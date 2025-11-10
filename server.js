@@ -6,6 +6,7 @@ import rateLimit from "express-rate-limit";
 import { connectDB } from "./config/db.js";
 import conversationRoutes from "./routes/conversations.js";
 import messageRoutes from "./routes/messages.js";
+import messageImagesRoute from "./routes/messages-image.js";
 
 dotenv.config();
 const app = express();
@@ -17,3 +18,4 @@ app.use("/conversations", conversationRoutes);
 app.use("/messages", messageRoutes);
 connectDB();
 app.listen(process.env.PORT || 5000, ()=>console.log("✅ PRYDE backend running"));
+app.use("/messages", messageImagesRoute);
