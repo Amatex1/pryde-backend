@@ -1,8 +1,11 @@
 import mongoose from "mongoose";
-const schema=new mongoose.Schema({
-  conversationId:{type:mongoose.Schema.Types.ObjectId,ref:"Conversation"},
-  senderId:Number,
-  text:String,
-  readBy:[Number]
-},{timestamps:true});
-export default mongoose.model("Message", schema);
+
+const MessageSchema = new mongoose.Schema({
+    conversationId: { type: String, required: true },
+    senderId: { type: String, required: true },
+    text: { type: String, default: null },
+    imageUrl: { type: String, default: null },
+    timestamp: { type: Date, default: Date.now }
+});
+
+export default mongoose.model("Message", MessageSchema);
