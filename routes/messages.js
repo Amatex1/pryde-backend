@@ -1,72 +1,117 @@
 import express from "express";
-import multer from "multer";
-import fetch from "node-fetch";
 import Message from "../models/Message.js";
+import { auth } from "../middleware/auth.js";
 
 const router = express.Router();
 
-// Temporary storage for uploaded files
-const upload = multer({ storage: multer.memoryStorage() });
+// Get conversation messages (paginated)
+router.get('/conversation/:userId', auth, async (req, res) => {
+  try {
+    const otherUserId = req.params.userId;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 50;
+    const skip = (page - 1) * limit;
+    
+    const messages = await Message.find({
+      $or: [
+        { from: req.userId, to: otherUserId },
+        { from: otherUserId, to: req.userId }
+      ]
+    })
+      .populate('from', 'display_name avatar_url')
+      .populate('to', 'display_name avatar_url')
+      .sort({ created_at: 1 })
+      .skip(skip)
+      .limit(limit);
+    
+    res.json(messages);
+  } catch (error) {
+    console.error('Get conversation error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
 
-/**
- * POST /messages/send-image
- * Upload image → WP Media Library → Save message → Return JSON
- */
-router.post("/send-image", upload.single("image"), async (req, res) => {
-    try {
-        const file = req.file;
-        const { conversationId, senderId } = req.body;
-
-        if (!file) {
-            return res.status(400).json({ error: "No file uploaded." });
+// Get conversation list (recent chats)
+router.get('/list', auth, async (req, res) => {
+  try {
+    const conversations = await Message.aggregate([
+      {
+        $match: {
+          $or: [
+            { from: req.userId },
+            { to: req.userId }
+          ]
         }
-
-        if (!conversationId || !senderId) {
-            return res.status(400).json({ error: "Missing conversationId or senderId" });
+      },
+      {
+        $sort: { created_at: -1 }
+      },
+      {
+        $group: {
+          _id: {
+            $cond: [
+              { $eq: ['$from', req.userId] },
+              '$to',
+              '$from'
+            ]
+          },
+          lastMessage: { $first: '$$ROOT' }
         }
-
-        // ✅ Send image to WordPress Media Library
-        const wpMediaResponse = await fetch(
-            "https://prydeapp.com/wp-json/wp/v2/media",
-            {
-                method: "POST",
-                headers: {
-                    "Content-Disposition": `attachment; filename="${file.originalname}"`,
-                    "Content-Type": file.mimetype,
-                    "Authorization": `Basic ${process.env.WP_MEDIA_TOKEN}` 
-                },
-                body: file.buffer
-            }
-        );
-
-        const wpMediaJson = await wpMediaResponse.json();
-
-        if (!wpMediaJson.source_url) {
-            console.error("WP Media Upload Failed:", wpMediaJson);
-            return res.status(500).json({ error: "Failed to upload image to WordPress." });
+      },
+      {
+        $replaceRoot: { newRoot: '$lastMessage' }
+      },
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'from',
+          foreignField: '_id',
+          as: 'fromUser'
         }
+      },
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'to',
+          foreignField: '_id',
+          as: 'toUser'
+        }
+      },
+      {
+        $unwind: '$fromUser'
+      },
+      {
+        $unwind: '$toUser'
+      },
+      {
+        $sort: { created_at: -1 }
+      }
+    ]);
+    
+    res.json(conversations);
+  } catch (error) {
+    console.error('Get conversation list error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
 
-        // ✅ Save message to MongoDB
-        const newMessage = new Message({
-            conversationId,
-            senderId,
-            imageUrl: wpMediaJson.source_url,
-            timestamp: new Date()
-        });
-
-        await newMessage.save();
-
-        res.json({
-            success: true,
-            message: "Image sent.",
-            imageUrl: wpMediaJson.source_url,
-            messageId: newMessage._id
-        });
-
-    } catch (err) {
-        console.error("❌ send-image error:", err);
-        res.status(500).json({ error: "Internal server error." });
-    }
+// Delete conversation
+router.delete('/conversation/:userId', auth, async (req, res) => {
+  try {
+    const otherUserId = req.params.userId;
+    
+    await Message.deleteMany({
+      $or: [
+        { from: req.userId, to: otherUserId },
+        { from: otherUserId, to: req.userId }
+      ]
+    });
+    
+    res.json({ success: true, message: 'Conversation deleted' });
+  } catch (error) {
+    console.error('Delete conversation error:', error);
+    res.status(500).json({ error: error.message });
+  }
 });
 
 export default router;

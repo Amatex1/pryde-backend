@@ -2,10 +2,11 @@
   "name": "pryde-backend",
   "version": "0.1.0",
   "description": "PRYDE Social - Backend (Node/Express/Mongo)",
-  "main": "src/index.js",
+  "main": "server.js",
+  "type": "module",
   "scripts": {
-    "start": "node src/index.js",
-    "dev": "nodemon src/index.js"
+    "start": "node server.js",
+    "dev": "nodemon server.js"
   },
   "engines": { "node": ">=18" },
   "dependencies": {
@@ -19,6 +20,7 @@
     "jsonwebtoken": "^9.0.0",
     "mongoose": "^7.2.0",
     "multer": "^1.4.5-lts.1",
+    "socket.io": "^4.6.0",
     "uuid": "^9.0.0"
   },
   "devDependencies": { "nodemon": "^3.0.1" }

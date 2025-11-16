@@ -1,11 +1,14 @@
 import mongoose from "mongoose";
 
 const MessageSchema = new mongoose.Schema({
-  conversationId: { type: String, required: true },
-  senderId:      { type: String, required: true },
-  text:          { type: String, default: null },
-  imageUrl:      { type: String, default: null },
-  timestamp:     { type: Date,   default: Date.now }
+  from: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  to: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  content: { type: String, default: null },
+  image_url: { type: String, default: null },
+  read_by: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+  created_at: { type: Date, default: Date.now }
 });
+
+MessageSchema.index({ from: 1, to: 1, created_at: -1 });
 
 export default mongoose.model("Message", MessageSchema);

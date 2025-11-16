@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Profile - Pryde Chat</title>
+  <link rel="stylesheet" href="/frontend/css/styles.css">
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <a href="/frontend/pages/directory.html" class="btn btn-secondary">← Back</a>
+      <h1>My Profile</h1>
+    </div>
+    <div class="profile-container">
+      <div class="profile-card">
+        <div class="avatar-section">
+          <img id="avatarPreview" src="/uploads/profile-pictures/default-avatar.png" alt="Avatar" class="avatar-large" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22100%22 height=%22100%22%3E%3Crect fill=%22%23ddd%22 width=%22100%22 height=%22100%22/%3E%3Ctext fill=%22%23999%22 x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22 font-size=%2240%22%3E?%3C/text%3E%3C/svg%3E'">
+          <input type="file" id="avatarInput" accept="image/*" style="display: none;">
+          <button id="uploadAvatarBtn" class="btn btn-secondary">Change Avatar</button>
+        </div>
+        <form id="profileForm">
+          <div class="form-group">
+            <label for="displayName">Display Name</label>
+            <input type="text" id="displayName" name="displayName" required>
+          </div>
+          <div class="form-group">
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" disabled>
+          </div>
+          <div class="form-group">
+            <label for="bio">Bio</label>
+            <textarea id="bio" name="bio" rows="3"></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary">Update Profile</button>
+          <div id="error" class="error"></div>
+          <div id="success" class="success"></div>
+        </form>
+      </div>
+    </div>
+  </div>
+  <script src="/frontend/js/profile.js"></script>
+</body>
+</html>
