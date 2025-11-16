@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  # Node.js application
+  app:
+    build:
+      context: ./
+      dockerfile: backend/Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - MONGO_URI=mongodb://mongo:27017/pryde
+      - JWT_SECRET=${JWT_SECRET:-secret_dev_key}
+      - PORT=3000
+    volumes:
+      - ./backend/uploads:/usr/src/app/backend/uploads
+    depends_on:
+      - mongo
+    restart: unless-stopped
+
+  # MongoDB database
+  mongo:
+    image: mongo:6
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    restart: unless-stopped
+
+volumes:
+  mongo-data:

@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chat - PRYDE</title>
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+  <div class="chat-container">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <h2>Conversations</h2>
+        <a href="directory.html" class="btn-secondary btn-sm">Directory</a>
+      </div>
+      <div id="conversationsList" class="conversations-list">
+        <div class="loading">Loading conversations...</div>
+      </div>
+    </aside>
+    
+    <main class="chat-main">
+      <div class="chat-header" id="chatHeader">
+        <div class="chat-user-info">
+          <div class="avatar" id="chatAvatar"></div>
+          <div>
+            <h3 id="chatUserName">Select a conversation</h3>
+            <span class="online-status" id="onlineStatus"></span>
+          </div>
+        </div>
+        <div class="header-actions">
+          <a href="profile.html" class="btn-secondary btn-sm">Profile</a>
+          <button id="logoutBtn" class="btn-secondary btn-sm">Logout</button>
+        </div>
+      </div>
+      
+      <div class="messages-container" id="messagesContainer">
+        <div class="empty-state">
+          Select a conversation to start chatting
+        </div>
+      </div>
+      
+      <div class="typing-indicator" id="typingIndicator" style="display: none;">
+        <span class="typing-dots"></span>
+      </div>
+      
+      <form class="message-form" id="messageForm">
+        <input 
+          type="file" 
+          id="imageInput" 
+          accept="image/*" 
+          style="display: none;"
+        >
+        <button type="button" id="imageBtn" class="btn-icon" title="Attach image">
+          📎
+        </button>
+        <input 
+          type="text" 
+          id="messageInput" 
+          placeholder="Type a message..." 
+          autocomplete="off"
+        >
+        <button type="submit" class="btn-send">Send</button>
+      </form>
+      
+      <div id="imagePreview" class="image-preview" style="display: none;">
+        <img id="previewImg" src="" alt="Preview">
+        <button id="removeImageBtn" class="btn-remove">✕</button>
+      </div>
+    </main>
+  </div>
+  
+  <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+  <script src="../js/chat.js"></script>
+</body>
+</html>
