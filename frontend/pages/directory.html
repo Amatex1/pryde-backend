@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Directory - Pryde Chat</title>
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+  <div class="header">
+    <div class="header-content">
+      <h1>Pryde Chat</h1>
+      <nav>
+        <a href="directory.html">Directory</a>
+        <a href="profile.html">Profile</a>
+        <a href="#" onclick="logout()">Logout</a>
+      </nav>
+    </div>
+  </div>
+
+  <div class="container">
+    <h2>User Directory</h2>
+    <div id="userGrid" class="user-grid"></div>
+  </div>
+
+  <script>
+    const API_URL = window.location.origin;
+    const token = localStorage.getItem('token');
+
+    if (!token) {
+      window.location.href = 'login.html';
+    }
+
+    function logout() {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      window.location.href = 'login.html';
+    }
+
+    async function loadUsers() {
+      try {
+        const response = await fetch(`${API_URL}/api/users`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to load users');
+        }
+
+        const users = await response.json();
+        const userGrid = document.getElementById('userGrid');
+        const currentUser = JSON.parse(localStorage.getItem('user'));
+
+        userGrid.innerHTML = users
+          .filter(user => user._id !== currentUser.id)
+          .map(user => `
+            <div class="user-card">
+              <img src="${user.avatar_url || '/uploads/profile-pictures/default-avatar.png'}" 
+                   alt="${user.display_name}"
+                   onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22100%22 height=%22100%22><rect width=%22100%22 height=%22100%22 fill=%22%23ddd%22/><text x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 font-size=%2240%22 fill=%22%23999%22>${user.display_name.charAt(0).toUpperCase()}</text></svg>'">
+              <h3>${user.display_name}</h3>
+              <p>${user.bio || 'No bio yet'}</p>
+              <button onclick="openChat('${user._id}', '${user.display_name}', '${user.avatar_url || ''}')">
+                Chat
+              </button>
+            </div>
+          `).join('');
+      } catch (error) {
+        console.error('Error loading users:', error);
+        alert('Failed to load users');
+      }
+    }
+
+    function openChat(userId, displayName, avatarUrl) {
+      window.location.href = `chat.html?userId=${userId}&name=${encodeURIComponent(displayName)}&avatar=${encodeURIComponent(avatarUrl)}`;
+    }
+
+    loadUsers();
+  </script>
+</body>
+</html>

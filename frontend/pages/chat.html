@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chat - Pryde Chat</title>
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+  <div class="header">
+    <div class="header-content">
+      <h1>Pryde Chat</h1>
+      <nav>
+        <a href="directory.html">Directory</a>
+        <a href="profile.html">Profile</a>
+        <a href="#" onclick="logout()">Logout</a>
+      </nav>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="chat-container">
+      <div class="chat-main">
+        <div class="chat-header">
+          <img id="otherUserAvatar" src="" alt="User">
+          <h3 id="otherUserName"></h3>
+        </div>
+        
+        <div id="chatMessages" class="chat-messages">
+          <!-- Messages will be inserted here -->
+        </div>
+        
+        <div class="chat-input">
+          <input type="file" id="imageInput" accept="image/*">
+          <label for="imageInput">📎</label>
+          <input type="text" id="messageInput" placeholder="Type a message..." onkeypress="handleKeyPress(event)">
+          <button onclick="sendMessage()">Send</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+  <script src="../js/chat.js"></script>
+</body>
+</html>
