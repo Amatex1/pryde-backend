@@ -3,6 +3,7 @@ import { createServer } from 'http';
 import dotenv from 'dotenv';
 import cors from 'cors';
 import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
@@ -23,6 +24,31 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 const httpServer = createServer(app);
+
+// Rate limiting configuration
+const generalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // Limit each IP to 100 requests per windowMs
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: 'Too many requests from this IP, please try again later.'
+});
+
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10, // Limit each IP to 10 auth requests per windowMs
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: 'Too many authentication attempts, please try again later.'
+});
+
+const uploadLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 20, // Limit each IP to 20 uploads per windowMs
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: 'Too many upload attempts, please try again later.'
+});
 
 // Middleware
 app.use(cors());
@@ -103,14 +129,14 @@ const messageUpload = multer({
 });
 
 // Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/messages', messageRoutes);
+app.use('/api/auth', authLimiter, authRoutes);
+app.use('/api/messages', generalLimiter, messageRoutes);
 
 /**
  * POST /api/upload-profile
  * Upload profile picture
  */
-app.post('/api/upload-profile', authMiddleware, profileUpload.single('profile'), async (req, res) => {
+app.post('/api/upload-profile', uploadLimiter, authMiddleware, profileUpload.single('profile'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: 'No file uploaded' });
@@ -135,7 +161,7 @@ app.post('/api/upload-profile', authMiddleware, profileUpload.single('profile'),
  * POST /api/messages/upload-image
  * Upload message image
  */
-app.post('/api/messages/upload-image', authMiddleware, messageUpload.single('image'), async (req, res) => {
+app.post('/api/messages/upload-image', uploadLimiter, authMiddleware, messageUpload.single('image'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: 'No file uploaded' });
@@ -157,7 +183,7 @@ app.post('/api/messages/upload-image', authMiddleware, messageUpload.single('ima
  * GET /api/users
  * Get list of all users (for directory)
  */
-app.get('/api/users', authMiddleware, async (req, res) => {
+app.get('/api/users', generalLimiter, authMiddleware, async (req, res) => {
   try {
     const users = await User.find({ banned: false })
       .select('display_name avatar_url bio created_at')
@@ -178,7 +204,7 @@ app.get('/api/users', authMiddleware, async (req, res) => {
  * GET /api/profile
  * Get current user profile
  */
-app.get('/api/profile', authMiddleware, async (req, res) => {
+app.get('/api/profile', generalLimiter, authMiddleware, async (req, res) => {
   try {
     const user = await User.findById(req.userId)
       .select('-password')
@@ -198,7 +224,7 @@ app.get('/api/profile', authMiddleware, async (req, res) => {
  * PUT /api/profile
  * Update user profile
  */
-app.put('/api/profile', authMiddleware, async (req, res) => {
+app.put('/api/profile', generalLimiter, authMiddleware, async (req, res) => {
   try {
     const { display_name, bio } = req.body;
     const updates = {};
