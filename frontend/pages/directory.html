@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Directory - PRYDE Chat</title>
+  <link rel="stylesheet" href="../css/styles.css">
+</head>
+<body>
+  <div class="container large">
+    <h1>👥 User Directory</h1>
+    <div class="nav-links">
+      <a href="profile.html">My Profile</a>
+      <a href="chat.html">My Chats</a>
+      <a href="#" onclick="logout()">Logout</a>
+    </div>
+    <div id="directory" class="directory-grid"></div>
+  </div>
+
+  <script>
+    const API_URL = window.location.origin;
+
+    // Check authentication
+    const token = localStorage.getItem('token');
+    if (!token) {
+      window.location.href = 'login.html';
+    }
+
+    // Load directory
+    async function loadDirectory() {
+      try {
+        const response = await fetch(`${API_URL}/api/users/directory`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to load directory');
+        }
+
+        const data = await response.json();
+        displayUsers(data.users);
+      } catch (error) {
+        console.error('Error loading directory:', error);
+        document.getElementById('directory').innerHTML = '<p>Error loading users</p>';
+      }
+    }
+
+    function displayUsers(users) {
+      const directory = document.getElementById('directory');
+      directory.innerHTML = '';
+
+      users.forEach(user => {
+        const card = document.createElement('div');
+        card.className = 'user-card';
+        card.onclick = () => openChat(user._id);
+
+        const avatarHtml = user.avatar_url 
+          ? `<img src="${user.avatar_url}" class="avatar" alt="${user.display_name}">`
+          : `<div class="avatar-placeholder">${user.display_name.charAt(0).toUpperCase()}</div>`;
+
+        card.innerHTML = `
+          ${avatarHtml}
+          <h3>${user.display_name}</h3>
+          <p>${user.bio || 'No bio'}</p>
+        `;
+
+        directory.appendChild(card);
+      });
+    }
+
+    function openChat(userId) {
+      window.location.href = `chat.html?userId=${userId}`;
+    }
+
+    function logout() {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      window.location.href = 'login.html';
+    }
+
+    loadDirectory();
+  </script>
+</body>
+</html>
