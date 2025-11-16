@@ -8,8 +8,8 @@ COPY package*.json ./
 # Install dependencies
 RUN npm install --production
 
-# Copy backend files
-COPY backend ./backend
+# Copy all application files
+COPY . .
 
 # Create uploads directories
 RUN mkdir -p backend/uploads/profile-pictures backend/uploads/messages

@@ -1,6 +1,8 @@
 node_modules/
-backend/uploads/*
-!backend/uploads/.gitkeep
+backend/uploads/profile-pictures/*
+backend/uploads/messages/*
+!backend/uploads/profile-pictures/.gitkeep
+!backend/uploads/messages/.gitkeep
 *.log
 .env
 .DS_Store
