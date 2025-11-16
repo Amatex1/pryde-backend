@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  # MongoDB service
+  mongo:
+    image: mongo:6
+    container_name: pryde-mongo
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    environment:
+      MONGO_INITDB_DATABASE: pryde
+
+  # Node.js backend application
+  app:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: pryde-app
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./backend:/app
+      - ./backend/uploads:/app/uploads
+      - /app/node_modules
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      MONGO_URI: mongodb://mongo:27017/pryde
+      JWT_SECRET: ${JWT_SECRET:-secret_dev_key}
+    depends_on:
+      - mongo
+
+volumes:
+  mongo-data:
+    name: pryde-mongo-data
