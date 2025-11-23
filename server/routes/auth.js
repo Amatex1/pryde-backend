@@ -10,11 +10,23 @@ import config from '../config/config.js';
 // @access  Public
 router.post('/signup', async (req, res) => {
   try {
-    const { username, email, password, displayName } = req.body;
+    const {
+      username,
+      email,
+      password,
+      fullName,
+      displayName,
+      nickname,
+      pronouns,
+      customPronouns,
+      gender,
+      customGender,
+      relationshipStatus
+    } = req.body;
 
     // Validation
     if (!username || !email || !password) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         message: 'Please provide all required fields',
         fields: { username, email, password }
       });
@@ -45,7 +57,14 @@ router.post('/signup', async (req, res) => {
       username,
       email,
       password,
-      displayName: displayName || username
+      fullName: fullName || '',
+      displayName: displayName || fullName || username,
+      nickname: nickname || '',
+      pronouns: pronouns || '',
+      customPronouns: customPronouns || '',
+      gender: gender || '',
+      customGender: customGender || '',
+      relationshipStatus: relationshipStatus || ''
     });
 
     await user.save();
@@ -67,9 +86,18 @@ router.post('/signup', async (req, res) => {
         id: user._id,
         username: user.username,
         email: user.email,
+        fullName: user.fullName,
         displayName: user.displayName,
+        nickname: user.nickname,
+        pronouns: user.pronouns,
+        customPronouns: user.customPronouns,
+        gender: user.gender,
+        customGender: user.customGender,
+        relationshipStatus: user.relationshipStatus,
         profilePhoto: user.profilePhoto,
-        coverPhoto: user.coverPhoto
+        coverPhoto: user.coverPhoto,
+        bio: user.bio,
+        socialLinks: user.socialLinks
       }
     });
   } catch (error) {
@@ -123,12 +151,20 @@ router.post('/login', async (req, res) => {
         id: user._id,
         username: user.username,
         email: user.email,
+        fullName: user.fullName,
         displayName: user.displayName,
+        nickname: user.nickname,
+        pronouns: user.pronouns,
+        customPronouns: user.customPronouns,
+        gender: user.gender,
+        customGender: user.customGender,
+        relationshipStatus: user.relationshipStatus,
         profilePhoto: user.profilePhoto,
         coverPhoto: user.coverPhoto,
         bio: user.bio,
         location: user.location,
-        website: user.website
+        website: user.website,
+        socialLinks: user.socialLinks
       }
     });
   } catch (error) {

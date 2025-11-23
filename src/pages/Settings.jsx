@@ -13,10 +13,18 @@ import './Settings.css';
 function Settings() {
   const currentUser = getCurrentUser();
   const [formData, setFormData] = useState({
+    fullName: '',
     displayName: '',
+    nickname: '',
+    pronouns: '',
+    customPronouns: '',
+    gender: '',
+    customGender: '',
+    relationshipStatus: '',
     bio: '',
     location: '',
-    website: ''
+    website: '',
+    socialLinks: []
   });
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
@@ -37,10 +45,18 @@ function Settings() {
       const response = await api.get('/auth/me');
       const user = response.data;
       setFormData({
+        fullName: user.fullName || '',
         displayName: user.displayName || '',
+        nickname: user.nickname || '',
+        pronouns: user.pronouns || '',
+        customPronouns: user.customPronouns || '',
+        gender: user.gender || '',
+        customGender: user.customGender || '',
+        relationshipStatus: user.relationshipStatus || '',
         bio: user.bio || '',
         location: user.location || '',
-        website: user.website || ''
+        website: user.website || '',
+        socialLinks: user.socialLinks || []
       });
     } catch (error) {
       console.error('Failed to fetch user data:', error);
@@ -51,6 +67,30 @@ function Settings() {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value
+    });
+  };
+
+  const addSocialLink = () => {
+    setFormData({
+      ...formData,
+      socialLinks: [...formData.socialLinks, { platform: '', url: '' }]
+    });
+  };
+
+  const removeSocialLink = (index) => {
+    const newLinks = formData.socialLinks.filter((_, i) => i !== index);
+    setFormData({
+      ...formData,
+      socialLinks: newLinks
+    });
+  };
+
+  const updateSocialLink = (index, field, value) => {
+    const newLinks = [...formData.socialLinks];
+    newLinks[index][field] = value;
+    setFormData({
+      ...formData,
+      socialLinks: newLinks
     });
   };
 
@@ -177,8 +217,21 @@ function Settings() {
 
           <form onSubmit={handleSubmit} className="settings-form">
             <div className="settings-section">
-              <h2 className="section-title">Profile Information</h2>
-              
+              <h2 className="section-title">Basic Information</h2>
+
+              <div className="form-group">
+                <label htmlFor="fullName">Full Name</label>
+                <input
+                  type="text"
+                  id="fullName"
+                  name="fullName"
+                  value={formData.fullName}
+                  onChange={handleChange}
+                  className="form-input glossy"
+                  placeholder="Your full name"
+                />
+              </div>
+
               <div className="form-group">
                 <label htmlFor="displayName">Display Name</label>
                 <input
@@ -188,8 +241,117 @@ function Settings() {
                   value={formData.displayName}
                   onChange={handleChange}
                   className="form-input glossy"
-                  placeholder="Your display name"
+                  placeholder="How you want to be called"
                 />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="nickname">Nickname (Optional)</label>
+                <input
+                  type="text"
+                  id="nickname"
+                  name="nickname"
+                  value={formData.nickname}
+                  onChange={handleChange}
+                  className="form-input glossy"
+                  placeholder="Your nickname"
+                />
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label htmlFor="pronouns">Pronouns</label>
+                  <select
+                    id="pronouns"
+                    name="pronouns"
+                    value={formData.pronouns}
+                    onChange={handleChange}
+                    className="form-input glossy"
+                  >
+                    <option value="">Select pronouns</option>
+                    <option value="He/Him">He/Him</option>
+                    <option value="She/Her">She/Her</option>
+                    <option value="They/Them">They/Them</option>
+                    <option value="He/They">He/They</option>
+                    <option value="She/They">She/They</option>
+                    <option value="Any Pronouns">Any Pronouns</option>
+                    <option value="Prefer Not to Say">Prefer Not to Say</option>
+                    <option value="Custom">Custom</option>
+                  </select>
+                </div>
+
+                {formData.pronouns === 'Custom' && (
+                  <div className="form-group">
+                    <label htmlFor="customPronouns">Custom Pronouns</label>
+                    <input
+                      type="text"
+                      id="customPronouns"
+                      name="customPronouns"
+                      value={formData.customPronouns}
+                      onChange={handleChange}
+                      className="form-input glossy"
+                      placeholder="Enter your pronouns"
+                    />
+                  </div>
+                )}
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label htmlFor="gender">Gender</label>
+                  <select
+                    id="gender"
+                    name="gender"
+                    value={formData.gender}
+                    onChange={handleChange}
+                    className="form-input glossy"
+                  >
+                    <option value="">Select gender</option>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Non-Binary">Non-Binary</option>
+                    <option value="Transgender">Transgender</option>
+                    <option value="Genderfluid">Genderfluid</option>
+                    <option value="Agender">Agender</option>
+                    <option value="Intersex">Intersex</option>
+                    <option value="Prefer Not to Say">Prefer Not to Say</option>
+                    <option value="Custom">Custom</option>
+                  </select>
+                </div>
+
+                {formData.gender === 'Custom' && (
+                  <div className="form-group">
+                    <label htmlFor="customGender">Custom Gender</label>
+                    <input
+                      type="text"
+                      id="customGender"
+                      name="customGender"
+                      value={formData.customGender}
+                      onChange={handleChange}
+                      className="form-input glossy"
+                      placeholder="Enter your gender"
+                    />
+                  </div>
+                )}
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="relationshipStatus">Relationship Status</label>
+                <select
+                  id="relationshipStatus"
+                  name="relationshipStatus"
+                  value={formData.relationshipStatus}
+                  onChange={handleChange}
+                  className="form-input glossy"
+                >
+                  <option value="">Select status</option>
+                  <option value="Single">Single</option>
+                  <option value="Taken">Taken</option>
+                  <option value="It's Complicated">It's Complicated</option>
+                  <option value="Married">Married</option>
+                  <option value="Looking for Friends">Looking for Friends</option>
+                  <option value="Prefer Not to Say">Prefer Not to Say</option>
+                </select>
               </div>
 
               <div className="form-group">
@@ -232,6 +394,49 @@ function Settings() {
                   placeholder="https://yourwebsite.com"
                 />
               </div>
+            </div>
+
+            <div className="settings-section">
+              <h2 className="section-title">Social Links</h2>
+              <p className="section-description">Add unlimited social media links to your profile</p>
+
+              {formData.socialLinks.map((link, index) => (
+                <div key={index} className="social-link-row">
+                  <div className="form-group">
+                    <input
+                      type="text"
+                      value={link.platform}
+                      onChange={(e) => updateSocialLink(index, 'platform', e.target.value)}
+                      className="form-input glossy"
+                      placeholder="Platform (e.g., Instagram, Twitter)"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <input
+                      type="url"
+                      value={link.url}
+                      onChange={(e) => updateSocialLink(index, 'url', e.target.value)}
+                      className="form-input glossy"
+                      placeholder="https://..."
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => removeSocialLink(index)}
+                    className="btn-remove"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+
+              <button
+                type="button"
+                onClick={addSocialLink}
+                className="btn-add-link glossy"
+              >
+                + Add Social Link
+              </button>
             </div>
 
             <button type="submit" disabled={loading} className="btn-save glossy-gold">

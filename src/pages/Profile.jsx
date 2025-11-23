@@ -69,10 +69,37 @@ function Profile() {
             </div>
 
             <div className="profile-details">
-              <h1 className="profile-name text-shadow">{user.displayName || user.username}</h1>
+              <h1 className="profile-name text-shadow">
+                {user.displayName || user.fullName || user.username}
+                {user.nickname && <span className="nickname"> "{user.nickname}"</span>}
+              </h1>
               <p className="profile-username">@{user.username}</p>
+
+              <div className="profile-badges">
+                {user.pronouns && user.pronouns !== 'Prefer Not to Say' && (
+                  <span className="badge">
+                    {user.pronouns === 'Custom' ? user.customPronouns : user.pronouns}
+                  </span>
+                )}
+                {user.gender && user.gender !== 'Prefer Not to Say' && (
+                  <span className="badge">
+                    {user.gender === 'Custom' ? user.customGender : user.gender}
+                  </span>
+                )}
+                {user.relationshipStatus && user.relationshipStatus !== 'Prefer Not to Say' && (
+                  <span className="badge">
+                    {user.relationshipStatus === 'Single' && '💔'}
+                    {user.relationshipStatus === 'Taken' && '💕'}
+                    {user.relationshipStatus === 'Married' && '💍'}
+                    {user.relationshipStatus === "It's Complicated" && '😅'}
+                    {user.relationshipStatus === 'Looking for Friends' && '👋'}
+                    {' '}{user.relationshipStatus}
+                  </span>
+                )}
+              </div>
+
               {user.bio && <p className="profile-bio">{user.bio}</p>}
-              
+
               <div className="profile-meta">
                 {user.location && (
                   <span className="meta-item">📍 {user.location}</span>
@@ -83,6 +110,26 @@ function Profile() {
                   </a>
                 )}
               </div>
+
+              {user.socialLinks && user.socialLinks.length > 0 && (
+                <div className="social-links">
+                  <h3 className="social-title">Social Links</h3>
+                  <div className="social-grid">
+                    {user.socialLinks.map((link, index) => (
+                      <a
+                        key={index}
+                        href={link.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="social-link-item glossy"
+                      >
+                        <span className="social-platform">{link.platform}</span>
+                        <span className="social-icon">→</span>
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               <div className="profile-stats">
                 <div className="stat-item">

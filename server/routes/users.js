@@ -56,19 +56,40 @@ router.get('/:id', auth, async (req, res) => {
 // @access  Private
 router.put('/profile', auth, async (req, res) => {
   try {
-    const { displayName, bio, location, website } = req.body;
+    const {
+      fullName,
+      displayName,
+      nickname,
+      pronouns,
+      customPronouns,
+      gender,
+      customGender,
+      relationshipStatus,
+      bio,
+      location,
+      website,
+      socialLinks
+    } = req.body;
 
     const user = await User.findById(req.userId);
-    
+
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
 
     // Update fields
+    if (fullName !== undefined) user.fullName = fullName;
     if (displayName !== undefined) user.displayName = displayName;
+    if (nickname !== undefined) user.nickname = nickname;
+    if (pronouns !== undefined) user.pronouns = pronouns;
+    if (customPronouns !== undefined) user.customPronouns = customPronouns;
+    if (gender !== undefined) user.gender = gender;
+    if (customGender !== undefined) user.customGender = customGender;
+    if (relationshipStatus !== undefined) user.relationshipStatus = relationshipStatus;
     if (bio !== undefined) user.bio = bio;
     if (location !== undefined) user.location = location;
     if (website !== undefined) user.website = website;
+    if (socialLinks !== undefined) user.socialLinks = socialLinks;
 
     await user.save();
 

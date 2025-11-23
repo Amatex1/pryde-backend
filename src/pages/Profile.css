@@ -65,11 +65,39 @@
   font-size: 2rem;
   color: var(--gold);
   margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.nickname {
+  font-size: 1.5rem;
+  color: var(--text-muted);
+  font-style: italic;
+  font-weight: normal;
 }
 
 .profile-username {
   color: var(--text-muted);
   font-size: 1.1rem;
+}
+
+.profile-badges {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-top: 0.75rem;
+}
+
+.badge {
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  background: rgba(255, 215, 0, 0.15);
+  color: var(--gold);
+  font-size: 0.875rem;
+  font-weight: 500;
+  border: 1px solid rgba(255, 215, 0, 0.3);
 }
 
 .profile-bio {
@@ -82,6 +110,50 @@
   display: flex;
   gap: 1.5rem;
   margin-top: 0.5rem;
+}
+
+.social-links {
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(255, 215, 0, 0.1);
+}
+
+.social-title {
+  color: var(--gold);
+  font-size: 1rem;
+  margin-bottom: 1rem;
+}
+
+.social-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+}
+
+.social-link-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  text-decoration: none;
+  color: var(--text-light);
+  transition: all 0.3s ease;
+}
+
+.social-link-item:hover {
+  background: rgba(255, 215, 0, 0.15);
+  transform: translateX(5px);
+}
+
+.social-platform {
+  font-weight: 500;
+  color: var(--gold);
+}
+
+.social-icon {
+  color: var(--text-muted);
+  font-size: 1.25rem;
 }
 
 .meta-item {
