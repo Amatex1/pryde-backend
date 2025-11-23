@@ -187,8 +187,13 @@ router.put('/users/:id/suspend', checkPermission('canManageUsers'), async (req, 
       return res.status(404).json({ message: 'User not found' });
     }
 
+    // NEVER allow super admins to be suspended (platform owner protection)
+    if (user.role === 'super_admin') {
+      return res.status(403).json({ message: 'Cannot suspend super admin (platform owner)' });
+    }
+
     // Cannot suspend other admins unless you're a super admin
-    if (['moderator', 'admin', 'super_admin'].includes(user.role) && req.adminUser.role !== 'super_admin') {
+    if (['moderator', 'admin'].includes(user.role) && req.adminUser.role !== 'super_admin') {
       return res.status(403).json({ message: 'Cannot suspend admin users' });
     }
 
@@ -245,8 +250,13 @@ router.put('/users/:id/ban', checkPermission('canManageUsers'), async (req, res)
       return res.status(404).json({ message: 'User not found' });
     }
 
+    // NEVER allow super admins to be banned (platform owner protection)
+    if (user.role === 'super_admin') {
+      return res.status(403).json({ message: 'Cannot ban super admin (platform owner)' });
+    }
+
     // Cannot ban other admins unless you're a super admin
-    if (['moderator', 'admin', 'super_admin'].includes(user.role) && req.adminUser.role !== 'super_admin') {
+    if (['moderator', 'admin'].includes(user.role) && req.adminUser.role !== 'super_admin') {
       return res.status(403).json({ message: 'Cannot ban admin users' });
     }
 

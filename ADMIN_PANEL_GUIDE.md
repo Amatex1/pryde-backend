@@ -293,9 +293,10 @@ db.users.updateOne(
 1. **Hidden URL** - Admin panel is not linked anywhere in the UI
 2. **Role-Based Access** - Only users with admin roles can access
 3. **Permission Checks** - Each action requires specific permissions
-4. **Protection Against Self-Harm** - Admins cannot suspend/ban other admins (unless super admin)
-5. **Audit Trail** - All report actions are logged with reviewer ID and timestamp
-6. **Ban/Suspend Checks** - Banned/suspended users cannot log in
+4. **Super Admin Protection** - Super admins (platform owners) CANNOT be suspended or banned by anyone
+5. **Admin Protection** - Regular admins cannot suspend/ban other admins (only super admins can)
+6. **Audit Trail** - All report actions are logged with reviewer ID and timestamp
+7. **Ban/Suspend Checks** - Banned/suspended users cannot log in
 
 ---
 
@@ -303,13 +304,15 @@ db.users.updateOne(
 
 1. **First Admin Setup:** You must manually set your first admin in MongoDB. After that, super admins can promote others via the API.
 
-2. **No UI for Role Management Yet:** Currently, you must use MongoDB or the API to change user roles. A future update could add a UI for this in the admin panel.
+2. **Super Admin Protection:** Super admins (platform owners) are **completely protected** and cannot be suspended or banned by anyone, including other super admins. This prevents accidental lockouts.
 
-3. **Regular Users Cannot See Admin Panel:** If a regular user tries to access `/admin`, they'll see "Access denied" and be redirected to the home page.
+3. **No UI for Role Management Yet:** Currently, you must use MongoDB or the API to change user roles. A future update could add a UI for this in the admin panel.
 
-4. **Suspended Users:** When a suspended user tries to log in, they'll see a message with the suspension end date and reason.
+4. **Regular Users Cannot See Admin Panel:** If a regular user tries to access `/admin`, they'll see "Access denied" and be redirected to the home page.
 
-5. **Banned Users:** Banned users cannot log in and will see a message with the ban reason.
+5. **Suspended Users:** When a suspended user tries to log in, they'll see a message with the suspension end date and reason.
+
+6. **Banned Users:** Banned users cannot log in and will see a message with the ban reason.
 
 ---
 

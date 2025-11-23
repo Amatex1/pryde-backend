@@ -435,23 +435,31 @@ function UsersTab({ users, onSuspend, onBan, onUnsuspend, onUnban }) {
                 </td>
                 <td>{new Date(user.createdAt).toLocaleDateString()}</td>
                 <td className="user-actions">
-                  {user.isSuspended ? (
-                    <button className="btn-action" onClick={() => onUnsuspend(user._id)}>
-                      🔓 Unsuspend
-                    </button>
+                  {user.role === 'super_admin' ? (
+                    <span style={{ color: '#6C5CE7', fontWeight: 'bold' }}>
+                      🛡️ Platform Owner (Protected)
+                    </span>
                   ) : (
-                    <button className="btn-action" onClick={() => onSuspend(user._id)}>
-                      ⏸️ Suspend
-                    </button>
-                  )}
-                  {user.isBanned ? (
-                    <button className="btn-action" onClick={() => onUnban(user._id)}>
-                      ✅ Unban
-                    </button>
-                  ) : (
-                    <button className="btn-action btn-danger" onClick={() => onBan(user._id)}>
-                      🚫 Ban
-                    </button>
+                    <>
+                      {user.isSuspended ? (
+                        <button className="btn-action" onClick={() => onUnsuspend(user._id)}>
+                          🔓 Unsuspend
+                        </button>
+                      ) : (
+                        <button className="btn-action" onClick={() => onSuspend(user._id)}>
+                          ⏸️ Suspend
+                        </button>
+                      )}
+                      {user.isBanned ? (
+                        <button className="btn-action" onClick={() => onUnban(user._id)}>
+                          ✅ Unban
+                        </button>
+                      ) : (
+                        <button className="btn-action btn-danger" onClick={() => onBan(user._id)}>
+                          🚫 Ban
+                        </button>
+                      )}
+                    </>
                   )}
                 </td>
               </tr>
