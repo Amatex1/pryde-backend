@@ -1,0 +1,30 @@
+services:
+  # Backend API Service
+  - type: web
+    name: pryde-backend
+    env: node
+    region: oregon
+    plan: free
+    buildCommand: cd server && npm install
+    startCommand: cd server && npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: MONGO_URL
+        sync: false
+      - key: MONGODB_URI
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: BASE_URL
+        value: https://pryde-backend.onrender.com
+      - key: FRONTEND_URL
+        value: https://prydeapp.com
+      - key: VAPID_PUBLIC_KEY
+        sync: false
+      - key: VAPID_PRIVATE_KEY
+        sync: false
+    healthCheckPath: /api/health
+
