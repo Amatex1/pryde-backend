@@ -6,20 +6,45 @@
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  background: var(--bg-light);
   min-height: 100vh;
-  color: #fff;
+  color: var(--text-main);
 }
 
 :root {
-  --gold: #ffd700;
-  --gold-light: #ffed4e;
-  --gold-dark: #daa520;
-  --dark-bg: #1a1a2e;
-  --dark-secondary: #16213e;
-  --dark-card: #0f3460;
-  --text-light: #e9ecef;
-  --text-muted: #adb5bd;
+  /* ========================================
+     OFFICIAL PRYDE THEME COLORS
+     ======================================== */
+
+  /* Primary Colors */
+  --pryde-purple: #6C5CE7;
+  --electric-blue: #0984E3;
+  --soft-lavender: #EDEAFF;
+
+  /* Neutrals */
+  --bg-light: #F7F7F7;
+  --card-surface: #FFFFFF;
+  --border-light: #E0E0E0;
+  --text-main: #2B2B2B;
+  --text-muted: #616161;
+
+  /* Gradients */
+  --gradient-primary: linear-gradient(135deg, var(--pryde-purple) 0%, var(--electric-blue) 100%);
+  --gradient-soft: linear-gradient(135deg, var(--soft-lavender) 0%, var(--pryde-purple) 100%);
+
+  /* Semantic Colors */
+  --success: #28a745;
+  --error: #ff6b6b;
+  --warning: #ffc107;
+
+  /* Legacy support (will be removed) */
+  --gold: var(--pryde-purple);
+  --gold-light: var(--electric-blue);
+  --gold-dark: var(--pryde-purple);
+  --dark-bg: var(--text-main);
+  --dark-secondary: var(--border-light);
+  --dark-card: var(--card-surface);
+  --text-light: var(--text-main);
 }
 
 /* Scrollbar styling */
@@ -28,33 +53,34 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--dark-secondary);
+  background: var(--border-light);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--gold-dark);
+  background: var(--pryde-purple);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--gold);
+  background: var(--electric-blue);
 }
 
-/* Glossy effect utility */
+/* Glossy effect utility - Updated for new theme */
 .glossy {
-  background: linear-gradient(135deg, rgba(255, 215, 0, 0.2) 0%, rgba(218, 165, 32, 0.1) 100%);
+  background: var(--card-surface);
   backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 215, 0, 0.3);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  border: 1px solid var(--border-light);
+  box-shadow: 0 4px 20px rgba(108, 92, 231, 0.1);
 }
 
-.glossy-gold {
-  background: linear-gradient(135deg, #ffd700 0%, #daa520 100%);
-  box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4);
+.glossy-gradient {
+  background: var(--gradient-primary);
+  box-shadow: 0 4px 15px rgba(108, 92, 231, 0.3);
+  color: white;
 }
 
 .text-shadow {
-  text-shadow: 0 2px 10px rgba(255, 215, 0, 0.5);
+  text-shadow: 0 2px 10px rgba(108, 92, 231, 0.3);
 }
 
 /* Button styles */
@@ -104,10 +130,40 @@ input, textarea {
 .shimmer {
   background: linear-gradient(
     90deg,
-    rgba(255, 215, 0, 0.1) 0%,
-    rgba(255, 215, 0, 0.3) 50%,
-    rgba(255, 215, 0, 0.1) 100%
+    rgba(108, 92, 231, 0.1) 0%,
+    rgba(108, 92, 231, 0.3) 50%,
+    rgba(108, 92, 231, 0.1) 100%
   );
   background-size: 1000px 100%;
   animation: shimmer 2s infinite;
+}
+
+/* Utility Classes for New Theme */
+.bg-gradient-primary {
+  background: var(--gradient-primary);
+}
+
+.bg-gradient-soft {
+  background: var(--gradient-soft);
+}
+
+.text-purple {
+  color: var(--pryde-purple);
+}
+
+.text-blue {
+  color: var(--electric-blue);
+}
+
+.border-purple {
+  border-color: var(--pryde-purple);
+}
+
+.hover-lift {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(108, 92, 231, 0.2);
 }

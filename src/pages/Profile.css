@@ -8,12 +8,15 @@
   border-radius: 24px;
   overflow: hidden;
   margin-bottom: 2rem;
+  background: var(--card-surface);
+  box-shadow: 0 4px 20px rgba(108, 92, 231, 0.1);
 }
 
 .cover-photo {
   height: 300px;
   overflow: hidden;
-  background: linear-gradient(135deg, var(--gold-dark) 0%, var(--gold) 100%);
+  background: var(--gradient-primary);
+  position: relative;
 }
 
 .cover-photo img {
@@ -36,17 +39,18 @@
   width: 150px;
   height: 150px;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--gold) 0%, var(--gold-dark) 100%);
+  background: var(--gradient-primary);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 4rem;
   font-weight: bold;
-  color: var(--dark-bg);
+  color: white;
   overflow: hidden;
-  border: 5px solid var(--dark-bg);
+  border: 5px solid var(--card-surface);
   margin-top: -75px;
   margin-bottom: 1rem;
+  box-shadow: 0 4px 15px rgba(108, 92, 231, 0.2);
 }
 
 .profile-avatar img {
@@ -63,12 +67,16 @@
 
 .profile-name {
   font-size: 2rem;
-  color: var(--gold);
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
   margin: 0;
   display: flex;
   align-items: center;
   gap: 0.5rem;
   flex-wrap: wrap;
+  font-weight: 700;
 }
 
 .nickname {
@@ -93,15 +101,15 @@
 .badge {
   padding: 0.5rem 1rem;
   border-radius: 20px;
-  background: rgba(255, 215, 0, 0.15);
-  color: var(--gold);
+  background: var(--soft-lavender);
+  color: var(--pryde-purple);
   font-size: 0.875rem;
-  font-weight: 500;
-  border: 1px solid rgba(255, 215, 0, 0.3);
+  font-weight: 600;
+  border: 1px solid var(--pryde-purple);
 }
 
 .profile-bio {
-  color: var(--text-light);
+  color: var(--text-main);
   margin: 0.5rem 0;
   line-height: 1.6;
 }
@@ -115,13 +123,14 @@
 .social-links {
   margin-top: 1.5rem;
   padding-top: 1.5rem;
-  border-top: 1px solid rgba(255, 215, 0, 0.1);
+  border-top: 1px solid var(--border-light);
 }
 
 .social-title {
-  color: var(--gold);
+  color: var(--pryde-purple);
   font-size: 1rem;
   margin-bottom: 1rem;
+  font-weight: 600;
 }
 
 .social-grid {
@@ -137,33 +146,115 @@
   padding: 0.75rem 1rem;
   border-radius: 12px;
   text-decoration: none;
-  color: var(--text-light);
+  background: var(--soft-lavender);
+  color: var(--text-main);
   transition: all 0.3s ease;
 }
 
 .social-link-item:hover {
-  background: rgba(255, 215, 0, 0.15);
+  background: var(--pryde-purple);
+  color: white;
   transform: translateX(5px);
 }
 
+.social-link-item:hover .social-platform,
+.social-link-item:hover .social-icon {
+  color: white;
+}
+
 .social-platform {
-  font-weight: 500;
-  color: var(--gold);
+  font-weight: 600;
+  color: var(--pryde-purple);
+  transition: color 0.3s ease;
 }
 
 .social-icon {
   color: var(--text-muted);
   font-size: 1.25rem;
+  transition: color 0.3s ease;
 }
 
 .meta-item {
-  color: var(--text-light);
+  color: var(--text-main);
   text-decoration: none;
   transition: color 0.3s ease;
 }
 
 .meta-item:hover {
-  color: var(--gold);
+  color: var(--pryde-purple);
+}
+
+/* Add Friend Button */
+.friend-actions {
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+}
+
+.btn-add-friend {
+  padding: 0.75rem 1.5rem;
+  border-radius: 12px;
+  border: none;
+  background: var(--gradient-primary);
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.95rem;
+}
+
+.btn-add-friend:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(108, 92, 231, 0.3);
+}
+
+.btn-add-friend:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.btn-add-friend:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Upload Buttons on Profile */
+.profile-upload-section {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border-light);
+}
+
+.btn-upload {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  border: 2px dashed var(--pryde-purple);
+  background: var(--soft-lavender);
+  color: var(--pryde-purple);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-align: center;
+}
+
+.btn-upload:hover {
+  background: var(--pryde-purple);
+  color: white;
+  border-style: solid;
+}
+
+.upload-message {
+  padding: 0.75rem;
+  border-radius: 8px;
+  background: var(--soft-lavender);
+  color: var(--pryde-purple);
+  text-align: center;
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
 }
 
 .profile-stats {

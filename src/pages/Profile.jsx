@@ -10,10 +10,16 @@ function Profile() {
   const currentUser = getCurrentUser();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [uploadMessage, setUploadMessage] = useState('');
+  const [friendStatus, setFriendStatus] = useState(null); // null, 'friends', 'pending_sent', 'pending_received', 'none'
+  const [friendRequestId, setFriendRequestId] = useState(null);
   const isOwnProfile = currentUser?.id === id;
 
   useEffect(() => {
     fetchUserProfile();
+    if (!isOwnProfile) {
+      checkFriendStatus();
+    }
   }, [id]);
 
   const fetchUserProfile = async () => {
@@ -24,6 +30,94 @@ function Profile() {
       console.error('Failed to fetch user profile:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const checkFriendStatus = async () => {
+    try {
+      // Check if already friends
+      const friendsResponse = await api.get('/friends');
+      const isFriend = friendsResponse.data.some(friend => friend._id === id);
+
+      if (isFriend) {
+        setFriendStatus('friends');
+        return;
+      }
+
+      // Check for pending requests
+      const pendingResponse = await api.get('/friends/requests/pending');
+      const receivedRequest = pendingResponse.data.find(req => req.sender._id === id);
+
+      if (receivedRequest) {
+        setFriendStatus('pending_received');
+        setFriendRequestId(receivedRequest._id);
+        return;
+      }
+
+      // Check for sent requests (we need to check if we sent a request to this user)
+      // The backend doesn't have a route for this, so we'll try to send and catch the error
+      setFriendStatus('none');
+    } catch (error) {
+      console.error('Failed to check friend status:', error);
+      setFriendStatus('none');
+    }
+  };
+
+  const handlePhotoUpload = async (e, type) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append('photo', file);
+
+    try {
+      const endpoint = type === 'profile' ? '/upload/profile-photo' : '/upload/cover-photo';
+      await api.post(endpoint, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      setUploadMessage(`${type === 'profile' ? 'Profile' : 'Cover'} photo updated!`);
+      setTimeout(() => setUploadMessage(''), 3000);
+      fetchUserProfile();
+    } catch (error) {
+      setUploadMessage('Failed to upload photo');
+      setTimeout(() => setUploadMessage(''), 3000);
+      console.error('Upload error:', error);
+    }
+  };
+
+  const handleAddFriend = async () => {
+    try {
+      await api.post(`/friends/request/${id}`);
+      setFriendStatus('pending_sent');
+      alert('Friend request sent!');
+    } catch (error) {
+      alert(error.response?.data?.message || 'Failed to send friend request');
+    }
+  };
+
+  const handleAcceptFriend = async () => {
+    try {
+      await api.post(`/friends/accept/${friendRequestId}`);
+      setFriendStatus('friends');
+      fetchUserProfile(); // Refresh to update friend count
+      alert('Friend request accepted!');
+    } catch (error) {
+      alert(error.response?.data?.message || 'Failed to accept friend request');
+    }
+  };
+
+  const handleRemoveFriend = async () => {
+    if (!window.confirm('Are you sure you want to remove this friend?')) {
+      return;
+    }
+
+    try {
+      await api.delete(`/friends/${id}`);
+      setFriendStatus('none');
+      fetchUserProfile(); // Refresh to update friend count
+      alert('Friend removed');
+    } catch (error) {
+      alert(error.response?.data?.message || 'Failed to remove friend');
     }
   };
 
@@ -100,6 +194,31 @@ function Profile() {
 
               {user.bio && <p className="profile-bio">{user.bio}</p>}
 
+              {!isOwnProfile && (
+                <div className="friend-actions">
+                  {friendStatus === 'none' && (
+                    <button className="btn-add-friend" onClick={handleAddFriend}>
+                      ➕ Add Friend
+                    </button>
+                  )}
+                  {friendStatus === 'pending_sent' && (
+                    <button className="btn-add-friend" disabled style={{ opacity: 0.6, cursor: 'not-allowed' }}>
+                      ⏳ Request Sent
+                    </button>
+                  )}
+                  {friendStatus === 'pending_received' && (
+                    <button className="btn-add-friend" onClick={handleAcceptFriend}>
+                      ✅ Accept Friend Request
+                    </button>
+                  )}
+                  {friendStatus === 'friends' && (
+                    <button className="btn-add-friend" onClick={handleRemoveFriend} style={{ background: 'var(--soft-lavender)', color: 'var(--pryde-purple)' }}>
+                      ✓ Friends
+                    </button>
+                  )}
+                </div>
+              )}
+
               <div className="profile-meta">
                 {user.location && (
                   <span className="meta-item">📍 {user.location}</span>
@@ -128,6 +247,34 @@ function Profile() {
                       </a>
                     ))}
                   </div>
+                </div>
+              )}
+
+              {isOwnProfile && (
+                <div className="profile-upload-section">
+                  {uploadMessage && (
+                    <div className="upload-message">{uploadMessage}</div>
+                  )}
+                  <label htmlFor="profile-photo-upload" className="btn-upload">
+                    📷 Update Profile Photo
+                    <input
+                      type="file"
+                      id="profile-photo-upload"
+                      accept="image/*"
+                      onChange={(e) => handlePhotoUpload(e, 'profile')}
+                      style={{ display: 'none' }}
+                    />
+                  </label>
+                  <label htmlFor="cover-photo-upload" className="btn-upload">
+                    🖼️ Update Cover Photo
+                    <input
+                      type="file"
+                      id="cover-photo-upload"
+                      accept="image/*"
+                      onChange={(e) => handlePhotoUpload(e, 'cover')}
+                      style={{ display: 'none' }}
+                    />
+                  </label>
                 </div>
               )}
 

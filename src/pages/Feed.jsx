@@ -79,6 +79,20 @@ function Feed() {
     }
   };
 
+  const handleDelete = async (postId) => {
+    if (!window.confirm('Are you sure you want to delete this post?')) {
+      return;
+    }
+
+    try {
+      await api.delete(`/posts/${postId}`);
+      setPosts(posts.filter(p => p._id !== postId));
+    } catch (error) {
+      console.error('Failed to delete post:', error);
+      alert('Failed to delete post. Please try again.');
+    }
+  };
+
   return (
     <div className="page-container">
       <Navbar />
@@ -131,6 +145,15 @@ function Feed() {
                           <div className="post-time">{new Date(post.createdAt).toLocaleDateString()}</div>
                         </div>
                       </div>
+                      {(post.author?._id === currentUser?.id || post.author?._id === currentUser?._id) && (
+                        <button
+                          className="btn-delete"
+                          onClick={() => handleDelete(post._id)}
+                          title="Delete post"
+                        >
+                          🗑️
+                        </button>
+                      )}
                     </div>
 
                     <div className="post-content">

@@ -111,25 +111,7 @@ function Settings() {
     }
   };
 
-  const handlePhotoUpload = async (e, type) => {
-    const file = e.target.files[0];
-    if (!file) return;
 
-    const formData = new FormData();
-    formData.append('photo', file);
-
-    try {
-      const endpoint = type === 'profile' ? '/upload/profile-photo' : '/upload/cover-photo';
-      await api.post(endpoint, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
-      setMessage(`${type === 'profile' ? 'Profile' : 'Cover'} photo updated!`);
-      fetchUserData();
-    } catch (error) {
-      setMessage('Failed to upload photo');
-      console.error('Upload error:', error);
-    }
-  };
 
   const handlePushToggle = async () => {
     try {
@@ -183,37 +165,6 @@ function Settings() {
               {message}
             </div>
           )}
-
-          <div className="settings-section">
-            <h2 className="section-title">Profile Photos</h2>
-            <div className="photo-uploads">
-              <div className="upload-group">
-                <label htmlFor="profile-photo" className="upload-label">
-                  Profile Photo
-                </label>
-                <input
-                  type="file"
-                  id="profile-photo"
-                  accept="image/*"
-                  onChange={(e) => handlePhotoUpload(e, 'profile')}
-                  className="file-input"
-                />
-              </div>
-
-              <div className="upload-group">
-                <label htmlFor="cover-photo" className="upload-label">
-                  Cover Photo
-                </label>
-                <input
-                  type="file"
-                  id="cover-photo"
-                  accept="image/*"
-                  onChange={(e) => handlePhotoUpload(e, 'cover')}
-                  className="file-input"
-                />
-              </div>
-            </div>
-          </div>
 
           <form onSubmit={handleSubmit} className="settings-form">
             <div className="settings-section">
