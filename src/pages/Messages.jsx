@@ -18,6 +18,10 @@ function Messages() {
   const [loading, setLoading] = useState(true);
   const [isTyping, setIsTyping] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
+  const [showNewChatModal, setShowNewChatModal] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [searchLoading, setSearchLoading] = useState(false);
   const messagesEndRef = useRef(null);
   const typingTimeoutRef = useRef(null);
 
@@ -132,6 +136,28 @@ function Messages() {
     }, 1000);
   };
 
+  const handleSearchUsers = async (e) => {
+    e.preventDefault();
+    if (!searchQuery.trim()) return;
+
+    setSearchLoading(true);
+    try {
+      const response = await api.get(`/users/search?q=${searchQuery}`);
+      setSearchResults(response.data);
+    } catch (error) {
+      console.error('Search failed:', error);
+    } finally {
+      setSearchLoading(false);
+    }
+  };
+
+  const handleStartChat = (userId) => {
+    setSelectedChat(userId);
+    setShowNewChatModal(false);
+    setSearchQuery('');
+    setSearchResults([]);
+  };
+
   return (
     <div className="page-container">
       <Navbar />
@@ -141,7 +167,7 @@ function Messages() {
           <div className="conversations-sidebar">
             <div className="sidebar-header">
               <h2 className="sidebar-title">💬 Messages</h2>
-              <button className="btn-new-chat">+</button>
+              <button className="btn-new-chat" onClick={() => setShowNewChatModal(true)}>+</button>
             </div>
 
             <div className="conversations-list">
@@ -263,6 +289,58 @@ function Messages() {
             )}
           </div>
         </div>
+
+        {/* New Chat Modal */}
+        {showNewChatModal && (
+          <div className="modal-overlay" onClick={() => setShowNewChatModal(false)}>
+            <div className="modal-content glossy" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-header">
+                <h2>New Message</h2>
+                <button className="btn-close" onClick={() => setShowNewChatModal(false)}>×</button>
+              </div>
+
+              <form onSubmit={handleSearchUsers} className="search-form">
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search for users..."
+                  className="search-input glossy"
+                  autoFocus
+                />
+                <button type="submit" disabled={searchLoading} className="btn-search glossy-gold">
+                  {searchLoading ? 'Searching...' : 'Search'}
+                </button>
+              </form>
+
+              <div className="search-results">
+                {searchResults.length > 0 ? (
+                  searchResults.map((user) => (
+                    <div
+                      key={user._id}
+                      className="user-result"
+                      onClick={() => handleStartChat(user._id)}
+                    >
+                      <div className="user-avatar">
+                        {user.profilePhoto ? (
+                          <img src={user.profilePhoto} alt={user.username} />
+                        ) : (
+                          <span>{user.displayName?.charAt(0).toUpperCase() || user.username?.charAt(0).toUpperCase()}</span>
+                        )}
+                      </div>
+                      <div className="user-info">
+                        <div className="user-name">{user.displayName || user.username}</div>
+                        <div className="user-username">@{user.username}</div>
+                      </div>
+                    </div>
+                  ))
+                ) : searchQuery && !searchLoading ? (
+                  <div className="no-results">No users found</div>
+                ) : null}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
