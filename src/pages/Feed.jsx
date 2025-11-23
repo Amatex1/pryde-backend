@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import Navbar from '../components/Navbar';
+import ReportModal from '../components/ReportModal';
 import api from '../utils/api';
 import { getCurrentUser } from '../utils/auth';
 import './Feed.css';
@@ -9,11 +10,26 @@ function Feed() {
   const [newPost, setNewPost] = useState('');
   const [loading, setLoading] = useState(false);
   const [fetchingPosts, setFetchingPosts] = useState(true);
+  const [selectedMedia, setSelectedMedia] = useState([]);
+  const [uploadingMedia, setUploadingMedia] = useState(false);
+  const [reportModal, setReportModal] = useState({ isOpen: false, type: '', contentId: null, userId: null });
+  const [blockedUsers, setBlockedUsers] = useState([]);
   const currentUser = getCurrentUser();
 
   useEffect(() => {
     fetchPosts();
+    fetchBlockedUsers();
   }, []);
+
+  const fetchBlockedUsers = async () => {
+    try {
+      const response = await api.get('/blocks');
+      const blockedIds = response.data.map(block => block.blocked._id);
+      setBlockedUsers(blockedIds);
+    } catch (error) {
+      console.error('Failed to fetch blocked users:', error);
+    }
+  };
 
   const fetchPosts = async () => {
     try {
@@ -26,18 +42,68 @@ function Feed() {
     }
   };
 
+  const handleMediaSelect = async (e) => {
+    const files = Array.from(e.target.files);
+    if (files.length === 0) return;
+
+    // Validate file types
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'video/mp4', 'video/webm', 'video/ogg'];
+    const invalidFiles = files.filter(file => !validTypes.includes(file.type));
+
+    if (invalidFiles.length > 0) {
+      alert('Please select only images (JPEG, PNG, GIF) or videos (MP4, WebM, OGG)');
+      return;
+    }
+
+    // Limit to 10 files
+    if (selectedMedia.length + files.length > 10) {
+      alert('You can only upload up to 10 media files per post');
+      return;
+    }
+
+    setUploadingMedia(true);
+    try {
+      const formData = new FormData();
+      files.forEach(file => {
+        formData.append('media', file);
+      });
+
+      const response = await api.post('/upload/post-media', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+
+      setSelectedMedia([...selectedMedia, ...response.data.media]);
+    } catch (error) {
+      console.error('Media upload failed:', error);
+      alert('Failed to upload media. Please try again.');
+    } finally {
+      setUploadingMedia(false);
+    }
+  };
+
+  const removeMedia = (index) => {
+    setSelectedMedia(selectedMedia.filter((_, i) => i !== index));
+  };
+
   const handlePostSubmit = async (e) => {
     e.preventDefault();
-    if (!newPost.trim()) return;
+    if (!newPost.trim() && selectedMedia.length === 0) {
+      alert('Please add some content or media to your post');
+      return;
+    }
 
     setLoading(true);
     try {
       const response = await api.post('/posts', {
         content: newPost,
+        media: selectedMedia,
         visibility: 'public'
       });
       setPosts([response.data, ...posts]);
       setNewPost('');
+      setSelectedMedia([]);
     } catch (error) {
       console.error('Post creation failed:', error);
       alert('Failed to create post. Please try again.');
@@ -109,9 +175,44 @@ function Feed() {
                 className="post-input glossy"
                 rows="4"
               />
-              <button type="submit" disabled={loading} className="btn-post glossy-gold">
-                {loading ? 'Posting...' : 'Share Post ✨'}
-              </button>
+
+              {selectedMedia.length > 0 && (
+                <div className="media-preview">
+                  {selectedMedia.map((media, index) => (
+                    <div key={index} className="media-preview-item">
+                      {media.type === 'video' ? (
+                        <video src={media.url} controls />
+                      ) : (
+                        <img src={media.url} alt={`Upload ${index + 1}`} />
+                      )}
+                      <button
+                        type="button"
+                        className="remove-media"
+                        onClick={() => removeMedia(index)}
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div className="post-actions-bar">
+                <label className="btn-media-upload">
+                  <input
+                    type="file"
+                    multiple
+                    accept="image/*,video/*"
+                    onChange={handleMediaSelect}
+                    disabled={uploadingMedia || selectedMedia.length >= 10}
+                    style={{ display: 'none' }}
+                  />
+                  {uploadingMedia ? '⏳ Uploading...' : '📷 Add Photos/Videos'}
+                </label>
+                <button type="submit" disabled={loading || uploadingMedia} className="btn-post glossy-gold">
+                  {loading ? 'Posting...' : 'Share Post ✨'}
+                </button>
+              </div>
             </form>
           </div>
 
@@ -124,7 +225,9 @@ function Feed() {
                 <p>Be the first to share something!</p>
               </div>
             ) : (
-              posts.map((post) => {
+              posts
+                .filter(post => !blockedUsers.includes(post.author?._id))
+                .map((post) => {
                 const isLiked = post.likes?.some(like =>
                   (typeof like === 'string' ? like : like._id) === (currentUser?.id || currentUser?._id)
                 );
@@ -145,19 +248,43 @@ function Feed() {
                           <div className="post-time">{new Date(post.createdAt).toLocaleDateString()}</div>
                         </div>
                       </div>
-                      {(post.author?._id === currentUser?.id || post.author?._id === currentUser?._id) && (
-                        <button
-                          className="btn-delete"
-                          onClick={() => handleDelete(post._id)}
-                          title="Delete post"
-                        >
-                          🗑️
-                        </button>
-                      )}
+                      <div className="post-header-actions">
+                        {(post.author?._id === currentUser?.id || post.author?._id === currentUser?._id) ? (
+                          <button
+                            className="btn-delete"
+                            onClick={() => handleDelete(post._id)}
+                            title="Delete post"
+                          >
+                            🗑️
+                          </button>
+                        ) : (
+                          <button
+                            className="btn-report"
+                            onClick={() => setReportModal({ isOpen: true, type: 'post', contentId: post._id, userId: post.author?._id })}
+                            title="Report post"
+                          >
+                            🚩
+                          </button>
+                        )}
+                      </div>
                     </div>
 
                     <div className="post-content">
-                      <p>{post.content}</p>
+                      {post.content && <p>{post.content}</p>}
+
+                      {post.media && post.media.length > 0 && (
+                        <div className={`post-media-grid ${post.media.length === 1 ? 'single' : post.media.length === 2 ? 'double' : 'multiple'}`}>
+                          {post.media.map((media, index) => (
+                            <div key={index} className="post-media-item">
+                              {media.type === 'video' ? (
+                                <video src={media.url} controls />
+                              ) : (
+                                <img src={media.url} alt={`Post media ${index + 1}`} />
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
 
                     <div className="post-actions">
@@ -218,6 +345,14 @@ function Feed() {
           </div>
         </div>
       </div>
+
+      <ReportModal
+        isOpen={reportModal.isOpen}
+        onClose={() => setReportModal({ isOpen: false, type: '', contentId: null, userId: null })}
+        reportType={reportModal.type}
+        contentId={reportModal.contentId}
+        userId={reportModal.userId}
+      />
     </div>
   );
 }

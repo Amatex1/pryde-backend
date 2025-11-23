@@ -92,6 +92,35 @@ router.post('/chat-attachment', auth, upload.single('file'), async (req, res) =>
   }
 });
 
+// @route   POST /api/upload/post-media
+// @desc    Upload media for posts (images, videos, gifs)
+// @access  Private
+router.post('/post-media', auth, upload.array('media', 10), async (req, res) => {
+  try {
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ message: 'No files uploaded' });
+    }
+
+    const mediaUrls = req.files.map(file => {
+      const url = `/api/upload/file/${file.filename}`;
+      let type = 'image';
+
+      if (file.mimetype.startsWith('video/')) {
+        type = 'video';
+      } else if (file.mimetype === 'image/gif') {
+        type = 'gif';
+      }
+
+      return { url, type };
+    });
+
+    res.json({ media: mediaUrls });
+  } catch (error) {
+    console.error('Upload post media error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // @route   GET /api/upload/image/:filename
 // @desc    Get image
 // @access  Public
@@ -108,6 +137,22 @@ router.get('/image/:filename', (req, res) => {
     } else {
       res.status(404).json({ message: 'Not an image' });
     }
+  });
+});
+
+// @route   GET /api/upload/file/:filename
+// @desc    Get any file (image, video, gif)
+// @access  Public
+router.get('/file/:filename', (req, res) => {
+  gfs.files.findOne({ filename: req.params.filename }, (err, file) => {
+    if (!file || file.length === 0) {
+      return res.status(404).json({ message: 'File not found' });
+    }
+
+    // Stream the file
+    const readstream = gfs.createReadStream(file.filename);
+    res.set('Content-Type', file.contentType);
+    readstream.pipe(res);
   });
 });
 

@@ -18,6 +18,9 @@ import notificationsRoutes from './routes/notifications.js';
 import messagesRoutes from './routes/messages.js';
 import groupChatsRoutes from './routes/groupChats.js';
 import pushNotificationsRouter from './routes/pushNotifications.js';
+import reportsRoutes from './routes/reports.js';
+import blocksRoutes from './routes/blocks.js';
+import adminRoutes from './routes/admin.js';
 
 import connectDB from "./dbConn.js";
 import config from "./config/config.js";
@@ -84,6 +87,9 @@ app.use('/api/notifications', notificationsRoutes);
 app.use('/api/messages', messagesRoutes);
 app.use('/api/groupchats', groupChatsRoutes);
 app.use('/api/push', pushNotificationsRouter);
+app.use('/api/reports', reportsRoutes);
+app.use('/api/blocks', blocksRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Health check and status endpoints
 app.get('/', (req, res) => {

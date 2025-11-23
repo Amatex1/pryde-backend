@@ -6,7 +6,7 @@ function Privacy() {
     <div className="legal-page">
       <div className="legal-header">
         <h1>Privacy Policy</h1>
-        <p className="legal-subtitle">Effective Date: January 1, 2025</p>
+        <p className="legal-subtitle">Effective Date: November 23, 2025</p>
       </div>
 
       <div className="legal-content">
@@ -51,11 +51,13 @@ function Privacy() {
             <strong>2.3 Content & Activity</strong>
           </p>
           <ul>
-            <li><strong>Posts:</strong> Text, images, and metadata of posts you create</li>
+            <li><strong>Posts:</strong> Text, images, videos, and GIFs you create</li>
             <li><strong>Messages:</strong> Direct messages and group chat content stored in MongoDB</li>
             <li><strong>Friend Requests:</strong> Connections you make, pending requests, and friend list</li>
             <li><strong>Reactions:</strong> Likes, comments, and other interactions with content</li>
-            <li><strong>Uploads:</strong> Images and attachments sent via messages or posts (stored via GridFS)</li>
+            <li><strong>Uploads:</strong> Images, videos, and attachments sent via messages or posts (stored via GridFS)</li>
+            <li><strong>Reports:</strong> Content and users you report for violations</li>
+            <li><strong>Blocks:</strong> Users you have blocked from contacting you</li>
           </ul>
 
           <p>
@@ -100,14 +102,20 @@ function Privacy() {
         <section className="legal-section">
           <h2>4. Data Storage & Security</h2>
           <p>
-            <strong>4.1 Storage Infrastructure</strong>
+            <strong>4.1 Storage Infrastructure & Data Responsibility</strong>
           </p>
           <ul>
-            <li><strong>Database:</strong> MongoDB stores user profiles, posts, messages, friend requests, notifications, and group chats</li>
-            <li><strong>Image Storage:</strong> GridFS (MongoDB's file storage system) stores profile photos, cover photos, and uploaded images</li>
-            <li><strong>Hosting:</strong> Backend hosted on Render.com (https://pryde-social.onrender.com)</li>
-            <li><strong>Frontend:</strong> React app hosted on Blink (https://pryde-social-fullstack-qut6su09.sites.blink.new)</li>
+            <li><strong>Database:</strong> MongoDB Atlas stores user profiles, posts, messages, friend requests, notifications, reports, blocks, and group chats</li>
+            <li><strong>Media Storage:</strong> GridFS (MongoDB's file storage system) stores profile photos, cover photos, images, videos, and GIFs</li>
+            <li><strong>Backend Hosting:</strong> Render.com hosts our API server</li>
+            <li><strong>Frontend Hosting:</strong> SiteGround hosts our React application</li>
           </ul>
+          <p>
+            <strong>Data Controller:</strong> Pryde Social (the platform owner) is the Data Controller responsible for all data collection, processing, and compliance decisions. MongoDB Atlas, Render.com, and SiteGround are Data Processors who provide infrastructure services on our behalf.
+          </p>
+          <p>
+            <strong>Your data is controlled by Pryde Social, not by our service providers.</strong> We make all decisions about what data is collected, how it's used, and how long it's retained.
+          </p>
 
           <p>
             <strong>4.2 Security Measures</strong>
@@ -182,15 +190,18 @@ function Privacy() {
             You have the following rights regarding your data:
           </p>
           <ul>
-            <li><strong>Access:</strong> Request a copy of your personal data stored on Pryde Social</li>
+            <li><strong>Access:</strong> View all your data in your profile and settings</li>
             <li><strong>Update:</strong> Edit your profile information at any time via Settings</li>
-            <li><strong>Delete:</strong> Delete your account and associated data (may take up to 30 days)</li>
-            <li><strong>Export:</strong> Request a downloadable archive of your posts and messages</li>
+            <li><strong>Download Data:</strong> Export all your data (profile, posts, messages, friends, etc.) as a JSON file via Settings → Account Management → Download Data</li>
+            <li><strong>Deactivate Account:</strong> Temporarily deactivate your account via Settings → Account Management → Deactivate Account (reactivate by logging in)</li>
+            <li><strong>Delete Account:</strong> Permanently delete your account and ALL associated data via Settings → Account Management → Delete Account (irreversible)</li>
+            <li><strong>Block Users:</strong> Prevent specific users from seeing your content or contacting you</li>
+            <li><strong>Report Content:</strong> Report posts, comments, messages, or users that violate our Community Guidelines</li>
             <li><strong>Restrict Processing:</strong> Limit how we use certain data (e.g., disable push notifications)</li>
             <li><strong>Object:</strong> Opt-out of certain data processing activities</li>
           </ul>
           <p>
-            To exercise these rights, visit your Settings page or contact us via our <Link to="/contact" className="legal-link">Contact</Link> page.
+            <strong>All data rights can be exercised directly in your Settings page.</strong> For additional assistance, contact us via our <Link to="/contact" className="legal-link">Contact</Link> page.
           </p>
         </section>
 
@@ -262,7 +273,39 @@ function Privacy() {
         </section>
 
         <section className="legal-section">
-          <h2>12. Push Notifications</h2>
+          <h2>12. Reports & Blocks</h2>
+          <p>
+            <strong>12.1 Reporting Content</strong>
+          </p>
+          <p>
+            When you report a post, comment, message, or user:
+          </p>
+          <ul>
+            <li>Your report is stored in our database with the reason and description you provide</li>
+            <li>Reports are anonymous to the reported user (they won't know who reported them)</li>
+            <li>Our moderation team reviews all reports</li>
+            <li>We may contact you for additional information</li>
+            <li>False or malicious reports may result in action against your account</li>
+          </ul>
+
+          <p>
+            <strong>12.2 Blocking Users</strong>
+          </p>
+          <p>
+            When you block a user:
+          </p>
+          <ul>
+            <li>They cannot see your posts, profile, or send you messages</li>
+            <li>You won't see their content in your feed</li>
+            <li>Existing friend connections are removed</li>
+            <li>The block is stored in our database</li>
+            <li>The blocked user is not notified</li>
+            <li>You can unblock users at any time via Settings</li>
+          </ul>
+        </section>
+
+        <section className="legal-section">
+          <h2>13. Push Notifications</h2>
           <p>
             If you enable push notifications:
           </p>
@@ -276,7 +319,7 @@ function Privacy() {
         </section>
 
         <section className="legal-section">
-          <h2>13. Changes to Privacy Policy</h2>
+          <h2>14. Changes to Privacy Policy</h2>
           <p>
             We may update this Privacy Policy periodically. When we make material changes:
           </p>
@@ -291,7 +334,7 @@ function Privacy() {
         </section>
 
         <section className="legal-section">
-          <h2>14. Contact Us</h2>
+          <h2>15. Contact Us</h2>
           <p>
             If you have questions or concerns about this Privacy Policy, your data, or how we process information, please contact us:
           </p>
@@ -310,7 +353,7 @@ function Privacy() {
             By using Pryde Social, you acknowledge that you have read and understood this Privacy Policy and consent to the collection, use, and storage of your information as described.
           </p>
           <p className="last-updated">
-            Last Updated: January 1, 2025
+            Last Updated: November 23, 2025
           </p>
         </div>
       </div>

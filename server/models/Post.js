@@ -9,11 +9,22 @@ const postSchema = new mongoose.Schema({
   },
   content: {
     type: String,
-    required: true,
+    required: false,
     maxlength: 5000
   },
   images: [{
     type: String
+  }],
+  media: [{
+    url: {
+      type: String,
+      required: true
+    },
+    type: {
+      type: String,
+      enum: ['image', 'video', 'gif'],
+      required: true
+    }
   }],
   likes: [{
     type: mongoose.Schema.Types.ObjectId,

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import Navbar from '../components/Navbar';
+import ReportModal from '../components/ReportModal';
 import api from '../utils/api';
 import { getCurrentUser } from '../utils/auth';
 import './Profile.css';
@@ -13,14 +14,26 @@ function Profile() {
   const [uploadMessage, setUploadMessage] = useState('');
   const [friendStatus, setFriendStatus] = useState(null); // null, 'friends', 'pending_sent', 'pending_received', 'none'
   const [friendRequestId, setFriendRequestId] = useState(null);
+  const [isBlocked, setIsBlocked] = useState(false);
+  const [reportModal, setReportModal] = useState({ isOpen: false, type: '', contentId: null, userId: null });
   const isOwnProfile = currentUser?.id === id;
 
   useEffect(() => {
     fetchUserProfile();
     if (!isOwnProfile) {
       checkFriendStatus();
+      checkBlockStatus();
     }
   }, [id]);
+
+  const checkBlockStatus = async () => {
+    try {
+      const response = await api.get(`/blocks/check/${id}`);
+      setIsBlocked(response.data.isBlocked);
+    } catch (error) {
+      console.error('Failed to check block status:', error);
+    }
+  };
 
   const fetchUserProfile = async () => {
     try {
@@ -121,6 +134,34 @@ function Profile() {
     }
   };
 
+  const handleBlockUser = async () => {
+    if (!window.confirm('Are you sure you want to block this user? They will not be able to see your content or contact you.')) {
+      return;
+    }
+
+    try {
+      await api.post('/blocks', { blockedUserId: id });
+      setIsBlocked(true);
+      alert('User blocked successfully');
+    } catch (error) {
+      alert(error.response?.data?.message || 'Failed to block user');
+    }
+  };
+
+  const handleUnblockUser = async () => {
+    if (!window.confirm('Are you sure you want to unblock this user?')) {
+      return;
+    }
+
+    try {
+      await api.delete(`/blocks/${id}`);
+      setIsBlocked(false);
+      alert('User unblocked successfully');
+    } catch (error) {
+      alert(error.response?.data?.message || 'Failed to unblock user');
+    }
+  };
+
   if (loading) {
     return (
       <div className="page-container">
@@ -195,27 +236,47 @@ function Profile() {
               {user.bio && <p className="profile-bio">{user.bio}</p>}
 
               {!isOwnProfile && (
-                <div className="friend-actions">
-                  {friendStatus === 'none' && (
-                    <button className="btn-add-friend" onClick={handleAddFriend}>
-                      ➕ Add Friend
+                <div className="profile-action-buttons">
+                  <div className="friend-actions">
+                    {friendStatus === 'none' && (
+                      <button className="btn-add-friend" onClick={handleAddFriend}>
+                        ➕ Add Friend
+                      </button>
+                    )}
+                    {friendStatus === 'pending_sent' && (
+                      <button className="btn-add-friend" disabled style={{ opacity: 0.6, cursor: 'not-allowed' }}>
+                        ⏳ Request Sent
+                      </button>
+                    )}
+                    {friendStatus === 'pending_received' && (
+                      <button className="btn-add-friend" onClick={handleAcceptFriend}>
+                        ✅ Accept Friend Request
+                      </button>
+                    )}
+                    {friendStatus === 'friends' && (
+                      <button className="btn-add-friend" onClick={handleRemoveFriend} style={{ background: 'var(--soft-lavender)', color: 'var(--pryde-purple)' }}>
+                        ✓ Friends
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="profile-secondary-actions">
+                    {isBlocked ? (
+                      <button className="btn-unblock" onClick={handleUnblockUser}>
+                        🔓 Unblock
+                      </button>
+                    ) : (
+                      <button className="btn-block" onClick={handleBlockUser}>
+                        🚫 Block
+                      </button>
+                    )}
+                    <button
+                      className="btn-report-user"
+                      onClick={() => setReportModal({ isOpen: true, type: 'user', contentId: null, userId: id })}
+                    >
+                      🚩 Report
                     </button>
-                  )}
-                  {friendStatus === 'pending_sent' && (
-                    <button className="btn-add-friend" disabled style={{ opacity: 0.6, cursor: 'not-allowed' }}>
-                      ⏳ Request Sent
-                    </button>
-                  )}
-                  {friendStatus === 'pending_received' && (
-                    <button className="btn-add-friend" onClick={handleAcceptFriend}>
-                      ✅ Accept Friend Request
-                    </button>
-                  )}
-                  {friendStatus === 'friends' && (
-                    <button className="btn-add-friend" onClick={handleRemoveFriend} style={{ background: 'var(--soft-lavender)', color: 'var(--pryde-purple)' }}>
-                      ✓ Friends
-                    </button>
-                  )}
+                  </div>
                 </div>
               )}
 
@@ -325,6 +386,14 @@ function Profile() {
           </div>
         </div>
       </div>
+
+      <ReportModal
+        isOpen={reportModal.isOpen}
+        onClose={() => setReportModal({ isOpen: false, type: '', contentId: null, userId: null })}
+        reportType={reportModal.type}
+        contentId={reportModal.contentId}
+        userId={reportModal.userId}
+      />
     </div>
   );
 }

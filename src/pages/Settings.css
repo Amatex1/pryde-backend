@@ -314,3 +314,120 @@
     flex: 1;
   }
 }
+
+/* Account Management Section */
+.danger-zone {
+  border-top: 2px solid var(--border-light);
+  padding-top: 2.5rem;
+  margin-top: 3rem;
+}
+
+.account-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.action-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+  border-radius: 12px;
+  background: var(--bg-light);
+  border: 1px solid var(--border-light);
+  transition: all 0.3s ease;
+}
+
+.action-item:hover {
+  box-shadow: 0 4px 12px rgba(108, 92, 231, 0.1);
+}
+
+.action-item.danger {
+  background: rgba(255, 107, 107, 0.05);
+  border-color: rgba(255, 107, 107, 0.2);
+}
+
+.action-item.danger:hover {
+  box-shadow: 0 4px 12px rgba(255, 107, 107, 0.2);
+}
+
+.action-info h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: var(--text-main);
+}
+
+.action-info p {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  margin: 0;
+  max-width: 500px;
+}
+
+.danger-text {
+  color: var(--error) !important;
+  font-weight: 500;
+}
+
+.btn-download,
+.btn-deactivate,
+.btn-delete-account {
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+.btn-download {
+  background: var(--gradient-primary);
+  color: white;
+}
+
+.btn-download:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(108, 92, 231, 0.3);
+}
+
+.btn-deactivate {
+  background: var(--soft-lavender);
+  color: var(--pryde-purple);
+  border: 1px solid var(--pryde-purple);
+}
+
+.btn-deactivate:hover {
+  background: var(--pryde-purple);
+  color: white;
+  transform: translateY(-2px);
+}
+
+.btn-delete-account {
+  background: rgba(255, 107, 107, 0.1);
+  color: var(--error);
+  border: 1px solid var(--error);
+}
+
+.btn-delete-account:hover {
+  background: var(--error);
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
+}
+
+@media (max-width: 768px) {
+  .action-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .btn-download,
+  .btn-deactivate,
+  .btn-delete-account {
+    width: 100%;
+  }
+}

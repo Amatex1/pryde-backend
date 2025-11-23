@@ -1,16 +1,18 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import api from '../utils/api';
-import { getCurrentUser, setCurrentUser } from '../utils/auth';
-import { 
-  subscribeToPushNotifications, 
-  unsubscribeFromPushNotifications, 
+import { getCurrentUser, setCurrentUser, logout } from '../utils/auth';
+import {
+  subscribeToPushNotifications,
+  unsubscribeFromPushNotifications,
   isPushNotificationSubscribed,
-  sendTestNotification 
+  sendTestNotification
 } from '../utils/pushNotifications';
 import './Settings.css';
 
 function Settings() {
+  const navigate = useNavigate();
   const currentUser = getCurrentUser();
   const [formData, setFormData] = useState({
     fullName: '',
@@ -149,6 +151,83 @@ function Settings() {
     } catch (error) {
       console.error('Test notification error:', error);
       setMessage('Failed to send test notification');
+    }
+  };
+
+  const handleDownloadData = async () => {
+    try {
+      setMessage('Preparing your data...');
+      const response = await api.get('/users/download-data');
+
+      // Create a blob and download
+      const dataStr = JSON.stringify(response.data, null, 2);
+      const dataBlob = new Blob([dataStr], { type: 'application/json' });
+      const url = URL.createObjectURL(dataBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `pryde-social-data-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      setMessage('Your data has been downloaded!');
+    } catch (error) {
+      console.error('Download data error:', error);
+      setMessage('Failed to download data');
+    }
+  };
+
+  const handleDeactivateAccount = async () => {
+    const confirmed = window.confirm(
+      'Are you sure you want to deactivate your account?\n\n' +
+      'Your profile will be hidden and you won\'t be able to use Pryde Social until you reactivate.\n\n' +
+      'You can reactivate by logging in again.'
+    );
+
+    if (!confirmed) return;
+
+    try {
+      await api.put('/users/deactivate');
+      logout();
+      navigate('/login');
+      alert('Your account has been deactivated. You can reactivate by logging in again.');
+    } catch (error) {
+      console.error('Deactivate account error:', error);
+      setMessage('Failed to deactivate account');
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    const confirmed = window.confirm(
+      '⚠️ WARNING: This action is PERMANENT and CANNOT be undone!\n\n' +
+      'Are you absolutely sure you want to delete your account?\n\n' +
+      'This will permanently delete:\n' +
+      '• Your profile and all personal information\n' +
+      '• All your posts and comments\n' +
+      '• All your messages\n' +
+      '• All your friend connections\n' +
+      '• Everything associated with your account\n\n' +
+      'Type "DELETE" in the next prompt to confirm.'
+    );
+
+    if (!confirmed) return;
+
+    const confirmation = prompt('Type DELETE to confirm account deletion:');
+
+    if (confirmation !== 'DELETE') {
+      alert('Account deletion cancelled. You must type DELETE exactly to confirm.');
+      return;
+    }
+
+    try {
+      await api.delete('/users/account');
+      logout();
+      navigate('/');
+      alert('Your account has been permanently deleted.');
+    } catch (error) {
+      console.error('Delete account error:', error);
+      setMessage('Failed to delete account');
     }
   };
 
@@ -415,14 +494,62 @@ function Settings() {
               </div>
 
               {pushEnabled && (
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   onClick={handleTestNotification}
                   className="btn-test"
                 >
                   🔔 Send Test Notification
                 </button>
               )}
+            </div>
+          </div>
+
+          <div className="settings-section danger-zone">
+            <h2 className="section-title">Account Management</h2>
+
+            <div className="account-actions">
+              <div className="action-item">
+                <div className="action-info">
+                  <h3>📥 Download Your Data</h3>
+                  <p>Download a copy of all your data including posts, messages, and profile information</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleDownloadData}
+                  className="btn-download"
+                >
+                  Download Data
+                </button>
+              </div>
+
+              <div className="action-item">
+                <div className="action-info">
+                  <h3>⏸️ Deactivate Account</h3>
+                  <p>Temporarily deactivate your account. You can reactivate by logging in again.</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleDeactivateAccount}
+                  className="btn-deactivate"
+                >
+                  Deactivate Account
+                </button>
+              </div>
+
+              <div className="action-item danger">
+                <div className="action-info">
+                  <h3>🗑️ Delete Account</h3>
+                  <p className="danger-text">Permanently delete your account and all associated data. This action cannot be undone!</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleDeleteAccount}
+                  className="btn-delete-account"
+                >
+                  Delete Account
+                </button>
+              </div>
             </div>
           </div>
         </div>

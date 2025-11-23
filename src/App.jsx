@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
+import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Feed from './pages/Feed';
@@ -7,6 +8,7 @@ import Profile from './pages/Profile';
 import Settings from './pages/Settings';
 import Friends from './pages/Friends';
 import Messages from './pages/Messages';
+import Admin from './pages/Admin';
 import Terms from './pages/legal/Terms';
 import Privacy from './pages/legal/Privacy';
 import Community from './pages/legal/Community';
@@ -46,22 +48,29 @@ function App() {
     <Router>
       <div className="app-container">
         <Routes>
+          {/* Public Home Page */}
+          <Route path="/" element={<Home />} />
+
+          {/* Auth Pages */}
           <Route path="/login" element={!isAuth ? <Login setIsAuth={setIsAuth} /> : <Navigate to="/feed" />} />
           <Route path="/register" element={!isAuth ? <Register setIsAuth={setIsAuth} /> : <Navigate to="/feed" />} />
+
+          {/* Protected Routes */}
           <Route path="/feed" element={<PrivateRoute><Feed /></PrivateRoute>} />
           <Route path="/profile/:id" element={<PrivateRoute><Profile /></PrivateRoute>} />
           <Route path="/settings" element={<PrivateRoute><Settings /></PrivateRoute>} />
           <Route path="/friends" element={<PrivateRoute><Friends /></PrivateRoute>} />
           <Route path="/messages" element={<PrivateRoute><Messages /></PrivateRoute>} />
-          
+
+          {/* Admin Panel - Hidden Route (requires admin role) */}
+          <Route path="/admin" element={<PrivateRoute><Admin /></PrivateRoute>} />
+
           {/* Legal Pages - Public Access */}
           <Route path="/terms" element={<><Terms /><Footer /></>} />
           <Route path="/privacy" element={<><Privacy /><Footer /></>} />
           <Route path="/community" element={<><Community /><Footer /></>} />
           <Route path="/safety" element={<><Safety /><Footer /></>} />
           <Route path="/contact" element={<><Contact /><Footer /></>} />
-          
-          <Route path="/" element={<Navigate to="/feed" />} />
         </Routes>
       </div>
     </Router>

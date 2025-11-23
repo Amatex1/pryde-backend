@@ -111,7 +111,47 @@ const userSchema = new mongoose.Schema({
     type: Object,
     default: null
   },
+  isActive: {
+    type: Boolean,
+    default: true
+  },
+  role: {
+    type: String,
+    enum: ['user', 'moderator', 'admin', 'super_admin'],
+    default: 'user'
+  },
+  permissions: {
+    canViewReports: { type: Boolean, default: false },
+    canResolveReports: { type: Boolean, default: false },
+    canManageUsers: { type: Boolean, default: false },
+    canViewAnalytics: { type: Boolean, default: false },
+    canManageAdmins: { type: Boolean, default: false }
+  },
+  isSuspended: {
+    type: Boolean,
+    default: false
+  },
+  suspendedUntil: {
+    type: Date,
+    default: null
+  },
+  suspensionReason: {
+    type: String,
+    default: ''
+  },
+  isBanned: {
+    type: Boolean,
+    default: false
+  },
+  bannedReason: {
+    type: String,
+    default: ''
+  },
   createdAt: {
+    type: Date,
+    default: Date.now
+  },
+  lastLogin: {
     type: Date,
     default: Date.now
   }

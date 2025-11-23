@@ -128,11 +128,37 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ message: 'Invalid email or password' });
     }
 
+    // Check if user is banned
+    if (user.isBanned) {
+      return res.status(403).json({
+        message: `Your account has been banned. Reason: ${user.bannedReason}`
+      });
+    }
+
+    // Check if user is suspended
+    if (user.isSuspended) {
+      const suspendedUntil = new Date(user.suspendedUntil);
+      if (suspendedUntil > new Date()) {
+        return res.status(403).json({
+          message: `Your account is suspended until ${suspendedUntil.toLocaleDateString()}. Reason: ${user.suspensionReason}`
+        });
+      } else {
+        // Suspension expired, unsuspend user
+        user.isSuspended = false;
+        user.suspendedUntil = null;
+        user.suspensionReason = '';
+      }
+    }
+
     // Check password
     const isMatch = await user.comparePassword(password);
     if (!isMatch) {
       return res.status(401).json({ message: 'Invalid email or password' });
     }
+
+    // Update last login
+    user.lastLogin = new Date();
+    await user.save();
 
     // Create JWT token
     const token = jwt.sign(
@@ -164,7 +190,9 @@ router.post('/login', async (req, res) => {
         bio: user.bio,
         location: user.location,
         website: user.website,
-        socialLinks: user.socialLinks
+        socialLinks: user.socialLinks,
+        role: user.role,
+        permissions: user.permissions
       }
     });
   } catch (error) {

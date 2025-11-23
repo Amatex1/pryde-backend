@@ -185,9 +185,22 @@
 }
 
 /* Add Friend Button */
-.friend-actions {
+.profile-action-buttons {
   margin-top: 1rem;
   margin-bottom: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.friend-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.profile-secondary-actions {
+  display: flex;
+  gap: 0.5rem;
 }
 
 .btn-add-friend {
@@ -216,6 +229,54 @@
   opacity: 0.6;
   cursor: not-allowed;
   transform: none;
+}
+
+.btn-block,
+.btn-unblock,
+.btn-report-user {
+  padding: 0.6rem 1.2rem;
+  border-radius: 10px;
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.9rem;
+}
+
+.btn-block {
+  background: rgba(255, 107, 107, 0.1);
+  color: var(--error);
+  border: 2px solid var(--error);
+}
+
+.btn-block:hover {
+  background: var(--error);
+  color: white;
+  transform: translateY(-2px);
+}
+
+.btn-unblock {
+  background: rgba(76, 175, 80, 0.1);
+  color: #4caf50;
+  border: 2px solid #4caf50;
+}
+
+.btn-unblock:hover {
+  background: #4caf50;
+  color: white;
+  transform: translateY(-2px);
+}
+
+.btn-report-user {
+  background: rgba(255, 165, 0, 0.1);
+  color: #ff8c00;
+  border: 2px solid #ff8c00;
+}
+
+.btn-report-user:hover {
+  background: #ff8c00;
+  color: white;
+  transform: translateY(-2px);
 }
 
 /* Upload Buttons on Profile */

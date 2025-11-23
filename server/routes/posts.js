@@ -75,18 +75,20 @@ router.get('/:id', auth, async (req, res) => {
 // @access  Private
 router.post('/', auth, async (req, res) => {
   try {
-    const { content, images, visibility } = req.body;
+    const { content, images, media, visibility } = req.body;
 
-    if (!content || content.trim() === '') {
-      return res.status(400).json({ message: 'Post content is required' });
+    // Require either content or media
+    if ((!content || content.trim() === '') && (!media || media.length === 0)) {
+      return res.status(400).json({ message: 'Post must have content or media' });
     }
 
     const userId = req.userId || req.user._id;
 
     const post = new Post({
       author: userId,
-      content,
+      content: content || '',
       images: images || [],
+      media: media || [],
       visibility: visibility || 'public'
     });
 
