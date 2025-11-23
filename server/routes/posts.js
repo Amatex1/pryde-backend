@@ -10,14 +10,15 @@ import auth from '../middleware/auth.js';
 router.get('/', auth, async (req, res) => {
   try {
     const { page = 1, limit = 20 } = req.query;
-    
+
     // Get posts from user and their friends
-    const currentUser = await User.findById(req.user.userId);
+    const userId = req.userId || req.user._id;
+    const currentUser = await User.findById(userId);
     const friendIds = currentUser.friends || [];
-    
+
     const posts = await Post.find({
       $or: [
-        { author: req.user.userId },
+        { author: userId },
         { author: { $in: friendIds }, visibility: { $in: ['public', 'friends'] } },
         { visibility: 'public' }
       ]
@@ -28,10 +29,10 @@ router.get('/', auth, async (req, res) => {
       .sort({ createdAt: -1 })
       .limit(limit * 1)
       .skip((page - 1) * limit);
-    
+
     const count = await Post.countDocuments({
       $or: [
-        { author: req.user.userId },
+        { author: userId },
         { author: { $in: friendIds }, visibility: { $in: ['public', 'friends'] } },
         { visibility: 'public' }
       ]
@@ -75,25 +76,27 @@ router.get('/:id', auth, async (req, res) => {
 router.post('/', auth, async (req, res) => {
   try {
     const { content, images, visibility } = req.body;
-    
+
     if (!content || content.trim() === '') {
       return res.status(400).json({ message: 'Post content is required' });
     }
-    
+
+    const userId = req.userId || req.user._id;
+
     const post = new Post({
-      author: req.user.userId,
+      author: userId,
       content,
       images: images || [],
       visibility: visibility || 'public'
     });
-    
+
     await post.save();
     await post.populate('author', 'username displayName profilePhoto');
-    
+
     res.status(201).json(post);
   } catch (error) {
     console.error('Create post error:', error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
 
@@ -103,25 +106,27 @@ router.post('/', auth, async (req, res) => {
 router.put('/:id', auth, async (req, res) => {
   try {
     const post = await Post.findById(req.params.id);
-    
+
     if (!post) {
       return res.status(404).json({ message: 'Post not found' });
     }
-    
+
+    const userId = req.userId || req.user._id;
+
     // Check if user is the author
-    if (post.author.toString() !== req.user.userId) {
+    if (post.author.toString() !== userId.toString()) {
       return res.status(403).json({ message: 'Not authorized to edit this post' });
     }
-    
+
     const { content, images, visibility } = req.body;
-    
+
     if (content) post.content = content;
     if (images) post.images = images;
     if (visibility) post.visibility = visibility;
-    
+
     await post.save();
     await post.populate('author', 'username displayName profilePhoto');
-    
+
     res.json(post);
   } catch (error) {
     console.error('Update post error:', error);
@@ -135,18 +140,20 @@ router.put('/:id', auth, async (req, res) => {
 router.delete('/:id', auth, async (req, res) => {
   try {
     const post = await Post.findById(req.params.id);
-    
+
     if (!post) {
       return res.status(404).json({ message: 'Post not found' });
     }
-    
+
+    const userId = req.userId || req.user._id;
+
     // Check if user is the author
-    if (post.author.toString() !== req.user.userId) {
+    if (post.author.toString() !== userId.toString()) {
       return res.status(403).json({ message: 'Not authorized to delete this post' });
     }
-    
+
     await post.deleteOne();
-    
+
     res.json({ message: 'Post deleted successfully' });
   } catch (error) {
     console.error('Delete post error:', error);
@@ -165,7 +172,7 @@ router.post('/:id/like', auth, async (req, res) => {
       return res.status(404).json({ message: 'Post not found' });
     }
 
-    const userId = req.user.userId;
+    const userId = req.userId || req.user._id;
     const likeIndex = post.likes.indexOf(userId);
 
     if (likeIndex > -1) {
@@ -204,8 +211,10 @@ router.post('/:id/comment', auth, async (req, res) => {
       return res.status(404).json({ message: 'Post not found' });
     }
 
+    const userId = req.userId || req.user._id;
+
     const comment = {
-      user: req.user.userId,
+      user: userId,
       content,
       createdAt: new Date()
     };
@@ -240,8 +249,10 @@ router.delete('/:id/comment/:commentId', auth, async (req, res) => {
       return res.status(404).json({ message: 'Comment not found' });
     }
 
+    const userId = req.userId || req.user._id;
+
     // Check if user is the comment author or post author
-    if (comment.user.toString() !== req.user.userId && post.author.toString() !== req.user.userId) {
+    if (comment.user.toString() !== userId.toString() && post.author.toString() !== userId.toString()) {
       return res.status(403).json({ message: 'Not authorized to delete this comment' });
     }
 
@@ -269,8 +280,8 @@ router.post('/:id/share', auth, async (req, res) => {
       return res.status(404).json({ message: 'Post not found' });
     }
 
-    const userId = req.user.userId;
-    const shareIndex = post.shares.findIndex(s => s.user.toString() === userId);
+    const userId = req.userId || req.user._id;
+    const shareIndex = post.shares.findIndex(s => s.user.toString() === userId.toString());
 
     if (shareIndex > -1) {
       return res.status(400).json({ message: 'You have already shared this post' });
