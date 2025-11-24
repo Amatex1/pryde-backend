@@ -68,7 +68,7 @@ router.post('/profile-photo', auth, (req, res) => {
         return res.status(400).json({ message: 'No file uploaded' });
       }
 
-      const photoUrl = `/api/upload/image/${req.file.filename}`;
+      const photoUrl = `/upload/image/${req.file.filename}`;
       console.log('Photo URL:', photoUrl);
 
       // Update user profile photo
@@ -107,7 +107,7 @@ router.post('/cover-photo', auth, (req, res) => {
         return res.status(400).json({ message: 'No file uploaded' });
       }
 
-      const photoUrl = `/api/upload/image/${req.file.filename}`;
+      const photoUrl = `/upload/image/${req.file.filename}`;
       console.log('Photo URL:', photoUrl);
 
       // Update user cover photo
@@ -135,7 +135,7 @@ router.post('/chat-attachment', auth, upload.single('file'), async (req, res) =>
       return res.status(400).json({ message: 'No file uploaded' });
     }
 
-    const fileUrl = `/api/upload/image/${req.file.filename}`;
+    const fileUrl = `/upload/image/${req.file.filename}`;
 
     res.json({ url: fileUrl });
   } catch (error) {
@@ -154,7 +154,7 @@ router.post('/post-media', auth, upload.array('media', 10), async (req, res) => 
     }
 
     const mediaUrls = req.files.map(file => {
-      const url = `/api/upload/file/${file.filename}`;
+      const url = `/upload/file/${file.filename}`;
       let type = 'image';
 
       if (file.mimetype.startsWith('video/')) {
