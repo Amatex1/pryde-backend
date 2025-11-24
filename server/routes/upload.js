@@ -197,7 +197,13 @@ router.get('/image/:filename', async (req, res) => {
         file.contentType === 'image/gif' ||
         file.contentType === 'image/webp') {
 
+      // Set CORS headers to prevent CORB
+      res.set('Access-Control-Allow-Origin', '*');
+      res.set('Access-Control-Allow-Methods', 'GET');
+      res.set('Cross-Origin-Resource-Policy', 'cross-origin');
       res.set('Content-Type', file.contentType);
+      res.set('Cache-Control', 'public, max-age=31536000');
+
       const downloadStream = gridfsBucket.openDownloadStreamByName(req.params.filename);
       downloadStream.pipe(res);
     } else {
@@ -226,8 +232,14 @@ router.get('/file/:filename', async (req, res) => {
 
     const file = files[0];
 
-    // Stream the file
+    // Set CORS headers to prevent CORB
+    res.set('Access-Control-Allow-Origin', '*');
+    res.set('Access-Control-Allow-Methods', 'GET');
+    res.set('Cross-Origin-Resource-Policy', 'cross-origin');
     res.set('Content-Type', file.contentType);
+    res.set('Cache-Control', 'public, max-age=31536000');
+
+    // Stream the file
     const downloadStream = gridfsBucket.openDownloadStreamByName(req.params.filename);
     downloadStream.pipe(res);
   } catch (error) {
