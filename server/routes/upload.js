@@ -10,15 +10,34 @@ import config from '../config/config.js';
 // Create storage engine
 const storage = new GridFsStorage({
   url: config.mongoURI,
+  options: { useNewUrlParser: true, useUnifiedTopology: true },
   file: (req, file) => {
-    return {
-      filename: `${Date.now()}-${file.originalname}`,
-      bucketName: 'uploads'
-    };
+    console.log('GridFsStorage processing file:', file.originalname);
+    return new Promise((resolve, reject) => {
+      const filename = `${Date.now()}-${file.originalname}`;
+      const fileInfo = {
+        filename: filename,
+        bucketName: 'uploads'
+      };
+      console.log('File info:', fileInfo);
+      resolve(fileInfo);
+    });
   }
 });
 
-const upload = multer({ storage });
+// Error handling for storage
+storage.on('connection', (db) => {
+  console.log('✅ GridFsStorage connected to database');
+});
+
+storage.on('connectionFailed', (err) => {
+  console.error('❌ GridFsStorage connection failed:', err);
+});
+
+const upload = multer({
+  storage,
+  limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
+});
 
 // Init GridFSBucket (modern API)
 let gridfsBucket;
@@ -32,63 +51,79 @@ mongoose.connection.once('open', () => {
 // @route   POST /api/upload/profile-photo
 // @desc    Upload profile photo
 // @access  Private
-router.post('/profile-photo', auth, upload.single('photo'), async (req, res) => {
-  try {
-    console.log('Profile photo upload request received');
-    console.log('File:', req.file);
+router.post('/profile-photo', auth, (req, res) => {
+  upload.single('photo')(req, res, async (err) => {
+    try {
+      console.log('Profile photo upload request received');
 
-    if (!req.file) {
-      console.log('No file in request');
-      return res.status(400).json({ message: 'No file uploaded' });
+      if (err) {
+        console.error('Multer error:', err);
+        return res.status(500).json({ message: 'Upload failed', error: err.message });
+      }
+
+      console.log('File:', req.file);
+
+      if (!req.file) {
+        console.log('No file in request');
+        return res.status(400).json({ message: 'No file uploaded' });
+      }
+
+      const photoUrl = `/api/upload/image/${req.file.filename}`;
+      console.log('Photo URL:', photoUrl);
+
+      // Update user profile photo
+      const updatedUser = await User.findByIdAndUpdate(
+        req.userId,
+        { profilePhoto: photoUrl },
+        { new: true }
+      );
+
+      console.log('Profile photo updated for user:', req.userId);
+      res.json({ url: photoUrl, user: updatedUser });
+    } catch (error) {
+      console.error('Upload profile photo error:', error);
+      res.status(500).json({ message: 'Server error', error: error.message });
     }
-
-    const photoUrl = `/api/upload/image/${req.file.filename}`;
-    console.log('Photo URL:', photoUrl);
-
-    // Update user profile photo
-    const updatedUser = await User.findByIdAndUpdate(
-      req.userId,
-      { profilePhoto: photoUrl },
-      { new: true }
-    );
-
-    console.log('Profile photo updated for user:', req.userId);
-    res.json({ url: photoUrl, user: updatedUser });
-  } catch (error) {
-    console.error('Upload profile photo error:', error);
-    res.status(500).json({ message: 'Server error', error: error.message });
-  }
+  });
 });
 
 // @route   POST /api/upload/cover-photo
 // @desc    Upload cover photo
 // @access  Private
-router.post('/cover-photo', auth, upload.single('photo'), async (req, res) => {
-  try {
-    console.log('Cover photo upload request received');
-    console.log('File:', req.file);
+router.post('/cover-photo', auth, (req, res) => {
+  upload.single('photo')(req, res, async (err) => {
+    try {
+      console.log('Cover photo upload request received');
 
-    if (!req.file) {
-      console.log('No file in request');
-      return res.status(400).json({ message: 'No file uploaded' });
+      if (err) {
+        console.error('Multer error:', err);
+        return res.status(500).json({ message: 'Upload failed', error: err.message });
+      }
+
+      console.log('File:', req.file);
+
+      if (!req.file) {
+        console.log('No file in request');
+        return res.status(400).json({ message: 'No file uploaded' });
+      }
+
+      const photoUrl = `/api/upload/image/${req.file.filename}`;
+      console.log('Photo URL:', photoUrl);
+
+      // Update user cover photo
+      const updatedUser = await User.findByIdAndUpdate(
+        req.userId,
+        { coverPhoto: photoUrl },
+        { new: true }
+      );
+
+      console.log('Cover photo updated for user:', req.userId);
+      res.json({ url: photoUrl, user: updatedUser });
+    } catch (error) {
+      console.error('Upload cover photo error:', error);
+      res.status(500).json({ message: 'Server error', error: error.message });
     }
-
-    const photoUrl = `/api/upload/image/${req.file.filename}`;
-    console.log('Photo URL:', photoUrl);
-
-    // Update user cover photo
-    const updatedUser = await User.findByIdAndUpdate(
-      req.userId,
-      { coverPhoto: photoUrl },
-      { new: true }
-    );
-
-    console.log('Cover photo updated for user:', req.userId);
-    res.json({ url: photoUrl, user: updatedUser });
-  } catch (error) {
-    console.error('Upload cover photo error:', error);
-    res.status(500).json({ message: 'Server error', error: error.message });
-  }
+  });
 });
 
 // @route   POST /api/upload/chat-attachment
