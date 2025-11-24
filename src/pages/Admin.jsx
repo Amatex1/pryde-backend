@@ -69,6 +69,7 @@ function Admin() {
         setReports(response.data.reports);
       } else if (activeTab === 'users') {
         const response = await api.get('/admin/users');
+        console.log('Users data:', response.data.users);
         setUsers(response.data.users);
       } else if (activeTab === 'blocks') {
         const response = await api.get('/admin/blocks');
@@ -435,7 +436,12 @@ function UsersTab({ users, onSuspend, onBan, onUnsuspend, onUnban }) {
                 </td>
                 <td>{new Date(user.createdAt).toLocaleDateString()}</td>
                 <td className="user-actions">
-                  {user.role === 'super_admin' ? (
+                  {(() => {
+                    console.log(`User ${user.username}: role="${user.role}", checking super_admin...`);
+                    const isSuperAdmin = user.role?.toLowerCase() === 'super_admin';
+                    console.log(`Is super admin: ${isSuperAdmin}`);
+                    return isSuperAdmin;
+                  })() ? (
                     <span style={{ color: '#6C5CE7', fontWeight: 'bold' }}>
                       🛡️ Platform Owner (Protected)
                     </span>
