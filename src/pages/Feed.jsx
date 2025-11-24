@@ -182,9 +182,9 @@ function Feed() {
                   {selectedMedia.map((media, index) => (
                     <div key={index} className="media-preview-item">
                       {media.type === 'video' ? (
-                        <video src={media.url} controls />
+                        <video src={getImageUrl(media.url)} controls />
                       ) : (
-                        <img src={media.url} alt={`Upload ${index + 1}`} />
+                        <img src={getImageUrl(media.url)} alt={`Upload ${index + 1}`} />
                       )}
                       <button
                         type="button"
@@ -278,9 +278,9 @@ function Feed() {
                           {post.media.map((media, index) => (
                             <div key={index} className="post-media-item">
                               {media.type === 'video' ? (
-                                <video src={media.url} controls />
+                                <video src={getImageUrl(media.url)} controls />
                               ) : (
-                                <img src={media.url} alt={`Post media ${index + 1}`} />
+                                <img src={getImageUrl(media.url)} alt={`Post media ${index + 1}`} />
                               )}
                             </div>
                           ))}
