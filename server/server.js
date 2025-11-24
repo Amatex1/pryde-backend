@@ -40,7 +40,7 @@ const allowedOrigins = [
   'https://www.prydeapp.com',
   'http://localhost:3000',
   'http://localhost:5173',
-  'https://pryde-social.onrender.com',
+  'https://pryde-1flx.onrender.com',
   config.frontendURL
 ].filter(Boolean); // Remove any undefined values
 
