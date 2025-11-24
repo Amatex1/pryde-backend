@@ -3,6 +3,7 @@ import Navbar from '../components/Navbar';
 import ReportModal from '../components/ReportModal';
 import api from '../utils/api';
 import { getCurrentUser } from '../utils/auth';
+import { getImageUrl } from '../utils/imageUrl';
 import './Feed.css';
 
 function Feed() {
@@ -238,7 +239,7 @@ function Feed() {
                       <div className="post-author">
                         <div className="author-avatar">
                           {post.author?.profilePhoto ? (
-                            <img src={post.author.profilePhoto} alt={post.author.username} />
+                            <img src={getImageUrl(post.author.profilePhoto)} alt={post.author.username} />
                           ) : (
                             <span>{post.author?.displayName?.charAt(0).toUpperCase() || post.author?.username?.charAt(0).toUpperCase() || 'U'}</span>
                           )}

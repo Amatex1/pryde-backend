@@ -1,5 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { getCurrentUser, logout } from '../utils/auth';
+import { getImageUrl } from '../utils/imageUrl';
 import OnlinePresence from './OnlinePresence';
 import './Navbar.css';
 
@@ -52,7 +53,7 @@ function Navbar() {
           <OnlinePresence />
           <div className="user-avatar">
             {user?.profilePhoto ? (
-              <img src={user.profilePhoto} alt={user.username} />
+              <img src={getImageUrl(user.profilePhoto)} alt={user.username} />
             ) : (
               <span>{user?.username?.charAt(0).toUpperCase()}</span>
             )}

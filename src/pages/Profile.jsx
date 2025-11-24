@@ -4,6 +4,7 @@ import Navbar from '../components/Navbar';
 import ReportModal from '../components/ReportModal';
 import api from '../utils/api';
 import { getCurrentUser } from '../utils/auth';
+import { getImageUrl } from '../utils/imageUrl';
 import './Profile.css';
 
 function Profile() {
@@ -188,7 +189,7 @@ function Profile() {
         <div className="profile-header glossy fade-in">
           <div className="cover-photo">
             {user.coverPhoto ? (
-              <img src={user.coverPhoto} alt="Cover" />
+              <img src={getImageUrl(user.coverPhoto)} alt="Cover" />
             ) : (
               <div className="cover-placeholder shimmer"></div>
             )}
@@ -197,7 +198,7 @@ function Profile() {
           <div className="profile-info">
             <div className="profile-avatar">
               {user.profilePhoto ? (
-                <img src={user.profilePhoto} alt={user.username} />
+                <img src={getImageUrl(user.profilePhoto)} alt={user.username} />
               ) : (
                 <span>{user.displayName?.charAt(0).toUpperCase()}</span>
               )}
@@ -370,7 +371,7 @@ function Profile() {
                     <div key={friend._id} className="friend-item">
                       <div className="friend-avatar">
                         {friend.profilePhoto ? (
-                          <img src={friend.profilePhoto} alt={friend.username} />
+                          <img src={getImageUrl(friend.profilePhoto)} alt={friend.username} />
                         ) : (
                           <span>{friend.displayName?.charAt(0).toUpperCase()}</span>
                         )}

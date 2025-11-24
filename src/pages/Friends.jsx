@@ -2,11 +2,12 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import api from '../utils/api';
-import { 
-  onFriendRequestReceived, 
+import { getImageUrl } from '../utils/imageUrl';
+import {
+  onFriendRequestReceived,
   onFriendRequestAccepted,
   emitFriendRequestSent,
-  emitFriendRequestAccepted 
+  emitFriendRequestAccepted
 } from '../utils/socket';
 import './Friends.css';
 
@@ -216,7 +217,7 @@ function Friends() {
                       <Link to={`/profile/${friend._id}`} className="user-link">
                         <div className="user-avatar">
                           {friend.profilePhoto ? (
-                            <img src={friend.profilePhoto} alt={friend.username} />
+                            <img src={getImageUrl(friend.profilePhoto)} alt={friend.username} />
                           ) : (
                             <span>{friend.displayName?.charAt(0).toUpperCase()}</span>
                           )}

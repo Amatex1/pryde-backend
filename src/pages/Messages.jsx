@@ -1,12 +1,13 @@
 import { useState, useEffect, useRef } from 'react';
 import Navbar from '../components/Navbar';
 import api from '../utils/api';
-import { 
-  onNewMessage, 
-  onMessageSent, 
+import { getImageUrl } from '../utils/imageUrl';
+import {
+  onNewMessage,
+  onMessageSent,
   sendMessage as socketSendMessage,
   emitTyping,
-  onUserTyping 
+  onUserTyping
 } from '../utils/socket';
 import './Messages.css';
 
@@ -298,7 +299,7 @@ function Messages() {
                           >
                       <div className="conv-avatar">
                         {otherUser?.profilePhoto ? (
-                          <img src={otherUser.profilePhoto} alt={otherUser.username} />
+                          <img src={getImageUrl(otherUser.profilePhoto)} alt={otherUser.username} />
                         ) : (
                           <span>{otherUser?.username?.charAt(0).toUpperCase() || '?'}</span>
                         )}
@@ -354,7 +355,7 @@ function Messages() {
                         {!isSent && (
                           <div className="message-avatar">
                             {msg.sender.profilePhoto ? (
-                              <img src={msg.sender.profilePhoto} alt={msg.sender.username} />
+                              <img src={getImageUrl(msg.sender.profilePhoto)} alt={msg.sender.username} />
                             ) : (
                               <span>{msg.sender.username?.charAt(0).toUpperCase() || 'U'}</span>
                             )}
@@ -534,7 +535,7 @@ function Messages() {
                       >
                         <div className="user-avatar">
                           {user.profilePhoto ? (
-                            <img src={user.profilePhoto} alt={user.username} />
+                            <img src={getImageUrl(user.profilePhoto)} alt={user.username} />
                           ) : (
                             <span>{user.displayName?.charAt(0).toUpperCase() || user.username?.charAt(0).toUpperCase()}</span>
                           )}

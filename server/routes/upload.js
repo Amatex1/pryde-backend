@@ -2,7 +2,6 @@ import express from 'express';
 const router = express.Router();
 import multer from 'multer';
 import { GridFsStorage } from 'multer-gridfs-storage';
-import Grid from 'gridfs-stream';
 import mongoose from 'mongoose';
 import auth from '../middleware/auth.js';
 import User from '../models/User.js';
@@ -21,11 +20,13 @@ const storage = new GridFsStorage({
 
 const upload = multer({ storage });
 
-// Init gfs
-let gfs;
+// Init GridFSBucket (modern API)
+let gridfsBucket;
 mongoose.connection.once('open', () => {
-  gfs = Grid(mongoose.connection.db, mongoose.mongo);
-  gfs.collection('uploads');
+  gridfsBucket = new mongoose.mongo.GridFSBucket(mongoose.connection.db, {
+    bucketName: 'uploads'
+  });
+  console.log('GridFS initialized successfully');
 });
 
 // @route   POST /api/upload/profile-photo
@@ -33,21 +34,29 @@ mongoose.connection.once('open', () => {
 // @access  Private
 router.post('/profile-photo', auth, upload.single('photo'), async (req, res) => {
   try {
+    console.log('Profile photo upload request received');
+    console.log('File:', req.file);
+
     if (!req.file) {
+      console.log('No file in request');
       return res.status(400).json({ message: 'No file uploaded' });
     }
 
     const photoUrl = `/api/upload/image/${req.file.filename}`;
+    console.log('Photo URL:', photoUrl);
 
     // Update user profile photo
-    await User.findByIdAndUpdate(req.userId, {
-      profilePhoto: photoUrl
-    });
+    const updatedUser = await User.findByIdAndUpdate(
+      req.userId,
+      { profilePhoto: photoUrl },
+      { new: true }
+    );
 
-    res.json({ url: photoUrl });
+    console.log('Profile photo updated for user:', req.userId);
+    res.json({ url: photoUrl, user: updatedUser });
   } catch (error) {
     console.error('Upload profile photo error:', error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
 
@@ -56,21 +65,29 @@ router.post('/profile-photo', auth, upload.single('photo'), async (req, res) => 
 // @access  Private
 router.post('/cover-photo', auth, upload.single('photo'), async (req, res) => {
   try {
+    console.log('Cover photo upload request received');
+    console.log('File:', req.file);
+
     if (!req.file) {
+      console.log('No file in request');
       return res.status(400).json({ message: 'No file uploaded' });
     }
 
     const photoUrl = `/api/upload/image/${req.file.filename}`;
+    console.log('Photo URL:', photoUrl);
 
     // Update user cover photo
-    await User.findByIdAndUpdate(req.userId, {
-      coverPhoto: photoUrl
-    });
+    const updatedUser = await User.findByIdAndUpdate(
+      req.userId,
+      { coverPhoto: photoUrl },
+      { new: true }
+    );
 
-    res.json({ url: photoUrl });
+    console.log('Cover photo updated for user:', req.userId);
+    res.json({ url: photoUrl, user: updatedUser });
   } catch (error) {
     console.error('Upload cover photo error:', error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
 
@@ -124,36 +141,64 @@ router.post('/post-media', auth, upload.array('media', 10), async (req, res) => 
 // @route   GET /api/upload/image/:filename
 // @desc    Get image
 // @access  Public
-router.get('/image/:filename', (req, res) => {
-  gfs.files.findOne({ filename: req.params.filename }, (err, file) => {
-    if (!file || file.length === 0) {
+router.get('/image/:filename', async (req, res) => {
+  try {
+    if (!gridfsBucket) {
+      return res.status(500).json({ message: 'GridFS not initialized' });
+    }
+
+    const files = await gridfsBucket.find({ filename: req.params.filename }).toArray();
+
+    if (!files || files.length === 0) {
       return res.status(404).json({ message: 'File not found' });
     }
 
+    const file = files[0];
+
     // Check if image
-    if (file.contentType === 'image/jpeg' || file.contentType === 'image/png' || file.contentType === 'image/jpg') {
-      const readstream = gfs.createReadStream(file.filename);
-      readstream.pipe(res);
+    if (file.contentType === 'image/jpeg' ||
+        file.contentType === 'image/png' ||
+        file.contentType === 'image/jpg' ||
+        file.contentType === 'image/gif' ||
+        file.contentType === 'image/webp') {
+
+      res.set('Content-Type', file.contentType);
+      const downloadStream = gridfsBucket.openDownloadStreamByName(req.params.filename);
+      downloadStream.pipe(res);
     } else {
       res.status(404).json({ message: 'Not an image' });
     }
-  });
+  } catch (error) {
+    console.error('Get image error:', error);
+    res.status(500).json({ message: 'Error retrieving image' });
+  }
 });
 
 // @route   GET /api/upload/file/:filename
 // @desc    Get any file (image, video, gif)
 // @access  Public
-router.get('/file/:filename', (req, res) => {
-  gfs.files.findOne({ filename: req.params.filename }, (err, file) => {
-    if (!file || file.length === 0) {
+router.get('/file/:filename', async (req, res) => {
+  try {
+    if (!gridfsBucket) {
+      return res.status(500).json({ message: 'GridFS not initialized' });
+    }
+
+    const files = await gridfsBucket.find({ filename: req.params.filename }).toArray();
+
+    if (!files || files.length === 0) {
       return res.status(404).json({ message: 'File not found' });
     }
 
+    const file = files[0];
+
     // Stream the file
-    const readstream = gfs.createReadStream(file.filename);
     res.set('Content-Type', file.contentType);
-    readstream.pipe(res);
-  });
+    const downloadStream = gridfsBucket.openDownloadStreamByName(req.params.filename);
+    downloadStream.pipe(res);
+  } catch (error) {
+    console.error('Get file error:', error);
+    res.status(500).json({ message: 'Error retrieving file' });
+  }
 });
 
 export default router;
