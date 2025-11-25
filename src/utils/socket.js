@@ -17,19 +17,25 @@ export const connectSocket = (userId) => {
         const token = localStorage.getItem('token');
 
         socket = io(SOCKET_URL, {
-            transports: ["websocket", "polling"],
+            // Use polling first for faster connection on Render
+            transports: ["polling", "websocket"],
             auth: {
                 token: token
             },
             query: { userId },
             reconnection: true,
             reconnectionDelay: 1000,
-            reconnectionAttempts: 5
+            reconnectionDelayMax: 5000,
+            reconnectionAttempts: 5,
+            timeout: 10000, // 10 second timeout instead of default 20s
+            forceNew: false,
+            upgrade: true, // Allow upgrade to websocket after polling connects
         });
 
         // Add connection event listeners
         socket.on('connect', () => {
             console.log('✅ Socket connected successfully!');
+            console.log('🔌 Transport:', socket.io.engine.transport.name);
         });
 
         socket.on('connect_error', (error) => {
@@ -38,6 +44,11 @@ export const connectSocket = (userId) => {
 
         socket.on('disconnect', (reason) => {
             console.log('🔌 Socket disconnected:', reason);
+        });
+
+        // Log transport upgrades
+        socket.io.engine.on('upgrade', (transport) => {
+            console.log('⬆️ Socket upgraded to:', transport.name);
         });
     }
     return socket;
