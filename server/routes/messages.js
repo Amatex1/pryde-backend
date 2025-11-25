@@ -1,13 +1,14 @@
 import express from 'express';
 const router = express.Router();
 import Message from '../models/Message.js';
+import mongoose from 'mongoose';
 import authMiddleware from '../middleware/auth.js';
 
 // Get conversation with a user
 router.get('/:userId', authMiddleware, async (req, res) => {
   try {
     const { userId } = req.params;
-    const currentUserId = req.user.userId;
+    const currentUserId = req.userId;
 
     console.log('📥 Fetching messages between:', {
       currentUserId,
@@ -16,8 +17,14 @@ router.get('/:userId', authMiddleware, async (req, res) => {
 
     const messages = await Message.find({
       $or: [
-        { sender: currentUserId, recipient: userId },
-        { sender: userId, recipient: currentUserId }
+        {
+          sender: mongoose.Types.ObjectId(currentUserId),
+          recipient: mongoose.Types.ObjectId(userId)
+        },
+        {
+          sender: mongoose.Types.ObjectId(userId),
+          recipient: mongoose.Types.ObjectId(currentUserId)
+        }
       ]
     })
       .populate('sender', 'username profilePhoto')
@@ -36,15 +43,15 @@ router.get('/:userId', authMiddleware, async (req, res) => {
 // Get all conversations
 router.get('/', authMiddleware, async (req, res) => {
   try {
-    const currentUserId = req.user.userId;
-    
+    const currentUserId = req.userId;
+
     // Get unique conversation partners
     const messages = await Message.aggregate([
       {
         $match: {
           $or: [
-            { sender: currentUserId },
-            { recipient: currentUserId }
+            { sender: mongoose.Types.ObjectId(currentUserId) },
+            { recipient: mongoose.Types.ObjectId(currentUserId) }
           ]
         }
       },
@@ -55,7 +62,7 @@ router.get('/', authMiddleware, async (req, res) => {
         $group: {
           _id: {
             $cond: [
-              { $eq: ['$sender', currentUserId] },
+              { $eq: ['$sender', mongoose.Types.ObjectId(currentUserId)] },
               '$recipient',
               '$sender'
             ]
@@ -64,15 +71,16 @@ router.get('/', authMiddleware, async (req, res) => {
         }
       }
     ]);
-    
+
     // Populate user details
     await Message.populate(messages, {
       path: 'lastMessage.sender lastMessage.recipient',
       select: 'username profilePhoto'
     });
-    
+
     res.json(messages);
   } catch (error) {
+    console.error('❌ Error fetching conversations:', error);
     res.status(500).json({ message: 'Error fetching conversations', error: error.message });
   }
 });
@@ -81,21 +89,21 @@ router.get('/', authMiddleware, async (req, res) => {
 router.post('/', authMiddleware, async (req, res) => {
   try {
     const { recipient, content, attachment, groupChatId } = req.body;
-    
+
     const message = new Message({
-      sender: req.user.userId,
+      sender: req.userId,
       recipient: groupChatId ? undefined : recipient,
       groupChat: groupChatId || null,
       content,
       attachment: attachment || null
     });
-    
+
     await message.save();
     await message.populate('sender', 'username profilePhoto');
     if (!groupChatId) {
       await message.populate('recipient', 'username profilePhoto');
     }
-    
+
     // Update group chat's last message if it's a group message
     if (groupChatId) {
       const GroupChat = require('../models/GroupChat');
@@ -104,9 +112,10 @@ router.post('/', authMiddleware, async (req, res) => {
         updatedAt: Date.now()
       });
     }
-    
+
     res.status(201).json(message);
   } catch (error) {
+    console.error('❌ Error sending message:', error);
     res.status(500).json({ message: 'Error sending message', error: error.message });
   }
 });
@@ -115,31 +124,32 @@ router.post('/', authMiddleware, async (req, res) => {
 router.put('/:id/read', authMiddleware, async (req, res) => {
   try {
     const message = await Message.findById(req.params.id);
-    
+
     if (!message) {
       return res.status(404).json({ message: 'Message not found' });
     }
-    
+
     // For direct messages
-    if (message.recipient && message.recipient.toString() === req.user.userId) {
+    if (message.recipient && message.recipient.toString() === req.userId) {
       message.read = true;
       await message.save();
     }
-    
+
     // For group messages - add to readBy array
     if (message.groupChat) {
-      const alreadyRead = message.readBy.some(r => r.user.toString() === req.user.userId);
+      const alreadyRead = message.readBy.some(r => r.user.toString() === req.userId);
       if (!alreadyRead) {
         message.readBy.push({
-          user: req.user.userId,
+          user: req.userId,
           readAt: new Date()
         });
         await message.save();
       }
     }
-    
+
     res.json(message);
   } catch (error) {
+    console.error('❌ Error updating message:', error);
     res.status(500).json({ message: 'Error updating message', error: error.message });
   }
 });
@@ -148,25 +158,26 @@ router.put('/:id/read', authMiddleware, async (req, res) => {
 router.put('/:id/delivered', authMiddleware, async (req, res) => {
   try {
     const message = await Message.findById(req.params.id);
-    
+
     if (!message) {
       return res.status(404).json({ message: 'Message not found' });
     }
-    
+
     // For group messages - add to deliveredTo array
     if (message.groupChat) {
-      const alreadyDelivered = message.deliveredTo.some(d => d.user.toString() === req.user.userId);
+      const alreadyDelivered = message.deliveredTo.some(d => d.user.toString() === req.userId);
       if (!alreadyDelivered) {
         message.deliveredTo.push({
-          user: req.user.userId,
+          user: req.userId,
           deliveredAt: new Date()
         });
         await message.save();
       }
     }
-    
+
     res.json(message);
   } catch (error) {
+    console.error('❌ Error updating message:', error);
     res.status(500).json({ message: 'Error updating message', error: error.message });
   }
 });

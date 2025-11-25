@@ -182,11 +182,65 @@ router.delete('/:friendId', auth, async (req, res) => {
 router.get('/', auth, async (req, res) => {
   try {
     const user = await User.findById(req.userId)
-      .populate('friends', 'username displayName profilePhoto bio');
+      .populate('friends', 'username displayName profilePhoto bio lastSeen');
 
     res.json(user.friends);
   } catch (error) {
     console.error('Get friends error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   GET /api/friends/online
+// @desc    Get online friends with full details
+// @access  Private
+router.get('/online', auth, async (req, res) => {
+  try {
+    const user = await User.findById(req.userId).select('friends');
+    const onlineUsers = req.app.get('onlineUsers');
+
+    if (!onlineUsers) {
+      return res.json([]);
+    }
+
+    // Filter friends who are online
+    const onlineFriendIds = user.friends.filter(friendId =>
+      onlineUsers.has(friendId.toString())
+    );
+
+    // Fetch full user details
+    const onlineFriends = await User.find({
+      _id: { $in: onlineFriendIds }
+    }).select('username displayName profilePhoto lastSeen');
+
+    res.json(onlineFriends);
+  } catch (error) {
+    console.error('Get online friends error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   GET /api/friends/offline
+// @desc    Get offline friends with lastSeen timestamp
+// @access  Private
+router.get('/offline', auth, async (req, res) => {
+  try {
+    const user = await User.findById(req.userId).select('friends');
+    const onlineUsers = req.app.get('onlineUsers');
+
+    // Filter friends who are offline
+    const offlineFriendIds = user.friends.filter(friendId =>
+      !onlineUsers || !onlineUsers.has(friendId.toString())
+    );
+
+    // Fetch full user details
+    const offlineFriends = await User.find({
+      _id: { $in: offlineFriendIds }
+    }).select('username displayName profilePhoto lastSeen');
+
+    res.json(offlineFriends);
+  } catch (error) {
+    console.error('Get offline friends error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });

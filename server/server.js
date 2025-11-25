@@ -258,10 +258,19 @@ io.on('connection', (socket) => {
   });
   
   // Handle disconnect
-  socket.on('disconnect', () => {
+  socket.on('disconnect', async () => {
     console.log(`User disconnected: ${userId}`);
     onlineUsers.delete(userId);
-    
+
+    // Update lastSeen timestamp
+    try {
+      await User.findByIdAndUpdate(userId, {
+        lastSeen: new Date()
+      });
+    } catch (error) {
+      console.error('Error updating lastSeen:', error);
+    }
+
     // Emit offline status to all users
     io.emit('user_offline', { userId });
   });
