@@ -18,12 +18,12 @@ router.get('/:userId', authMiddleware, async (req, res) => {
     const messages = await Message.find({
       $or: [
         {
-          sender: mongoose.Types.ObjectId(currentUserId),
-          recipient: mongoose.Types.ObjectId(userId)
+          sender: new mongoose.Types.ObjectId(currentUserId),
+          recipient: new mongoose.Types.ObjectId(userId)
         },
         {
-          sender: mongoose.Types.ObjectId(userId),
-          recipient: mongoose.Types.ObjectId(currentUserId)
+          sender: new mongoose.Types.ObjectId(userId),
+          recipient: new mongoose.Types.ObjectId(currentUserId)
         }
       ]
     })
@@ -50,8 +50,8 @@ router.get('/', authMiddleware, async (req, res) => {
       {
         $match: {
           $or: [
-            { sender: mongoose.Types.ObjectId(currentUserId) },
-            { recipient: mongoose.Types.ObjectId(currentUserId) }
+            { sender: new mongoose.Types.ObjectId(currentUserId) },
+            { recipient: new mongoose.Types.ObjectId(currentUserId) }
           ]
         }
       },
@@ -62,7 +62,7 @@ router.get('/', authMiddleware, async (req, res) => {
         $group: {
           _id: {
             $cond: [
-              { $eq: ['$sender', mongoose.Types.ObjectId(currentUserId)] },
+              { $eq: ['$sender', new mongoose.Types.ObjectId(currentUserId)] },
               '$recipient',
               '$sender'
             ]

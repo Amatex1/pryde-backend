@@ -31,6 +31,7 @@ connectDB();
 // Import models
 import Notification from './models/Notification.js';
 import Message from './models/Message.js';
+import User from './models/User.js';
 
 const app = express();
 const server = http.createServer(app);
