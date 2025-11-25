@@ -184,26 +184,34 @@ io.on('connection', (socket) => {
   // Handle real-time message
   socket.on('send_message', async (data) => {
     try {
+      console.log('📤 Saving message to DB:', {
+        sender: userId,
+        recipient: data.recipientId,
+        content: data.content.substring(0, 50)
+      });
+
       const message = new Message({
         sender: userId,
         recipient: data.recipientId,
         content: data.content,
         attachment: data.attachment || null
       });
-      
+
       await message.save();
+      console.log('✅ Message saved to DB with ID:', message._id);
+
       await message.populate('sender', 'username profilePhoto');
       await message.populate('recipient', 'username profilePhoto');
-      
+
       // Send to recipient if online
       const recipientSocketId = onlineUsers.get(data.recipientId);
       if (recipientSocketId) {
         io.to(recipientSocketId).emit('new_message', message);
       }
-      
+
       // Send back to sender as confirmation
       socket.emit('message_sent', message);
-      
+
       // Create notification for recipient
       const notification = new Notification({
         recipient: data.recipientId,
@@ -214,12 +222,13 @@ io.on('connection', (socket) => {
       });
       await notification.save();
       await notification.populate('sender', 'username profilePhoto');
-      
+
       // Send notification to recipient if online
       if (recipientSocketId) {
         io.to(recipientSocketId).emit('new_notification', notification);
       }
     } catch (error) {
+      console.error('❌ Error saving message:', error);
       socket.emit('error', { message: 'Error sending message' });
     }
   });

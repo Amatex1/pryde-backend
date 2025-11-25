@@ -8,7 +8,12 @@ router.get('/:userId', authMiddleware, async (req, res) => {
   try {
     const { userId } = req.params;
     const currentUserId = req.user.userId;
-    
+
+    console.log('📥 Fetching messages between:', {
+      currentUserId,
+      otherUserId: userId
+    });
+
     const messages = await Message.find({
       $or: [
         { sender: currentUserId, recipient: userId },
@@ -18,9 +23,12 @@ router.get('/:userId', authMiddleware, async (req, res) => {
       .populate('sender', 'username profilePhoto')
       .populate('recipient', 'username profilePhoto')
       .sort({ createdAt: 1 });
-    
+
+    console.log('✅ Found messages:', messages.length);
+
     res.json(messages);
   } catch (error) {
+    console.error('❌ Error fetching messages:', error);
     res.status(500).json({ message: 'Error fetching messages', error: error.message });
   }
 });
