@@ -4,5 +4,6 @@ export default {
   port: process.env.PORT || 9000,
   baseURL: process.env.BASE_URL || 'https://pryde-social.onrender.com',
   frontendURL: process.env.FRONTEND_URL || 'http://localhost:5173',
+  cloudflareURL: process.env.CLOUDFLARE_URL || 'https://pryde-social.pages.dev',
   nodeEnv: process.env.NODE_ENV || 'development'
 };

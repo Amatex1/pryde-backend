@@ -45,10 +45,11 @@ const allowedOrigins = [
   'http://localhost:5173',
   'https://pryde-frontend.onrender.com',
   'https://pryde-1flx.onrender.com',
-  // Cloudflare Pages URLs (add your specific URL here)
+  // Cloudflare Pages URLs
   'https://pryde-social.pages.dev',
-  /\.pages\.dev$/, // Allow all Cloudflare Pages subdomains temporarily
-  config.frontendURL
+  /\.pages\.dev$/, // Allow all Cloudflare Pages subdomains
+  config.frontendURL,
+  config.cloudflareURL
 ].filter(Boolean); // Remove any undefined values
 
 // Socket.IO setup with CORS
