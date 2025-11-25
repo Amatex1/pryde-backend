@@ -232,6 +232,51 @@ router.post('/:id/comment', auth, async (req, res) => {
   }
 });
 
+// @route   PUT /api/posts/:id/comment/:commentId
+// @desc    Edit a comment on a post
+// @access  Private
+router.put('/:id/comment/:commentId', auth, async (req, res) => {
+  try {
+    const { content } = req.body;
+
+    if (!content || content.trim() === '') {
+      return res.status(400).json({ message: 'Comment content is required' });
+    }
+
+    const post = await Post.findById(req.params.id);
+
+    if (!post) {
+      return res.status(404).json({ message: 'Post not found' });
+    }
+
+    const comment = post.comments.id(req.params.commentId);
+
+    if (!comment) {
+      return res.status(404).json({ message: 'Comment not found' });
+    }
+
+    const userId = req.userId || req.user._id;
+
+    // Check if user is the comment author
+    if (comment.user.toString() !== userId.toString()) {
+      return res.status(403).json({ message: 'Not authorized to edit this comment' });
+    }
+
+    comment.content = content;
+    comment.edited = true;
+    comment.editedAt = new Date();
+    await post.save();
+
+    await post.populate('author', 'username displayName profilePhoto');
+    await post.populate('comments.user', 'username displayName profilePhoto');
+
+    res.json(post);
+  } catch (error) {
+    console.error('Edit comment error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // @route   DELETE /api/posts/:id/comment/:commentId
 // @desc    Delete a comment from a post
 // @access  Private

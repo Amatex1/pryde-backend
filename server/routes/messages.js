@@ -132,6 +132,66 @@ router.post('/', authMiddleware, async (req, res) => {
   }
 });
 
+// Edit a message
+router.put('/:id', authMiddleware, async (req, res) => {
+  try {
+    const { content } = req.body;
+
+    if (!content || content.trim() === '') {
+      return res.status(400).json({ message: 'Message content is required' });
+    }
+
+    const message = await Message.findById(req.params.id);
+
+    if (!message) {
+      return res.status(404).json({ message: 'Message not found' });
+    }
+
+    // Check if user is the sender
+    if (message.sender.toString() !== req.userId) {
+      return res.status(403).json({ message: 'Not authorized to edit this message' });
+    }
+
+    message.content = content;
+    message.edited = true;
+    message.editedAt = new Date();
+    await message.save();
+
+    await message.populate('sender', 'username profilePhoto displayName');
+    if (message.recipient) {
+      await message.populate('recipient', 'username profilePhoto displayName');
+    }
+
+    res.json(message);
+  } catch (error) {
+    console.error('❌ Error editing message:', error);
+    res.status(500).json({ message: 'Error editing message', error: error.message });
+  }
+});
+
+// Delete a message
+router.delete('/:id', authMiddleware, async (req, res) => {
+  try {
+    const message = await Message.findById(req.params.id);
+
+    if (!message) {
+      return res.status(404).json({ message: 'Message not found' });
+    }
+
+    // Check if user is the sender
+    if (message.sender.toString() !== req.userId) {
+      return res.status(403).json({ message: 'Not authorized to delete this message' });
+    }
+
+    await message.deleteOne();
+
+    res.json({ message: 'Message deleted successfully' });
+  } catch (error) {
+    console.error('❌ Error deleting message:', error);
+    res.status(500).json({ message: 'Error deleting message', error: error.message });
+  }
+});
+
 // Mark message as read (with read receipts)
 router.put('/:id/read', authMiddleware, async (req, res) => {
   try {
