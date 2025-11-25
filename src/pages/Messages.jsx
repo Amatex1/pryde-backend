@@ -389,9 +389,12 @@ function Messages({ onOpenMiniChat }) {
                     <>
                       <div className="section-label">Direct Messages</div>
                       {conversations.map((conv) => {
-                        const otherUser = conv.lastMessage?.sender?._id === currentUser?._id
-                          ? conv.lastMessage?.recipient
-                          : conv.lastMessage?.sender;
+                        // Use the otherUser field from backend, or fallback to lastMessage sender/recipient
+                        const otherUser = conv.otherUser || (
+                          conv.lastMessage?.sender?._id === currentUser?._id
+                            ? conv.lastMessage?.recipient
+                            : conv.lastMessage?.sender
+                        );
 
                         return (
                           <div
@@ -411,9 +414,9 @@ function Messages({ onOpenMiniChat }) {
                       </div>
                       <div className="conv-info">
                         <div className="conv-header">
-                          <div className="conv-name">{otherUser?.username || 'Unknown'}</div>
+                          <div className="conv-name">{otherUser?.displayName || otherUser?.username || 'Unknown'}</div>
                           <div className="conv-time">
-                            {new Date(conv.lastMessage?.createdAt).toLocaleTimeString()}
+                            {conv.lastMessage?.createdAt ? new Date(conv.lastMessage.createdAt).toLocaleTimeString() : ''}
                           </div>
                         </div>
                         <div className="conv-last-message">

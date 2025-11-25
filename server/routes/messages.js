@@ -75,10 +75,22 @@ router.get('/', authMiddleware, async (req, res) => {
     // Populate user details
     await Message.populate(messages, {
       path: 'lastMessage.sender lastMessage.recipient',
-      select: 'username profilePhoto'
+      select: 'username profilePhoto displayName'
     });
 
-    res.json(messages);
+    // Also populate the _id field which contains the other user's ID
+    const User = require('../models/User');
+    const populatedConversations = await Promise.all(
+      messages.map(async (conv) => {
+        const otherUser = await User.findById(conv._id).select('username profilePhoto displayName');
+        return {
+          ...conv,
+          otherUser
+        };
+      })
+    );
+
+    res.json(populatedConversations);
   } catch (error) {
     console.error('❌ Error fetching conversations:', error);
     res.status(500).json({ message: 'Error fetching conversations', error: error.message });
