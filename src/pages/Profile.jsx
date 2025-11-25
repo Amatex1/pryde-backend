@@ -1,11 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import ReportModal from '../components/ReportModal';
 import PhotoViewer from '../components/PhotoViewer';
+import Toast from '../components/Toast';
 import api from '../utils/api';
 import { getCurrentUser } from '../utils/auth';
 import { getImageUrl } from '../utils/imageUrl';
+import { useToast } from '../hooks/useToast';
 import './Profile.css';
 
 function Profile({ onOpenMiniChat }) {
@@ -19,6 +21,9 @@ function Profile({ onOpenMiniChat }) {
   const [isBlocked, setIsBlocked] = useState(false);
   const [reportModal, setReportModal] = useState({ isOpen: false, type: '', contentId: null, userId: null });
   const [photoViewerImage, setPhotoViewerImage] = useState(null);
+  const [showActionsMenu, setShowActionsMenu] = useState(false);
+  const { toasts, showToast, removeToast } = useToast();
+  const actionsMenuRef = useRef(null);
   const isOwnProfile = currentUser?.id === id;
 
   useEffect(() => {
@@ -28,6 +33,23 @@ function Profile({ onOpenMiniChat }) {
       checkBlockStatus();
     }
   }, [id]);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (actionsMenuRef.current && !actionsMenuRef.current.contains(event.target)) {
+        setShowActionsMenu(false);
+      }
+    };
+
+    if (showActionsMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showActionsMenu]);
 
   const checkBlockStatus = async () => {
     try {
@@ -105,9 +127,9 @@ function Profile({ onOpenMiniChat }) {
     try {
       await api.post(`/friends/request/${id}`);
       setFriendStatus('pending_sent');
-      alert('Friend request sent!');
+      showToast('Friend request sent! 🎉', 'success');
     } catch (error) {
-      alert(error.response?.data?.message || 'Failed to send friend request');
+      showToast(error.response?.data?.message || 'Failed to send friend request', 'error');
     }
   };
 
@@ -116,9 +138,9 @@ function Profile({ onOpenMiniChat }) {
       await api.post(`/friends/accept/${friendRequestId}`);
       setFriendStatus('friends');
       fetchUserProfile(); // Refresh to update friend count
-      alert('Friend request accepted!');
+      showToast('Friend request accepted! 🎉', 'success');
     } catch (error) {
-      alert(error.response?.data?.message || 'Failed to accept friend request');
+      showToast(error.response?.data?.message || 'Failed to accept friend request', 'error');
     }
   };
 
@@ -273,22 +295,32 @@ function Profile({ onOpenMiniChat }) {
                     )}
                   </div>
 
-                  <div className="profile-secondary-actions">
-                    {isBlocked ? (
-                      <button className="btn-unblock" onClick={handleUnblockUser}>
-                        🔓 Unblock
-                      </button>
-                    ) : (
-                      <button className="btn-block" onClick={handleBlockUser}>
-                        🚫 Block
-                      </button>
-                    )}
+                  <div className="profile-actions-dropdown" ref={actionsMenuRef}>
                     <button
-                      className="btn-report-user"
-                      onClick={() => setReportModal({ isOpen: true, type: 'user', contentId: null, userId: id })}
+                      className="btn-actions-menu"
+                      onClick={() => setShowActionsMenu(!showActionsMenu)}
                     >
-                      🚩 Report
+                      ⋮
                     </button>
+                    {showActionsMenu && (
+                      <div className="actions-dropdown-menu">
+                        {isBlocked ? (
+                          <button className="dropdown-item" onClick={() => { handleUnblockUser(); setShowActionsMenu(false); }}>
+                            🔓 Unblock User
+                          </button>
+                        ) : (
+                          <button className="dropdown-item" onClick={() => { handleBlockUser(); setShowActionsMenu(false); }}>
+                            🚫 Block User
+                          </button>
+                        )}
+                        <button
+                          className="dropdown-item dropdown-item-danger"
+                          onClick={() => { setReportModal({ isOpen: true, type: 'user', contentId: null, userId: id }); setShowActionsMenu(false); }}
+                        >
+                          🚩 Report User
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
@@ -414,6 +446,17 @@ function Profile({ onOpenMiniChat }) {
           onClose={() => setPhotoViewerImage(null)}
         />
       )}
+
+      {/* Toast Notifications */}
+      {toasts.map(toast => (
+        <Toast
+          key={toast.id}
+          message={toast.message}
+          type={toast.type}
+          duration={toast.duration}
+          onClose={() => removeToast(toast.id)}
+        />
+      ))}
     </div>
   );
 }

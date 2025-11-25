@@ -5,6 +5,7 @@ import { getImageUrl } from '../utils/imageUrl';
 import OnlinePresence from './OnlinePresence';
 import DarkModeToggle from './DarkModeToggle';
 import GlobalSearch from './GlobalSearch';
+import NotificationBell from './NotificationBell';
 import './Navbar.css';
 
 function Navbar({ onOpenMiniChat }) {
@@ -43,6 +44,7 @@ function Navbar({ onOpenMiniChat }) {
 
         <div className="navbar-user" ref={dropdownRef}>
           <DarkModeToggle />
+          <NotificationBell />
           <OnlinePresence onOpenMiniChat={onOpenMiniChat} />
           <div
             className="user-profile-trigger"

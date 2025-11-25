@@ -189,13 +189,95 @@
   margin-top: 1rem;
   margin-bottom: 1rem;
   display: flex;
-  flex-direction: column;
+  align-items: flex-start;
   gap: 1rem;
 }
 
 .friend-actions {
   display: flex;
   gap: 0.5rem;
+  flex: 1;
+}
+
+/* Actions Dropdown Menu */
+.profile-actions-dropdown {
+  position: relative;
+}
+
+.btn-actions-menu {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 2px solid var(--border-light);
+  background: var(--card-surface);
+  color: var(--text-main);
+  font-size: 1.5rem;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  line-height: 1;
+  padding: 0;
+}
+
+.btn-actions-menu:hover {
+  background: var(--soft-lavender);
+  border-color: var(--pryde-purple);
+  color: var(--pryde-purple);
+  transform: scale(1.05);
+}
+
+.actions-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  background: var(--card-surface);
+  border: 2px solid var(--border-light);
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  min-width: 180px;
+  z-index: 100;
+  overflow: hidden;
+  animation: dropdownSlideIn 0.2s ease;
+}
+
+@keyframes dropdownSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dropdown-item {
+  width: 100%;
+  padding: 0.875rem 1.25rem;
+  border: none;
+  background: transparent;
+  color: var(--text-main);
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.95rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.dropdown-item:hover {
+  background: var(--soft-lavender);
+  color: var(--pryde-purple);
+}
+
+.dropdown-item-danger:hover {
+  background: rgba(255, 107, 107, 0.1);
+  color: var(--error);
 }
 
 .profile-secondary-actions {
