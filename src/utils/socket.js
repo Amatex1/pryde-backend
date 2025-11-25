@@ -26,19 +26,37 @@ export const disconnectSocket = () => {
     if (socket) socket.disconnect();
 };
 
+// Get socket instance
+export const getSocket = () => socket;
+
+// Check if socket is connected
+export const isSocketConnected = () => socket && socket.connected;
+
 // -----------------------------
 // MESSAGES
 // -----------------------------
 export const sendMessage = (data) => {
-    if (socket) socket.emit("send_message", data);
+    if (socket) {
+        console.log('🔌 Socket connected:', socket.connected);
+        console.log('📤 Emitting send_message:', data);
+        socket.emit("send_message", data);
+    } else {
+        console.error('❌ Socket not initialized!');
+    }
 };
 
 export const onMessageSent = (callback) => {
-    if (socket) socket.on("message_sent", callback);
+    if (socket) {
+        socket.off("message_sent"); // Remove previous listener
+        socket.on("message_sent", callback);
+    }
 };
 
 export const onNewMessage = (callback) => {
-    if (socket) socket.on("new_message", callback);
+    if (socket) {
+        socket.off("new_message"); // Remove previous listener
+        socket.on("new_message", callback);
+    }
 };
 
 // -----------------------------
@@ -49,7 +67,10 @@ export const emitTyping = (conversationId, userId) => {
 };
 
 export const onUserTyping = (callback) => {
-    if (socket) socket.on("typing", callback);
+    if (socket) {
+        socket.off("typing"); // Remove previous listener
+        socket.on("typing", callback);
+    }
 };
 
 // -----------------------------

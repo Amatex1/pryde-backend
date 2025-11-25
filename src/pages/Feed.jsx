@@ -17,12 +17,29 @@ function Feed() {
   const [reportModal, setReportModal] = useState({ isOpen: false, type: '', contentId: null, userId: null });
   const [blockedUsers, setBlockedUsers] = useState([]);
   const [photoViewerImage, setPhotoViewerImage] = useState(null);
+  const [showCommentBox, setShowCommentBox] = useState({});
+  const [commentText, setCommentText] = useState({});
+  const [postVisibility, setPostVisibility] = useState('friends');
+  const [showPrivacyModal, setShowPrivacyModal] = useState(false);
+  const [hiddenFromUsers, setHiddenFromUsers] = useState([]);
+  const [sharedWithUsers, setSharedWithUsers] = useState([]);
+  const [friends, setFriends] = useState([]);
   const currentUser = getCurrentUser();
 
   useEffect(() => {
     fetchPosts();
     fetchBlockedUsers();
+    fetchFriends();
   }, []);
+
+  const fetchFriends = async () => {
+    try {
+      const response = await api.get('/friends');
+      setFriends(response.data);
+    } catch (error) {
+      console.error('Failed to fetch friends:', error);
+    }
+  };
 
   const fetchBlockedUsers = async () => {
     try {
@@ -99,14 +116,29 @@ function Feed() {
 
     setLoading(true);
     try {
-      const response = await api.post('/posts', {
+      const postData = {
         content: newPost,
         media: selectedMedia,
-        visibility: 'public'
-      });
+        visibility: postVisibility
+      };
+
+      // Add custom privacy settings if applicable
+      if (postVisibility === 'custom') {
+        if (hiddenFromUsers.length > 0) {
+          postData.hiddenFrom = hiddenFromUsers;
+        }
+        if (sharedWithUsers.length > 0) {
+          postData.sharedWith = sharedWithUsers;
+        }
+      }
+
+      const response = await api.post('/posts', postData);
       setPosts([response.data, ...posts]);
       setNewPost('');
       setSelectedMedia([]);
+      setPostVisibility('friends');
+      setHiddenFromUsers([]);
+      setSharedWithUsers([]);
     } catch (error) {
       console.error('Post creation failed:', error);
       alert('Failed to create post. Please try again.');
@@ -124,17 +156,30 @@ function Feed() {
     }
   };
 
-  const handleComment = async (postId) => {
-    const content = prompt('Enter your comment:');
+  const toggleCommentBox = (postId) => {
+    setShowCommentBox(prev => ({
+      ...prev,
+      [postId]: !prev[postId]
+    }));
+  };
+
+  const handleCommentSubmit = async (postId, e) => {
+    e.preventDefault();
+    const content = commentText[postId];
     if (!content || !content.trim()) return;
 
     try {
       const response = await api.post(`/posts/${postId}/comment`, { content });
       setPosts(posts.map(p => p._id === postId ? response.data : p));
+      setCommentText(prev => ({ ...prev, [postId]: '' }));
     } catch (error) {
       console.error('Failed to comment:', error);
       alert('Failed to add comment. Please try again.');
     }
+  };
+
+  const handleCommentChange = (postId, value) => {
+    setCommentText(prev => ({ ...prev, [postId]: value }));
   };
 
   const handleShare = async (postId) => {
@@ -212,6 +257,23 @@ function Feed() {
                   />
                   {uploadingMedia ? '⏳ Uploading...' : '📷 Add Photos/Videos'}
                 </label>
+
+                <select
+                  value={postVisibility}
+                  onChange={(e) => {
+                    setPostVisibility(e.target.value);
+                    if (e.target.value === 'custom') {
+                      setShowPrivacyModal(true);
+                    }
+                  }}
+                  className="privacy-selector glossy"
+                >
+                  <option value="public">🌍 Public</option>
+                  <option value="friends">👥 Friends</option>
+                  <option value="custom">⚙️ Custom</option>
+                  <option value="private">🔒 Only Me</option>
+                </select>
+
                 <button type="submit" disabled={loading || uploadingMedia} className="btn-post glossy-gold">
                   {loading ? 'Posting...' : 'Share Post ✨'}
                 </button>
@@ -304,7 +366,7 @@ function Feed() {
                       </button>
                       <button
                         className="action-btn"
-                        onClick={() => handleComment(post._id)}
+                        onClick={() => toggleCommentBox(post._id)}
                       >
                         <span>💬</span> Comment ({post.comments?.length || 0})
                       </button>
@@ -322,7 +384,7 @@ function Feed() {
                           <div key={comment._id} className="comment">
                             <div className="comment-avatar">
                               {comment.user?.profilePhoto ? (
-                                <img src={comment.user.profilePhoto} alt={comment.user.username} />
+                                <img src={getImageUrl(comment.user.profilePhoto)} alt={comment.user.username} />
                               ) : (
                                 <span>{comment.user?.displayName?.charAt(0).toUpperCase() || 'U'}</span>
                               )}
@@ -334,6 +396,35 @@ function Feed() {
                           </div>
                         ))}
                       </div>
+                    )}
+
+                    {/* Comment Input Box */}
+                    {showCommentBox[post._id] && (
+                      <form onSubmit={(e) => handleCommentSubmit(post._id, e)} className="comment-input-box">
+                        <div className="comment-input-wrapper">
+                          <div className="comment-user-avatar">
+                            {currentUser?.profilePhoto ? (
+                              <img src={getImageUrl(currentUser.profilePhoto)} alt="You" />
+                            ) : (
+                              <span>{currentUser?.displayName?.charAt(0).toUpperCase() || 'U'}</span>
+                            )}
+                          </div>
+                          <input
+                            type="text"
+                            value={commentText[post._id] || ''}
+                            onChange={(e) => handleCommentChange(post._id, e.target.value)}
+                            placeholder="Write a comment..."
+                            className="comment-input glossy"
+                          />
+                          <button
+                            type="submit"
+                            className="comment-submit-btn"
+                            disabled={!commentText[post._id]?.trim()}
+                          >
+                            ➤
+                          </button>
+                        </div>
+                      </form>
                     )}
                   </div>
                 );
@@ -367,6 +458,101 @@ function Feed() {
           imageUrl={photoViewerImage}
           onClose={() => setPhotoViewerImage(null)}
         />
+      )}
+
+      {/* Privacy Settings Modal */}
+      {showPrivacyModal && (
+        <div className="modal-overlay" onClick={() => setShowPrivacyModal(false)}>
+          <div className="modal-content privacy-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Custom Privacy Settings</h2>
+              <button className="btn-close" onClick={() => setShowPrivacyModal(false)}>×</button>
+            </div>
+
+            <div className="privacy-modal-body">
+              <div className="privacy-section">
+                <h3>Hide from specific friends</h3>
+                <p className="privacy-description">Select friends who won't see this post</p>
+                <div className="friends-checklist">
+                  {friends.map(friend => (
+                    <label key={friend._id} className="friend-checkbox-item">
+                      <input
+                        type="checkbox"
+                        checked={hiddenFromUsers.includes(friend._id)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setHiddenFromUsers([...hiddenFromUsers, friend._id]);
+                            setSharedWithUsers(sharedWithUsers.filter(id => id !== friend._id));
+                          } else {
+                            setHiddenFromUsers(hiddenFromUsers.filter(id => id !== friend._id));
+                          }
+                        }}
+                      />
+                      <div className="friend-info">
+                        <div className="friend-avatar-small">
+                          {friend.profilePhoto ? (
+                            <img src={getImageUrl(friend.profilePhoto)} alt={friend.displayName} />
+                          ) : (
+                            <span>{friend.displayName?.charAt(0).toUpperCase()}</span>
+                          )}
+                        </div>
+                        <span>{friend.displayName || friend.username}</span>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div className="privacy-divider">OR</div>
+
+              <div className="privacy-section">
+                <h3>Share with specific friends only</h3>
+                <p className="privacy-description">Only selected friends will see this post</p>
+                <div className="friends-checklist">
+                  {friends.map(friend => (
+                    <label key={friend._id} className="friend-checkbox-item">
+                      <input
+                        type="checkbox"
+                        checked={sharedWithUsers.includes(friend._id)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSharedWithUsers([...sharedWithUsers, friend._id]);
+                            setHiddenFromUsers(hiddenFromUsers.filter(id => id !== friend._id));
+                          } else {
+                            setSharedWithUsers(sharedWithUsers.filter(id => id !== friend._id));
+                          }
+                        }}
+                      />
+                      <div className="friend-info">
+                        <div className="friend-avatar-small">
+                          {friend.profilePhoto ? (
+                            <img src={getImageUrl(friend.profilePhoto)} alt={friend.displayName} />
+                          ) : (
+                            <span>{friend.displayName?.charAt(0).toUpperCase()}</span>
+                          )}
+                        </div>
+                        <span>{friend.displayName || friend.username}</span>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="modal-footer">
+              <button className="btn-secondary" onClick={() => {
+                setHiddenFromUsers([]);
+                setSharedWithUsers([]);
+                setShowPrivacyModal(false);
+              }}>
+                Clear All
+              </button>
+              <button className="btn-primary glossy-gold" onClick={() => setShowPrivacyModal(false)}>
+                Done
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

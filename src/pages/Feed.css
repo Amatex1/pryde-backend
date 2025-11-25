@@ -517,3 +517,240 @@
     grid-template-columns: repeat(2, 1fr);
   }
 }
+
+/* Comment Input Box */
+.comment-input-box {
+  padding: 1rem;
+  border-top: 1px solid var(--border-light);
+  margin-top: 0.5rem;
+}
+
+.comment-input-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.comment-user-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: var(--soft-lavender);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.comment-user-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.comment-user-avatar span {
+  color: var(--pryde-purple);
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.comment-input {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  border-radius: 20px;
+  border: 1px solid var(--border-light);
+  outline: none;
+  font-size: 0.95rem;
+  color: var(--text-main);
+  background: var(--background-light);
+  transition: all 0.3s ease;
+}
+
+.comment-input:focus {
+  border-color: var(--pryde-purple);
+  background: var(--card-surface);
+}
+
+.comment-submit-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: var(--pryde-purple);
+  color: white;
+  font-size: 1.2rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+}
+
+.comment-submit-btn:hover:not(:disabled) {
+  background: var(--electric-blue);
+  transform: scale(1.1);
+}
+
+.comment-submit-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Privacy Selector */
+.privacy-selector {
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  border: 2px solid var(--border-light);
+  background: var(--card-surface);
+  color: var(--text-main);
+  font-size: 0.95rem;
+  cursor: pointer;
+  outline: none;
+  transition: all 0.3s ease;
+}
+
+.privacy-selector:hover {
+  border-color: var(--pryde-purple);
+}
+
+.privacy-selector:focus {
+  border-color: var(--pryde-purple);
+  box-shadow: 0 0 0 3px rgba(108, 92, 231, 0.1);
+}
+
+/* Privacy Modal */
+.privacy-modal {
+  max-width: 600px;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.privacy-modal-body {
+  padding: 1.5rem;
+}
+
+.privacy-section {
+  margin-bottom: 2rem;
+}
+
+.privacy-section h3 {
+  color: var(--pryde-purple);
+  font-size: 1.1rem;
+  margin-bottom: 0.5rem;
+}
+
+.privacy-description {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+}
+
+.privacy-divider {
+  text-align: center;
+  color: var(--text-muted);
+  font-weight: 600;
+  margin: 2rem 0;
+  position: relative;
+}
+
+.privacy-divider::before,
+.privacy-divider::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: 40%;
+  height: 1px;
+  background: var(--border-light);
+}
+
+.privacy-divider::before {
+  left: 0;
+}
+
+.privacy-divider::after {
+  right: 0;
+}
+
+.friends-checklist {
+  max-height: 300px;
+  overflow-y: auto;
+  border: 1px solid var(--border-light);
+  border-radius: 12px;
+  padding: 0.5rem;
+}
+
+.friend-checkbox-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.friend-checkbox-item:hover {
+  background: var(--soft-lavender);
+}
+
+.friend-checkbox-item input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+}
+
+.friend-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1;
+}
+
+.friend-avatar-small {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--soft-lavender);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.friend-avatar-small img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.friend-avatar-small span {
+  color: var(--pryde-purple);
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  padding: 1rem 1.5rem;
+  border-top: 1px solid var(--border-light);
+}
+
+.btn-secondary {
+  padding: 0.75rem 1.5rem;
+  border-radius: 12px;
+  border: 2px solid var(--border-light);
+  background: transparent;
+  color: var(--text-main);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-secondary:hover {
+  border-color: var(--pryde-purple);
+  color: var(--pryde-purple);
+}

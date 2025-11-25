@@ -58,9 +58,17 @@ const postSchema = new mongoose.Schema({
   }],
   visibility: {
     type: String,
-    enum: ['public', 'friends', 'private'],
-    default: 'public'
+    enum: ['public', 'friends', 'private', 'custom'],
+    default: 'friends'
   },
+  hiddenFrom: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  }],
+  sharedWith: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  }],
   createdAt: {
     type: Date,
     default: Date.now

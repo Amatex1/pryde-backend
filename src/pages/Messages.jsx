@@ -7,7 +7,9 @@ import {
   onMessageSent,
   sendMessage as socketSendMessage,
   emitTyping,
-  onUserTyping
+  onUserTyping,
+  isSocketConnected,
+  getSocket
 } from '../utils/socket';
 import './Messages.css';
 
@@ -46,6 +48,24 @@ function Messages() {
       }
     };
     fetchCurrentUser();
+
+    // Log socket connection status
+    console.log('🔌 Socket connection status:', isSocketConnected());
+    const socket = getSocket();
+    if (socket) {
+      console.log('✅ Socket instance exists');
+      socket.on('connect', () => {
+        console.log('✅ Socket connected!');
+      });
+      socket.on('disconnect', () => {
+        console.log('❌ Socket disconnected!');
+      });
+      socket.on('connect_error', (error) => {
+        console.error('❌ Socket connection error:', error);
+      });
+    } else {
+      console.error('❌ Socket instance not found!');
+    }
   }, []);
 
   // Fetch conversations and group chats
@@ -124,6 +144,7 @@ function Messages() {
 
     // Listen for sent message confirmation
     onMessageSent((sentMessage) => {
+      console.log('✅ Received message_sent event:', sentMessage);
       setMessages((prev) => [...prev, sentMessage]);
 
       // Update conversations list with the sent message
@@ -146,6 +167,13 @@ function Messages() {
     e.preventDefault();
     if (!message.trim() || !selectedChat) return;
 
+    console.log('📤 Sending message:', {
+      recipientId: selectedChat,
+      content: message,
+      chatType: selectedChatType,
+      socketConnected: isSocketConnected()
+    });
+
     try {
       if (selectedChatType === 'group') {
         // Send group message via API
@@ -155,7 +183,15 @@ function Messages() {
         });
         setMessages((prev) => [...prev, response.data]);
       } else {
+        // Check if socket is connected
+        if (!isSocketConnected()) {
+          console.error('❌ Socket not connected!');
+          alert('Connection lost. Please refresh the page.');
+          return;
+        }
+
         // Send via Socket.IO for real-time delivery
+        console.log('🔌 Emitting send_message via socket');
         socketSendMessage({
           recipientId: selectedChat,
           content: message
@@ -168,7 +204,7 @@ function Messages() {
         emitTyping(selectedChat, currentUser._id);
       }
     } catch (error) {
-      console.error('Error sending message:', error);
+      console.error('❌ Error sending message:', error);
       alert('Failed to send message');
     }
   };
