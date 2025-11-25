@@ -38,6 +38,8 @@ function Messages({ onOpenMiniChat }) {
   const [groupDescription, setGroupDescription] = useState('');
   const [selectedMembers, setSelectedMembers] = useState([]);
   const [onlineUsers, setOnlineUsers] = useState([]);
+  const [editingMessageId, setEditingMessageId] = useState(null);
+  const [editMessageText, setEditMessageText] = useState('');
   const messagesEndRef = useRef(null);
   const typingTimeoutRef = useRef(null);
 
@@ -282,6 +284,51 @@ function Messages({ onOpenMiniChat }) {
     }, 1000);
   };
 
+  const handleEditMessage = (messageId, content) => {
+    setEditingMessageId(messageId);
+    setEditMessageText(content);
+  };
+
+  const handleSaveEditMessage = async (messageId) => {
+    if (!editMessageText.trim()) return;
+
+    try {
+      const response = await api.put(`/messages/${messageId}`, {
+        content: editMessageText
+      });
+
+      // Update the message in the list
+      setMessages((prev) =>
+        prev.map((msg) => (msg._id === messageId ? response.data : msg))
+      );
+
+      setEditingMessageId(null);
+      setEditMessageText('');
+    } catch (error) {
+      console.error('❌ Error editing message:', error);
+      alert('Failed to edit message');
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditingMessageId(null);
+    setEditMessageText('');
+  };
+
+  const handleDeleteMessage = async (messageId) => {
+    if (!confirm('Are you sure you want to delete this message?')) return;
+
+    try {
+      await api.delete(`/messages/${messageId}`);
+
+      // Remove the message from the list
+      setMessages((prev) => prev.filter((msg) => msg._id !== messageId));
+    } catch (error) {
+      console.error('❌ Error deleting message:', error);
+      alert('Failed to delete message');
+    }
+  };
+
   const fetchFriends = async () => {
     try {
       const response = await api.get('/friends');
@@ -499,6 +546,8 @@ function Messages({ onOpenMiniChat }) {
                 <div className="chat-messages">
                   {messages.map((msg) => {
                     const isSent = msg.sender._id === currentUser?._id;
+                    const isEditing = editingMessageId === msg._id;
+
                     return (
                       <div key={msg._id} className={`message-group ${isSent ? 'sent' : 'received'}`}>
                         {!isSent && (
@@ -514,9 +563,52 @@ function Messages({ onOpenMiniChat }) {
                           {selectedChatType === 'group' && !isSent && (
                             <div className="message-sender-name">{msg.sender.displayName || msg.sender.username}</div>
                           )}
-                          <div className="message-bubble">
-                            {msg.content}
-                          </div>
+
+                          {isEditing ? (
+                            <div className="message-edit-box">
+                              <input
+                                type="text"
+                                value={editMessageText}
+                                onChange={(e) => setEditMessageText(e.target.value)}
+                                className="message-edit-input"
+                                autoFocus
+                              />
+                              <div className="message-edit-actions">
+                                <button onClick={() => handleSaveEditMessage(msg._id)} className="btn-save-edit">
+                                  ✓
+                                </button>
+                                <button onClick={handleCancelEdit} className="btn-cancel-edit">
+                                  ✕
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <>
+                              <div className="message-bubble">
+                                {msg.content}
+                                {msg.edited && <span className="edited-indicator"> (edited)</span>}
+                              </div>
+                              {isSent && (
+                                <div className="message-actions">
+                                  <button
+                                    onClick={() => handleEditMessage(msg._id, msg.content)}
+                                    className="btn-message-action"
+                                    title="Edit message"
+                                  >
+                                    ✏️
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeleteMessage(msg._id)}
+                                    className="btn-message-action"
+                                    title="Delete message"
+                                  >
+                                    🗑️
+                                  </button>
+                                </div>
+                              )}
+                            </>
+                          )}
+
                           <div className="message-time">
                             {new Date(msg.createdAt).toLocaleTimeString()}
                           </div>
