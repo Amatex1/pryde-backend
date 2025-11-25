@@ -21,6 +21,7 @@ import pushNotificationsRouter from './routes/pushNotifications.js';
 import reportsRoutes from './routes/reports.js';
 import blocksRoutes from './routes/blocks.js';
 import adminRoutes from './routes/admin.js';
+import searchRoutes from './routes/search.js';
 
 import connectDB from "./dbConn.js";
 import config from "./config/config.js";
@@ -91,6 +92,7 @@ app.use('/api/push', pushNotificationsRouter);
 app.use('/api/reports', reportsRoutes);
 app.use('/api/blocks', blocksRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/search', searchRoutes);
 
 // Health check and status endpoints
 app.get('/', (req, res) => {
