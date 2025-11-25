@@ -13,9 +13,31 @@ export const initializeSocket = (userId) => {
 // Connect socket
 export const connectSocket = (userId) => {
     if (!socket) {
+        // Get JWT token from localStorage
+        const token = localStorage.getItem('token');
+
         socket = io(SOCKET_URL, {
-            transports: ["websocket"],
+            transports: ["websocket", "polling"],
+            auth: {
+                token: token
+            },
             query: { userId },
+            reconnection: true,
+            reconnectionDelay: 1000,
+            reconnectionAttempts: 5
+        });
+
+        // Add connection event listeners
+        socket.on('connect', () => {
+            console.log('✅ Socket connected successfully!');
+        });
+
+        socket.on('connect_error', (error) => {
+            console.error('❌ Socket connection error:', error.message);
+        });
+
+        socket.on('disconnect', (reason) => {
+            console.log('🔌 Socket disconnected:', reason);
         });
     }
     return socket;
