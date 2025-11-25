@@ -37,6 +37,8 @@ const server = http.createServer(app);
 
 // Allowed origins for CORS
 const allowedOrigins = [
+  'https://prydesocial.com',
+  'https://www.prydesocial.com',
   'https://prydeapp.com',
   'https://www.prydeapp.com',
   'http://localhost:3000',
