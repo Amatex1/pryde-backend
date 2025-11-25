@@ -754,3 +754,70 @@
   border-color: var(--pryde-purple);
   color: var(--pryde-purple);
 }
+
+/* Hashtag Links */
+.hashtag-link {
+  color: var(--pryde-purple);
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.hashtag-link:hover {
+  color: var(--electric-blue);
+  text-decoration: underline;
+}
+
+/* Hashtag Page Header */
+.hashtag-header {
+  padding: 2rem;
+  border-radius: 20px;
+  background: var(--card-surface);
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.hashtag-title {
+  color: var(--pryde-purple);
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+}
+
+.hashtag-subtitle {
+  color: var(--text-muted);
+  font-size: 1rem;
+}
+
+/* Trending Items */
+.trending-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  color: var(--text-main);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.trending-item:hover {
+  background: var(--soft-lavender);
+  color: var(--pryde-purple);
+}
+
+.trending-placeholder {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.trending-placeholder:hover {
+  background: transparent;
+  color: var(--text-main);
+}
+
+.trending-count {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-left: 0.5rem;
+}

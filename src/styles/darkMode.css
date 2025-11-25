@@ -30,6 +30,11 @@
   color: var(--text-main);
 }
 
+/* Labels in dark mode */
+[data-theme="dark"] label {
+  color: var(--text-main);
+}
+
 [data-theme="dark"] .glossy {
   background: rgba(22, 33, 62, 0.8);
   backdrop-filter: blur(10px);

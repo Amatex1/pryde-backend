@@ -3,6 +3,7 @@ import { getCurrentUser, logout } from '../utils/auth';
 import { getImageUrl } from '../utils/imageUrl';
 import OnlinePresence from './OnlinePresence';
 import DarkModeToggle from './DarkModeToggle';
+import GlobalSearch from './GlobalSearch';
 import './Navbar.css';
 
 function Navbar() {
@@ -22,7 +23,9 @@ function Navbar() {
           <span className="brand-icon">✨</span>
           <span className="brand-text">Pryde Social</span>
         </Link>
-        
+
+        <GlobalSearch />
+
         <div className="navbar-links">
           <Link to="/feed" className="nav-link">
             <span className="nav-icon">🏠</span>

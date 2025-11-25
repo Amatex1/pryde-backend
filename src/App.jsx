@@ -11,6 +11,7 @@ import Settings from './pages/Settings';
 import Friends from './pages/Friends';
 import Messages from './pages/Messages';
 import Admin from './pages/Admin';
+import Hashtag from './pages/Hashtag';
 import Terms from './pages/legal/Terms';
 import Privacy from './pages/legal/Privacy';
 import Community from './pages/legal/Community';
@@ -65,6 +66,7 @@ function App() {
           <Route path="/settings" element={<PrivateRoute><Settings /></PrivateRoute>} />
           <Route path="/friends" element={<PrivateRoute><Friends /></PrivateRoute>} />
           <Route path="/messages" element={<PrivateRoute><Messages /></PrivateRoute>} />
+          <Route path="/hashtag/:tag" element={<PrivateRoute><Hashtag /></PrivateRoute>} />
 
           {/* Admin Panel - Hidden Route (requires admin role) */}
           <Route path="/admin" element={<PrivateRoute><Admin /></PrivateRoute>} />

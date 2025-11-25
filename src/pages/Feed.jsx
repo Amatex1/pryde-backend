@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import ReportModal from '../components/ReportModal';
 import PhotoViewer from '../components/PhotoViewer';
@@ -24,12 +25,14 @@ function Feed() {
   const [hiddenFromUsers, setHiddenFromUsers] = useState([]);
   const [sharedWithUsers, setSharedWithUsers] = useState([]);
   const [friends, setFriends] = useState([]);
+  const [trending, setTrending] = useState([]);
   const currentUser = getCurrentUser();
 
   useEffect(() => {
     fetchPosts();
     fetchBlockedUsers();
     fetchFriends();
+    fetchTrending();
   }, []);
 
   const fetchFriends = async () => {
@@ -38,6 +41,15 @@ function Feed() {
       setFriends(response.data);
     } catch (error) {
       console.error('Failed to fetch friends:', error);
+    }
+  };
+
+  const fetchTrending = async () => {
+    try {
+      const response = await api.get('/search/trending');
+      setTrending(response.data);
+    } catch (error) {
+      console.error('Failed to fetch trending:', error);
     }
   };
 
@@ -335,7 +347,19 @@ function Feed() {
                     </div>
 
                     <div className="post-content">
-                      {post.content && <p>{post.content}</p>}
+                      {post.content && (
+                        <p>
+                          {post.content.split(' ').map((word, index) =>
+                            word.startsWith('#') ? (
+                              <Link key={index} to={`/hashtag/${word.substring(1)}`} className="hashtag-link">
+                                {word}{' '}
+                              </Link>
+                            ) : (
+                              <span key={index}>{word} </span>
+                            )
+                          )}
+                        </p>
+                      )}
 
                       {post.media && post.media.length > 0 && (
                         <div className={`post-media-grid ${post.media.length === 1 ? 'single' : post.media.length === 2 ? 'double' : 'multiple'}`}>
@@ -437,9 +461,24 @@ function Feed() {
           <div className="sidebar-card glossy">
             <h3 className="sidebar-title">Trending Topics</h3>
             <div className="trending-list">
-              <div className="trending-item">#PrydeSocial</div>
-              <div className="trending-item">#ConnectWithFriends</div>
-              <div className="trending-item">#SocialNetwork</div>
+              {trending.length > 0 ? (
+                trending.map((item, index) => (
+                  <Link
+                    key={index}
+                    to={`/hashtag/${item.hashtag.replace('#', '')}`}
+                    className="trending-item"
+                  >
+                    {item.hashtag}
+                    <span className="trending-count">{item.count} posts</span>
+                  </Link>
+                ))
+              ) : (
+                <>
+                  <div className="trending-item trending-placeholder">#PrydeSocial</div>
+                  <div className="trending-item trending-placeholder">#ConnectWithFriends</div>
+                  <div className="trending-item trending-placeholder">#SocialNetwork</div>
+                </>
+              )}
             </div>
           </div>
         </div>
