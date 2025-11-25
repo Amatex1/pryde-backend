@@ -473,11 +473,10 @@ function Feed() {
                   </Link>
                 ))
               ) : (
-                <>
-                  <div className="trending-item trending-placeholder">#PrydeSocial</div>
-                  <div className="trending-item trending-placeholder">#ConnectWithFriends</div>
-                  <div className="trending-item trending-placeholder">#SocialNetwork</div>
-                </>
+                <div className="no-trending">
+                  <p>No trending topics yet</p>
+                  <p className="trending-hint">Start using hashtags in your posts!</p>
+                </div>
               )}
             </div>
           </div>

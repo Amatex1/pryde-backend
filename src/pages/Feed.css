@@ -806,18 +806,23 @@
   color: var(--pryde-purple);
 }
 
-.trending-placeholder {
-  cursor: default;
-  opacity: 0.6;
-}
-
-.trending-placeholder:hover {
-  background: transparent;
-  color: var(--text-main);
-}
-
 .trending-count {
   font-size: 0.85rem;
   color: var(--text-muted);
   margin-left: 0.5rem;
+}
+
+.no-trending {
+  text-align: center;
+  padding: 2rem 1rem;
+  color: var(--text-muted);
+}
+
+.no-trending p {
+  margin: 0.5rem 0;
+}
+
+.trending-hint {
+  font-size: 0.85rem;
+  color: var(--pryde-purple);
 }

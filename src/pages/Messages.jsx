@@ -95,7 +95,9 @@ function Messages() {
           const endpoint = selectedChatType === 'group'
             ? `/messages/group/${selectedChat}`
             : `/messages/${selectedChat}`;
+          console.log('📥 Fetching messages from:', endpoint);
           const response = await api.get(endpoint);
+          console.log('✅ Loaded messages:', response.data.length);
           setMessages(response.data);
         } catch (error) {
           console.error('Error fetching messages:', error);
@@ -118,6 +120,8 @@ function Messages() {
         }
       };
 
+      // Clear messages first to show loading state
+      setMessages([]);
       fetchMessages();
       fetchChatInfo();
     }
