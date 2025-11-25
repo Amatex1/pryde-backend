@@ -132,39 +132,62 @@ function Messages() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Socket.IO listeners
+  // Socket.IO listeners - wait for socket to be ready
   useEffect(() => {
-    // Listen for new messages
-    onNewMessage((newMessage) => {
-      if (selectedChat === newMessage.sender._id) {
-        setMessages((prev) => [...prev, newMessage]);
-      }
-      // Update conversations list
-      setConversations((prev) => {
-        const updated = prev.filter(c => c._id !== newMessage.sender._id);
-        return [{ _id: newMessage.sender._id, lastMessage: newMessage, ...newMessage.sender }, ...updated];
+    const socket = getSocket();
+
+    if (!socket) {
+      console.warn('⚠️ Socket not initialized yet, waiting...');
+      return;
+    }
+
+    // Ensure socket is connected before setting up listeners
+    const setupListeners = () => {
+      console.log('🎧 Setting up socket listeners');
+
+      // Listen for new messages
+      onNewMessage((newMessage) => {
+        console.log('📨 Received new_message event:', newMessage);
+        if (selectedChat === newMessage.sender._id) {
+          setMessages((prev) => [...prev, newMessage]);
+        }
+        // Update conversations list
+        setConversations((prev) => {
+          const updated = prev.filter(c => c._id !== newMessage.sender._id);
+          return [{ _id: newMessage.sender._id, lastMessage: newMessage, ...newMessage.sender }, ...updated];
+        });
       });
-    });
 
-    // Listen for sent message confirmation
-    onMessageSent((sentMessage) => {
-      console.log('✅ Received message_sent event:', sentMessage);
-      setMessages((prev) => [...prev, sentMessage]);
+      // Listen for sent message confirmation
+      onMessageSent((sentMessage) => {
+        console.log('✅ Received message_sent event:', sentMessage);
+        setMessages((prev) => [...prev, sentMessage]);
 
-      // Update conversations list with the sent message
-      setConversations((prev) => {
-        const recipientId = sentMessage.recipient._id;
-        const updated = prev.filter(c => c._id !== recipientId);
-        return [{ _id: recipientId, lastMessage: sentMessage, ...sentMessage.recipient }, ...updated];
+        // Update conversations list with the sent message
+        setConversations((prev) => {
+          const recipientId = sentMessage.recipient._id;
+          const updated = prev.filter(c => c._id !== recipientId);
+          return [{ _id: recipientId, lastMessage: sentMessage, ...sentMessage.recipient }, ...updated];
+        });
       });
-    });
 
-    // Listen for typing indicator
-    onUserTyping((data) => {
-      if (data.userId === selectedChat) {
-        setIsTyping(data.isTyping);
-      }
-    });
+      // Listen for typing indicator
+      onUserTyping((data) => {
+        if (data.userId === selectedChat) {
+          setIsTyping(data.isTyping);
+        }
+      });
+    };
+
+    if (socket.connected) {
+      setupListeners();
+    } else {
+      socket.on('connect', setupListeners);
+    }
+
+    return () => {
+      socket.off('connect', setupListeners);
+    };
   }, [selectedChat]);
 
   const handleSendMessage = async (e) => {

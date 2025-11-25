@@ -45,7 +45,10 @@ export const connectSocket = (userId) => {
 
 // Disconnect socket
 export const disconnectSocket = () => {
-    if (socket) socket.disconnect();
+    if (socket) {
+        socket.disconnect();
+        socket = null;
+    }
 };
 
 // Get socket instance
