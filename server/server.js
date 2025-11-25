@@ -45,6 +45,9 @@ const allowedOrigins = [
   'http://localhost:5173',
   'https://pryde-frontend.onrender.com',
   'https://pryde-1flx.onrender.com',
+  // Cloudflare Pages URLs (add your specific URL here)
+  'https://pryde-social.pages.dev',
+  /\.pages\.dev$/, // Allow all Cloudflare Pages subdomains temporarily
   config.frontendURL
 ].filter(Boolean); // Remove any undefined values
 
@@ -61,7 +64,26 @@ const io = new Server(server, {
 const corsOptions = {
   origin: function(origin, callback) {
     // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+    if (!origin) {
+      callback(null, true);
+      return;
+    }
+
+    // Check if origin is in allowed list (string match)
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+      return;
+    }
+
+    // Check if origin matches any regex patterns
+    const isAllowed = allowedOrigins.some(allowed => {
+      if (allowed instanceof RegExp) {
+        return allowed.test(origin);
+      }
+      return false;
+    });
+
+    if (isAllowed) {
       callback(null, true);
     } else {
       console.log(`CORS blocked origin: ${origin}`);
