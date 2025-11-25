@@ -1,6 +1,7 @@
 import express from 'express';
 const router = express.Router();
 import Message from '../models/Message.js';
+import User from '../models/User.js';
 import mongoose from 'mongoose';
 import authMiddleware from '../middleware/auth.js';
 
@@ -79,7 +80,6 @@ router.get('/', authMiddleware, async (req, res) => {
     });
 
     // Also populate the _id field which contains the other user's ID
-    const User = require('../models/User');
     const populatedConversations = await Promise.all(
       messages.map(async (conv) => {
         const otherUser = await User.findById(conv._id).select('username profilePhoto displayName');
