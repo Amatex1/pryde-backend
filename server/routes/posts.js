@@ -11,16 +11,15 @@ router.get('/', auth, async (req, res) => {
   try {
     const { page = 1, limit = 20 } = req.query;
 
-    // Get posts from user and their friends
+    // Get posts from user and their friends only
     const userId = req.userId || req.user._id;
     const currentUser = await User.findById(userId);
     const friendIds = currentUser.friends || [];
 
     const posts = await Post.find({
       $or: [
-        { author: userId },
-        { author: { $in: friendIds }, visibility: { $in: ['public', 'friends'] } },
-        { visibility: 'public' }
+        { author: userId }, // User's own posts
+        { author: { $in: friendIds }, visibility: { $in: ['public', 'friends'] } } // Friends' posts
       ]
     })
       .populate('author', 'username displayName profilePhoto')
@@ -33,8 +32,7 @@ router.get('/', auth, async (req, res) => {
     const count = await Post.countDocuments({
       $or: [
         { author: userId },
-        { author: { $in: friendIds }, visibility: { $in: ['public', 'friends'] } },
-        { visibility: 'public' }
+        { author: { $in: friendIds }, visibility: { $in: ['public', 'friends'] } }
       ]
     });
     

@@ -14,6 +14,8 @@ import './Messages.css';
 function Messages() {
   const [selectedChat, setSelectedChat] = useState(null);
   const [selectedChatType, setSelectedChatType] = useState('user'); // 'user' or 'group'
+  const [selectedUser, setSelectedUser] = useState(null); // Store selected user info
+  const [selectedGroup, setSelectedGroup] = useState(null); // Store selected group info
   const [message, setMessage] = useState('');
   const [conversations, setConversations] = useState([]);
   const [groupChats, setGroupChats] = useState([]);
@@ -64,7 +66,7 @@ function Messages() {
     fetchConversations();
   }, []);
 
-  // Fetch messages for selected chat
+  // Fetch messages and user/group info for selected chat
   useEffect(() => {
     if (selectedChat) {
       const fetchMessages = async () => {
@@ -78,7 +80,25 @@ function Messages() {
           console.error('Error fetching messages:', error);
         }
       };
+
+      const fetchChatInfo = async () => {
+        try {
+          if (selectedChatType === 'group') {
+            const response = await api.get(`/groupchats/${selectedChat}`);
+            setSelectedGroup(response.data);
+            setSelectedUser(null);
+          } else {
+            const response = await api.get(`/users/${selectedChat}`);
+            setSelectedUser(response.data);
+            setSelectedGroup(null);
+          }
+        } catch (error) {
+          console.error('Error fetching chat info:', error);
+        }
+      };
+
       fetchMessages();
+      fetchChatInfo();
     }
   }, [selectedChat, selectedChatType]);
 
@@ -338,10 +358,20 @@ function Messages() {
                 <div className="chat-header">
                   <div className="chat-user">
                     <div className="chat-avatar">
-                      <span>A</span>
+                      {selectedChatType === 'group' ? (
+                        <span>{selectedGroup?.name?.charAt(0).toUpperCase() || 'G'}</span>
+                      ) : selectedUser?.profilePhoto ? (
+                        <img src={getImageUrl(selectedUser.profilePhoto)} alt={selectedUser.username} />
+                      ) : (
+                        <span>{selectedUser?.displayName?.charAt(0).toUpperCase() || selectedUser?.username?.charAt(0).toUpperCase() || 'U'}</span>
+                      )}
                     </div>
                     <div className="chat-user-info">
-                      <div className="chat-user-name">Alex Johnson</div>
+                      <div className="chat-user-name">
+                        {selectedChatType === 'group'
+                          ? selectedGroup?.name || 'Group Chat'
+                          : selectedUser?.displayName || selectedUser?.username || 'User'}
+                      </div>
                       <div className="chat-user-status">Online</div>
                     </div>
                   </div>
@@ -443,7 +473,7 @@ function Messages() {
                     >
                       <div className="user-avatar">
                         {user.profilePhoto ? (
-                          <img src={user.profilePhoto} alt={user.username} />
+                          <img src={getImageUrl(user.profilePhoto)} alt={user.username} />
                         ) : (
                           <span>{user.displayName?.charAt(0).toUpperCase() || user.username?.charAt(0).toUpperCase()}</span>
                         )}

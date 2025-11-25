@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import Navbar from '../components/Navbar';
 import ReportModal from '../components/ReportModal';
+import PhotoViewer from '../components/PhotoViewer';
 import api from '../utils/api';
 import { getCurrentUser } from '../utils/auth';
 import { getImageUrl } from '../utils/imageUrl';
@@ -15,6 +16,7 @@ function Feed() {
   const [uploadingMedia, setUploadingMedia] = useState(false);
   const [reportModal, setReportModal] = useState({ isOpen: false, type: '', contentId: null, userId: null });
   const [blockedUsers, setBlockedUsers] = useState([]);
+  const [photoViewerImage, setPhotoViewerImage] = useState(null);
   const currentUser = getCurrentUser();
 
   useEffect(() => {
@@ -280,7 +282,12 @@ function Feed() {
                               {media.type === 'video' ? (
                                 <video src={getImageUrl(media.url)} controls />
                               ) : (
-                                <img src={getImageUrl(media.url)} alt={`Post media ${index + 1}`} />
+                                <img
+                                  src={getImageUrl(media.url)}
+                                  alt={`Post media ${index + 1}`}
+                                  onClick={() => setPhotoViewerImage(getImageUrl(media.url))}
+                                  style={{ cursor: 'pointer' }}
+                                />
                               )}
                             </div>
                           ))}
@@ -354,6 +361,13 @@ function Feed() {
         contentId={reportModal.contentId}
         userId={reportModal.userId}
       />
+
+      {photoViewerImage && (
+        <PhotoViewer
+          imageUrl={photoViewerImage}
+          onClose={() => setPhotoViewerImage(null)}
+        />
+      )}
     </div>
   );
 }

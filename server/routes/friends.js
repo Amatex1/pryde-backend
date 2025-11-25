@@ -192,7 +192,7 @@ router.get('/', auth, async (req, res) => {
 });
 
 // @route   GET /api/friends/requests/pending
-// @desc    Get pending friend requests
+// @desc    Get pending friend requests (received)
 // @access  Private
 router.get('/requests/pending', auth, async (req, res) => {
   try {
@@ -206,6 +206,25 @@ router.get('/requests/pending', auth, async (req, res) => {
     res.json(requests);
   } catch (error) {
     console.error('Get requests error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   GET /api/friends/requests/sent
+// @desc    Get sent friend requests (pending)
+// @access  Private
+router.get('/requests/sent', auth, async (req, res) => {
+  try {
+    const requests = await FriendRequest.find({
+      sender: req.userId,
+      status: 'pending'
+    })
+    .populate('receiver', 'username displayName profilePhoto')
+    .sort({ createdAt: -1 });
+
+    res.json(requests);
+  } catch (error) {
+    console.error('Get sent requests error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });

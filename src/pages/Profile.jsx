@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import ReportModal from '../components/ReportModal';
+import PhotoViewer from '../components/PhotoViewer';
 import api from '../utils/api';
 import { getCurrentUser } from '../utils/auth';
 import { getImageUrl } from '../utils/imageUrl';
@@ -17,6 +18,7 @@ function Profile() {
   const [friendRequestId, setFriendRequestId] = useState(null);
   const [isBlocked, setIsBlocked] = useState(false);
   const [reportModal, setReportModal] = useState({ isOpen: false, type: '', contentId: null, userId: null });
+  const [photoViewerImage, setPhotoViewerImage] = useState(null);
   const isOwnProfile = currentUser?.id === id;
 
   useEffect(() => {
@@ -189,7 +191,12 @@ function Profile() {
         <div className="profile-header glossy fade-in">
           <div className="cover-photo">
             {user.coverPhoto ? (
-              <img src={getImageUrl(user.coverPhoto)} alt="Cover" />
+              <img
+                src={getImageUrl(user.coverPhoto)}
+                alt="Cover"
+                onClick={() => setPhotoViewerImage(getImageUrl(user.coverPhoto))}
+                style={{ cursor: 'pointer' }}
+              />
             ) : (
               <div className="cover-placeholder shimmer"></div>
             )}
@@ -198,7 +205,12 @@ function Profile() {
           <div className="profile-info">
             <div className="profile-avatar">
               {user.profilePhoto ? (
-                <img src={getImageUrl(user.profilePhoto)} alt={user.username} />
+                <img
+                  src={getImageUrl(user.profilePhoto)}
+                  alt={user.username}
+                  onClick={() => setPhotoViewerImage(getImageUrl(user.profilePhoto))}
+                  style={{ cursor: 'pointer' }}
+                />
               ) : (
                 <span>{user.displayName?.charAt(0).toUpperCase()}</span>
               )}

@@ -15,6 +15,7 @@ function Friends() {
   const [activeTab, setActiveTab] = useState('friends');
   const [friends, setFriends] = useState([]);
   const [requests, setRequests] = useState([]);
+  const [sentRequests, setSentRequests] = useState([]); // Track sent friend requests
   const [searchResults, setSearchResults] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(false);
@@ -82,6 +83,15 @@ function Friends() {
     }
   };
 
+  const fetchSentRequests = async () => {
+    try {
+      const response = await api.get('/friends/requests/sent');
+      setSentRequests(response.data);
+    } catch (error) {
+      console.error('Failed to fetch sent requests:', error);
+    }
+  };
+
   const handleSearch = async (e) => {
     e.preventDefault();
     if (!searchQuery.trim()) return;
@@ -90,6 +100,9 @@ function Friends() {
     try {
       const response = await api.get(`/users/search?q=${searchQuery}`);
       setSearchResults(response.data);
+      // Also fetch sent requests to check status
+      await fetchSentRequests();
+      await fetchFriends();
     } catch (error) {
       console.error('Search failed:', error);
     } finally {
@@ -128,6 +141,8 @@ function Friends() {
         });
       }
 
+      // Refresh sent requests to update button state
+      await fetchSentRequests();
       alert('Friend request sent!');
     } catch (error) {
       alert(error.response?.data?.message || 'Failed to send request');
@@ -254,7 +269,7 @@ function Friends() {
                       <Link to={`/profile/${request.sender._id}`} className="user-link">
                         <div className="user-avatar">
                           {request.sender.profilePhoto ? (
-                            <img src={request.sender.profilePhoto} alt={request.sender.username} />
+                            <img src={getImageUrl(request.sender.profilePhoto)} alt={request.sender.username} />
                           ) : (
                             <span>{request.sender.displayName?.charAt(0).toUpperCase()}</span>
                           )}
@@ -306,30 +321,53 @@ function Friends() {
 
               {searchResults.length > 0 && (
                 <div className="user-grid">
-                  {searchResults.map((user) => (
-                    <div key={user._id} className="user-card glossy">
-                      <Link to={`/profile/${user._id}`} className="user-link">
-                        <div className="user-avatar">
-                          {user.profilePhoto ? (
-                            <img src={user.profilePhoto} alt={user.username} />
-                          ) : (
-                            <span>{user.displayName?.charAt(0).toUpperCase()}</span>
-                          )}
-                        </div>
-                        <div className="user-info">
-                          <div className="user-name">{user.displayName || user.username}</div>
-                          <div className="user-username">@{user.username}</div>
-                          {user.bio && <div className="user-bio">{user.bio}</div>}
-                        </div>
-                      </Link>
-                      <button
-                        onClick={() => handleSendRequest(user._id)}
-                        className="btn-add glossy-gold"
-                      >
-                        Add Friend
-                      </button>
-                    </div>
-                  ))}
+                  {searchResults.map((user) => {
+                    // Check if already friends
+                    const isFriend = friends.some(f => f._id === user._id);
+                    // Check if request already sent
+                    const requestSent = sentRequests.some(r => r.receiver._id === user._id);
+                    // Check if request received
+                    const requestReceived = requests.some(r => r.sender._id === user._id);
+
+                    return (
+                      <div key={user._id} className="user-card glossy">
+                        <Link to={`/profile/${user._id}`} className="user-link">
+                          <div className="user-avatar">
+                            {user.profilePhoto ? (
+                              <img src={getImageUrl(user.profilePhoto)} alt={user.username} />
+                            ) : (
+                              <span>{user.displayName?.charAt(0).toUpperCase()}</span>
+                            )}
+                          </div>
+                          <div className="user-info">
+                            <div className="user-name">{user.displayName || user.username}</div>
+                            <div className="user-username">@{user.username}</div>
+                            {user.bio && <div className="user-bio">{user.bio}</div>}
+                          </div>
+                        </Link>
+                        {isFriend ? (
+                          <button className="btn-friends" disabled>
+                            Friends ✓
+                          </button>
+                        ) : requestSent ? (
+                          <button className="btn-pending" disabled>
+                            Pending
+                          </button>
+                        ) : requestReceived ? (
+                          <button className="btn-respond" onClick={() => setActiveTab('requests')}>
+                            Respond
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => handleSendRequest(user._id)}
+                            className="btn-add glossy-gold"
+                          >
+                            Add Friend
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </div>
