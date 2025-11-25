@@ -193,7 +193,33 @@
 
 .chat-user-status {
   font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.chat-user-status.online {
   color: var(--success);
+}
+
+.chat-user-status.online::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--success);
+}
+
+.chat-user-status.offline {
+  color: var(--text-muted);
+}
+
+.chat-user-status.offline::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--text-muted);
 }
 
 .chat-messages {

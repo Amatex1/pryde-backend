@@ -9,7 +9,10 @@ import {
   emitTyping,
   onUserTyping,
   isSocketConnected,
-  getSocket
+  getSocket,
+  onUserOnline,
+  onUserOffline,
+  onOnlineUsers
 } from '../utils/socket';
 import './Messages.css';
 
@@ -34,6 +37,7 @@ function Messages({ onOpenMiniChat }) {
   const [groupName, setGroupName] = useState('');
   const [groupDescription, setGroupDescription] = useState('');
   const [selectedMembers, setSelectedMembers] = useState([]);
+  const [onlineUsers, setOnlineUsers] = useState([]);
   const messagesEndRef = useRef(null);
   const typingTimeoutRef = useRef(null);
 
@@ -176,6 +180,29 @@ function Messages({ onOpenMiniChat }) {
         if (data.userId === selectedChat) {
           setIsTyping(data.isTyping);
         }
+      });
+
+      // Listen for online users list
+      onOnlineUsers((users) => {
+        console.log('👥 Online users:', users);
+        setOnlineUsers(users);
+      });
+
+      // Listen for users coming online
+      onUserOnline((data) => {
+        console.log('✅ User came online:', data.userId);
+        setOnlineUsers((prev) => {
+          if (!prev.includes(data.userId)) {
+            return [...prev, data.userId];
+          }
+          return prev;
+        });
+      });
+
+      // Listen for users going offline
+      onUserOffline((data) => {
+        console.log('❌ User went offline:', data.userId);
+        setOnlineUsers((prev) => prev.filter(id => id !== data.userId));
       });
     };
 
@@ -460,7 +487,11 @@ function Messages({ onOpenMiniChat }) {
                           ? selectedGroup?.name || 'Group Chat'
                           : selectedUser?.displayName || selectedUser?.username || 'User'}
                       </div>
-                      <div className="chat-user-status">Online</div>
+                      {selectedChatType !== 'group' && (
+                        <div className={`chat-user-status ${onlineUsers.includes(selectedChat) ? 'online' : 'offline'}`}>
+                          {onlineUsers.includes(selectedChat) ? 'Online' : 'Offline'}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
