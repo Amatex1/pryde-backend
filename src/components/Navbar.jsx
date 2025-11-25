@@ -7,7 +7,7 @@ import DarkModeToggle from './DarkModeToggle';
 import GlobalSearch from './GlobalSearch';
 import './Navbar.css';
 
-function Navbar() {
+function Navbar({ onOpenMiniChat }) {
   const navigate = useNavigate();
   const user = getCurrentUser();
   const [showDropdown, setShowDropdown] = useState(false);
@@ -43,7 +43,7 @@ function Navbar() {
 
         <div className="navbar-user" ref={dropdownRef}>
           <DarkModeToggle />
-          <OnlinePresence />
+          <OnlinePresence onOpenMiniChat={onOpenMiniChat} />
           <div
             className="user-profile-trigger"
             onClick={() => setShowDropdown(!showDropdown)}

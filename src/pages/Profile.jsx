@@ -8,7 +8,7 @@ import { getCurrentUser } from '../utils/auth';
 import { getImageUrl } from '../utils/imageUrl';
 import './Profile.css';
 
-function Profile() {
+function Profile({ onOpenMiniChat }) {
   const { id } = useParams();
   const currentUser = getCurrentUser();
   const [user, setUser] = useState(null);
@@ -168,7 +168,7 @@ function Profile() {
   if (loading) {
     return (
       <div className="page-container">
-        <Navbar />
+        <Navbar onOpenMiniChat={onOpenMiniChat} />
         <div className="loading">Loading profile...</div>
       </div>
     );
@@ -177,7 +177,7 @@ function Profile() {
   if (!user) {
     return (
       <div className="page-container">
-        <Navbar />
+        <Navbar onOpenMiniChat={onOpenMiniChat} />
         <div className="error">User not found</div>
       </div>
     );
@@ -185,7 +185,7 @@ function Profile() {
 
   return (
     <div className="page-container">
-      <Navbar />
+      <Navbar onOpenMiniChat={onOpenMiniChat} />
       
       <div className="profile-container">
         <div className="profile-header glossy fade-in">

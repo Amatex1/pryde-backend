@@ -11,7 +11,7 @@ import {
 } from '../utils/socket';
 import './Friends.css';
 
-function Friends() {
+function Friends({ onOpenMiniChat }) {
   const [activeTab, setActiveTab] = useState('friends');
   const [friends, setFriends] = useState([]);
   const [requests, setRequests] = useState([]);
@@ -194,7 +194,7 @@ function Friends() {
 
   return (
     <div className="page-container">
-      <Navbar />
+      <Navbar onOpenMiniChat={onOpenMiniChat} />
       
       <div className="friends-container">
         <div className="friends-header glossy fade-in">

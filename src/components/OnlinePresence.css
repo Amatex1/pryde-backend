@@ -95,3 +95,123 @@
 .online-list p {
   margin: 0;
 }
+
+/* Friends Tabs */
+.friends-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.friends-tabs .tab {
+  flex: 1;
+  padding: 10px;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-weight: 500;
+}
+
+.friends-tabs .tab:hover {
+  color: var(--pryde-purple);
+}
+
+.friends-tabs .tab.active {
+  color: var(--pryde-purple);
+  border-bottom-color: var(--pryde-purple);
+}
+
+/* Friends List */
+.friends-list {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.friend-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-bottom: 8px;
+}
+
+.friend-item:hover {
+  background: rgba(108, 92, 231, 0.1);
+  transform: translateX(4px);
+}
+
+.friend-avatar {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+}
+
+.friend-avatar img,
+.friend-avatar .avatar-placeholder {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.friend-avatar .avatar-placeholder {
+  background: linear-gradient(135deg, var(--pryde-purple), var(--electric-blue));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 600;
+  font-size: 18px;
+}
+
+.status-dot {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid var(--card-surface);
+}
+
+.status-dot.online {
+  background: #28a745;
+  animation: pulse-green 2s infinite;
+}
+
+.status-dot.offline {
+  background: var(--text-muted);
+}
+
+.friend-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.friend-name {
+  color: var(--text-main);
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.friend-status {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.no-friends {
+  text-align: center;
+  color: var(--text-muted);
+  padding: 2rem;
+  margin: 0;
+}

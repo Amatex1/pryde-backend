@@ -13,7 +13,7 @@ import {
 } from '../utils/socket';
 import './Messages.css';
 
-function Messages() {
+function Messages({ onOpenMiniChat }) {
   const [selectedChat, setSelectedChat] = useState(null);
   const [selectedChatType, setSelectedChatType] = useState('user'); // 'user' or 'group'
   const [selectedUser, setSelectedUser] = useState(null); // Store selected user info
@@ -330,7 +330,7 @@ function Messages() {
 
   return (
     <div className="page-container">
-      <Navbar />
+      <Navbar onOpenMiniChat={onOpenMiniChat} />
       
       <div className="messages-container">
         <div className="messages-layout glossy fade-in">

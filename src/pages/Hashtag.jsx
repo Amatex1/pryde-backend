@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import Navbar from '../components/Navbar';
 import api from '../utils/api';
 import { getImageUrl } from '../utils/imageUrl';
 import PhotoViewer from '../components/PhotoViewer';
 import './Feed.css';
 
-function Hashtag() {
+function Hashtag({ onOpenMiniChat }) {
   const { tag } = useParams();
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -47,6 +48,7 @@ function Hashtag() {
 
   return (
     <div className="page-container">
+      <Navbar onOpenMiniChat={onOpenMiniChat} />
       <div className="feed-container">
         <div className="feed-content">
           <div className="hashtag-header glossy">

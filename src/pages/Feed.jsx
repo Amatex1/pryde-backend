@@ -8,7 +8,7 @@ import { getCurrentUser } from '../utils/auth';
 import { getImageUrl } from '../utils/imageUrl';
 import './Feed.css';
 
-function Feed() {
+function Feed({ onOpenMiniChat }) {
   const [posts, setPosts] = useState([]);
   const [newPost, setNewPost] = useState('');
   const [loading, setLoading] = useState(false);
@@ -221,7 +221,7 @@ function Feed() {
 
   return (
     <div className="page-container">
-      <Navbar />
+      <Navbar onOpenMiniChat={onOpenMiniChat} />
       
       <div className="feed-container">
         <div className="feed-content">

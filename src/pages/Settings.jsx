@@ -11,7 +11,7 @@ import {
 } from '../utils/pushNotifications';
 import './Settings.css';
 
-function Settings() {
+function Settings({ onOpenMiniChat }) {
   const navigate = useNavigate();
   const currentUser = getCurrentUser();
   const [formData, setFormData] = useState({
@@ -233,7 +233,7 @@ function Settings() {
 
   return (
     <div className="page-container">
-      <Navbar />
+      <Navbar onOpenMiniChat={onOpenMiniChat} />
       
       <div className="settings-container">
         <div className="settings-card glossy fade-in">

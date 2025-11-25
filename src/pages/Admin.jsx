@@ -5,7 +5,7 @@ import api from '../utils/api';
 import { getCurrentUser } from '../utils/auth';
 import './Admin.css';
 
-function Admin() {
+function Admin({ onOpenMiniChat }) {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [stats, setStats] = useState(null);
   const [reports, setReports] = useState([]);
@@ -157,7 +157,7 @@ function Admin() {
   if (loading) {
     return (
       <div className="page-container">
-        <Navbar />
+        <Navbar onOpenMiniChat={onOpenMiniChat} />
         <div className="admin-loading">🔒 Verifying admin access...</div>
       </div>
     );
@@ -166,7 +166,7 @@ function Admin() {
   if (error) {
     return (
       <div className="page-container">
-        <Navbar />
+        <Navbar onOpenMiniChat={onOpenMiniChat} />
         <div className="admin-error">
           <h2>⛔ {error}</h2>
           <p>Redirecting to home...</p>
@@ -246,7 +246,7 @@ function Admin() {
 
   return (
     <div className="page-container">
-      <Navbar />
+      <Navbar onOpenMiniChat={onOpenMiniChat} />
       <div className="admin-container">
         <div className="admin-header">
           <h1>🛡️ Admin Panel</h1>
