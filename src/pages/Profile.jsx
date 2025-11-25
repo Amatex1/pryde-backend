@@ -407,6 +407,13 @@ function Profile() {
         contentId={reportModal.contentId}
         userId={reportModal.userId}
       />
+
+      {photoViewerImage && (
+        <PhotoViewer
+          imageUrl={photoViewerImage}
+          onClose={() => setPhotoViewerImage(null)}
+        />
+      )}
     </div>
   );
 }
