@@ -2,6 +2,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { getCurrentUser, logout } from '../utils/auth';
 import { getImageUrl } from '../utils/imageUrl';
 import OnlinePresence from './OnlinePresence';
+import DarkModeToggle from './DarkModeToggle';
 import './Navbar.css';
 
 function Navbar() {
@@ -50,6 +51,7 @@ function Navbar() {
         </div>
 
         <div className="navbar-user">
+          <DarkModeToggle />
           <OnlinePresence />
           <div className="user-avatar">
             {user?.profilePhoto ? (

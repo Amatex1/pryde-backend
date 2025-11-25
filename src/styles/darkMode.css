@@ -1,0 +1,145 @@
+/* Dark Mode Theme */
+[data-theme="dark"] {
+  /* Background Colors */
+  --background-light: #1a1a2e;
+  --card-surface: #16213e;
+  --border-light: #2d3561;
+  
+  /* Text Colors */
+  --text-main: #e4e4e7;
+  --text-muted: #a1a1aa;
+  
+  /* Keep brand colors the same */
+  --pryde-purple: #6C5CE7;
+  --electric-blue: #0984E3;
+  --soft-lavender: #2d3561;
+  
+  /* Gradients adjusted for dark mode */
+  --gradient-primary: linear-gradient(135deg, #6C5CE7 0%, #0984E3 100%);
+  --gradient-gold: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+  
+  /* Shadows adjusted for dark mode */
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.6);
+}
+
+/* Dark mode specific adjustments */
+[data-theme="dark"] body {
+  background: var(--background-light);
+  color: var(--text-main);
+}
+
+[data-theme="dark"] .glossy {
+  background: rgba(22, 33, 62, 0.8);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(108, 92, 231, 0.2);
+}
+
+[data-theme="dark"] .glossy-gold {
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.2) 0%, rgba(255, 165, 0, 0.2) 100%);
+  border: 1px solid rgba(255, 215, 0, 0.3);
+}
+
+[data-theme="dark"] .glossy-gold:hover {
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.3) 0%, rgba(255, 165, 0, 0.3) 100%);
+  box-shadow: 0 4px 20px rgba(255, 215, 0, 0.3);
+}
+
+/* Input fields in dark mode */
+[data-theme="dark"] input,
+[data-theme="dark"] textarea,
+[data-theme="dark"] select {
+  background: rgba(22, 33, 62, 0.6);
+  color: var(--text-main);
+  border-color: var(--border-light);
+}
+
+[data-theme="dark"] input::placeholder,
+[data-theme="dark"] textarea::placeholder {
+  color: var(--text-muted);
+}
+
+/* Cards and containers */
+[data-theme="dark"] .post-card,
+[data-theme="dark"] .user-card,
+[data-theme="dark"] .friend-card {
+  background: var(--card-surface);
+  border-color: var(--border-light);
+}
+
+/* Navbar in dark mode */
+[data-theme="dark"] .navbar {
+  background: rgba(22, 33, 62, 0.95);
+  border-bottom-color: var(--border-light);
+}
+
+/* Buttons */
+[data-theme="dark"] button {
+  color: var(--text-main);
+}
+
+[data-theme="dark"] .btn-primary {
+  background: var(--gradient-primary);
+  color: white;
+}
+
+/* Messages */
+[data-theme="dark"] .message-bubble {
+  background: var(--card-surface);
+  color: var(--text-main);
+}
+
+[data-theme="dark"] .message-group.sent .message-bubble {
+  background: var(--pryde-purple);
+  color: white;
+}
+
+/* Modals */
+[data-theme="dark"] .modal-overlay {
+  background: rgba(0, 0, 0, 0.8);
+}
+
+[data-theme="dark"] .modal-content {
+  background: var(--card-surface);
+  color: var(--text-main);
+}
+
+/* Scrollbar for dark mode */
+[data-theme="dark"] ::-webkit-scrollbar-track {
+  background: var(--background-light);
+}
+
+[data-theme="dark"] ::-webkit-scrollbar-thumb {
+  background: var(--border-light);
+}
+
+[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
+  background: var(--pryde-purple);
+}
+
+/* Hover effects */
+[data-theme="dark"] .user-result:hover {
+  background: rgba(108, 92, 231, 0.3);
+}
+
+[data-theme="dark"] .conversation-item:hover {
+  background: rgba(108, 92, 231, 0.2);
+}
+
+/* Profile badges */
+[data-theme="dark"] .badge {
+  background: rgba(108, 92, 231, 0.3);
+  color: var(--text-main);
+}
+
+/* Trending section */
+[data-theme="dark"] .trending-item {
+  background: var(--card-surface);
+  color: var(--text-main);
+}
+
+[data-theme="dark"] .trending-item:hover {
+  background: rgba(108, 92, 231, 0.3);
+}
+

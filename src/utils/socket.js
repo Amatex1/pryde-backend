@@ -30,15 +30,15 @@ export const disconnectSocket = () => {
 // MESSAGES
 // -----------------------------
 export const sendMessage = (data) => {
-    if (socket) socket.emit("sendMessage", data);
+    if (socket) socket.emit("send_message", data);
 };
 
 export const onMessageSent = (callback) => {
-    if (socket) socket.on("messageSent", callback);
+    if (socket) socket.on("message_sent", callback);
 };
 
 export const onNewMessage = (callback) => {
-    if (socket) socket.on("newMessage", callback);
+    if (socket) socket.on("new_message", callback);
 };
 
 // -----------------------------

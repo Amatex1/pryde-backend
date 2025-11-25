@@ -1,0 +1,39 @@
+.dark-mode-toggle {
+  width: 45px;
+  height: 45px;
+  border-radius: 50%;
+  border: 2px solid var(--border-light);
+  background: var(--card-surface);
+  font-size: 1.5rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(108, 92, 231, 0.1);
+}
+
+.dark-mode-toggle:hover {
+  transform: scale(1.1) rotate(20deg);
+  box-shadow: 0 4px 16px rgba(108, 92, 231, 0.3);
+  border-color: var(--pryde-purple);
+}
+
+.dark-mode-toggle:active {
+  transform: scale(0.95);
+}
+
+/* Animation for theme switch */
+@keyframes rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.dark-mode-toggle:active {
+  animation: rotate 0.5s ease;
+}
+

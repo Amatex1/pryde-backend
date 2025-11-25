@@ -92,6 +92,12 @@ function Login({ setIsAuth }) {
             />
           </div>
 
+          <div style={{ textAlign: 'right', marginBottom: '1rem' }}>
+            <Link to="/forgot-password" className="auth-link" style={{ fontSize: '0.9rem' }}>
+              Forgot password?
+            </Link>
+          </div>
+
           <button type="submit" disabled={loading} className="btn-primary glossy-gold">
             {loading ? 'Signing in...' : 'Sign In'}
           </button>

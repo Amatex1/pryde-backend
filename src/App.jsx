@@ -3,6 +3,8 @@ import { useState, useEffect } from 'react';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 import Feed from './pages/Feed';
 import Profile from './pages/Profile';
 import Settings from './pages/Settings';
@@ -54,6 +56,8 @@ function App() {
           {/* Auth Pages */}
           <Route path="/login" element={!isAuth ? <Login setIsAuth={setIsAuth} /> : <Navigate to="/feed" />} />
           <Route path="/register" element={!isAuth ? <Register setIsAuth={setIsAuth} /> : <Navigate to="/feed" />} />
+          <Route path="/forgot-password" element={!isAuth ? <ForgotPassword /> : <Navigate to="/feed" />} />
+          <Route path="/reset-password" element={!isAuth ? <ResetPassword /> : <Navigate to="/feed" />} />
 
           {/* Protected Routes */}
           <Route path="/feed" element={<PrivateRoute><Feed /></PrivateRoute>} />

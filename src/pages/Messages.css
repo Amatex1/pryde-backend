@@ -482,6 +482,16 @@
   gap: 0.5rem;
 }
 
+.friends-list-header {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 0.5rem 1rem;
+  margin-top: 0.5rem;
+}
+
 .user-result {
   display: flex;
   align-items: center;

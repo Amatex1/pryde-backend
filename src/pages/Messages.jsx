@@ -28,6 +28,7 @@ function Messages() {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [searchLoading, setSearchLoading] = useState(false);
+  const [friends, setFriends] = useState([]);
   const [groupName, setGroupName] = useState('');
   const [groupDescription, setGroupDescription] = useState('');
   const [selectedMembers, setSelectedMembers] = useState([]);
@@ -124,6 +125,13 @@ function Messages() {
     // Listen for sent message confirmation
     onMessageSent((sentMessage) => {
       setMessages((prev) => [...prev, sentMessage]);
+
+      // Update conversations list with the sent message
+      setConversations((prev) => {
+        const recipientId = sentMessage.recipient._id;
+        const updated = prev.filter(c => c._id !== recipientId);
+        return [{ _id: recipientId, lastMessage: sentMessage, ...sentMessage.recipient }, ...updated];
+      });
     });
 
     // Listen for typing indicator
@@ -184,6 +192,15 @@ function Messages() {
     }, 1000);
   };
 
+  const fetchFriends = async () => {
+    try {
+      const response = await api.get('/friends');
+      setFriends(response.data);
+    } catch (error) {
+      console.error('Failed to fetch friends:', error);
+    }
+  };
+
   const handleSearchUsers = async (e) => {
     e.preventDefault();
     if (!searchQuery.trim()) return;
@@ -205,6 +222,11 @@ function Messages() {
     setShowNewChatModal(false);
     setSearchQuery('');
     setSearchResults([]);
+  };
+
+  const handleOpenNewChatModal = () => {
+    setShowNewChatModal(true);
+    fetchFriends();
   };
 
   const handleCreateGroup = async (e) => {
@@ -253,7 +275,7 @@ function Messages() {
             <div className="sidebar-header">
               <h2 className="sidebar-title">💬 Messages</h2>
               <div className="header-buttons">
-                <button className="btn-new-chat" onClick={() => setShowNewChatModal(true)} title="New Chat">💬</button>
+                <button className="btn-new-chat" onClick={handleOpenNewChatModal} title="New Chat">💬</button>
                 <button className="btn-new-chat" onClick={() => setShowNewGroupModal(true)} title="New Group">👥</button>
               </div>
             </div>
@@ -465,6 +487,7 @@ function Messages() {
 
               <div className="search-results">
                 {searchResults.length > 0 ? (
+                  // Show search results
                   searchResults.map((user) => (
                     <div
                       key={user._id}
@@ -486,7 +509,33 @@ function Messages() {
                   ))
                 ) : searchQuery && !searchLoading ? (
                   <div className="no-results">No users found</div>
-                ) : null}
+                ) : friends.length > 0 ? (
+                  // Show friends list when no search query
+                  <>
+                    <div className="friends-list-header">Your Friends</div>
+                    {friends.map((friend) => (
+                      <div
+                        key={friend._id}
+                        className="user-result"
+                        onClick={() => handleStartChat(friend._id)}
+                      >
+                        <div className="user-avatar">
+                          {friend.profilePhoto ? (
+                            <img src={getImageUrl(friend.profilePhoto)} alt={friend.username} />
+                          ) : (
+                            <span>{friend.displayName?.charAt(0).toUpperCase() || friend.username?.charAt(0).toUpperCase()}</span>
+                          )}
+                        </div>
+                        <div className="user-info">
+                          <div className="user-name">{friend.displayName || friend.username}</div>
+                          <div className="user-username">@{friend.username}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </>
+                ) : (
+                  <div className="no-results">No friends yet. Search for users to start chatting!</div>
+                )}
               </div>
             </div>
           </div>
