@@ -162,6 +162,11 @@ function Settings({ onOpenMiniChat }) {
       setMessage('Preparing your data...');
       console.log('📥 Requesting data download...');
 
+      // Debug: Check if token exists
+      const token = localStorage.getItem('token');
+      console.log('🔑 Token exists:', !!token);
+      console.log('🔑 Token preview:', token ? token.substring(0, 20) + '...' : 'NO TOKEN');
+
       const response = await api.get('/users/download-data');
       console.log('✅ Data received:', response.data);
 

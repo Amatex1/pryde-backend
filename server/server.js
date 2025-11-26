@@ -115,9 +115,13 @@ const corsOptions = {
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  exposedHeaders: ['Authorization'],
   optionsSuccessStatus: 200
 };
+
+// Trust proxy - required for Render and rate limiting
+app.set('trust proxy', 1);
 
 app.use(cors(corsOptions));
 app.use(express.json({ limit: '10mb' }));

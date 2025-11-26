@@ -136,7 +136,7 @@ router.get('/download-data', auth, async (req, res) => {
     console.log('📥 Download data request for user:', userId);
 
     // Fetch user data
-    const user = await User.findById(userId).select('-password');
+    const user = await User.findById(userId).select('-password').lean();
 
     if (!user) {
       console.log('❌ User not found:', userId);
@@ -144,39 +144,49 @@ router.get('/download-data', auth, async (req, res) => {
     }
 
     console.log('✅ User found:', user.username);
+    console.log('📊 User object keys:', Object.keys(user));
 
     // Initialize data object with safe field access
-    const userData = {
-      profile: {
-        username: user.username || '',
-        displayName: user.displayName || '',
-        fullName: user.fullName || '',
-        nickname: user.nickname || '',
-        email: user.email || '',
-        bio: user.bio || '',
-        location: user.location || '',
-        website: user.website || '',
-        birthday: user.birthday || null,
-        gender: user.gender || '',
-        pronouns: user.pronouns || '',
-        sexualOrientation: user.sexualOrientation || '',
-        relationshipStatus: user.relationshipStatus || '',
-        interests: user.interests || '',
-        lookingFor: user.lookingFor || '',
-        profilePhoto: user.profilePhoto || '',
-        coverPhoto: user.coverPhoto || '',
-        createdAt: user.createdAt || null,
-        friends: user.friends || [],
-        blockedUsers: user.blockedUsers || [],
-        bookmarkedPosts: user.bookmarkedPosts || []
-      },
-      posts: [],
-      messages: [],
-      friendRequests: [],
-      groupChats: [],
-      notifications: [],
-      exportDate: new Date().toISOString()
-    };
+    console.log('📝 Building user profile data...');
+
+    let userData;
+    try {
+      userData = {
+        profile: {
+          username: user.username || '',
+          displayName: user.displayName || '',
+          fullName: user.fullName || '',
+          nickname: user.nickname || '',
+          email: user.email || '',
+          bio: user.bio || '',
+          location: user.location || '',
+          website: user.website || '',
+          birthday: user.birthday || null,
+          gender: user.gender || '',
+          pronouns: user.pronouns || '',
+          sexualOrientation: user.sexualOrientation || '',
+          relationshipStatus: user.relationshipStatus || '',
+          interests: user.interests || '',
+          lookingFor: user.lookingFor || '',
+          profilePhoto: user.profilePhoto || '',
+          coverPhoto: user.coverPhoto || '',
+          createdAt: user.createdAt || null,
+          friends: Array.isArray(user.friends) ? user.friends : [],
+          blockedUsers: Array.isArray(user.blockedUsers) ? user.blockedUsers : [],
+          bookmarkedPosts: Array.isArray(user.bookmarkedPosts) ? user.bookmarkedPosts : []
+        },
+        posts: [],
+        messages: [],
+        friendRequests: [],
+        groupChats: [],
+        notifications: [],
+        exportDate: new Date().toISOString()
+      };
+      console.log('✅ Profile data built successfully');
+    } catch (profileError) {
+      console.error('❌ Error building profile data:', profileError);
+      throw new Error('Failed to build profile data: ' + profileError.message);
+    }
 
     // Fetch posts
     try {
