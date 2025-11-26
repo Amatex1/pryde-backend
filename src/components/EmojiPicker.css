@@ -81,7 +81,8 @@
 .emoji-grid {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
-  gap: 12px;
+  gap: 14px;
+  padding: 4px;
 }
 
 .emoji-button {
