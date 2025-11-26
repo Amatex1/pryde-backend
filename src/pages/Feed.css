@@ -1167,8 +1167,19 @@
   }
 
   .post-actions {
-    flex-wrap: wrap;
-    gap: 0.75rem;
+    gap: 0.5rem;
+  }
+
+  .action-btn {
+    flex: 1;
+    padding: 0.5rem 0.25rem;
+    font-size: 0.8rem;
+    gap: 0.25rem;
+    border-radius: 8px;
+  }
+
+  .action-btn span {
+    font-size: 1rem;
   }
 
   .post-action-btn {
@@ -1224,6 +1235,16 @@
     border-radius: 12px;
   }
 
+  .action-btn {
+    padding: 0.4rem 0.2rem;
+    font-size: 0.7rem;
+    gap: 0.2rem;
+  }
+
+  .action-btn span {
+    font-size: 0.9rem;
+  }
+
   .post-action-btn {
     font-size: 0.875rem;
     padding: 0.5rem 0.75rem;
@@ -1235,16 +1256,6 @@
 
   .post-timestamp {
     font-size: 0.75rem;
-  }
-
-  /* Stack post actions vertically on very small screens */
-  .post-actions {
-    flex-direction: column;
-  }
-
-  .post-action-btn {
-    width: 100%;
-    min-width: 100%;
   }
 }
 
