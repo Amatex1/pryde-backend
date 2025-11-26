@@ -372,6 +372,78 @@ function Settings({ onOpenMiniChat }) {
               </div>
             </div>
           </div>
+
+          <div className="settings-section">
+            <h2 className="section-title">Legal & Policies</h2>
+
+            <div className="legal-links">
+              <a href="/terms" target="_blank" rel="noopener noreferrer" className="legal-link">
+                <div className="legal-link-content">
+                  <div className="legal-icon">📄</div>
+                  <div className="legal-info">
+                    <h3>Terms of Service</h3>
+                    <p>Read our terms and conditions</p>
+                  </div>
+                </div>
+                <span className="legal-arrow">→</span>
+              </a>
+
+              <a href="/privacy-policy" target="_blank" rel="noopener noreferrer" className="legal-link">
+                <div className="legal-link-content">
+                  <div className="legal-icon">🔒</div>
+                  <div className="legal-info">
+                    <h3>Privacy Policy</h3>
+                    <p>Learn how we protect your data</p>
+                  </div>
+                </div>
+                <span className="legal-arrow">→</span>
+              </a>
+
+              <a href="/cookie-policy" target="_blank" rel="noopener noreferrer" className="legal-link">
+                <div className="legal-link-content">
+                  <div className="legal-icon">🍪</div>
+                  <div className="legal-info">
+                    <h3>Cookie Policy</h3>
+                    <p>How we use cookies</p>
+                  </div>
+                </div>
+                <span className="legal-arrow">→</span>
+              </a>
+
+              <a href="/community-guidelines" target="_blank" rel="noopener noreferrer" className="legal-link">
+                <div className="legal-link-content">
+                  <div className="legal-icon">👥</div>
+                  <div className="legal-info">
+                    <h3>Community Guidelines</h3>
+                    <p>Our community standards and rules</p>
+                  </div>
+                </div>
+                <span className="legal-arrow">→</span>
+              </a>
+
+              <a href="/acceptable-use" target="_blank" rel="noopener noreferrer" className="legal-link">
+                <div className="legal-link-content">
+                  <div className="legal-icon">✅</div>
+                  <div className="legal-info">
+                    <h3>Acceptable Use Policy</h3>
+                    <p>Guidelines for using our platform</p>
+                  </div>
+                </div>
+                <span className="legal-arrow">→</span>
+              </a>
+
+              <a href="/dmca" target="_blank" rel="noopener noreferrer" className="legal-link">
+                <div className="legal-link-content">
+                  <div className="legal-icon">©️</div>
+                  <div className="legal-info">
+                    <h3>DMCA Policy</h3>
+                    <p>Copyright and intellectual property</p>
+                  </div>
+                </div>
+                <span className="legal-arrow">→</span>
+              </a>
+            </div>
+          </div>
         </div>
       </div>
 
