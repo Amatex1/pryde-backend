@@ -200,6 +200,16 @@ router.put('/:id', auth, async (req, res) => {
 
     await post.save();
     await post.populate('author', 'username displayName profilePhoto');
+    await post.populate('likes', 'username displayName profilePhoto');
+    await post.populate('comments.user', 'username displayName profilePhoto');
+    await post.populate({
+      path: 'originalPost',
+      populate: [
+        { path: 'author', select: 'username displayName profilePhoto' },
+        { path: 'likes', select: 'username displayName profilePhoto' },
+        { path: 'comments.user', select: 'username displayName profilePhoto' }
+      ]
+    });
 
     res.json(post);
   } catch (error) {
@@ -272,6 +282,15 @@ router.post('/:id/like', auth, async (req, res) => {
     await post.save();
     await post.populate('author', 'username displayName profilePhoto');
     await post.populate('likes', 'username displayName profilePhoto');
+    await post.populate('comments.user', 'username displayName profilePhoto');
+    await post.populate({
+      path: 'originalPost',
+      populate: [
+        { path: 'author', select: 'username displayName profilePhoto' },
+        { path: 'likes', select: 'username displayName profilePhoto' },
+        { path: 'comments.user', select: 'username displayName profilePhoto' }
+      ]
+    });
 
     res.json(post);
   } catch (error) {
@@ -435,6 +454,15 @@ router.post('/:id/comment', auth, commentLimiter, checkMuted, moderateContent, a
 
     await post.populate('author', 'username displayName profilePhoto');
     await post.populate('comments.user', 'username displayName profilePhoto');
+    await post.populate('likes', 'username displayName profilePhoto');
+    await post.populate({
+      path: 'originalPost',
+      populate: [
+        { path: 'author', select: 'username displayName profilePhoto' },
+        { path: 'likes', select: 'username displayName profilePhoto' },
+        { path: 'comments.user', select: 'username displayName profilePhoto' }
+      ]
+    });
 
     res.json(post);
   } catch (error) {
@@ -486,6 +514,15 @@ router.post('/:id/comment/:commentId/reply', auth, commentLimiter, checkMuted, m
 
     await post.populate('author', 'username displayName profilePhoto');
     await post.populate('comments.user', 'username displayName profilePhoto');
+    await post.populate('likes', 'username displayName profilePhoto');
+    await post.populate({
+      path: 'originalPost',
+      populate: [
+        { path: 'author', select: 'username displayName profilePhoto' },
+        { path: 'likes', select: 'username displayName profilePhoto' },
+        { path: 'comments.user', select: 'username displayName profilePhoto' }
+      ]
+    });
 
     res.json(post);
   } catch (error) {
@@ -531,6 +568,15 @@ router.put('/:id/comment/:commentId', auth, async (req, res) => {
 
     await post.populate('author', 'username displayName profilePhoto');
     await post.populate('comments.user', 'username displayName profilePhoto');
+    await post.populate('likes', 'username displayName profilePhoto');
+    await post.populate({
+      path: 'originalPost',
+      populate: [
+        { path: 'author', select: 'username displayName profilePhoto' },
+        { path: 'likes', select: 'username displayName profilePhoto' },
+        { path: 'comments.user', select: 'username displayName profilePhoto' }
+      ]
+    });
 
     res.json(post);
   } catch (error) {
@@ -568,6 +614,15 @@ router.delete('/:id/comment/:commentId', auth, async (req, res) => {
 
     await post.populate('author', 'username displayName profilePhoto');
     await post.populate('comments.user', 'username displayName profilePhoto');
+    await post.populate('likes', 'username displayName profilePhoto');
+    await post.populate({
+      path: 'originalPost',
+      populate: [
+        { path: 'author', select: 'username displayName profilePhoto' },
+        { path: 'likes', select: 'username displayName profilePhoto' },
+        { path: 'comments.user', select: 'username displayName profilePhoto' }
+      ]
+    });
 
     res.json(post);
   } catch (error) {
