@@ -59,12 +59,15 @@ const server = http.createServer(app);
 
 // Allowed origins for CORS
 const allowedOrigins = [
+  // Production domains (replace with your actual domain)
   'https://prydesocial.com',
   'https://www.prydesocial.com',
   'https://prydeapp.com',
   'https://www.prydeapp.com',
+  // Development
   'http://localhost:3000',
   'http://localhost:5173',
+  // Render URLs
   'https://pryde-frontend.onrender.com',
   'https://pryde-1flx.onrender.com',
   // Cloudflare Pages URLs
