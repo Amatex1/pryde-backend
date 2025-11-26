@@ -320,7 +320,7 @@ function FAQ() {
             <strong>Still have questions?</strong> Email us at <span className="contact-email">prydeapp-team@outlook.com</span>
           </p>
           <p className="last-updated">
-            Last Updated: January 1, 2025
+            Last Updated: November 26, 2025
           </p>
         </div>
       </div>

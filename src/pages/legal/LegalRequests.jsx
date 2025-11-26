@@ -173,7 +173,7 @@ function LegalRequests() {
             <strong>Questions?</strong> Contact our Legal Department at legal@prydesocial.com or call [Phone Number - Coming Soon].
           </p>
           <p className="last-updated">
-            Last Updated: January 1, 2025
+            Last Updated: November 26, 2025
           </p>
         </div>
       </div>

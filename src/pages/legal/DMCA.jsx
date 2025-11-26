@@ -6,7 +6,7 @@ function DMCA() {
     <div className="legal-page">
       <div className="legal-header">
         <h1>🌈 Pryde Social — DMCA Copyright Policy</h1>
-        <p className="legal-subtitle">Last Updated: January 1, 2025</p>
+        <p className="legal-subtitle">Last Updated: November 26, 2025</p>
       </div>
 
       <div className="legal-content">
@@ -218,7 +218,7 @@ function DMCA() {
             <strong>Questions about DMCA or copyright?</strong> Contact <span className="contact-email">prydeapp-team@outlook.com</span> or consult with a copyright attorney.
           </p>
           <p className="last-updated">
-            Last Updated: January 1, 2025
+            Last Updated: November 26, 2025
           </p>
         </div>
       </div>

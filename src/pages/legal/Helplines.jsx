@@ -246,7 +246,7 @@ function Helplines() {
             If you're experiencing a mental health crisis, please reach out. You are not alone. 💜
           </p>
           <p className="last-updated">
-            Last Updated: January 1, 2025
+            Last Updated: November 26, 2025
           </p>
         </div>
       </div>
