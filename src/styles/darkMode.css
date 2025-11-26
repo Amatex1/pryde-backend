@@ -332,6 +332,50 @@
   background: var(--card-surface);
 }
 
+/* Security Settings - 2FA Warning Box */
+[data-theme="dark"] .security-status-card {
+  background: rgba(108, 92, 231, 0.15) !important;
+  border: 1px solid var(--pryde-purple) !important;
+}
+
+[data-theme="dark"] .security-status-card strong,
+[data-theme="dark"] .security-status-card p {
+  color: var(--text-main) !important;
+}
+
+/* Two-Factor Setup Modal */
+[data-theme="dark"] .modal-content {
+  background: var(--card-surface) !important;
+  color: var(--text-main);
+}
+
+[data-theme="dark"] .modal-title {
+  color: var(--text-main) !important;
+}
+
+[data-theme="dark"] .modal-close {
+  color: var(--text-muted) !important;
+}
+
+[data-theme="dark"] .modal-close:hover {
+  background: rgba(108, 92, 231, 0.2) !important;
+  color: var(--text-main) !important;
+}
+
+[data-theme="dark"] .qr-code-container {
+  background: white !important;
+}
+
+[data-theme="dark"] .backup-codes-container {
+  background: var(--background-light) !important;
+  border-color: var(--border-light) !important;
+}
+
+[data-theme="dark"] .backup-codes-container > div > div {
+  background: var(--card-surface) !important;
+  color: var(--pryde-purple) !important;
+}
+
 [data-theme="dark"] .conversation-list {
   background: var(--card-surface);
   border-color: var(--border-light);

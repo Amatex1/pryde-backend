@@ -132,14 +132,15 @@ function TwoFactorSetup({ onClose, onSuccess }) {
                 className="verification-input"
                 style={{
                   width: '100%',
-                  padding: '15px',
+                  padding: '15px 25px',
                   fontSize: '24px',
                   textAlign: 'center',
                   letterSpacing: '10px',
                   fontWeight: 'bold',
                   border: '2px solid #E0E0E0',
                   borderRadius: '8px',
-                  marginBottom: '15px'
+                  marginBottom: '15px',
+                  boxSizing: 'border-box'
                 }}
                 maxLength={6}
                 autoFocus
