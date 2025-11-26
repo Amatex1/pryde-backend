@@ -9,7 +9,7 @@ const router = express.Router();
 // Generate 2FA secret and QR code
 router.post('/setup', authenticateToken, async (req, res) => {
   try {
-    const user = await User.findById(req.user.id);
+    const user = await User.findById(req.userId);
     
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
@@ -64,7 +64,7 @@ router.post('/verify', authenticateToken, async (req, res) => {
       return res.status(400).json({ message: 'Verification token is required' });
     }
 
-    const user = await User.findById(req.user.id);
+    const user = await User.findById(req.userId);
     
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
@@ -167,7 +167,7 @@ router.post('/disable', authenticateToken, async (req, res) => {
       return res.status(400).json({ message: 'Password is required to disable 2FA' });
     }
 
-    const user = await User.findById(req.user.id);
+    const user = await User.findById(req.userId);
 
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
@@ -199,7 +199,7 @@ router.post('/disable', authenticateToken, async (req, res) => {
 // Get 2FA status
 router.get('/status', authenticateToken, async (req, res) => {
   try {
-    const user = await User.findById(req.user.id);
+    const user = await User.findById(req.userId);
 
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
@@ -224,7 +224,7 @@ router.post('/regenerate-backup-codes', authenticateToken, async (req, res) => {
       return res.status(400).json({ message: 'Password is required' });
     }
 
-    const user = await User.findById(req.user.id);
+    const user = await User.findById(req.userId);
 
     if (!user) {
       return res.status(404).json({ message: 'User not found' });

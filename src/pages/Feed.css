@@ -1000,3 +1000,25 @@
   font-size: 0.85rem;
   color: var(--pryde-purple);
 }
+
+/* Highlighted Post/Comment Animations */
+.highlighted-post {
+  animation: highlightPulse 3s ease-in-out;
+  border: 2px solid var(--pryde-purple) !important;
+}
+
+.highlighted-comment {
+  animation: highlightPulse 3s ease-in-out;
+  background: rgba(108, 92, 231, 0.1) !important;
+  border-left: 3px solid var(--pryde-purple) !important;
+  padding-left: 1rem !important;
+}
+
+@keyframes highlightPulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(108, 92, 231, 0);
+  }
+  50% {
+    box-shadow: 0 0 20px 5px rgba(108, 92, 231, 0.4);
+  }
+}

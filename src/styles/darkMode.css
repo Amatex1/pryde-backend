@@ -327,6 +327,11 @@
   background: var(--background-light);
 }
 
+[data-theme="dark"] .section-label {
+  color: var(--text-muted);
+  background: var(--card-surface);
+}
+
 [data-theme="dark"] .conversation-list {
   background: var(--card-surface);
   border-color: var(--border-light);

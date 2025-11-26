@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { useState, useEffect, useRef } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import ReportModal from '../components/ReportModal';
 import PhotoViewer from '../components/PhotoViewer';
@@ -9,6 +9,7 @@ import { getImageUrl } from '../utils/imageUrl';
 import './Feed.css';
 
 function Feed({ onOpenMiniChat }) {
+  const [searchParams] = useSearchParams();
   const [posts, setPosts] = useState([]);
   const [newPost, setNewPost] = useState('');
   const [loading, setLoading] = useState(false);
@@ -32,6 +33,8 @@ function Feed({ onOpenMiniChat }) {
   const [trending, setTrending] = useState([]);
   const [bookmarkedPosts, setBookmarkedPosts] = useState([]);
   const currentUser = getCurrentUser();
+  const postRefs = useRef({});
+  const commentRefs = useRef({});
 
   useEffect(() => {
     fetchPosts();
@@ -40,6 +43,44 @@ function Feed({ onOpenMiniChat }) {
     fetchTrending();
     fetchBookmarkedPosts();
   }, []);
+
+  // Handle scrolling to specific post/comment from notifications
+  useEffect(() => {
+    const postId = searchParams.get('post');
+    const commentId = searchParams.get('comment');
+
+    if (postId && posts.length > 0) {
+      // Wait for DOM to update
+      setTimeout(() => {
+        const postElement = postRefs.current[postId];
+        if (postElement) {
+          postElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          postElement.classList.add('highlighted-post');
+
+          // Remove highlight after 3 seconds
+          setTimeout(() => {
+            postElement.classList.remove('highlighted-post');
+          }, 3000);
+
+          // If there's a specific comment, scroll to it
+          if (commentId) {
+            setTimeout(() => {
+              const commentElement = commentRefs.current[commentId];
+              if (commentElement) {
+                commentElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                commentElement.classList.add('highlighted-comment');
+
+                // Remove highlight after 3 seconds
+                setTimeout(() => {
+                  commentElement.classList.remove('highlighted-comment');
+                }, 3000);
+              }
+            }, 500);
+          }
+        }
+      }, 500);
+    }
+  }, [posts, searchParams]);
 
   const fetchFriends = async () => {
     try {
@@ -406,7 +447,11 @@ function Feed({ onOpenMiniChat }) {
                 );
 
                 return (
-                  <div key={post._id} className="post-card glossy fade-in">
+                  <div
+                    key={post._id}
+                    className="post-card glossy fade-in"
+                    ref={(el) => postRefs.current[post._id] = el}
+                  >
                     <div className="post-header">
                       <div className="post-author">
                         <div className="author-avatar">
@@ -512,7 +557,11 @@ function Feed({ onOpenMiniChat }) {
                           const isOwnComment = comment.user?._id === currentUser?._id;
 
                           return (
-                            <div key={comment._id} className="comment">
+                            <div
+                              key={comment._id}
+                              className="comment"
+                              ref={(el) => commentRefs.current[comment._id] = el}
+                            >
                               <div className="comment-avatar">
                                 {comment.user?.profilePhoto ? (
                                   <img src={getImageUrl(comment.user.profilePhoto)} alt={comment.user.username} />
