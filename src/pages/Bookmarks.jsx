@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import Navbar from '../components/Navbar';
+import api from '../utils/api';
+import { getImageUrl } from '../utils/imageUrl';
 import './Bookmarks.css';
 
-const Bookmarks = () => {
+const Bookmarks = ({ onOpenMiniChat }) => {
   const [bookmarks, setBookmarks] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
@@ -13,17 +16,8 @@ const Bookmarks = () => {
 
   const fetchBookmarks = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('https://pryde-social.onrender.com/api/bookmarks', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setBookmarks(data.bookmarks || []);
-      }
+      const response = await api.get('/bookmarks');
+      setBookmarks(response.data.bookmarks || []);
     } catch (error) {
       console.error('Error fetching bookmarks:', error);
     } finally {
@@ -33,17 +27,8 @@ const Bookmarks = () => {
 
   const handleRemoveBookmark = async (postId) => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`https://pryde-social.onrender.com/api/bookmarks/${postId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      if (response.ok) {
-        setBookmarks(bookmarks.filter(post => post._id !== postId));
-      }
+      await api.delete(`/bookmarks/${postId}`);
+      setBookmarks(bookmarks.filter(post => post._id !== postId));
     } catch (error) {
       console.error('Error removing bookmark:', error);
     }
