@@ -16,6 +16,9 @@ function LegalRequests() {
   return (
     <div className="legal-page">
       <div className="legal-header">
+        <Link to="/" className="legal-home-button">
+          🏠 Home
+        </Link>
         <h1>Legal Requests & Law Enforcement</h1>
         <p className="legal-subtitle">Information for Law Enforcement and Legal Authorities</p>
       </div>

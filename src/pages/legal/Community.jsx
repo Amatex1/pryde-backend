@@ -16,6 +16,9 @@ function Community() {
   return (
     <div className="legal-page">
       <div className="legal-header">
+        <Link to="/" className="legal-home-button">
+          🏠 Home
+        </Link>
         <h1>🌈 Pryde Social — Community Guidelines</h1>
         <p className="legal-subtitle">Last Updated: November 26, 2025</p>
       </div>

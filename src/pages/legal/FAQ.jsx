@@ -16,6 +16,9 @@ function FAQ() {
   return (
     <div className="legal-page">
       <div className="legal-header">
+        <Link to="/" className="legal-home-button">
+          🏠 Home
+        </Link>
         <h1>🌈 Pryde Social — FAQ</h1>
         <p className="legal-subtitle">Frequently Asked Questions</p>
       </div>

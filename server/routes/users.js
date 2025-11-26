@@ -135,10 +135,8 @@ router.get('/download-data', auth, async (req, res) => {
     const userId = req.userId;
     console.log('📥 Download data request for user:', userId);
 
-    // Fetch all user data
-    const user = await User.findById(userId)
-      .select('-password')
-      .populate('friends', 'username displayName profilePhoto');
+    // Fetch user data
+    const user = await User.findById(userId).select('-password');
 
     if (!user) {
       console.log('❌ User not found:', userId);
@@ -147,78 +145,95 @@ router.get('/download-data', auth, async (req, res) => {
 
     console.log('✅ User found:', user.username);
 
-    // Fetch posts
-    const posts = await Post.find({ author: userId })
-      .populate('comments.user', 'username displayName')
-      .populate('likes', 'username displayName')
-      .catch(err => {
-        console.log('⚠️ Error fetching posts:', err.message);
-        return [];
-      });
-
-    console.log('✅ Posts fetched:', posts.length);
-
-    // Fetch messages
-    const messages = await Message.find({
-      $or: [{ sender: userId }, { recipient: userId }]
-    })
-      .populate('sender', 'username displayName')
-      .populate('recipient', 'username displayName')
-      .catch(err => {
-        console.log('⚠️ Error fetching messages:', err.message);
-        return [];
-      });
-
-    console.log('✅ Messages fetched:', messages.length);
-
-    // Fetch friend requests
-    const friendRequests = await FriendRequest.find({
-      $or: [{ sender: userId }, { receiver: userId }]
-    })
-      .populate('sender', 'username displayName')
-      .populate('receiver', 'username displayName')
-      .catch(err => {
-        console.log('⚠️ Error fetching friend requests:', err.message);
-        return [];
-      });
-
-    console.log('✅ Friend requests fetched:', friendRequests.length);
-
-    // Fetch group chats
-    const groupChats = await GroupChat.find({ members: userId })
-      .populate('members', 'username displayName')
-      .populate('creator', 'username displayName')
-      .catch(err => {
-        console.log('⚠️ Error fetching group chats:', err.message);
-        return [];
-      });
-
-    console.log('✅ Group chats fetched:', groupChats.length);
-
-    // Fetch notifications
-    const notifications = await Notification.find({ recipient: userId })
-      .catch(err => {
-        console.log('⚠️ Error fetching notifications:', err.message);
-        return [];
-      });
-
-    console.log('✅ Notifications fetched:', notifications.length);
-
-    // Compile all data
+    // Initialize data object
     const userData = {
-      profile: user,
-      posts: posts,
-      messages: messages,
-      friendRequests: friendRequests,
-      groupChats: groupChats,
-      notifications: notifications,
+      profile: {
+        username: user.username,
+        displayName: user.displayName,
+        email: user.email,
+        bio: user.bio,
+        location: user.location,
+        website: user.website,
+        birthday: user.birthday,
+        gender: user.gender,
+        pronouns: user.pronouns,
+        sexualOrientation: user.sexualOrientation,
+        relationshipStatus: user.relationshipStatus,
+        interests: user.interests,
+        lookingFor: user.lookingFor,
+        profilePhoto: user.profilePhoto,
+        coverPhoto: user.coverPhoto,
+        createdAt: user.createdAt,
+        friends: user.friends || [],
+        blockedUsers: user.blockedUsers || [],
+        bookmarks: user.bookmarks || []
+      },
+      posts: [],
+      messages: [],
+      friendRequests: [],
+      groupChats: [],
+      notifications: [],
       exportDate: new Date().toISOString()
     };
+
+    // Fetch posts
+    try {
+      const posts = await Post.find({ author: userId });
+      userData.posts = posts;
+      console.log('✅ Posts fetched:', posts.length);
+    } catch (err) {
+      console.log('⚠️ Error fetching posts:', err.message);
+    }
+
+    // Fetch messages
+    try {
+      const messages = await Message.find({
+        $or: [{ sender: userId }, { recipient: userId }]
+      });
+      userData.messages = messages;
+      console.log('✅ Messages fetched:', messages.length);
+    } catch (err) {
+      console.log('⚠️ Error fetching messages:', err.message);
+    }
+
+    // Fetch friend requests
+    try {
+      const friendRequests = await FriendRequest.find({
+        $or: [{ sender: userId }, { receiver: userId }]
+      });
+      userData.friendRequests = friendRequests;
+      console.log('✅ Friend requests fetched:', friendRequests.length);
+    } catch (err) {
+      console.log('⚠️ Error fetching friend requests:', err.message);
+    }
+
+    // Fetch group chats (if model exists)
+    try {
+      if (GroupChat) {
+        const groupChats = await GroupChat.find({ members: userId });
+        userData.groupChats = groupChats;
+        console.log('✅ Group chats fetched:', groupChats.length);
+      }
+    } catch (err) {
+      console.log('⚠️ Error fetching group chats:', err.message);
+    }
+
+    // Fetch notifications (if model exists)
+    try {
+      if (Notification) {
+        const notifications = await Notification.find({ recipient: userId });
+        userData.notifications = notifications;
+        console.log('✅ Notifications fetched:', notifications.length);
+      }
+    } catch (err) {
+      console.log('⚠️ Error fetching notifications:', err.message);
+    }
 
     console.log('✅ Data compiled successfully, sending response');
     res.json(userData);
   } catch (error) {
     console.error('❌ Download data error:', error);
+    console.error('❌ Error stack:', error.stack);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });

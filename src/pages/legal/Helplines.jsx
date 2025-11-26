@@ -16,6 +16,9 @@ function Helplines() {
   return (
     <div className="legal-page">
       <div className="legal-header">
+        <Link to="/" className="legal-home-button">
+          🏠 Home
+        </Link>
         <h1>🌈 Global Crisis Helplines</h1>
         <p className="legal-subtitle">24/7 Support Resources Worldwide</p>
       </div>
