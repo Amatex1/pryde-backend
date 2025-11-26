@@ -10,6 +10,7 @@ import './Settings.css';
 
 function SecuritySettings({ onOpenMiniChat }) {
   const navigate = useNavigate();
+  const { modalState, closeModal, showPrompt } = useModal();
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState('');
   const [twoFactorStatus, setTwoFactorStatus] = useState({
