@@ -29,6 +29,9 @@ function Feed({ onOpenMiniChat }) {
   const [editCommentText, setEditCommentText] = useState('');
   const [replyingToComment, setReplyingToComment] = useState(null);
   const [replyText, setReplyText] = useState('');
+  const [openDropdownId, setOpenDropdownId] = useState(null);
+  const [editingPostId, setEditingPostId] = useState(null);
+  const [editPostText, setEditPostText] = useState('');
   const [postVisibility, setPostVisibility] = useState('friends');
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const [hiddenFromUsers, setHiddenFromUsers] = useState([]);
