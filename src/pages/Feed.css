@@ -506,6 +506,7 @@
   justify-content: space-between;
   align-items: flex-start;
   gap: 0.5rem;
+  flex-wrap: wrap;
 }
 
 .comment-dropdown-container {
@@ -552,6 +553,9 @@
   font-size: 0.875rem;
   line-height: 1.4;
   display: inline;
+  flex: 1;
+  min-width: 0;
+  word-wrap: break-word;
 }
 
 .comment-text .edited-indicator {

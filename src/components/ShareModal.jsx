@@ -158,10 +158,34 @@ function ShareModal({ isOpen, onClose, post, onShare }) {
               <input
                 type="checkbox"
                 checked={shareToFeed}
-                onChange={(e) => setShareToFeed(e.target.checked)}
+                onChange={(e) => {
+                  setShareToFeed(e.target.checked);
+                  if (e.target.checked) setShareToFriendProfile(null);
+                }}
               />
               <span>📢 Share to my feed</span>
             </label>
+
+            {/* Share to Friend's Profile */}
+            <div className="share-to-friend-profile">
+              <h4>Or share to a friend's profile:</h4>
+              <select
+                value={shareToFriendProfile || ''}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setShareToFriendProfile(value || null);
+                  if (value) setShareToFeed(false);
+                }}
+                className="friend-profile-select"
+              >
+                <option value="">Select a friend...</option>
+                {friends.map(friend => (
+                  <option key={friend._id} value={friend._id}>
+                    {friend.displayName || friend.username}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
           {/* Friend & Group Selection */}
