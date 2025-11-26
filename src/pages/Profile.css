@@ -727,12 +727,15 @@
   color: var(--text-main);
   font-size: 0.9rem;
   line-height: 1.4;
+  display: inline;
 }
 
 .edited-indicator {
   color: var(--text-muted);
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   font-style: italic;
+  margin-left: 0.5rem;
+  white-space: nowrap;
 }
 
 .comment-actions {

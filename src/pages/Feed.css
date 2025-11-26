@@ -551,12 +551,15 @@
   color: var(--text-main);
   font-size: 0.875rem;
   line-height: 1.4;
+  display: inline;
 }
 
 .comment-text .edited-indicator {
   font-size: 0.75rem;
   color: var(--text-muted);
   font-style: italic;
+  margin-left: 0.5rem;
+  white-space: nowrap;
 }
 
 .comment-actions {

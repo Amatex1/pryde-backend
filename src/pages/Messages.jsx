@@ -667,7 +667,6 @@ function Messages({ onOpenMiniChat }) {
                             <>
                               <div className="message-bubble">
                                 {msg.content}
-                                {msg.edited && <span className="edited-indicator"> (edited)</span>}
 
                                 {/* Display reactions */}
                                 {msg.reactions && msg.reactions.length > 0 && (
@@ -695,6 +694,8 @@ function Messages({ onOpenMiniChat }) {
                                   </div>
                                 )}
                               </div>
+
+                              {msg.edited && <div className="message-edited-indicator">(edited)</div>}
 
                               <div className="message-actions">
                                 <button
