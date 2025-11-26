@@ -64,7 +64,7 @@ function SecuritySettings({ onOpenMiniChat }) {
   };
 
   const handleDisable2FA = async () => {
-    const password = prompt('Enter your password to disable 2FA:');
+    const password = await showPrompt('Enter your password to disable 2FA:', 'Disable 2FA', 'Password', '', 'password');
     if (!password) return;
 
     try {
@@ -79,7 +79,7 @@ function SecuritySettings({ onOpenMiniChat }) {
   };
 
   const handleRegenerateBackupCodes = async () => {
-    const password = prompt('Enter your password to regenerate backup codes:');
+    const password = await showPrompt('Enter your password to regenerate backup codes:', 'Regenerate Backup Codes', 'Password', '', 'password');
     if (!password) return;
 
     try {
@@ -266,6 +266,20 @@ function SecuritySettings({ onOpenMiniChat }) {
           </div>
         </div>
       </div>
+
+      <CustomModal
+        isOpen={modalState.isOpen}
+        onClose={closeModal}
+        type={modalState.type}
+        title={modalState.title}
+        message={modalState.message}
+        placeholder={modalState.placeholder}
+        confirmText={modalState.confirmText}
+        cancelText={modalState.cancelText}
+        onConfirm={modalState.onConfirm}
+        inputType={modalState.inputType}
+        defaultValue={modalState.defaultValue}
+      />
     </div>
   );
 }
