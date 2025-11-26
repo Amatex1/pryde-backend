@@ -74,6 +74,19 @@ function Profile({ onOpenMiniChat }) {
     }
   };
 
+  const fetchUserPosts = async () => {
+    try {
+      setLoadingPosts(true);
+      const response = await api.get(`/posts/user/${id}`);
+      setPosts(response.data || []);
+    } catch (error) {
+      console.error('Failed to fetch user posts:', error);
+      setPosts([]);
+    } finally {
+      setLoadingPosts(false);
+    }
+  };
+
   const checkFriendStatus = async () => {
     try {
       // Check if already friends
@@ -393,7 +406,7 @@ function Profile({ onOpenMiniChat }) {
                   <span className="stat-label">Friends</span>
                 </div>
                 <div className="stat-item">
-                  <span className="stat-value">0</span>
+                  <span className="stat-value">{posts.length}</span>
                   <span className="stat-label">Posts</span>
                 </div>
               </div>
@@ -403,10 +416,91 @@ function Profile({ onOpenMiniChat }) {
 
         <div className="profile-content">
           <div className="profile-posts">
-            <h2 className="section-title">Posts</h2>
-            <div className="empty-state glossy">
-              <p>No posts yet</p>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <h2 className="section-title">Posts</h2>
+              <button
+                onClick={() => window.location.href = '/'}
+                className="btn-primary"
+                style={{
+                  padding: '10px 20px',
+                  borderRadius: '12px',
+                  background: 'linear-gradient(135deg, #6C5CE7 0%, #0984E3 100%)',
+                  color: 'white',
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontWeight: '600',
+                  transition: 'all 0.3s ease'
+                }}
+              >
+                ✨ Create Post
+              </button>
             </div>
+
+            {loadingPosts ? (
+              <div className="loading-state">Loading posts...</div>
+            ) : posts.length === 0 ? (
+              <div className="empty-state glossy">
+                <p>No posts yet</p>
+              </div>
+            ) : (
+              <div className="posts-list">
+                {posts.map((post) => {
+                  const isLiked = post.likes?.some(like =>
+                    (typeof like === 'string' ? like : like._id) === (currentUser?.id || currentUser?._id)
+                  );
+
+                  return (
+                    <div key={post._id} className="post-card glossy fade-in">
+                      <div className="post-header">
+                        <div className="post-author">
+                          <div className="author-avatar">
+                            {post.author?.profilePhoto ? (
+                              <img src={getImageUrl(post.author.profilePhoto)} alt={post.author.username} />
+                            ) : (
+                              <span>{post.author?.displayName?.charAt(0).toUpperCase() || 'U'}</span>
+                            )}
+                          </div>
+                          <div className="author-info">
+                            <div className="author-name">{post.author?.displayName || post.author?.username}</div>
+                            <div className="post-time">{new Date(post.createdAt).toLocaleDateString()}</div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="post-content">
+                        <p>{post.content}</p>
+                        {post.media && post.media.length > 0 && (
+                          <div className="post-media">
+                            {post.media.map((mediaItem, index) => (
+                              <div key={index} className="media-item">
+                                {mediaItem.type === 'image' ? (
+                                  <img
+                                    src={getImageUrl(mediaItem.url)}
+                                    alt="Post media"
+                                    onClick={() => setPhotoViewerImage(getImageUrl(mediaItem.url))}
+                                    style={{ cursor: 'pointer' }}
+                                  />
+                                ) : (
+                                  <video controls>
+                                    <source src={getImageUrl(mediaItem.url)} type="video/mp4" />
+                                  </video>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="post-stats">
+                        <span>{post.likes?.length || 0} likes</span>
+                        <span>{post.comments?.length || 0} comments</span>
+                        <span>{post.shares || 0} shares</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           <div className="profile-sidebar">
