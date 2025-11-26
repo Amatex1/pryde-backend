@@ -123,7 +123,7 @@ function Community() {
 
         <div className="legal-footer-note">
           <p className="last-updated">
-            Last Updated: January 1, 2025
+            Last Updated: November 26, 2025
           </p>
         </div>
       </div>
