@@ -160,7 +160,10 @@ function Settings({ onOpenMiniChat }) {
   const handleDownloadData = async () => {
     try {
       setMessage('Preparing your data...');
+      console.log('📥 Requesting data download...');
+
       const response = await api.get('/users/download-data');
+      console.log('✅ Data received:', response.data);
 
       // Create a blob and download
       const dataStr = JSON.stringify(response.data, null, 2);
@@ -175,9 +178,17 @@ function Settings({ onOpenMiniChat }) {
       URL.revokeObjectURL(url);
 
       setMessage('Your data has been downloaded!');
+      setTimeout(() => setMessage(''), 3000);
     } catch (error) {
       console.error('Download data error:', error);
-      setMessage('Failed to download data');
+      console.error('Error response:', error.response?.data);
+      console.error('Error status:', error.response?.status);
+
+      if (error.response?.status === 401) {
+        setMessage('Authentication failed. Please log in again.');
+      } else {
+        setMessage(`Failed to download data: ${error.response?.data?.message || error.message}`);
+      }
     }
   };
 
