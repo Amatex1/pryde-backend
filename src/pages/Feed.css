@@ -1246,6 +1246,23 @@
     margin-top: -1.5rem;
   }
 
+  /* Better reply styling on mobile */
+  .comment-replies {
+    margin-left: 1rem;
+    padding-left: 0.75rem;
+    border-left: 3px solid var(--pryde-purple);
+  }
+
+  .comment.reply {
+    background: rgba(108, 92, 231, 0.1);
+    padding: 1rem;
+  }
+
+  .comment-text {
+    font-size: 0.9375rem;
+    line-height: 1.5;
+  }
+
   .reply-input-box {
     margin-left: 0;
     padding: 0.75rem;
