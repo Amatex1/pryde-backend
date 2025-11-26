@@ -32,6 +32,7 @@ function Feed({ onOpenMiniChat }) {
   const [openDropdownId, setOpenDropdownId] = useState(null);
   const [editingPostId, setEditingPostId] = useState(null);
   const [editPostText, setEditPostText] = useState('');
+  const [openCommentDropdownId, setOpenCommentDropdownId] = useState(null);
   const [postVisibility, setPostVisibility] = useState('friends');
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const [hiddenFromUsers, setHiddenFromUsers] = useState([]);
@@ -275,6 +276,38 @@ function Feed({ onOpenMiniChat }) {
     setEditCommentText('');
   };
 
+  const toggleDropdown = (postId) => {
+    setOpenDropdownId(openDropdownId === postId ? null : postId);
+  };
+
+  const handleEditPost = (post) => {
+    setEditingPostId(post._id);
+    setEditPostText(post.content);
+    setOpenDropdownId(null);
+  };
+
+  const handleSaveEditPost = async (postId) => {
+    if (!editPostText.trim()) return;
+
+    try {
+      const response = await api.put(`/posts/${postId}`, {
+        content: editPostText
+      });
+      setPosts(posts.map(p => p._id === postId ? response.data : p));
+      setEditingPostId(null);
+      setEditPostText('');
+      showAlert('Post updated successfully!', 'Success');
+    } catch (error) {
+      console.error('Failed to edit post:', error);
+      showAlert('Failed to edit post. Please try again.', 'Edit Failed');
+    }
+  };
+
+  const handleCancelEditPost = () => {
+    setEditingPostId(null);
+    setEditPostText('');
+  };
+
   const handleDeleteComment = async (postId, commentId) => {
     const confirmed = await showConfirm('Are you sure you want to delete this comment?', 'Delete Comment', 'Delete', 'Cancel');
     if (!confirmed) return;
@@ -483,23 +516,48 @@ function Feed({ onOpenMiniChat }) {
                         </div>
                       </div>
                       <div className="post-header-actions">
-                        {(post.author?._id === currentUser?.id || post.author?._id === currentUser?._id) ? (
+                        <div className="post-dropdown-container">
                           <button
-                            className="btn-delete"
-                            onClick={() => handleDelete(post._id)}
-                            title="Delete post"
+                            className="btn-dropdown"
+                            onClick={() => toggleDropdown(post._id)}
+                            title="More options"
                           >
-                            🗑️
+                            ⋮
                           </button>
-                        ) : (
-                          <button
-                            className="btn-report"
-                            onClick={() => setReportModal({ isOpen: true, type: 'post', contentId: post._id, userId: post.author?._id })}
-                            title="Report post"
-                          >
-                            🚩
-                          </button>
-                        )}
+                          {openDropdownId === post._id && (
+                            <div className="dropdown-menu">
+                              {(post.author?._id === currentUser?.id || post.author?._id === currentUser?._id) ? (
+                                <>
+                                  <button
+                                    className="dropdown-item"
+                                    onClick={() => handleEditPost(post)}
+                                  >
+                                    ✏️ Edit
+                                  </button>
+                                  <button
+                                    className="dropdown-item delete"
+                                    onClick={() => {
+                                      handleDelete(post._id);
+                                      setOpenDropdownId(null);
+                                    }}
+                                  >
+                                    🗑️ Delete
+                                  </button>
+                                </>
+                              ) : (
+                                <button
+                                  className="dropdown-item report"
+                                  onClick={() => {
+                                    setReportModal({ isOpen: true, type: 'post', contentId: post._id, userId: post.author?._id });
+                                    setOpenDropdownId(null);
+                                  }}
+                                >
+                                  🚩 Report
+                                </button>
+                              )}
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
 
@@ -574,18 +632,44 @@ function Feed({ onOpenMiniChat }) {
                         </div>
                       ) : (
                         <>
-                          {post.content && (
-                            <p>
-                              {post.content.split(' ').map((word, index) =>
-                                word.startsWith('#') ? (
-                                  <Link key={index} to={`/hashtag/${word.substring(1)}`} className="hashtag-link">
-                                    {word}{' '}
-                                  </Link>
-                                ) : (
-                                  <span key={index}>{word} </span>
-                                )
-                              )}
-                            </p>
+                          {editingPostId === post._id ? (
+                            <div className="post-edit-box">
+                              <textarea
+                                value={editPostText}
+                                onChange={(e) => setEditPostText(e.target.value)}
+                                className="post-edit-textarea"
+                                autoFocus
+                                rows="4"
+                              />
+                              <div className="post-edit-actions">
+                                <button
+                                  onClick={() => handleSaveEditPost(post._id)}
+                                  className="btn-save-post"
+                                >
+                                  Save
+                                </button>
+                                <button
+                                  onClick={handleCancelEditPost}
+                                  className="btn-cancel-post"
+                                >
+                                  Cancel
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            post.content && (
+                              <p>
+                                {post.content.split(' ').map((word, index) =>
+                                  word.startsWith('#') ? (
+                                    <Link key={index} to={`/hashtag/${word.substring(1)}`} className="hashtag-link">
+                                      {word}{' '}
+                                    </Link>
+                                  ) : (
+                                    <span key={index}>{word} </span>
+                                  )
+                                )}
+                              </p>
+                            )
                           )}
 
                           {post.media && post.media.length > 0 && (
@@ -689,36 +773,65 @@ function Feed({ onOpenMiniChat }) {
                                     </div>
                                   ) : (
                                     <>
-                                      <div className="comment-text">
-                                        {comment.content}
-                                        {comment.edited && <span className="edited-indicator"> (edited)</span>}
-                                      </div>
-                                      <div className="comment-actions">
-                                        <button
-                                          onClick={() => handleReplyToComment(post._id, comment._id)}
-                                          className="btn-comment-action"
-                                          title="Reply to comment"
-                                        >
-                                          💬 Reply
-                                        </button>
-                                        {isOwnComment && (
-                                          <>
-                                            <button
-                                              onClick={() => handleEditComment(comment._id, comment.content)}
-                                              className="btn-comment-action"
-                                              title="Edit comment"
-                                            >
-                                              ✏️ Edit
-                                            </button>
-                                            <button
-                                              onClick={() => handleDeleteComment(post._id, comment._id)}
-                                              className="btn-comment-action"
-                                              title="Delete comment"
-                                            >
-                                              🗑️ Delete
-                                            </button>
-                                          </>
-                                        )}
+                                      <div className="comment-header-wrapper">
+                                        <div className="comment-text">
+                                          {comment.content}
+                                          {comment.edited && <span className="edited-indicator"> (edited)</span>}
+                                        </div>
+                                        <div className="comment-dropdown-container">
+                                          <button
+                                            className="btn-comment-dropdown"
+                                            onClick={() => setOpenCommentDropdownId(openCommentDropdownId === comment._id ? null : comment._id)}
+                                            title="More options"
+                                          >
+                                            ⋮
+                                          </button>
+                                          {openCommentDropdownId === comment._id && (
+                                            <div className="dropdown-menu comment-dropdown">
+                                              <button
+                                                className="dropdown-item"
+                                                onClick={() => {
+                                                  handleReplyToComment(post._id, comment._id);
+                                                  setOpenCommentDropdownId(null);
+                                                }}
+                                              >
+                                                💬 Reply
+                                              </button>
+                                              {isOwnComment ? (
+                                                <>
+                                                  <button
+                                                    className="dropdown-item"
+                                                    onClick={() => {
+                                                      handleEditComment(comment._id, comment.content);
+                                                      setOpenCommentDropdownId(null);
+                                                    }}
+                                                  >
+                                                    ✏️ Edit
+                                                  </button>
+                                                  <button
+                                                    className="dropdown-item delete"
+                                                    onClick={() => {
+                                                      handleDeleteComment(post._id, comment._id);
+                                                      setOpenCommentDropdownId(null);
+                                                    }}
+                                                  >
+                                                    🗑️ Delete
+                                                  </button>
+                                                </>
+                                              ) : (
+                                                <button
+                                                  className="dropdown-item report"
+                                                  onClick={() => {
+                                                    setReportModal({ isOpen: true, type: 'comment', contentId: comment._id, userId: comment.user?._id });
+                                                    setOpenCommentDropdownId(null);
+                                                  }}
+                                                >
+                                                  🚩 Report
+                                                </button>
+                                              )}
+                                            </div>
+                                          )}
+                                        </div>
                                       </div>
 
                                       {/* Reply Input Box */}
