@@ -84,6 +84,7 @@ function ShareModal({ isOpen, onClose, post, onShare }) {
       setSelectedFriends([]);
       setSelectedGroups([]);
       setShareToFeed(true);
+      setShareToFriendProfile(null);
     } catch (error) {
       console.error('Failed to share post:', error);
       alert('Failed to share post. Please try again.');
