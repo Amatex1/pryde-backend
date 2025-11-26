@@ -3,6 +3,8 @@ import { Link, useSearchParams } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import ReportModal from '../components/ReportModal';
 import PhotoViewer from '../components/PhotoViewer';
+import CustomModal from '../components/CustomModal';
+import { useModal } from '../hooks/useModal';
 import api from '../utils/api';
 import { getCurrentUser } from '../utils/auth';
 import { getImageUrl } from '../utils/imageUrl';
@@ -10,6 +12,7 @@ import './Feed.css';
 
 function Feed({ onOpenMiniChat }) {
   const [searchParams] = useSearchParams();
+  const { modalState, closeModal, showAlert, showConfirm } = useModal();
   const [posts, setPosts] = useState([]);
   const [newPost, setNewPost] = useState('');
   const [loading, setLoading] = useState(false);
@@ -130,13 +133,13 @@ function Feed({ onOpenMiniChat }) {
     const invalidFiles = files.filter(file => !validTypes.includes(file.type));
 
     if (invalidFiles.length > 0) {
-      alert('Please select only images (JPEG, PNG, GIF) or videos (MP4, WebM, OGG)');
+      showAlert('Please select only images (JPEG, PNG, GIF) or videos (MP4, WebM, OGG)', 'Invalid File Type');
       return;
     }
 
     // Limit to 10 files
     if (selectedMedia.length + files.length > 10) {
-      alert('You can only upload up to 10 media files per post');
+      showAlert('You can only upload up to 10 media files per post', 'Upload Limit Reached');
       return;
     }
 
@@ -156,7 +159,7 @@ function Feed({ onOpenMiniChat }) {
       setSelectedMedia([...selectedMedia, ...response.data.media]);
     } catch (error) {
       console.error('Media upload failed:', error);
-      alert('Failed to upload media. Please try again.');
+      showAlert('Failed to upload media. Please try again.', 'Upload Failed');
     } finally {
       setUploadingMedia(false);
     }
@@ -169,7 +172,7 @@ function Feed({ onOpenMiniChat }) {
   const handlePostSubmit = async (e) => {
     e.preventDefault();
     if (!newPost.trim() && selectedMedia.length === 0) {
-      alert('Please add some content or media to your post');
+      showAlert('Please add some content or media to your post', 'Empty Post');
       return;
     }
 
@@ -200,7 +203,7 @@ function Feed({ onOpenMiniChat }) {
       setSharedWithUsers([]);
     } catch (error) {
       console.error('Post creation failed:', error);
-      alert('Failed to create post. Please try again.');
+      showAlert('Failed to create post. Please try again.', 'Post Failed');
     } finally {
       setLoading(false);
     }
@@ -233,7 +236,7 @@ function Feed({ onOpenMiniChat }) {
       setCommentText(prev => ({ ...prev, [postId]: '' }));
     } catch (error) {
       console.error('Failed to comment:', error);
-      alert('Failed to add comment. Please try again.');
+      showAlert('Failed to add comment. Please try again.', 'Comment Failed');
     }
   };
 
@@ -258,7 +261,7 @@ function Feed({ onOpenMiniChat }) {
       setEditCommentText('');
     } catch (error) {
       console.error('Failed to edit comment:', error);
-      alert('Failed to edit comment. Please try again.');
+      showAlert('Failed to edit comment. Please try again.', 'Edit Failed');
     }
   };
 
@@ -268,14 +271,15 @@ function Feed({ onOpenMiniChat }) {
   };
 
   const handleDeleteComment = async (postId, commentId) => {
-    if (!window.confirm('Are you sure you want to delete this comment?')) return;
+    const confirmed = await showConfirm('Are you sure you want to delete this comment?', 'Delete Comment', 'Delete', 'Cancel');
+    if (!confirmed) return;
 
     try {
       const response = await api.delete(`/posts/${postId}/comment/${commentId}`);
       setPosts(posts.map(p => p._id === postId ? response.data : p));
     } catch (error) {
       console.error('Failed to delete comment:', error);
-      alert('Failed to delete comment. Please try again.');
+      showAlert('Failed to delete comment. Please try again.', 'Delete Failed');
     }
   };
 
@@ -296,7 +300,7 @@ function Feed({ onOpenMiniChat }) {
       setReplyText('');
     } catch (error) {
       console.error('Failed to reply to comment:', error);
-      alert('Failed to reply. Please try again.');
+      showAlert('Failed to reply. Please try again.', 'Reply Failed');
     }
   };
 
@@ -309,10 +313,10 @@ function Feed({ onOpenMiniChat }) {
     try {
       const response = await api.post(`/posts/${postId}/share`);
       setPosts(posts.map(p => p._id === postId ? response.data : p));
-      alert('Post shared successfully!');
+      showAlert('Post shared successfully!', 'Shared');
     } catch (error) {
       console.error('Failed to share post:', error);
-      alert(error.response?.data?.message || 'Failed to share post.');
+      showAlert(error.response?.data?.message || 'Failed to share post.', 'Share Failed');
     }
   };
 
@@ -338,12 +342,13 @@ function Feed({ onOpenMiniChat }) {
       }
     } catch (error) {
       console.error('Failed to bookmark post:', error);
-      alert(error.response?.data?.message || 'Failed to bookmark post.');
+      showAlert(error.response?.data?.message || 'Failed to bookmark post.', 'Bookmark Failed');
     }
   };
 
   const handleDelete = async (postId) => {
-    if (!window.confirm('Are you sure you want to delete this post?')) {
+    const confirmed = await showConfirm('Are you sure you want to delete this post?', 'Delete Post', 'Delete', 'Cancel');
+    if (!confirmed) {
       return;
     }
 
@@ -352,7 +357,7 @@ function Feed({ onOpenMiniChat }) {
       setPosts(posts.filter(p => p._id !== postId));
     } catch (error) {
       console.error('Failed to delete post:', error);
-      alert('Failed to delete post. Please try again.');
+      showAlert('Failed to delete post. Please try again.', 'Delete Failed');
     }
   };
 
@@ -832,6 +837,20 @@ function Feed({ onOpenMiniChat }) {
           </div>
         </div>
       )}
+
+      <CustomModal
+        isOpen={modalState.isOpen}
+        onClose={closeModal}
+        type={modalState.type}
+        title={modalState.title}
+        message={modalState.message}
+        placeholder={modalState.placeholder}
+        confirmText={modalState.confirmText}
+        cancelText={modalState.cancelText}
+        onConfirm={modalState.onConfirm}
+        inputType={modalState.inputType}
+        defaultValue={modalState.defaultValue}
+      />
     </div>
   );
 }

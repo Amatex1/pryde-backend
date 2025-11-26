@@ -1,0 +1,156 @@
+.custom-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  animation: fadeIn 0.2s ease-in-out;
+  backdrop-filter: blur(4px);
+}
+
+.custom-modal-content {
+  background: var(--card-surface);
+  border-radius: 16px;
+  padding: 2rem;
+  max-width: 500px;
+  width: 90%;
+  box-shadow: 0 10px 40px rgba(108, 92, 231, 0.3);
+  animation: slideUp 0.3s ease-out;
+  border: 2px solid var(--pryde-purple);
+}
+
+.custom-modal-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--pryde-purple);
+  margin: 0 0 1rem 0;
+  text-align: center;
+}
+
+.custom-modal-message {
+  font-size: 1rem;
+  color: var(--text-main);
+  margin-bottom: 1.5rem;
+  line-height: 1.6;
+  text-align: center;
+}
+
+.custom-modal-input {
+  width: 100%;
+  padding: 0.875rem 1rem;
+  border-radius: 12px;
+  border: 2px solid var(--border-light);
+  background: var(--card-surface);
+  color: var(--text-main);
+  font-size: 1rem;
+  margin-bottom: 1.5rem;
+  transition: all 0.3s ease;
+  box-sizing: border-box;
+}
+
+.custom-modal-input:focus {
+  outline: none;
+  border-color: var(--pryde-purple);
+  box-shadow: 0 0 0 3px rgba(108, 92, 231, 0.1);
+}
+
+.custom-modal-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+}
+
+.custom-modal-btn {
+  padding: 0.875rem 2rem;
+  border-radius: 12px;
+  border: none;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 120px;
+}
+
+.custom-modal-btn-primary {
+  background: linear-gradient(135deg, var(--pryde-purple) 0%, var(--electric-blue) 100%);
+  color: white;
+  box-shadow: 0 4px 12px rgba(108, 92, 231, 0.3);
+}
+
+.custom-modal-btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(108, 92, 231, 0.4);
+}
+
+.custom-modal-btn-primary:active {
+  transform: translateY(0);
+}
+
+.custom-modal-btn-secondary {
+  background: var(--card-surface);
+  color: var(--text-main);
+  border: 2px solid var(--border-light);
+}
+
+.custom-modal-btn-secondary:hover {
+  border-color: var(--pryde-purple);
+  background: rgba(108, 92, 231, 0.1);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(50px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Dark mode adjustments */
+[data-theme="dark"] .custom-modal-content {
+  background: var(--card-surface);
+  border-color: var(--pryde-purple);
+}
+
+[data-theme="dark"] .custom-modal-input {
+  background: var(--background-light);
+  border-color: var(--border-light);
+  color: var(--text-main);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .custom-modal-content {
+    padding: 1.5rem;
+    width: 95%;
+  }
+
+  .custom-modal-title {
+    font-size: 1.25rem;
+  }
+
+  .custom-modal-actions {
+    flex-direction: column;
+  }
+
+  .custom-modal-btn {
+    width: 100%;
+  }
+}
+

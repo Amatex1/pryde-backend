@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import TwoFactorSetup from '../components/security/TwoFactorSetup';
 import SessionManagement from '../components/security/SessionManagement';
+import CustomModal from '../components/CustomModal';
+import { useModal } from '../hooks/useModal';
 import api from '../utils/api';
 import './Settings.css';
 
