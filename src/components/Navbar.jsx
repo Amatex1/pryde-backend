@@ -76,6 +76,10 @@ function Navbar({ onOpenMiniChat }) {
                 <span className="dropdown-icon">👤</span>
                 <span>Profile</span>
               </Link>
+              <Link to="/bookmarks" className="dropdown-item" onClick={() => setShowDropdown(false)}>
+                <span className="dropdown-icon">🔖</span>
+                <span>Bookmarks</span>
+              </Link>
               <Link to="/settings" className="dropdown-item" onClick={() => setShowDropdown(false)}>
                 <span className="dropdown-icon">⚙️</span>
                 <span>Settings</span>

@@ -601,6 +601,20 @@ function Settings({ onOpenMiniChat }) {
           </div>
         </div>
       </div>
+
+      <CustomModal
+        isOpen={modalState.isOpen}
+        onClose={closeModal}
+        type={modalState.type}
+        title={modalState.title}
+        message={modalState.message}
+        placeholder={modalState.placeholder}
+        confirmText={modalState.confirmText}
+        cancelText={modalState.cancelText}
+        onConfirm={modalState.onConfirm}
+        inputType={modalState.inputType}
+        defaultValue={modalState.defaultValue}
+      />
     </div>
   );
 }

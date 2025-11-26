@@ -4,6 +4,8 @@ import Navbar from '../components/Navbar';
 import ReportModal from '../components/ReportModal';
 import PhotoViewer from '../components/PhotoViewer';
 import Toast from '../components/Toast';
+import CustomModal from '../components/CustomModal';
+import { useModal } from '../hooks/useModal';
 import api from '../utils/api';
 import { getCurrentUser } from '../utils/auth';
 import { getImageUrl } from '../utils/imageUrl';
@@ -13,17 +15,27 @@ import './Profile.css';
 function Profile({ onOpenMiniChat }) {
   const { id } = useParams();
   const currentUser = getCurrentUser();
+  const { modalState, closeModal, showAlert, showConfirm } = useModal();
   const [user, setUser] = useState(null);
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadingPosts, setLoadingPosts] = useState(true);
   const [uploadMessage, setUploadMessage] = useState('');
+  const [showCommentBox, setShowCommentBox] = useState({});
+  const [commentText, setCommentText] = useState({});
   const [friendStatus, setFriendStatus] = useState(null); // null, 'friends', 'pending_sent', 'pending_received', 'none'
   const [friendRequestId, setFriendRequestId] = useState(null);
   const [isBlocked, setIsBlocked] = useState(false);
   const [reportModal, setReportModal] = useState({ isOpen: false, type: '', contentId: null, userId: null });
   const [photoViewerImage, setPhotoViewerImage] = useState(null);
   const [showActionsMenu, setShowActionsMenu] = useState(false);
+  const [showCreatePostModal, setShowCreatePostModal] = useState(false);
+  const [newPost, setNewPost] = useState('');
+  const [selectedMedia, setSelectedMedia] = useState([]);
+  const [uploadingMedia, setUploadingMedia] = useState(false);
+  const [showCommentBox, setShowCommentBox] = useState({});
+  const [commentText, setCommentText] = useState({});
+  const [bookmarkedPosts, setBookmarkedPosts] = useState([]);
   const { toasts, showToast, removeToast } = useToast();
   const actionsMenuRef = useRef(null);
   const isOwnProfile = currentUser?.id === id;
@@ -84,6 +96,45 @@ function Profile({ onOpenMiniChat }) {
       setPosts([]);
     } finally {
       setLoadingPosts(false);
+    }
+  };
+
+  const handleLike = async (postId) => {
+    try {
+      const response = await api.post(`/posts/${postId}/like`);
+      setPosts(posts.map(p => p._id === postId ? response.data : p));
+    } catch (error) {
+      console.error('Failed to like post:', error);
+    }
+  };
+
+  const handleCommentSubmit = async (postId, e) => {
+    e.preventDefault();
+    const content = commentText[postId];
+    if (!content || !content.trim()) return;
+
+    try {
+      const response = await api.post(`/posts/${postId}/comment`, { content });
+      setPosts(posts.map(p => p._id === postId ? response.data : p));
+      setCommentText(prev => ({ ...prev, [postId]: '' }));
+    } catch (error) {
+      console.error('Failed to comment:', error);
+      showAlert('Failed to add comment. Please try again.', 'Comment Failed');
+    }
+  };
+
+  const handleCommentChange = (postId, value) => {
+    setCommentText(prev => ({ ...prev, [postId]: value }));
+  };
+
+  const handleShare = async (postId) => {
+    try {
+      const response = await api.post(`/posts/${postId}/share`);
+      setPosts(posts.map(p => p._id === postId ? response.data : p));
+      showAlert('Post shared successfully!', 'Shared');
+    } catch (error) {
+      console.error('Failed to share post:', error);
+      showAlert(error.response?.data?.message || 'Failed to share post.', 'Share Failed');
     }
   };
 
@@ -418,8 +469,8 @@ function Profile({ onOpenMiniChat }) {
           <div className="profile-posts">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
               <h2 className="section-title">Posts</h2>
-              <button
-                onClick={() => window.location.href = '/'}
+              <Link
+                to="/feed"
                 className="btn-primary"
                 style={{
                   padding: '10px 20px',
@@ -429,11 +480,13 @@ function Profile({ onOpenMiniChat }) {
                   border: 'none',
                   cursor: 'pointer',
                   fontWeight: '600',
-                  transition: 'all 0.3s ease'
+                  transition: 'all 0.3s ease',
+                  textDecoration: 'none',
+                  display: 'inline-block'
                 }}
               >
                 ✨ Create Post
-              </button>
+              </Link>
             </div>
 
             {loadingPosts ? (
@@ -496,6 +549,56 @@ function Profile({ onOpenMiniChat }) {
                         <span>{post.comments?.length || 0} comments</span>
                         <span>{post.shares || 0} shares</span>
                       </div>
+
+                      <div className="post-actions">
+                        <button
+                          className={`action-btn ${isLiked ? 'liked' : ''}`}
+                          onClick={() => handleLike(post._id)}
+                        >
+                          {isLiked ? '❤️' : '🤍'} Like
+                        </button>
+                        <button
+                          className="action-btn"
+                          onClick={() => setShowCommentBox(prev => ({ ...prev, [post._id]: !prev[post._id] }))}
+                        >
+                          💬 Comment
+                        </button>
+                        <button
+                          className="action-btn"
+                          onClick={() => handleShare(post._id)}
+                        >
+                          🔄 Share
+                        </button>
+                      </div>
+
+                      {/* Comment Input Box */}
+                      {showCommentBox[post._id] && (
+                        <form onSubmit={(e) => handleCommentSubmit(post._id, e)} className="comment-input-box">
+                          <div className="comment-input-wrapper">
+                            <div className="comment-user-avatar">
+                              {currentUser?.profilePhoto ? (
+                                <img src={getImageUrl(currentUser.profilePhoto)} alt="You" />
+                              ) : (
+                                <span>{currentUser?.displayName?.charAt(0).toUpperCase() || 'U'}</span>
+                              )}
+                            </div>
+                            <input
+                              type="text"
+                              value={commentText[post._id] || ''}
+                              onChange={(e) => handleCommentChange(post._id, e.target.value)}
+                              placeholder="Write a comment..."
+                              className="comment-input glossy"
+                            />
+                            <button
+                              type="submit"
+                              className="comment-submit-btn"
+                              disabled={!commentText[post._id]?.trim()}
+                            >
+                              ➤
+                            </button>
+                          </div>
+                        </form>
+                      )}
                     </div>
                   );
                 })}
