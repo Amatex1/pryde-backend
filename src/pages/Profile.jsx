@@ -26,6 +26,11 @@ function Profile({ onOpenMiniChat }) {
   const [showCommentBox, setShowCommentBox] = useState({});
   const [commentText, setCommentText] = useState({});
   const [shareModal, setShareModal] = useState({ isOpen: false, post: null });
+  const [editingCommentId, setEditingCommentId] = useState(null);
+  const [editCommentText, setEditCommentText] = useState('');
+  const [replyingToComment, setReplyingToComment] = useState(null);
+  const [replyText, setReplyText] = useState('');
+  const commentRefs = useRef({});
   const [editProfileModal, setEditProfileModal] = useState(false);
   const [friendStatus, setFriendStatus] = useState(null); // null, 'friends', 'pending_sent', 'pending_received', 'none'
   const [friendRequestId, setFriendRequestId] = useState(null);
@@ -127,6 +132,81 @@ function Profile({ onOpenMiniChat }) {
 
   const handleCommentChange = (postId, value) => {
     setCommentText(prev => ({ ...prev, [postId]: value }));
+  };
+
+  const handleEditComment = (commentId, content) => {
+    setEditingCommentId(commentId);
+    setEditCommentText(content);
+  };
+
+  const handleSaveEditComment = async (postId, commentId) => {
+    if (!editCommentText.trim()) return;
+
+    try {
+      const response = await api.put(`/posts/${postId}/comment/${commentId}`, {
+        content: editCommentText
+      });
+      setPosts(posts.map(p => p._id === postId ? response.data : p));
+      setEditingCommentId(null);
+      setEditCommentText('');
+      showToast('Comment updated successfully', 'success');
+    } catch (error) {
+      console.error('Failed to update comment:', error);
+      showToast('Failed to update comment', 'error');
+    }
+  };
+
+  const handleCancelEditComment = () => {
+    setEditingCommentId(null);
+    setEditCommentText('');
+  };
+
+  const handleDeleteComment = async (postId, commentId) => {
+    const confirmed = await showConfirm(
+      'Are you sure you want to delete this comment?',
+      'Delete Comment'
+    );
+
+    if (!confirmed) return;
+
+    try {
+      const response = await api.delete(`/posts/${postId}/comment/${commentId}`);
+      setPosts(posts.map(p => p._id === postId ? response.data : p));
+      showToast('Comment deleted successfully', 'success');
+    } catch (error) {
+      console.error('Failed to delete comment:', error);
+      showToast('Failed to delete comment', 'error');
+    }
+  };
+
+  const handleReplyToComment = (postId, commentId) => {
+    setReplyingToComment({ postId, commentId });
+    setReplyText('');
+  };
+
+  const handleSubmitReply = async (e) => {
+    e.preventDefault();
+    if (!replyText.trim()) return;
+
+    const { postId, commentId } = replyingToComment;
+
+    try {
+      const response = await api.post(`/posts/${postId}/comment/${commentId}/reply`, {
+        content: replyText
+      });
+      setPosts(posts.map(p => p._id === postId ? response.data : p));
+      setReplyText('');
+      setReplyingToComment(null);
+      showToast('Reply added successfully', 'success');
+    } catch (error) {
+      console.error('Failed to add reply:', error);
+      showToast('Failed to add reply', 'error');
+    }
+  };
+
+  const handleCancelReply = () => {
+    setReplyingToComment(null);
+    setReplyText('');
   };
 
   const handleShare = (post) => {
@@ -664,6 +744,203 @@ function Profile({ onOpenMiniChat }) {
                           🔄 Share
                         </button>
                       </div>
+
+                      {/* Comments Display */}
+                      {post.comments && post.comments.length > 0 && (
+                        <div className="post-comments">
+                          {post.comments.filter(comment => !comment.parentComment).slice(-3).map((comment) => {
+                            const isEditing = editingCommentId === comment._id;
+                            const isOwnComment = comment.user?._id === currentUser?._id;
+                            const replies = post.comments.filter(c => c.parentComment === comment._id);
+
+                            return (
+                              <div key={comment._id} className="comment-thread">
+                                <div
+                                  className="comment"
+                                  ref={(el) => commentRefs.current[comment._id] = el}
+                                >
+                                  <div className="comment-avatar">
+                                    {comment.user?.profilePhoto ? (
+                                      <img src={getImageUrl(comment.user.profilePhoto)} alt={comment.user.username} />
+                                    ) : (
+                                      <span>{comment.user?.displayName?.charAt(0).toUpperCase() || 'U'}</span>
+                                    )}
+                                  </div>
+                                  <div className="comment-content">
+                                    <div className="comment-author">{comment.user?.displayName || comment.user?.username}</div>
+
+                                    {isEditing ? (
+                                      <div className="comment-edit-box">
+                                        <input
+                                          type="text"
+                                          value={editCommentText}
+                                          onChange={(e) => setEditCommentText(e.target.value)}
+                                          className="comment-edit-input"
+                                          autoFocus
+                                        />
+                                        <div className="comment-edit-actions">
+                                          <button
+                                            onClick={() => handleSaveEditComment(post._id, comment._id)}
+                                            className="btn-save-comment"
+                                          >
+                                            Save
+                                          </button>
+                                          <button
+                                            onClick={handleCancelEditComment}
+                                            className="btn-cancel-comment"
+                                          >
+                                            Cancel
+                                          </button>
+                                        </div>
+                                      </div>
+                                    ) : (
+                                      <>
+                                        <div className="comment-text">
+                                          {comment.content}
+                                          {comment.edited && <span className="edited-indicator"> (edited)</span>}
+                                        </div>
+                                        <div className="comment-actions">
+                                          <button
+                                            onClick={() => handleReplyToComment(post._id, comment._id)}
+                                            className="btn-comment-action"
+                                            title="Reply to comment"
+                                          >
+                                            💬 Reply
+                                          </button>
+                                          {isOwnComment && (
+                                            <>
+                                              <button
+                                                onClick={() => handleEditComment(comment._id, comment.content)}
+                                                className="btn-comment-action"
+                                                title="Edit comment"
+                                              >
+                                                ✏️ Edit
+                                              </button>
+                                              <button
+                                                onClick={() => handleDeleteComment(post._id, comment._id)}
+                                                className="btn-comment-action"
+                                                title="Delete comment"
+                                              >
+                                                🗑️ Delete
+                                              </button>
+                                            </>
+                                          )}
+                                        </div>
+
+                                        {/* Reply Input Box */}
+                                        {replyingToComment?.postId === post._id && replyingToComment?.commentId === comment._id && (
+                                          <form onSubmit={handleSubmitReply} className="reply-input-box">
+                                            <div className="reply-input-wrapper">
+                                              <input
+                                                type="text"
+                                                value={replyText}
+                                                onChange={(e) => setReplyText(e.target.value)}
+                                                placeholder="Write a reply..."
+                                                className="reply-input"
+                                                autoFocus
+                                              />
+                                              <div className="reply-actions">
+                                                <button type="submit" className="btn-submit-reply" disabled={!replyText.trim()}>
+                                                  Send
+                                                </button>
+                                                <button type="button" onClick={handleCancelReply} className="btn-cancel-reply">
+                                                  Cancel
+                                                </button>
+                                              </div>
+                                            </div>
+                                          </form>
+                                        )}
+                                      </>
+                                    )}
+                                  </div>
+                                </div>
+
+                                {/* Nested Replies */}
+                                {replies.length > 0 && (
+                                  <div className="comment-replies">
+                                    {replies.map((reply) => {
+                                      const isOwnReply = reply.user?._id === currentUser?._id;
+                                      const isEditingReply = editingCommentId === reply._id;
+
+                                      return (
+                                        <div
+                                          key={reply._id}
+                                          className="comment reply"
+                                          ref={(el) => commentRefs.current[reply._id] = el}
+                                        >
+                                          <div className="comment-avatar">
+                                            {reply.user?.profilePhoto ? (
+                                              <img src={getImageUrl(reply.user.profilePhoto)} alt={reply.user.username} />
+                                            ) : (
+                                              <span>{reply.user?.displayName?.charAt(0).toUpperCase() || 'U'}</span>
+                                            )}
+                                          </div>
+                                          <div className="comment-content">
+                                            <div className="comment-author">{reply.user?.displayName || reply.user?.username}</div>
+
+                                            {isEditingReply ? (
+                                              <div className="comment-edit-box">
+                                                <input
+                                                  type="text"
+                                                  value={editCommentText}
+                                                  onChange={(e) => setEditCommentText(e.target.value)}
+                                                  className="comment-edit-input"
+                                                  autoFocus
+                                                />
+                                                <div className="comment-edit-actions">
+                                                  <button
+                                                    onClick={() => handleSaveEditComment(post._id, reply._id)}
+                                                    className="btn-save-comment"
+                                                  >
+                                                    Save
+                                                  </button>
+                                                  <button
+                                                    onClick={handleCancelEditComment}
+                                                    className="btn-cancel-comment"
+                                                  >
+                                                    Cancel
+                                                  </button>
+                                                </div>
+                                              </div>
+                                            ) : (
+                                              <>
+                                                <div className="comment-text">
+                                                  {reply.content}
+                                                  {reply.edited && <span className="edited-indicator"> (edited)</span>}
+                                                </div>
+                                                <div className="comment-actions">
+                                                  {isOwnReply && (
+                                                    <>
+                                                      <button
+                                                        onClick={() => handleEditComment(reply._id, reply.content)}
+                                                        className="btn-comment-action"
+                                                        title="Edit reply"
+                                                      >
+                                                        ✏️ Edit
+                                                      </button>
+                                                      <button
+                                                        onClick={() => handleDeleteComment(post._id, reply._id)}
+                                                        className="btn-comment-action"
+                                                        title="Delete reply"
+                                                      >
+                                                        🗑️ Delete
+                                                      </button>
+                                                    </>
+                                                  )}
+                                                </div>
+                                              </>
+                                            )}
+                                          </div>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
 
                       {/* Comment Input Box */}
                       {showCommentBox[post._id] && (

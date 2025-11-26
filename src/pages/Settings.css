@@ -334,7 +334,7 @@
   align-items: center;
   padding: 1.5rem;
   border-radius: 12px;
-  background: var(--bg-light);
+  background: var(--card-surface);
   border: 1px solid var(--border-light);
   transition: all 0.3s ease;
 }
@@ -369,6 +369,17 @@
 .danger-text {
   color: var(--error) !important;
   font-weight: 500;
+}
+
+/* Dark Mode - Account Actions */
+[data-theme="dark"] .action-item {
+  background: var(--background-dark);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .action-item.danger {
+  background: rgba(255, 107, 107, 0.1);
+  border-color: rgba(255, 107, 107, 0.3);
 }
 
 .btn-download,

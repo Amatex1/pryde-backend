@@ -241,12 +241,31 @@
   gap: 0.75rem;
 }
 
+.comment-thread {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
 .comment {
   display: flex;
   gap: 0.75rem;
   padding: 0.75rem;
   background: var(--soft-lavender);
   border-radius: 10px;
+}
+
+.comment-replies {
+  margin-left: 2.5rem;
+  padding-left: 1rem;
+  border-left: 2px solid var(--pryde-purple);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.comment.reply {
+  background: rgba(108, 92, 231, 0.05);
 }
 
 .comment-avatar {
@@ -571,6 +590,19 @@
 .friends-hint {
   font-size: 0.85rem;
   color: var(--text-muted);
+}
+
+/* Dark Mode - Comments */
+[data-theme="dark"] .comment {
+  background: rgba(108, 92, 231, 0.15);
+}
+
+[data-theme="dark"] .comment.reply {
+  background: rgba(108, 92, 231, 0.08);
+}
+
+[data-theme="dark"] .comment-replies {
+  border-left-color: rgba(108, 92, 231, 0.5);
 }
 
 /* Dark Mode - Friends Sidebar */
