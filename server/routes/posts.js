@@ -157,7 +157,9 @@ router.post('/', auth, postLimiter, checkMuted, moderateContent, async (req, res
       content: content || '',
       images: images || [],
       media: media || [],
-      visibility: visibility || 'public'
+      visibility: visibility || 'public',
+      hiddenFrom: hiddenFrom || [],
+      sharedWith: sharedWith || []
     });
 
     await post.save();
@@ -188,11 +190,13 @@ router.put('/:id', auth, async (req, res) => {
       return res.status(403).json({ message: 'Not authorized to edit this post' });
     }
 
-    const { content, images, visibility } = req.body;
+    const { content, images, visibility, hiddenFrom, sharedWith } = req.body;
 
-    if (content) post.content = content;
+    if (content !== undefined) post.content = content;
     if (images) post.images = images;
     if (visibility) post.visibility = visibility;
+    if (hiddenFrom !== undefined) post.hiddenFrom = hiddenFrom;
+    if (sharedWith !== undefined) post.sharedWith = sharedWith;
 
     await post.save();
     await post.populate('author', 'username displayName profilePhoto');
