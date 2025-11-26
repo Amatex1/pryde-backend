@@ -121,7 +121,7 @@
 }
 
 .report-info {
-  background: var(--soft-lavender);
+  background: rgba(108, 92, 231, 0.1);
   padding: 1rem;
   border-radius: 10px;
   border-left: 4px solid var(--pryde-purple);
@@ -131,6 +131,7 @@
   margin: 0.5rem 0;
   font-size: 0.9rem;
   color: var(--text-main);
+  font-weight: 500;
 }
 
 .modal-actions {
@@ -171,6 +172,42 @@
 .btn-submit:hover:not(:disabled) {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(108, 92, 231, 0.3);
+}
+
+/* Dark Mode */
+[data-theme="dark"] .modal-content {
+  background: var(--card-surface);
+  border: 1px solid rgba(108, 92, 231, 0.2);
+}
+
+[data-theme="dark"] .modal-header {
+  border-bottom-color: rgba(108, 92, 231, 0.2);
+}
+
+[data-theme="dark"] .report-form .form-input {
+  background: rgba(0, 0, 0, 0.2);
+  border-color: rgba(108, 92, 231, 0.3);
+  color: var(--text-main);
+}
+
+[data-theme="dark"] .report-form .form-input::placeholder {
+  color: var(--text-muted);
+  opacity: 0.6;
+}
+
+[data-theme="dark"] .report-info {
+  background: rgba(108, 92, 231, 0.15);
+  border-left-color: var(--electric-blue);
+}
+
+[data-theme="dark"] .btn-cancel {
+  border-color: rgba(108, 92, 231, 0.3);
+  color: var(--text-main);
+}
+
+[data-theme="dark"] .btn-cancel:hover {
+  background: rgba(108, 92, 231, 0.2);
+  border-color: var(--pryde-purple);
 }
 
 .btn-submit:disabled {
