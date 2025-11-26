@@ -578,7 +578,12 @@ function Feed({ onOpenMiniChat }) {
                           <Link to={`/profile/${post.author?._id}`} className="author-name" style={{ textDecoration: 'none', color: 'inherit' }}>
                             {post.author?.displayName || post.author?.username || 'User'}
                           </Link>
-                          <div className="post-time">{new Date(post.createdAt).toLocaleDateString()}</div>
+                          <div className="post-time">
+                            {new Date(post.createdAt).toLocaleDateString()}
+                            <span className="post-privacy-icon" title={`Visible to: ${post.visibility || 'friends'}`}>
+                              {post.visibility === 'public' ? '🌍' : post.visibility === 'private' ? '🔒' : '👥'}
+                            </span>
+                          </div>
                         </div>
                       </div>
                       <div className="post-header-actions">
@@ -1145,9 +1150,16 @@ function Feed({ onOpenMiniChat }) {
                         </div>
                         <div className="friend-sidebar-actions">
                           <button
-                            onClick={() => onOpenMiniChat(friend)}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              if (onOpenMiniChat) {
+                                onOpenMiniChat(friend);
+                              }
+                            }}
                             className="btn-friend-action"
                             title="Chat"
+                            type="button"
                           >
                             💬
                           </button>
@@ -1196,9 +1208,16 @@ function Feed({ onOpenMiniChat }) {
                         </div>
                         <div className="friend-sidebar-actions">
                           <button
-                            onClick={() => onOpenMiniChat(friend)}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              if (onOpenMiniChat) {
+                                onOpenMiniChat(friend);
+                              }
+                            }}
                             className="btn-friend-action"
                             title="Chat"
+                            type="button"
                           >
                             💬
                           </button>

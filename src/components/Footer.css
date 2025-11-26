@@ -1,12 +1,12 @@
-/* Footer - Glossy Gold Theme */
+/* Footer - Pryde Purple Theme */
 
 .app-footer {
-  background: linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 100%);
-  color: #e0e0e0;
+  background: linear-gradient(135deg, rgba(108, 92, 231, 0.05) 0%, rgba(9, 132, 227, 0.05) 100%);
+  backdrop-filter: blur(10px);
+  border-top: 2px solid rgba(108, 92, 231, 0.2);
+  color: var(--text-main);
   padding: 3rem 2rem 1rem;
   margin-top: 4rem;
-  border-top: 4px solid #d4af37;
-  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.2);
 }
 
 .footer-content {
@@ -16,7 +16,7 @@
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 2rem;
   padding-bottom: 2rem;
-  border-bottom: 2px solid rgba(212, 175, 55, 0.2);
+  border-bottom: 1px solid rgba(108, 92, 231, 0.1);
 }
 
 .footer-section {
@@ -27,7 +27,7 @@
 .footer-logo {
   font-size: 1.8rem;
   font-weight: 800;
-  background: linear-gradient(135deg, #d4af37 0%, #f4e285 100%);
+  background: linear-gradient(135deg, var(--pryde-purple) 0%, var(--electric-blue) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -35,19 +35,19 @@
 }
 
 .footer-tagline {
-  color: #bbb;
+  color: var(--text-muted);
   font-size: 0.95rem;
   margin-bottom: 1rem;
   font-style: italic;
 }
 
 .footer-copyright {
-  color: #888;
+  color: var(--text-muted);
   font-size: 0.85rem;
 }
 
 .footer-section h4 {
-  color: #d4af37;
+  color: var(--pryde-purple);
   font-size: 1.1rem;
   font-weight: 700;
   margin-bottom: 1rem;
@@ -66,16 +66,18 @@
 }
 
 .footer-links a {
-  color: #bbb;
+  color: var(--text-main);
   text-decoration: none;
   font-size: 0.95rem;
-  transition: color 0.3s ease, transform 0.3s ease;
+  transition: all 0.3s ease;
   display: inline-block;
+  opacity: 0.8;
 }
 
 .footer-links a:hover {
-  color: #d4af37;
+  color: var(--pryde-purple);
   transform: translateX(4px);
+  opacity: 1;
 }
 
 .footer-bottom {
@@ -86,7 +88,7 @@
 }
 
 .footer-notice {
-  color: #aaa;
+  color: var(--text-muted);
   font-size: 0.9rem;
   margin-bottom: 1rem;
   font-weight: 500;
@@ -101,18 +103,29 @@
 }
 
 .footer-quick-links a {
-  color: #888;
+  color: var(--text-muted);
   text-decoration: none;
   font-size: 0.9rem;
   transition: color 0.3s ease;
 }
 
 .footer-quick-links a:hover {
-  color: #d4af37;
+  color: var(--pryde-purple);
 }
 
 .footer-quick-links span {
-  color: #555;
+  color: var(--text-muted);
+  opacity: 0.5;
+}
+
+/* Dark Mode */
+[data-theme="dark"] .app-footer {
+  background: linear-gradient(135deg, rgba(108, 92, 231, 0.1) 0%, rgba(9, 132, 227, 0.1) 100%);
+  border-top-color: rgba(108, 92, 231, 0.3);
+}
+
+[data-theme="dark"] .footer-content {
+  border-bottom-color: rgba(108, 92, 231, 0.2);
 }
 
 /* Responsive Design */

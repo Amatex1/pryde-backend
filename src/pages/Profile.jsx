@@ -614,7 +614,12 @@ function Profile({ onOpenMiniChat }) {
                           </div>
                           <div className="author-info">
                             <div className="author-name">{post.author?.displayName || post.author?.username}</div>
-                            <div className="post-time">{new Date(post.createdAt).toLocaleDateString()}</div>
+                            <div className="post-time">
+                              {new Date(post.createdAt).toLocaleDateString()}
+                              <span className="post-privacy-icon" title={`Visible to: ${post.visibility || 'friends'}`}>
+                                {post.visibility === 'public' ? '🌍' : post.visibility === 'private' ? '🔒' : '👥'}
+                              </span>
+                            </div>
                           </div>
                         </div>
                       </div>

@@ -302,6 +302,20 @@
 .post-time {
   font-size: 0.875rem;
   color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.post-privacy-icon {
+  font-size: 0.9rem;
+  cursor: help;
+  opacity: 0.7;
+  transition: opacity 0.3s ease;
+}
+
+.post-privacy-icon:hover {
+  opacity: 1;
 }
 
 .post-content {
