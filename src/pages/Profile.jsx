@@ -30,6 +30,7 @@ function Profile({ onOpenMiniChat }) {
 
   useEffect(() => {
     fetchUserProfile();
+    fetchUserPosts();
     if (!isOwnProfile) {
       checkFriendStatus();
       checkBlockStatus();
