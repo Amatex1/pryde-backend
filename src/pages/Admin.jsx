@@ -544,7 +544,7 @@ function ReportsTab({ reports, onResolve }) {
 }
 
 // Users Tab Component
-function UsersTab({ users, onSuspend, onBan, onUnsuspend, onUnban }) {
+function UsersTab({ users, onSuspend, onBan, onUnsuspend, onUnban, onChangeRole }) {
   return (
     <div className="users-list">
       <h2>User Management</h2>
@@ -568,9 +568,22 @@ function UsersTab({ users, onSuspend, onBan, onUnsuspend, onUnban }) {
                 <td>{user.username}</td>
                 <td>{user.email}</td>
                 <td>
-                  <span className={`role-badge role-${user.role}`}>
-                    {user.role}
-                  </span>
+                  {user.role?.toLowerCase() === 'super_admin' ? (
+                    <span className={`role-badge role-${user.role}`}>
+                      {user.role}
+                    </span>
+                  ) : (
+                    <select
+                      className={`role-select role-${user.role}`}
+                      value={user.role}
+                      onChange={(e) => onChangeRole(user._id, e.target.value)}
+                    >
+                      <option value="user">user</option>
+                      <option value="moderator">moderator</option>
+                      <option value="admin">admin</option>
+                      <option value="super_admin">super_admin</option>
+                    </select>
+                  )}
                 </td>
                 <td>
                   {user.isBanned && <span className="status-badge banned">Banned</span>}
