@@ -114,17 +114,18 @@ function EditProfileModal({ isOpen, onClose, user, onUpdate }) {
 
     setUploadingPhoto(true);
     const formDataUpload = new FormData();
-    formDataUpload.append(type === 'profile' ? 'profilePhoto' : 'coverPhoto', file);
+    formDataUpload.append('photo', file);
 
     try {
-      const response = await api.post('/users/upload-photo', formDataUpload, {
+      const endpoint = type === 'profile' ? '/upload/profile-photo' : '/upload/cover-photo';
+      const response = await api.post(endpoint, formDataUpload, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
-      
+
       if (type === 'profile') {
-        setFormData(prev => ({ ...prev, profilePhoto: response.data.profilePhoto }));
+        setFormData(prev => ({ ...prev, profilePhoto: response.data.url }));
       } else {
-        setFormData(prev => ({ ...prev, coverPhoto: response.data.coverPhoto }));
+        setFormData(prev => ({ ...prev, coverPhoto: response.data.url }));
       }
     } catch (error) {
       console.error('Failed to upload photo:', error);

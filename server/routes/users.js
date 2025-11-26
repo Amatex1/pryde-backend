@@ -1,6 +1,5 @@
 import express from 'express';
 const router = express.Router();
-import multer from 'multer';
 import User from '../models/User.js';
 import Post from '../models/Post.js';
 import Message from '../models/Message.js';
@@ -9,9 +8,6 @@ import GroupChat from '../models/GroupChat.js';
 import Notification from '../models/Notification.js';
 import auth from '../middleware/auth.js';
 import { checkProfileVisibility, checkBlocked } from '../middleware/privacy.js';
-import { uploadToGridFS } from '../utils/gridfs.js';
-
-const upload = multer({ storage: multer.memoryStorage() });
 
 // @route   GET /api/users/search
 // @desc    Search users
@@ -58,44 +54,6 @@ router.get('/:id', auth, checkProfileVisibility, async (req, res) => {
   } catch (error) {
     console.error('Get user error:', error);
     res.status(500).json({ message: 'Server error' });
-  }
-});
-
-// @route   POST /api/users/upload-photo
-// @desc    Upload profile or cover photo
-// @access  Private
-router.post('/upload-photo', auth, upload.fields([
-  { name: 'profilePhoto', maxCount: 1 },
-  { name: 'coverPhoto', maxCount: 1 }
-]), async (req, res) => {
-  try {
-    const user = await User.findById(req.userId);
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-
-    const updates = {};
-
-    if (req.files.profilePhoto) {
-      const file = req.files.profilePhoto[0];
-      const filename = await uploadToGridFS(file.buffer, file.originalname, file.mimetype);
-      user.profilePhoto = filename;
-      updates.profilePhoto = filename;
-    }
-
-    if (req.files.coverPhoto) {
-      const file = req.files.coverPhoto[0];
-      const filename = await uploadToGridFS(file.buffer, file.originalname, file.mimetype);
-      user.coverPhoto = filename;
-      updates.coverPhoto = filename;
-    }
-
-    await user.save();
-
-    res.json(updates);
-  } catch (error) {
-    console.error('Upload photo error:', error);
-    res.status(500).json({ message: 'Failed to upload photo' });
   }
 });
 
