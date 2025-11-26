@@ -366,24 +366,24 @@
   justify-content: space-between;
   align-items: center;
   padding: 0.75rem;
-  background: var(--background-light);
+  background: var(--pryde-purple);
   border-radius: 8px;
   text-decoration: none;
-  color: var(--text-main);
+  color: #ffffff;
   transition: all 0.2s ease;
 }
 
 .social-link:hover {
-  background: var(--soft-lavender);
+  background: var(--electric-blue);
   transform: translateX(5px);
 }
 
 .social-link strong {
-  color: var(--pryde-purple);
+  color: #ffffff;
 }
 
 .link-arrow {
-  color: var(--pryde-purple);
+  color: #ffffff;
   font-size: 1.2rem;
 }
 
@@ -391,29 +391,33 @@
 .website-link {
   display: block;
   padding: 0.75rem;
-  background: var(--background-light);
+  background: var(--pryde-purple);
   border-radius: 8px;
-  color: var(--pryde-purple);
+  color: #ffffff;
   text-decoration: none;
   word-break: break-all;
   transition: all 0.2s ease;
 }
 
 .website-link:hover {
-  background: var(--soft-lavender);
+  background: var(--electric-blue);
   text-decoration: underline;
 }
 
 /* Dark Mode Support */
-[data-theme="dark"] .looking-for-item,
+[data-theme="dark"] .looking-for-item {
+  background: var(--background-dark);
+}
+
 [data-theme="dark"] .social-link,
 [data-theme="dark"] .website-link {
-  background: var(--background-dark);
+  background: var(--pryde-purple);
+  color: #ffffff;
 }
 
 [data-theme="dark"] .social-link:hover,
 [data-theme="dark"] .website-link:hover {
-  background: rgba(108, 92, 231, 0.1);
+  background: var(--electric-blue);
 }
 
 .btn-block,

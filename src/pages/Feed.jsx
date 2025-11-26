@@ -766,6 +766,41 @@ function Feed({ onOpenMiniChat }) {
         </div>
 
         <div className="feed-sidebar">
+          {/* Friends List */}
+          <div className="sidebar-card glossy">
+            <h3 className="sidebar-title">Friends</h3>
+            <div className="friends-sidebar-list">
+              {friends.length > 0 ? (
+                friends.slice(0, 10).map((friend) => (
+                  <div
+                    key={friend._id}
+                    className="friend-sidebar-item"
+                    onClick={() => onOpenMiniChat && onOpenMiniChat(friend)}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    <div className="friend-sidebar-avatar">
+                      {friend.profilePhoto ? (
+                        <img src={getImageUrl(friend.profilePhoto)} alt={friend.displayName} />
+                      ) : (
+                        <span>{friend.displayName?.charAt(0).toUpperCase() || 'U'}</span>
+                      )}
+                    </div>
+                    <div className="friend-sidebar-info">
+                      <div className="friend-sidebar-name">{friend.displayName || friend.username}</div>
+                      <div className="friend-sidebar-status">Click to chat</div>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="no-friends">
+                  <p>No friends yet</p>
+                  <p className="friends-hint">Add friends to start chatting!</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Trending Topics */}
           <div className="sidebar-card glossy">
             <h3 className="sidebar-title">Trending Topics</h3>
             <div className="trending-list">

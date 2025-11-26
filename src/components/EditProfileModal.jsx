@@ -283,13 +283,24 @@ function EditProfileModal({ isOpen, onClose, user, onUpdate }) {
 
               <div className="form-group">
                 <label>Sexual Orientation</label>
-                <input
-                  type="text"
+                <select
                   name="sexualOrientation"
                   value={formData.sexualOrientation}
                   onChange={handleChange}
-                  placeholder="Enter your sexual orientation (optional)"
-                />
+                >
+                  <option value="">Select orientation (optional)</option>
+                  <option value="heterosexual">Heterosexual/Straight</option>
+                  <option value="gay">Gay</option>
+                  <option value="lesbian">Lesbian</option>
+                  <option value="bisexual">Bisexual</option>
+                  <option value="pansexual">Pansexual</option>
+                  <option value="asexual">Asexual</option>
+                  <option value="demisexual">Demisexual</option>
+                  <option value="queer">Queer</option>
+                  <option value="questioning">Questioning</option>
+                  <option value="prefer_not_to_say">Prefer not to say</option>
+                  <option value="other">Other</option>
+                </select>
               </div>
 
               <div className="form-group">
