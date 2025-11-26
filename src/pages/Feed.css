@@ -467,7 +467,8 @@
 }
 
 .comment.reply {
-  background: rgba(108, 92, 231, 0.05);
+  background: rgba(108, 92, 231, 0.08);
+  padding: 0.875rem;
 }
 
 .comment-avatar {
@@ -1324,19 +1325,23 @@
   }
 
   .reply-input-box {
-    padding: 0.4rem;
-    margin-top: 0.5rem;
+    padding: 0.75rem;
+    margin-top: 0.75rem;
+    background: rgba(108, 92, 231, 0.08);
   }
 
   .reply-input {
-    padding: 0.4rem;
-    font-size: 0.8rem;
+    padding: 0.875rem;
+    font-size: 1rem;
+    min-height: 48px;
   }
 
   .btn-submit-reply,
   .btn-cancel-reply {
-    padding: 0.4rem;
-    font-size: 0.75rem;
+    padding: 0.875rem 1.25rem;
+    font-size: 0.9375rem;
+    min-height: 48px;
+    flex: 1;
   }
 }
 
