@@ -38,6 +38,9 @@ function Feed({ onOpenMiniChat }) {
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const [hiddenFromUsers, setHiddenFromUsers] = useState([]);
   const [sharedWithUsers, setSharedWithUsers] = useState([]);
+  const [editPostVisibility, setEditPostVisibility] = useState('friends');
+  const [editHiddenFromUsers, setEditHiddenFromUsers] = useState([]);
+  const [editSharedWithUsers, setEditSharedWithUsers] = useState([]);
   const [friends, setFriends] = useState([]);
   const [onlineFriends, setOnlineFriends] = useState([]);
   const [offlineFriends, setOfflineFriends] = useState([]);
@@ -349,6 +352,9 @@ function Feed({ onOpenMiniChat }) {
   const handleEditPost = (post) => {
     setEditingPostId(post._id);
     setEditPostText(post.content);
+    setEditPostVisibility(post.visibility || 'friends');
+    setEditHiddenFromUsers(post.hiddenFrom?.map(u => u._id || u) || []);
+    setEditSharedWithUsers(post.sharedWith?.map(u => u._id || u) || []);
     setOpenDropdownId(null);
   };
 
@@ -356,12 +362,32 @@ function Feed({ onOpenMiniChat }) {
     if (!editPostText.trim()) return;
 
     try {
-      const response = await api.put(`/posts/${postId}`, {
-        content: editPostText
-      });
+      const updateData = {
+        content: editPostText,
+        visibility: editPostVisibility
+      };
+
+      // Add custom privacy settings if applicable
+      if (editPostVisibility === 'custom') {
+        if (editHiddenFromUsers.length > 0) {
+          updateData.hiddenFrom = editHiddenFromUsers;
+        }
+        if (editSharedWithUsers.length > 0) {
+          updateData.sharedWith = editSharedWithUsers;
+        }
+      } else {
+        // Clear custom privacy if not using custom visibility
+        updateData.hiddenFrom = [];
+        updateData.sharedWith = [];
+      }
+
+      const response = await api.put(`/posts/${postId}`, updateData);
       setPosts(posts.map(p => p._id === postId ? response.data : p));
       setEditingPostId(null);
       setEditPostText('');
+      setEditPostVisibility('friends');
+      setEditHiddenFromUsers([]);
+      setEditSharedWithUsers([]);
       showAlert('Post updated successfully!', 'Success');
     } catch (error) {
       console.error('Failed to edit post:', error);
@@ -372,6 +398,9 @@ function Feed({ onOpenMiniChat }) {
   const handleCancelEditPost = () => {
     setEditingPostId(null);
     setEditPostText('');
+    setEditPostVisibility('friends');
+    setEditHiddenFromUsers([]);
+    setEditSharedWithUsers([]);
   };
 
   const handleDeleteComment = async (postId, commentId) => {
@@ -712,6 +741,22 @@ function Feed({ onOpenMiniChat }) {
                                 autoFocus
                                 rows="4"
                               />
+                              <div className="post-edit-privacy">
+                                <label style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginRight: '0.5rem' }}>
+                                  Privacy:
+                                </label>
+                                <select
+                                  value={editPostVisibility}
+                                  onChange={(e) => setEditPostVisibility(e.target.value)}
+                                  className="privacy-selector glossy"
+                                  style={{ fontSize: '0.9rem', padding: '0.5rem 1rem' }}
+                                >
+                                  <option value="public">🌍 Public</option>
+                                  <option value="friends">👥 Friends</option>
+                                  <option value="custom">⚙️ Custom</option>
+                                  <option value="private">🔒 Only Me</option>
+                                </select>
+                              </div>
                               <div className="post-edit-actions">
                                 <button
                                   onClick={() => handleSaveEditPost(post._id)}

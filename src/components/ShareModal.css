@@ -141,6 +141,36 @@
   font-size: 1rem;
 }
 
+.share-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  border-bottom: 2px solid var(--border-light);
+}
+
+.share-tab {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  background: transparent;
+  border: none;
+  border-bottom: 3px solid transparent;
+  color: var(--text-muted);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.95rem;
+}
+
+.share-tab:hover {
+  color: var(--pryde-purple);
+  background: var(--soft-lavender);
+}
+
+.share-tab.active {
+  color: var(--pryde-purple);
+  border-bottom-color: var(--pryde-purple);
+}
+
 .friends-list {
   max-height: 200px;
   overflow-y: auto;

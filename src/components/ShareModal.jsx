@@ -5,13 +5,17 @@ import './ShareModal.css';
 
 function ShareModal({ isOpen, onClose, post, onShare }) {
   const [friends, setFriends] = useState([]);
+  const [groupChats, setGroupChats] = useState([]);
   const [selectedFriends, setSelectedFriends] = useState([]);
+  const [selectedGroups, setSelectedGroups] = useState([]);
   const [shareToFeed, setShareToFeed] = useState(true);
   const [loading, setLoading] = useState(false);
+  const [shareTab, setShareTab] = useState('friends'); // 'friends' or 'groups'
 
   useEffect(() => {
     if (isOpen) {
       fetchFriends();
+      fetchGroupChats();
     }
   }, [isOpen]);
 
@@ -24,6 +28,15 @@ function ShareModal({ isOpen, onClose, post, onShare }) {
     }
   };
 
+  const fetchGroupChats = async () => {
+    try {
+      const response = await api.get('/groupChats');
+      setGroupChats(response.data || []);
+    } catch (error) {
+      console.error('Failed to fetch group chats:', error);
+    }
+  };
+
   const handleShare = async () => {
     setLoading(true);
     try {
@@ -32,16 +45,44 @@ function ShareModal({ isOpen, onClose, post, onShare }) {
         await api.post(`/posts/${post._id}/share`);
       }
 
-      // Send to selected friends (future feature - would need messaging integration)
+      // Create post link message
+      const postLink = `${window.location.origin}/post/${post._id}`;
+      const postPreview = post.content ? post.content.substring(0, 100) + (post.content.length > 100 ? '...' : '') : 'Check out this post!';
+      const messageContent = `📌 Shared a post: ${postPreview}\n\n${postLink}`;
+
+      // Send to selected friends via messages
       if (selectedFriends.length > 0) {
-        // TODO: Implement sending post to specific friends via messages
-        console.log('Sharing with friends:', selectedFriends);
+        await Promise.all(
+          selectedFriends.map(friendId =>
+            api.post('/messages', {
+              recipient: friendId,
+              content: messageContent
+            })
+          )
+        );
+      }
+
+      // Send to selected group chats
+      if (selectedGroups.length > 0) {
+        await Promise.all(
+          selectedGroups.map(groupId =>
+            api.post('/messages', {
+              groupChatId: groupId,
+              content: messageContent
+            })
+          )
+        );
       }
 
       onShare();
       onClose();
+      // Reset selections
+      setSelectedFriends([]);
+      setSelectedGroups([]);
+      setShareToFeed(true);
     } catch (error) {
       console.error('Failed to share post:', error);
+      alert('Failed to share post. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -52,6 +93,14 @@ function ShareModal({ isOpen, onClose, post, onShare }) {
       prev.includes(friendId)
         ? prev.filter(id => id !== friendId)
         : [...prev, friendId]
+    );
+  };
+
+  const toggleGroup = (groupId) => {
+    setSelectedGroups(prev =>
+      prev.includes(groupId)
+        ? prev.filter(id => id !== groupId)
+        : [...prev, groupId]
     );
   };
 
@@ -110,32 +159,79 @@ function ShareModal({ isOpen, onClose, post, onShare }) {
             </label>
           </div>
 
-          {/* Friend Selection */}
+          {/* Friend & Group Selection */}
           <div className="friend-selection">
-            <h3>Send to Friends (Optional)</h3>
-            <div className="friends-list">
-              {friends.length === 0 ? (
-                <p className="no-friends">No friends to share with</p>
-              ) : (
-                friends.map(friend => (
-                  <label key={friend._id} className="friend-item">
-                    <input
-                      type="checkbox"
-                      checked={selectedFriends.includes(friend._id)}
-                      onChange={() => toggleFriend(friend._id)}
-                    />
-                    <div className="friend-avatar">
-                      {friend.profilePhoto ? (
-                        <img src={getImageUrl(friend.profilePhoto)} alt={friend.displayName} />
-                      ) : (
-                        <span>{friend.displayName?.charAt(0).toUpperCase()}</span>
-                      )}
-                    </div>
-                    <span>{friend.displayName || friend.username}</span>
-                  </label>
-                ))
-              )}
+            <h3>Send via Message (Optional)</h3>
+
+            {/* Tabs */}
+            <div className="share-tabs">
+              <button
+                className={`share-tab ${shareTab === 'friends' ? 'active' : ''}`}
+                onClick={() => setShareTab('friends')}
+              >
+                👥 Friends ({selectedFriends.length})
+              </button>
+              <button
+                className={`share-tab ${shareTab === 'groups' ? 'active' : ''}`}
+                onClick={() => setShareTab('groups')}
+              >
+                💬 Groups ({selectedGroups.length})
+              </button>
             </div>
+
+            {/* Friends List */}
+            {shareTab === 'friends' && (
+              <div className="friends-list">
+                {friends.length === 0 ? (
+                  <p className="no-friends">No friends to share with</p>
+                ) : (
+                  friends.map(friend => (
+                    <label key={friend._id} className="friend-item">
+                      <input
+                        type="checkbox"
+                        checked={selectedFriends.includes(friend._id)}
+                        onChange={() => toggleFriend(friend._id)}
+                      />
+                      <div className="friend-avatar">
+                        {friend.profilePhoto ? (
+                          <img src={getImageUrl(friend.profilePhoto)} alt={friend.displayName} />
+                        ) : (
+                          <span>{friend.displayName?.charAt(0).toUpperCase()}</span>
+                        )}
+                      </div>
+                      <span>{friend.displayName || friend.username}</span>
+                    </label>
+                  ))
+                )}
+              </div>
+            )}
+
+            {/* Groups List */}
+            {shareTab === 'groups' && (
+              <div className="friends-list">
+                {groupChats.length === 0 ? (
+                  <p className="no-friends">No group chats to share with</p>
+                ) : (
+                  groupChats.map(group => (
+                    <label key={group._id} className="friend-item">
+                      <input
+                        type="checkbox"
+                        checked={selectedGroups.includes(group._id)}
+                        onChange={() => toggleGroup(group._id)}
+                      />
+                      <div className="friend-avatar">
+                        {group.avatar ? (
+                          <img src={getImageUrl(group.avatar)} alt={group.name} />
+                        ) : (
+                          <span>{group.name?.charAt(0).toUpperCase()}</span>
+                        )}
+                      </div>
+                      <span>{group.name}</span>
+                    </label>
+                  ))
+                )}
+              </div>
+            )}
           </div>
         </div>
 
@@ -144,7 +240,7 @@ function ShareModal({ isOpen, onClose, post, onShare }) {
           <button
             className="btn-share"
             onClick={handleShare}
-            disabled={loading || (!shareToFeed && selectedFriends.length === 0)}
+            disabled={loading || (!shareToFeed && selectedFriends.length === 0 && selectedGroups.length === 0)}
           >
             {loading ? 'Sharing...' : 'Share'}
           </button>

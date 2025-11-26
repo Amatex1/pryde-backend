@@ -65,7 +65,22 @@ function App() {
   }, [isAuth]);
 
   // Open a mini chat
-  const openMiniChat = (friendId, friendName, friendPhoto) => {
+  const openMiniChat = (friendIdOrObject, friendName, friendPhoto) => {
+    // Handle both object and individual parameters
+    let friendId, name, photo;
+
+    if (typeof friendIdOrObject === 'object' && friendIdOrObject !== null) {
+      // Called with friend object
+      friendId = friendIdOrObject._id || friendIdOrObject.id;
+      name = friendIdOrObject.displayName || friendIdOrObject.username;
+      photo = friendIdOrObject.profilePhoto;
+    } else {
+      // Called with individual parameters
+      friendId = friendIdOrObject;
+      name = friendName;
+      photo = friendPhoto;
+    }
+
     // Check if chat is already open
     const existingChat = openChats.find(chat => chat.friendId === friendId);
     if (existingChat) {
@@ -75,7 +90,7 @@ function App() {
     }
 
     // Add new chat
-    setOpenChats(prev => [...prev, { friendId, friendName, friendPhoto }]);
+    setOpenChats(prev => [...prev, { friendId, friendName: name, friendPhoto: photo }]);
   };
 
   // Close a mini chat
