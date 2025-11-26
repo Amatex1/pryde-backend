@@ -15,8 +15,8 @@ function Navbar({ onOpenMiniChat }) {
 
   const handleLogout = () => {
     logout();
-    navigate('/login');
-    window.location.reload();
+    // Use window.location.href for immediate redirect without flash
+    window.location.href = '/login';
   };
 
   // Close dropdown when clicking outside
