@@ -30,6 +30,31 @@ const auth = async (req, res, next) => {
 
     console.log('✅ User found:', user.username);
 
+    // Check age if birthday exists (auto-ban underage users)
+    if (user.birthday) {
+      const birthDate = new Date(user.birthday);
+      const today = new Date();
+      let age = today.getFullYear() - birthDate.getFullYear();
+      const monthDiff = today.getMonth() - birthDate.getMonth();
+
+      if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+        age--;
+      }
+
+      if (age < 18) {
+        // Auto-ban underage user
+        user.isBanned = true;
+        user.bannedReason = 'Underage - Platform is strictly 18+ only';
+        await user.save();
+
+        console.log('❌ User is underage and has been banned:', user.username);
+        return res.status(403).json({
+          message: 'Your account has been banned. This platform is strictly 18+ only.',
+          reason: 'underage'
+        });
+      }
+    }
+
     // Check if user is banned
     if (user.isBanned) {
       console.log('❌ User is banned:', user.username);

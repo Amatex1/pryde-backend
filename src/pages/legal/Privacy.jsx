@@ -102,17 +102,21 @@ function Privacy() {
         </section>
 
         <section className="legal-section">
-          <h2>5. Messages</h2>
+          <h2>5. Messages & Privacy</h2>
+          <p>
+            <strong>Private messages may be accessed only when reported for safety or legal reasons.</strong>
+          </p>
           <p>
             Messages are private between users but may be reviewed only:
           </p>
           <ul>
-            <li>When reported</li>
-            <li>For safety or legal compliance</li>
+            <li>When reported by a user</li>
+            <li>For safety investigations or legal compliance</li>
             <li>During moderation of harmful behavior</li>
+            <li>In response to law enforcement requests</li>
           </ul>
           <p>
-            <strong>We do not read private messages unnecessarily.</strong>
+            <strong>We do not proactively monitor or read private messages.</strong> Your conversations remain private unless a report or legal obligation requires review.
           </p>
         </section>
 

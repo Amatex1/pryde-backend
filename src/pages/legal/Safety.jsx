@@ -66,6 +66,31 @@ function Safety() {
             <li>Report hate speech or harassment immediately</li>
             <li>You are not obligated to disclose your identity to anyone</li>
           </ul>
+
+          <div style={{
+            background: 'rgba(255, 165, 0, 0.1)',
+            border: '2px solid #ff8c00',
+            borderRadius: '8px',
+            padding: '1.5rem',
+            marginTop: '1.5rem'
+          }}>
+            <h3 style={{ color: '#ff8c00', marginTop: 0 }}>⚠️ Safety in High-Risk Regions</h3>
+            <p>
+              <strong>If you are in a country where same-sex relationships are criminalised, please take extra precautions:</strong>
+            </p>
+            <ul style={{ marginTop: '0.5rem' }}>
+              <li><strong>Do not use real names</strong> — Use a pseudonym or nickname</li>
+              <li><strong>Do not use real photos</strong> — Avoid profile pictures that could identify you</li>
+              <li><strong>Do not share identifying details</strong> — Avoid posting your location, workplace, school, or other personal information</li>
+              <li><strong>Turn off online status and last seen</strong> — Go to Settings → Privacy to disable these features</li>
+              <li><strong>Avoid enabling location</strong> unless it is safe to do so</li>
+              <li><strong>Use a VPN</strong> if accessing the platform from a restricted region</li>
+              <li><strong>Be cautious about who you connect with</strong> — Verify identities before sharing personal information</li>
+            </ul>
+            <p style={{ marginTop: '1rem', fontWeight: 'bold' }}>
+              Your safety is our priority. If you feel unsafe, please deactivate your account or contact us for assistance.
+            </p>
+          </div>
         </section>
 
         <section className="legal-section">

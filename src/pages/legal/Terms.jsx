@@ -82,7 +82,7 @@ function Terms() {
         </section>
 
         <section className="legal-section">
-          <h2>4. 18+ Content</h2>
+          <h2>4. 18+ Content & Media Responsibility</h2>
           <p>
             <strong>Adult content is allowed only if:</strong>
           </p>
@@ -92,6 +92,9 @@ function Terms() {
             <li>It complies with local laws</li>
             <li>It does not include exploitation or illegal behavior</li>
           </ul>
+          <p>
+            <strong>Users are responsible for ensuring that all photos, videos, and other media uploaded to Pryde Social involve adults and are consensual.</strong>
+          </p>
           <p>
             We reserve the right to remove content that is unsafe or harmful.
           </p>
@@ -123,7 +126,7 @@ function Terms() {
         </section>
 
         <section className="legal-section">
-          <h2>7. Removal of Content</h2>
+          <h2>7. Removal of Content & Private Messages</h2>
           <p>
             <strong>We may remove content that:</strong>
           </p>
@@ -134,6 +137,9 @@ function Terms() {
             <li>Involves copyright infringement</li>
             <li>Harasses or targets individuals</li>
           </ul>
+          <p>
+            <strong>Private messages are not monitored unless reported.</strong> We respect your privacy and do not proactively monitor private conversations. However, reported messages may be reviewed for safety and policy enforcement.
+          </p>
         </section>
 
         <section className="legal-section">

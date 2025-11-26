@@ -10,7 +10,7 @@ function Register({ setIsAuth }) {
     email: '',
     password: '',
     displayName: '',
-    ageVerified: false,
+    birthday: '',
     termsAccepted: false
   });
   const [error, setError] = useState('');
@@ -28,13 +28,35 @@ function Register({ setIsAuth }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-    
-    // Validate age verification
-    if (!formData.ageVerified || !formData.termsAccepted) {
-      setError('You must be 18+ and accept the terms to register');
+
+    // Validate birthday is provided
+    if (!formData.birthday) {
+      setError('Please enter your full birthday');
       return;
     }
-    
+
+    // Calculate age from birthday
+    const birthDate = new Date(formData.birthday);
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+
+    // Validate age is 18 or older
+    if (age < 18) {
+      setError('You must be 18 years or older to register');
+      return;
+    }
+
+    // Validate terms accepted
+    if (!formData.termsAccepted) {
+      setError('You must accept the terms to register');
+      return;
+    }
+
     // Frontend validation
     if (formData.password.length < 6) {
       setError('Password must be at least 6 characters');
@@ -148,14 +170,30 @@ function Register({ setIsAuth }) {
             />
           </div>
 
-          <div className="form-group checkbox-group">
+          <div className="form-group">
+            <label htmlFor="birthday">Birthday <span style={{ color: 'var(--pryde-purple)', fontWeight: 'bold' }}>*</span></label>
+            <input
+              type="date"
+              id="birthday"
+              name="birthday"
+              value={formData.birthday}
+              onChange={handleChange}
+              required
+              max={new Date(new Date().setFullYear(new Date().getFullYear() - 18)).toISOString().split('T')[0]}
+              className="form-input glossy"
+            />
+            <small style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginTop: '0.25rem', display: 'block' }}>
+              You must be 18 or older to register. Only your age will be shown on your profile.
+            </small>
+          </div>
+
+          <div className="form-group checkbox-group" style={{ display: 'none' }}>
             <label className="checkbox-label">
               <input
                 type="checkbox"
                 name="ageVerified"
-                checked={formData.ageVerified}
+                checked={true}
                 onChange={handleChange}
-                required
               />
               <span className="checkbox-text">
                 I verify that I am 18 years or older
@@ -178,7 +216,7 @@ function Register({ setIsAuth }) {
             </label>
           </div>
 
-          <button type="submit" disabled={loading || !formData.ageVerified || !formData.termsAccepted} className="btn-primary glossy-gold">
+          <button type="submit" disabled={loading || !formData.birthday || !formData.termsAccepted} className="btn-primary glossy-gold">
             {loading ? 'Creating account...' : 'Sign Up'}
           </button>
         </form>

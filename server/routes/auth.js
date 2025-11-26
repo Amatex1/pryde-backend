@@ -32,14 +32,33 @@ router.post('/signup', signupLimiter, async (req, res) => {
       customPronouns,
       gender,
       customGender,
-      relationshipStatus
+      relationshipStatus,
+      birthday
     } = req.body;
 
     // Validation
-    if (!username || !email || !password) {
+    if (!username || !email || !password || !birthday) {
       return res.status(400).json({
-        message: 'Please provide all required fields',
-        fields: { username, email, password }
+        message: 'Please provide all required fields including birthday',
+        fields: { username, email, password, birthday }
+      });
+    }
+
+    // Validate birthday and calculate age
+    const birthDate = new Date(birthday);
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+
+    // Auto-ban users under 18
+    if (age < 18) {
+      return res.status(403).json({
+        message: 'You must be 18 years or older to register. This platform is strictly 18+ only.',
+        reason: 'underage'
       });
     }
 
@@ -75,7 +94,8 @@ router.post('/signup', signupLimiter, async (req, res) => {
       customPronouns: customPronouns || '',
       gender: gender || '',
       customGender: customGender || '',
-      relationshipStatus: relationshipStatus || ''
+      relationshipStatus: relationshipStatus || '',
+      birthday: birthDate
     });
 
     await user.save();
@@ -138,6 +158,30 @@ router.post('/login', loginLimiter, async (req, res) => {
     if (!user) {
       // Log failed login attempt
       return res.status(401).json({ message: 'Invalid email or password' });
+    }
+
+    // Check age if birthday exists (auto-ban underage users)
+    if (user.birthday) {
+      const birthDate = new Date(user.birthday);
+      const today = new Date();
+      let age = today.getFullYear() - birthDate.getFullYear();
+      const monthDiff = today.getMonth() - birthDate.getMonth();
+
+      if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+        age--;
+      }
+
+      if (age < 18) {
+        // Auto-ban underage user
+        user.isBanned = true;
+        user.bannedReason = 'Underage - Platform is strictly 18+ only';
+        await user.save();
+
+        return res.status(403).json({
+          message: 'Your account has been banned. This platform is strictly 18+ only.',
+          reason: 'underage'
+        });
+      }
     }
 
     // Check if user is banned
