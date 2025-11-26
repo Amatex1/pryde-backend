@@ -5,6 +5,7 @@ import Report from '../models/Report.js';
 import Block from '../models/Block.js';
 import Post from '../models/Post.js';
 import Message from '../models/Message.js';
+import SecurityLog from '../models/SecurityLog.js';
 import auth from '../middleware/auth.js';
 import adminAuth, { checkPermission } from '../middleware/adminAuth.js';
 

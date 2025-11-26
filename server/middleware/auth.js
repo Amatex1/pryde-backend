@@ -1,6 +1,8 @@
 import jwt from 'jsonwebtoken';
 import config from '../config/config.js';
 import User from '../models/User.js';
+import SecurityLog from '../models/SecurityLog.js';
+import { getClientIp } from '../utils/sessionUtils.js';
 
 const auth = async (req, res, next) => {
   try {
@@ -46,6 +48,25 @@ const auth = async (req, res, next) => {
         user.isBanned = true;
         user.bannedReason = 'Underage - Platform is strictly 18+ only';
         await user.save();
+
+        // Log underage access attempt
+        try {
+          await SecurityLog.create({
+            type: 'underage_access',
+            severity: 'critical',
+            username: user.username,
+            email: user.email,
+            userId: user._id,
+            birthday: user.birthday,
+            calculatedAge: age,
+            ipAddress: getClientIp(req),
+            userAgent: req.headers['user-agent'],
+            details: `Underage user attempted to access ${req.path} and was auto-banned. Age: ${age} years old.`,
+            action: 'banned'
+          });
+        } catch (logError) {
+          console.error('Failed to log underage access attempt:', logError);
+        }
 
         console.log('❌ User is underage and has been banned:', user.username);
         return res.status(403).json({

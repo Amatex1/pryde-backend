@@ -3,6 +3,7 @@ const router = express.Router();
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import User from '../models/User.js';
+import SecurityLog from '../models/SecurityLog.js';
 import auth from '../middleware/auth.js';
 import config from '../config/config.js';
 import { sendPasswordResetEmail, sendLoginAlertEmail, sendSuspiciousLoginEmail } from '../utils/emailService.js';
@@ -56,6 +57,24 @@ router.post('/signup', signupLimiter, async (req, res) => {
 
     // Auto-ban users under 18
     if (age < 18) {
+      // Log underage registration attempt
+      try {
+        await SecurityLog.create({
+          type: 'underage_registration',
+          severity: 'high',
+          username,
+          email,
+          birthday: birthDate,
+          calculatedAge: age,
+          ipAddress: getClientIp(req),
+          userAgent: req.headers['user-agent'],
+          details: `Underage registration attempt blocked. Age: ${age} years old.`,
+          action: 'blocked'
+        });
+      } catch (logError) {
+        console.error('Failed to log underage registration attempt:', logError);
+      }
+
       return res.status(403).json({
         message: 'You must be 18 years or older to register. This platform is strictly 18+ only.',
         reason: 'underage'
@@ -176,6 +195,25 @@ router.post('/login', loginLimiter, async (req, res) => {
         user.isBanned = true;
         user.bannedReason = 'Underage - Platform is strictly 18+ only';
         await user.save();
+
+        // Log underage login attempt
+        try {
+          await SecurityLog.create({
+            type: 'underage_login',
+            severity: 'critical',
+            username: user.username,
+            email: user.email,
+            userId: user._id,
+            birthday: user.birthday,
+            calculatedAge: age,
+            ipAddress: getClientIp(req),
+            userAgent: req.headers['user-agent'],
+            details: `Underage user attempted login and was auto-banned. Age: ${age} years old.`,
+            action: 'banned'
+          });
+        } catch (logError) {
+          console.error('Failed to log underage login attempt:', logError);
+        }
 
         return res.status(403).json({
           message: 'Your account has been banned. This platform is strictly 18+ only.',
