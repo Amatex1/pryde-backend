@@ -42,9 +42,11 @@ function ShareModal({ isOpen, onClose, post, onShare }) {
   const handleShare = async () => {
     setLoading(true);
     try {
-      // Share to feed
-      if (shareToFeed) {
-        await api.post(`/posts/${post._id}/share`);
+      // Share to feed or friend's profile
+      if (shareToFeed || shareToFriendProfile) {
+        await api.post(`/posts/${post._id}/share`, {
+          shareToFriendProfile: shareToFriendProfile
+        });
       }
 
       // Create post link message
