@@ -285,6 +285,49 @@
   color: white;
 }
 
+.role-select {
+  padding: 0.4rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  border: 2px solid var(--border-light);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: white;
+}
+
+.role-select:hover {
+  border-color: var(--pryde-purple);
+}
+
+.role-select:focus {
+  outline: none;
+  border-color: var(--electric-blue);
+  box-shadow: 0 0 0 3px rgba(9, 132, 227, 0.1);
+}
+
+.role-select.role-user {
+  color: var(--text-main);
+  background: rgba(158, 158, 158, 0.1);
+}
+
+.role-select.role-moderator {
+  color: var(--electric-blue);
+  background: rgba(9, 132, 227, 0.1);
+}
+
+.role-select.role-admin {
+  color: var(--pryde-purple);
+  background: rgba(108, 92, 231, 0.1);
+}
+
+.role-select.role-super_admin {
+  color: var(--pryde-purple);
+  background: rgba(108, 92, 231, 0.2);
+  font-weight: 700;
+}
+
 .status-badge {
   padding: 0.25rem 0.75rem;
   border-radius: 20px;
