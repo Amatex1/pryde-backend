@@ -37,99 +37,10 @@ router.get('/search', auth, async (req, res) => {
   }
 });
 
-// @route   GET /api/users/:id
-// @desc    Get user by ID
-// @access  Private
-router.get('/:id', auth, checkProfileVisibility, async (req, res) => {
-  try {
-    const user = await User.findById(req.params.id)
-      .select('-password')
-      .populate('friends', 'username displayName profilePhoto');
-
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-
-    res.json(user);
-  } catch (error) {
-    console.error('Get user error:', error);
-    res.status(500).json({ message: 'Server error' });
-  }
-});
-
-// @route   PUT /api/users/profile
-// @desc    Update user profile
-// @access  Private
-router.put('/profile', auth, async (req, res) => {
-  try {
-    const {
-      fullName,
-      nickname,
-      displayNameType,
-      customDisplayName,
-      pronouns,
-      gender,
-      sexualOrientation,
-      relationshipStatus,
-      birthday,
-      bio,
-      postcode,
-      city,
-      website,
-      socialLinks,
-      interests,
-      lookingFor,
-      communicationStyle,
-      safetyPreferences
-    } = req.body;
-
-    const user = await User.findById(req.userId);
-
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-
-    // Update fields
-    if (fullName !== undefined) user.fullName = fullName;
-    if (nickname !== undefined) user.nickname = nickname;
-    if (displayNameType !== undefined) user.displayNameType = displayNameType;
-    if (customDisplayName !== undefined) user.customDisplayName = customDisplayName;
-    if (pronouns !== undefined) user.pronouns = pronouns;
-    if (gender !== undefined) user.gender = gender;
-    if (sexualOrientation !== undefined) user.sexualOrientation = sexualOrientation;
-    if (relationshipStatus !== undefined) user.relationshipStatus = relationshipStatus;
-    if (birthday !== undefined) user.birthday = birthday;
-    if (bio !== undefined) user.bio = bio;
-    if (postcode !== undefined) user.postcode = postcode;
-    if (city !== undefined) user.city = city;
-    if (website !== undefined) user.website = website;
-    if (socialLinks !== undefined) user.socialLinks = socialLinks;
-    if (interests !== undefined) user.interests = interests;
-    if (lookingFor !== undefined) user.lookingFor = lookingFor;
-    if (communicationStyle !== undefined) user.communicationStyle = communicationStyle;
-    if (safetyPreferences !== undefined) user.safetyPreferences = safetyPreferences;
-
-    // Update displayName based on displayNameType
-    if (displayNameType === 'fullName') {
-      user.displayName = fullName;
-    } else if (displayNameType === 'nickname') {
-      user.displayName = nickname || fullName;
-    } else if (displayNameType === 'custom') {
-      user.displayName = customDisplayName || fullName;
-    }
-
-    await user.save();
-
-    res.json({ user });
-  } catch (error) {
-    console.error('Update profile error:', error);
-    res.status(500).json({ message: 'Server error' });
-  }
-});
-
 // @route   GET /api/users/download-data
 // @desc    Download all user data
 // @access  Private
+// NOTE: This route MUST be before /:id route to avoid being caught by it
 router.get('/download-data', auth, async (req, res) => {
   try {
     const userId = req.userId;
@@ -287,6 +198,96 @@ router.get('/download-data', auth, async (req, res) => {
       error: error.message,
       errorName: error.name
     });
+  }
+});
+
+// @route   GET /api/users/:id
+// @desc    Get user by ID
+// @access  Private
+router.get('/:id', auth, checkProfileVisibility, async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id)
+      .select('-password')
+      .populate('friends', 'username displayName profilePhoto');
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    res.json(user);
+  } catch (error) {
+    console.error('Get user error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   PUT /api/users/profile
+// @desc    Update user profile
+// @access  Private
+router.put('/profile', auth, async (req, res) => {
+  try {
+    const {
+      fullName,
+      nickname,
+      displayNameType,
+      customDisplayName,
+      pronouns,
+      gender,
+      sexualOrientation,
+      relationshipStatus,
+      birthday,
+      bio,
+      postcode,
+      city,
+      website,
+      socialLinks,
+      interests,
+      lookingFor,
+      communicationStyle,
+      safetyPreferences
+    } = req.body;
+
+    const user = await User.findById(req.userId);
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Update fields
+    if (fullName !== undefined) user.fullName = fullName;
+    if (nickname !== undefined) user.nickname = nickname;
+    if (displayNameType !== undefined) user.displayNameType = displayNameType;
+    if (customDisplayName !== undefined) user.customDisplayName = customDisplayName;
+    if (pronouns !== undefined) user.pronouns = pronouns;
+    if (gender !== undefined) user.gender = gender;
+    if (sexualOrientation !== undefined) user.sexualOrientation = sexualOrientation;
+    if (relationshipStatus !== undefined) user.relationshipStatus = relationshipStatus;
+    if (birthday !== undefined) user.birthday = birthday;
+    if (bio !== undefined) user.bio = bio;
+    if (postcode !== undefined) user.postcode = postcode;
+    if (city !== undefined) user.city = city;
+    if (website !== undefined) user.website = website;
+    if (socialLinks !== undefined) user.socialLinks = socialLinks;
+    if (interests !== undefined) user.interests = interests;
+    if (lookingFor !== undefined) user.lookingFor = lookingFor;
+    if (communicationStyle !== undefined) user.communicationStyle = communicationStyle;
+    if (safetyPreferences !== undefined) user.safetyPreferences = safetyPreferences;
+
+    // Update displayName based on displayNameType
+    if (displayNameType === 'fullName') {
+      user.displayName = fullName;
+    } else if (displayNameType === 'nickname') {
+      user.displayName = nickname || fullName;
+    } else if (displayNameType === 'custom') {
+      user.displayName = customDisplayName || fullName;
+    }
+
+    await user.save();
+
+    res.json({ user });
+  } catch (error) {
+    console.error('Update profile error:', error);
+    res.status(500).json({ message: 'Server error' });
   }
 });
 
