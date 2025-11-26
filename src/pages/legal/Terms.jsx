@@ -5,352 +5,176 @@ function Terms() {
   return (
     <div className="legal-page">
       <div className="legal-header">
-        <h1>Terms of Service</h1>
-        <p className="legal-subtitle">Effective Date: January 1, 2025</p>
+        <h1>🌈 Pryde Social — Terms of Service</h1>
+        <p className="legal-subtitle">Last Updated: January 1, 2025</p>
       </div>
 
       <div className="legal-content">
         <section className="legal-section">
-          <h2>1. Acceptance of Terms</h2>
           <p>
-            Welcome to Pryde Social! By accessing or using our platform, you agree to be bound by these Terms of Service and all applicable laws and regulations. If you do not agree with any part of these terms, you may not use our service.
+            Welcome to Pryde Social ("Pryde", "we", "our", "the platform"). By accessing or using Pryde Social, you agree to these Terms of Service.
           </p>
           <p>
-            Pryde Social reserves the right to modify these Terms at any time. We will notify users of significant changes via email or in-app notification. Your continued use of the service after such modifications constitutes acceptance of the updated terms.
+            <strong>If you do not agree, you must not use the platform.</strong>
           </p>
         </section>
 
         <section className="legal-section">
-          <h2>2. Age Restriction & Verification</h2>
+          <h2>1. Eligibility</h2>
           <p>
-            <strong>You must be at least 18 years of age to use Pryde Social.</strong> By creating an account, you represent and warrant that:
+            <strong>Pryde Social is strictly 18+ only.</strong>
           </p>
-          <ul>
-            <li>You are 18 years of age or older</li>
-            <li>You have the legal capacity to enter into binding contracts</li>
-            <li>You will comply with all local, state, national, and international laws</li>
-            <li>You will not misrepresent your age or identity</li>
-          </ul>
           <p>
-            Pryde Social reserves the right to verify user age and terminate accounts that violate this requirement. Providing false information about your age is a violation of these Terms and may result in immediate account suspension or termination.
+            By using the platform, you confirm you are 18 years or older.
           </p>
         </section>
 
         <section className="legal-section">
-          <h2>3. Account Responsibilities</h2>
+          <h2>2. Description of Service</h2>
           <p>
-            When you create an account on Pryde Social, you are responsible for:
+            Pryde Social is a hobby-operated LGBTQ+ community platform where users can create profiles, post content, send messages, and interact with other adults.
+          </p>
+          <p>
+            <strong>We do not guarantee:</strong>
           </p>
           <ul>
-            <li><strong>Security:</strong> Maintaining the confidentiality of your password and account credentials</li>
-            <li><strong>Accuracy:</strong> Providing accurate, current, and complete information during registration</li>
-            <li><strong>Updates:</strong> Keeping your profile information up-to-date</li>
-            <li><strong>Activity:</strong> All activities that occur under your account</li>
-            <li><strong>Notifications:</strong> Immediately notifying us of any unauthorized use or security breach</li>
+            <li>Uninterrupted access</li>
+            <li>Error-free operation</li>
+            <li>Permanent data storage</li>
           </ul>
           <p>
-            You may not:
-          </p>
-          <ul>
-            <li>Create multiple accounts or impersonate others</li>
-            <li>Share your account credentials with third parties</li>
-            <li>Use automated systems (bots) to access the platform</li>
-            <li>Sell, transfer, or assign your account to another person</li>
-          </ul>
-        </section>
-
-        <section className="legal-section">
-          <h2>4. Acceptable Use Policy</h2>
-          <p>
-            Pryde Social is a community built on respect, safety, and authentic connections. You agree NOT to use the platform to:
-          </p>
-          <ul>
-            <li><strong>Harass or Abuse:</strong> Post threatening, harassing, defamatory, or discriminatory content</li>
-            <li><strong>Illegal Activity:</strong> Engage in or promote illegal activities, including fraud, theft, or distribution of illegal materials</li>
-            <li><strong>Adult Content:</strong> Share pornographic, sexually explicit, or obscene content (violations result in immediate suspension)</li>
-            <li><strong>Violence:</strong> Promote violence, self-harm, or harm to others</li>
-            <li><strong>Spam:</strong> Send unsolicited messages, advertisements, or commercial content</li>
-            <li><strong>Intellectual Property:</strong> Upload content that infringes on copyrights, trademarks, or other intellectual property rights</li>
-            <li><strong>Hate Speech:</strong> Post content that promotes hate, discrimination, or intolerance based on race, religion, gender, sexual orientation, disability, or other protected characteristics</li>
-            <li><strong>Privacy Violations:</strong> Share others' personal information without consent (doxxing)</li>
-            <li><strong>Malware:</strong> Distribute viruses, malware, or malicious code</li>
-          </ul>
-        </section>
-
-        <section className="legal-section">
-          <h2>5. Content Ownership & License</h2>
-          <p>
-            <strong>Your Content:</strong> You retain all ownership rights to the content you upload to Pryde Social (posts, photos, messages, profile information). However, by uploading content, you grant Pryde Social a worldwide, non-exclusive, royalty-free license to:
-          </p>
-          <ul>
-            <li>Display, reproduce, and distribute your content within the platform</li>
-            <li>Store content using MongoDB and GridFS technology for delivery and backup</li>
-            <li>Create backups and cache your content for performance optimization</li>
-            <li>Moderate and remove content that violates our policies</li>
-          </ul>
-          <p>
-            <strong>Platform Content:</strong> The Pryde Social name, logo, design, interface, and all proprietary features are owned by Pryde Social and protected by intellectual property laws. You may not copy, reproduce, or redistribute any platform content without written permission.
+            This platform is operated privately by an individual, not a company.
           </p>
         </section>
 
         <section className="legal-section">
-          <h2>6. Data Storage & Image Uploads</h2>
+          <h2>3. User Conduct</h2>
           <p>
-            Pryde Social uses the following technologies to store and deliver your data:
+            <strong>You agree not to:</strong>
           </p>
           <ul>
-            <li><strong>Database:</strong> MongoDB for user profiles, posts, messages, and metadata</li>
-            <li><strong>Image Storage:</strong> GridFS (MongoDB's file storage system) for profile photos, cover photos, and uploaded images</li>
-            <li><strong>Message Storage:</strong> Encrypted message history stored in MongoDB with read receipts and delivery tracking</li>
+            <li>Harass, threaten, or abuse other users</li>
+            <li>Post hate speech, discrimination, or slurs</li>
+            <li>Post or share illegal content</li>
+            <li>Share CSAM (child sexual abuse material) — zero tolerance</li>
+            <li>Impersonate others</li>
+            <li>Spam, scam, or mislead users</li>
+            <li>Post revenge porn or non-consensual content</li>
+            <li>Use Pryde to stalk, monitor, or harm others</li>
           </ul>
           <p>
-            You acknowledge that:
-          </p>
-          <ul>
-            <li>Images uploaded to Pryde Social are stored on our servers using GridFS</li>
-            <li>We implement reasonable security measures but cannot guarantee absolute security</li>
-            <li>You are responsible for backing up your own content</li>
-            <li>We may compress or optimize images for performance without prior notice</li>
-          </ul>
-        </section>
-
-        <section className="legal-section">
-          <h2>7. Privacy & Messages</h2>
-          <p>
-            <strong>Message Privacy:</strong> Direct messages on Pryde Social are private between sender and recipient(s). However:
-          </p>
-          <ul>
-            <li>Messages are stored in our MongoDB database for delivery and history purposes</li>
-            <li>We may access messages in cases of abuse reports, legal obligations, or Terms violations</li>
-            <li>Group chat messages are visible to all group members</li>
-            <li>Read receipts and delivery status are tracked and visible to senders</li>
-            <li>We do not sell or share your message content with third parties for advertising</li>
-          </ul>
-          <p>
-            For full details on data collection and usage, please review our <Link to="/privacy" className="legal-link">Privacy Policy</Link>.
+            Violations may result in warnings, suspensions, or permanent bans.
           </p>
         </section>
 
         <section className="legal-section">
-          <h2>8. Reporting & Enforcement</h2>
+          <h2>4. 18+ Content</h2>
           <p>
-            Pryde Social takes violations of these Terms seriously. If you encounter inappropriate content or behavior:
+            <strong>Adult content is allowed only if:</strong>
           </p>
           <ul>
-            <li>Use the "Report" button available on all posts and profiles</li>
-            <li>Contact our Safety Team via the <Link to="/safety" className="legal-link">Safety & Reporting</Link> page</li>
-            <li>For immediate safety concerns, contact local law enforcement first</li>
+            <li>All individuals depicted are adults</li>
+            <li>Content is consensual</li>
+            <li>It complies with local laws</li>
+            <li>It does not include exploitation or illegal behavior</li>
           </ul>
           <p>
-            <strong>Enforcement Actions:</strong> Violations may result in:
-          </p>
-          <ul>
-            <li>Warning notifications</li>
-            <li>Content removal</li>
-            <li>Temporary account suspension</li>
-            <li>Permanent account termination</li>
-            <li>Reporting to law enforcement (for illegal activities)</li>
-          </ul>
-        </section>
-
-        <section className="legal-section">
-          <h2>9. Termination</h2>
-          <p>
-            <strong>By You:</strong> You may delete your account at any time through your Settings page. Upon deletion:
-          </p>
-          <ul>
-            <li>Your profile and posts will be removed within 30 days</li>
-            <li>Some data may be retained for legal compliance or fraud prevention</li>
-            <li>Messages sent to other users may remain visible to recipients</li>
-          </ul>
-          <p>
-            <strong>By Us:</strong> We reserve the right to suspend or terminate your account at any time for:
-          </p>
-          <ul>
-            <li>Violations of these Terms</li>
-            <li>Violations of our Community Guidelines</li>
-            <li>Prolonged account inactivity</li>
-            <li>Legal or regulatory requirements</li>
-          </ul>
-        </section>
-
-        <section className="legal-section">
-          <h2>10. Disclaimers & Limitation of Liability</h2>
-          <p>
-            <strong>Service Availability:</strong> Pryde Social is provided "AS IS" and "AS AVAILABLE" without warranties of any kind. We do not guarantee:
-          </p>
-          <ul>
-            <li>Uninterrupted or error-free service</li>
-            <li>Complete data security or backup</li>
-            <li>Accuracy of user-generated content</li>
-            <li>Compatibility with all devices or browsers</li>
-          </ul>
-          <p>
-            <strong>No Emergency Services:</strong> Pryde Social is NOT an emergency service. If you or someone you know is in immediate danger, contact local emergency services (911 in the US) immediately.
-          </p>
-          <p>
-            <strong>No Professional Advice:</strong> Pryde Social is a social networking platform and does NOT provide professional advice of any kind, including but not limited to:
-          </p>
-          <ul>
-            <li><strong>Medical Advice:</strong> Content on the platform is not a substitute for professional medical diagnosis or treatment</li>
-            <li><strong>Legal Advice:</strong> Information shared is not legal counsel and should not be relied upon for legal decisions</li>
-            <li><strong>Financial Advice:</strong> Investment or financial information is not professional financial advice</li>
-            <li><strong>Mental Health Services:</strong> We are not a crisis service or mental health provider</li>
-            <li><strong>Relationship Counseling:</strong> User advice is not professional therapy or counseling</li>
-          </ul>
-          <p>
-            Always consult qualified professionals for medical, legal, financial, or mental health matters. Pryde Social and its users are not liable for any decisions made based on information shared on the platform.
-          </p>
-          <p>
-            <strong>Limitation of Liability:</strong> To the maximum extent permitted by law, Pryde Social and its officers, directors, employees, and affiliates shall not be liable for any indirect, incidental, special, consequential, or punitive damages arising from your use of the platform, including but not limited to:
-          </p>
-          <ul>
-            <li>Loss of data or content</li>
-            <li>Loss of profits or revenue</li>
-            <li>Unauthorized access to your account</li>
-            <li>Actions of other users</li>
-            <li>Reliance on user-generated content or advice</li>
-            <li>Emotional distress or psychological harm</li>
-            <li>Physical harm resulting from in-person meetings arranged through the platform</li>
-          </ul>
-          <p>
-            <strong>Legal Responsibility Limits:</strong> Pryde Social's total liability for any claims arising from your use of the service shall not exceed the amount you paid us in the past 12 months (currently $0 as the service is free).
+            We reserve the right to remove content that is unsafe or harmful.
           </p>
         </section>
 
         <section className="legal-section">
-          <h2>11. Not a Mandated Reporter</h2>
+          <h2>5. Account Responsibilities</h2>
           <p>
-            <strong>Important Disclosure:</strong> Pryde Social and its employees are NOT mandated reporters under child protection laws. We are a technology platform, not a social services agency, educational institution, or healthcare provider.
-          </p>
-          <p>
-            <strong>What This Means:</strong>
+            <strong>You are responsible for:</strong>
           </p>
           <ul>
-            <li>We are not legally required to report suspected child abuse or neglect to authorities</li>
-            <li>We do not have the training or expertise to assess abuse situations</li>
-            <li>We cannot investigate or intervene in real-world situations</li>
-            <li>We are not a substitute for professional child protective services</li>
+            <li>Maintaining account security</li>
+            <li>Not sharing your password</li>
+            <li>Reviewing your privacy and safety settings</li>
           </ul>
           <p>
-            <strong>If You Suspect Child Abuse:</strong> Contact local authorities immediately:
-          </p>
-          <ul>
-            <li><strong>Emergency (US):</strong> 911</li>
-            <li><strong>Childhelp National Child Abuse Hotline:</strong> 1-800-422-4453</li>
-            <li><strong>Local Child Protective Services:</strong> Contact your state/county CPS office</li>
-          </ul>
-        </section>
-
-        <section className="legal-section">
-          <h2>12. Authority Reporting Clause</h2>
-          <p>
-            While we are not mandated reporters, <strong>Pryde Social reserves the right to report content or activity to law enforcement or relevant authorities</strong> when we believe, in our sole discretion, that:
-          </p>
-          <ul>
-            <li><strong>Imminent Danger:</strong> Someone is in immediate danger of serious physical harm or death</li>
-            <li><strong>Child Exploitation:</strong> Content involves child sexual abuse material (CSAM) or child exploitation</li>
-            <li><strong>Terrorism:</strong> Content promotes or plans terrorist activities</li>
-            <li><strong>Human Trafficking:</strong> Activity suggests human trafficking or exploitation</li>
-            <li><strong>Credible Threats:</strong> Specific, credible threats of violence against individuals or groups</li>
-            <li><strong>Illegal Activity:</strong> Evidence of serious crimes (drug trafficking, fraud, weapons sales)</li>
-            <li><strong>Legal Obligation:</strong> We receive a valid legal request (subpoena, court order, warrant)</li>
-          </ul>
-          <p>
-            <strong>Voluntary Reporting:</strong> We may voluntarily report to:
-          </p>
-          <ul>
-            <li>National Center for Missing & Exploited Children (NCMEC) for CSAM</li>
-            <li>FBI or local law enforcement for terrorism or credible threats</li>
-            <li>Relevant authorities for human trafficking or exploitation</li>
-          </ul>
-          <p>
-            <strong>User Privacy:</strong> We balance user privacy with public safety. Reports to authorities are made only when we believe there is a genuine risk of serious harm. We do not routinely monitor private messages or content.
-          </p>
-          <p>
-            <strong>No Liability for Reporting:</strong> You agree that Pryde Social shall not be liable for any reports made to authorities in good faith, even if such reports are later determined to be unfounded.
+            You agree that anything posted from your account is your responsibility.
           </p>
         </section>
 
         <section className="legal-section">
-          <h2>13. Intellectual Property & Copyright</h2>
+          <h2>6. Content Ownership</h2>
           <p>
-            Pryde Social respects intellectual property rights. If you believe content on our platform infringes your copyright:
+            You retain copyright to your content. However, by posting on Pryde Social, you grant us a non-exclusive license to display and distribute your content within the platform.
           </p>
-          <ul>
-            <li>Submit a DMCA takedown notice to our <Link to="/contact" className="legal-link">Contact</Link> page</li>
-            <li>Include the URL of the infringing content</li>
-            <li>Provide proof of ownership</li>
-            <li>Include your contact information</li>
-          </ul>
           <p>
-            We will investigate and remove infringing content within 72 hours of receiving a valid notice.
+            <strong>We do not claim ownership of user content.</strong>
           </p>
         </section>
 
         <section className="legal-section">
-          <h2>14. Third-Party Links & Services</h2>
+          <h2>7. Removal of Content</h2>
           <p>
-            Pryde Social may contain links to third-party websites or services. We are not responsible for:
+            <strong>We may remove content that:</strong>
           </p>
           <ul>
-            <li>The content or privacy practices of external sites</li>
-            <li>Transactions made with third-party services</li>
-            <li>Damages resulting from your use of linked services</li>
+            <li>Violates policies</li>
+            <li>Is harmful or unsafe</li>
+            <li>Is reported and verified</li>
+            <li>Involves copyright infringement</li>
+            <li>Harasses or targets individuals</li>
           </ul>
+        </section>
+
+        <section className="legal-section">
+          <h2>8. Termination</h2>
           <p>
-            We do not endorse or guarantee any third-party content linked on our platform.
+            We may suspend or terminate accounts that violate these Terms. You may delete your account at any time.
           </p>
         </section>
 
         <section className="legal-section">
-          <h2>15. Governing Law & Dispute Resolution</h2>
+          <h2>9. Disclaimers</h2>
           <p>
-            These Terms shall be governed by and construed in accordance with the laws of the United States, without regard to conflict of law provisions.
+            Pryde Social is provided "as is" with no warranties.
           </p>
           <p>
-            <strong>Dispute Resolution:</strong> Any disputes arising from these Terms or your use of Pryde Social shall be resolved through:
+            <strong>We are:</strong>
           </p>
           <ul>
-            <li>Good faith negotiation between you and Pryde Social</li>
-            <li>Binding arbitration if negotiation fails</li>
-            <li>Small claims court (if eligible)</li>
+            <li>Not responsible for user actions</li>
+            <li>Not liable for harm caused by user content</li>
+            <li>Not a crisis or emergency service</li>
           </ul>
+        </section>
+
+        <section className="legal-section">
+          <h2>10. Limitation of Liability</h2>
           <p>
-            You waive the right to participate in class-action lawsuits against Pryde Social.
+            To the fullest extent allowed by law, Pryde Social (its operator) is not liable for:
+          </p>
+          <ul>
+            <li>Loss of data</li>
+            <li>Harassment or interactions between users</li>
+            <li>Damages arising from use of the platform</li>
+            <li>Misuse of content by others</li>
+          </ul>
+        </section>
+
+        <section className="legal-section">
+          <h2>11. Changes to Terms</h2>
+          <p>
+            We may update these Terms at any time. We encourage you to review them periodically.
           </p>
         </section>
 
         <section className="legal-section">
-          <h2>16. Changes to Terms</h2>
+          <h2>12. Contact</h2>
           <p>
-            We may update these Terms periodically. When we make material changes:
+            For questions or concerns:
           </p>
-          <ul>
-            <li>We will update the "Effective Date" at the top of this page</li>
-            <li>We will notify you via email or in-app notification</li>
-            <li>Continued use after notification constitutes acceptance of new Terms</li>
-          </ul>
-          <p>
-            If you do not agree to updated Terms, you must stop using the platform and delete your account.
-          </p>
-        </section>
-
-        <section className="legal-section">
-          <h2>17. Contact Information</h2>
-          <p>
-            For questions about these Terms of Service, please contact us via our <Link to="/contact" className="legal-link">Contact</Link> page or email us at:
-          </p>
-          <p className="contact-info">
-            <strong>Email:</strong> legal@prydesocial.com<br />
-            <strong>Subject Line:</strong> Terms of Service Inquiry
-          </p>
+          <div className="contact-info">
+            <p><strong>📧</strong> <span className="contact-email">prydeapp-team@outlook.com</span></p>
+          </div>
         </section>
 
         <div className="legal-footer-note">
-          <p>
-            By using Pryde Social, you acknowledge that you have read, understood, and agree to be bound by these Terms of Service and our <Link to="/privacy" className="legal-link">Privacy Policy</Link>.
-          </p>
           <p className="last-updated">
             Last Updated: January 1, 2025
           </p>
@@ -361,9 +185,10 @@ function Terms() {
         <Link to="/" className="back-link">← Back to Home</Link>
         <div className="legal-links">
           <Link to="/privacy">Privacy Policy</Link>
-          <Link to="/community">Community Guidelines</Link>
-          <Link to="/safety">Safety & Reporting</Link>
-          <Link to="/contact">Contact Us</Link>
+          <Link to="/community-guidelines">Community Guidelines</Link>
+          <Link to="/acceptable-use">Acceptable Use Policy</Link>
+          <Link to="/dmca">DMCA Policy</Link>
+          <Link to="/faq">FAQ</Link>
         </div>
       </div>
     </div>

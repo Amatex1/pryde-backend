@@ -5,178 +5,319 @@ function FAQ() {
   return (
     <div className="legal-page">
       <div className="legal-header">
-        <h1>Frequently Asked Questions (FAQ)</h1>
-        <p className="legal-subtitle">Quick Answers to Common Questions</p>
+        <h1>🌈 Pryde Social — FAQ</h1>
+        <p className="legal-subtitle">Frequently Asked Questions</p>
       </div>
 
       <div className="legal-content">
         <section className="legal-section">
-          <h2>1. Account & Login</h2>
-          
+          <h2>General Questions</h2>
+
+          <div className="faq-item">
+            <h3>What is Pryde Social?</h3>
+            <p>
+              Pryde Social is an 18+ LGBTQ+ community platform created as a hobby project to provide a safe, respectful space for connection, support, creativity, and conversation.
+            </p>
+          </div>
+
+          <div className="faq-item">
+            <h3>Who runs Pryde Social?</h3>
+            <p>
+              The platform is operated privately as a hobby by a single Australian individual. Pryde Social is not a registered company.
+            </p>
+          </div>
+
+          <div className="faq-item">
+            <h3>Is Pryde Social free to use?</h3>
+            <p>
+              Yes. Pryde Social is completely free with no paid features.
+            </p>
+          </div>
+
+          <div className="faq-item">
+            <h3>Why is the platform 18+ only?</h3>
+            <p>
+              To protect younger users and ensure safer community discussions, Pryde Social is strictly limited to adults aged 18 and over.
+            </p>
+          </div>
+        </section>
+
+        <section className="legal-section">
+          <h2>Accounts & Profiles</h2>
+
           <div className="faq-item">
             <h3>How do I create an account?</h3>
-            <p>Click "Sign Up" on the homepage, enter your email, create a password, and confirm you're 18+. You'll receive a verification email to activate your account.</p>
+            <p>
+              You can sign up using a valid email and password. You must confirm that you are 18 or older.
+            </p>
           </div>
 
           <div className="faq-item">
-            <h3>I forgot my password. How do I reset it?</h3>
-            <p>Click "Forgot Password?" on the login page, enter your email, and follow the reset link sent to your inbox. The link expires in 1 hour.</p>
+            <h3>What profile information can I include?</h3>
+            <p>You can add your:</p>
+            <ul>
+              <li>Full name</li>
+              <li>Display name</li>
+              <li>Nickname</li>
+              <li>Pronouns</li>
+              <li>Gender</li>
+              <li>Sexual orientation</li>
+              <li>Relationship status</li>
+              <li>Bio</li>
+              <li>Location (city/town only)</li>
+              <li>Website</li>
+              <li>Social links (Instagram, Twitter, TikTok, YouTube, Snapchat, Discord)</li>
+              <li>Interests</li>
+              <li>Safety/communication preferences</li>
+              <li>Accessibility preferences</li>
+              <li>Profile photo & cover photo</li>
+              <li>Custom badges</li>
+            </ul>
           </div>
 
           <div className="faq-item">
-            <h3>Can I change my username?</h3>
-            <p>Yes! Go to Settings → Profile → Edit Display Name. Your username is unique and can be changed once every 30 days.</p>
+            <h3>How do I change or delete information on my profile?</h3>
+            <p>
+              Click the <strong>Edit Profile</strong> button on your profile page (located in the top right corner under your cover photo).
+            </p>
+          </div>
+
+          <div className="faq-item">
+            <h3>Can I hide parts of my profile?</h3>
+            <p>
+              Yes. In the Edit Profile modal, you can hide age, pronouns, gender, orientation, and city/town from other users using the visibility toggles.
+            </p>
+          </div>
+        </section>
+
+        <section className="legal-section">
+          <h2>Posts, Comments & Messages</h2>
+
+          <div className="faq-item">
+            <h3>What can I post on Pryde Social?</h3>
+            <p>
+              You can post text, images, videos, and GIFs, as long as they follow our <Link to="/community-guidelines" className="legal-link">Community Guidelines</Link> and <Link to="/acceptable-use" className="legal-link">Acceptable Use Policy</Link>.
+            </p>
+          </div>
+
+          <div className="faq-item">
+            <h3>Can I control who sees my posts?</h3>
+            <p>
+              Yes! When creating a post, you can set the privacy to:
+            </p>
+            <ul>
+              <li><strong>Public</strong> - Everyone can see</li>
+              <li><strong>Friends</strong> - Only your friends can see</li>
+              <li><strong>Private</strong> - Only you can see</li>
+              <li><strong>Custom</strong> - Choose specific people who can see it or hide it from certain people</li>
+            </ul>
+          </div>
+
+          <div className="faq-item">
+            <h3>Can I share someone else's post?</h3>
+            <p>
+              Yes! Click the <strong>Share</strong> button on any post. You can add your own comment when sharing, and the original author will be credited.
+            </p>
+          </div>
+
+          <div className="faq-item">
+            <h3>Can I bookmark posts to read later?</h3>
+            <p>
+              Yes! Click the bookmark icon on any post. Access your saved posts from the dropdown menu in the navbar.
+            </p>
+          </div>
+
+          <div className="faq-item">
+            <h3>Can I reply to comments?</h3>
+            <p>
+              Yes! Click the <strong>💬 Reply</strong> button on any comment or reply to create threaded conversations.
+            </p>
+          </div>
+
+          <div className="faq-item">
+            <h3>Can I edit or delete my comments?</h3>
+            <p>
+              Yes! Click the <strong>✏️ Edit</strong> or <strong>🗑️ Delete</strong> button on your own comments and replies.
+            </p>
+          </div>
+
+          <div className="faq-item">
+            <h3>Can I message other users?</h3>
+            <p>
+              Yes. You can send one-on-one or group messages. Click the <strong>Messages</strong> button in the navbar or click on a friend in your friends list to start chatting.
+            </p>
+          </div>
+
+          <div className="faq-item">
+            <h3>Why can't I message someone?</h3>
+            <p>They may have:</p>
+            <ul>
+              <li>"Friends only" messaging enabled</li>
+              <li>"Ask before DM" turned on</li>
+              <li>Blocked you</li>
+              <li>Disabled DMs entirely</li>
+            </ul>
+          </div>
+
+          <div className="faq-item">
+            <h3>Do messages have sound notifications?</h3>
+            <p>
+              Yes! You'll hear a notification sound when you receive new messages while using the platform.
+            </p>
+          </div>
+
+          <div className="faq-item">
+            <h3>Can I reply to specific messages?</h3>
+            <p>
+              Yes! Click the <strong>💬 Reply</strong> button on any message to reply directly to it. The original message will be shown above your reply.
+            </p>
+          </div>
+        </section>
+
+        <section className="legal-section">
+          <h2>Safety & Reporting</h2>
+
+          <div className="faq-item">
+            <h3>How do I block or report someone?</h3>
+            <p>
+              Use the <strong>Block</strong> or <strong>Report</strong> option on their profile or the specific post/comment/message.
+            </p>
+          </div>
+
+          <div className="faq-item">
+            <h3>What happens when I report content or a user?</h3>
+            <p>Reports are reviewed and actions may include:</p>
+            <ul>
+              <li>Warning</li>
+              <li>Content removal</li>
+              <li>Temporary suspension</li>
+              <li>Permanent ban</li>
+            </ul>
+          </div>
+
+          <div className="faq-item">
+            <h3>Is Pryde Social a crisis or emergency service?</h3>
+            <p>
+              <strong>No.</strong> Pryde Social cannot provide emergency help. If you are in immediate danger, contact your local emergency services.
+            </p>
+          </div>
+        </section>
+
+        <section className="legal-section">
+          <h2>Legal & Privacy</h2>
+
+          <div className="faq-item">
+            <h3>How does Pryde Social handle my data?</h3>
+            <p>
+              Your personal data is stored securely and never sold to advertisers. See our <Link to="/privacy" className="legal-link">Privacy Policy</Link> for full details.
+            </p>
           </div>
 
           <div className="faq-item">
             <h3>How do I delete my account?</h3>
-            <p>Go to Settings → Account Management → Delete Account. This is permanent and cannot be undone. All your data will be deleted within 30 days.</p>
+            <p>
+              Go to <strong>Settings → Account Management</strong> and choose <strong>Delete Account</strong>. You can also request deletion by emailing:
+            </p>
+            <div className="contact-info">
+              <p><strong>📧</strong> <span className="contact-email">prydeapp-team@outlook.com</span></p>
+            </div>
           </div>
 
           <div className="faq-item">
-            <h3>Can I deactivate my account temporarily?</h3>
-            <p>Yes! Go to Settings → Account Management → Deactivate Account. Your profile will be hidden, but you can reactivate by logging in again.</p>
-          </div>
-        </section>
-
-        <section className="legal-section">
-          <h2>2. Privacy & Safety</h2>
-          
-          <div className="faq-item">
-            <h3>Who can see my posts?</h3>
-            <p>By default, your friends can see your posts. You can adjust privacy settings in Settings → Privacy to make posts public or private.</p>
-          </div>
-
-          <div className="faq-item">
-            <h3>How do I block someone?</h3>
-            <p>Visit their profile → Click the three-dot menu (⋯) → Select "Block User". They won't be able to see your posts or contact you.</p>
-          </div>
-
-          <div className="faq-item">
-            <h3>How do I report a post or user?</h3>
-            <p>Click the three-dot menu (⋯) on any post or profile → Select "Report". Choose a reason and provide details. Our moderation team will review it within 24 hours.</p>
-          </div>
-
-          <div className="faq-item">
-            <h3>Can I see who viewed my profile?</h3>
-            <p>No, Pryde Social does not track profile views. Your privacy is important to us.</p>
+            <h3>What happens when my account is deleted?</h3>
+            <p>
+              Your profile and posts are removed. Some technical records (like log timestamps) may remain for security purposes.
+            </p>
           </div>
 
           <div className="faq-item">
             <h3>How do I download my data?</h3>
-            <p>Go to Settings → Account Management → Download Data. You'll receive a JSON file with all your profile info, posts, messages, and friends.</p>
+            <p>
+              Go to <strong>Settings → Account Management → Download Data</strong>. You'll receive a JSON file with all your profile info, posts, messages, and friends.
+            </p>
+          </div>
+
+          <div className="faq-item">
+            <h3>How do I file a copyright complaint (DMCA)?</h3>
+            <p>
+              Follow the instructions in our <Link to="/dmca" className="legal-link">DMCA Policy</Link>.
+            </p>
           </div>
         </section>
 
         <section className="legal-section">
-          <h2>3. Posts & Content</h2>
-          
-          <div className="faq-item">
-            <h3>What file types can I upload?</h3>
-            <p>Images: JPG, PNG, GIF, WebP (max 10MB). Videos: MP4, WebM (max 50MB). Profile photos are automatically resized.</p>
-          </div>
-
-          <div className="faq-item">
-            <h3>Can I edit or delete my posts?</h3>
-            <p>Yes! Click the three-dot menu (⋯) on your post → Select "Edit" or "Delete". Edited posts show an "(edited)" label.</p>
-          </div>
+          <h2>Moderation & Bans</h2>
 
           <div className="faq-item">
             <h3>Why was my post removed?</h3>
-            <p>Posts are removed if they violate our <Link to="/community" className="legal-link">Community Guidelines</Link>. Check your notifications for details or contact us at abuse@prydesocial.com.</p>
+            <p>
+              It may have violated the <Link to="/community-guidelines" className="legal-link">Community Guidelines</Link> or <Link to="/acceptable-use" className="legal-link">Acceptable Use Policy</Link>.
+            </p>
           </div>
 
           <div className="faq-item">
-            <h3>Can I save posts for later?</h3>
-            <p>Bookmarking feature is coming soon! For now, you can like posts to find them in your activity history.</p>
-          </div>
-        </section>
-
-        <section className="legal-section">
-          <h2>4. Messaging & Friends</h2>
-          
-          <div className="faq-item">
-            <h3>How do I send a friend request?</h3>
-            <p>Visit their profile → Click "Add Friend". They'll receive a notification and can accept or decline.</p>
+            <h3>Why was I suspended or banned?</h3>
+            <p>
+              Reasons may include harassment, hate speech, impersonation, illegal content, or repeated violations. A suspension notification is usually sent to your email.
+            </p>
           </div>
 
           <div className="faq-item">
-            <h3>Can I message someone who isn't my friend?</h3>
-            <p>Currently, you can only message friends. Privacy settings for messaging will be added soon.</p>
-          </div>
-
-          <div className="faq-item">
-            <h3>How do I create a group chat?</h3>
-            <p>Go to Messages → Click "New Group" → Select friends → Name your group → Click "Create". You can add up to 50 members.</p>
-          </div>
-
-          <div className="faq-item">
-            <h3>Can I delete messages?</h3>
-            <p>Yes! Hover over a message → Click the trash icon. Deleted messages are removed from your view but may remain visible to recipients.</p>
-          </div>
-
-          <div className="faq-item">
-            <h3>What do the checkmarks mean?</h3>
-            <p>One checkmark (✓) = Delivered. Two checkmarks (✓✓) = Read. Gray = Not delivered yet.</p>
+            <h3>Can I appeal a moderation decision?</h3>
+            <p>
+              Yes. Email a clear explanation to:
+            </p>
+            <div className="contact-info">
+              <p><strong>📧</strong> <span className="contact-email">prydeapp-team@outlook.com</span></p>
+            </div>
           </div>
         </section>
 
         <section className="legal-section">
-          <h2>5. Technical Issues</h2>
-          
+          <h2>Technical Questions</h2>
+
           <div className="faq-item">
-            <h3>The site isn't loading. What should I do?</h3>
-            <p>Try refreshing the page, clearing your browser cache, or using a different browser. If the issue persists, email support@prydesocial.com.</p>
+            <h3>Why isn't the site loading properly?</h3>
+            <p>Try the following:</p>
+            <ul>
+              <li>Clear your browser cache</li>
+              <li>Refresh the page</li>
+              <li>Disable browser extensions</li>
+              <li>Try a different device or browser</li>
+            </ul>
           </div>
 
           <div className="faq-item">
-            <h3>Why can't I upload images?</h3>
-            <p>Check your file size (max 10MB for images, 50MB for videos) and format (JPG, PNG, GIF, WebP). If the issue continues, try a different browser.</p>
+            <h3>What if I find a bug?</h3>
+            <p>
+              Please report it so it can be fixed:
+            </p>
+            <div className="contact-info">
+              <p><strong>📧</strong> <span className="contact-email">prydeapp-team@outlook.com</span></p>
+            </div>
           </div>
 
           <div className="faq-item">
             <h3>How do I enable push notifications?</h3>
-            <p>Go to Settings → Notifications → Enable Push Notifications. Your browser will ask for permission. Click "Allow".</p>
-          </div>
-
-          <div className="faq-item">
-            <h3>Why am I not receiving notifications?</h3>
-            <p>Check Settings → Notifications to ensure they're enabled. Also check your browser's notification permissions and email spam folder.</p>
+            <p>
+              Go to <strong>Settings → Notifications → Test Push Notification</strong>. Your browser will ask for permission. Click "Allow".
+            </p>
           </div>
         </section>
 
         <section className="legal-section">
-          <h2>6. Policies & Guidelines</h2>
-          
-          <div className="faq-item">
-            <h3>Is Pryde Social free?</h3>
-            <p>Yes! Pryde Social is completely free with no ads. We may introduce optional premium features in the future.</p>
-          </div>
-
-          <div className="faq-item">
-            <h3>Do I have to be 18 to use Pryde Social?</h3>
-            <p>Yes. Pryde Social is strictly for users 18 years of age and older. Accounts found to be under 18 will be immediately deleted.</p>
-          </div>
-
-          <div className="faq-item">
-            <h3>What content is not allowed?</h3>
-            <p>Prohibited content includes: hate speech, harassment, adult content, violence, illegal activity, spam, and impersonation. See our <Link to="/community" className="legal-link">Community Guidelines</Link> for details.</p>
-          </div>
-
-          <div className="faq-item">
-            <h3>Can I appeal a suspension or ban?</h3>
-            <p>Yes. Email abuse@prydesocial.com with your username and reason for appeal. We'll review your case within 5 business days.</p>
-          </div>
-
-          <div className="faq-item">
-            <h3>Does Pryde Social sell my data?</h3>
-            <p>No. We do NOT sell your personal data to third parties. See our <Link to="/privacy" className="legal-link">Privacy Policy</Link> for how we use your information.</p>
+          <h2>Contact Information</h2>
+          <p>
+            If you need help with anything not covered here, contact:
+          </p>
+          <div className="contact-info">
+            <p><strong>📧 Email:</strong> <span className="contact-email">prydeapp-team@outlook.com</span></p>
           </div>
         </section>
 
         <div className="legal-footer-note">
           <p>
-            <strong>Still have questions?</strong> Visit our <Link to="/contact" className="legal-link">Contact</Link> page or email support@prydesocial.com.
+            <strong>Still have questions?</strong> Email us at <span className="contact-email">prydeapp-team@outlook.com</span>
           </p>
           <p className="last-updated">
             Last Updated: January 1, 2025
@@ -189,9 +330,9 @@ function FAQ() {
         <div className="legal-links">
           <Link to="/terms">Terms of Service</Link>
           <Link to="/privacy">Privacy Policy</Link>
-          <Link to="/community">Community Guidelines</Link>
-          <Link to="/safety">Safety & Reporting</Link>
-          <Link to="/contact">Contact Us</Link>
+          <Link to="/community-guidelines">Community Guidelines</Link>
+          <Link to="/acceptable-use">Acceptable Use Policy</Link>
+          <Link to="/dmca">DMCA Policy</Link>
         </div>
       </div>
     </div>
