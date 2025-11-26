@@ -723,14 +723,31 @@
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-  max-height: 400px;
+  max-height: 600px;
   overflow-y: auto;
+}
+
+.friends-section-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  margin-top: 0.5rem;
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.friends-section-title {
+  flex: 1;
 }
 
 .friend-sidebar-item {
   display: flex;
-  align-items: center;
-  gap: 0.75rem;
+  flex-direction: column;
+  gap: 0.5rem;
   padding: 0.75rem;
   border-radius: 12px;
   background: var(--background-light);
@@ -739,10 +756,17 @@
 
 .friend-sidebar-item:hover {
   background: var(--soft-lavender);
-  transform: translateX(5px);
+  box-shadow: 0 2px 8px rgba(108, 92, 231, 0.1);
+}
+
+.friend-sidebar-main {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
 }
 
 .friend-sidebar-avatar {
+  position: relative;
   width: 40px;
   height: 40px;
   border-radius: 50%;
@@ -766,6 +790,25 @@
   font-size: 1rem;
 }
 
+.friend-sidebar-avatar .status-dot {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid var(--card-surface);
+}
+
+.status-dot.online {
+  background: #10b981;
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.5);
+}
+
+.status-dot.offline {
+  background: #6b7280;
+}
+
 .friend-sidebar-info {
   flex: 1;
   min-width: 0;
@@ -783,6 +826,43 @@
 .friend-sidebar-status {
   font-size: 0.75rem;
   color: var(--text-muted);
+}
+
+.friend-sidebar-status.online-status {
+  color: #10b981;
+  font-weight: 600;
+}
+
+.friend-sidebar-status.offline-status {
+  color: var(--text-muted);
+}
+
+.friend-sidebar-actions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
+.btn-friend-action {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: none;
+  background: var(--pryde-purple);
+  color: white;
+  font-size: 1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  text-decoration: none;
+}
+
+.btn-friend-action:hover {
+  background: var(--electric-blue);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(108, 92, 231, 0.3);
 }
 
 .no-friends {
@@ -816,11 +896,23 @@
 
 /* Dark Mode - Friends Sidebar */
 [data-theme="dark"] .friend-sidebar-item {
-  background: var(--background-dark);
+  background: #2a2a2a;
 }
 
 [data-theme="dark"] .friend-sidebar-item:hover {
-  background: rgba(108, 92, 231, 0.1);
+  background: rgba(108, 92, 231, 0.15);
+}
+
+[data-theme="dark"] .btn-friend-action {
+  background: var(--pryde-purple);
+}
+
+[data-theme="dark"] .btn-friend-action:hover {
+  background: var(--electric-blue);
+}
+
+[data-theme="dark"] .friends-section-header {
+  color: #a1a1aa;
 }
 
 /* Trending List */
