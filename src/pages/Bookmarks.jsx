@@ -49,39 +49,44 @@ const Bookmarks = ({ onOpenMiniChat }) => {
 
   if (loading) {
     return (
-      <div className="bookmarks-container">
-        <div className="bookmarks-header">
-          <h1>📚 Bookmarks</h1>
+      <div className="page-container">
+        <Navbar onOpenMiniChat={onOpenMiniChat} />
+        <div className="bookmarks-container">
+          <div className="bookmarks-header">
+            <h1>📚 Bookmarks</h1>
+          </div>
+          <div className="loading">Loading bookmarks...</div>
         </div>
-        <div className="loading">Loading bookmarks...</div>
       </div>
     );
   }
 
   return (
-    <div className="bookmarks-container">
-      <div className="bookmarks-header">
-        <h1>📚 Bookmarks</h1>
-        <p className="bookmarks-subtitle">Posts you've saved for later</p>
-      </div>
-
-      {bookmarks.length === 0 ? (
-        <div className="no-bookmarks">
-          <div className="no-bookmarks-icon">🔖</div>
-          <h2>No bookmarks yet</h2>
-          <p>Save posts to read them later</p>
+    <div className="page-container">
+      <Navbar onOpenMiniChat={onOpenMiniChat} />
+      <div className="bookmarks-container">
+        <div className="bookmarks-header">
+          <h1>📚 Bookmarks</h1>
+          <p className="bookmarks-subtitle">Posts you've saved for later</p>
         </div>
-      ) : (
-        <div className="bookmarks-grid">
-          {bookmarks.map(post => (
-            <div key={post._id} className="bookmark-card">
-              <div className="bookmark-header">
-                <div className="bookmark-author" onClick={() => navigate(`/profile/${post.author._id}`)}>
-                  <img 
-                    src={post.author.profilePhoto || '/default-avatar.png'} 
-                    alt={post.author.displayName}
-                    className="author-avatar"
-                  />
+
+        {bookmarks.length === 0 ? (
+          <div className="no-bookmarks">
+            <div className="no-bookmarks-icon">🔖</div>
+            <h2>No bookmarks yet</h2>
+            <p>Save posts to read them later</p>
+          </div>
+        ) : (
+          <div className="bookmarks-grid">
+            {bookmarks.map(post => (
+              <div key={post._id} className="bookmark-card">
+                <div className="bookmark-header">
+                  <div className="bookmark-author" onClick={() => navigate(`/profile/${post.author._id}`)}>
+                    <img
+                      src={getImageUrl(post.author.profilePhoto) || '/default-avatar.png'}
+                      alt={post.author.displayName}
+                      className="author-avatar"
+                    />
                   <div className="author-info">
                     <span className="author-name">{post.author.displayName}</span>
                     <span className="author-username">@{post.author.username}</span>
@@ -119,6 +124,7 @@ const Bookmarks = ({ onOpenMiniChat }) => {
           ))}
         </div>
       )}
+      </div>
     </div>
   );
 };

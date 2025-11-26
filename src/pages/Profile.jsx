@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import ReportModal from '../components/ReportModal';
 import PhotoViewer from '../components/PhotoViewer';
 import Toast from '../components/Toast';
 import CustomModal from '../components/CustomModal';
+import ShareModal from '../components/ShareModal';
 import { useModal } from '../hooks/useModal';
 import api from '../utils/api';
 import { getCurrentUser } from '../utils/auth';
@@ -23,6 +24,7 @@ function Profile({ onOpenMiniChat }) {
   const [uploadMessage, setUploadMessage] = useState('');
   const [showCommentBox, setShowCommentBox] = useState({});
   const [commentText, setCommentText] = useState({});
+  const [shareModal, setShareModal] = useState({ isOpen: false, post: null });
   const [friendStatus, setFriendStatus] = useState(null); // null, 'friends', 'pending_sent', 'pending_received', 'none'
   const [friendRequestId, setFriendRequestId] = useState(null);
   const [isBlocked, setIsBlocked] = useState(false);
@@ -127,10 +129,14 @@ function Profile({ onOpenMiniChat }) {
     setCommentText(prev => ({ ...prev, [postId]: value }));
   };
 
-  const handleShare = async (postId) => {
+  const handleShare = (post) => {
+    setShareModal({ isOpen: true, post });
+  };
+
+  const handleShareComplete = async () => {
     try {
-      const response = await api.post(`/posts/${postId}/share`);
-      setPosts(posts.map(p => p._id === postId ? response.data : p));
+      const response = await api.post(`/posts/${shareModal.post._id}/share`);
+      setPosts(posts.map(p => p._id === shareModal.post._id ? response.data : p));
       showAlert('Post shared successfully!', 'Shared');
     } catch (error) {
       console.error('Failed to share post:', error);
@@ -565,7 +571,7 @@ function Profile({ onOpenMiniChat }) {
                         </button>
                         <button
                           className="action-btn"
-                          onClick={() => handleShare(post._id)}
+                          onClick={() => handleShare(post)}
                         >
                           🔄 Share
                         </button>
@@ -657,6 +663,13 @@ function Profile({ onOpenMiniChat }) {
           onClose={() => removeToast(toast.id)}
         />
       ))}
+
+      <ShareModal
+        isOpen={shareModal.isOpen}
+        onClose={() => setShareModal({ isOpen: false, post: null })}
+        post={shareModal.post}
+        onShare={handleShareComplete}
+      />
     </div>
   );
 }

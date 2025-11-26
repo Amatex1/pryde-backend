@@ -4,6 +4,7 @@ import Navbar from '../components/Navbar';
 import ReportModal from '../components/ReportModal';
 import PhotoViewer from '../components/PhotoViewer';
 import CustomModal from '../components/CustomModal';
+import ShareModal from '../components/ShareModal';
 import { useModal } from '../hooks/useModal';
 import api from '../utils/api';
 import { getCurrentUser } from '../utils/auth';
@@ -35,6 +36,7 @@ function Feed({ onOpenMiniChat }) {
   const [friends, setFriends] = useState([]);
   const [trending, setTrending] = useState([]);
   const [bookmarkedPosts, setBookmarkedPosts] = useState([]);
+  const [shareModal, setShareModal] = useState({ isOpen: false, post: null });
   const currentUser = getCurrentUser();
   const postRefs = useRef({});
   const commentRefs = useRef({});
@@ -309,10 +311,14 @@ function Feed({ onOpenMiniChat }) {
     setReplyText('');
   };
 
-  const handleShare = async (postId) => {
+  const handleShare = (post) => {
+    setShareModal({ isOpen: true, post });
+  };
+
+  const handleShareComplete = async () => {
     try {
-      const response = await api.post(`/posts/${postId}/share`);
-      setPosts(posts.map(p => p._id === postId ? response.data : p));
+      const response = await api.post(`/posts/${shareModal.post._id}/share`);
+      setPosts(posts.map(p => p._id === shareModal.post._id ? response.data : p));
       showAlert('Post shared successfully!', 'Shared');
     } catch (error) {
       console.error('Failed to share post:', error);
@@ -542,7 +548,7 @@ function Feed({ onOpenMiniChat }) {
                       </button>
                       <button
                         className="action-btn"
-                        onClick={() => handleShare(post._id)}
+                        onClick={() => handleShare(post)}
                       >
                         <span>🔗</span> Share ({post.shares?.length || 0})
                       </button>
@@ -850,6 +856,13 @@ function Feed({ onOpenMiniChat }) {
         onConfirm={modalState.onConfirm}
         inputType={modalState.inputType}
         defaultValue={modalState.defaultValue}
+      />
+
+      <ShareModal
+        isOpen={shareModal.isOpen}
+        onClose={() => setShareModal({ isOpen: false, post: null })}
+        post={shareModal.post}
+        onShare={handleShareComplete}
       />
     </div>
   );
