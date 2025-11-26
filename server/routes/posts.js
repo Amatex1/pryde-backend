@@ -57,6 +57,31 @@ router.get('/', auth, async (req, res) => {
   }
 });
 
+// @route   GET /api/posts/user/:userId
+// @desc    Get posts by user
+// @access  Private
+router.get('/user/:userId', auth, async (req, res) => {
+  try {
+    const posts = await Post.find({ author: req.params.userId })
+      .populate('author', 'username displayName profilePhoto')
+      .populate('comments.user', 'username displayName profilePhoto')
+      .populate('likes', 'username displayName profilePhoto')
+      .populate({
+        path: 'originalPost',
+        populate: [
+          { path: 'author', select: 'username displayName profilePhoto' },
+          { path: 'likes', select: 'username displayName profilePhoto' }
+        ]
+      })
+      .sort({ createdAt: -1 });
+
+    res.json(posts);
+  } catch (error) {
+    console.error('Get user posts error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // @route   GET /api/posts/:id
 // @desc    Get single post
 // @access  Private
@@ -66,11 +91,11 @@ router.get('/:id', auth, async (req, res) => {
       .populate('author', 'username displayName profilePhoto')
       .populate('comments.user', 'username displayName profilePhoto')
       .populate('likes', 'username displayName profilePhoto');
-    
+
     if (!post) {
       return res.status(404).json({ message: 'Post not found' });
     }
-    
+
     res.json(post);
   } catch (error) {
     console.error('Get post error:', error);
