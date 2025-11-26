@@ -35,8 +35,6 @@ function Profile({ onOpenMiniChat }) {
   const [newPost, setNewPost] = useState('');
   const [selectedMedia, setSelectedMedia] = useState([]);
   const [uploadingMedia, setUploadingMedia] = useState(false);
-  const [showCommentBox, setShowCommentBox] = useState({});
-  const [commentText, setCommentText] = useState({});
   const [bookmarkedPosts, setBookmarkedPosts] = useState([]);
   const { toasts, showToast, removeToast } = useToast();
   const actionsMenuRef = useRef(null);
