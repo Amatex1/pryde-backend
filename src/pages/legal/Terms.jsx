@@ -6,7 +6,7 @@ function Terms() {
     <div className="legal-page">
       <div className="legal-header">
         <h1>🌈 Pryde Social — Terms of Service</h1>
-        <p className="legal-subtitle">Last Updated: January 1, 2025</p>
+        <p className="legal-subtitle">Last Updated: November 26, 2025</p>
       </div>
 
       <div className="legal-content">
@@ -176,7 +176,7 @@ function Terms() {
 
         <div className="legal-footer-note">
           <p className="last-updated">
-            Last Updated: January 1, 2025
+            Last Updated: November 26, 2025
           </p>
         </div>
       </div>
