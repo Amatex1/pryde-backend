@@ -912,6 +912,13 @@ function Profile({ onOpenMiniChat }) {
                                                   {reply.edited && <span className="edited-indicator"> (edited)</span>}
                                                 </div>
                                                 <div className="comment-actions">
+                                                  <button
+                                                    onClick={() => handleReplyToComment(post._id, comment._id)}
+                                                    className="btn-comment-action"
+                                                    title="Reply to comment"
+                                                  >
+                                                    💬 Reply
+                                                  </button>
                                                   {isOwnReply && (
                                                     <>
                                                       <button

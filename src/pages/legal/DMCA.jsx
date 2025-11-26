@@ -5,160 +5,217 @@ function DMCA() {
   return (
     <div className="legal-page">
       <div className="legal-header">
-        <h1>DMCA Copyright Policy</h1>
-        <p className="legal-subtitle">Digital Millennium Copyright Act Compliance</p>
+        <h1>🌈 Pryde Social — DMCA Copyright Policy</h1>
+        <p className="legal-subtitle">Last Updated: January 1, 2025</p>
       </div>
 
       <div className="legal-content">
         <section className="legal-section">
-          <h2>1. Copyright Infringement Policy</h2>
+          <h2>Introduction & Purpose</h2>
           <p>
-            Pryde Social respects the intellectual property rights of others and expects our users to do the same. We comply with the Digital Millennium Copyright Act (DMCA) and will respond to valid copyright infringement notices.
+            Pryde Social ("we", "our", "the platform") respects the intellectual property rights of creators, artists, and copyright holders. We expect all users to comply with applicable copyright laws, including the Australian Copyright Act and international copyright standards such as the Digital Millennium Copyright Act (DMCA).
           </p>
           <p>
-            <strong>Our Policy:</strong>
+            <strong>Pryde Social is a hobby-operated platform based in Australia. We do not maintain a physical mailing address for legal notices. All copyright notices must be submitted via email only.</strong>
+          </p>
+          <p>
+            This DMCA Copyright Policy explains:
           </p>
           <ul>
-            <li>We remove or disable access to content that infringes copyright when properly notified</li>
-            <li>We terminate accounts of repeat infringers</li>
-            <li>We provide a counter-notification process for users who believe content was wrongly removed</li>
+            <li>How to submit a copyright takedown notice</li>
+            <li>How Pryde Social responds once a notice is received</li>
+            <li>How to submit a counter-notification if your content is wrongly removed</li>
+            <li>Our repeat-infringer policy</li>
+            <li>Consequences for filing false copyright claims</li>
+          </ul>
+          <p>
+            If you believe someone is using your copyrighted work without permission, you can request removal by submitting a valid notice.
+          </p>
+        </section>
+
+        <section className="legal-section">
+          <h2>How to File a DMCA Takedown Notice</h2>
+          <p>
+            If you believe that content hosted on Pryde Social infringes your copyright, please send a takedown notice to:
+          </p>
+          <div className="contact-info">
+            <p>
+              <strong>📧 Email:</strong> <span className="contact-email">prydeapp-team@outlook.com</span><br />
+              <strong>Subject Line:</strong> DMCA Takedown Notice – [Your Name]
+            </p>
+          </div>
+          <p>
+            <strong>To be valid, your notice must include all of the following:</strong>
+          </p>
+
+          <h3>A. Your Contact Information</h3>
+          <ul>
+            <li>Full name</li>
+            <li>Email address</li>
+            <li>Any additional contact details you wish to provide</li>
+          </ul>
+
+          <h3>B. Identification of the Copyrighted Work</h3>
+          <p>
+            Describe the copyrighted material you believe has been infringed.<br />
+            <em>Example: "My photograph titled 'Summer Light', published in 2023."</em>
+          </p>
+
+          <h3>C. Identification of the Infringing Content</h3>
+          <p>
+            Provide the exact URL(s) of the content on Pryde Social that you believe infringes your rights.<br />
+            <em>Example: "https://prydeapp.com/post/12345"</em>
+          </p>
+
+          <h3>D. Statement of Good Faith</h3>
+          <p>
+            "I have a good faith belief that the use of the copyrighted material described above is not authorized by the copyright owner, its agent, or the law."
+          </p>
+
+          <h3>E. Statement of Accuracy (Under Penalty of Perjury)</h3>
+          <p>
+            "The information in this notification is accurate, and under penalty of perjury, I am the copyright owner or am authorized to act on behalf of the copyright owner."
+          </p>
+
+          <h3>F. Electronic Signature</h3>
+          <p>
+            Type your full name.<br />
+            <em>(Example: /s Jane Doe)</em>
+          </p>
+        </section>
+
+        <section className="legal-section">
+          <h2>What Happens After We Receive Your Notice</h2>
+          <p>
+            Once Pryde Social receives a valid notice:
+          </p>
+
+          <h3>Step 1 – Review (1–3 business days)</h3>
+          <p>We verify your notice meets the DMCA requirements.</p>
+
+          <h3>Step 2 – Content Removal (within 24–48 hours after validation)</h3>
+          <p>If valid, the allegedly infringing content is removed or disabled.</p>
+
+          <h3>Step 3 – Notify the User</h3>
+          <p>We notify the user whose content was removed and provide them with your notice.</p>
+
+          <h3>Step 4 – Counter-Notification Period (10–14 days)</h3>
+          <p>The user may respond if they believe the removal was made in error.</p>
+
+          <h3>Step 5 – Final Resolution</h3>
+          <ul>
+            <li><strong>If no counter-notification is filed</strong> → the content stays removed.</li>
+            <li><strong>If a counter-notice is filed</strong> → content may be restored unless you initiate legal action.</li>
           </ul>
         </section>
 
         <section className="legal-section">
-          <h2>2. How to File a DMCA Takedown Notice</h2>
+          <h2>How to File a Counter-Notification (For Users)</h2>
           <p>
-            If you believe content on Pryde Social infringes your copyright, submit a DMCA takedown notice to our designated Copyright Agent.
+            If your content was removed and you believe it was taken down by mistake or due to misidentification, you can submit a counter-notification.
           </p>
-          <p>
-            <strong>Email:</strong> legal@prydesocial.com<br />
-            <strong>Subject Line:</strong> DMCA Takedown Notice - [Your Name]
-          </p>
-          <p>
-            <strong>Your notice must include ALL of the following information:</strong>
-          </p>
-          <ol>
-            <li><strong>Your Contact Information:</strong> Full name, mailing address, phone number, and email address</li>
-            <li><strong>Identification of Copyrighted Work:</strong> Describe the copyrighted work you claim has been infringed. If multiple works, provide a representative list.</li>
-            <li><strong>Identification of Infringing Material:</strong> Provide the URL(s) of the specific post(s), image(s), or content on Pryde Social that you claim is infringing. Be as specific as possible.</li>
-            <li><strong>Statement of Good Faith:</strong> Include this statement: "I have a good faith belief that the use of the material in the manner complained of is not authorized by the copyright owner, its agent, or the law."</li>
-            <li><strong>Statement of Accuracy:</strong> Include this statement: "The information in this notification is accurate, and under penalty of perjury, I am the copyright owner or authorized to act on behalf of the copyright owner."</li>
-            <li><strong>Your Signature:</strong> Physical or electronic signature of the copyright owner or authorized representative</li>
-          </ol>
-          <p>
-            <strong>Mailing Address for DMCA Notices:</strong>
-          </p>
-          <div className="mailing-address">
+          <div className="contact-info">
             <p>
-              <strong>Pryde Social - DMCA Agent</strong><br />
-              Attn: Copyright Infringement Claims<br />
-              123 Social Network Lane<br />
-              San Francisco, CA 94102<br />
-              United States
+              <strong>📧 Email:</strong> <span className="contact-email">prydeapp-team@outlook.com</span><br />
+              <strong>Subject Line:</strong> DMCA Counter-Notification – [Your Username]
             </p>
           </div>
-        </section>
-
-        <section className="legal-section">
-          <h2>3. What Happens After You File a Notice</h2>
-          <p>
-            Once we receive a valid DMCA takedown notice:
-          </p>
-          <ol>
-            <li><strong>Review (1-3 business days):</strong> We review the notice to ensure it meets DMCA requirements</li>
-            <li><strong>Removal (24-48 hours):</strong> If valid, we remove or disable access to the allegedly infringing content</li>
-            <li><strong>User Notification:</strong> We notify the user who posted the content that it was removed due to a DMCA claim</li>
-            <li><strong>Counter-Notification Period (10-14 days):</strong> The user has the right to file a counter-notification if they believe the removal was a mistake</li>
-            <li><strong>Restoration or Permanent Removal:</strong> If no counter-notification is filed, the content remains removed. If a counter-notification is filed, we may restore the content unless you file a lawsuit.</li>
-          </ol>
-        </section>
-
-        <section className="legal-section">
-          <h2>4. Counter-Notification (For Users)</h2>
-          <p>
-            If your content was removed due to a DMCA claim and you believe it was removed by mistake or misidentification, you can file a counter-notification.
-          </p>
-          <p>
-            <strong>Email:</strong> legal@prydesocial.com<br />
-            <strong>Subject Line:</strong> DMCA Counter-Notification - [Your Username]
-          </p>
           <p>
             <strong>Your counter-notification must include:</strong>
           </p>
-          <ol>
-            <li><strong>Your Contact Information:</strong> Full name, mailing address, phone number, and email address</li>
-            <li><strong>Identification of Removed Content:</strong> Describe the content that was removed and where it appeared before removal (URL or description)</li>
-            <li><strong>Statement Under Penalty of Perjury:</strong> "I swear, under penalty of perjury, that I have a good faith belief that the material was removed or disabled as a result of mistake or misidentification."</li>
-            <li><strong>Consent to Jurisdiction:</strong> "I consent to the jurisdiction of the Federal District Court for the judicial district in which my address is located (or San Francisco, CA if outside the U.S.), and I will accept service of process from the person who filed the original DMCA notice or their agent."</li>
-            <li><strong>Your Signature:</strong> Physical or electronic signature</li>
-          </ol>
+
+          <h3>A. Your Contact Information</h3>
+          <p>Full name and email address.</p>
+
+          <h3>B. Identification of Removed Content</h3>
+          <p>Provide the URL(s) or description of the content before removal.</p>
+
+          <h3>C. Statement Under Penalty of Perjury</h3>
           <p>
-            <strong>What Happens Next:</strong>
+            "I swear, under penalty of perjury, that I have a good faith belief that the material was removed or disabled as a result of a mistake or misidentification."
           </p>
-          <ul>
-            <li>We forward your counter-notification to the original complainant</li>
-            <li>If they do not file a lawsuit within 10-14 business days, we may restore your content</li>
-            <li>If they file a lawsuit, the content remains removed pending court resolution</li>
-          </ul>
+
+          <h3>D. Consent to Jurisdiction</h3>
+          <p>
+            "I consent to resolve this matter under the applicable laws of my own region or country."
+          </p>
+          <p className="legal-note">
+            <em>(This replaces U.S. District Court language, since Pryde Social is not a U.S. company and is hobby-operated.)</em>
+          </p>
+
+          <h3>E. Electronic Signature</h3>
+          <p>Your typed full name.</p>
         </section>
 
         <section className="legal-section">
-          <h2>5. Repeat Infringer Policy</h2>
+          <h2>Repeat Infringer Policy</h2>
           <p>
-            Pryde Social has a policy of terminating accounts of users who repeatedly infringe copyright.
+            Pryde Social may permanently terminate accounts belonging to users who repeatedly infringe copyright.
           </p>
           <p>
-            <strong>Strikes System:</strong>
+            <strong>We operate a three-strike system:</strong>
           </p>
           <ul>
-            <li><strong>1st Strike:</strong> Content removed, warning issued</li>
-            <li><strong>2nd Strike:</strong> Content removed, 7-day suspension</li>
-            <li><strong>3rd Strike:</strong> Account permanently terminated</li>
+            <li><strong>Strike 1:</strong> Content removed, warning issued</li>
+            <li><strong>Strike 2:</strong> Content removed, temporary suspension</li>
+            <li><strong>Strike 3:</strong> Permanent ban</li>
           </ul>
           <p>
-            Strikes expire after 6 months if no further infringements occur. Accounts terminated for repeat infringement cannot be reinstated.
+            Strikes expire after 6 months with no further copyright issues.
           </p>
         </section>
 
         <section className="legal-section">
-          <h2>6. Misuse of DMCA Process</h2>
+          <h2>Misuse of the DMCA Process</h2>
           <p>
-            <strong>Warning:</strong> Filing a false or fraudulent DMCA notice is illegal and may result in:
+            Filing false, fraudulent, or abusive DMCA notices or counter-notices is illegal and may result in:
           </p>
           <ul>
-            <li>Liability for damages (including attorney's fees) under Section 512(f) of the DMCA</li>
-            <li>Perjury charges (DMCA notices are made under penalty of perjury)</li>
-            <li>Termination of your Pryde Social account</li>
+            <li>Legal liability</li>
+            <li>Account suspension</li>
+            <li>Account termination</li>
+            <li>Potential civil penalties under applicable laws</li>
           </ul>
           <p>
-            <strong>Before filing a DMCA notice:</strong>
+            <strong>Please ensure your claim is legitimate before submitting.</strong>
           </p>
-          <ul>
-            <li>Ensure you own the copyright or are authorized to act on behalf of the owner</li>
-            <li>Verify that the content actually infringes your copyright (fair use may apply)</li>
-            <li>Consider contacting the user directly to resolve the issue</li>
-          </ul>
         </section>
 
         <section className="legal-section">
-          <h2>7. Fair Use & Exceptions</h2>
+          <h2>Fair Use and Exceptions</h2>
           <p>
-            Not all uses of copyrighted material are infringement. The following may qualify as fair use:
+            Not all uses of copyrighted material constitute infringement. Content may be protected by:
           </p>
           <ul>
-            <li><strong>Commentary & Criticism:</strong> Using excerpts to comment on or critique the work</li>
-            <li><strong>Parody:</strong> Transformative works that parody the original</li>
-            <li><strong>News Reporting:</strong> Using content for news or educational purposes</li>
-            <li><strong>Transformative Use:</strong> Creating new meaning or message from the original</li>
+            <li><strong>Fair use</strong></li>
+            <li><strong>Parody</strong></li>
+            <li><strong>Commentary/criticism</strong></li>
+            <li><strong>Transformative use</strong></li>
+            <li><strong>User-granted permissions</strong></li>
           </ul>
           <p>
-            Fair use is determined on a case-by-case basis. If you believe your use qualifies as fair use, explain this in your counter-notification.
+            If you believe your content qualifies as fair use, you may explain this in your counter-notification.
+          </p>
+        </section>
+
+        <section className="legal-section">
+          <h2>DMCA Contact Information</h2>
+          <p>
+            All DMCA notices, counter-notices, and copyright inquiries should be sent to:
+          </p>
+          <div className="contact-info">
+            <p>
+              <strong>📧 Email:</strong> <span className="contact-email">prydeapp-team@outlook.com</span>
+            </p>
+          </div>
+          <p className="legal-note">
+            <em>Pryde Social does not maintain a physical mailing address or registered DMCA agent due to its status as a hobby-operated platform.</em>
           </p>
         </section>
 
         <div className="legal-footer-note">
           <p>
-            <strong>Questions about DMCA or copyright?</strong> Contact legal@prydesocial.com or consult with a copyright attorney.
+            <strong>Questions about DMCA or copyright?</strong> Contact <span className="contact-email">prydeapp-team@outlook.com</span> or consult with a copyright attorney.
           </p>
           <p className="last-updated">
             Last Updated: January 1, 2025
