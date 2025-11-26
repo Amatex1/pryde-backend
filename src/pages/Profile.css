@@ -929,7 +929,14 @@
   }
 
   .comment-replies {
-    margin-left: 1.5rem;
+    margin-left: 1rem;
+    padding-left: 0.75rem;
+    border-left: 3px solid var(--pryde-purple);
+  }
+
+  .comment.reply {
+    background: rgba(108, 92, 231, 0.1);
+    padding: 1rem;
   }
 
   .comment-content {
@@ -941,29 +948,38 @@
     margin-bottom: 0.5rem;
   }
 
+  .comment-text {
+    font-size: 0.9375rem;
+    line-height: 1.5;
+  }
+
   .reply-input-box {
     margin-left: 0;
-    padding: 0.5rem;
+    padding: 0.75rem;
     border-radius: 8px;
+    background: rgba(108, 92, 231, 0.08);
   }
 
   .reply-input {
-    padding: 0.5rem;
-    font-size: 0.875rem;
-    border-radius: 6px;
+    padding: 0.75rem;
+    font-size: 1rem;
+    border-radius: 8px;
+    min-height: 44px;
   }
 
   .reply-actions {
     flex-direction: row;
-    gap: 0.5rem;
+    gap: 0.75rem;
+    margin-top: 0.5rem;
   }
 
   .btn-submit-reply,
   .btn-cancel-reply {
     flex: 1;
-    padding: 0.5rem;
-    font-size: 0.8rem;
-    border-radius: 6px;
+    padding: 0.75rem 1.25rem;
+    font-size: 0.9375rem;
+    border-radius: 8px;
+    min-height: 44px;
   }
 
   .profile-tabs {
