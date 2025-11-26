@@ -324,24 +324,40 @@ function Profile({ onOpenMiniChat }) {
               <p className="profile-username">@{user.username}</p>
 
               <div className="profile-badges">
-                {user.pronouns && user.pronouns !== 'Prefer Not to Say' && (
+                {user.pronouns && (
                   <span className="badge">
-                    {user.pronouns === 'Custom' ? user.customPronouns : user.pronouns}
+                    {user.pronouns}
                   </span>
                 )}
-                {user.gender && user.gender !== 'Prefer Not to Say' && (
+                {user.gender && (
                   <span className="badge">
-                    {user.gender === 'Custom' ? user.customGender : user.gender}
+                    {user.gender}
                   </span>
                 )}
-                {user.relationshipStatus && user.relationshipStatus !== 'Prefer Not to Say' && (
+                {user.sexualOrientation && (
                   <span className="badge">
-                    {user.relationshipStatus === 'Single' && '💔'}
-                    {user.relationshipStatus === 'Taken' && '💕'}
-                    {user.relationshipStatus === 'Married' && '💍'}
-                    {user.relationshipStatus === "It's Complicated" && '😅'}
-                    {user.relationshipStatus === 'Looking for Friends' && '👋'}
-                    {' '}{user.relationshipStatus}
+                    {user.sexualOrientation}
+                  </span>
+                )}
+                {user.relationshipStatus && (
+                  <span className="badge">
+                    {user.relationshipStatus === 'single' && '💔'}
+                    {user.relationshipStatus === 'in_relationship' && '💕'}
+                    {user.relationshipStatus === 'married' && '💍'}
+                    {user.relationshipStatus === 'engaged' && '💍'}
+                    {user.relationshipStatus === 'complicated' && '😅'}
+                    {user.relationshipStatus === 'open' && '🌈'}
+                    {' '}{user.relationshipStatus.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                  </span>
+                )}
+                {user.birthday && (
+                  <span className="badge">
+                    🎂 {new Date().getFullYear() - new Date(user.birthday).getFullYear()} years old
+                  </span>
+                )}
+                {user.city && (
+                  <span className="badge">
+                    📍 {user.city}
                   </span>
                 )}
               </div>
