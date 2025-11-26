@@ -5,47 +5,54 @@ function Community() {
   return (
     <div className="legal-page">
       <div className="legal-header">
-        <h1>Community Guidelines</h1>
-        <p className="legal-subtitle">Building a Safe, Respectful, and Inclusive Community</p>
+        <h1>🌈 Pryde Social — Community Guidelines</h1>
+        <p className="legal-subtitle">Last Updated: January 1, 2025</p>
       </div>
 
       <div className="legal-content">
         <section className="legal-section">
-          <h2>Welcome to Pryde Social</h2>
           <p>
-            Pryde Social is a community built on respect, authenticity, and meaningful connections. These Community Guidelines outline the behavior we expect from all members to ensure a safe, welcoming, and positive environment for everyone.
+            Pryde Social is an 18+ LGBTQ+ community platform. These guidelines help keep the space safe, respectful, and welcoming.
           </p>
-          <p>
-            <strong>Our Core Values:</strong>
-          </p>
+        </section>
+
+        <section className="legal-section">
+          <h2>1. Respect LGBTQ+ Identities</h2>
           <ul>
-            <li><strong>Respect:</strong> Treat others with kindness and dignity</li>
-            <li><strong>Safety:</strong> Create a space free from harassment and harm</li>
-            <li><strong>Authenticity:</strong> Be genuine and honest in your interactions</li>
-            <li><strong>Inclusivity:</strong> Welcome people of all backgrounds and identities</li>
+            <li>Use correct pronouns</li>
+            <li>Respect gender identities and sexual orientations</li>
+            <li>No misgendering or deadnaming</li>
+            <li>No conversion therapy promotion</li>
           </ul>
         </section>
 
         <section className="legal-section">
-          <h2>1. Be Respectful & Kind</h2>
+          <h2>2. Be Kind & Respectful</h2>
+          <ul>
+            <li>Treat others with empathy</li>
+            <li>Disagree respectfully</li>
+            <li>No harassment, bullying, or threats</li>
+            <li>No doxxing (sharing private information)</li>
+          </ul>
+        </section>
+
+        <section className="legal-section">
+          <h2>3. Adult Content Rules (18+ Only)</h2>
           <p>
-            <strong>We expect all members to:</strong>
+            <strong>Allowed:</strong>
           </p>
           <ul>
-            <li>Communicate with respect and empathy</li>
-            <li>Value diverse opinions and perspectives</li>
-            <li>Disagree constructively without personal attacks</li>
-            <li>Use inclusive language that welcomes everyone</li>
-            <li>Give credit when sharing others' content or ideas</li>
+            <li>Artistic nudity</li>
+            <li>Educational sexual health content</li>
+            <li>LGBTQ+ expression</li>
           </ul>
           <p>
-            <strong>Zero Tolerance for:</strong>
+            <strong>NOT Allowed:</strong>
           </p>
           <ul>
-            <li>Hate speech, slurs, or discriminatory language</li>
-            <li>Bullying, harassment, or intimidation</li>
-            <li>Threats of violence or harm</li>
-            <li>Doxxing (sharing personal information without consent)</li>
+            <li>Explicit sexual content</li>
+            <li>Pornography</li>
+            <li>Non-consensual content</li>
           </ul>
         </section>
 
