@@ -1,6 +1,9 @@
 import dotenv from "dotenv";
 dotenv.config();
 
+console.log('🔐 JWT_SECRET from env:', process.env.JWT_SECRET ? 'Set' : 'Not set');
+console.log('🔐 JWT_SECRET value:', process.env.JWT_SECRET);
+
 import express from "express";
 import cors from "cors";
 import http from "http";
@@ -178,12 +181,13 @@ io.use((socket, next) => {
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
+    const decoded = jwt.verify(token, config.jwtSecret);
     console.log('✅ Token verified successfully for user:', decoded.userId);
     socket.userId = decoded.userId;
     next();
   } catch (error) {
     console.log('❌ Token verification failed:', error.message);
+    console.log('❌ Error details:', error);
     next(new Error('Authentication error'));
   }
 });

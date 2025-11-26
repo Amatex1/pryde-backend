@@ -1,7 +1,7 @@
 import jwt from 'jsonwebtoken';
 
-// The token from your login response
-const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2OTIyZGE0Yzg3N2Q4OTU3OGJiM2UzODkiLCJzZXNzaW9uSWQiOiI2NzQ1YzJhMjI5YzI5YjI5ZjI5YzkyMTgiLCJpYXQiOjE3MzI1ODQwOTgsImV4cCI6MTczMzE4ODg5OH0.skElkt4NwE-ORxejMU08gVO6x_9verVG04g297-wSig';
+// The NEW token from your fresh login
+const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2OTIyZGE0Yzg3N2Q4OTU3OGJiM2UzODkiLCJzZXNzaW9uSWQiOiI2NzQ1YzU5ZDI5YzI5YjI5ZjI5Yzk1NzMiLCJpYXQiOjE3MzI1ODY5MDksImV4cCI6MTczMzE5MTcwOX0.VFO_Gnyw8I_XwokdgcRl72cV4Ph07fWsHqcmECxBViI';
 
 const secret1 = 'your-super-secret-jwt-key-change-this';
 const secret2 = 'your-secret-key';

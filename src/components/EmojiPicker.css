@@ -24,10 +24,10 @@
 .emoji-picker {
   background: white;
   border-radius: 16px;
-  padding: 20px;
+  padding: 24px;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-  max-width: 400px;
-  width: 90%;
+  max-width: 520px;
+  width: 95%;
   animation: slideUp 0.3s ease;
 }
 
@@ -81,20 +81,21 @@
 .emoji-grid {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
-  gap: 10px;
+  gap: 12px;
 }
 
 .emoji-button {
   background: #F7F7F7;
   border: 2px solid transparent;
   border-radius: 12px;
-  padding: 15px;
-  font-size: 1.8rem;
+  padding: 18px;
+  font-size: 2rem;
   cursor: pointer;
   transition: all 0.2s ease;
   display: flex;
   align-items: center;
   justify-content: center;
+  aspect-ratio: 1;
 }
 
 .emoji-button:hover {
