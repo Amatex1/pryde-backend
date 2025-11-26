@@ -619,6 +619,237 @@
   }
 }
 
+/* Comments Section */
+.post-comments {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-light);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.comment-thread {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.comment {
+  display: flex;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  background: var(--soft-lavender);
+  border-radius: 10px;
+}
+
+.comment-replies {
+  margin-left: 2.5rem;
+  padding-left: 1rem;
+  border-left: 2px solid var(--pryde-purple);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.comment.reply {
+  background: rgba(108, 92, 231, 0.05);
+}
+
+.comment-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--gradient-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 600;
+  font-size: 0.875rem;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.comment-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.comment-content {
+  flex: 1;
+}
+
+.comment-author {
+  font-weight: 600;
+  color: var(--text-main);
+  font-size: 0.9rem;
+  margin-bottom: 0.25rem;
+}
+
+.comment-text {
+  color: var(--text-main);
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.edited-indicator {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  font-style: italic;
+}
+
+.comment-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.btn-comment-action {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.btn-comment-action:hover {
+  background: rgba(108, 92, 231, 0.1);
+  color: var(--pryde-purple);
+}
+
+.comment-edit-box {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.comment-edit-input {
+  padding: 0.5rem;
+  border: 2px solid var(--pryde-purple);
+  border-radius: 8px;
+  background: var(--card-surface);
+  color: var(--text-main);
+  font-size: 0.9rem;
+}
+
+.comment-edit-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.btn-save-comment,
+.btn-cancel-comment {
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  border: none;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-save-comment {
+  background: var(--pryde-purple);
+  color: white;
+}
+
+.btn-save-comment:hover {
+  background: var(--electric-blue);
+}
+
+.btn-cancel-comment {
+  background: var(--border-light);
+  color: var(--text-main);
+}
+
+.btn-cancel-comment:hover {
+  background: var(--text-muted);
+  color: white;
+}
+
+.reply-input-box {
+  margin-top: 0.5rem;
+}
+
+.reply-input-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.reply-input {
+  padding: 0.5rem;
+  border: 2px solid var(--pryde-purple);
+  border-radius: 8px;
+  background: var(--card-surface);
+  color: var(--text-main);
+  font-size: 0.9rem;
+}
+
+.reply-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.btn-submit-reply,
+.btn-cancel-reply {
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  border: none;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-submit-reply {
+  background: var(--pryde-purple);
+  color: white;
+}
+
+.btn-submit-reply:hover:not(:disabled) {
+  background: var(--electric-blue);
+}
+
+.btn-submit-reply:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-cancel-reply {
+  background: var(--border-light);
+  color: var(--text-main);
+}
+
+.btn-cancel-reply:hover {
+  background: var(--text-muted);
+  color: white;
+}
+
+/* Dark Mode - Comments */
+[data-theme="dark"] .comment {
+  background: rgba(108, 92, 231, 0.15);
+}
+
+[data-theme="dark"] .comment.reply {
+  background: rgba(108, 92, 231, 0.08);
+}
+
+[data-theme="dark"] .comment-replies {
+  border-left-color: rgba(108, 92, 231, 0.5);
+}
+
+[data-theme="dark"] .comment-edit-input,
+[data-theme="dark"] .reply-input {
+  background: var(--background-dark);
+  border-color: rgba(108, 92, 231, 0.5);
+}
+
 @media (max-width: 768px) {
   .profile-container {
     padding: 0 1rem 1rem;
@@ -641,5 +872,9 @@
 
   .friends-grid {
     grid-template-columns: repeat(2, 1fr);
+  }
+
+  .comment-replies {
+    margin-left: 1.5rem;
   }
 }
