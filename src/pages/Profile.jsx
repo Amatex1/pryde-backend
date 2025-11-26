@@ -473,9 +473,27 @@ function Profile({ onOpenMiniChat }) {
                       </button>
                     )}
                     {friendStatus === 'friends' && (
-                      <button className="btn-add-friend" onClick={handleRemoveFriend} style={{ background: 'var(--soft-lavender)', color: 'var(--pryde-purple)' }}>
-                        ✓ Friends
-                      </button>
+                      <>
+                        <button className="btn-add-friend" onClick={handleRemoveFriend} style={{ background: 'var(--soft-lavender)', color: 'var(--pryde-purple)' }}>
+                          ✓ Friends
+                        </button>
+                        <button
+                          className="btn-message"
+                          onClick={() => onOpenMiniChat(user)}
+                          style={{
+                            background: 'var(--gradient-primary)',
+                            color: 'white',
+                            padding: '10px 20px',
+                            borderRadius: '12px',
+                            border: 'none',
+                            cursor: 'pointer',
+                            fontWeight: '600',
+                            transition: 'all 0.3s ease'
+                          }}
+                        >
+                          💬 Message
+                        </button>
+                      </>
                     )}
                   </div>
 
