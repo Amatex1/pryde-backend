@@ -160,6 +160,25 @@ function Admin({ onOpenMiniChat }) {
     }
   };
 
+  const handleChangeRole = async (userId, newRole) => {
+    const confirmed = await showConfirm(
+      `Are you sure you want to change this user's role to ${newRole}?`,
+      'Change User Role',
+      'Change Role',
+      'Cancel'
+    );
+    if (!confirmed) return;
+
+    try {
+      await api.put(`/admin/users/${userId}/role`, { role: newRole });
+      showAlert(`User role changed to ${newRole} successfully`, 'Success');
+      loadTabData();
+    } catch (error) {
+      console.error('Change role error:', error);
+      showAlert(error.response?.data?.message || 'Failed to change user role', 'Error');
+    }
+  };
+
   if (loading) {
     return (
       <div className="page-container">
@@ -306,6 +325,7 @@ function Admin({ onOpenMiniChat }) {
               onBan={handleBanUser}
               onUnsuspend={handleUnsuspendUser}
               onUnban={handleUnbanUser}
+              onChangeRole={handleChangeRole}
             />
           )}
           {activeTab === 'blocks' && (
