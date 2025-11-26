@@ -16,6 +16,10 @@ export const connectSocket = (userId) => {
         // Get JWT token from localStorage
         const token = localStorage.getItem('token');
 
+        console.log('🔌 Connecting socket with userId:', userId);
+        console.log('🔑 Token exists:', !!token);
+        console.log('🔑 Token preview:', token ? token.substring(0, 20) + '...' : 'null');
+
         socket = io(SOCKET_URL, {
             // Use polling first for faster connection on Render
             transports: ["polling", "websocket"],
@@ -28,7 +32,7 @@ export const connectSocket = (userId) => {
             reconnectionDelayMax: 5000,
             reconnectionAttempts: 5,
             timeout: 10000, // 10 second timeout instead of default 20s
-            forceNew: false,
+            forceNew: true, // Force new connection to use new token
             upgrade: true, // Allow upgrade to websocket after polling connects
         });
 

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../utils/api';
 import { setAuthToken, setCurrentUser } from '../utils/auth';
+import { disconnectSocket, initializeSocket } from '../utils/socket';
 import './Auth.css';
 
 function Login({ setIsAuth }) {
@@ -47,6 +48,12 @@ function Login({ setIsAuth }) {
       // Normal login (no 2FA)
       setAuthToken(response.data.token);
       setCurrentUser(response.data.user);
+
+      // Disconnect old socket and reconnect with new token
+      disconnectSocket();
+      const userId = response.data.user.id || response.data.user._id;
+      initializeSocket(userId);
+
       setIsAuth(true);
       navigate('/feed');
     } catch (err) {
@@ -81,6 +88,12 @@ function Login({ setIsAuth }) {
 
       setAuthToken(response.data.token);
       setCurrentUser(response.data.user);
+
+      // Disconnect old socket and reconnect with new token
+      disconnectSocket();
+      const userId = response.data.user.id || response.data.user._id;
+      initializeSocket(userId);
+
       setIsAuth(true);
       navigate('/feed');
     } catch (err) {

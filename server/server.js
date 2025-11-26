@@ -166,16 +166,24 @@ app.get('/api/status', (req, res) => {
 // Socket.IO authentication middleware
 io.use((socket, next) => {
   const token = socket.handshake.auth.token;
-  
+
+  console.log('🔌 Socket.IO authentication attempt');
+  console.log('🔑 Token received:', token ? 'Yes' : 'No');
+  console.log('🔑 Token preview:', token ? token.substring(0, 20) + '...' : 'null');
+  console.log('🔐 JWT_SECRET:', process.env.JWT_SECRET ? 'Set' : 'Not set');
+
   if (!token) {
+    console.log('❌ No token provided');
     return next(new Error('Authentication error'));
   }
-  
+
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
+    console.log('✅ Token verified successfully for user:', decoded.userId);
     socket.userId = decoded.userId;
     next();
   } catch (error) {
+    console.log('❌ Token verification failed:', error.message);
     next(new Error('Authentication error'));
   }
 });
