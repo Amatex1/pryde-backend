@@ -6,6 +6,7 @@ import PhotoViewer from '../components/PhotoViewer';
 import Toast from '../components/Toast';
 import CustomModal from '../components/CustomModal';
 import ShareModal from '../components/ShareModal';
+import EditProfileModal from '../components/EditProfileModal';
 import { useModal } from '../hooks/useModal';
 import api from '../utils/api';
 import { getCurrentUser } from '../utils/auth';
@@ -25,6 +26,7 @@ function Profile({ onOpenMiniChat }) {
   const [showCommentBox, setShowCommentBox] = useState({});
   const [commentText, setCommentText] = useState({});
   const [shareModal, setShareModal] = useState({ isOpen: false, post: null });
+  const [editProfileModal, setEditProfileModal] = useState(false);
   const [friendStatus, setFriendStatus] = useState(null); // null, 'friends', 'pending_sent', 'pending_received', 'none'
   const [friendRequestId, setFriendRequestId] = useState(null);
   const [isBlocked, setIsBlocked] = useState(false);
@@ -140,6 +142,11 @@ function Profile({ onOpenMiniChat }) {
       console.error('Failed to share post:', error);
       showAlert(error.response?.data?.message || 'Failed to share post.', 'Share Failed');
     }
+  };
+
+  const handleProfileUpdate = (updatedUser) => {
+    setUser(updatedUser);
+    showToast('Profile updated successfully!', 'success');
   };
 
   const checkFriendStatus = async () => {
@@ -340,6 +347,14 @@ function Profile({ onOpenMiniChat }) {
               </div>
 
               {user.bio && <p className="profile-bio">{user.bio}</p>}
+
+              {isOwnProfile && (
+                <div className="profile-action-buttons">
+                  <button className="btn-edit-profile" onClick={() => setEditProfileModal(true)}>
+                    ✏️ Edit Profile
+                  </button>
+                </div>
+              )}
 
               {!isOwnProfile && (
                 <div className="profile-action-buttons">
@@ -667,6 +682,13 @@ function Profile({ onOpenMiniChat }) {
         onClose={() => setShareModal({ isOpen: false, post: null })}
         post={shareModal.post}
         onShare={handleShareComplete}
+      />
+
+      <EditProfileModal
+        isOpen={editProfileModal}
+        onClose={() => setEditProfileModal(false)}
+        user={user}
+        onUpdate={handleProfileUpdate}
       />
     </div>
   );

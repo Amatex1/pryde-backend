@@ -35,30 +35,39 @@ const userSchema = new mongoose.Schema({
     default: '',
     trim: true
   },
-  pronouns: {
+  displayNameType: {
     type: String,
-    enum: ['', 'He/Him', 'She/Her', 'They/Them', 'He/They', 'She/They', 'Any Pronouns', 'Prefer Not to Say', 'Custom'],
-    default: ''
+    enum: ['fullName', 'nickname', 'custom'],
+    default: 'fullName'
   },
-  customPronouns: {
+  customDisplayName: {
+    type: String,
+    default: '',
+    trim: true
+  },
+  pronouns: {
     type: String,
     default: '',
     trim: true
   },
   gender: {
     type: String,
-    enum: ['', 'Male', 'Female', 'Non-Binary', 'Transgender', 'Genderfluid', 'Agender', 'Intersex', 'Prefer Not to Say', 'Custom'],
-    default: ''
+    default: '',
+    trim: true
   },
-  customGender: {
+  sexualOrientation: {
     type: String,
     default: '',
     trim: true
   },
   relationshipStatus: {
     type: String,
-    enum: ['', 'Single', 'Taken', 'It\'s Complicated', 'Married', 'Looking for Friends', 'Prefer Not to Say'],
-    default: ''
+    default: '',
+    trim: true
+  },
+  birthday: {
+    type: Date,
+    default: null
   },
   bio: {
     type: String,
@@ -77,6 +86,16 @@ const userSchema = new mongoose.Schema({
     type: String,
     default: ''
   },
+  postcode: {
+    type: String,
+    default: '',
+    trim: true
+  },
+  city: {
+    type: String,
+    default: '',
+    trim: true
+  },
   website: {
     type: String,
     default: ''
@@ -93,6 +112,25 @@ const userSchema = new mongoose.Schema({
       trim: true
     }
   }],
+  interests: [{
+    type: String,
+    trim: true
+  }],
+  lookingFor: [{
+    type: String,
+    enum: ['friends', 'support', 'community', 'networking'],
+    lowercase: true
+  }],
+  communicationStyle: {
+    type: String,
+    default: '',
+    trim: true
+  },
+  safetyPreferences: {
+    type: String,
+    default: '',
+    trim: true
+  },
   friends: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'

@@ -285,7 +285,8 @@
   gap: 0.5rem;
 }
 
-.btn-add-friend {
+.btn-add-friend,
+.btn-edit-profile {
   padding: 0.75rem 1.5rem;
   border-radius: 12px;
   border: none;
@@ -297,7 +298,8 @@
   font-size: 0.95rem;
 }
 
-.btn-add-friend:hover:not(:disabled) {
+.btn-add-friend:hover:not(:disabled),
+.btn-edit-profile:hover {
   transform: translateY(-2px);
   box-shadow: 0 8px 25px rgba(108, 92, 231, 0.3);
 }
@@ -311,6 +313,11 @@
   opacity: 0.6;
   cursor: not-allowed;
   transform: none;
+}
+
+.btn-edit-profile {
+  width: 100%;
+  max-width: 200px;
 }
 
 .btn-block,

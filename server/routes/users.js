@@ -1,5 +1,6 @@
 import express from 'express';
 const router = express.Router();
+import multer from 'multer';
 import User from '../models/User.js';
 import Post from '../models/Post.js';
 import Message from '../models/Message.js';
@@ -8,6 +9,9 @@ import GroupChat from '../models/GroupChat.js';
 import Notification from '../models/Notification.js';
 import auth from '../middleware/auth.js';
 import { checkProfileVisibility, checkBlocked } from '../middleware/privacy.js';
+import { uploadToGridFS } from '../utils/gridfs.js';
+
+const upload = multer({ storage: multer.memoryStorage() });
 
 // @route   GET /api/users/search
 // @desc    Search users
@@ -57,6 +61,44 @@ router.get('/:id', auth, checkProfileVisibility, async (req, res) => {
   }
 });
 
+// @route   POST /api/users/upload-photo
+// @desc    Upload profile or cover photo
+// @access  Private
+router.post('/upload-photo', auth, upload.fields([
+  { name: 'profilePhoto', maxCount: 1 },
+  { name: 'coverPhoto', maxCount: 1 }
+]), async (req, res) => {
+  try {
+    const user = await User.findById(req.userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const updates = {};
+
+    if (req.files.profilePhoto) {
+      const file = req.files.profilePhoto[0];
+      const filename = await uploadToGridFS(file.buffer, file.originalname, file.mimetype);
+      user.profilePhoto = filename;
+      updates.profilePhoto = filename;
+    }
+
+    if (req.files.coverPhoto) {
+      const file = req.files.coverPhoto[0];
+      const filename = await uploadToGridFS(file.buffer, file.originalname, file.mimetype);
+      user.coverPhoto = filename;
+      updates.coverPhoto = filename;
+    }
+
+    await user.save();
+
+    res.json(updates);
+  } catch (error) {
+    console.error('Upload photo error:', error);
+    res.status(500).json({ message: 'Failed to upload photo' });
+  }
+});
+
 // @route   PUT /api/users/profile
 // @desc    Update user profile
 // @access  Private
@@ -64,17 +106,23 @@ router.put('/profile', auth, async (req, res) => {
   try {
     const {
       fullName,
-      displayName,
       nickname,
+      displayNameType,
+      customDisplayName,
       pronouns,
-      customPronouns,
       gender,
-      customGender,
+      sexualOrientation,
       relationshipStatus,
+      birthday,
       bio,
-      location,
+      postcode,
+      city,
       website,
-      socialLinks
+      socialLinks,
+      interests,
+      lookingFor,
+      communicationStyle,
+      safetyPreferences
     } = req.body;
 
     const user = await User.findById(req.userId);
@@ -85,21 +133,36 @@ router.put('/profile', auth, async (req, res) => {
 
     // Update fields
     if (fullName !== undefined) user.fullName = fullName;
-    if (displayName !== undefined) user.displayName = displayName;
     if (nickname !== undefined) user.nickname = nickname;
+    if (displayNameType !== undefined) user.displayNameType = displayNameType;
+    if (customDisplayName !== undefined) user.customDisplayName = customDisplayName;
     if (pronouns !== undefined) user.pronouns = pronouns;
-    if (customPronouns !== undefined) user.customPronouns = customPronouns;
     if (gender !== undefined) user.gender = gender;
-    if (customGender !== undefined) user.customGender = customGender;
+    if (sexualOrientation !== undefined) user.sexualOrientation = sexualOrientation;
     if (relationshipStatus !== undefined) user.relationshipStatus = relationshipStatus;
+    if (birthday !== undefined) user.birthday = birthday;
     if (bio !== undefined) user.bio = bio;
-    if (location !== undefined) user.location = location;
+    if (postcode !== undefined) user.postcode = postcode;
+    if (city !== undefined) user.city = city;
     if (website !== undefined) user.website = website;
     if (socialLinks !== undefined) user.socialLinks = socialLinks;
+    if (interests !== undefined) user.interests = interests;
+    if (lookingFor !== undefined) user.lookingFor = lookingFor;
+    if (communicationStyle !== undefined) user.communicationStyle = communicationStyle;
+    if (safetyPreferences !== undefined) user.safetyPreferences = safetyPreferences;
+
+    // Update displayName based on displayNameType
+    if (displayNameType === 'fullName') {
+      user.displayName = fullName;
+    } else if (displayNameType === 'nickname') {
+      user.displayName = nickname || fullName;
+    } else if (displayNameType === 'custom') {
+      user.displayName = customDisplayName || fullName;
+    }
 
     await user.save();
 
-    res.json(user);
+    res.json({ user });
   } catch (error) {
     console.error('Update profile error:', error);
     res.status(500).json({ message: 'Server error' });
