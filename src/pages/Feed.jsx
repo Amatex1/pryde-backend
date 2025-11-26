@@ -53,6 +53,19 @@ function Feed({ onOpenMiniChat }) {
     fetchBookmarkedPosts();
   }, []);
 
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (!event.target.closest('.post-dropdown-container') && !event.target.closest('.comment-dropdown-container')) {
+        setOpenDropdownId(null);
+        setOpenCommentDropdownId(null);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   // Handle scrolling to specific post/comment from notifications
   useEffect(() => {
     const postId = searchParams.get('post');
