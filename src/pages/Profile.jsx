@@ -568,24 +568,26 @@ function Profile({ onOpenMiniChat }) {
           <div className="profile-posts">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
               <h2 className="section-title">Posts</h2>
-              <Link
-                to="/feed"
-                className="btn-primary"
-                style={{
-                  padding: '10px 20px',
-                  borderRadius: '12px',
-                  background: 'linear-gradient(135deg, #6C5CE7 0%, #0984E3 100%)',
-                  color: 'white',
-                  border: 'none',
-                  cursor: 'pointer',
-                  fontWeight: '600',
-                  transition: 'all 0.3s ease',
-                  textDecoration: 'none',
-                  display: 'inline-block'
-                }}
-              >
-                ✨ Create Post
-              </Link>
+              {isOwnProfile && (
+                <Link
+                  to="/feed"
+                  className="btn-primary"
+                  style={{
+                    padding: '10px 20px',
+                    borderRadius: '12px',
+                    background: 'linear-gradient(135deg, #6C5CE7 0%, #0984E3 100%)',
+                    color: 'white',
+                    border: 'none',
+                    cursor: 'pointer',
+                    fontWeight: '600',
+                    transition: 'all 0.3s ease',
+                    textDecoration: 'none',
+                    display: 'inline-block'
+                  }}
+                >
+                  ✨ Create Post
+                </Link>
+              )}
             </div>
 
             {loadingPosts ? (

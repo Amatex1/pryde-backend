@@ -19,12 +19,29 @@ router.get('/', auth, async (req, res) => {
     const currentUser = await User.findById(userId);
     const friendIds = currentUser.friends || [];
 
-    const posts = await Post.find({
+    // Build query with privacy filtering
+    const query = {
       $or: [
-        { author: userId }, // User's own posts
-        { author: { $in: friendIds }, visibility: { $in: ['public', 'friends'] } } // Friends' posts
+        { author: userId }, // User's own posts (always visible)
+        {
+          author: { $in: friendIds },
+          visibility: 'public',
+          hiddenFrom: { $ne: userId } // Not hidden from current user
+        },
+        {
+          author: { $in: friendIds },
+          visibility: 'friends',
+          hiddenFrom: { $ne: userId } // Not hidden from current user
+        },
+        {
+          visibility: 'custom',
+          sharedWith: userId, // Explicitly shared with current user
+          hiddenFrom: { $ne: userId }
+        }
       ]
-    })
+    };
+
+    const posts = await Post.find(query)
       .populate('author', 'username displayName profilePhoto')
       .populate('comments.user', 'username displayName profilePhoto')
       .populate('likes', 'username displayName profilePhoto')
@@ -39,13 +56,8 @@ router.get('/', auth, async (req, res) => {
       .limit(limit * 1)
       .skip((page - 1) * limit);
 
-    const count = await Post.countDocuments({
-      $or: [
-        { author: userId },
-        { author: { $in: friendIds }, visibility: { $in: ['public', 'friends'] } }
-      ]
-    });
-    
+    const count = await Post.countDocuments(query);
+
     res.json({
       posts,
       totalPages: Math.ceil(count / limit),
@@ -62,7 +74,30 @@ router.get('/', auth, async (req, res) => {
 // @access  Private
 router.get('/user/:userId', auth, async (req, res) => {
   try {
-    const posts = await Post.find({ author: req.params.userId })
+    const currentUserId = req.userId || req.user._id;
+    const profileUserId = req.params.userId;
+
+    // Get current user to check friendship
+    const currentUser = await User.findById(currentUserId);
+    const isFriend = currentUser.friends.some(friendId => friendId.toString() === profileUserId);
+    const isOwnProfile = currentUserId.toString() === profileUserId;
+
+    // Build query based on relationship
+    let query = { author: profileUserId };
+
+    if (!isOwnProfile) {
+      // Not viewing own profile - apply privacy filters
+      query = {
+        author: profileUserId,
+        $or: [
+          { visibility: 'public', hiddenFrom: { $ne: currentUserId } },
+          { visibility: 'friends', hiddenFrom: { $ne: currentUserId }, ...(isFriend ? {} : { _id: null }) }, // Only if friends
+          { visibility: 'custom', sharedWith: currentUserId, hiddenFrom: { $ne: currentUserId } }
+        ]
+      };
+    }
+
+    const posts = await Post.find(query)
       .populate('author', 'username displayName profilePhoto')
       .populate('comments.user', 'username displayName profilePhoto')
       .populate('likes', 'username displayName profilePhoto')

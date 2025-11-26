@@ -1033,14 +1033,27 @@
   transform: translateX(5px);
 }
 
-@media (max-width: 1024px) {
+/* Tablet breakpoint - keep sidebar visible but adjust layout */
+@media (max-width: 1200px) {
+  .feed-container {
+    grid-template-columns: 1fr 280px;
+    gap: 1.5rem;
+  }
+
+  .feed-sidebar {
+    position: sticky;
+    top: 100px;
+  }
+}
+
+/* Only hide sidebar on mobile devices */
+@media (max-width: 768px) {
   .feed-container {
     grid-template-columns: 1fr;
   }
 
   .feed-sidebar {
-    position: relative;
-    top: 0;
+    display: none; /* Hide on mobile only */
   }
 }
 
@@ -1077,10 +1090,6 @@
 
   .comment-input {
     font-size: 16px; /* Prevents zoom on iOS */
-  }
-
-  .feed-sidebar {
-    display: none; /* Hide sidebar on mobile, show as modal if needed */
   }
 
   /* Improve media grid on mobile */
