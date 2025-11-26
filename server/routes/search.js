@@ -33,7 +33,9 @@ router.get('/', auth, searchLimiter, async (req, res) => {
         $or: [
           { username: { $regex: searchQuery, $options: 'i' } },
           { displayName: { $regex: searchQuery, $options: 'i' } }
-        ]
+        ],
+        isActive: true, // Only show active accounts
+        isBanned: { $ne: true } // Exclude banned users
       })
       .select('username displayName profilePhoto bio')
       .limit(10);

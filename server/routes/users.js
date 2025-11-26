@@ -25,7 +25,9 @@ router.get('/search', auth, async (req, res) => {
         { username: { $regex: q, $options: 'i' } },
         { displayName: { $regex: q, $options: 'i' } }
       ],
-      _id: { $ne: req.userId } // Exclude current user
+      _id: { $ne: req.userId }, // Exclude current user
+      isActive: true, // Only show active accounts
+      isBanned: { $ne: true } // Exclude banned users
     })
     .select('username displayName profilePhoto bio')
     .limit(20);

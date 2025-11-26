@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { onUserOnline, onUserOffline, onOnlineUsers } from '../utils/socket';
 import api from '../utils/api';
+import { getImageUrl } from '../utils/imageUtils';
 import './OnlinePresence.css';
 
 function OnlinePresence({ onOpenMiniChat }) {
@@ -130,14 +132,11 @@ function OnlinePresence({ onOpenMiniChat }) {
             <div className="friends-list">
               {onlineFriends.length > 0 ? (
                 onlineFriends.map(friend => (
-                  <div
+                  <Link
                     key={friend._id}
+                    to={`/profile/${friend._id}`}
                     className="friend-item"
-                    onClick={() => {
-                      if (onOpenMiniChat) {
-                        onOpenMiniChat(friend._id, friend.displayName || friend.username, friend.profilePhoto);
-                      }
-                    }}
+                    style={{ textDecoration: 'none', color: 'inherit' }}
                   >
                     <div className="friend-avatar">
                       {friend.profilePhoto ? (
@@ -153,7 +152,7 @@ function OnlinePresence({ onOpenMiniChat }) {
                       <span className="friend-name">{friend.displayName || friend.username}</span>
                       <span className="friend-status">Online</span>
                     </div>
-                  </div>
+                  </Link>
                 ))
               ) : (
                 <p className="no-friends">No friends online</p>
@@ -166,14 +165,11 @@ function OnlinePresence({ onOpenMiniChat }) {
             <div className="friends-list">
               {offlineFriends.length > 0 ? (
                 offlineFriends.map(friend => (
-                  <div
+                  <Link
                     key={friend._id}
+                    to={`/profile/${friend._id}`}
                     className="friend-item"
-                    onClick={() => {
-                      if (onOpenMiniChat) {
-                        onOpenMiniChat(friend._id, friend.displayName || friend.username, friend.profilePhoto);
-                      }
-                    }}
+                    style={{ textDecoration: 'none', color: 'inherit' }}
                   >
                     <div className="friend-avatar">
                       {friend.profilePhoto ? (
@@ -189,7 +185,7 @@ function OnlinePresence({ onOpenMiniChat }) {
                       <span className="friend-name">{friend.displayName || friend.username}</span>
                       <span className="friend-status">{getTimeSince(friend.lastSeen)}</span>
                     </div>
-                  </div>
+                  </Link>
                 ))
               ) : (
                 <p className="no-friends">No offline friends</p>

@@ -184,9 +184,15 @@ router.delete('/:friendId', auth, async (req, res) => {
 router.get('/', auth, async (req, res) => {
   try {
     const user = await User.findById(req.userId)
-      .populate('friends', 'username displayName profilePhoto bio lastSeen');
+      .populate({
+        path: 'friends',
+        match: { isActive: true, isBanned: { $ne: true } },
+        select: 'username displayName profilePhoto bio lastSeen'
+      });
 
-    res.json(user.friends);
+    // Filter out null values (deactivated/banned friends)
+    const activeFriends = user.friends.filter(friend => friend !== null);
+    res.json(activeFriends);
   } catch (error) {
     console.error('Get friends error:', error);
     res.status(500).json({ message: 'Server error' });
@@ -210,9 +216,11 @@ router.get('/online', auth, async (req, res) => {
       onlineUsers.has(friendId.toString())
     );
 
-    // Fetch full user details
+    // Fetch full user details (only active, non-banned users)
     const onlineFriends = await User.find({
-      _id: { $in: onlineFriendIds }
+      _id: { $in: onlineFriendIds },
+      isActive: true,
+      isBanned: { $ne: true }
     }).select('username displayName profilePhoto lastSeen');
 
     res.json(onlineFriends);
@@ -235,9 +243,11 @@ router.get('/offline', auth, async (req, res) => {
       !onlineUsers || !onlineUsers.has(friendId.toString())
     );
 
-    // Fetch full user details
+    // Fetch full user details (only active, non-banned users)
     const offlineFriends = await User.find({
-      _id: { $in: offlineFriendIds }
+      _id: { $in: offlineFriendIds },
+      isActive: true,
+      isBanned: { $ne: true }
     }).select('username displayName profilePhoto lastSeen');
 
     res.json(offlineFriends);
