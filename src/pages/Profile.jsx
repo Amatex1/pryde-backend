@@ -14,7 +14,9 @@ function Profile({ onOpenMiniChat }) {
   const { id } = useParams();
   const currentUser = getCurrentUser();
   const [user, setUser] = useState(null);
+  const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadingPosts, setLoadingPosts] = useState(true);
   const [uploadMessage, setUploadMessage] = useState('');
   const [friendStatus, setFriendStatus] = useState(null); // null, 'friends', 'pending_sent', 'pending_received', 'none'
   const [friendRequestId, setFriendRequestId] = useState(null);
