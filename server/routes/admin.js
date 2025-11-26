@@ -445,5 +445,90 @@ router.get('/activity', checkPermission('canViewAnalytics'), async (req, res) =>
   }
 });
 
+// @route   GET /api/admin/security-logs
+// @desc    Get security logs (underage attempts, suspicious activity, etc.)
+// @access  Admin (canViewAnalytics)
+router.get('/security-logs', checkPermission('canViewAnalytics'), async (req, res) => {
+  try {
+    const { type, severity, resolved, limit = 50, skip = 0 } = req.query;
+
+    // Build filter
+    const filter = {};
+    if (type) filter.type = type;
+    if (severity) filter.severity = severity;
+    if (resolved !== undefined) filter.resolved = resolved === 'true';
+
+    // Get logs
+    const logs = await SecurityLog.find(filter)
+      .populate('userId', 'username email profilePicture')
+      .populate('resolvedBy', 'username')
+      .sort({ createdAt: -1 })
+      .limit(parseInt(limit))
+      .skip(parseInt(skip));
+
+    // Get total count
+    const total = await SecurityLog.countDocuments(filter);
+
+    // Get stats
+    const stats = {
+      total: await SecurityLog.countDocuments(),
+      unresolved: await SecurityLog.countDocuments({ resolved: false }),
+      byType: {
+        underage_registration: await SecurityLog.countDocuments({ type: 'underage_registration' }),
+        underage_login: await SecurityLog.countDocuments({ type: 'underage_login' }),
+        underage_access: await SecurityLog.countDocuments({ type: 'underage_access' }),
+        failed_login: await SecurityLog.countDocuments({ type: 'failed_login' }),
+        suspicious_activity: await SecurityLog.countDocuments({ type: 'suspicious_activity' })
+      },
+      bySeverity: {
+        low: await SecurityLog.countDocuments({ severity: 'low' }),
+        medium: await SecurityLog.countDocuments({ severity: 'medium' }),
+        high: await SecurityLog.countDocuments({ severity: 'high' }),
+        critical: await SecurityLog.countDocuments({ severity: 'critical' })
+      }
+    };
+
+    res.json({
+      logs,
+      total,
+      stats,
+      hasMore: total > parseInt(skip) + parseInt(limit)
+    });
+  } catch (error) {
+    console.error('Get security logs error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   PUT /api/admin/security-logs/:id/resolve
+// @desc    Mark a security log as resolved
+// @access  Admin (canManageUsers)
+router.put('/security-logs/:id/resolve', checkPermission('canManageUsers'), async (req, res) => {
+  try {
+    const { notes } = req.body;
+
+    const log = await SecurityLog.findByIdAndUpdate(
+      req.params.id,
+      {
+        resolved: true,
+        resolvedBy: req.user._id,
+        resolvedAt: new Date(),
+        notes: notes || ''
+      },
+      { new: true }
+    ).populate('userId', 'username email')
+      .populate('resolvedBy', 'username');
+
+    if (!log) {
+      return res.status(404).json({ message: 'Security log not found' });
+    }
+
+    res.json(log);
+  } catch (error) {
+    console.error('Resolve security log error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 export default router;
 
