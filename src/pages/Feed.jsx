@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import ReportModal from '../components/ReportModal';
 import PhotoViewer from '../components/PhotoViewer';
@@ -9,6 +9,7 @@ import { useModal } from '../hooks/useModal';
 import api from '../utils/api';
 import { getCurrentUser } from '../utils/auth';
 import { getImageUrl } from '../utils/imageUrl';
+import { onUserOnline, onUserOffline, onOnlineUsers } from '../utils/socket';
 import './Feed.css';
 
 function Feed({ onOpenMiniChat }) {
@@ -38,6 +39,9 @@ function Feed({ onOpenMiniChat }) {
   const [hiddenFromUsers, setHiddenFromUsers] = useState([]);
   const [sharedWithUsers, setSharedWithUsers] = useState([]);
   const [friends, setFriends] = useState([]);
+  const [onlineFriends, setOnlineFriends] = useState([]);
+  const [offlineFriends, setOfflineFriends] = useState([]);
+  const [onlineUsers, setOnlineUsers] = useState([]);
   const [trending, setTrending] = useState([]);
   const [bookmarkedPosts, setBookmarkedPosts] = useState([]);
   const [shareModal, setShareModal] = useState({ isOpen: false, post: null });
@@ -64,6 +68,38 @@ function Feed({ onOpenMiniChat }) {
 
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Socket listeners for online/offline status
+  useEffect(() => {
+    // Get initial online users list
+    onOnlineUsers((users) => {
+      setOnlineUsers(users);
+    });
+
+    // Listen for users coming online
+    onUserOnline((data) => {
+      setOnlineUsers((prev) => {
+        if (!prev.includes(data.userId)) {
+          return [...prev, data.userId];
+        }
+        return prev;
+      });
+      // Refresh friends list
+      fetchFriends();
+    });
+
+    // Listen for users going offline
+    onUserOffline((data) => {
+      setOnlineUsers((prev) => prev.filter(id => id !== data.userId));
+      // Refresh friends list
+      fetchFriends();
+    });
+
+    // Refresh friends list every 30 seconds
+    const interval = setInterval(fetchFriends, 30000);
+
+    return () => clearInterval(interval);
   }, []);
 
   // Handle scrolling to specific post/comment from notifications
@@ -106,11 +142,26 @@ function Feed({ onOpenMiniChat }) {
 
   const fetchFriends = async () => {
     try {
-      const response = await api.get('/friends');
-      setFriends(response.data);
+      const [onlineRes, offlineRes] = await Promise.all([
+        api.get('/friends/online'),
+        api.get('/friends/offline')
+      ]);
+      setOnlineFriends(onlineRes.data);
+      setOfflineFriends(offlineRes.data);
+      setFriends([...onlineRes.data, ...offlineRes.data]);
     } catch (error) {
       console.error('Failed to fetch friends:', error);
     }
+  };
+
+  // Helper function to format time since last seen
+  const getTimeSince = (date) => {
+    if (!date) return 'Unknown';
+    const seconds = Math.floor((new Date() - new Date(date)) / 1000);
+    if (seconds < 60) return 'Just now';
+    if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+    if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
+    return `${Math.floor(seconds / 86400)}d ago`;
   };
 
   const fetchTrending = async () => {
@@ -1011,28 +1062,96 @@ function Feed({ onOpenMiniChat }) {
           <div className="sidebar-card glossy">
             <h3 className="sidebar-title">Friends</h3>
             <div className="friends-sidebar-list">
-              {friends.length > 0 ? (
-                friends.slice(0, 10).map((friend) => (
-                  <Link
-                    key={friend._id}
-                    to={`/profile/${friend._id}`}
-                    className="friend-sidebar-item"
-                    style={{ textDecoration: 'none', color: 'inherit' }}
-                  >
-                    <div className="friend-sidebar-avatar">
-                      {friend.profilePhoto ? (
-                        <img src={getImageUrl(friend.profilePhoto)} alt={friend.displayName} />
-                      ) : (
-                        <span>{friend.displayName?.charAt(0).toUpperCase() || 'U'}</span>
-                      )}
+              {/* Online Friends */}
+              {onlineFriends.length > 0 && (
+                <>
+                  <div className="friends-section-header">
+                    <span className="status-dot online"></span>
+                    <span className="friends-section-title">Online ({onlineFriends.length})</span>
+                  </div>
+                  {onlineFriends.map((friend) => (
+                    <div key={friend._id} className="friend-sidebar-item">
+                      <div className="friend-sidebar-main">
+                        <div className="friend-sidebar-avatar">
+                          {friend.profilePhoto ? (
+                            <img src={getImageUrl(friend.profilePhoto)} alt={friend.displayName} />
+                          ) : (
+                            <span>{friend.displayName?.charAt(0).toUpperCase() || 'U'}</span>
+                          )}
+                          <span className="status-dot online"></span>
+                        </div>
+                        <div className="friend-sidebar-info">
+                          <div className="friend-sidebar-name">{friend.displayName || friend.username}</div>
+                          <div className="friend-sidebar-status online-status">Online</div>
+                        </div>
+                      </div>
+                      <div className="friend-sidebar-actions">
+                        <button
+                          onClick={() => onOpenMiniChat(friend)}
+                          className="btn-friend-action"
+                          title="Chat"
+                        >
+                          💬
+                        </button>
+                        <Link
+                          to={`/profile/${friend._id}`}
+                          className="btn-friend-action"
+                          title="View Profile"
+                        >
+                          👤
+                        </Link>
+                      </div>
                     </div>
-                    <div className="friend-sidebar-info">
-                      <div className="friend-sidebar-name">{friend.displayName || friend.username}</div>
-                      <div className="friend-sidebar-status">Click to view profile</div>
+                  ))}
+                </>
+              )}
+
+              {/* Offline Friends */}
+              {offlineFriends.length > 0 && (
+                <>
+                  <div className="friends-section-header">
+                    <span className="status-dot offline"></span>
+                    <span className="friends-section-title">Offline ({offlineFriends.length})</span>
+                  </div>
+                  {offlineFriends.slice(0, 10).map((friend) => (
+                    <div key={friend._id} className="friend-sidebar-item">
+                      <div className="friend-sidebar-main">
+                        <div className="friend-sidebar-avatar">
+                          {friend.profilePhoto ? (
+                            <img src={getImageUrl(friend.profilePhoto)} alt={friend.displayName} />
+                          ) : (
+                            <span>{friend.displayName?.charAt(0).toUpperCase() || 'U'}</span>
+                          )}
+                          <span className="status-dot offline"></span>
+                        </div>
+                        <div className="friend-sidebar-info">
+                          <div className="friend-sidebar-name">{friend.displayName || friend.username}</div>
+                          <div className="friend-sidebar-status offline-status">{getTimeSince(friend.lastSeen)}</div>
+                        </div>
+                      </div>
+                      <div className="friend-sidebar-actions">
+                        <button
+                          onClick={() => onOpenMiniChat(friend)}
+                          className="btn-friend-action"
+                          title="Chat"
+                        >
+                          💬
+                        </button>
+                        <Link
+                          to={`/profile/${friend._id}`}
+                          className="btn-friend-action"
+                          title="View Profile"
+                        >
+                          👤
+                        </Link>
+                      </div>
                     </div>
-                  </Link>
-                ))
-              ) : (
+                  ))}
+                </>
+              )}
+
+              {/* No Friends */}
+              {friends.length === 0 && (
                 <div className="no-friends">
                   <p>No friends yet</p>
                   <p className="friends-hint">Add friends to start chatting!</p>
