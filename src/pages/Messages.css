@@ -901,7 +901,7 @@
 
   .conversations-sidebar {
     position: fixed;
-    top: 80px;
+    top: 0;
     left: 0;
     bottom: 0;
     width: 300px;
@@ -912,6 +912,7 @@
     transform: translateX(-100%);
     transition: transform 0.3s ease;
     overflow-y: auto;
+    padding-top: 5rem; /* Account for navbar */
   }
 
   .conversations-sidebar.mobile-visible {
