@@ -227,7 +227,7 @@
 .blocks-table {
   width: 100%;
   border-collapse: collapse;
-  background: white;
+  background: var(--card-surface);
   border-radius: 12px;
   overflow: hidden;
 }
@@ -249,6 +249,7 @@
 .blocks-table td {
   padding: 1rem;
   border-bottom: 1px solid var(--border-light);
+  color: var(--text-main);
 }
 
 .users-table tbody tr:hover,
@@ -516,4 +517,43 @@
   background: var(--electric-blue) !important;
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(108, 92, 231, 0.3);
+}
+
+/* Dark Mode Support */
+[data-theme="dark"] .admin-content {
+  background: var(--card-surface);
+  color: var(--text-main);
+}
+
+[data-theme="dark"] .users-table,
+[data-theme="dark"] .blocks-table {
+  background: var(--card-surface);
+  color: var(--text-main);
+}
+
+[data-theme="dark"] .users-table td,
+[data-theme="dark"] .blocks-table td {
+  color: var(--text-main);
+  border-bottom-color: var(--border-light);
+}
+
+[data-theme="dark"] .users-table tbody tr:hover,
+[data-theme="dark"] .blocks-table tbody tr:hover {
+  background: rgba(108, 92, 231, 0.1);
+}
+
+[data-theme="dark"] .stat-card {
+  background: var(--card-surface);
+  border: 1px solid var(--border-light);
+}
+
+[data-theme="dark"] .report-card {
+  background: var(--card-surface);
+  border-left-color: var(--pryde-purple);
+}
+
+[data-theme="dark"] .content-preview {
+  background: var(--background-light);
+  border-color: var(--border-light);
+  color: var(--text-main);
 }

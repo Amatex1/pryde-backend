@@ -239,24 +239,95 @@
 @media (max-width: 768px) {
   .navbar {
     padding: 0.75rem 1rem;
+    margin-bottom: 1rem;
   }
 
   .navbar-container {
-    flex-direction: column;
-    gap: 1rem;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+
+  .navbar-brand {
+    font-size: 1.25rem;
+  }
+
+  .brand-icon {
+    font-size: 1.5rem;
   }
 
   .navbar-links {
+    flex: 1;
     flex-wrap: wrap;
     justify-content: center;
     gap: 0.5rem;
   }
 
   .nav-text {
-    display: none;
+    display: none; /* Show only icons on mobile */
+  }
+
+  .nav-link {
+    padding: 0.625rem;
+    min-width: 44px; /* Minimum touch target */
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .nav-icon {
+    font-size: 1.25rem;
+  }
+
+  .navbar-actions {
+    gap: 0.5rem;
+  }
+
+  .notification-badge {
+    top: -4px;
+    right: -4px;
+    font-size: 0.625rem;
+    min-width: 16px;
+    height: 16px;
+  }
+
+  .user-dropdown {
+    right: 0;
+    left: auto;
+    width: 200px;
+  }
+}
+
+/* Extra small devices */
+@media (max-width: 480px) {
+  .navbar {
+    padding: 0.5rem 0.75rem;
+  }
+
+  .navbar-container {
+    gap: 0.5rem;
+  }
+
+  .navbar-brand {
+    font-size: 1.125rem;
+  }
+
+  .brand-text {
+    display: none; /* Show only icon on very small screens */
   }
 
   .nav-link {
     padding: 0.5rem;
+    min-width: 40px;
+    min-height: 40px;
+  }
+
+  .nav-icon {
+    font-size: 1.125rem;
+  }
+
+  .navbar-links {
+    gap: 0.25rem;
   }
 }

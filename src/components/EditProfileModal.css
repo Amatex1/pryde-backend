@@ -339,7 +339,7 @@
 }
 
 .btn-add {
-  background: linear-gradient(135deg, #6C5CE7 0%, #0984E3 100%);
+  background: var(--gradient-primary);
   color: white;
   white-space: nowrap;
 }
@@ -392,7 +392,7 @@
 }
 
 .btn-save {
-  background: linear-gradient(135deg, #6C5CE7 0%, #0984E3 100%);
+  background: var(--gradient-primary);
   color: white;
 }
 

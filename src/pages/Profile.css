@@ -903,11 +903,86 @@
     font-size: 1.5rem;
   }
 
+  .profile-bio {
+    font-size: 0.9375rem;
+    padding: 0 1rem;
+  }
+
+  .profile-stats {
+    flex-wrap: wrap;
+    gap: 1rem;
+    padding: 1rem;
+  }
+
+  .stat-item {
+    min-width: calc(33.333% - 0.75rem);
+  }
+
   .friends-grid {
     grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
   }
 
   .comment-replies {
     margin-left: 1.5rem;
+  }
+
+  .profile-tabs {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .profile-tab {
+    white-space: nowrap;
+    font-size: 0.875rem;
+    padding: 0.75rem 1rem;
+  }
+
+  .btn-edit-profile-cover {
+    padding: 0.625rem 1rem;
+    font-size: 0.875rem;
+  }
+}
+
+/* Extra small devices */
+@media (max-width: 480px) {
+  .profile-container {
+    padding: 0 0.5rem 1rem;
+  }
+
+  .cover-photo {
+    height: 150px;
+  }
+
+  .profile-avatar {
+    width: 80px;
+    height: 80px;
+    font-size: 2.5rem;
+    margin-top: -40px;
+  }
+
+  .profile-name {
+    font-size: 1.25rem;
+  }
+
+  .profile-stats {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .stat-item {
+    min-width: 100%;
+    text-align: left;
+    padding: 0.75rem;
+    background: var(--soft-lavender);
+    border-radius: 8px;
+  }
+
+  .friends-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .profile-header {
+    border-radius: 16px;
   }
 }

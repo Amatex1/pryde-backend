@@ -838,7 +838,7 @@
 @media (max-width: 768px) {
   .messages-container {
     padding: 0 1rem 1rem;
-    height: calc(100vh - 200px);
+    height: calc(100vh - 180px);
   }
 
   .messages-layout {
@@ -846,7 +846,73 @@
   }
 
   .conversations-sidebar {
-    display: none;
+    display: none; /* Could be shown as a slide-out menu */
+  }
+
+  .chat-window {
+    border-radius: 16px;
+  }
+
+  .chat-header {
+    padding: 1rem;
+  }
+
+  .messages-list {
+    padding: 1rem;
+  }
+
+  .message-bubble {
+    max-width: 85%;
+    font-size: 0.9375rem;
+    padding: 0.75rem 1rem;
+  }
+
+  .message-input-container {
+    padding: 1rem;
+    gap: 0.5rem;
+  }
+
+  .message-input {
+    font-size: 16px; /* Prevents zoom on iOS */
+    padding: 0.75rem 1rem;
+  }
+
+  .btn-send-message {
+    padding: 0.75rem 1rem;
+  }
+}
+
+/* Extra small devices */
+@media (max-width: 480px) {
+  .messages-container {
+    padding: 0 0.5rem 1rem;
+    height: calc(100vh - 160px);
+  }
+
+  .chat-window {
+    border-radius: 12px;
+  }
+
+  .message-bubble {
+    max-width: 90%;
+    font-size: 0.875rem;
+    padding: 0.625rem 0.875rem;
+  }
+
+  .chat-header {
+    padding: 0.75rem;
+  }
+
+  .messages-list {
+    padding: 0.75rem;
+  }
+
+  .message-input-container {
+    padding: 0.75rem;
+  }
+
+  .message-timestamp {
+    font-size: 0.6875rem;
   }
 }
 

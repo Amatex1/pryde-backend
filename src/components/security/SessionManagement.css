@@ -5,7 +5,7 @@
 .sessions-loading {
   text-align: center;
   padding: 20px;
-  color: #616161;
+  color: var(--text-muted);
 }
 
 .session-message {
@@ -40,23 +40,24 @@
 }
 
 .session-card {
-  background: white;
-  border: 2px solid #E0E0E0;
+  background: var(--card-surface);
+  border: 2px solid var(--border-light);
   border-radius: 12px;
   padding: 20px;
   transition: all 0.3s ease;
   animation: fadeIn 0.3s ease-in-out;
+  color: var(--text-main);
 }
 
 .session-card:hover {
-  border-color: #6C5CE7;
+  border-color: var(--pryde-purple);
   box-shadow: 0 4px 12px rgba(108, 92, 231, 0.1);
   transform: translateY(-2px);
 }
 
 .session-card.current-session {
-  background: linear-gradient(135deg, #EDEAFF 0%, #F7F7F7 100%);
-  border-color: #6C5CE7;
+  background: linear-gradient(135deg, var(--soft-lavender) 0%, var(--bg-light) 100%);
+  border-color: var(--pryde-purple);
   box-shadow: 0 4px 12px rgba(108, 92, 231, 0.15);
 }
 
@@ -85,7 +86,7 @@
 }
 
 .current-badge {
-  background: linear-gradient(135deg, #6C5CE7 0%, #0984E3 100%);
+  background: var(--gradient-primary);
   color: white;
   padding: 4px 12px;
   border-radius: 20px;
@@ -101,7 +102,7 @@
   gap: 5px;
   margin-bottom: 8px;
   font-size: 14px;
-  color: #616161;
+  color: var(--text-muted);
 }
 
 .session-ip {
@@ -111,7 +112,7 @@
 }
 
 .session-location {
-  color: #6C5CE7;
+  color: var(--pryde-purple);
   font-weight: 500;
 }
 
@@ -120,7 +121,7 @@
   flex-direction: column;
   gap: 3px;
   font-size: 13px;
-  color: #999;
+  color: var(--text-muted);
 }
 
 .btn-logout-session {
@@ -143,7 +144,7 @@
 .no-sessions {
   text-align: center;
   padding: 40px;
-  color: #616161;
+  color: var(--text-muted);
 }
 
 @keyframes slideDown {
