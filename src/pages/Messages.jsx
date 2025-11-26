@@ -44,6 +44,7 @@ function Messages({ onOpenMiniChat }) {
   const [editingMessageId, setEditingMessageId] = useState(null);
   const [editMessageText, setEditMessageText] = useState('');
   const [activeTab, setActiveTab] = useState('all'); // 'all' or 'unread'
+  const [replyingTo, setReplyingTo] = useState(null); // Message being replied to
   const messagesEndRef = useRef(null);
   const typingTimeoutRef = useRef(null);
 
@@ -459,6 +460,22 @@ function Messages({ onOpenMiniChat }) {
               </div>
             </div>
 
+            {/* Tabs for All/Unread */}
+            <div className="messages-tabs">
+              <button
+                className={`tab-button ${activeTab === 'all' ? 'active' : ''}`}
+                onClick={() => setActiveTab('all')}
+              >
+                All
+              </button>
+              <button
+                className={`tab-button ${activeTab === 'unread' ? 'active' : ''}`}
+                onClick={() => setActiveTab('unread')}
+              >
+                Unread
+              </button>
+            </div>
+
             <div className="conversations-list">
               {loading ? (
                 <div className="loading-state">Loading conversations...</div>
@@ -504,7 +521,9 @@ function Messages({ onOpenMiniChat }) {
                   {conversations.length > 0 && (
                     <>
                       <div className="section-label">Direct Messages</div>
-                      {conversations.map((conv) => {
+                      {conversations
+                        .filter(conv => activeTab === 'all' || (activeTab === 'unread' && conv.unread > 0))
+                        .map((conv) => {
                         // Use the otherUser field from backend, or fallback to lastMessage sender/recipient
                         const otherUser = conv.otherUser || (
                           conv.lastMessage?.sender?._id === currentUser?._id
@@ -659,6 +678,13 @@ function Messages({ onOpenMiniChat }) {
 
                               <div className="message-actions">
                                 <button
+                                  onClick={() => setReplyingTo(msg)}
+                                  className="btn-message-action"
+                                  title="Reply to message"
+                                >
+                                  ↩️
+                                </button>
+                                <button
                                   onClick={() => handleReactToMessage(msg._id)}
                                   className="btn-message-action"
                                   title="React to message"
@@ -705,19 +731,36 @@ function Messages({ onOpenMiniChat }) {
                 </div>
 
                 <form onSubmit={handleSendMessage} className="chat-input-area">
-                  <button type="button" className="btn-attachment">
-                    📎
-                  </button>
-                  <input
-                    type="text"
-                    value={message}
-                    onChange={handleTyping}
-                    placeholder="Type a message..."
-                    className="chat-input glossy"
-                  />
-                  <button type="submit" className="btn-send glossy-gold">
-                    Send
-                  </button>
+                  {replyingTo && (
+                    <div className="reply-preview">
+                      <div className="reply-preview-content">
+                        <div className="reply-preview-label">Replying to {replyingTo.sender.displayName || replyingTo.sender.username}</div>
+                        <div className="reply-preview-text">{replyingTo.content}</div>
+                      </div>
+                      <button
+                        type="button"
+                        className="btn-cancel-reply"
+                        onClick={() => setReplyingTo(null)}
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  )}
+                  <div className="chat-input-wrapper">
+                    <button type="button" className="btn-attachment">
+                      📎
+                    </button>
+                    <input
+                      type="text"
+                      value={message}
+                      onChange={handleTyping}
+                      placeholder={replyingTo ? "Type your reply..." : "Type a message..."}
+                      className="chat-input glossy"
+                    />
+                    <button type="submit" className="btn-send glossy-gold">
+                      Send
+                    </button>
+                  </div>
                 </form>
               </>
             ) : (

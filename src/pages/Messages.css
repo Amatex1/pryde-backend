@@ -62,6 +62,35 @@
   box-shadow: 0 4px 15px rgba(108, 92, 231, 0.3);
 }
 
+.messages-tabs {
+  display: flex;
+  gap: 0;
+  padding: 0 1.5rem;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.tab-button {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border-bottom: 3px solid transparent;
+}
+
+.tab-button:hover {
+  color: var(--pryde-purple);
+  background: var(--soft-lavender);
+}
+
+.tab-button.active {
+  color: var(--pryde-purple);
+  border-bottom-color: var(--pryde-purple);
+}
+
 .conversations-list {
   flex: 1;
   overflow-y: auto;
@@ -480,10 +509,64 @@
   padding: 1.5rem;
   border-top: 1px solid var(--border-light);
   display: flex;
-  gap: 1rem;
-  align-items: center;
+  flex-direction: column;
+  gap: 0.75rem;
   background: var(--card-surface);
   flex-shrink: 0;
+}
+
+.chat-input-wrapper {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.reply-preview {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  background: var(--soft-lavender);
+  border-left: 3px solid var(--pryde-purple);
+  border-radius: 8px;
+  gap: 1rem;
+}
+
+.reply-preview-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.reply-preview-label {
+  font-size: 0.75rem;
+  color: var(--pryde-purple);
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.reply-preview-text {
+  font-size: 0.875rem;
+  color: var(--text-main);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.btn-cancel-reply {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 1.25rem;
+  cursor: pointer;
+  padding: 0.25rem;
+  line-height: 1;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.btn-cancel-reply:hover {
+  color: var(--error);
+  transform: scale(1.2);
 }
 
 .btn-attachment {
@@ -863,6 +946,31 @@
   color: var(--pryde-purple);
   font-size: 1.25rem;
   font-weight: bold;
+}
+
+/* Dark Mode */
+[data-theme="dark"] .messages-tabs {
+  border-bottom-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .tab-button {
+  color: var(--text-muted);
+}
+
+[data-theme="dark"] .tab-button:hover {
+  background: rgba(108, 92, 231, 0.1);
+}
+
+[data-theme="dark"] .tab-button.active {
+  color: var(--pryde-purple);
+}
+
+[data-theme="dark"] .reply-preview {
+  background: rgba(108, 92, 231, 0.1);
+}
+
+[data-theme="dark"] .reply-preview-text {
+  color: var(--text-main);
 }
 
 .btn-create-group {
