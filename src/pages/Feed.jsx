@@ -465,15 +465,17 @@ function Feed({ onOpenMiniChat }) {
                   >
                     <div className="post-header">
                       <div className="post-author">
-                        <div className="author-avatar">
+                        <Link to={`/profile/${post.author?._id}`} className="author-avatar" style={{ textDecoration: 'none' }}>
                           {post.author?.profilePhoto ? (
                             <img src={getImageUrl(post.author.profilePhoto)} alt={post.author.username} />
                           ) : (
                             <span>{post.author?.displayName?.charAt(0).toUpperCase() || post.author?.username?.charAt(0).toUpperCase() || 'U'}</span>
                           )}
-                        </div>
+                        </Link>
                         <div className="author-info">
-                          <div className="author-name">{post.author?.displayName || post.author?.username || 'User'}</div>
+                          <Link to={`/profile/${post.author?._id}`} className="author-name" style={{ textDecoration: 'none', color: 'inherit' }}>
+                            {post.author?.displayName || post.author?.username || 'User'}
+                          </Link>
                           <div className="post-time">{new Date(post.createdAt).toLocaleDateString()}</div>
                         </div>
                       </div>
@@ -631,15 +633,17 @@ function Feed({ onOpenMiniChat }) {
                                 className="comment"
                                 ref={(el) => commentRefs.current[comment._id] = el}
                               >
-                                <div className="comment-avatar">
+                                <Link to={`/profile/${comment.user?._id}`} className="comment-avatar" style={{ textDecoration: 'none' }}>
                                   {comment.user?.profilePhoto ? (
                                     <img src={getImageUrl(comment.user.profilePhoto)} alt={comment.user.username} />
                                   ) : (
                                     <span>{comment.user?.displayName?.charAt(0).toUpperCase() || 'U'}</span>
                                   )}
-                                </div>
+                                </Link>
                                 <div className="comment-content">
-                                  <div className="comment-author">{comment.user?.displayName || comment.user?.username}</div>
+                                  <Link to={`/profile/${comment.user?._id}`} className="comment-author" style={{ textDecoration: 'none', color: 'inherit' }}>
+                                    {comment.user?.displayName || comment.user?.username}
+                                  </Link>
 
                                   {isEditing ? (
                                     <div className="comment-edit-box">
@@ -740,15 +744,17 @@ function Feed({ onOpenMiniChat }) {
                                         className="comment reply"
                                         ref={(el) => commentRefs.current[reply._id] = el}
                                       >
-                                        <div className="comment-avatar">
+                                        <Link to={`/profile/${reply.user?._id}`} className="comment-avatar" style={{ textDecoration: 'none' }}>
                                           {reply.user?.profilePhoto ? (
                                             <img src={getImageUrl(reply.user.profilePhoto)} alt={reply.user.username} />
                                           ) : (
                                             <span>{reply.user?.displayName?.charAt(0).toUpperCase() || 'U'}</span>
                                           )}
-                                        </div>
+                                        </Link>
                                         <div className="comment-content">
-                                          <div className="comment-author">{reply.user?.displayName || reply.user?.username}</div>
+                                          <Link to={`/profile/${reply.user?._id}`} className="comment-author" style={{ textDecoration: 'none', color: 'inherit' }}>
+                                            {reply.user?.displayName || reply.user?.username}
+                                          </Link>
 
                                           {isEditingReply ? (
                                             <div className="comment-edit-box">
@@ -856,11 +862,11 @@ function Feed({ onOpenMiniChat }) {
             <div className="friends-sidebar-list">
               {friends.length > 0 ? (
                 friends.slice(0, 10).map((friend) => (
-                  <div
+                  <Link
                     key={friend._id}
+                    to={`/profile/${friend._id}`}
                     className="friend-sidebar-item"
-                    onClick={() => onOpenMiniChat && onOpenMiniChat(friend)}
-                    style={{ cursor: 'pointer' }}
+                    style={{ textDecoration: 'none', color: 'inherit' }}
                   >
                     <div className="friend-sidebar-avatar">
                       {friend.profilePhoto ? (
@@ -871,9 +877,9 @@ function Feed({ onOpenMiniChat }) {
                     </div>
                     <div className="friend-sidebar-info">
                       <div className="friend-sidebar-name">{friend.displayName || friend.username}</div>
-                      <div className="friend-sidebar-status">Click to chat</div>
+                      <div className="friend-sidebar-status">Click to view profile</div>
                     </div>
-                  </div>
+                  </Link>
                 ))
               ) : (
                 <div className="no-friends">

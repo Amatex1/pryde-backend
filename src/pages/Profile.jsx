@@ -518,25 +518,7 @@ function Profile({ onOpenMiniChat }) {
                 )}
               </div>
 
-              {user.socialLinks && user.socialLinks.length > 0 && (
-                <div className="social-links">
-                  <h3 className="social-title">Social Links</h3>
-                  <div className="social-grid">
-                    {user.socialLinks.map((link, index) => (
-                      <a
-                        key={index}
-                        href={link.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="social-link-item glossy"
-                      >
-                        <span className="social-platform">{link.platform}</span>
-                        <span className="social-icon">→</span>
-                      </a>
-                    ))}
-                  </div>
-                </div>
-              )}
+
 
               {isOwnProfile && (
                 <div className="profile-upload-section">
@@ -759,15 +741,17 @@ function Profile({ onOpenMiniChat }) {
                                   className="comment"
                                   ref={(el) => commentRefs.current[comment._id] = el}
                                 >
-                                  <div className="comment-avatar">
+                                  <Link to={`/profile/${comment.user?._id}`} className="comment-avatar" style={{ textDecoration: 'none' }}>
                                     {comment.user?.profilePhoto ? (
                                       <img src={getImageUrl(comment.user.profilePhoto)} alt={comment.user.username} />
                                     ) : (
                                       <span>{comment.user?.displayName?.charAt(0).toUpperCase() || 'U'}</span>
                                     )}
-                                  </div>
+                                  </Link>
                                   <div className="comment-content">
-                                    <div className="comment-author">{comment.user?.displayName || comment.user?.username}</div>
+                                    <Link to={`/profile/${comment.user?._id}`} className="comment-author" style={{ textDecoration: 'none', color: 'inherit' }}>
+                                      {comment.user?.displayName || comment.user?.username}
+                                    </Link>
 
                                     {isEditing ? (
                                       <div className="comment-edit-box">
