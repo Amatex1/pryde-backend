@@ -852,15 +852,17 @@ function Profile({ onOpenMiniChat }) {
                                           className="comment reply"
                                           ref={(el) => commentRefs.current[reply._id] = el}
                                         >
-                                          <div className="comment-avatar">
+                                          <Link to={`/profile/${reply.user?._id}`} className="comment-avatar" style={{ textDecoration: 'none' }}>
                                             {reply.user?.profilePhoto ? (
                                               <img src={getImageUrl(reply.user.profilePhoto)} alt={reply.user.username} />
                                             ) : (
                                               <span>{reply.user?.displayName?.charAt(0).toUpperCase() || 'U'}</span>
                                             )}
-                                          </div>
+                                          </Link>
                                           <div className="comment-content">
-                                            <div className="comment-author">{reply.user?.displayName || reply.user?.username}</div>
+                                            <Link to={`/profile/${reply.user?._id}`} className="comment-author" style={{ textDecoration: 'none', color: 'inherit' }}>
+                                              {reply.user?.displayName || reply.user?.username}
+                                            </Link>
 
                                             {isEditingReply ? (
                                               <div className="comment-edit-box">
@@ -1032,7 +1034,7 @@ function Profile({ onOpenMiniChat }) {
               {user.friends && user.friends.length > 0 ? (
                 <div className="friends-grid">
                   {user.friends.slice(0, 6).map((friend) => (
-                    <div key={friend._id} className="friend-item">
+                    <Link key={friend._id} to={`/profile/${friend._id}`} className="friend-item" style={{ textDecoration: 'none', color: 'inherit' }}>
                       <div className="friend-avatar">
                         {friend.profilePhoto ? (
                           <img src={getImageUrl(friend.profilePhoto)} alt={friend.username} />
@@ -1041,7 +1043,7 @@ function Profile({ onOpenMiniChat }) {
                         )}
                       </div>
                       <div className="friend-name">{friend.displayName}</div>
-                    </div>
+                    </Link>
                   ))}
                 </div>
               ) : (
