@@ -311,22 +311,27 @@ router.post('/:id/share', auth, postLimiter, checkMuted, async (req, res) => {
     }
 
     const userId = req.userId || req.user._id;
-    const { shareComment } = req.body;
+    const { shareComment, shareToFriendProfile } = req.body;
 
-    // Check if user already shared this post
-    const existingShare = await Post.findOne({
-      author: userId,
-      isShared: true,
-      originalPost: originalPost._id
-    });
+    // Check if user already shared this post (only for own profile shares)
+    if (!shareToFriendProfile) {
+      const existingShare = await Post.findOne({
+        author: userId,
+        isShared: true,
+        originalPost: originalPost._id
+      });
 
-    if (existingShare) {
-      return res.status(400).json({ message: 'You have already shared this post' });
+      if (existingShare) {
+        return res.status(400).json({ message: 'You have already shared this post' });
+      }
     }
+
+    // Determine the author of the shared post
+    const shareAuthor = shareToFriendProfile || userId;
 
     // Create shared post
     const sharedPost = new Post({
-      author: userId,
+      author: shareAuthor,
       isShared: true,
       originalPost: originalPost._id,
       shareComment: shareComment || '',

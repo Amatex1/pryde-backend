@@ -9,6 +9,7 @@ function ShareModal({ isOpen, onClose, post, onShare }) {
   const [selectedFriends, setSelectedFriends] = useState([]);
   const [selectedGroups, setSelectedGroups] = useState([]);
   const [shareToFeed, setShareToFeed] = useState(true);
+  const [shareToFriendProfile, setShareToFriendProfile] = useState(null);
   const [loading, setLoading] = useState(false);
   const [shareTab, setShareTab] = useState('friends'); // 'friends' or 'groups'
 
@@ -22,7 +23,8 @@ function ShareModal({ isOpen, onClose, post, onShare }) {
   const fetchFriends = async () => {
     try {
       const response = await api.get('/friends');
-      setFriends(response.data.friends || []);
+      // The endpoint returns the friends array directly, not wrapped in an object
+      setFriends(response.data || []);
     } catch (error) {
       console.error('Failed to fetch friends:', error);
     }
