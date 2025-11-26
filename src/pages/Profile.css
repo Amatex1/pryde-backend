@@ -932,6 +932,20 @@
     margin-left: 1.5rem;
   }
 
+  .comment-content {
+    width: 100%;
+  }
+
+  .comment-author {
+    display: block;
+    margin-bottom: 0.5rem;
+  }
+
+  .reply-input-box {
+    margin-left: 0;
+    padding: 0.5rem;
+  }
+
   .profile-tabs {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
