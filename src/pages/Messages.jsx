@@ -43,6 +43,7 @@ function Messages({ onOpenMiniChat }) {
   const [reactingToMessage, setReactingToMessage] = useState(null);
   const [editingMessageId, setEditingMessageId] = useState(null);
   const [editMessageText, setEditMessageText] = useState('');
+  const [activeTab, setActiveTab] = useState('all'); // 'all' or 'unread'
   const messagesEndRef = useRef(null);
   const typingTimeoutRef = useRef(null);
 
