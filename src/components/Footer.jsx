@@ -28,6 +28,7 @@ function Footer() {
           <h4>Support</h4>
           <ul className="footer-links">
             <li><Link to="/safety">Safety & Reporting</Link></li>
+            <li><Link to="/helplines">Crisis Helplines</Link></li>
             <li><Link to="/contact">Contact Us</Link></li>
             <li><Link to="/faq">FAQ</Link></li>
             <li><Link to="/dmca">DMCA</Link></li>

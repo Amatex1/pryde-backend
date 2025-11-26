@@ -133,33 +133,76 @@ router.put('/profile', auth, async (req, res) => {
 router.get('/download-data', auth, async (req, res) => {
   try {
     const userId = req.userId;
+    console.log('📥 Download data request for user:', userId);
 
     // Fetch all user data
     const user = await User.findById(userId)
       .select('-password')
       .populate('friends', 'username displayName profilePhoto');
 
+    if (!user) {
+      console.log('❌ User not found:', userId);
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    console.log('✅ User found:', user.username);
+
+    // Fetch posts
     const posts = await Post.find({ author: userId })
       .populate('comments.user', 'username displayName')
-      .populate('likes', 'username displayName');
+      .populate('likes', 'username displayName')
+      .catch(err => {
+        console.log('⚠️ Error fetching posts:', err.message);
+        return [];
+      });
 
+    console.log('✅ Posts fetched:', posts.length);
+
+    // Fetch messages
     const messages = await Message.find({
       $or: [{ sender: userId }, { recipient: userId }]
     })
       .populate('sender', 'username displayName')
-      .populate('recipient', 'username displayName');
+      .populate('recipient', 'username displayName')
+      .catch(err => {
+        console.log('⚠️ Error fetching messages:', err.message);
+        return [];
+      });
 
+    console.log('✅ Messages fetched:', messages.length);
+
+    // Fetch friend requests
     const friendRequests = await FriendRequest.find({
       $or: [{ sender: userId }, { receiver: userId }]
     })
       .populate('sender', 'username displayName')
-      .populate('receiver', 'username displayName');
+      .populate('receiver', 'username displayName')
+      .catch(err => {
+        console.log('⚠️ Error fetching friend requests:', err.message);
+        return [];
+      });
 
+    console.log('✅ Friend requests fetched:', friendRequests.length);
+
+    // Fetch group chats
     const groupChats = await GroupChat.find({ members: userId })
       .populate('members', 'username displayName')
-      .populate('creator', 'username displayName');
+      .populate('creator', 'username displayName')
+      .catch(err => {
+        console.log('⚠️ Error fetching group chats:', err.message);
+        return [];
+      });
 
-    const notifications = await Notification.find({ recipient: userId });
+    console.log('✅ Group chats fetched:', groupChats.length);
+
+    // Fetch notifications
+    const notifications = await Notification.find({ recipient: userId })
+      .catch(err => {
+        console.log('⚠️ Error fetching notifications:', err.message);
+        return [];
+      });
+
+    console.log('✅ Notifications fetched:', notifications.length);
 
     // Compile all data
     const userData = {
@@ -172,10 +215,11 @@ router.get('/download-data', auth, async (req, res) => {
       exportDate: new Date().toISOString()
     };
 
+    console.log('✅ Data compiled successfully, sending response');
     res.json(userData);
   } catch (error) {
-    console.error('Download data error:', error);
-    res.status(500).json({ message: 'Server error' });
+    console.error('❌ Download data error:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
 

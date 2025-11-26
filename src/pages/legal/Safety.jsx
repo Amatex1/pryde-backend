@@ -22,8 +22,14 @@ function Safety() {
             <strong>Pryde Social is not an emergency service.</strong>
           </p>
           <p>
-            If you are in immediate danger, contact local authorities (911 in the US).
+            If you are in immediate danger, contact local authorities:
           </p>
+          <ul style={{ marginTop: '0.5rem' }}>
+            <li><strong>Australia:</strong> 000 (Police, Ambulance, Fire)</li>
+            <li><strong>US:</strong> 911</li>
+            <li><strong>UK:</strong> 999</li>
+            <li><strong>Other countries:</strong> See our <Link to="/helplines" className="legal-link">Global Helplines</Link> page</li>
+          </ul>
         </div>
 
         <section className="legal-section">
@@ -53,18 +59,35 @@ function Safety() {
           <p>
             <strong>If you're in crisis:</strong>
           </p>
+
+          <h3>🇦🇺 Australia</h3>
           <ul>
-            <li><strong>US:</strong> Call 988 (Suicide & Crisis Lifeline)</li>
+            <li><strong>Lifeline:</strong> 13 11 14 (24/7 crisis support)</li>
+            <li><strong>Beyond Blue:</strong> 1300 22 4636 (mental health support)</li>
+            <li><strong>Suicide Call Back Service:</strong> 1300 659 467</li>
+            <li><strong>Kids Helpline:</strong> 1800 55 1800 (ages 5-25)</li>
+          </ul>
+
+          <h3>🏳️‍🌈 LGBTQ+ Specific Resources (Australia)</h3>
+          <ul>
+            <li><strong>QLife:</strong> 1800 184 527 (LGBTQ+ peer support, 3pm-midnight daily)</li>
+            <li><strong>QLife Webchat:</strong> <a href="https://qlife.org.au" target="_blank" rel="noopener noreferrer">qlife.org.au</a></li>
+            <li><strong>Switchboard Victoria:</strong> 1800 184 527 (LGBTIQ+ support)</li>
+            <li><strong>Transgender Victoria:</strong> (03) 9020 4675</li>
+          </ul>
+
+          <h3>🌍 International Crisis Support</h3>
+          <ul>
+            <li><strong>US:</strong> 988 (Suicide & Crisis Lifeline)</li>
             <li><strong>US:</strong> Text HOME to 741741 (Crisis Text Line)</li>
-            <li><strong>International:</strong> <a href="https://findahelpline.com" target="_blank" rel="noopener noreferrer">findahelpline.com</a></li>
+            <li><strong>UK:</strong> 116 123 (Samaritans)</li>
+            <li><strong>Trevor Project (US LGBTQ+ youth):</strong> 1-866-488-7386</li>
+            <li><strong>Trans Lifeline (US/Canada):</strong> 1-877-565-8860</li>
           </ul>
-          <p>
-            <strong>LGBTQ+ Specific Resources:</strong>
+
+          <p style={{ marginTop: '1.5rem' }}>
+            <strong>📋 For a comprehensive list of helplines worldwide, visit our <Link to="/helplines" className="legal-link">Global Helplines</Link> page.</strong>
           </p>
-          <ul>
-            <li><strong>Trevor Project:</strong> 1-866-488-7386 (LGBTQ+ youth crisis line)</li>
-            <li><strong>Trans Lifeline:</strong> 1-877-565-8860</li>
-          </ul>
         </section>
 
         <section className="legal-section">

@@ -25,6 +25,7 @@ import LegalRequests from './pages/legal/LegalRequests';
 import DMCA from './pages/legal/DMCA';
 import AcceptableUse from './pages/legal/AcceptableUse';
 import CookiePolicy from './pages/legal/CookiePolicy';
+import Helplines from './pages/legal/Helplines';
 import Footer from './components/Footer';
 import MiniChat from './components/MiniChat';
 import { isAuthenticated, getCurrentUser } from './utils/auth';
@@ -137,6 +138,7 @@ function App() {
           <Route path="/dmca" element={<><DMCA /><Footer /></>} />
           <Route path="/acceptable-use" element={<><AcceptableUse /><Footer /></>} />
           <Route path="/cookie-policy" element={<><CookiePolicy /><Footer /></>} />
+          <Route path="/helplines" element={<><Helplines /><Footer /></>} />
         </Routes>
 
         {/* Mini Chat Boxes */}
