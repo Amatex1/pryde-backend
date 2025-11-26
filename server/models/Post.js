@@ -56,7 +56,15 @@ const postSchema = new mongoose.Schema({
     createdAt: {
       type: Date,
       default: Date.now
-    }
+    },
+    // Threaded comments (replies)
+    parentComment: {
+      type: mongoose.Schema.Types.ObjectId,
+      default: null
+    },
+    replies: [{
+      type: mongoose.Schema.Types.ObjectId
+    }]
   }],
   shares: [{
     user: {
@@ -68,6 +76,21 @@ const postSchema = new mongoose.Schema({
       default: Date.now
     }
   }],
+  // Shared/Reposted content
+  isShared: {
+    type: Boolean,
+    default: false
+  },
+  originalPost: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Post',
+    default: null
+  },
+  shareComment: {
+    type: String,
+    maxlength: 500,
+    default: ''
+  },
   visibility: {
     type: String,
     enum: ['public', 'friends', 'private', 'custom'],

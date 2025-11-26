@@ -11,6 +11,9 @@ function Login({ setIsAuth }) {
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [requires2FA, setRequires2FA] = useState(false);
+  const [tempToken, setTempToken] = useState('');
+  const [twoFactorCode, setTwoFactorCode] = useState('');
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -29,9 +32,19 @@ function Login({ setIsAuth }) {
       console.log('Attempting login with email:', formData.email);
 
       const response = await api.post('/auth/login', formData);
-      
-      console.log('Login successful:', response.data);
 
+      console.log('Login response:', response.data);
+
+      // Check if 2FA is required
+      if (response.data.requires2FA) {
+        setRequires2FA(true);
+        setTempToken(response.data.tempToken);
+        setError('');
+        setLoading(false);
+        return;
+      }
+
+      // Normal login (no 2FA)
       setAuthToken(response.data.token);
       setCurrentUser(response.data.user);
       setIsAuth(true);
@@ -44,9 +57,36 @@ function Login({ setIsAuth }) {
         fullError: err
       });
 
-      const errorMessage = err.response?.data?.message 
-        || err.message 
+      const errorMessage = err.response?.data?.message
+        || err.message
         || 'Login failed. Please try again.';
+      setError(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerify2FA = async (e) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+
+    try {
+      const response = await api.post('/auth/verify-2fa-login', {
+        tempToken,
+        token: twoFactorCode
+      });
+
+      console.log('2FA verification successful:', response.data);
+
+      setAuthToken(response.data.token);
+      setCurrentUser(response.data.user);
+      setIsAuth(true);
+      navigate('/feed');
+    } catch (err) {
+      console.error('2FA verification error:', err);
+      const errorMessage = err.response?.data?.message
+        || 'Invalid verification code. Please try again.';
       setError(errorMessage);
     } finally {
       setLoading(false);
@@ -58,12 +98,61 @@ function Login({ setIsAuth }) {
       <div className="auth-card glossy fade-in">
         <div className="auth-header">
           <h1 className="auth-title text-shadow">✨ Pryde Social</h1>
-          <p className="auth-subtitle">Welcome back! Sign in to continue.</p>
+          <p className="auth-subtitle">
+            {requires2FA ? 'Enter your verification code' : 'Welcome back! Sign in to continue.'}
+          </p>
         </div>
 
         {error && <div className="error-message">{error}</div>}
 
-        <form onSubmit={handleSubmit} className="auth-form">
+        {/* 2FA Verification Form */}
+        {requires2FA ? (
+          <form onSubmit={handleVerify2FA} className="auth-form">
+            <div className="form-group">
+              <label htmlFor="twoFactorCode">Two-Factor Authentication Code</label>
+              <p style={{ fontSize: '14px', color: '#616161', marginBottom: '10px' }}>
+                Enter the 6-digit code from your authenticator app or use a backup code.
+              </p>
+              <input
+                type="text"
+                id="twoFactorCode"
+                value={twoFactorCode}
+                onChange={(e) => setTwoFactorCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                required
+                className="form-input glossy"
+                placeholder="000000"
+                maxLength={6}
+                autoFocus
+                style={{
+                  fontSize: '24px',
+                  textAlign: 'center',
+                  letterSpacing: '10px',
+                  fontWeight: 'bold'
+                }}
+              />
+            </div>
+
+            <button type="submit" disabled={loading || twoFactorCode.length !== 6} className="btn-primary glossy-gold">
+              {loading ? 'Verifying...' : 'Verify Code'}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setRequires2FA(false);
+                setTempToken('');
+                setTwoFactorCode('');
+                setError('');
+              }}
+              className="btn-secondary"
+              style={{ marginTop: '10px', width: '100%' }}
+            >
+              ← Back to Login
+            </button>
+          </form>
+        ) : (
+          // Normal Login Form
+          <form onSubmit={handleSubmit} className="auth-form">
           <div className="form-group">
             <label htmlFor="email">Email</label>
             <input
@@ -102,6 +191,7 @@ function Login({ setIsAuth }) {
             {loading ? 'Signing in...' : 'Sign In'}
           </button>
         </form>
+        )}
 
         <div className="auth-footer">
           <p>Don't have an account? <Link to="/register" className="auth-link">Sign up</Link></p>

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import Navbar from '../components/Navbar';
+import EmojiPicker from '../components/EmojiPicker';
 import api from '../utils/api';
 import { getImageUrl } from '../utils/imageUrl';
 import {
@@ -38,6 +39,8 @@ function Messages({ onOpenMiniChat }) {
   const [groupDescription, setGroupDescription] = useState('');
   const [selectedMembers, setSelectedMembers] = useState([]);
   const [onlineUsers, setOnlineUsers] = useState([]);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [reactingToMessage, setReactingToMessage] = useState(null);
   const [editingMessageId, setEditingMessageId] = useState(null);
   const [editMessageText, setEditMessageText] = useState('');
   const messagesEndRef = useRef(null);
@@ -329,6 +332,44 @@ function Messages({ onOpenMiniChat }) {
     }
   };
 
+  const handleReactToMessage = (messageId) => {
+    setReactingToMessage(messageId);
+    setShowEmojiPicker(true);
+  };
+
+  const handleEmojiSelect = async (emoji) => {
+    if (!reactingToMessage) return;
+
+    try {
+      const response = await api.post(`/messages/${reactingToMessage}/react`, { emoji });
+
+      // Update the message in the list with new reactions
+      setMessages((prev) =>
+        prev.map((msg) => (msg._id === reactingToMessage ? response.data : msg))
+      );
+    } catch (error) {
+      console.error('❌ Error adding reaction:', error);
+      if (error.response?.data?.message) {
+        alert(error.response.data.message);
+      }
+    }
+  };
+
+  const handleRemoveReaction = async (messageId, emoji) => {
+    try {
+      const response = await api.delete(`/messages/${messageId}/react`, {
+        data: { emoji }
+      });
+
+      // Update the message in the list
+      setMessages((prev) =>
+        prev.map((msg) => (msg._id === messageId ? response.data : msg))
+      );
+    } catch (error) {
+      console.error('❌ Error removing reaction:', error);
+    }
+  };
+
   const fetchFriends = async () => {
     try {
       const response = await api.get('/friends');
@@ -587,25 +628,61 @@ function Messages({ onOpenMiniChat }) {
                               <div className="message-bubble">
                                 {msg.content}
                                 {msg.edited && <span className="edited-indicator"> (edited)</span>}
+
+                                {/* Display reactions */}
+                                {msg.reactions && msg.reactions.length > 0 && (
+                                  <div className="message-reactions">
+                                    {Object.entries(
+                                      msg.reactions.reduce((acc, reaction) => {
+                                        acc[reaction.emoji] = (acc[reaction.emoji] || 0) + 1;
+                                        return acc;
+                                      }, {})
+                                    ).map(([emoji, count]) => {
+                                      const userReacted = msg.reactions.some(
+                                        r => r.emoji === emoji && r.user._id === currentUser?._id
+                                      );
+                                      return (
+                                        <button
+                                          key={emoji}
+                                          className={`reaction-badge ${userReacted ? 'user-reacted' : ''}`}
+                                          onClick={() => userReacted ? handleRemoveReaction(msg._id, emoji) : null}
+                                          title={userReacted ? 'Click to remove' : ''}
+                                        >
+                                          {emoji} {count}
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
+                                )}
                               </div>
-                              {isSent && (
-                                <div className="message-actions">
-                                  <button
-                                    onClick={() => handleEditMessage(msg._id, msg.content)}
-                                    className="btn-message-action"
-                                    title="Edit message"
-                                  >
-                                    ✏️
-                                  </button>
-                                  <button
-                                    onClick={() => handleDeleteMessage(msg._id)}
-                                    className="btn-message-action"
-                                    title="Delete message"
-                                  >
-                                    🗑️
-                                  </button>
-                                </div>
-                              )}
+
+                              <div className="message-actions">
+                                <button
+                                  onClick={() => handleReactToMessage(msg._id)}
+                                  className="btn-message-action"
+                                  title="React to message"
+                                >
+                                  😊
+                                </button>
+                                {isSent && (
+                                  <>
+                                    <button
+                                      onClick={() => handleEditMessage(msg._id, msg.content)}
+                                      className="btn-message-action"
+                                      title="Edit message"
+                                    >
+                                      ✏️
+                                    </button>
+                                    <button
+                                      onClick={() => handleDeleteMessage(msg._id)}
+                                      className="btn-message-action"
+                                      title="Delete message"
+                                    >
+                                      🗑️
+                                    </button>
+                                  </>
+                                )}
+                              </div>
                             </>
                           )}
 
@@ -826,6 +903,17 @@ function Messages({ onOpenMiniChat }) {
               </form>
             </div>
           </div>
+        )}
+
+        {/* Emoji Picker Modal */}
+        {showEmojiPicker && (
+          <EmojiPicker
+            onEmojiSelect={handleEmojiSelect}
+            onClose={() => {
+              setShowEmojiPicker(false);
+              setReactingToMessage(null);
+            }}
+          />
         )}
       </div>
     </div>

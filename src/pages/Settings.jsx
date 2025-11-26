@@ -234,7 +234,7 @@ function Settings({ onOpenMiniChat }) {
   return (
     <div className="page-container">
       <Navbar onOpenMiniChat={onOpenMiniChat} />
-      
+
       <div className="settings-container">
         <div className="settings-card glossy fade-in">
           <h1 className="settings-title text-shadow">⚙️ Settings</h1>
@@ -244,6 +244,46 @@ function Settings({ onOpenMiniChat }) {
               {message}
             </div>
           )}
+
+          {/* Security Settings Link */}
+          <div className="settings-section" style={{ background: 'linear-gradient(135deg, #EDEAFF 0%, #F7F7F7 100%)', padding: '20px', borderRadius: '12px', marginBottom: '20px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div>
+                <h2 className="section-title" style={{ margin: 0, marginBottom: '5px' }}>🔐 Security Settings</h2>
+                <p style={{ color: '#616161', margin: 0, fontSize: '14px' }}>
+                  Manage 2FA, active sessions, and login alerts
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => navigate('/settings/security')}
+                className="btn-primary"
+                style={{ whiteSpace: 'nowrap' }}
+              >
+                Manage Security →
+              </button>
+            </div>
+          </div>
+
+          {/* Privacy Settings Link */}
+          <div className="settings-section" style={{ background: 'linear-gradient(135deg, #EDEAFF 0%, #F7F7F7 100%)', padding: '20px', borderRadius: '12px', marginBottom: '20px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div>
+                <h2 className="section-title" style={{ margin: 0, marginBottom: '5px' }}>🔒 Privacy Settings</h2>
+                <p style={{ color: '#616161', margin: 0, fontSize: '14px' }}>
+                  Control who can see your profile, send messages, and more
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => navigate('/settings/privacy')}
+                className="btn-primary"
+                style={{ whiteSpace: 'nowrap' }}
+              >
+                Manage Privacy →
+              </button>
+            </div>
+          </div>
 
           <form onSubmit={handleSubmit} className="settings-form">
             <div className="settings-section">

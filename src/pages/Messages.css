@@ -329,6 +329,41 @@
   transform: scale(1.1);
 }
 
+.message-reactions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin-top: 0.5rem;
+}
+
+.reaction-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 12px;
+  background: rgba(108, 92, 231, 0.1);
+  border: 1px solid transparent;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.reaction-badge:hover {
+  background: rgba(108, 92, 231, 0.2);
+  transform: scale(1.05);
+}
+
+.reaction-badge.user-reacted {
+  background: rgba(108, 92, 231, 0.2);
+  border-color: var(--pryde-purple);
+  font-weight: 600;
+}
+
+.reaction-badge.user-reacted:hover {
+  background: rgba(108, 92, 231, 0.3);
+}
+
 .message-edit-box {
   display: flex;
   flex-direction: column;

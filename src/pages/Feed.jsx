@@ -22,12 +22,15 @@ function Feed({ onOpenMiniChat }) {
   const [commentText, setCommentText] = useState({});
   const [editingCommentId, setEditingCommentId] = useState(null);
   const [editCommentText, setEditCommentText] = useState('');
+  const [replyingToComment, setReplyingToComment] = useState(null);
+  const [replyText, setReplyText] = useState('');
   const [postVisibility, setPostVisibility] = useState('friends');
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const [hiddenFromUsers, setHiddenFromUsers] = useState([]);
   const [sharedWithUsers, setSharedWithUsers] = useState([]);
   const [friends, setFriends] = useState([]);
   const [trending, setTrending] = useState([]);
+  const [bookmarkedPosts, setBookmarkedPosts] = useState([]);
   const currentUser = getCurrentUser();
 
   useEffect(() => {
@@ -35,6 +38,7 @@ function Feed({ onOpenMiniChat }) {
     fetchBlockedUsers();
     fetchFriends();
     fetchTrending();
+    fetchBookmarkedPosts();
   }, []);
 
   const fetchFriends = async () => {
@@ -234,6 +238,32 @@ function Feed({ onOpenMiniChat }) {
     }
   };
 
+  const handleReplyToComment = (postId, commentId) => {
+    setReplyingToComment({ postId, commentId });
+    setReplyText('');
+  };
+
+  const handleSubmitReply = async (e) => {
+    e.preventDefault();
+    if (!replyText.trim() || !replyingToComment) return;
+
+    try {
+      const { postId, commentId } = replyingToComment;
+      const response = await api.post(`/posts/${postId}/comment/${commentId}/reply`, { content: replyText });
+      setPosts(posts.map(p => p._id === postId ? response.data : p));
+      setReplyingToComment(null);
+      setReplyText('');
+    } catch (error) {
+      console.error('Failed to reply to comment:', error);
+      alert('Failed to reply. Please try again.');
+    }
+  };
+
+  const handleCancelReply = () => {
+    setReplyingToComment(null);
+    setReplyText('');
+  };
+
   const handleShare = async (postId) => {
     try {
       const response = await api.post(`/posts/${postId}/share`);
@@ -242,6 +272,32 @@ function Feed({ onOpenMiniChat }) {
     } catch (error) {
       console.error('Failed to share post:', error);
       alert(error.response?.data?.message || 'Failed to share post.');
+    }
+  };
+
+  const fetchBookmarkedPosts = async () => {
+    try {
+      const response = await api.get('/bookmarks');
+      setBookmarkedPosts(response.data.bookmarks.map(post => post._id));
+    } catch (error) {
+      console.error('Failed to fetch bookmarks:', error);
+    }
+  };
+
+  const handleBookmark = async (postId) => {
+    const isBookmarked = bookmarkedPosts.includes(postId);
+
+    try {
+      if (isBookmarked) {
+        await api.delete(`/bookmarks/${postId}`);
+        setBookmarkedPosts(bookmarkedPosts.filter(id => id !== postId));
+      } else {
+        await api.post(`/bookmarks/${postId}`);
+        setBookmarkedPosts([...bookmarkedPosts, postId]);
+      }
+    } catch (error) {
+      console.error('Failed to bookmark post:', error);
+      alert(error.response?.data?.message || 'Failed to bookmark post.');
     }
   };
 
@@ -440,6 +496,13 @@ function Feed({ onOpenMiniChat }) {
                       >
                         <span>🔗</span> Share ({post.shares?.length || 0})
                       </button>
+                      <button
+                        className={`action-btn ${bookmarkedPosts.includes(post._id) ? 'bookmarked' : ''}`}
+                        onClick={() => handleBookmark(post._id)}
+                        title={bookmarkedPosts.includes(post._id) ? 'Remove bookmark' : 'Bookmark post'}
+                      >
+                        <span>{bookmarkedPosts.includes(post._id) ? '🔖' : '📑'}</span> Bookmark
+                      </button>
                     </div>
 
                     {post.comments && post.comments.length > 0 && (
@@ -490,23 +553,56 @@ function Feed({ onOpenMiniChat }) {
                                       {comment.content}
                                       {comment.edited && <span className="edited-indicator"> (edited)</span>}
                                     </div>
-                                    {isOwnComment && (
-                                      <div className="comment-actions">
-                                        <button
-                                          onClick={() => handleEditComment(comment._id, comment.content)}
-                                          className="btn-comment-action"
-                                          title="Edit comment"
-                                        >
-                                          ✏️ Edit
-                                        </button>
-                                        <button
-                                          onClick={() => handleDeleteComment(post._id, comment._id)}
-                                          className="btn-comment-action"
-                                          title="Delete comment"
-                                        >
-                                          🗑️ Delete
-                                        </button>
-                                      </div>
+                                    <div className="comment-actions">
+                                      <button
+                                        onClick={() => handleReplyToComment(post._id, comment._id)}
+                                        className="btn-comment-action"
+                                        title="Reply to comment"
+                                      >
+                                        💬 Reply
+                                      </button>
+                                      {isOwnComment && (
+                                        <>
+                                          <button
+                                            onClick={() => handleEditComment(comment._id, comment.content)}
+                                            className="btn-comment-action"
+                                            title="Edit comment"
+                                          >
+                                            ✏️ Edit
+                                          </button>
+                                          <button
+                                            onClick={() => handleDeleteComment(post._id, comment._id)}
+                                            className="btn-comment-action"
+                                            title="Delete comment"
+                                          >
+                                            🗑️ Delete
+                                          </button>
+                                        </>
+                                      )}
+                                    </div>
+
+                                    {/* Reply Input Box */}
+                                    {replyingToComment?.postId === post._id && replyingToComment?.commentId === comment._id && (
+                                      <form onSubmit={handleSubmitReply} className="reply-input-box">
+                                        <div className="reply-input-wrapper">
+                                          <input
+                                            type="text"
+                                            value={replyText}
+                                            onChange={(e) => setReplyText(e.target.value)}
+                                            placeholder="Write a reply..."
+                                            className="reply-input"
+                                            autoFocus
+                                          />
+                                          <div className="reply-actions">
+                                            <button type="submit" className="btn-submit-reply" disabled={!replyText.trim()}>
+                                              Send
+                                            </button>
+                                            <button type="button" onClick={handleCancelReply} className="btn-cancel-reply">
+                                              Cancel
+                                            </button>
+                                          </div>
+                                        </div>
+                                      </form>
                                     )}
                                   </>
                                 )}

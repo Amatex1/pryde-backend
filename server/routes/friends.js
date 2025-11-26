@@ -3,11 +3,13 @@ const router = express.Router();
 import User from '../models/User.js';
 import FriendRequest from '../models/FriendRequest.js';
 import auth from '../middleware/auth.js';
+import { friendRequestLimiter } from '../middleware/rateLimiter.js';
+import { checkFriendRequestPermission, checkBlocked } from '../middleware/privacy.js';
 
 // @route   POST /api/friends/request/:userId
 // @desc    Send friend request
 // @access  Private
-router.post('/request/:userId', auth, async (req, res) => {
+router.post('/request/:userId', auth, friendRequestLimiter, checkFriendRequestPermission, async (req, res) => {
   try {
     const receiverId = req.params.userId;
     const senderId = req.userId;

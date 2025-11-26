@@ -8,6 +8,9 @@ import ResetPassword from './pages/ResetPassword';
 import Feed from './pages/Feed';
 import Profile from './pages/Profile';
 import Settings from './pages/Settings';
+import SecuritySettings from './pages/SecuritySettings';
+import PrivacySettings from './pages/PrivacySettings';
+import Bookmarks from './pages/Bookmarks';
 import Friends from './pages/Friends';
 import Messages from './pages/Messages';
 import Admin from './pages/Admin';
@@ -17,6 +20,9 @@ import Privacy from './pages/legal/Privacy';
 import Community from './pages/legal/Community';
 import Safety from './pages/legal/Safety';
 import Contact from './pages/legal/Contact';
+import FAQ from './pages/legal/FAQ';
+import LegalRequests from './pages/legal/LegalRequests';
+import DMCA from './pages/legal/DMCA';
 import Footer from './components/Footer';
 import MiniChat from './components/MiniChat';
 import { isAuthenticated, getCurrentUser } from './utils/auth';
@@ -107,6 +113,9 @@ function App() {
           <Route path="/feed" element={<PrivateRoute><Feed onOpenMiniChat={openMiniChat} /></PrivateRoute>} />
           <Route path="/profile/:id" element={<PrivateRoute><Profile onOpenMiniChat={openMiniChat} /></PrivateRoute>} />
           <Route path="/settings" element={<PrivateRoute><Settings onOpenMiniChat={openMiniChat} /></PrivateRoute>} />
+          <Route path="/settings/security" element={<PrivateRoute><SecuritySettings onOpenMiniChat={openMiniChat} /></PrivateRoute>} />
+          <Route path="/settings/privacy" element={<PrivateRoute><PrivacySettings onOpenMiniChat={openMiniChat} /></PrivateRoute>} />
+          <Route path="/bookmarks" element={<PrivateRoute><Bookmarks onOpenMiniChat={openMiniChat} /></PrivateRoute>} />
           <Route path="/friends" element={<PrivateRoute><Friends onOpenMiniChat={openMiniChat} /></PrivateRoute>} />
           <Route path="/messages" element={<PrivateRoute><Messages onOpenMiniChat={openMiniChat} /></PrivateRoute>} />
           <Route path="/hashtag/:tag" element={<PrivateRoute><Hashtag onOpenMiniChat={openMiniChat} /></PrivateRoute>} />
@@ -120,6 +129,9 @@ function App() {
           <Route path="/community" element={<><Community /><Footer /></>} />
           <Route path="/safety" element={<><Safety /><Footer /></>} />
           <Route path="/contact" element={<><Contact /><Footer /></>} />
+          <Route path="/faq" element={<><FAQ /><Footer /></>} />
+          <Route path="/legal-requests" element={<><LegalRequests /><Footer /></>} />
+          <Route path="/dmca" element={<><DMCA /><Footer /></>} />
         </Routes>
 
         {/* Mini Chat Boxes */}

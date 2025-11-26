@@ -4,9 +4,12 @@ import Message from '../models/Message.js';
 import User from '../models/User.js';
 import mongoose from 'mongoose';
 import authMiddleware from '../middleware/auth.js';
+import { messageLimiter } from '../middleware/rateLimiter.js';
+import { checkMessagingPermission, checkBlocked } from '../middleware/privacy.js';
+import { checkMuted, moderateContent } from '../middleware/moderation.js';
 
 // Get conversation with a user
-router.get('/:userId', authMiddleware, async (req, res) => {
+router.get('/:userId', authMiddleware, checkBlocked, async (req, res) => {
   try {
     const { userId } = req.params;
     const currentUserId = req.userId;
@@ -98,7 +101,7 @@ router.get('/', authMiddleware, async (req, res) => {
 });
 
 // Send a message
-router.post('/', authMiddleware, async (req, res) => {
+router.post('/', authMiddleware, messageLimiter, checkMessagingPermission, checkMuted, moderateContent, async (req, res) => {
   try {
     const { recipient, content, attachment, groupChatId } = req.body;
 
@@ -268,6 +271,81 @@ router.get('/group/:groupId', authMiddleware, async (req, res) => {
     res.json(messages);
   } catch (error) {
     res.status(500).json({ message: 'Error fetching group messages', error: error.message });
+  }
+});
+
+// @route   POST /api/messages/:id/react
+// @desc    Add a reaction to a message
+// @access  Private
+router.post('/:id/react', authMiddleware, async (req, res) => {
+  try {
+    const { emoji } = req.body;
+
+    if (!emoji) {
+      return res.status(400).json({ message: 'Emoji is required' });
+    }
+
+    const message = await Message.findById(req.params.id);
+
+    if (!message) {
+      return res.status(404).json({ message: 'Message not found' });
+    }
+
+    // Check if user already reacted with this emoji
+    const existingReaction = message.reactions.find(
+      r => r.user.toString() === req.userId && r.emoji === emoji
+    );
+
+    if (existingReaction) {
+      return res.status(400).json({ message: 'You already reacted with this emoji' });
+    }
+
+    // Add reaction
+    message.reactions.push({
+      user: req.userId,
+      emoji,
+      createdAt: new Date()
+    });
+
+    await message.save();
+    await message.populate('reactions.user', 'username displayName profilePhoto');
+
+    res.json(message);
+  } catch (error) {
+    console.error('Add reaction error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   DELETE /api/messages/:id/react
+// @desc    Remove a reaction from a message
+// @access  Private
+router.delete('/:id/react', authMiddleware, async (req, res) => {
+  try {
+    const { emoji } = req.body;
+
+    if (!emoji) {
+      return res.status(400).json({ message: 'Emoji is required' });
+    }
+
+    const message = await Message.findById(req.params.id);
+
+    if (!message) {
+      return res.status(404).json({ message: 'Message not found' });
+    }
+
+    // Remove reaction
+    message.reactions = message.reactions.filter(
+      r => !(r.user.toString() === req.userId && r.emoji === emoji)
+    );
+
+    await message.save();
+    await message.populate('reactions.user', 'username displayName profilePhoto');
+
+    res.json(message);
+  } catch (error) {
+    console.error('Remove reaction error:', error);
+    res.status(500).json({ message: 'Server error' });
   }
 });
 

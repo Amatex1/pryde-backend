@@ -6,6 +6,7 @@ import mongoose from 'mongoose';
 import auth from '../middleware/auth.js';
 import User from '../models/User.js';
 import config from '../config/config.js';
+import { uploadLimiter } from '../middleware/rateLimiter.js';
 
 // Create storage engine
 const storage = new GridFsStorage({
@@ -51,7 +52,7 @@ mongoose.connection.once('open', () => {
 // @route   POST /api/upload/profile-photo
 // @desc    Upload profile photo
 // @access  Private
-router.post('/profile-photo', auth, (req, res) => {
+router.post('/profile-photo', auth, uploadLimiter, (req, res) => {
   upload.single('photo')(req, res, async (err) => {
     try {
       console.log('Profile photo upload request received');
@@ -90,7 +91,7 @@ router.post('/profile-photo', auth, (req, res) => {
 // @route   POST /api/upload/cover-photo
 // @desc    Upload cover photo
 // @access  Private
-router.post('/cover-photo', auth, (req, res) => {
+router.post('/cover-photo', auth, uploadLimiter, (req, res) => {
   upload.single('photo')(req, res, async (err) => {
     try {
       console.log('Cover photo upload request received');
@@ -129,7 +130,7 @@ router.post('/cover-photo', auth, (req, res) => {
 // @route   POST /api/upload/chat-attachment
 // @desc    Upload chat attachment
 // @access  Private
-router.post('/chat-attachment', auth, upload.single('file'), async (req, res) => {
+router.post('/chat-attachment', auth, uploadLimiter, upload.single('file'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ message: 'No file uploaded' });
@@ -147,7 +148,7 @@ router.post('/chat-attachment', auth, upload.single('file'), async (req, res) =>
 // @route   POST /api/upload/post-media
 // @desc    Upload media for posts (images, videos, gifs)
 // @access  Private
-router.post('/post-media', auth, upload.array('media', 10), async (req, res) => {
+router.post('/post-media', auth, uploadLimiter, upload.array('media', 10), async (req, res) => {
   try {
     if (!req.files || req.files.length === 0) {
       return res.status(400).json({ message: 'No files uploaded' });

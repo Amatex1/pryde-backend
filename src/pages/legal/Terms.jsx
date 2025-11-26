@@ -189,6 +189,19 @@ function Terms() {
             <strong>No Emergency Services:</strong> Pryde Social is NOT an emergency service. If you or someone you know is in immediate danger, contact local emergency services (911 in the US) immediately.
           </p>
           <p>
+            <strong>No Professional Advice:</strong> Pryde Social is a social networking platform and does NOT provide professional advice of any kind, including but not limited to:
+          </p>
+          <ul>
+            <li><strong>Medical Advice:</strong> Content on the platform is not a substitute for professional medical diagnosis or treatment</li>
+            <li><strong>Legal Advice:</strong> Information shared is not legal counsel and should not be relied upon for legal decisions</li>
+            <li><strong>Financial Advice:</strong> Investment or financial information is not professional financial advice</li>
+            <li><strong>Mental Health Services:</strong> We are not a crisis service or mental health provider</li>
+            <li><strong>Relationship Counseling:</strong> User advice is not professional therapy or counseling</li>
+          </ul>
+          <p>
+            Always consult qualified professionals for medical, legal, financial, or mental health matters. Pryde Social and its users are not liable for any decisions made based on information shared on the platform.
+          </p>
+          <p>
             <strong>Limitation of Liability:</strong> To the maximum extent permitted by law, Pryde Social and its officers, directors, employees, and affiliates shall not be liable for any indirect, incidental, special, consequential, or punitive damages arising from your use of the platform, including but not limited to:
           </p>
           <ul>
@@ -196,11 +209,71 @@ function Terms() {
             <li>Loss of profits or revenue</li>
             <li>Unauthorized access to your account</li>
             <li>Actions of other users</li>
+            <li>Reliance on user-generated content or advice</li>
+            <li>Emotional distress or psychological harm</li>
+            <li>Physical harm resulting from in-person meetings arranged through the platform</li>
+          </ul>
+          <p>
+            <strong>Legal Responsibility Limits:</strong> Pryde Social's total liability for any claims arising from your use of the service shall not exceed the amount you paid us in the past 12 months (currently $0 as the service is free).
+          </p>
+        </section>
+
+        <section className="legal-section">
+          <h2>11. Not a Mandated Reporter</h2>
+          <p>
+            <strong>Important Disclosure:</strong> Pryde Social and its employees are NOT mandated reporters under child protection laws. We are a technology platform, not a social services agency, educational institution, or healthcare provider.
+          </p>
+          <p>
+            <strong>What This Means:</strong>
+          </p>
+          <ul>
+            <li>We are not legally required to report suspected child abuse or neglect to authorities</li>
+            <li>We do not have the training or expertise to assess abuse situations</li>
+            <li>We cannot investigate or intervene in real-world situations</li>
+            <li>We are not a substitute for professional child protective services</li>
+          </ul>
+          <p>
+            <strong>If You Suspect Child Abuse:</strong> Contact local authorities immediately:
+          </p>
+          <ul>
+            <li><strong>Emergency (US):</strong> 911</li>
+            <li><strong>Childhelp National Child Abuse Hotline:</strong> 1-800-422-4453</li>
+            <li><strong>Local Child Protective Services:</strong> Contact your state/county CPS office</li>
           </ul>
         </section>
 
         <section className="legal-section">
-          <h2>11. Intellectual Property & Copyright</h2>
+          <h2>12. Authority Reporting Clause</h2>
+          <p>
+            While we are not mandated reporters, <strong>Pryde Social reserves the right to report content or activity to law enforcement or relevant authorities</strong> when we believe, in our sole discretion, that:
+          </p>
+          <ul>
+            <li><strong>Imminent Danger:</strong> Someone is in immediate danger of serious physical harm or death</li>
+            <li><strong>Child Exploitation:</strong> Content involves child sexual abuse material (CSAM) or child exploitation</li>
+            <li><strong>Terrorism:</strong> Content promotes or plans terrorist activities</li>
+            <li><strong>Human Trafficking:</strong> Activity suggests human trafficking or exploitation</li>
+            <li><strong>Credible Threats:</strong> Specific, credible threats of violence against individuals or groups</li>
+            <li><strong>Illegal Activity:</strong> Evidence of serious crimes (drug trafficking, fraud, weapons sales)</li>
+            <li><strong>Legal Obligation:</strong> We receive a valid legal request (subpoena, court order, warrant)</li>
+          </ul>
+          <p>
+            <strong>Voluntary Reporting:</strong> We may voluntarily report to:
+          </p>
+          <ul>
+            <li>National Center for Missing & Exploited Children (NCMEC) for CSAM</li>
+            <li>FBI or local law enforcement for terrorism or credible threats</li>
+            <li>Relevant authorities for human trafficking or exploitation</li>
+          </ul>
+          <p>
+            <strong>User Privacy:</strong> We balance user privacy with public safety. Reports to authorities are made only when we believe there is a genuine risk of serious harm. We do not routinely monitor private messages or content.
+          </p>
+          <p>
+            <strong>No Liability for Reporting:</strong> You agree that Pryde Social shall not be liable for any reports made to authorities in good faith, even if such reports are later determined to be unfounded.
+          </p>
+        </section>
+
+        <section className="legal-section">
+          <h2>13. Intellectual Property & Copyright</h2>
           <p>
             Pryde Social respects intellectual property rights. If you believe content on our platform infringes your copyright:
           </p>
@@ -216,7 +289,7 @@ function Terms() {
         </section>
 
         <section className="legal-section">
-          <h2>12. Third-Party Links & Services</h2>
+          <h2>14. Third-Party Links & Services</h2>
           <p>
             Pryde Social may contain links to third-party websites or services. We are not responsible for:
           </p>
@@ -231,7 +304,7 @@ function Terms() {
         </section>
 
         <section className="legal-section">
-          <h2>13. Governing Law & Dispute Resolution</h2>
+          <h2>15. Governing Law & Dispute Resolution</h2>
           <p>
             These Terms shall be governed by and construed in accordance with the laws of the United States, without regard to conflict of law provisions.
           </p>
@@ -249,7 +322,7 @@ function Terms() {
         </section>
 
         <section className="legal-section">
-          <h2>14. Changes to Terms</h2>
+          <h2>16. Changes to Terms</h2>
           <p>
             We may update these Terms periodically. When we make material changes:
           </p>
@@ -264,7 +337,7 @@ function Terms() {
         </section>
 
         <section className="legal-section">
-          <h2>15. Contact Information</h2>
+          <h2>17. Contact Information</h2>
           <p>
             For questions about these Terms of Service, please contact us via our <Link to="/contact" className="legal-link">Contact</Link> page or email us at:
           </p>

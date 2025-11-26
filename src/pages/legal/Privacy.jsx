@@ -108,25 +108,43 @@ function Privacy() {
             <li><strong>Database:</strong> MongoDB Atlas stores user profiles, posts, messages, friend requests, notifications, reports, blocks, and group chats</li>
             <li><strong>Media Storage:</strong> GridFS (MongoDB's file storage system) stores profile photos, cover photos, images, videos, and GIFs</li>
             <li><strong>Backend Hosting:</strong> Render.com hosts our API server</li>
-            <li><strong>Frontend Hosting:</strong> SiteGround hosts our React application</li>
+            <li><strong>Frontend Hosting:</strong> Cloudflare Pages hosts our React application with global CDN</li>
           </ul>
           <p>
-            <strong>Data Controller:</strong> Pryde Social (the platform owner) is the Data Controller responsible for all data collection, processing, and compliance decisions. MongoDB Atlas, Render.com, and SiteGround are Data Processors who provide infrastructure services on our behalf.
+            <strong>Data Controller:</strong> Pryde Social (the platform owner) is the Data Controller responsible for all data collection, processing, and compliance decisions. MongoDB Atlas, Render.com, and Cloudflare are Data Processors who provide infrastructure services on our behalf.
           </p>
           <p>
             <strong>Your data is controlled by Pryde Social, not by our service providers.</strong> We make all decisions about what data is collected, how it's used, and how long it's retained.
           </p>
 
           <p>
-            <strong>4.2 Security Measures</strong>
+            <strong>4.2 MongoDB Encryption at Rest</strong>
+          </p>
+          <p>
+            All data stored in MongoDB Atlas is encrypted at rest using industry-standard AES-256 encryption. This means:
           </p>
           <ul>
-            <li><strong>Encryption:</strong> Passwords are hashed using bcrypt (industry-standard)</li>
-            <li><strong>JWT Authentication:</strong> Secure token-based authentication for API access</li>
-            <li><strong>HTTPS:</strong> All data transmission is encrypted via SSL/TLS</li>
+            <li>Your profile information, posts, messages, and media are encrypted when stored on disk</li>
+            <li>Database backups are also encrypted</li>
+            <li>Encryption keys are managed by MongoDB Atlas with strict access controls</li>
+            <li>Even if physical storage media is compromised, data remains protected</li>
+          </ul>
+          <p>
+            <strong>Note:</strong> Encryption at rest protects data on disk, but authorized Pryde Social administrators can access data when needed for platform operations, abuse investigations, or legal compliance.
+          </p>
+
+          <p>
+            <strong>4.3 Security Measures</strong>
+          </p>
+          <ul>
+            <li><strong>Password Encryption:</strong> Passwords are hashed using bcrypt (industry-standard, one-way encryption)</li>
+            <li><strong>JWT Authentication:</strong> Secure token-based authentication for API access (7-day expiration)</li>
+            <li><strong>HTTPS/SSL:</strong> All data transmission is encrypted via TLS 1.2+ (end-to-end encryption in transit)</li>
             <li><strong>Access Control:</strong> Only authorized personnel can access backend systems</li>
             <li><strong>Rate Limiting:</strong> Protection against brute-force attacks and spam</li>
-            <li><strong>Regular Backups:</strong> MongoDB backups to prevent data loss</li>
+            <li><strong>Regular Backups:</strong> MongoDB automated backups to prevent data loss</li>
+            <li><strong>Session Management:</strong> Automatic logout after inactivity, secure session tokens</li>
+            <li><strong>Input Validation:</strong> Protection against SQL injection, XSS, and other attacks</li>
           </ul>
 
           <p>
@@ -206,7 +224,52 @@ function Privacy() {
         </section>
 
         <section className="legal-section">
-          <h2>8. Data Retention</h2>
+          <h2>8. Data Deletion Process</h2>
+          <p>
+            <strong>How to Delete Your Account:</strong>
+          </p>
+          <ol>
+            <li>Log in to your Pryde Social account</li>
+            <li>Go to <strong>Settings → Account Management</strong></li>
+            <li>Click <strong>"Delete Account"</strong></li>
+            <li>Confirm your password</li>
+            <li>Read the deletion warning (this is permanent and irreversible)</li>
+            <li>Click <strong>"Permanently Delete My Account"</strong></li>
+          </ol>
+          <p>
+            <strong>What Happens When You Delete Your Account:</strong>
+          </p>
+          <ul>
+            <li><strong>Immediate:</strong> Your profile becomes inaccessible to other users</li>
+            <li><strong>Within 24 hours:</strong> Your posts, comments, and profile information are removed from public view</li>
+            <li><strong>Within 30 days:</strong> All your data (profile, posts, messages, media) is permanently deleted from our active database</li>
+            <li><strong>Within 90 days:</strong> Data is removed from backup systems</li>
+          </ul>
+          <p>
+            <strong>What Is NOT Deleted:</strong>
+          </p>
+          <ul>
+            <li>Messages you sent to others (they remain visible to recipients)</li>
+            <li>Comments on other users' posts (removed from your profile but may remain on their posts)</li>
+            <li>Data required for legal compliance, fraud prevention, or security (retained for up to 7 years)</li>
+            <li>Anonymized analytics data (no longer linked to your identity)</li>
+          </ul>
+          <p>
+            <strong>Alternative: Deactivate Instead of Delete</strong>
+          </p>
+          <p>
+            If you're not ready to permanently delete your account, you can <strong>deactivate</strong> it instead:
+          </p>
+          <ul>
+            <li>Your profile is hidden from other users</li>
+            <li>Your data is preserved</li>
+            <li>You can reactivate by logging in again</li>
+            <li>Go to <strong>Settings → Account Management → Deactivate Account</strong></li>
+          </ul>
+        </section>
+
+        <section className="legal-section">
+          <h2>9. Data Retention</h2>
           <p>
             We retain your data for as long as you maintain an active account. When you delete your account:
           </p>
@@ -219,7 +282,7 @@ function Privacy() {
         </section>
 
         <section className="legal-section">
-          <h2>9. Children's Privacy (COPPA Compliance)</h2>
+          <h2>10. Age Restriction (18+ Only)</h2>
           <p>
             Pryde Social is <strong>strictly for users 18 years of age and older</strong>. We do not knowingly collect personal information from anyone under 18.
           </p>
@@ -237,7 +300,7 @@ function Privacy() {
         </section>
 
         <section className="legal-section">
-          <h2>10. Cookies & Tracking Technologies</h2>
+          <h2>11. Cookies & Tracking Technologies</h2>
           <p>
             Pryde Social uses cookies and similar technologies for:
           </p>
@@ -253,7 +316,7 @@ function Privacy() {
         </section>
 
         <section className="legal-section">
-          <h2>11. International Users & GDPR</h2>
+          <h2>12. International Users & GDPR/CCPA Compliance</h2>
           <p>
             Pryde Social is based in the United States. If you access the platform from outside the US:
           </p>
@@ -266,16 +329,30 @@ function Privacy() {
             <strong>GDPR Rights (EU Users):</strong> If you are in the European Union, you have additional rights under GDPR:
           </p>
           <ul>
-            <li>Right to data portability</li>
+            <li>Right to data portability (download your data in machine-readable format)</li>
             <li>Right to object to automated decision-making</li>
             <li>Right to lodge a complaint with your data protection authority</li>
+            <li>Right to erasure ("right to be forgotten")</li>
+            <li>Right to restrict processing</li>
           </ul>
+          <p>
+            <strong>CCPA Rights (California Users):</strong> If you are a California resident, you have rights under the California Consumer Privacy Act (CCPA):
+          </p>
+          <ul>
+            <li>Right to know what personal information is collected, used, shared, or sold</li>
+            <li>Right to delete personal information (with certain exceptions)</li>
+            <li>Right to opt-out of the sale of personal information (we do NOT sell your data)</li>
+            <li>Right to non-discrimination for exercising your privacy rights</li>
+          </ul>
+          <p>
+            To exercise your GDPR or CCPA rights, contact us at <strong>privacy@prydesocial.com</strong> or use the data management tools in your Settings page.
+          </p>
         </section>
 
         <section className="legal-section">
-          <h2>12. Reports & Blocks</h2>
+          <h2>13. Reports & Blocks</h2>
           <p>
-            <strong>12.1 Reporting Content</strong>
+            <strong>13.1 Reporting Content</strong>
           </p>
           <p>
             When you report a post, comment, message, or user:
@@ -289,7 +366,7 @@ function Privacy() {
           </ul>
 
           <p>
-            <strong>12.2 Blocking Users</strong>
+            <strong>13.2 Blocking Users</strong>
           </p>
           <p>
             When you block a user:
@@ -305,7 +382,7 @@ function Privacy() {
         </section>
 
         <section className="legal-section">
-          <h2>13. Push Notifications</h2>
+          <h2>14. Push Notifications</h2>
           <p>
             If you enable push notifications:
           </p>
@@ -319,7 +396,7 @@ function Privacy() {
         </section>
 
         <section className="legal-section">
-          <h2>14. Changes to Privacy Policy</h2>
+          <h2>15. Changes to Privacy Policy</h2>
           <p>
             We may update this Privacy Policy periodically. When we make material changes:
           </p>
@@ -334,7 +411,7 @@ function Privacy() {
         </section>
 
         <section className="legal-section">
-          <h2>15. Contact Us</h2>
+          <h2>16. Contact Information</h2>
           <p>
             If you have questions or concerns about this Privacy Policy, your data, or how we process information, please contact us:
           </p>

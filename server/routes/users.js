@@ -7,6 +7,7 @@ import FriendRequest from '../models/FriendRequest.js';
 import GroupChat from '../models/GroupChat.js';
 import Notification from '../models/Notification.js';
 import auth from '../middleware/auth.js';
+import { checkProfileVisibility, checkBlocked } from '../middleware/privacy.js';
 
 // @route   GET /api/users/search
 // @desc    Search users
@@ -39,7 +40,7 @@ router.get('/search', auth, async (req, res) => {
 // @route   GET /api/users/:id
 // @desc    Get user by ID
 // @access  Private
-router.get('/:id', auth, async (req, res) => {
+router.get('/:id', auth, checkProfileVisibility, async (req, res) => {
   try {
     const user = await User.findById(req.params.id)
       .select('-password')

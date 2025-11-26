@@ -166,9 +166,9 @@ function Contact() {
             </div>
 
             <div className="contact-method">
-              <h3>🛡️ Safety & Trust</h3>
-              <p className="contact-email">safety@prydesocial.com</p>
-              <p>Abuse reports, safety concerns, policy violations</p>
+              <h3>🛡️ Safety & Abuse</h3>
+              <p className="contact-email">abuse@prydesocial.com</p>
+              <p>Abuse reports, safety concerns, policy violations, harassment</p>
             </div>
 
             <div className="contact-method">

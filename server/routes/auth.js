@@ -5,12 +5,21 @@ import crypto from 'crypto';
 import User from '../models/User.js';
 import auth from '../middleware/auth.js';
 import config from '../config/config.js';
-import { sendPasswordResetEmail } from '../utils/emailService.js';
+import { sendPasswordResetEmail, sendLoginAlertEmail, sendSuspiciousLoginEmail } from '../utils/emailService.js';
+import {
+  generateSessionId,
+  parseUserAgent,
+  getClientIp,
+  isSuspiciousLogin,
+  cleanupOldSessions,
+  limitLoginHistory
+} from '../utils/sessionUtils.js';
+import { loginLimiter, signupLimiter, passwordResetLimiter } from '../middleware/rateLimiter.js';
 
 // @route   POST /api/auth/signup
 // @desc    Register new user
 // @access  Public
-router.post('/signup', async (req, res) => {
+router.post('/signup', signupLimiter, async (req, res) => {
   try {
     const {
       username,
@@ -115,7 +124,7 @@ router.post('/signup', async (req, res) => {
 // @route   POST /api/auth/login
 // @desc    Login user
 // @access  Public
-router.post('/login', async (req, res) => {
+router.post('/login', loginLimiter, async (req, res) => {
   try {
     const { email, password } = req.body;
 
@@ -127,6 +136,7 @@ router.post('/login', async (req, res) => {
     // Check if user exists
     const user = await User.findOne({ email });
     if (!user) {
+      // Log failed login attempt
       return res.status(401).json({ message: 'Invalid email or password' });
     }
 
@@ -155,26 +165,124 @@ router.post('/login', async (req, res) => {
     // Check password
     const isMatch = await user.comparePassword(password);
     if (!isMatch) {
+      // Log failed login attempt
+      const ipAddress = getClientIp(req);
+      const { deviceInfo } = parseUserAgent(req.headers['user-agent']);
+
+      user.loginHistory.push({
+        ipAddress,
+        deviceInfo,
+        success: false,
+        failureReason: 'Invalid password',
+        timestamp: new Date()
+      });
+
+      limitLoginHistory(user);
+      await user.save();
+
       return res.status(401).json({ message: 'Invalid email or password' });
     }
 
+    // Get device and IP info
+    const ipAddress = getClientIp(req);
+    const { browser, os, deviceInfo } = parseUserAgent(req.headers['user-agent']);
+
+    // Check if 2FA is enabled
+    if (user.twoFactorEnabled) {
+      // Return temporary token that requires 2FA verification
+      const tempToken = jwt.sign(
+        { userId: user._id, requires2FA: true },
+        config.jwtSecret,
+        { expiresIn: '10m' }
+      );
+
+      // Check if login is suspicious
+      const suspicious = isSuspiciousLogin(user, ipAddress, deviceInfo);
+
+      return res.json({
+        success: false,
+        requires2FA: true,
+        tempToken,
+        suspicious,
+        message: '2FA verification required'
+      });
+    }
+
+    // Check if login is suspicious
+    const suspicious = isSuspiciousLogin(user, ipAddress, deviceInfo);
+
+    // Create session
+    const sessionId = generateSessionId();
+
+    // Clean up old sessions
+    cleanupOldSessions(user);
+
+    // Add new session
+    user.activeSessions.push({
+      sessionId,
+      deviceInfo,
+      browser,
+      os,
+      ipAddress,
+      location: {
+        city: '',
+        region: '',
+        country: ''
+      },
+      createdAt: new Date(),
+      lastActive: new Date()
+    });
+
+    // Log successful login
+    user.loginHistory.push({
+      ipAddress,
+      deviceInfo,
+      success: true,
+      timestamp: new Date()
+    });
+
     // Update last login
     user.lastLogin = new Date();
+
+    limitLoginHistory(user);
     await user.save();
 
-    // Create JWT token
+    // Send login alert emails (async, don't wait)
+    if (user.loginAlerts?.enabled && user.loginAlerts?.emailOnNewDevice) {
+      const loginInfo = {
+        deviceInfo,
+        browser,
+        os,
+        ipAddress,
+        location: { city: '', region: '', country: '' },
+        timestamp: new Date()
+      };
+
+      if (suspicious && user.loginAlerts?.emailOnSuspiciousLogin) {
+        sendSuspiciousLoginEmail(user.email, user.username, loginInfo).catch(err =>
+          console.error('Failed to send suspicious login email:', err)
+        );
+      } else {
+        sendLoginAlertEmail(user.email, user.username, loginInfo).catch(err =>
+          console.error('Failed to send login alert email:', err)
+        );
+      }
+    }
+
+    // Create JWT token with session ID
     const token = jwt.sign(
-      { userId: user._id },
+      { userId: user._id, sessionId },
       config.jwtSecret,
       { expiresIn: '7d' }
     );
 
-    console.log(`User logged in: ${email}`);
+    console.log(`User logged in: ${email} from ${ipAddress}`);
 
     res.json({
       success: true,
       message: 'Login successful',
       token,
+      suspicious,
       user: {
         id: user._id,
         username: user.username,
@@ -207,6 +315,167 @@ router.post('/login', async (req, res) => {
   }
 });
 
+// @route   POST /api/auth/verify-2fa-login
+// @desc    Complete login with 2FA verification
+// @access  Public (requires temp token)
+router.post('/verify-2fa-login', loginLimiter, async (req, res) => {
+  try {
+    const { tempToken, token: twoFactorToken } = req.body;
+
+    if (!tempToken || !twoFactorToken) {
+      return res.status(400).json({ message: 'Temporary token and 2FA code are required' });
+    }
+
+    // Verify temp token
+    let decoded;
+    try {
+      decoded = jwt.verify(tempToken, config.jwtSecret);
+    } catch (error) {
+      return res.status(401).json({ message: 'Invalid or expired temporary token' });
+    }
+
+    if (!decoded.requires2FA) {
+      return res.status(400).json({ message: 'Invalid token type' });
+    }
+
+    const user = await User.findById(decoded.userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Import speakeasy for verification
+    const speakeasy = (await import('speakeasy')).default;
+
+    // Check if it's a backup code
+    const backupCodeIndex = user.twoFactorBackupCodes.findIndex(
+      bc => bc.code === twoFactorToken && !bc.used
+    );
+
+    let verified = false;
+
+    if (backupCodeIndex !== -1) {
+      // Mark backup code as used
+      user.twoFactorBackupCodes[backupCodeIndex].used = true;
+      verified = true;
+    } else {
+      // Verify TOTP token
+      verified = speakeasy.totp.verify({
+        secret: user.twoFactorSecret,
+        encoding: 'base32',
+        token: twoFactorToken,
+        window: 2
+      });
+    }
+
+    if (!verified) {
+      return res.status(400).json({ message: 'Invalid 2FA code' });
+    }
+
+    // Get device and IP info
+    const ipAddress = getClientIp(req);
+    const { browser, os, deviceInfo } = parseUserAgent(req.headers['user-agent']);
+
+    // Create session
+    const sessionId = generateSessionId();
+
+    // Clean up old sessions
+    cleanupOldSessions(user);
+
+    // Add new session
+    user.activeSessions.push({
+      sessionId,
+      deviceInfo,
+      browser,
+      os,
+      ipAddress,
+      location: {
+        city: '',
+        region: '',
+        country: ''
+      },
+      createdAt: new Date(),
+      lastActive: new Date()
+    });
+
+    // Log successful login
+    user.loginHistory.push({
+      ipAddress,
+      deviceInfo,
+      success: true,
+      timestamp: new Date()
+    });
+
+    // Update last login
+    user.lastLogin = new Date();
+
+    limitLoginHistory(user);
+    await user.save();
+
+    // Send login alert emails (async, don't wait)
+    if (user.loginAlerts?.enabled && user.loginAlerts?.emailOnNewDevice) {
+      const loginInfo = {
+        deviceInfo,
+        browser,
+        os,
+        ipAddress,
+        location: { city: '', region: '', country: '' },
+        timestamp: new Date()
+      };
+
+      const suspicious = isSuspiciousLogin(user, ipAddress, deviceInfo);
+
+      if (suspicious && user.loginAlerts?.emailOnSuspiciousLogin) {
+        sendSuspiciousLoginEmail(user.email, user.username, loginInfo).catch(err =>
+          console.error('Failed to send suspicious login email:', err)
+        );
+      } else {
+        sendLoginAlertEmail(user.email, user.username, loginInfo).catch(err =>
+          console.error('Failed to send login alert email:', err)
+        );
+      }
+    }
+
+    // Create JWT token with session ID
+    const token = jwt.sign(
+      { userId: user._id, sessionId },
+      config.jwtSecret,
+      { expiresIn: '7d' }
+    );
+
+    console.log(`User logged in with 2FA: ${user.email} from ${ipAddress}`);
+
+    res.json({
+      success: true,
+      message: 'Login successful',
+      token,
+      user: {
+        id: user._id,
+        username: user.username,
+        email: user.email,
+        fullName: user.fullName,
+        displayName: user.displayName,
+        nickname: user.nickname,
+        pronouns: user.pronouns,
+        customPronouns: user.customPronouns,
+        gender: user.gender,
+        customGender: user.customGender,
+        relationshipStatus: user.relationshipStatus,
+        profilePhoto: user.profilePhoto,
+        coverPhoto: user.coverPhoto,
+        bio: user.bio,
+        location: user.location,
+        website: user.website,
+        socialLinks: user.socialLinks,
+        role: user.role,
+        permissions: user.permissions
+      }
+    });
+  } catch (error) {
+    console.error('2FA login verification error:', error);
+    res.status(500).json({ message: 'Server error during 2FA verification' });
+  }
+});
+
 // @route   GET /api/auth/me
 // @desc    Get current user
 // @access  Private
@@ -226,7 +495,7 @@ router.get('/me', auth, async (req, res) => {
 // @route   POST /api/auth/forgot-password
 // @desc    Request password reset
 // @access  Public
-router.post('/forgot-password', async (req, res) => {
+router.post('/forgot-password', passwordResetLimiter, async (req, res) => {
   try {
     const { email } = req.body;
 

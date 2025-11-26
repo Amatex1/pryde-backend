@@ -3,11 +3,12 @@ const router = express.Router();
 import auth from '../middleware/auth.js';
 import User from '../models/User.js';
 import Post from '../models/Post.js';
+import { searchLimiter } from '../middleware/rateLimiter.js';
 
 // @route   GET /api/search
 // @desc    Global search for users, posts, and hashtags
 // @access  Private
-router.get('/', auth, async (req, res) => {
+router.get('/', auth, searchLimiter, async (req, res) => {
   try {
     const { q, type } = req.query;
 

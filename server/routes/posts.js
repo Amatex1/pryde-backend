@@ -3,6 +3,8 @@ const router = express.Router();
 import Post from '../models/Post.js';
 import User from '../models/User.js';
 import auth from '../middleware/auth.js';
+import { postLimiter, commentLimiter } from '../middleware/rateLimiter.js';
+import { checkMuted, moderateContent } from '../middleware/moderation.js';
 
 // @route   GET /api/posts
 // @desc    Get all posts (feed)
@@ -25,6 +27,13 @@ router.get('/', auth, async (req, res) => {
       .populate('author', 'username displayName profilePhoto')
       .populate('comments.user', 'username displayName profilePhoto')
       .populate('likes', 'username displayName profilePhoto')
+      .populate({
+        path: 'originalPost',
+        populate: [
+          { path: 'author', select: 'username displayName profilePhoto' },
+          { path: 'likes', select: 'username displayName profilePhoto' }
+        ]
+      })
       .sort({ createdAt: -1 })
       .limit(limit * 1)
       .skip((page - 1) * limit);
@@ -71,7 +80,7 @@ router.get('/:id', auth, async (req, res) => {
 // @route   POST /api/posts
 // @desc    Create a new post
 // @access  Private
-router.post('/', auth, async (req, res) => {
+router.post('/', auth, postLimiter, checkMuted, moderateContent, async (req, res) => {
   try {
     const { content, images, media, visibility } = req.body;
 
@@ -194,10 +203,107 @@ router.post('/:id/like', auth, async (req, res) => {
   }
 });
 
+// @route   POST /api/posts/:id/share
+// @desc    Share/Repost a post
+// @access  Private
+router.post('/:id/share', auth, postLimiter, checkMuted, async (req, res) => {
+  try {
+    const originalPost = await Post.findById(req.params.id);
+
+    if (!originalPost) {
+      return res.status(404).json({ message: 'Post not found' });
+    }
+
+    const userId = req.userId || req.user._id;
+    const { shareComment } = req.body;
+
+    // Check if user already shared this post
+    const existingShare = await Post.findOne({
+      author: userId,
+      isShared: true,
+      originalPost: originalPost._id
+    });
+
+    if (existingShare) {
+      return res.status(400).json({ message: 'You have already shared this post' });
+    }
+
+    // Create shared post
+    const sharedPost = new Post({
+      author: userId,
+      isShared: true,
+      originalPost: originalPost._id,
+      shareComment: shareComment || '',
+      visibility: 'public'
+    });
+
+    await sharedPost.save();
+
+    // Add to original post's shares
+    originalPost.shares.push({
+      user: userId,
+      sharedAt: new Date()
+    });
+    await originalPost.save();
+
+    // Populate the shared post
+    await sharedPost.populate('author', 'username displayName profilePhoto');
+    await sharedPost.populate({
+      path: 'originalPost',
+      populate: [
+        { path: 'author', select: 'username displayName profilePhoto' },
+        { path: 'likes', select: 'username displayName profilePhoto' }
+      ]
+    });
+
+    res.status(201).json(sharedPost);
+  } catch (error) {
+    console.error('Share post error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   DELETE /api/posts/:id/share
+// @desc    Unshare/Remove repost
+// @access  Private
+router.delete('/:id/share', auth, async (req, res) => {
+  try {
+    const userId = req.userId || req.user._id;
+
+    // Find the shared post
+    const sharedPost = await Post.findOne({
+      author: userId,
+      isShared: true,
+      originalPost: req.params.id
+    });
+
+    if (!sharedPost) {
+      return res.status(404).json({ message: 'Shared post not found' });
+    }
+
+    // Remove from original post's shares
+    const originalPost = await Post.findById(req.params.id);
+    if (originalPost) {
+      originalPost.shares = originalPost.shares.filter(
+        share => share.user.toString() !== userId.toString()
+      );
+      await originalPost.save();
+    }
+
+    // Delete the shared post
+    await sharedPost.deleteOne();
+
+    res.json({ message: 'Post unshared successfully' });
+  } catch (error) {
+    console.error('Unshare post error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // @route   POST /api/posts/:id/comment
 // @desc    Add a comment to a post
 // @access  Private
-router.post('/:id/comment', auth, async (req, res) => {
+router.post('/:id/comment', auth, commentLimiter, checkMuted, moderateContent, async (req, res) => {
   try {
     const { content } = req.body;
 
@@ -228,6 +334,57 @@ router.post('/:id/comment', auth, async (req, res) => {
     res.json(post);
   } catch (error) {
     console.error('Comment post error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   POST /api/posts/:id/comment/:commentId/reply
+// @desc    Reply to a comment
+// @access  Private
+router.post('/:id/comment/:commentId/reply', auth, commentLimiter, checkMuted, moderateContent, async (req, res) => {
+  try {
+    const { content } = req.body;
+
+    if (!content || content.trim() === '') {
+      return res.status(400).json({ message: 'Reply content is required' });
+    }
+
+    const post = await Post.findById(req.params.id);
+
+    if (!post) {
+      return res.status(404).json({ message: 'Post not found' });
+    }
+
+    const parentComment = post.comments.id(req.params.commentId);
+
+    if (!parentComment) {
+      return res.status(404).json({ message: 'Parent comment not found' });
+    }
+
+    const userId = req.userId || req.user._id;
+
+    const reply = {
+      user: userId,
+      content,
+      parentComment: req.params.commentId,
+      createdAt: new Date()
+    };
+
+    post.comments.push(reply);
+
+    // Add reply ID to parent comment's replies array
+    const savedPost = await post.save();
+    const newReply = savedPost.comments[savedPost.comments.length - 1];
+    parentComment.replies.push(newReply._id);
+
+    await post.save();
+
+    await post.populate('author', 'username displayName profilePhoto');
+    await post.populate('comments.user', 'username displayName profilePhoto');
+
+    res.json(post);
+  } catch (error) {
+    console.error('Reply to comment error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });

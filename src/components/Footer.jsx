@@ -29,7 +29,8 @@ function Footer() {
           <ul className="footer-links">
             <li><Link to="/safety">Safety & Reporting</Link></li>
             <li><Link to="/contact">Contact Us</Link></li>
-            <li><a href="mailto:support@prydesocial.com">Email Support</a></li>
+            <li><Link to="/faq">FAQ</Link></li>
+            <li><Link to="/dmca">DMCA</Link></li>
           </ul>
         </div>
 
@@ -64,6 +65,8 @@ function Footer() {
           <Link to="/community">Guidelines</Link>
           <span>•</span>
           <Link to="/safety">Safety</Link>
+          <span>•</span>
+          <Link to="/faq">FAQ</Link>
           <span>•</span>
           <Link to="/contact">Contact</Link>
         </div>

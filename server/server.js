@@ -22,6 +22,24 @@ import reportsRoutes from './routes/reports.js';
 import blocksRoutes from './routes/blocks.js';
 import adminRoutes from './routes/admin.js';
 import searchRoutes from './routes/search.js';
+import twoFactorRoutes from './routes/twoFactor.js';
+import sessionsRoutes from './routes/sessions.js';
+import privacyRoutes from './routes/privacy.js';
+import bookmarksRoutes from './routes/bookmarks.js';
+
+// Import rate limiters
+import {
+  globalLimiter,
+  loginLimiter,
+  signupLimiter,
+  postLimiter,
+  messageLimiter,
+  commentLimiter,
+  friendRequestLimiter,
+  passwordResetLimiter,
+  uploadLimiter,
+  searchLimiter
+} from './middleware/rateLimiter.js';
 
 import connectDB from "./dbConn.js";
 import config from "./config/config.js";
@@ -102,10 +120,13 @@ app.use(cors(corsOptions));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
+// Apply global rate limiter to all requests
+app.use(globalLimiter);
+
 // Store online users
 const onlineUsers = new Map(); // userId -> socketId
 
-// Routes
+// Routes with specific rate limiters
 app.use('/api/auth', authRoutes);
 app.use('/api/users', usersRoutes);
 app.use('/api/friends', friendsRoutes);
@@ -119,6 +140,10 @@ app.use('/api/reports', reportsRoutes);
 app.use('/api/blocks', blocksRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/search', searchRoutes);
+app.use('/api/2fa', twoFactorRoutes);
+app.use('/api/sessions', sessionsRoutes);
+app.use('/api/privacy', privacyRoutes);
+app.use('/api/bookmarks', bookmarksRoutes);
 
 // Health check and status endpoints
 app.get('/', (req, res) => {

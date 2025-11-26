@@ -97,6 +97,10 @@ const userSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
   }],
+  bookmarkedPosts: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Post'
+  }],
   ageVerified: {
     type: Boolean,
     required: true,
@@ -166,7 +170,228 @@ const userSchema = new mongoose.Schema({
   resetPasswordExpires: {
     type: Date,
     default: null
-  }
+  },
+  // Two-Factor Authentication
+  twoFactorEnabled: {
+    type: Boolean,
+    default: false
+  },
+  twoFactorSecret: {
+    type: String,
+    default: null
+  },
+  twoFactorBackupCodes: [{
+    code: {
+      type: String,
+      required: true
+    },
+    used: {
+      type: Boolean,
+      default: false
+    }
+  }],
+  // Session Management
+  activeSessions: [{
+    sessionId: {
+      type: String,
+      required: true
+    },
+    deviceInfo: {
+      type: String,
+      default: ''
+    },
+    browser: {
+      type: String,
+      default: ''
+    },
+    os: {
+      type: String,
+      default: ''
+    },
+    ipAddress: {
+      type: String,
+      default: ''
+    },
+    location: {
+      city: { type: String, default: '' },
+      region: { type: String, default: '' },
+      country: { type: String, default: '' }
+    },
+    createdAt: {
+      type: Date,
+      default: Date.now
+    },
+    lastActive: {
+      type: Date,
+      default: Date.now
+    }
+  }],
+  // Login Alerts & Security
+  loginAlerts: {
+    enabled: {
+      type: Boolean,
+      default: true
+    },
+    emailOnNewDevice: {
+      type: Boolean,
+      default: true
+    },
+    emailOnSuspiciousLogin: {
+      type: Boolean,
+      default: true
+    }
+  },
+  trustedDevices: [{
+    deviceId: {
+      type: String,
+      required: true
+    },
+    deviceInfo: {
+      type: String,
+      default: ''
+    },
+    ipAddress: {
+      type: String,
+      default: ''
+    },
+    addedAt: {
+      type: Date,
+      default: Date.now
+    }
+  }],
+  loginHistory: [{
+    ipAddress: {
+      type: String,
+      required: true
+    },
+    deviceInfo: {
+      type: String,
+      default: ''
+    },
+    location: {
+      city: { type: String, default: '' },
+      region: { type: String, default: '' },
+      country: { type: String, default: '' }
+    },
+    success: {
+      type: Boolean,
+      default: true
+    },
+    failureReason: {
+      type: String,
+      default: ''
+    },
+    timestamp: {
+      type: Date,
+      default: Date.now
+    }
+  }],
+  // Privacy Settings
+  privacySettings: {
+    profileVisibility: {
+      type: String,
+      enum: ['public', 'friends', 'private'],
+      default: 'public'
+    },
+    whoCanSendFriendRequests: {
+      type: String,
+      enum: ['everyone', 'friends-of-friends', 'no-one'],
+      default: 'everyone'
+    },
+    whoCanMessage: {
+      type: String,
+      enum: ['everyone', 'friends', 'no-one'],
+      default: 'friends'
+    },
+    showOnlineStatus: {
+      type: Boolean,
+      default: true
+    },
+    showLastSeen: {
+      type: Boolean,
+      default: true
+    },
+    whoCanSeeMyPosts: {
+      type: String,
+      enum: ['public', 'friends', 'only-me'],
+      default: 'public'
+    },
+    whoCanCommentOnMyPosts: {
+      type: String,
+      enum: ['everyone', 'friends', 'no-one'],
+      default: 'everyone'
+    },
+    whoCanSeeFriendsList: {
+      type: String,
+      enum: ['everyone', 'friends', 'only-me'],
+      default: 'everyone'
+    },
+    whoCanTagMe: {
+      type: String,
+      enum: ['everyone', 'friends', 'no-one'],
+      default: 'friends'
+    }
+  },
+  // Blocked Users
+  blockedUsers: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  }],
+  // Moderation & Auto-Mute
+  moderation: {
+    isMuted: {
+      type: Boolean,
+      default: false
+    },
+    muteExpires: {
+      type: Date,
+      default: null
+    },
+    muteReason: {
+      type: String,
+      default: ''
+    },
+    violationCount: {
+      type: Number,
+      default: 0
+    },
+    lastViolation: {
+      type: Date,
+      default: null
+    },
+    autoMuteEnabled: {
+      type: Boolean,
+      default: true
+    }
+  },
+  moderationHistory: [{
+    action: {
+      type: String,
+      enum: ['warning', 'mute', 'unmute', 'content-removed', 'spam-detected'],
+      required: true
+    },
+    reason: {
+      type: String,
+      default: ''
+    },
+    contentType: {
+      type: String,
+      enum: ['post', 'comment', 'message', 'profile'],
+      default: 'post'
+    },
+    contentId: {
+      type: mongoose.Schema.Types.ObjectId,
+      default: null
+    },
+    timestamp: {
+      type: Date,
+      default: Date.now
+    },
+    automated: {
+      type: Boolean,
+      default: false
+    }
+  }]
 });
 
 // Hash password before saving
@@ -191,6 +416,9 @@ userSchema.methods.comparePassword = async function(candidatePassword) {
 userSchema.methods.toJSON = function() {
   const user = this.toObject();
   delete user.password;
+  delete user.twoFactorSecret;
+  delete user.twoFactorBackupCodes;
+  delete user.resetPasswordToken;
   return user;
 };
 
