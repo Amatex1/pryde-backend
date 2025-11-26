@@ -1,11 +1,15 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
+import CustomModal from '../components/CustomModal';
+import { useModal } from '../hooks/useModal';
 import api from '../utils/api';
 import { getCurrentUser } from '../utils/auth';
+import { getImageUrl } from '../utils/imageUrl';
 import './Admin.css';
 
 function Admin({ onOpenMiniChat }) {
+  const { modalState, closeModal, showAlert, showConfirm, showPrompt } = useModal();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [stats, setStats] = useState(null);
   const [reports, setReports] = useState([]);
@@ -15,6 +19,7 @@ function Admin({ onOpenMiniChat }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [currentUser, setCurrentUser] = useState(null);
+  const [selectedReport, setSelectedReport] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -91,66 +96,67 @@ function Admin({ onOpenMiniChat }) {
         action,
         reviewNotes: `Reviewed by admin`
       });
-      alert('Report updated successfully');
+      showAlert('Report updated successfully', 'Success');
       loadTabData();
     } catch (error) {
       console.error('Resolve report error:', error);
-      alert('Failed to update report');
+      showAlert('Failed to update report', 'Error');
     }
   };
 
   const handleSuspendUser = async (userId) => {
-    const days = prompt('Suspend for how many days?', '7');
+    const days = await showPrompt('Suspend for how many days?', 'Suspend User', 'Number of days', '7', 'number');
     if (!days) return;
 
-    const reason = prompt('Reason for suspension:', 'Violation of Terms of Service');
+    const reason = await showPrompt('Reason for suspension:', 'Suspension Reason', 'Enter reason', 'Violation of Terms of Service');
     if (!reason) return;
 
     try {
       await api.put(`/admin/users/${userId}/suspend`, { days: parseInt(days), reason });
-      alert('User suspended successfully');
+      showAlert('User suspended successfully', 'Success');
       loadTabData();
     } catch (error) {
       console.error('Suspend user error:', error);
-      alert(error.response?.data?.message || 'Failed to suspend user');
+      showAlert(error.response?.data?.message || 'Failed to suspend user', 'Error');
     }
   };
 
   const handleBanUser = async (userId) => {
-    if (!window.confirm('Are you sure you want to permanently ban this user?')) return;
+    const confirmed = await showConfirm('Are you sure you want to permanently ban this user?', 'Ban User', 'Ban', 'Cancel');
+    if (!confirmed) return;
 
-    const reason = prompt('Reason for ban:', 'Severe violation of Terms of Service');
+    const reason = await showPrompt('Reason for ban:', 'Ban Reason', 'Enter reason', 'Severe violation of Terms of Service');
     if (!reason) return;
 
     try {
       await api.put(`/admin/users/${userId}/ban`, { reason });
-      alert('User banned successfully');
+      showAlert('User banned successfully', 'Success');
       loadTabData();
     } catch (error) {
       console.error('Ban user error:', error);
-      alert(error.response?.data?.message || 'Failed to ban user');
+      showAlert(error.response?.data?.message || 'Failed to ban user', 'Error');
     }
   };
 
   const handleUnsuspendUser = async (userId) => {
     try {
       await api.put(`/admin/users/${userId}/unsuspend`);
-      alert('User unsuspended successfully');
+      showAlert('User unsuspended successfully', 'Success');
       loadTabData();
     } catch (error) {
       console.error('Unsuspend user error:', error);
-      alert('Failed to unsuspend user');
+      showAlert('Failed to unsuspend user', 'Error');
     }
   };
 
   const handleUnbanUser = async (userId) => {
     try {
       await api.put(`/admin/users/${userId}/unban`);
-      alert('User unbanned successfully');
+      showAlert('User unbanned successfully', 'Success');
       loadTabData();
     } catch (error) {
       console.error('Unban user error:', error);
-      alert('Failed to unban user');
+      showAlert('Failed to unban user', 'Error');
     }
   };
 
@@ -310,6 +316,20 @@ function Admin({ onOpenMiniChat }) {
           )}
         </div>
       </div>
+
+      <CustomModal
+        isOpen={modalState.isOpen}
+        onClose={closeModal}
+        type={modalState.type}
+        title={modalState.title}
+        message={modalState.message}
+        placeholder={modalState.placeholder}
+        confirmText={modalState.confirmText}
+        cancelText={modalState.cancelText}
+        onConfirm={modalState.onConfirm}
+        inputType={modalState.inputType}
+        defaultValue={modalState.defaultValue}
+      />
     </div>
   );
 }
@@ -354,6 +374,92 @@ function DashboardTab({ stats }) {
 
 // Reports Tab Component
 function ReportsTab({ reports, onResolve }) {
+  const [expandedReport, setExpandedReport] = useState(null);
+
+  const renderContentPreview = (report) => {
+    if (report.reportType === 'post' && report.reportedPost) {
+      const post = report.reportedPost;
+      return (
+        <div className="content-preview">
+          <h4>📝 Reported Post Preview:</h4>
+          <div className="preview-card">
+            <div className="preview-author">
+              {post.author?.profilePhoto && (
+                <img src={getImageUrl(post.author.profilePhoto)} alt={post.author.username} className="preview-avatar" />
+              )}
+              <span>{post.author?.displayName || post.author?.username || 'Unknown'}</span>
+            </div>
+            <p className="preview-content">{post.content}</p>
+            {post.media && post.media.length > 0 && (
+              <div className="preview-media">
+                {post.media.slice(0, 3).map((media, idx) => (
+                  <div key={idx} className="preview-media-item">
+                    {media.type === 'image' ? (
+                      <img src={getImageUrl(media.url)} alt="Post media" />
+                    ) : (
+                      <video src={getImageUrl(media.url)} />
+                    )}
+                  </div>
+                ))}
+                {post.media.length > 3 && <span>+{post.media.length - 3} more</span>}
+              </div>
+            )}
+            <div className="preview-stats">
+              <span>❤️ {post.likes?.length || 0}</span>
+              <span>💬 {post.comments?.length || 0}</span>
+              <span>📅 {new Date(post.createdAt).toLocaleDateString()}</span>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    if (report.reportType === 'comment' && report.reportedComment) {
+      const comment = report.reportedComment;
+      return (
+        <div className="content-preview">
+          <h4>💬 Reported Comment Preview:</h4>
+          <div className="preview-card">
+            <div className="preview-author">
+              {comment.user?.profilePhoto && (
+                <img src={getImageUrl(comment.user.profilePhoto)} alt={comment.user.username} className="preview-avatar" />
+              )}
+              <span>{comment.user?.displayName || comment.user?.username || 'Unknown'}</span>
+            </div>
+            <p className="preview-content">{comment.content}</p>
+            <div className="preview-stats">
+              <span>📅 {new Date(comment.createdAt).toLocaleDateString()}</span>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    if (report.reportType === 'user' && report.reportedUser) {
+      const user = report.reportedUser;
+      return (
+        <div className="content-preview">
+          <h4>👤 Reported User Profile:</h4>
+          <div className="preview-card">
+            <div className="preview-author">
+              {user.profilePhoto && (
+                <img src={getImageUrl(user.profilePhoto)} alt={user.username} className="preview-avatar" />
+              )}
+              <div>
+                <div><strong>{user.displayName || user.username}</strong></div>
+                <div style={{ color: '#666', fontSize: '0.9em' }}>@{user.username}</div>
+                <div style={{ color: '#666', fontSize: '0.9em' }}>{user.email}</div>
+              </div>
+            </div>
+            {user.bio && <p className="preview-content">{user.bio}</p>}
+          </div>
+        </div>
+      );
+    }
+
+    return null;
+  };
+
   return (
     <div className="reports-list">
       <h2>Pending Reports</h2>
@@ -371,6 +477,24 @@ function ReportsTab({ reports, onResolve }) {
               <p><strong>Reporter:</strong> {report.reporter?.username || 'Unknown'} ({report.reporter?.email})</p>
               <p><strong>Reported User:</strong> {report.reportedUser?.username || 'N/A'} ({report.reportedUser?.email || 'N/A'})</p>
               {report.description && <p><strong>Description:</strong> {report.description}</p>}
+
+              <button
+                className="btn-preview"
+                onClick={() => setExpandedReport(expandedReport === report._id ? null : report._id)}
+                style={{
+                  marginTop: '10px',
+                  padding: '8px 16px',
+                  background: 'var(--pryde-purple)',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  cursor: 'pointer'
+                }}
+              >
+                {expandedReport === report._id ? '🔼 Hide Preview' : '🔽 Show Content Preview'}
+              </button>
+
+              {expandedReport === report._id && renderContentPreview(report)}
             </div>
             <div className="report-actions">
               <button

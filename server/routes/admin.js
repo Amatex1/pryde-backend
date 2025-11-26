@@ -68,18 +68,30 @@ router.get('/stats', checkPermission('canViewAnalytics'), async (req, res) => {
 router.get('/reports', checkPermission('canViewReports'), async (req, res) => {
   try {
     const { status, reportType, page = 1, limit = 20 } = req.query;
-    
+
     const query = {};
     if (status) query.status = status;
     if (reportType) query.reportType = reportType;
 
     const reports = await Report.find(query)
-      .populate('reporter', 'username displayName email')
-      .populate('reportedUser', 'username displayName email')
+      .populate('reporter', 'username displayName email profilePhoto')
+      .populate('reportedUser', 'username displayName email profilePhoto')
+      .populate('reportedPost')
+      .populate('reportedComment')
       .populate('reviewedBy', 'username displayName')
       .sort({ createdAt: -1 })
       .limit(parseInt(limit))
       .skip((parseInt(page) - 1) * parseInt(limit));
+
+    // Populate nested content for posts and comments
+    for (let report of reports) {
+      if (report.reportedPost) {
+        await report.populate('reportedPost.author', 'username displayName profilePhoto');
+      }
+      if (report.reportedComment) {
+        await report.populate('reportedComment.user', 'username displayName profilePhoto');
+      }
+    }
 
     const total = await Report.countDocuments(query);
 
