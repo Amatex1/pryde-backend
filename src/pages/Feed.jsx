@@ -501,6 +501,21 @@ function Feed({ onOpenMiniChat }) {
                     </div>
 
                     <div className="post-content">
+                      {/* Show "X shared X's post" if this is a shared post */}
+                      {post.isShared && post.originalPost && (
+                        <div style={{
+                          marginBottom: '1rem',
+                          padding: '0.5rem 0.75rem',
+                          background: 'var(--soft-lavender)',
+                          borderRadius: '8px',
+                          fontSize: '0.9rem',
+                          color: 'var(--text-main)'
+                        }}>
+                          <strong>{post.author?.displayName || post.author?.username}</strong> shared{' '}
+                          <strong>{post.originalPost.author?.displayName || post.originalPost.author?.username}'s</strong> post
+                        </div>
+                      )}
+
                       {/* Show share comment if this is a shared post */}
                       {post.isShared && post.shareComment && (
                         <p style={{ marginBottom: '1rem', fontStyle: 'italic' }}>

@@ -380,6 +380,16 @@ function Profile({ onOpenMiniChat }) {
             ) : (
               <div className="cover-placeholder shimmer"></div>
             )}
+            {/* Edit Profile button in top right of cover photo */}
+            {isOwnProfile && (
+              <button
+                className="btn-edit-profile-cover"
+                onClick={() => setEditProfileModal(true)}
+                title="Edit Profile"
+              >
+                ✏️ Edit Profile
+              </button>
+            )}
           </div>
 
           <div className="profile-info">
@@ -443,14 +453,6 @@ function Profile({ onOpenMiniChat }) {
               </div>
 
               {user.bio && <p className="profile-bio">{user.bio}</p>}
-
-              {isOwnProfile && (
-                <div className="profile-action-buttons">
-                  <button className="btn-edit-profile" onClick={() => setEditProfileModal(true)}>
-                    ✏️ Edit Profile
-                  </button>
-                </div>
-              )}
 
               {!isOwnProfile && (
                 <div className="profile-action-buttons">
@@ -618,6 +620,21 @@ function Profile({ onOpenMiniChat }) {
                       </div>
 
                       <div className="post-content">
+                        {/* Show "X shared X's post" if this is a shared post */}
+                        {post.isShared && post.originalPost && (
+                          <div style={{
+                            marginBottom: '1rem',
+                            padding: '0.5rem 0.75rem',
+                            background: 'var(--soft-lavender)',
+                            borderRadius: '8px',
+                            fontSize: '0.9rem',
+                            color: 'var(--text-main)'
+                          }}>
+                            <strong>{post.author?.displayName || post.author?.username}</strong> shared{' '}
+                            <strong>{post.originalPost.author?.displayName || post.originalPost.author?.username}'s</strong> post
+                          </div>
+                        )}
+
                         {/* Show share comment if this is a shared post */}
                         {post.isShared && post.shareComment && (
                           <p style={{ marginBottom: '1rem', fontStyle: 'italic' }}>
