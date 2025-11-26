@@ -16,6 +16,8 @@ function Admin({ onOpenMiniChat }) {
   const [users, setUsers] = useState([]);
   const [blocks, setBlocks] = useState([]);
   const [activity, setActivity] = useState(null);
+  const [securityLogs, setSecurityLogs] = useState([]);
+  const [securityStats, setSecurityStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [currentUser, setCurrentUser] = useState(null);
@@ -82,6 +84,10 @@ function Admin({ onOpenMiniChat }) {
       } else if (activeTab === 'activity') {
         const response = await api.get('/admin/activity?days=7');
         setActivity(response.data);
+      } else if (activeTab === 'security') {
+        const response = await api.get('/admin/security-logs?limit=100');
+        setSecurityLogs(response.data.logs);
+        setSecurityStats(response.data.stats);
       }
     } catch (error) {
       console.error('Load data error:', error);
@@ -309,6 +315,12 @@ function Admin({ onOpenMiniChat }) {
           >
             📈 Activity
           </button>
+          <button
+            className={`admin-tab ${activeTab === 'security' ? 'active' : ''}`}
+            onClick={() => setActiveTab('security')}
+          >
+            🔒 Security
+          </button>
         </div>
 
         <div className="admin-content">
@@ -333,6 +345,13 @@ function Admin({ onOpenMiniChat }) {
           )}
           {activeTab === 'activity' && activity && (
             <ActivityTab activity={activity} />
+          )}
+          {activeTab === 'security' && (
+            <SecurityTab
+              logs={securityLogs}
+              stats={securityStats}
+              onResolve={handleResolveSecurityLog}
+            />
           )}
         </div>
       </div>
