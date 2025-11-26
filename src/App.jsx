@@ -28,6 +28,7 @@ import CookiePolicy from './pages/legal/CookiePolicy';
 import Helplines from './pages/legal/Helplines';
 import Footer from './components/Footer';
 import MiniChat from './components/MiniChat';
+import SafetyWarning from './components/SafetyWarning';
 import { isAuthenticated, getCurrentUser } from './utils/auth';
 import { initializeSocket, disconnectSocket, onNewMessage } from './utils/socket';
 import { playNotificationSound, requestNotificationPermission } from './utils/notifications';
@@ -117,6 +118,9 @@ function App() {
   return (
     <Router>
       <div className="app-container">
+        {/* Safety Warning for high-risk regions */}
+        {isAuth && <SafetyWarning />}
+
         <Routes>
           {/* Public Home Page */}
           <Route path="/" element={<Home onOpenMiniChat={openMiniChat} />} />
