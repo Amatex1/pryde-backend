@@ -537,37 +537,4 @@ router.delete('/:id/comment/:commentId', auth, async (req, res) => {
   }
 });
 
-// @route   POST /api/posts/:id/share
-// @desc    Share a post
-// @access  Private
-router.post('/:id/share', auth, async (req, res) => {
-  try {
-    const post = await Post.findById(req.params.id);
-
-    if (!post) {
-      return res.status(404).json({ message: 'Post not found' });
-    }
-
-    const userId = req.userId || req.user._id;
-    const shareIndex = post.shares.findIndex(s => s.user.toString() === userId.toString());
-
-    if (shareIndex > -1) {
-      return res.status(400).json({ message: 'You have already shared this post' });
-    }
-
-    post.shares.push({
-      user: userId,
-      sharedAt: new Date()
-    });
-
-    await post.save();
-    await post.populate('author', 'username displayName profilePhoto');
-
-    res.json(post);
-  } catch (error) {
-    console.error('Share post error:', error);
-    res.status(500).json({ message: 'Server error' });
-  }
-});
-
 export default router;

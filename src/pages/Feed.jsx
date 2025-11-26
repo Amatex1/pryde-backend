@@ -499,37 +499,94 @@ function Feed({ onOpenMiniChat }) {
                     </div>
 
                     <div className="post-content">
-                      {post.content && (
-                        <p>
-                          {post.content.split(' ').map((word, index) =>
-                            word.startsWith('#') ? (
-                              <Link key={index} to={`/hashtag/${word.substring(1)}`} className="hashtag-link">
-                                {word}{' '}
-                              </Link>
-                            ) : (
-                              <span key={index}>{word} </span>
-                            )
-                          )}
+                      {/* Show share comment if this is a shared post */}
+                      {post.isShared && post.shareComment && (
+                        <p style={{ marginBottom: '1rem', fontStyle: 'italic' }}>
+                          {post.shareComment}
                         </p>
                       )}
 
-                      {post.media && post.media.length > 0 && (
-                        <div className={`post-media-grid ${post.media.length === 1 ? 'single' : post.media.length === 2 ? 'double' : 'multiple'}`}>
-                          {post.media.map((media, index) => (
-                            <div key={index} className="post-media-item">
-                              {media.type === 'video' ? (
-                                <video src={getImageUrl(media.url)} controls />
+                      {/* Show original post if this is a shared post */}
+                      {post.isShared && post.originalPost ? (
+                        <div className="shared-post-container" style={{
+                          border: '2px solid var(--soft-lavender)',
+                          borderRadius: '12px',
+                          padding: '1rem',
+                          marginTop: '0.5rem',
+                          background: 'var(--background-light)'
+                        }}>
+                          <div className="shared-post-header" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
+                            <div className="author-avatar" style={{ width: '32px', height: '32px' }}>
+                              {post.originalPost.author?.profilePhoto ? (
+                                <img src={getImageUrl(post.originalPost.author.profilePhoto)} alt={post.originalPost.author.username} />
                               ) : (
-                                <img
-                                  src={getImageUrl(media.url)}
-                                  alt={`Post media ${index + 1}`}
-                                  onClick={() => setPhotoViewerImage(getImageUrl(media.url))}
-                                  style={{ cursor: 'pointer' }}
-                                />
+                                <span>{post.originalPost.author?.displayName?.charAt(0).toUpperCase() || 'U'}</span>
                               )}
                             </div>
-                          ))}
+                            <div>
+                              <div style={{ fontWeight: '600', fontSize: '0.9rem' }}>
+                                {post.originalPost.author?.displayName || post.originalPost.author?.username}
+                              </div>
+                              <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                                {new Date(post.originalPost.createdAt).toLocaleDateString()}
+                              </div>
+                            </div>
+                          </div>
+                          {post.originalPost.content && <p>{post.originalPost.content}</p>}
+                          {post.originalPost.media && post.originalPost.media.length > 0 && (
+                            <div className={`post-media-grid ${post.originalPost.media.length === 1 ? 'single' : post.originalPost.media.length === 2 ? 'double' : 'multiple'}`}>
+                              {post.originalPost.media.map((media, index) => (
+                                <div key={index} className="post-media-item">
+                                  {media.type === 'video' ? (
+                                    <video src={getImageUrl(media.url)} controls />
+                                  ) : (
+                                    <img
+                                      src={getImageUrl(media.url)}
+                                      alt={`Shared post media ${index + 1}`}
+                                      onClick={() => setPhotoViewerImage(getImageUrl(media.url))}
+                                      style={{ cursor: 'pointer' }}
+                                    />
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          )}
                         </div>
+                      ) : (
+                        <>
+                          {post.content && (
+                            <p>
+                              {post.content.split(' ').map((word, index) =>
+                                word.startsWith('#') ? (
+                                  <Link key={index} to={`/hashtag/${word.substring(1)}`} className="hashtag-link">
+                                    {word}{' '}
+                                  </Link>
+                                ) : (
+                                  <span key={index}>{word} </span>
+                                )
+                              )}
+                            </p>
+                          )}
+
+                          {post.media && post.media.length > 0 && (
+                            <div className={`post-media-grid ${post.media.length === 1 ? 'single' : post.media.length === 2 ? 'double' : 'multiple'}`}>
+                              {post.media.map((media, index) => (
+                                <div key={index} className="post-media-item">
+                                  {media.type === 'video' ? (
+                                    <video src={getImageUrl(media.url)} controls />
+                                  ) : (
+                                    <img
+                                      src={getImageUrl(media.url)}
+                                      alt={`Post media ${index + 1}`}
+                                      onClick={() => setPhotoViewerImage(getImageUrl(media.url))}
+                                      style={{ cursor: 'pointer' }}
+                                    />
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </>
                       )}
                     </div>
 

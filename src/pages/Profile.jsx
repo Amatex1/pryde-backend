@@ -556,33 +556,92 @@ function Profile({ onOpenMiniChat }) {
                       </div>
 
                       <div className="post-content">
-                        <p>{post.content}</p>
-                        {post.media && post.media.length > 0 && (
-                          <div className="post-media">
-                            {post.media.map((mediaItem, index) => (
-                              <div key={index} className="media-item">
-                                {mediaItem.type === 'image' ? (
-                                  <img
-                                    src={getImageUrl(mediaItem.url)}
-                                    alt="Post media"
-                                    onClick={() => setPhotoViewerImage(getImageUrl(mediaItem.url))}
-                                    style={{ cursor: 'pointer' }}
-                                  />
+                        {/* Show share comment if this is a shared post */}
+                        {post.isShared && post.shareComment && (
+                          <p style={{ marginBottom: '1rem', fontStyle: 'italic' }}>
+                            {post.shareComment}
+                          </p>
+                        )}
+
+                        {/* Show original post if this is a shared post */}
+                        {post.isShared && post.originalPost ? (
+                          <div className="shared-post-container" style={{
+                            border: '2px solid var(--soft-lavender)',
+                            borderRadius: '12px',
+                            padding: '1rem',
+                            marginTop: '0.5rem',
+                            background: 'var(--background-light)'
+                          }}>
+                            <div className="shared-post-header" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
+                              <div className="author-avatar" style={{ width: '32px', height: '32px' }}>
+                                {post.originalPost.author?.profilePhoto ? (
+                                  <img src={getImageUrl(post.originalPost.author.profilePhoto)} alt={post.originalPost.author.username} />
                                 ) : (
-                                  <video controls>
-                                    <source src={getImageUrl(mediaItem.url)} type="video/mp4" />
-                                  </video>
+                                  <span>{post.originalPost.author?.displayName?.charAt(0).toUpperCase() || 'U'}</span>
                                 )}
                               </div>
-                            ))}
+                              <div>
+                                <div style={{ fontWeight: '600', fontSize: '0.9rem' }}>
+                                  {post.originalPost.author?.displayName || post.originalPost.author?.username}
+                                </div>
+                                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                                  {new Date(post.originalPost.createdAt).toLocaleDateString()}
+                                </div>
+                              </div>
+                            </div>
+                            {post.originalPost.content && <p>{post.originalPost.content}</p>}
+                            {post.originalPost.media && post.originalPost.media.length > 0 && (
+                              <div className="post-media">
+                                {post.originalPost.media.map((mediaItem, index) => (
+                                  <div key={index} className="media-item">
+                                    {mediaItem.type === 'image' ? (
+                                      <img
+                                        src={getImageUrl(mediaItem.url)}
+                                        alt="Shared post media"
+                                        onClick={() => setPhotoViewerImage(getImageUrl(mediaItem.url))}
+                                        style={{ cursor: 'pointer' }}
+                                      />
+                                    ) : (
+                                      <video controls>
+                                        <source src={getImageUrl(mediaItem.url)} type="video/mp4" />
+                                      </video>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            )}
                           </div>
+                        ) : (
+                          <>
+                            {post.content && <p>{post.content}</p>}
+                            {post.media && post.media.length > 0 && (
+                              <div className="post-media">
+                                {post.media.map((mediaItem, index) => (
+                                  <div key={index} className="media-item">
+                                    {mediaItem.type === 'image' ? (
+                                      <img
+                                        src={getImageUrl(mediaItem.url)}
+                                        alt="Post media"
+                                        onClick={() => setPhotoViewerImage(getImageUrl(mediaItem.url))}
+                                        style={{ cursor: 'pointer' }}
+                                      />
+                                    ) : (
+                                      <video controls>
+                                        <source src={getImageUrl(mediaItem.url)} type="video/mp4" />
+                                      </video>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </>
                         )}
                       </div>
 
                       <div className="post-stats">
                         <span>{post.likes?.length || 0} likes</span>
                         <span>{post.comments?.length || 0} comments</span>
-                        <span>{post.shares || 0} shares</span>
+                        <span>{post.shares?.length || 0} shares</span>
                       </div>
 
                       <div className="post-actions">
