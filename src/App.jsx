@@ -23,6 +23,8 @@ import Contact from './pages/legal/Contact';
 import FAQ from './pages/legal/FAQ';
 import LegalRequests from './pages/legal/LegalRequests';
 import DMCA from './pages/legal/DMCA';
+import AcceptableUse from './pages/legal/AcceptableUse';
+import CookiePolicy from './pages/legal/CookiePolicy';
 import Footer from './components/Footer';
 import MiniChat from './components/MiniChat';
 import { isAuthenticated, getCurrentUser } from './utils/auth';
@@ -127,11 +129,14 @@ function App() {
           <Route path="/terms" element={<><Terms /><Footer /></>} />
           <Route path="/privacy" element={<><Privacy /><Footer /></>} />
           <Route path="/community" element={<><Community /><Footer /></>} />
+          <Route path="/community-guidelines" element={<><Community /><Footer /></>} />
           <Route path="/safety" element={<><Safety /><Footer /></>} />
           <Route path="/contact" element={<><Contact /><Footer /></>} />
           <Route path="/faq" element={<><FAQ /><Footer /></>} />
           <Route path="/legal-requests" element={<><LegalRequests /><Footer /></>} />
           <Route path="/dmca" element={<><DMCA /><Footer /></>} />
+          <Route path="/acceptable-use" element={<><AcceptableUse /><Footer /></>} />
+          <Route path="/cookie-policy" element={<><CookiePolicy /><Footer /></>} />
         </Routes>
 
         {/* Mini Chat Boxes */}
