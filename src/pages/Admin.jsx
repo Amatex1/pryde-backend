@@ -185,6 +185,19 @@ function Admin({ onOpenMiniChat }) {
     }
   };
 
+  const handleResolveSecurityLog = async (logId) => {
+    const notes = await showPrompt('Add notes (optional):', 'Resolve Security Log', 'Notes', '');
+
+    try {
+      await api.put(`/admin/security-logs/${logId}/resolve`, { notes });
+      showAlert('Security log marked as resolved', 'Success');
+      loadTabData();
+    } catch (error) {
+      console.error('Resolve security log error:', error);
+      showAlert('Failed to resolve security log', 'Error');
+    }
+  };
+
   if (loading) {
     return (
       <div className="page-container">
@@ -736,8 +749,154 @@ function ActivityTab({ activity }) {
   );
 }
 
-export default Admin;
+// Security Tab Component
+function SecurityTab({ logs, stats, onResolve }) {
+  const [filter, setFilter] = useState('all');
 
-// Add return statement to main component
-// Find the return statement and add loading/error states
+  const filteredLogs = logs.filter(log => {
+    if (filter === 'all') return true;
+    if (filter === 'unresolved') return !log.resolved;
+    if (filter === 'underage') return log.type.includes('underage');
+    return log.type === filter;
+  });
+
+  const getSeverityColor = (severity) => {
+    switch (severity) {
+      case 'critical': return '#dc3545';
+      case 'high': return '#ff8c00';
+      case 'medium': return '#ffc107';
+      case 'low': return '#28a745';
+      default: return '#6c757d';
+    }
+  };
+
+  const getTypeLabel = (type) => {
+    switch (type) {
+      case 'underage_registration': return '🚫 Underage Registration';
+      case 'underage_login': return '🔒 Underage Login';
+      case 'underage_access': return '⚠️ Underage Access';
+      case 'failed_login': return '❌ Failed Login';
+      case 'suspicious_activity': return '🔍 Suspicious Activity';
+      default: return type;
+    }
+  };
+
+  return (
+    <div className="security-container">
+      <h2>🔒 Security Logs</h2>
+
+      {stats && (
+        <div className="security-stats">
+          <div className="stat-card">
+            <h3>Total Logs</h3>
+            <p className="stat-number">{stats.total}</p>
+          </div>
+          <div className="stat-card">
+            <h3>Unresolved</h3>
+            <p className="stat-number" style={{ color: '#ff8c00' }}>{stats.unresolved}</p>
+          </div>
+          <div className="stat-card">
+            <h3>Underage Attempts</h3>
+            <p className="stat-number" style={{ color: '#dc3545' }}>
+              {stats.byType.underage_registration + stats.byType.underage_login + stats.byType.underage_access}
+            </p>
+          </div>
+          <div className="stat-card">
+            <h3>Critical</h3>
+            <p className="stat-number" style={{ color: '#dc3545' }}>{stats.bySeverity.critical}</p>
+          </div>
+        </div>
+      )}
+
+      <div className="security-filters">
+        <button
+          className={`filter-btn ${filter === 'all' ? 'active' : ''}`}
+          onClick={() => setFilter('all')}
+        >
+          All ({logs.length})
+        </button>
+        <button
+          className={`filter-btn ${filter === 'unresolved' ? 'active' : ''}`}
+          onClick={() => setFilter('unresolved')}
+        >
+          Unresolved ({logs.filter(l => !l.resolved).length})
+        </button>
+        <button
+          className={`filter-btn ${filter === 'underage' ? 'active' : ''}`}
+          onClick={() => setFilter('underage')}
+        >
+          Underage ({logs.filter(l => l.type.includes('underage')).length})
+        </button>
+      </div>
+
+      <div className="security-logs-list">
+        {filteredLogs.length === 0 ? (
+          <div className="empty-state">No security logs found</div>
+        ) : (
+          filteredLogs.map(log => (
+            <div key={log._id} className={`security-log-item ${log.resolved ? 'resolved' : 'unresolved'}`}>
+              <div className="log-header">
+                <span className="log-type">{getTypeLabel(log.type)}</span>
+                <span
+                  className="log-severity"
+                  style={{
+                    background: getSeverityColor(log.severity),
+                    color: 'white',
+                    padding: '0.25rem 0.75rem',
+                    borderRadius: '12px',
+                    fontSize: '0.75rem',
+                    fontWeight: 'bold'
+                  }}
+                >
+                  {log.severity.toUpperCase()}
+                </span>
+                <span className="log-date">{new Date(log.createdAt).toLocaleString()}</span>
+              </div>
+
+              <div className="log-details">
+                {log.username && <p><strong>Username:</strong> {log.username}</p>}
+                {log.email && <p><strong>Email:</strong> {log.email}</p>}
+                {log.calculatedAge !== null && <p><strong>Age:</strong> {log.calculatedAge} years old</p>}
+                {log.birthday && <p><strong>Birthday:</strong> {new Date(log.birthday).toLocaleDateString()}</p>}
+                {log.ipAddress && <p><strong>IP:</strong> {log.ipAddress}</p>}
+                {log.details && <p><strong>Details:</strong> {log.details}</p>}
+                {log.action && (
+                  <p>
+                    <strong>Action:</strong>
+                    <span style={{
+                      marginLeft: '0.5rem',
+                      padding: '0.25rem 0.5rem',
+                      background: log.action === 'banned' ? '#dc3545' : log.action === 'blocked' ? '#ff8c00' : '#6c757d',
+                      color: 'white',
+                      borderRadius: '4px',
+                      fontSize: '0.875rem'
+                    }}>
+                      {log.action.toUpperCase()}
+                    </span>
+                  </p>
+                )}
+              </div>
+
+              {log.resolved ? (
+                <div className="log-resolved">
+                  ✅ Resolved by {log.resolvedBy?.username || 'Admin'} on {new Date(log.resolvedAt).toLocaleString()}
+                  {log.notes && <p className="log-notes"><strong>Notes:</strong> {log.notes}</p>}
+                </div>
+              ) : (
+                <button
+                  className="btn-resolve-log"
+                  onClick={() => onResolve(log._id)}
+                >
+                  Mark as Resolved
+                </button>
+              )}
+            </div>
+          ))
+        )}
+      </div>
+    </div>
+  );
+}
+
+export default Admin;
 
