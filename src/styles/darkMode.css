@@ -433,3 +433,62 @@
   background: var(--card-surface) !important;
 }
 
+/* Session Management Dark Mode */
+[data-theme="dark"] .session-card {
+  background: var(--card-surface);
+  border-color: #444;
+  color: var(--text-main);
+}
+
+[data-theme="dark"] .session-card.current-session {
+  background: linear-gradient(135deg, rgba(108, 92, 231, 0.15) 0%, var(--card-surface) 100%);
+  border-color: var(--pryde-purple);
+}
+
+[data-theme="dark"] .session-details {
+  color: var(--text-muted);
+}
+
+[data-theme="dark"] .session-time {
+  color: var(--text-muted);
+}
+
+/* Account Management Cards Dark Mode */
+[data-theme="dark"] .account-management-card {
+  background: var(--card-surface);
+  border-color: #444;
+  color: var(--text-main);
+}
+
+[data-theme="dark"] .account-management-card h3 {
+  color: var(--text-main);
+}
+
+[data-theme="dark"] .account-management-card p {
+  color: var(--text-muted);
+}
+
+/* Danger Button Dark Mode */
+[data-theme="dark"] .btn-danger {
+  background: rgba(255, 107, 107, 0.15);
+  color: #ff6b6b;
+  border: 1px solid #ff6b6b;
+}
+
+[data-theme="dark"] .btn-danger:hover {
+  background: #ff6b6b;
+  color: white;
+}
+
+/* Backup codes dark mode */
+[data-theme="dark"] .backup-codes-container {
+  background: var(--card-surface);
+  border-color: var(--pryde-purple);
+}
+
+[data-theme="dark"] .backup-code {
+  background: rgba(108, 92, 231, 0.1);
+  color: var(--pryde-purple);
+  border-color: var(--pryde-purple);
+}
+

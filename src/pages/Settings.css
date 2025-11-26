@@ -418,6 +418,26 @@
   box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
 }
 
+/* Danger button for 2FA disable */
+.btn-danger {
+  padding: 0.75rem 1.5rem;
+  border-radius: 12px;
+  border: 1px solid #ff6b6b;
+  background: rgba(255, 107, 107, 0.1);
+  color: #ff6b6b;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+.btn-danger:hover {
+  background: #ff6b6b;
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
+}
+
 @media (max-width: 768px) {
   .action-item {
     flex-direction: column;

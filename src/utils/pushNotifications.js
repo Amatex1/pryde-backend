@@ -52,14 +52,39 @@ export const sendTestNotification = async () => {
   console.log("📨 Sending test notification...");
 
   try {
-    // Simulated test notification
-    // In a real implementation, this would send a request to the backend
-    if (!isSubscribed) {
+    // Check if browser supports notifications
+    if (!("Notification" in window)) {
+      alert("This browser does not support desktop notifications");
       return false;
     }
-    return true;
+
+    // Request permission if not granted
+    if (Notification.permission === "default") {
+      const permission = await Notification.requestPermission();
+      if (permission !== "granted") {
+        alert("Notification permission denied");
+        return false;
+      }
+    }
+
+    // Check if permission is granted
+    if (Notification.permission === "granted") {
+      // Create a test notification
+      new Notification("Pryde Social Test Notification", {
+        body: "Push notifications are working! 🎉",
+        icon: "/logo192.png",
+        badge: "/logo192.png",
+        tag: "test-notification",
+        requireInteraction: false
+      });
+      return true;
+    } else {
+      alert("Notification permission is denied. Please enable notifications in your browser settings.");
+      return false;
+    }
   } catch (error) {
     console.error("Failed to send test notification:", error);
+    alert("Failed to send test notification: " + error.message);
     return false;
   }
 };
