@@ -50,6 +50,7 @@ function Feed({ onOpenMiniChat }) {
   const [trending, setTrending] = useState([]);
   const [bookmarkedPosts, setBookmarkedPosts] = useState([]);
   const [shareModal, setShareModal] = useState({ isOpen: false, post: null });
+  const [showMobileSidebar, setShowMobileSidebar] = useState(false);
   const currentUser = getCurrentUser();
   const postRefs = useRef({});
   const commentRefs = useRef({});
@@ -501,7 +502,24 @@ function Feed({ onOpenMiniChat }) {
   return (
     <div className="page-container">
       <Navbar onOpenMiniChat={onOpenMiniChat} />
-      
+
+      {/* Mobile Sidebar Toggle Button */}
+      <button
+        className="mobile-sidebar-toggle"
+        onClick={() => setShowMobileSidebar(!showMobileSidebar)}
+        aria-label="Toggle sidebar"
+      >
+        {showMobileSidebar ? '✕' : '☰'}
+      </button>
+
+      {/* Mobile Sidebar Overlay */}
+      {showMobileSidebar && (
+        <div
+          className="mobile-sidebar-overlay"
+          onClick={() => setShowMobileSidebar(false)}
+        />
+      )}
+
       <div className="feed-container">
         <div className="feed-content">
           <div className="create-post glossy fade-in">
@@ -1109,7 +1127,7 @@ function Feed({ onOpenMiniChat }) {
           </div>
         </div>
 
-        <div className="feed-sidebar">
+        <div className={`feed-sidebar ${showMobileSidebar ? 'mobile-visible' : ''}`}>
           {/* Trending Topics */}
           <div className="sidebar-card glossy">
             <h3 className="sidebar-title">Trending Topics</h3>

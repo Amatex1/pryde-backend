@@ -45,6 +45,7 @@ function Messages({ onOpenMiniChat }) {
   const [editMessageText, setEditMessageText] = useState('');
   const [activeTab, setActiveTab] = useState('all'); // 'all' or 'unread'
   const [replyingTo, setReplyingTo] = useState(null); // Message being replied to
+  const [showMobileSidebar, setShowMobileSidebar] = useState(false);
   const messagesEndRef = useRef(null);
   const typingTimeoutRef = useRef(null);
 
@@ -448,10 +449,27 @@ function Messages({ onOpenMiniChat }) {
   return (
     <div className="page-container">
       <Navbar onOpenMiniChat={onOpenMiniChat} />
-      
+
+      {/* Mobile Sidebar Toggle Button */}
+      <button
+        className="mobile-sidebar-toggle"
+        onClick={() => setShowMobileSidebar(!showMobileSidebar)}
+        aria-label="Toggle conversations"
+      >
+        {showMobileSidebar ? '✕' : '💬'}
+      </button>
+
+      {/* Mobile Sidebar Overlay */}
+      {showMobileSidebar && (
+        <div
+          className="mobile-sidebar-overlay"
+          onClick={() => setShowMobileSidebar(false)}
+        />
+      )}
+
       <div className="messages-container">
         <div className="messages-layout glossy fade-in">
-          <div className="conversations-sidebar">
+          <div className={`conversations-sidebar ${showMobileSidebar ? 'mobile-visible' : ''}`}>
             <div className="sidebar-header">
               <h2 className="sidebar-title">💬 Messages</h2>
               <div className="header-buttons">
@@ -492,6 +510,7 @@ function Messages({ onOpenMiniChat }) {
                           onClick={() => {
                             setSelectedChat(group._id);
                             setSelectedChatType('group');
+                            setShowMobileSidebar(false);
                           }}
                         >
                           <div className="conv-avatar group-avatar">
@@ -538,6 +557,7 @@ function Messages({ onOpenMiniChat }) {
                             onClick={() => {
                               setSelectedChat(conv._id);
                               setSelectedChatType('user');
+                              setShowMobileSidebar(false);
                             }}
                           >
                       <div className="conv-avatar">
