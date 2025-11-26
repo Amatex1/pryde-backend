@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
+import CustomModal from '../components/CustomModal';
+import { useModal } from '../hooks/useModal';
 import api from '../utils/api';
 import { getCurrentUser, setCurrentUser, logout } from '../utils/auth';
 import {
@@ -12,6 +14,7 @@ import {
 import './Settings.css';
 
 function Settings({ onOpenMiniChat }) {
+  const { modalState, closeModal, showAlert, showConfirm, showPrompt } = useModal();
   const navigate = useNavigate();
   const currentUser = getCurrentUser();
   const [formData, setFormData] = useState({
@@ -179,10 +182,12 @@ function Settings({ onOpenMiniChat }) {
   };
 
   const handleDeactivateAccount = async () => {
-    const confirmed = window.confirm(
-      'Are you sure you want to deactivate your account?\n\n' +
+    const confirmed = await showConfirm(
       'Your profile will be hidden and you won\'t be able to use Pryde Social until you reactivate.\n\n' +
-      'You can reactivate by logging in again.'
+      'You can reactivate by logging in again.',
+      'Deactivate Account?',
+      'Deactivate',
+      'Cancel'
     );
 
     if (!confirmed) return;
@@ -191,7 +196,7 @@ function Settings({ onOpenMiniChat }) {
       await api.put('/users/deactivate');
       logout();
       navigate('/login');
-      alert('Your account has been deactivated. You can reactivate by logging in again.');
+      showAlert('Your account has been deactivated. You can reactivate by logging in again.', 'Account Deactivated');
     } catch (error) {
       console.error('Deactivate account error:', error);
       setMessage('Failed to deactivate account');
@@ -199,24 +204,26 @@ function Settings({ onOpenMiniChat }) {
   };
 
   const handleDeleteAccount = async () => {
-    const confirmed = window.confirm(
+    const confirmed = await showConfirm(
       '⚠️ WARNING: This action is PERMANENT and CANNOT be undone!\n\n' +
-      'Are you absolutely sure you want to delete your account?\n\n' +
       'This will permanently delete:\n' +
       '• Your profile and all personal information\n' +
       '• All your posts and comments\n' +
       '• All your messages\n' +
       '• All your friend connections\n' +
       '• Everything associated with your account\n\n' +
-      'Type "DELETE" in the next prompt to confirm.'
+      'Type "DELETE" in the next prompt to confirm.',
+      'Delete Account Permanently?',
+      'Continue',
+      'Cancel'
     );
 
     if (!confirmed) return;
 
-    const confirmation = prompt('Type DELETE to confirm account deletion:');
+    const confirmation = await showPrompt('Type DELETE to confirm account deletion:', 'Confirm Deletion', 'Type DELETE');
 
     if (confirmation !== 'DELETE') {
-      alert('Account deletion cancelled. You must type DELETE exactly to confirm.');
+      showAlert('Account deletion cancelled. You must type DELETE exactly to confirm.', 'Cancelled');
       return;
     }
 
@@ -224,7 +231,7 @@ function Settings({ onOpenMiniChat }) {
       await api.delete('/users/account');
       logout();
       navigate('/');
-      alert('Your account has been permanently deleted.');
+      showAlert('Your account has been permanently deleted.', 'Account Deleted');
     } catch (error) {
       console.error('Delete account error:', error);
       setMessage('Failed to delete account');
