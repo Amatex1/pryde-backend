@@ -944,6 +944,26 @@
   .reply-input-box {
     margin-left: 0;
     padding: 0.5rem;
+    border-radius: 8px;
+  }
+
+  .reply-input {
+    padding: 0.5rem;
+    font-size: 0.875rem;
+    border-radius: 6px;
+  }
+
+  .reply-actions {
+    flex-direction: row;
+    gap: 0.5rem;
+  }
+
+  .btn-submit-reply,
+  .btn-cancel-reply {
+    flex: 1;
+    padding: 0.5rem;
+    font-size: 0.8rem;
+    border-radius: 6px;
   }
 
   .profile-tabs {
@@ -1026,5 +1046,21 @@
   .btn-message {
     width: 100%;
     min-width: 100%;
+  }
+
+  .reply-input-box {
+    padding: 0.4rem;
+    margin-top: 0.5rem;
+  }
+
+  .reply-input {
+    padding: 0.4rem;
+    font-size: 0.8rem;
+  }
+
+  .btn-submit-reply,
+  .btn-cancel-reply {
+    padding: 0.4rem;
+    font-size: 0.75rem;
   }
 }
