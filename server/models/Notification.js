@@ -14,7 +14,7 @@ const notificationSchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    enum: ['friend_request', 'friend_accept', 'message', 'mention'],
+    enum: ['friend_request', 'friend_accept', 'message', 'mention', 'like', 'comment', 'share'],
     required: true
   },
   message: {
@@ -27,6 +27,13 @@ const notificationSchema = new mongoose.Schema({
   },
   link: {
     type: String
+  },
+  postId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Post'
+  },
+  commentId: {
+    type: mongoose.Schema.Types.ObjectId
   },
   createdAt: {
     type: Date,

@@ -38,8 +38,10 @@ function NotificationBell() {
   const fetchNotifications = async () => {
     try {
       const response = await api.get('/notifications');
-      setNotifications(response.data);
-      const unread = response.data.filter(n => !n.read).length;
+      // Filter out message notifications - they should only appear in Messages page
+      const filteredNotifications = response.data.filter(n => n.type !== 'message');
+      setNotifications(filteredNotifications);
+      const unread = filteredNotifications.filter(n => !n.read).length;
       setUnreadCount(unread);
     } catch (error) {
       console.error('Failed to fetch notifications:', error);
@@ -73,12 +75,21 @@ function NotificationBell() {
     setShowDropdown(false);
 
     // Navigate based on notification type
-    if (notification.type === 'friend_request') {
+    if (notification.type === 'friend_request' || notification.type === 'friend_accept') {
       navigate('/friends');
-    } else if (notification.type === 'like' || notification.type === 'comment' || notification.type === 'share') {
-      navigate('/feed');
     } else if (notification.postId) {
-      navigate(`/feed?post=${notification.postId}`);
+      // Navigate to specific post with comment highlight if it's a comment notification
+      if (notification.type === 'comment' && notification.commentId) {
+        navigate(`/feed?post=${notification.postId}&comment=${notification.commentId}`);
+      } else {
+        navigate(`/feed?post=${notification.postId}`);
+      }
+    } else if (notification.link) {
+      // Use the link field if available
+      navigate(notification.link);
+    } else {
+      // Default to feed
+      navigate('/feed');
     }
   };
 

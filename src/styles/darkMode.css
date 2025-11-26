@@ -148,3 +148,239 @@
   background: rgba(108, 92, 231, 0.3);
 }
 
+/* ========================================
+   COMPREHENSIVE TEXT COLOR OVERRIDES
+   Fix hardcoded dark colors for dark mode
+   ======================================== */
+
+/* Override all hardcoded #2B2B2B (dark text) */
+[data-theme="dark"] h1,
+[data-theme="dark"] h2,
+[data-theme="dark"] h3,
+[data-theme="dark"] h4,
+[data-theme="dark"] h5,
+[data-theme="dark"] h6,
+[data-theme="dark"] p,
+[data-theme="dark"] span,
+[data-theme="dark"] div,
+[data-theme="dark"] .modal-title,
+[data-theme="dark"] .section-title,
+[data-theme="dark"] .author-name,
+[data-theme="dark"] .blocked-user-name,
+[data-theme="dark"] .post-content,
+[data-theme="dark"] .no-bookmarks h2,
+[data-theme="dark"] .emoji-picker-header h4,
+[data-theme="dark"] .privacy-title {
+  color: var(--text-main) !important;
+}
+
+/* Override all hardcoded #616161 (muted text) */
+[data-theme="dark"] .author-username,
+[data-theme="dark"] .blocked-user-username,
+[data-theme="dark"] .no-bookmarks p,
+[data-theme="dark"] .emoji-picker-close,
+[data-theme="dark"] .modal-close,
+[data-theme="dark"] .setting-item label,
+[data-theme="dark"] .post-timestamp,
+[data-theme="dark"] .bookmark-timestamp {
+  color: var(--text-muted) !important;
+}
+
+/* Bookmarks page */
+[data-theme="dark"] .bookmarks-container {
+  background: var(--background-light);
+}
+
+[data-theme="dark"] .bookmark-card {
+  background: var(--card-surface);
+  border-color: var(--border-light);
+}
+
+[data-theme="dark"] .bookmark-card:hover {
+  border-color: var(--pryde-purple);
+}
+
+/* Privacy Settings */
+[data-theme="dark"] .privacy-container {
+  background: var(--background-light);
+}
+
+[data-theme="dark"] .privacy-card {
+  background: var(--card-surface);
+  border-color: var(--border-light);
+}
+
+[data-theme="dark"] .privacy-section {
+  background: var(--card-surface);
+  border-color: var(--border-light);
+}
+
+[data-theme="dark"] .setting-item select {
+  background: rgba(22, 33, 62, 0.6);
+  color: var(--text-main);
+  border-color: var(--border-light);
+}
+
+[data-theme="dark"] .blocked-user-item {
+  background: var(--card-surface);
+  border-color: var(--border-light);
+}
+
+/* Emoji Picker */
+[data-theme="dark"] .emoji-picker {
+  background: var(--card-surface);
+  border-color: var(--border-light);
+}
+
+[data-theme="dark"] .emoji-button {
+  background: rgba(22, 33, 62, 0.6);
+}
+
+[data-theme="dark"] .emoji-button:hover {
+  background: rgba(108, 92, 231, 0.3);
+}
+
+/* Two Factor Setup */
+[data-theme="dark"] .modal-close:hover {
+  background: rgba(108, 92, 231, 0.2);
+  color: var(--text-main);
+}
+
+[data-theme="dark"] .qr-code-container {
+  background: var(--card-surface);
+  border-color: var(--border-light);
+}
+
+/* Session Management */
+[data-theme="dark"] .session-item {
+  background: var(--card-surface);
+  border-color: var(--border-light);
+}
+
+/* Legal Pages */
+[data-theme="dark"] .legal-container {
+  background: var(--background-light);
+  color: var(--text-main);
+}
+
+[data-theme="dark"] .legal-content h1,
+[data-theme="dark"] .legal-content h2,
+[data-theme="dark"] .legal-content h3,
+[data-theme="dark"] .legal-content p,
+[data-theme="dark"] .legal-content li {
+  color: var(--text-main) !important;
+}
+
+/* Footer */
+[data-theme="dark"] .footer {
+  background: var(--card-surface);
+  border-top-color: var(--border-light);
+}
+
+[data-theme="dark"] .footer-section h3,
+[data-theme="dark"] .footer-section p,
+[data-theme="dark"] .footer-section a,
+[data-theme="dark"] .footer-bottom p {
+  color: var(--text-muted) !important;
+}
+
+[data-theme="dark"] .footer-section a:hover {
+  color: var(--pryde-purple) !important;
+}
+
+/* Admin Page */
+[data-theme="dark"] .admin-container {
+  background: var(--background-light);
+}
+
+[data-theme="dark"] .admin-card {
+  background: var(--card-surface);
+  border-color: var(--border-light);
+}
+
+/* Feed Page */
+[data-theme="dark"] .feed-container {
+  background: var(--background-light);
+}
+
+[data-theme="dark"] .create-post-card {
+  background: var(--card-surface);
+  border-color: var(--border-light);
+}
+
+[data-theme="dark"] .post-media-item video {
+  background: #000;
+}
+
+/* Profile Page */
+[data-theme="dark"] .profile-container {
+  background: var(--background-light);
+}
+
+[data-theme="dark"] .profile-header {
+  background: var(--card-surface);
+  border-color: var(--border-light);
+}
+
+/* Messages Page */
+[data-theme="dark"] .messages-container {
+  background: var(--background-light);
+}
+
+[data-theme="dark"] .conversation-list {
+  background: var(--card-surface);
+  border-color: var(--border-light);
+}
+
+[data-theme="dark"] .message-input-container {
+  background: var(--card-surface);
+  border-color: var(--border-light);
+}
+
+/* Friends Page */
+[data-theme="dark"] .friends-container {
+  background: var(--background-light);
+}
+
+[data-theme="dark"] .friends-card {
+  background: var(--card-surface);
+  border-color: var(--border-light);
+}
+
+/* Auth Page */
+[data-theme="dark"] .auth-container {
+  background: var(--background-light);
+}
+
+[data-theme="dark"] .auth-card {
+  background: var(--card-surface);
+  border-color: var(--border-light);
+}
+
+/* Global text color fix for any remaining hardcoded colors */
+[data-theme="dark"] * {
+  border-color: var(--border-light);
+}
+
+/* Ensure all text is readable in dark mode */
+[data-theme="dark"] *:not(.btn-primary):not(.message-bubble):not(button) {
+  color: inherit;
+}
+
+/* Fix inline background gradients in Settings page */
+[data-theme="dark"] .settings-section[style*="linear-gradient"] {
+  background: var(--card-surface) !important;
+}
+
+/* Fix warning/alert boxes */
+[data-theme="dark"] div[style*="#fff3cd"],
+[data-theme="dark"] div[style*="#f8d7da"] {
+  background: var(--card-surface) !important;
+  border-color: var(--border-light) !important;
+}
+
+/* Fix manual entry boxes */
+[data-theme="dark"] .manual-entry {
+  background: var(--card-surface) !important;
+}
+

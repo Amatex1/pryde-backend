@@ -86,7 +86,7 @@ function TwoFactorSetup({ onClose, onSuccess }) {
         <h2 className="modal-title">🔐 Enable Two-Factor Authentication</h2>
 
         {error && (
-          <div className="error-message" style={{ background: '#f8d7da', color: '#721c24', padding: '10px', borderRadius: '5px', marginBottom: '15px' }}>
+          <div className="error-message" style={{ background: 'var(--error)', color: 'white', padding: '10px', borderRadius: '5px', marginBottom: '15px' }}>
             {error}
           </div>
         )}
@@ -103,7 +103,7 @@ function TwoFactorSetup({ onClose, onSuccess }) {
         {step === 2 && (
           <div className="setup-step">
             <h3>Step 1: Scan QR Code</h3>
-            <p style={{ color: '#616161', marginBottom: '15px' }}>
+            <p style={{ color: 'var(--text-muted)', marginBottom: '15px' }}>
               Use an authenticator app like Google Authenticator, Authy, or Microsoft Authenticator to scan this QR code:
             </p>
 
@@ -113,13 +113,13 @@ function TwoFactorSetup({ onClose, onSuccess }) {
               </div>
             )}
 
-            <div className="manual-entry" style={{ marginTop: '20px', padding: '15px', background: '#f7f7f7', borderRadius: '8px' }}>
+            <div className="manual-entry" style={{ marginTop: '20px', padding: '15px', background: 'var(--bg-light)', borderRadius: '8px' }}>
               <p style={{ fontSize: '14px', marginBottom: '5px' }}><strong>Can't scan?</strong> Enter this code manually:</p>
-              <code style={{ fontSize: '16px', fontWeight: 'bold', color: '#6C5CE7' }}>{secret}</code>
+              <code style={{ fontSize: '16px', fontWeight: 'bold', color: 'var(--pryde-purple)' }}>{secret}</code>
             </div>
 
             <h3 style={{ marginTop: '30px' }}>Step 2: Enter Verification Code</h3>
-            <p style={{ color: '#616161', marginBottom: '15px' }}>
+            <p style={{ color: 'var(--text-muted)', marginBottom: '15px' }}>
               Enter the 6-digit code from your authenticator app:
             </p>
 
@@ -160,15 +160,15 @@ function TwoFactorSetup({ onClose, onSuccess }) {
         {/* Step 3: Backup Codes */}
         {step === 3 && (
           <div className="setup-step">
-            <div style={{ background: '#d4edda', border: '1px solid #c3e6cb', padding: '15px', borderRadius: '8px', marginBottom: '20px' }}>
-              <h3 style={{ color: '#155724', marginTop: 0 }}>✅ 2FA Enabled Successfully!</h3>
-              <p style={{ color: '#155724', margin: 0 }}>
+            <div style={{ background: 'var(--success)', border: '1px solid var(--success)', padding: '15px', borderRadius: '8px', marginBottom: '20px' }}>
+              <h3 style={{ color: 'white', marginTop: 0 }}>✅ 2FA Enabled Successfully!</h3>
+              <p style={{ color: 'white', margin: 0 }}>
                 Your account is now protected with two-factor authentication.
               </p>
             </div>
 
             <h3>⚠️ Save Your Backup Codes</h3>
-            <p style={{ color: '#616161', marginBottom: '15px' }}>
+            <p style={{ color: 'var(--text-muted)', marginBottom: '15px' }}>
               These backup codes can be used to access your account if you lose your authenticator device.
               <strong> Save them in a secure location!</strong>
             </p>

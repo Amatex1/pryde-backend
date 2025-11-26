@@ -250,7 +250,7 @@ function Settings({ onOpenMiniChat }) {
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div>
                 <h2 className="section-title" style={{ margin: 0, marginBottom: '5px' }}>🔐 Security Settings</h2>
-                <p style={{ color: '#616161', margin: 0, fontSize: '14px' }}>
+                <p style={{ color: 'var(--text-muted)', margin: 0, fontSize: '14px' }}>
                   Manage 2FA, active sessions, and login alerts
                 </p>
               </div>
@@ -270,7 +270,7 @@ function Settings({ onOpenMiniChat }) {
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div>
                 <h2 className="section-title" style={{ margin: 0, marginBottom: '5px' }}>🔒 Privacy Settings</h2>
-                <p style={{ color: '#616161', margin: 0, fontSize: '14px' }}>
+                <p style={{ color: 'var(--text-muted)', margin: 0, fontSize: '14px' }}>
                   Control who can see your profile, send messages, and more
                 </p>
               </div>

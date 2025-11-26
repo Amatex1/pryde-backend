@@ -2,6 +2,7 @@ import express from 'express';
 const router = express.Router();
 import Post from '../models/Post.js';
 import User from '../models/User.js';
+import Notification from '../models/Notification.js';
 import auth from '../middleware/auth.js';
 import { postLimiter, commentLimiter } from '../middleware/rateLimiter.js';
 import { checkMuted, moderateContent } from '../middleware/moderation.js';
@@ -190,6 +191,18 @@ router.post('/:id/like', auth, async (req, res) => {
     } else {
       // Like the post
       post.likes.push(userId);
+
+      // Create notification for post author (don't notify yourself)
+      if (post.author.toString() !== userId.toString()) {
+        const notification = new Notification({
+          recipient: post.author,
+          sender: userId,
+          type: 'like',
+          message: 'liked your post',
+          postId: post._id
+        });
+        await notification.save();
+      }
     }
 
     await post.save();
@@ -245,6 +258,18 @@ router.post('/:id/share', auth, postLimiter, checkMuted, async (req, res) => {
       sharedAt: new Date()
     });
     await originalPost.save();
+
+    // Create notification for original post author (don't notify yourself)
+    if (originalPost.author.toString() !== userId.toString()) {
+      const notification = new Notification({
+        recipient: originalPost.author,
+        sender: userId,
+        type: 'share',
+        message: 'shared your post',
+        postId: originalPost._id
+      });
+      await notification.save();
+    }
 
     // Populate the shared post
     await sharedPost.populate('author', 'username displayName profilePhoto');
@@ -326,7 +351,23 @@ router.post('/:id/comment', auth, commentLimiter, checkMuted, moderateContent, a
     };
 
     post.comments.push(comment);
-    await post.save();
+    const savedPost = await post.save();
+
+    // Get the newly created comment ID
+    const newComment = savedPost.comments[savedPost.comments.length - 1];
+
+    // Create notification for post author (don't notify yourself)
+    if (post.author.toString() !== userId.toString()) {
+      const notification = new Notification({
+        recipient: post.author,
+        sender: userId,
+        type: 'comment',
+        message: 'commented on your post',
+        postId: post._id,
+        commentId: newComment._id
+      });
+      await notification.save();
+    }
 
     await post.populate('author', 'username displayName profilePhoto');
     await post.populate('comments.user', 'username displayName profilePhoto');

@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import api from '../utils/api';
 import { setAuthToken, setCurrentUser } from '../utils/auth';
 import { disconnectSocket, initializeSocket } from '../utils/socket';
@@ -15,7 +15,15 @@ function Login({ setIsAuth }) {
   const [requires2FA, setRequires2FA] = useState(false);
   const [tempToken, setTempToken] = useState('');
   const [twoFactorCode, setTwoFactorCode] = useState('');
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+
+  // Check if redirected due to expired token
+  useEffect(() => {
+    if (searchParams.get('expired') === 'true') {
+      setError('Your session has expired. Please log in again.');
+    }
+  }, [searchParams]);
 
   const handleChange = (e) => {
     setFormData({
@@ -123,7 +131,7 @@ function Login({ setIsAuth }) {
           <form onSubmit={handleVerify2FA} className="auth-form">
             <div className="form-group">
               <label htmlFor="twoFactorCode">Two-Factor Authentication Code</label>
-              <p style={{ fontSize: '14px', color: '#616161', marginBottom: '10px' }}>
+              <p style={{ fontSize: '14px', color: 'var(--text-muted)', marginBottom: '10px' }}>
                 Enter the 6-digit code from your authenticator app or use a backup code.
               </p>
               <input

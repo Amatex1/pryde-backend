@@ -203,7 +203,7 @@ function SecuritySettings({ onOpenMiniChat }) {
           {/* Login Alerts Section */}
           <div className="settings-section">
             <h2 className="section-title">Login Alerts</h2>
-            <p style={{ color: '#616161', marginBottom: '15px' }}>
+            <p style={{ color: 'var(--text-muted)', marginBottom: '15px' }}>
               Get notified when someone logs into your account from a new device or location.
             </p>
 
@@ -216,7 +216,7 @@ function SecuritySettings({ onOpenMiniChat }) {
                 />
                 <span>Enable login alerts</span>
               </label>
-              <p style={{ fontSize: '14px', color: '#616161', marginLeft: '24px' }}>
+              <p style={{ fontSize: '14px', color: 'var(--text-muted)', marginLeft: '24px' }}>
                 Receive email notifications when you log in
               </p>
             </div>
@@ -231,7 +231,7 @@ function SecuritySettings({ onOpenMiniChat }) {
                 />
                 <span>Email on new device login</span>
               </label>
-              <p style={{ fontSize: '14px', color: '#616161', marginLeft: '24px' }}>
+              <p style={{ fontSize: '14px', color: 'var(--text-muted)', marginLeft: '24px' }}>
                 Get notified when you log in from a device we don't recognize
               </p>
             </div>
@@ -246,7 +246,7 @@ function SecuritySettings({ onOpenMiniChat }) {
                 />
                 <span>Email on suspicious login</span>
               </label>
-              <p style={{ fontSize: '14px', color: '#616161', marginLeft: '24px' }}>
+              <p style={{ fontSize: '14px', color: 'var(--text-muted)', marginLeft: '24px' }}>
                 Get alerted if we detect unusual login activity
               </p>
             </div>
@@ -255,7 +255,7 @@ function SecuritySettings({ onOpenMiniChat }) {
           {/* Active Sessions Section */}
           <div className="settings-section">
             <h2 className="section-title">Active Sessions</h2>
-            <p style={{ color: '#616161', marginBottom: '15px' }}>
+            <p style={{ color: 'var(--text-muted)', marginBottom: '15px' }}>
               Manage devices and locations where you're currently logged in.
             </p>
 

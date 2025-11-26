@@ -195,7 +195,7 @@ function Admin({ onOpenMiniChat }) {
               animation: 'spin 1s linear infinite',
               margin: '0 auto'
             }}></div>
-            <p style={{ marginTop: '1rem', color: '#616161' }}>Loading admin panel...</p>
+            <p style={{ marginTop: '1rem', color: 'var(--text-muted)' }}>Loading admin panel...</p>
           </div>
         </div>
       </div>
@@ -215,13 +215,13 @@ function Admin({ onOpenMiniChat }) {
           <div style={{
             textAlign: 'center',
             padding: '3rem',
-            background: '#fff3cd',
+            background: 'var(--warning)',
             borderRadius: '12px',
             margin: '2rem 0',
-            border: '2px solid #ffc107'
+            border: '2px solid var(--warning)'
           }}>
-            <h2 style={{ color: '#856404', marginBottom: '1rem' }}>⚠️ {error}</h2>
-            <p style={{ color: '#856404', marginBottom: '1rem' }}>
+            <h2 style={{ color: 'white', marginBottom: '1rem' }}>⚠️ {error}</h2>
+            <p style={{ color: 'white', marginBottom: '1rem' }}>
               Redirecting to home page in 5 seconds...
             </p>
             <button
