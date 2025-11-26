@@ -72,12 +72,6 @@ function Contact() {
 
       <div className="legal-nav-footer">
         <Link to="/" className="back-link">← Back to Home</Link>
-        <div className="legal-links">
-          <Link to="/terms">Terms of Service</Link>
-          <Link to="/privacy">Privacy Policy</Link>
-          <Link to="/safety">Safety Center</Link>
-          <Link to="/faq">FAQ</Link>
-        </div>
       </div>
     </div>
   );

@@ -183,13 +183,6 @@ function Terms() {
 
       <div className="legal-nav-footer">
         <Link to="/" className="back-link">← Back to Home</Link>
-        <div className="legal-links">
-          <Link to="/privacy">Privacy Policy</Link>
-          <Link to="/community-guidelines">Community Guidelines</Link>
-          <Link to="/acceptable-use">Acceptable Use Policy</Link>
-          <Link to="/dmca">DMCA Policy</Link>
-          <Link to="/faq">FAQ</Link>
-        </div>
       </div>
     </div>
   );

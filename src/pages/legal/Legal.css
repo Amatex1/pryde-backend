@@ -168,10 +168,8 @@
   margin: 3rem auto 0;
   padding: 2rem;
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-start;
   align-items: center;
-  flex-wrap: wrap;
-  gap: 1rem;
 }
 
 .back-link {
@@ -186,23 +184,6 @@
 .back-link:hover {
   transform: translateX(-8px);
   color: var(--electric-blue);
-}
-
-.legal-links {
-  display: flex;
-  gap: 1.5rem;
-  flex-wrap: wrap;
-}
-
-.legal-links a {
-  color: var(--text-muted);
-  text-decoration: none;
-  font-weight: 500;
-  transition: color 0.3s ease;
-}
-
-.legal-links a:hover {
-  color: var(--pryde-purple);
 }
 
 /* Emergency Section Styling */

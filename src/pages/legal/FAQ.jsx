@@ -327,13 +327,6 @@ function FAQ() {
 
       <div className="legal-nav-footer">
         <Link to="/" className="back-link">← Back to Home</Link>
-        <div className="legal-links">
-          <Link to="/terms">Terms of Service</Link>
-          <Link to="/privacy">Privacy Policy</Link>
-          <Link to="/community-guidelines">Community Guidelines</Link>
-          <Link to="/acceptable-use">Acceptable Use Policy</Link>
-          <Link to="/dmca">DMCA Policy</Link>
-        </div>
       </div>
     </div>
   );

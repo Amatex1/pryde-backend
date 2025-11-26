@@ -180,12 +180,6 @@ function LegalRequests() {
 
       <div className="legal-nav-footer">
         <Link to="/" className="back-link">← Back to Home</Link>
-        <div className="legal-links">
-          <Link to="/terms">Terms of Service</Link>
-          <Link to="/privacy">Privacy Policy</Link>
-          <Link to="/dmca">DMCA Policy</Link>
-          <Link to="/contact">Contact Us</Link>
-        </div>
       </div>
     </div>
   );

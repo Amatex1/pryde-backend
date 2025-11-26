@@ -166,12 +166,6 @@ function Privacy() {
 
       <div className="legal-nav-footer">
         <Link to="/" className="back-link">← Back to Home</Link>
-        <div className="legal-links">
-          <Link to="/terms">Terms of Service</Link>
-          <Link to="/community-guidelines">Community Guidelines</Link>
-          <Link to="/cookie-policy">Cookie Policy</Link>
-          <Link to="/faq">FAQ</Link>
-        </div>
       </div>
     </div>
   );
