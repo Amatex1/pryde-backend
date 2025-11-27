@@ -1125,8 +1125,9 @@
   right: 0;
   bottom: 0;
   background: rgba(0, 0, 0, 0.5);
-  z-index: 1000;
-  backdrop-filter: blur(2px);
+  z-index: 999; /* Below sidebar */
+  backdrop-filter: none; /* Remove blur */
+  -webkit-backdrop-filter: none; /* Remove blur on iOS */
 }
 
 /* Only hide sidebar on mobile devices */
@@ -1247,6 +1248,86 @@
     flex-direction: column;
     align-items: flex-start;
   }
+
+  /* Privacy Modal Mobile Fixes */
+  .privacy-modal {
+    max-width: 100%;
+    width: 100%;
+    max-height: 90vh;
+    border-radius: 16px;
+  }
+
+  .privacy-modal-body {
+    padding: 1rem;
+  }
+
+  .privacy-section {
+    margin-bottom: 1.5rem;
+  }
+
+  .privacy-section h3 {
+    font-size: 1rem;
+  }
+
+  .friends-checklist {
+    max-height: 200px;
+  }
+
+  .friend-checkbox-item {
+    padding: 0.625rem;
+  }
+
+  .friend-avatar-small {
+    width: 28px;
+    height: 28px;
+  }
+
+  .modal-footer {
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 1rem;
+  }
+
+  .btn-secondary,
+  .btn-primary {
+    width: 100%;
+    padding: 0.875rem;
+  }
+
+  /* Ensure all inputs are mobile-friendly */
+  .post-input,
+  .comment-input,
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  textarea,
+  select {
+    font-size: 16px !important; /* Prevents iOS zoom */
+    width: 100%;
+    max-width: 100%;
+  }
+
+  /* Fix any overflow issues */
+  .post-card,
+  .create-post,
+  .feed-sidebar,
+  .privacy-modal,
+  .comment-item {
+    max-width: 100%;
+    overflow-x: hidden;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+  }
+
+  /* Ensure buttons are touch-friendly */
+  button,
+  .action-btn,
+  .btn-post,
+  .btn-comment {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
 
   .comment-dropdown-container {
     align-self: flex-end;
