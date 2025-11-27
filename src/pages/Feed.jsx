@@ -39,6 +39,7 @@ function Feed({ onOpenMiniChat }) {
   const [hiddenFromUsers, setHiddenFromUsers] = useState([]);
   const [sharedWithUsers, setSharedWithUsers] = useState([]);
   const [showReplies, setShowReplies] = useState({}); // Track which comments have replies visible
+  const [showReactionPicker, setShowReactionPicker] = useState(null); // Track which comment shows reaction picker
   const [editPostVisibility, setEditPostVisibility] = useState('friends');
   const [editHiddenFromUsers, setEditHiddenFromUsers] = useState([]);
   const [editSharedWithUsers, setEditSharedWithUsers] = useState([]);
@@ -916,12 +917,28 @@ function Feed({ onOpenMiniChat }) {
                                             return commentDate.toLocaleDateString();
                                           })()}
                                         </span>
-                                        <button
-                                          className="comment-action-btn"
-                                          onClick={() => {/* TODO: Add like functionality */}}
+                                        <div
+                                          className="reaction-container"
+                                          onMouseEnter={() => setShowReactionPicker(`comment-${comment._id}`)}
+                                          onMouseLeave={() => setShowReactionPicker(null)}
                                         >
-                                          👍 Like
-                                        </button>
+                                          <button
+                                            className="comment-action-btn"
+                                            onClick={() => {/* TODO: Add like functionality */}}
+                                          >
+                                            👍 Like
+                                          </button>
+                                          {showReactionPicker === `comment-${comment._id}` && (
+                                            <div className="reaction-picker">
+                                              <button className="reaction-btn" onClick={() => {/* TODO: Add reaction */}} title="Like">👍</button>
+                                              <button className="reaction-btn" onClick={() => {/* TODO: Add reaction */}} title="Love">❤️</button>
+                                              <button className="reaction-btn" onClick={() => {/* TODO: Add reaction */}} title="Haha">😂</button>
+                                              <button className="reaction-btn" onClick={() => {/* TODO: Add reaction */}} title="Wow">😮</button>
+                                              <button className="reaction-btn" onClick={() => {/* TODO: Add reaction */}} title="Sad">😢</button>
+                                              <button className="reaction-btn" onClick={() => {/* TODO: Add reaction */}} title="Angry">😡</button>
+                                            </div>
+                                          )}
+                                        </div>
                                         <button
                                           className="comment-action-btn"
                                           onClick={() => {
@@ -1070,12 +1087,28 @@ function Feed({ onOpenMiniChat }) {
                                                     return replyDate.toLocaleDateString();
                                                   })()}
                                                 </span>
-                                                <button
-                                                  className="comment-action-btn"
-                                                  onClick={() => {/* TODO: Add like functionality */}}
+                                                <div
+                                                  className="reaction-container"
+                                                  onMouseEnter={() => setShowReactionPicker(`reply-${reply._id}`)}
+                                                  onMouseLeave={() => setShowReactionPicker(null)}
                                                 >
-                                                  👍 Like
-                                                </button>
+                                                  <button
+                                                    className="comment-action-btn"
+                                                    onClick={() => {/* TODO: Add like functionality */}}
+                                                  >
+                                                    👍 Like
+                                                  </button>
+                                                  {showReactionPicker === `reply-${reply._id}` && (
+                                                    <div className="reaction-picker">
+                                                      <button className="reaction-btn" onClick={() => {/* TODO: Add reaction */}} title="Like">👍</button>
+                                                      <button className="reaction-btn" onClick={() => {/* TODO: Add reaction */}} title="Love">❤️</button>
+                                                      <button className="reaction-btn" onClick={() => {/* TODO: Add reaction */}} title="Haha">😂</button>
+                                                      <button className="reaction-btn" onClick={() => {/* TODO: Add reaction */}} title="Wow">😮</button>
+                                                      <button className="reaction-btn" onClick={() => {/* TODO: Add reaction */}} title="Sad">😢</button>
+                                                      <button className="reaction-btn" onClick={() => {/* TODO: Add reaction */}} title="Angry">😡</button>
+                                                    </div>
+                                                  )}
+                                                </div>
                                                 <button
                                                   className="comment-action-btn"
                                                   onClick={() => handleReplyToComment(post._id, comment._id)}

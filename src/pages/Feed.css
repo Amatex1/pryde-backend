@@ -579,6 +579,69 @@
   font-weight: 700;
 }
 
+/* Reaction picker container */
+.reaction-container {
+  position: relative;
+  display: inline-block;
+}
+
+/* Reaction picker popup */
+.reaction-picker {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--card-surface);
+  border: 1px solid var(--border-light);
+  border-radius: 50px;
+  padding: 0.5rem 0.75rem;
+  display: flex;
+  gap: 0.5rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  margin-bottom: 0.5rem;
+  z-index: 1000;
+  animation: reactionPopIn 0.2s ease-out;
+}
+
+[data-theme="dark"] .reaction-picker {
+  background: #1e293b;
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+@keyframes reactionPopIn {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(10px) scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1);
+  }
+}
+
+/* Individual reaction buttons */
+.reaction-btn {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0.25rem;
+  transition: transform 0.2s ease;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.reaction-btn:hover {
+  transform: scale(1.3);
+}
+
+.reaction-btn:active {
+  transform: scale(1.1);
+}
+
 .comment-avatar {
   width: 32px;
   height: 32px;
