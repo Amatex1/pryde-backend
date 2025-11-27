@@ -582,7 +582,7 @@ router.delete('/:id/share', auth, async (req, res) => {
 // @route   POST /api/posts/:id/comment
 // @desc    Add a comment to a post
 // @access  Private
-router.post('/:id/comment', auth, commentLimiter, checkMuted, moderateContent, async (req, res) => {
+router.post('/:id/comment', auth, commentLimiter, sanitizeFields(['content']), checkMuted, moderateContent, async (req, res) => {
   try {
     const { content } = req.body;
 

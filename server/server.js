@@ -15,6 +15,7 @@ import mongoose from "mongoose";
 import helmet from "helmet";
 import mongoSanitize from "express-mongo-sanitize";
 import xss from "xss";
+import cookieParser from "cookie-parser";
 
 // Import routes
 import authRoutes from './routes/auth.js';
@@ -176,11 +177,16 @@ app.use(mongoSanitize({
 }));
 
 app.use(cors(corsOptions));
+app.use(cookieParser()); // Parse cookies for CSRF tokens
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Apply global rate limiter to all requests
 app.use(globalLimiter);
+
+// Note: CSRF protection is handled via JWT tokens for API routes
+// JWT authentication provides sufficient protection against CSRF for API endpoints
+// For traditional form-based routes, use the csrf middleware from middleware/csrf.js
 
 // Store online users
 const onlineUsers = new Map(); // userId -> socketId

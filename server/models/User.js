@@ -189,6 +189,15 @@ const userSchema = new mongoose.Schema({
     type: String,
     default: ''
   },
+  // Account lockout for failed login attempts
+  loginAttempts: {
+    type: Number,
+    default: 0
+  },
+  lockoutUntil: {
+    type: Date,
+    default: null
+  },
   createdAt: {
     type: Date,
     default: Date.now
@@ -458,6 +467,44 @@ userSchema.methods.toJSON = function() {
   delete user.twoFactorBackupCodes;
   delete user.resetPasswordToken;
   return user;
+};
+
+// Method to check if account is locked
+userSchema.methods.isLocked = function() {
+  // Check if lockout is active
+  return !!(this.lockoutUntil && this.lockoutUntil > Date.now());
+};
+
+// Method to increment login attempts
+userSchema.methods.incrementLoginAttempts = async function() {
+  // If we have a previous lockout that has expired, reset attempts
+  if (this.lockoutUntil && this.lockoutUntil < Date.now()) {
+    return this.updateOne({
+      $set: { loginAttempts: 1 },
+      $unset: { lockoutUntil: 1 }
+    });
+  }
+
+  // Otherwise increment attempts
+  const updates = { $inc: { loginAttempts: 1 } };
+
+  // Lock account after 5 failed attempts
+  const maxAttempts = 5;
+  const lockoutDuration = 15 * 60 * 1000; // 15 minutes
+
+  if (this.loginAttempts + 1 >= maxAttempts && !this.isLocked()) {
+    updates.$set = { lockoutUntil: Date.now() + lockoutDuration };
+  }
+
+  return this.updateOne(updates);
+};
+
+// Method to reset login attempts
+userSchema.methods.resetLoginAttempts = async function() {
+  return this.updateOne({
+    $set: { loginAttempts: 0 },
+    $unset: { lockoutUntil: 1 }
+  });
 };
 
 export default mongoose.model('User', userSchema);

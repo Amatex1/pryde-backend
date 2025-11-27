@@ -16,11 +16,12 @@ import {
   limitLoginHistory
 } from '../utils/sessionUtils.js';
 import { loginLimiter, signupLimiter, passwordResetLimiter } from '../middleware/rateLimiter.js';
+import { validateSignup, validateLogin } from '../middleware/validation.js';
 
 // @route   POST /api/auth/signup
 // @desc    Register new user
 // @access  Public
-router.post('/signup', signupLimiter, async (req, res) => {
+router.post('/signup', signupLimiter, validateSignup, async (req, res) => {
   try {
     const {
       username,
@@ -163,7 +164,7 @@ router.post('/signup', signupLimiter, async (req, res) => {
 // @route   POST /api/auth/login
 // @desc    Login user
 // @access  Public
-router.post('/login', loginLimiter, async (req, res) => {
+router.post('/login', loginLimiter, validateLogin, async (req, res) => {
   try {
     const { email, password } = req.body;
 
@@ -177,6 +178,15 @@ router.post('/login', loginLimiter, async (req, res) => {
     if (!user) {
       // Log failed login attempt
       return res.status(401).json({ message: 'Invalid email or password' });
+    }
+
+    // Check if account is locked
+    if (user.isLocked()) {
+      const lockoutMinutes = Math.ceil((user.lockoutUntil - Date.now()) / 60000);
+      return res.status(423).json({
+        message: `Account is temporarily locked due to too many failed login attempts. Please try again in ${lockoutMinutes} minute(s).`,
+        lockoutUntil: user.lockoutUntil
+      });
     }
 
     // Check age if birthday exists (auto-ban underage users)
@@ -247,6 +257,9 @@ router.post('/login', loginLimiter, async (req, res) => {
     // Check password
     const isMatch = await user.comparePassword(password);
     if (!isMatch) {
+      // Increment login attempts and potentially lock account
+      await user.incrementLoginAttempts();
+
       // Log failed login attempt
       const ipAddress = getClientIp(req);
       const { deviceInfo } = parseUserAgent(req.headers['user-agent']);
@@ -262,7 +275,26 @@ router.post('/login', loginLimiter, async (req, res) => {
       limitLoginHistory(user);
       await user.save();
 
-      return res.status(401).json({ message: 'Invalid email or password' });
+      // Reload user to get updated loginAttempts
+      const updatedUser = await User.findById(user._id);
+      const attemptsLeft = 5 - updatedUser.loginAttempts;
+
+      if (updatedUser.isLocked()) {
+        return res.status(423).json({
+          message: 'Too many failed login attempts. Your account has been temporarily locked for 15 minutes.',
+          lockoutUntil: updatedUser.lockoutUntil
+        });
+      }
+
+      return res.status(401).json({
+        message: 'Invalid email or password',
+        attemptsLeft: attemptsLeft > 0 ? attemptsLeft : undefined
+      });
+    }
+
+    // Password is correct - reset login attempts
+    if (user.loginAttempts > 0 || user.lockoutUntil) {
+      await user.resetLoginAttempts();
     }
 
     // Get device and IP info

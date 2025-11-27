@@ -7,6 +7,7 @@ import authMiddleware from '../middleware/auth.js';
 import { messageLimiter } from '../middleware/rateLimiter.js';
 import { checkMessagingPermission, checkBlocked } from '../middleware/privacy.js';
 import { checkMuted, moderateContent } from '../middleware/moderation.js';
+import { sanitizeFields } from '../utils/sanitize.js';
 
 // Get conversation with a user
 router.get('/:userId', authMiddleware, checkBlocked, async (req, res) => {
@@ -101,7 +102,7 @@ router.get('/', authMiddleware, async (req, res) => {
 });
 
 // Send a message
-router.post('/', authMiddleware, messageLimiter, checkMessagingPermission, checkMuted, moderateContent, async (req, res) => {
+router.post('/', authMiddleware, messageLimiter, sanitizeFields(['content']), checkMessagingPermission, checkMuted, moderateContent, async (req, res) => {
   try {
     const { recipient, content, attachment, groupChatId } = req.body;
 
