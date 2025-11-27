@@ -695,23 +695,48 @@
 .comment {
   display: flex;
   gap: 0.5rem;
-  padding: 0.25rem 0;
+  padding: 0.5rem 0;
   background: transparent;
+  position: relative;
 }
 
 .comment-replies {
   margin-left: 2.5rem;
-  padding-left: 0;
-  border-left: none;
+  padding-left: 1.5rem;
+  border-left: 2px solid var(--border-light);
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
   margin-top: 0.5rem;
+  position: relative;
+}
+
+[data-theme="dark"] .comment-replies {
+  border-left-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Branch connector from parent to first reply */
+.comment-replies::before {
+  content: '';
+  position: absolute;
+  left: -2px;
+  top: 0;
+  width: 20px;
+  height: 20px;
+  border-left: 2px solid var(--border-light);
+  border-bottom: 2px solid var(--border-light);
+  border-bottom-left-radius: 8px;
+}
+
+[data-theme="dark"] .comment-replies::before {
+  border-left-color: rgba(255, 255, 255, 0.1);
+  border-bottom-color: rgba(255, 255, 255, 0.1);
 }
 
 .comment.reply {
   background: transparent;
-  padding: 0.25rem 0;
+  padding: 0.5rem 0;
+  position: relative;
 }
 
 .comment-avatar {
@@ -779,6 +804,11 @@
   word-wrap: break-word;
   overflow-wrap: break-word;
   margin: 0;
+  background: var(--soft-lavender);
+  padding: 0.5rem 0.75rem;
+  border-radius: 18px;
+  display: inline-block;
+  max-width: fit-content;
 }
 
 .comment-text .edited-indicator {
@@ -790,6 +820,7 @@
 
 [data-theme="dark"] .comment-text {
   color: var(--text-main);
+  background: rgba(108, 92, 231, 0.15);
 }
 
 /* Comment actions (Like, Reply) - YouTube style */
