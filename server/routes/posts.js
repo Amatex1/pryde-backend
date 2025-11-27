@@ -6,6 +6,7 @@ import Notification from '../models/Notification.js';
 import auth from '../middleware/auth.js';
 import { postLimiter, commentLimiter } from '../middleware/rateLimiter.js';
 import { checkMuted, moderateContent } from '../middleware/moderation.js';
+import { sanitizeFields } from '../utils/sanitize.js';
 
 // @route   GET /api/posts
 // @desc    Get all posts (feed)
@@ -141,7 +142,7 @@ router.get('/:id', auth, async (req, res) => {
 // @route   POST /api/posts
 // @desc    Create a new post
 // @access  Private
-router.post('/', auth, postLimiter, checkMuted, moderateContent, async (req, res) => {
+router.post('/', auth, postLimiter, sanitizeFields(['content']), checkMuted, moderateContent, async (req, res) => {
   try {
     const { content, images, media, visibility, hiddenFrom, sharedWith } = req.body;
 

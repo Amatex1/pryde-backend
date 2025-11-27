@@ -1,8 +1,10 @@
 import dotenv from "dotenv";
 dotenv.config();
 
-console.log('🔐 JWT_SECRET from env:', process.env.JWT_SECRET ? 'Set' : 'Not set');
-console.log('🔐 JWT_SECRET value:', process.env.JWT_SECRET);
+// Only log in development
+if (process.env.NODE_ENV === 'development') {
+  console.log('🔐 JWT_SECRET from env:', process.env.JWT_SECRET ? 'Set' : 'Not set');
+}
 
 import express from "express";
 import cors from "cors";
@@ -10,6 +12,9 @@ import http from "http";
 import { Server } from "socket.io";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
+import helmet from "helmet";
+import mongoSanitize from "express-mongo-sanitize";
+import xss from "xss";
 
 // Import routes
 import authRoutes from './routes/auth.js';
@@ -126,6 +131,50 @@ const corsOptions = {
 // Trust proxy - required for Render and rate limiting
 app.set('trust proxy', 1);
 
+// HTTPS enforcement in production
+if (config.nodeEnv === 'production') {
+  app.use((req, res, next) => {
+    if (req.header('x-forwarded-proto') !== 'https') {
+      res.redirect(`https://${req.header('host')}${req.url}`);
+    } else {
+      next();
+    }
+  });
+}
+
+// Security middleware - Helmet for security headers
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", "data:", "https:", "blob:"],
+      connectSrc: ["'self'", ...allowedOrigins.filter(o => typeof o === 'string')],
+      fontSrc: ["'self'", "data:"],
+      objectSrc: ["'none'"],
+      mediaSrc: ["'self'", "blob:"],
+      frameSrc: ["'none'"],
+    },
+  },
+  crossOriginEmbedderPolicy: false, // Allow embedding for uploads
+  hsts: {
+    maxAge: 31536000,
+    includeSubDomains: true,
+    preload: true
+  }
+}));
+
+// MongoDB injection protection
+app.use(mongoSanitize({
+  replaceWith: '_',
+  onSanitize: ({ req, key }) => {
+    if (config.nodeEnv === 'development') {
+      console.warn(`⚠️ Sanitized key: ${key}`);
+    }
+  },
+}));
+
 app.use(cors(corsOptions));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
@@ -177,24 +226,29 @@ app.get('/api/status', (req, res) => {
 io.use((socket, next) => {
   const token = socket.handshake.auth.token;
 
-  console.log('🔌 Socket.IO authentication attempt');
-  console.log('🔑 Token received:', token ? 'Yes' : 'No');
-  console.log('🔑 Token preview:', token ? token.substring(0, 20) + '...' : 'null');
-  console.log('🔐 JWT_SECRET:', process.env.JWT_SECRET ? 'Set' : 'Not set');
+  if (config.nodeEnv === 'development') {
+    console.log('🔌 Socket.IO authentication attempt');
+    console.log('🔑 Token received:', token ? 'Yes' : 'No');
+  }
 
   if (!token) {
-    console.log('❌ No token provided');
+    if (config.nodeEnv === 'development') {
+      console.log('❌ No token provided');
+    }
     return next(new Error('Authentication error'));
   }
 
   try {
     const decoded = jwt.verify(token, config.jwtSecret);
-    console.log('✅ Token verified successfully for user:', decoded.userId);
+    if (config.nodeEnv === 'development') {
+      console.log('✅ Token verified successfully');
+    }
     socket.userId = decoded.userId;
     next();
   } catch (error) {
-    console.log('❌ Token verification failed:', error.message);
-    console.log('❌ Error details:', error);
+    if (config.nodeEnv === 'development') {
+      console.log('❌ Token verification failed:', error.message);
+    }
     next(new Error('Authentication error'));
   }
 });

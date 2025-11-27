@@ -9,28 +9,39 @@ const auth = async (req, res, next) => {
     // Get token from header
     const token = req.header('Authorization')?.replace('Bearer ', '');
 
-    console.log('🔐 Auth middleware - Path:', req.path);
-    console.log('🔑 Token received:', token ? 'Yes (' + token.substring(0, 20) + '...)' : 'No');
+    // Only log in development mode
+    if (config.nodeEnv === 'development') {
+      console.log('🔐 Auth middleware - Path:', req.path);
+      console.log('🔑 Token received:', token ? 'Yes' : 'No');
+    }
 
     if (!token) {
-      console.log('❌ No token provided');
+      if (config.nodeEnv === 'development') {
+        console.log('❌ No token provided');
+      }
       return res.status(401).json({ message: 'No authentication token, access denied' });
     }
 
     // Verify token
-    console.log('🔐 Verifying token with secret:', config.jwtSecret ? 'Set' : 'Not set');
     const decoded = jwt.verify(token, config.jwtSecret);
-    console.log('✅ Token decoded successfully. UserID:', decoded.userId);
+
+    if (config.nodeEnv === 'development') {
+      console.log('✅ Token decoded successfully');
+    }
 
     // Get user from database
     const user = await User.findById(decoded.userId).select('-password');
 
     if (!user) {
-      console.log('❌ User not found in database:', decoded.userId);
+      if (config.nodeEnv === 'development') {
+        console.log('❌ User not found in database');
+      }
       return res.status(401).json({ message: 'User not found' });
     }
 
-    console.log('✅ User found:', user.username);
+    if (config.nodeEnv === 'development') {
+      console.log('✅ User authenticated:', user.username);
+    }
 
     // Check age if birthday exists (auto-ban underage users)
     if (user.birthday) {
@@ -91,11 +102,12 @@ const auth = async (req, res, next) => {
     req.user = user;
     req.userId = decoded.userId;
     req.sessionId = decoded.sessionId; // Extract session ID from token
-    console.log('✅ Auth successful for:', user.username);
     next();
   } catch (error) {
-    console.log('❌ Auth error:', error.message);
-    res.status(401).json({ message: 'Token is not valid', error: error.message });
+    if (config.nodeEnv === 'development') {
+      console.log('❌ Auth error:', error.message);
+    }
+    res.status(401).json({ message: 'Token is not valid', error: config.nodeEnv === 'development' ? error.message : undefined });
   }
 };
 
