@@ -892,11 +892,45 @@ function Feed({ onOpenMiniChat }) {
                                     </div>
                                   ) : (
                                     <>
-                                      <div className="comment-header-wrapper">
+                                      <div className="comment-bubble">
                                         <div className="comment-text">
                                           {comment.content}
                                           {comment.edited && <span className="edited-indicator"> (edited)</span>}
                                         </div>
+                                      </div>
+
+                                      {/* Facebook-style actions below comment */}
+                                      <div className="comment-actions">
+                                        <span className="comment-timestamp">
+                                          {(() => {
+                                            const now = new Date();
+                                            const commentDate = new Date(comment.createdAt);
+                                            const diffMs = now - commentDate;
+                                            const diffMins = Math.floor(diffMs / 60000);
+                                            const diffHours = Math.floor(diffMs / 3600000);
+                                            const diffDays = Math.floor(diffMs / 86400000);
+
+                                            if (diffMins < 1) return 'Just now';
+                                            if (diffMins < 60) return `${diffMins}m`;
+                                            if (diffHours < 24) return `${diffHours}h`;
+                                            if (diffDays < 7) return `${diffDays}d`;
+                                            return commentDate.toLocaleDateString();
+                                          })()}
+                                        </span>
+                                        <button
+                                          className="comment-action-btn"
+                                          onClick={() => {/* TODO: Add like functionality */}}
+                                        >
+                                          Like
+                                        </button>
+                                        <button
+                                          className="comment-action-btn"
+                                          onClick={() => {
+                                            handleReplyToComment(post._id, comment._id);
+                                          }}
+                                        >
+                                          Reply
+                                        </button>
                                         <div className="comment-dropdown-container">
                                           <button
                                             className="btn-comment-dropdown"
@@ -907,15 +941,6 @@ function Feed({ onOpenMiniChat }) {
                                           </button>
                                           {openCommentDropdownId === comment._id && (
                                             <div className="dropdown-menu comment-dropdown">
-                                              <button
-                                                className="dropdown-item"
-                                                onClick={() => {
-                                                  handleReplyToComment(post._id, comment._id);
-                                                  setOpenCommentDropdownId(null);
-                                                }}
-                                              >
-                                                💬 Reply
-                                              </button>
                                               {isOwnComment ? (
                                                 <>
                                                   <button
@@ -1032,36 +1057,88 @@ function Feed({ onOpenMiniChat }) {
                                             </div>
                                           ) : (
                                             <>
-                                              <div className="comment-text">
-                                                {reply.content}
-                                                {reply.edited && <span className="edited-indicator"> (edited)</span>}
+                                              <div className="comment-bubble">
+                                                <div className="comment-text">
+                                                  {reply.content}
+                                                  {reply.edited && <span className="edited-indicator"> (edited)</span>}
+                                                </div>
                                               </div>
+
+                                              {/* Facebook-style actions below reply */}
                                               <div className="comment-actions">
+                                                <span className="comment-timestamp">
+                                                  {(() => {
+                                                    const now = new Date();
+                                                    const replyDate = new Date(reply.createdAt);
+                                                    const diffMs = now - replyDate;
+                                                    const diffMins = Math.floor(diffMs / 60000);
+                                                    const diffHours = Math.floor(diffMs / 3600000);
+                                                    const diffDays = Math.floor(diffMs / 86400000);
+
+                                                    if (diffMins < 1) return 'Just now';
+                                                    if (diffMins < 60) return `${diffMins}m`;
+                                                    if (diffHours < 24) return `${diffHours}h`;
+                                                    if (diffDays < 7) return `${diffDays}d`;
+                                                    return replyDate.toLocaleDateString();
+                                                  })()}
+                                                </span>
                                                 <button
-                                                  onClick={() => handleReplyToComment(post._id, comment._id)}
-                                                  className="btn-comment-action"
-                                                  title="Reply to comment"
+                                                  className="comment-action-btn"
+                                                  onClick={() => {/* TODO: Add like functionality */}}
                                                 >
-                                                  💬 Reply
+                                                  Like
                                                 </button>
-                                                {isOwnReply && (
-                                                  <>
-                                                    <button
-                                                      onClick={() => handleEditComment(reply._id, reply.content)}
-                                                      className="btn-comment-action"
-                                                      title="Edit reply"
-                                                    >
-                                                      ✏️ Edit
-                                                    </button>
-                                                    <button
-                                                      onClick={() => handleDeleteComment(post._id, reply._id)}
-                                                      className="btn-comment-action"
-                                                      title="Delete reply"
-                                                    >
-                                                      🗑️ Delete
-                                                    </button>
-                                                  </>
-                                                )}
+                                                <button
+                                                  className="comment-action-btn"
+                                                  onClick={() => handleReplyToComment(post._id, comment._id)}
+                                                >
+                                                  Reply
+                                                </button>
+                                                <div className="comment-dropdown-container">
+                                                  <button
+                                                    className="btn-comment-dropdown"
+                                                    onClick={() => setOpenCommentDropdownId(openCommentDropdownId === reply._id ? null : reply._id)}
+                                                    title="More options"
+                                                  >
+                                                    ⋮
+                                                  </button>
+                                                  {openCommentDropdownId === reply._id && (
+                                                    <div className="dropdown-menu comment-dropdown">
+                                                      {isOwnReply ? (
+                                                        <>
+                                                          <button
+                                                            className="dropdown-item"
+                                                            onClick={() => {
+                                                              handleEditComment(reply._id, reply.content);
+                                                              setOpenCommentDropdownId(null);
+                                                            }}
+                                                          >
+                                                            ✏️ Edit
+                                                          </button>
+                                                          <button
+                                                            className="dropdown-item delete"
+                                                            onClick={() => {
+                                                              handleDeleteComment(post._id, reply._id);
+                                                              setOpenCommentDropdownId(null);
+                                                            }}
+                                                          >
+                                                            🗑️ Delete
+                                                          </button>
+                                                        </>
+                                                      ) : (
+                                                        <button
+                                                          className="dropdown-item report"
+                                                          onClick={() => {
+                                                            setReportModal({ isOpen: true, type: 'comment', contentId: reply._id, userId: reply.user?._id });
+                                                            setOpenCommentDropdownId(null);
+                                                          }}
+                                                        >
+                                                          🚩 Report
+                                                        </button>
+                                                      )}
+                                                    </div>
+                                                  )}
+                                                </div>
                                               </div>
                                             </>
                                           )}
