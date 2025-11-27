@@ -1,0 +1,164 @@
+/* ========================================
+   MOBILE OPTIMIZATION FIXES
+   Ensures proper display on mobile browsers
+   ======================================== */
+
+/* Prevent white text on white backgrounds */
+* {
+  -webkit-tap-highlight-color: rgba(108, 92, 231, 0.2);
+}
+
+/* Ensure all text is readable */
+body, p, span, div, h1, h2, h3, h4, h5, h6, label {
+  color: var(--text-main);
+}
+
+/* Fix any white-on-white issues in light mode */
+[data-theme="light"] .post-card,
+[data-theme="light"] .user-card,
+[data-theme="light"] .friend-card,
+[data-theme="light"] .sidebar-card {
+  background: var(--card-surface);
+  color: var(--text-main);
+}
+
+/* Ensure dropdowns are visible on mobile */
+@media (max-width: 768px) {
+  .dropdown-menu,
+  .post-dropdown-container .dropdown-menu,
+  .profile-actions-dropdown .actions-dropdown-menu {
+    position: absolute;
+    right: 0;
+    top: 100%;
+    background: var(--card-surface);
+    border: 1px solid var(--border-light);
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    z-index: 2100;
+    min-width: 150px;
+    max-width: 200px;
+    overflow: visible;
+  }
+
+  /* Ensure dropdown items are visible */
+  .dropdown-item {
+    padding: 0.75rem 1rem;
+    font-size: 0.9rem;
+    color: var(--text-main);
+    background: var(--card-surface);
+    border: none;
+    width: 100%;
+    text-align: left;
+    cursor: pointer;
+    transition: background 0.2s ease;
+  }
+
+  .dropdown-item:hover {
+    background: var(--soft-lavender);
+    color: var(--pryde-purple);
+  }
+
+  .dropdown-item.delete:hover {
+    background: rgba(255, 107, 107, 0.1);
+    color: #ff6b6b;
+  }
+
+  /* Fix post header actions */
+  .post-header-actions {
+    position: relative;
+    z-index: 10;
+  }
+
+  .btn-dropdown {
+    padding: 0.5rem;
+    font-size: 1.5rem;
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    min-width: 44px;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .btn-dropdown:hover {
+    background: var(--soft-lavender);
+    border-radius: 50%;
+  }
+
+  /* Ensure post cards don't have white text */
+  .post-card * {
+    color: inherit;
+  }
+
+  .post-content p {
+    color: var(--text-main);
+  }
+
+  .author-name {
+    color: var(--pryde-purple);
+  }
+
+  .post-time {
+    color: var(--text-muted);
+  }
+
+  /* Fix comment sections */
+  .comment-author {
+    color: var(--pryde-purple);
+  }
+
+  .comment-text {
+    color: var(--text-main);
+  }
+
+  .comment-time {
+    color: var(--text-muted);
+  }
+
+  /* Ensure buttons are touch-friendly */
+  button,
+  .action-btn,
+  .btn-primary,
+  .btn-secondary {
+    min-height: 44px;
+    min-width: 44px;
+    touch-action: manipulation;
+  }
+
+  /* Fix navbar on mobile */
+  .navbar {
+    position: sticky;
+    top: 0;
+    z-index: 2000;
+    background: var(--card-surface);
+    color: var(--text-main);
+  }
+
+  .navbar * {
+    color: var(--text-main);
+  }
+
+  .navbar .brand-text {
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Fix profile dropdown on mobile */
+  .profile-dropdown {
+    position: absolute;
+    right: 0;
+    top: 100%;
+    background: var(--card-surface);
+    border: 1px solid var(--border-light);
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    z-index: 2200;
+    min-width: 200px;
+  }
+}
+

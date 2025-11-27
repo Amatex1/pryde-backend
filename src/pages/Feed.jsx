@@ -629,12 +629,14 @@ function Feed({ onOpenMiniChat }) {
                             <div className="dropdown-menu">
                               {(post.author?._id === currentUser?.id || post.author?._id === currentUser?._id) ? (
                                 <>
-                                  <button
-                                    className="dropdown-item"
-                                    onClick={() => handleEditPost(post)}
-                                  >
-                                    ✏️ Edit
-                                  </button>
+                                  {!post.isShared && (
+                                    <button
+                                      className="dropdown-item"
+                                      onClick={() => handleEditPost(post)}
+                                    >
+                                      ✏️ Edit
+                                    </button>
+                                  )}
                                   <button
                                     className="dropdown-item delete"
                                     onClick={() => {

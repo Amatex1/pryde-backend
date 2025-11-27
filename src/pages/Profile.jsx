@@ -49,6 +49,10 @@ function Profile({ onOpenMiniChat }) {
   const [canSendFriendRequest, setCanSendFriendRequest] = useState(true);
   const [canSendMessage, setCanSendMessage] = useState(false);
   const [showUnfriendModal, setShowUnfriendModal] = useState(false);
+  const [openDropdownId, setOpenDropdownId] = useState(null);
+  const [editingPostId, setEditingPostId] = useState(null);
+  const [editPostText, setEditPostText] = useState('');
+  const [editPostVisibility, setEditPostVisibility] = useState('friends');
 
   useEffect(() => {
     fetchUserProfile();
@@ -274,6 +278,59 @@ function Profile({ onOpenMiniChat }) {
   const handleProfileUpdate = (updatedUser) => {
     setUser(updatedUser);
     showToast('Profile updated successfully!', 'success');
+  };
+
+  const toggleDropdown = (postId) => {
+    setOpenDropdownId(openDropdownId === postId ? null : postId);
+  };
+
+  const handleEditPost = (post) => {
+    setEditingPostId(post._id);
+    setEditPostText(post.content);
+    setEditPostVisibility(post.visibility || 'friends');
+    setOpenDropdownId(null);
+  };
+
+  const handleSaveEditPost = async (postId) => {
+    if (!editPostText.trim()) return;
+
+    try {
+      const response = await api.put(`/posts/${postId}`, {
+        content: editPostText,
+        visibility: editPostVisibility
+      });
+      setPosts(posts.map(p => p._id === postId ? response.data : p));
+      setEditingPostId(null);
+      setEditPostText('');
+      setEditPostVisibility('friends');
+      showToast('Post updated successfully!', 'success');
+    } catch (error) {
+      console.error('Failed to edit post:', error);
+      showToast('Failed to edit post. Please try again.', 'error');
+    }
+  };
+
+  const handleCancelEditPost = () => {
+    setEditingPostId(null);
+    setEditPostText('');
+    setEditPostVisibility('friends');
+  };
+
+  const handleDeletePost = async (postId) => {
+    const confirmed = await showConfirm(
+      'Are you sure you want to delete this post?',
+      'Delete Post'
+    );
+    if (!confirmed) return;
+
+    try {
+      await api.delete(`/posts/${postId}`);
+      setPosts(posts.filter(p => p._id !== postId));
+      showToast('Post deleted successfully', 'success');
+    } catch (error) {
+      console.error('Failed to delete post:', error);
+      showToast('Failed to delete post. Please try again.', 'error');
+    }
   };
 
   const checkFriendStatus = async () => {
@@ -725,101 +782,185 @@ function Profile({ onOpenMiniChat }) {
                             </div>
                           </div>
                         </div>
-                      </div>
-
-                      <div className="post-content">
-                        {/* Show "X shared X's post" if this is a shared post */}
-                        {post.isShared && post.originalPost && (
-                          <div style={{
-                            marginBottom: '1rem',
-                            padding: '0.5rem 0.75rem',
-                            background: 'var(--soft-lavender)',
-                            borderRadius: '8px',
-                            fontSize: '0.9rem',
-                            color: 'var(--text-main)'
-                          }}>
-                            <strong>{post.author?.displayName || post.author?.username}</strong> shared{' '}
-                            <strong>{post.originalPost.author?.displayName || post.originalPost.author?.username}'s</strong> post
-                          </div>
-                        )}
-
-                        {/* Show share comment if this is a shared post */}
-                        {post.isShared && post.shareComment && (
-                          <p style={{ marginBottom: '1rem', fontStyle: 'italic' }}>
-                            {post.shareComment}
-                          </p>
-                        )}
-
-                        {/* Show original post if this is a shared post */}
-                        {post.isShared && post.originalPost ? (
-                          <div className="shared-post-container" style={{
-                            border: '2px solid var(--soft-lavender)',
-                            borderRadius: '12px',
-                            padding: '1rem',
-                            marginTop: '0.5rem',
-                            background: 'var(--background-light)'
-                          }}>
-                            <div className="shared-post-header" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
-                              <div className="author-avatar" style={{ width: '32px', height: '32px' }}>
-                                {post.originalPost.author?.profilePhoto ? (
-                                  <img src={getImageUrl(post.originalPost.author.profilePhoto)} alt={post.originalPost.author.username} />
-                                ) : (
-                                  <span>{post.originalPost.author?.displayName?.charAt(0).toUpperCase() || 'U'}</span>
-                                )}
-                              </div>
-                              <div>
-                                <div style={{ fontWeight: '600', fontSize: '0.9rem' }}>
-                                  {post.originalPost.author?.displayName || post.originalPost.author?.username}
-                                </div>
-                                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                                  {new Date(post.originalPost.createdAt).toLocaleDateString()}
-                                </div>
-                              </div>
-                            </div>
-                            {post.originalPost.content && <p>{post.originalPost.content}</p>}
-                            {post.originalPost.media && post.originalPost.media.length > 0 && (
-                              <div className="post-media">
-                                {post.originalPost.media.map((mediaItem, index) => (
-                                  <div key={index} className="media-item">
-                                    {mediaItem.type === 'image' ? (
-                                      <img
-                                        src={getImageUrl(mediaItem.url)}
-                                        alt="Shared post media"
-                                        onClick={() => setPhotoViewerImage(getImageUrl(mediaItem.url))}
-                                        style={{ cursor: 'pointer' }}
-                                      />
-                                    ) : (
-                                      <video controls>
-                                        <source src={getImageUrl(mediaItem.url)} type="video/mp4" />
-                                      </video>
+                        <div className="post-header-actions">
+                          <div className="post-dropdown-container">
+                            <button
+                              className="btn-dropdown"
+                              onClick={() => toggleDropdown(post._id)}
+                              title="More options"
+                            >
+                              ⋮
+                            </button>
+                            {openDropdownId === post._id && (
+                              <div className="dropdown-menu">
+                                {(post.author?._id === currentUser?.id || post.author?._id === currentUser?._id) ? (
+                                  <>
+                                    {!post.isShared && (
+                                      <button
+                                        className="dropdown-item"
+                                        onClick={() => handleEditPost(post)}
+                                      >
+                                        ✏️ Edit
+                                      </button>
                                     )}
-                                  </div>
-                                ))}
+                                    <button
+                                      className="dropdown-item delete"
+                                      onClick={() => {
+                                        handleDeletePost(post._id);
+                                        setOpenDropdownId(null);
+                                      }}
+                                    >
+                                      🗑️ Delete
+                                    </button>
+                                  </>
+                                ) : (
+                                  <button
+                                    className="dropdown-item report"
+                                    onClick={() => {
+                                      setReportModal({ isOpen: true, type: 'post', contentId: post._id, userId: post.author?._id });
+                                      setOpenDropdownId(null);
+                                    }}
+                                  >
+                                    🚩 Report
+                                  </button>
+                                )}
                               </div>
                             )}
                           </div>
+                        </div>
+                      </div>
+
+                      <div className="post-content">
+                        {editingPostId === post._id ? (
+                          <div className="edit-post-container">
+                            <textarea
+                              value={editPostText}
+                              onChange={(e) => setEditPostText(e.target.value)}
+                              className="edit-post-textarea"
+                              placeholder="What's on your mind?"
+                            />
+                            <div className="edit-post-actions">
+                              <select
+                                value={editPostVisibility}
+                                onChange={(e) => setEditPostVisibility(e.target.value)}
+                                className="visibility-select"
+                              >
+                                <option value="public">🌍 Public</option>
+                                <option value="friends">👥 Friends</option>
+                                <option value="private">🔒 Private</option>
+                              </select>
+                              <div className="edit-post-buttons">
+                                <button
+                                  onClick={() => handleSaveEditPost(post._id)}
+                                  className="btn-save-edit"
+                                >
+                                  💾 Save
+                                </button>
+                                <button
+                                  onClick={handleCancelEditPost}
+                                  className="btn-cancel-edit"
+                                >
+                                  ❌ Cancel
+                                </button>
+                              </div>
+                            </div>
+                          </div>
                         ) : (
                           <>
-                            {post.content && <p>{post.content}</p>}
-                            {post.media && post.media.length > 0 && (
-                              <div className="post-media">
-                                {post.media.map((mediaItem, index) => (
-                                  <div key={index} className="media-item">
-                                    {mediaItem.type === 'image' ? (
-                                      <img
-                                        src={getImageUrl(mediaItem.url)}
-                                        alt="Post media"
-                                        onClick={() => setPhotoViewerImage(getImageUrl(mediaItem.url))}
-                                        style={{ cursor: 'pointer' }}
-                                      />
+                            {/* Show "X shared X's post" if this is a shared post */}
+                            {post.isShared && post.originalPost && (
+                              <div style={{
+                                marginBottom: '1rem',
+                                padding: '0.5rem 0.75rem',
+                                background: 'var(--soft-lavender)',
+                                borderRadius: '8px',
+                                fontSize: '0.9rem',
+                                color: 'var(--text-main)'
+                              }}>
+                                <strong>{post.author?.displayName || post.author?.username}</strong> shared{' '}
+                                <strong>{post.originalPost.author?.displayName || post.originalPost.author?.username}'s</strong> post
+                              </div>
+                            )}
+
+                            {/* Show share comment if this is a shared post */}
+                            {post.isShared && post.shareComment && (
+                              <p style={{ marginBottom: '1rem', fontStyle: 'italic' }}>
+                                {post.shareComment}
+                              </p>
+                            )}
+
+                            {/* Show original post if this is a shared post */}
+                            {post.isShared && post.originalPost ? (
+                              <div className="shared-post-container" style={{
+                                border: '2px solid var(--soft-lavender)',
+                                borderRadius: '12px',
+                                padding: '1rem',
+                                marginTop: '0.5rem',
+                                background: 'var(--background-light)'
+                              }}>
+                                <div className="shared-post-header" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
+                                  <div className="author-avatar" style={{ width: '32px', height: '32px' }}>
+                                    {post.originalPost.author?.profilePhoto ? (
+                                      <img src={getImageUrl(post.originalPost.author.profilePhoto)} alt={post.originalPost.author.username} />
                                     ) : (
-                                      <video controls>
-                                        <source src={getImageUrl(mediaItem.url)} type="video/mp4" />
-                                      </video>
+                                      <span>{post.originalPost.author?.displayName?.charAt(0).toUpperCase() || 'U'}</span>
                                     )}
                                   </div>
-                                ))}
+                                  <div>
+                                    <div style={{ fontWeight: '600', fontSize: '0.9rem' }}>
+                                      {post.originalPost.author?.displayName || post.originalPost.author?.username}
+                                    </div>
+                                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                                      {new Date(post.originalPost.createdAt).toLocaleDateString()}
+                                    </div>
+                                  </div>
+                                </div>
+                                {post.originalPost.content && <p>{post.originalPost.content}</p>}
+                                {post.originalPost.media && post.originalPost.media.length > 0 && (
+                                  <div className="post-media">
+                                    {post.originalPost.media.map((mediaItem, index) => (
+                                      <div key={index} className="media-item">
+                                        {mediaItem.type === 'image' ? (
+                                          <img
+                                            src={getImageUrl(mediaItem.url)}
+                                            alt="Shared post media"
+                                            onClick={() => setPhotoViewerImage(getImageUrl(mediaItem.url))}
+                                            style={{ cursor: 'pointer' }}
+                                          />
+                                        ) : (
+                                          <video controls>
+                                            <source src={getImageUrl(mediaItem.url)} type="video/mp4" />
+                                          </video>
+                                        )}
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
                               </div>
+                            ) : (
+                              <>
+                                {post.content && <p>{post.content}</p>}
+                                {post.media && post.media.length > 0 && (
+                                  <div className="post-media">
+                                    {post.media.map((mediaItem, index) => (
+                                      <div key={index} className="media-item">
+                                        {mediaItem.type === 'image' ? (
+                                          <img
+                                            src={getImageUrl(mediaItem.url)}
+                                            alt="Post media"
+                                            onClick={() => setPhotoViewerImage(getImageUrl(mediaItem.url))}
+                                            style={{ cursor: 'pointer' }}
+                                          />
+                                        ) : (
+                                          <video controls>
+                                            <source src={getImageUrl(mediaItem.url)} type="video/mp4" />
+                                          </video>
+                                        )}
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                              </>
                             )}
                           </>
                         )}
