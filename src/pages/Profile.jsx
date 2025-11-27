@@ -1010,20 +1010,20 @@ function Profile({ onOpenMiniChat }) {
                               onMouseEnter={() => setShowReactionPicker(`post-${post._id}`)}
                               onMouseLeave={() => setShowReactionPicker(null)}
                             >
-                              <button className="reaction-btn" onClick={() => {/* TODO: Add reaction */}} title="Like">👍</button>
-                              <button className="reaction-btn" onClick={() => {/* TODO: Add reaction */}} title="Love">❤️</button>
-                              <button className="reaction-btn" onClick={() => {/* TODO: Add reaction */}} title="Haha">😂</button>
-                              <button className="reaction-btn" onClick={() => {/* TODO: Add reaction */}} title="Wow">😮</button>
-                              <button className="reaction-btn" onClick={() => {/* TODO: Add reaction */}} title="Sad">😢</button>
-                              <button className="reaction-btn" onClick={() => {/* TODO: Add reaction */}} title="Angry">😡</button>
-                              <button className="reaction-btn" onClick={() => {/* TODO: Add reaction */}} title="Care">🤗</button>
-                              <button className="reaction-btn" onClick={() => {/* TODO: Add reaction */}} title="Celebrate">🎉</button>
-                              <button className="reaction-btn" onClick={() => {/* TODO: Add reaction */}} title="Think">🤔</button>
-                              <button className="reaction-btn" onClick={() => {/* TODO: Add reaction */}} title="Fire">🔥</button>
-                              <button className="reaction-btn" onClick={() => {/* TODO: Add reaction */}} title="Clap">👏</button>
-                              <button className="reaction-btn" onClick={() => {/* TODO: Add reaction */}} title="Mind Blown">🤯</button>
-                              <button className="reaction-btn" onClick={() => {/* TODO: Add reaction */}} title="Disgust">🤢</button>
-                              <button className="reaction-btn" onClick={() => {/* TODO: Add reaction */}} title="Dislike">👎</button>
+                              <button className="reaction-btn" onClick={() => handlePostReaction(post._id, '👍')} title="Like">👍</button>
+                              <button className="reaction-btn" onClick={() => handlePostReaction(post._id, '❤️')} title="Love">❤️</button>
+                              <button className="reaction-btn" onClick={() => handlePostReaction(post._id, '😂')} title="Haha">😂</button>
+                              <button className="reaction-btn" onClick={() => handlePostReaction(post._id, '😮')} title="Wow">😮</button>
+                              <button className="reaction-btn" onClick={() => handlePostReaction(post._id, '😢')} title="Sad">😢</button>
+                              <button className="reaction-btn" onClick={() => handlePostReaction(post._id, '😡')} title="Angry">😡</button>
+                              <button className="reaction-btn" onClick={() => handlePostReaction(post._id, '🤗')} title="Care">🤗</button>
+                              <button className="reaction-btn" onClick={() => handlePostReaction(post._id, '🎉')} title="Celebrate">🎉</button>
+                              <button className="reaction-btn" onClick={() => handlePostReaction(post._id, '🤔')} title="Think">🤔</button>
+                              <button className="reaction-btn" onClick={() => handlePostReaction(post._id, '🔥')} title="Fire">🔥</button>
+                              <button className="reaction-btn" onClick={() => handlePostReaction(post._id, '👏')} title="Clap">👏</button>
+                              <button className="reaction-btn" onClick={() => handlePostReaction(post._id, '🤯')} title="Mind Blown">🤯</button>
+                              <button className="reaction-btn" onClick={() => handlePostReaction(post._id, '🤢')} title="Disgust">🤢</button>
+                              <button className="reaction-btn" onClick={() => handlePostReaction(post._id, '👎')} title="Dislike">👎</button>
                             </div>
                           )}
                         </div>
