@@ -100,53 +100,45 @@
 }
 
 /* Responsive Design */
-@media (max-width: 1024px) {
-  .footer-content {
-    grid-template-columns: repeat(3, 1fr);
-    gap: 2rem;
-  }
-}
-
 @media (max-width: 768px) {
   .app-footer {
-    padding: 2rem 1rem 1rem;
-  }
-
-  .footer-content {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 1.5rem;
+    padding: 1.5rem 1rem 1rem;
   }
 
   .footer-logo {
     font-size: 1.5rem;
   }
 
-  .footer-section h4 {
-    font-size: 1rem;
-  }
-
-  .footer-quick-links {
+  .footer-links-container {
     font-size: 0.85rem;
     gap: 0.5rem;
+  }
+
+  .footer-notice {
+    padding: 0.75rem 1rem;
+  }
+
+  .footer-notice p {
+    font-size: 0.85rem;
   }
 }
 
 @media (max-width: 480px) {
-  .footer-content {
-    grid-template-columns: 1fr;
-    text-align: center;
+  .footer-logo {
+    font-size: 1.3rem;
   }
 
-  .footer-links a:hover {
-    transform: none;
-  }
-
-  .footer-quick-links {
+  .footer-links-container {
     flex-direction: column;
-    gap: 0.25rem;
+    gap: 0.5rem;
   }
 
-  .footer-quick-links span {
+  .footer-links-container .separator {
     display: none;
+  }
+
+  .footer-copyright,
+  .footer-notice p {
+    font-size: 0.8rem;
   }
 }
