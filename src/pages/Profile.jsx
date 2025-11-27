@@ -303,6 +303,7 @@ function Profile({ onOpenMiniChat }) {
 
       if (sentRequest) {
         setFriendStatus('pending_sent');
+        setFriendRequestId(sentRequest._id); // Store request ID for cancellation
         return;
       }
 
@@ -353,6 +354,17 @@ function Profile({ onOpenMiniChat }) {
       showToast('Friend request accepted! 🎉', 'success');
     } catch (error) {
       showToast(error.response?.data?.message || 'Failed to accept friend request', 'error');
+    }
+  };
+
+  const handleCancelRequest = async () => {
+    try {
+      await api.delete(`/friends/request/${friendRequestId}`);
+      setFriendStatus('none');
+      setFriendRequestId(null);
+      showToast('Friend request cancelled', 'success');
+    } catch (error) {
+      showToast(error.response?.data?.message || 'Failed to cancel friend request', 'error');
     }
   };
 
