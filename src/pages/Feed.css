@@ -480,16 +480,19 @@
 .comment-replies {
   margin-left: 2.5rem;
   padding-left: 1.5rem;
+  padding-top: 0.75rem;
   border-left: 2px solid var(--border-light);
+  border-top: 1px solid var(--border-light);
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  margin-top: 0.5rem;
+  margin-top: 0.75rem;
   position: relative;
 }
 
 [data-theme="dark"] .comment-replies {
   border-left-color: rgba(255, 255, 255, 0.1);
+  border-top-color: rgba(255, 255, 255, 0.1);
 }
 
 /* Branch connector from parent to first reply */
@@ -516,27 +519,29 @@
   position: relative;
 }
 
-/* YouTube-style comment header (name + timestamp on same line) */
+/* YouTube-style comment header (name only) */
 .comment-header {
   display: flex;
   align-items: baseline;
   gap: 0.5rem;
-  margin-bottom: 0.25rem;
+  margin-bottom: 0.375rem;
 }
 
 .comment-author-name {
   font-weight: 600;
   color: var(--text-main);
-  font-size: 0.8125rem;
-}
-
-.comment-timestamp {
-  color: var(--text-muted);
-  font-size: 0.75rem;
+  font-size: 0.875rem;
 }
 
 [data-theme="dark"] .comment-author-name {
   color: var(--text-main);
+}
+
+/* Timestamp in actions row */
+.comment-timestamp {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  font-weight: 400;
 }
 
 [data-theme="dark"] .comment-timestamp {

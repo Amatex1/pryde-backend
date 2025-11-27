@@ -1048,6 +1048,15 @@ function Profile({ onOpenMiniChat }) {
                                       <>
                                         <div className="comment-header">
                                           <span className="comment-author-name">{comment.user?.displayName || comment.user?.username}</span>
+                                        </div>
+
+                                        <div className="comment-text">
+                                          {comment.content}
+                                          {comment.edited && <span className="edited-indicator"> (edited)</span>}
+                                        </div>
+
+                                        {/* YouTube-style actions below comment */}
+                                        <div className="comment-actions">
                                           <span className="comment-timestamp">
                                             {(() => {
                                               const now = new Date();
@@ -1064,15 +1073,6 @@ function Profile({ onOpenMiniChat }) {
                                               return commentDate.toLocaleDateString();
                                             })()}
                                           </span>
-                                        </div>
-
-                                        <div className="comment-text">
-                                          {comment.content}
-                                          {comment.edited && <span className="edited-indicator"> (edited)</span>}
-                                        </div>
-
-                                        {/* YouTube-style actions below comment */}
-                                        <div className="comment-actions">
                                           <button
                                             className="comment-action-btn"
                                             onClick={() => {/* TODO: Add like functionality */}}
@@ -1210,6 +1210,15 @@ function Profile({ onOpenMiniChat }) {
                                               <>
                                                 <div className="comment-header">
                                                   <span className="comment-author-name">{reply.user?.displayName || reply.user?.username}</span>
+                                                </div>
+
+                                                <div className="comment-text">
+                                                  {reply.content}
+                                                  {reply.edited && <span className="edited-indicator"> (edited)</span>}
+                                                </div>
+
+                                                {/* YouTube-style actions below reply */}
+                                                <div className="comment-actions">
                                                   <span className="comment-timestamp">
                                                     {(() => {
                                                       const now = new Date();
@@ -1226,15 +1235,6 @@ function Profile({ onOpenMiniChat }) {
                                                       return replyDate.toLocaleDateString();
                                                     })()}
                                                   </span>
-                                                </div>
-
-                                                <div className="comment-text">
-                                                  {reply.content}
-                                                  {reply.edited && <span className="edited-indicator"> (edited)</span>}
-                                                </div>
-
-                                                {/* YouTube-style actions below reply */}
-                                                <div className="comment-actions">
                                                   <button
                                                     className="comment-action-btn"
                                                     onClick={() => {/* TODO: Add like functionality */}}
