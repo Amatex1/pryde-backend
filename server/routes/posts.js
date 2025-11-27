@@ -299,6 +299,171 @@ router.post('/:id/like', auth, async (req, res) => {
   }
 });
 
+// @route   POST /api/posts/:id/react
+// @desc    Add a reaction to a post
+// @access  Private
+router.post('/:id/react', auth, async (req, res) => {
+  try {
+    const { emoji } = req.body;
+
+    if (!emoji) {
+      return res.status(400).json({ message: 'Emoji is required' });
+    }
+
+    const post = await Post.findById(req.params.id);
+
+    if (!post) {
+      return res.status(404).json({ message: 'Post not found' });
+    }
+
+    const userId = req.userId || req.user._id;
+
+    // Check if user already reacted with this emoji
+    const existingReaction = post.reactions.find(
+      r => r.user.toString() === userId.toString() && r.emoji === emoji
+    );
+
+    if (existingReaction) {
+      // Remove the reaction (toggle off)
+      post.reactions = post.reactions.filter(
+        r => !(r.user.toString() === userId.toString() && r.emoji === emoji)
+      );
+    } else {
+      // Remove any other reaction from this user first (only one reaction per user)
+      post.reactions = post.reactions.filter(
+        r => r.user.toString() !== userId.toString()
+      );
+
+      // Add new reaction
+      post.reactions.push({
+        user: userId,
+        emoji,
+        createdAt: new Date()
+      });
+
+      // Create notification for post author (don't notify yourself)
+      if (post.author.toString() !== userId.toString()) {
+        const notification = new Notification({
+          recipient: post.author,
+          sender: userId,
+          type: 'like',
+          message: `reacted ${emoji} to your post`,
+          postId: post._id
+        });
+        await notification.save();
+      }
+    }
+
+    await post.save();
+    await post.populate('author', 'username displayName profilePhoto');
+    await post.populate('likes', 'username displayName profilePhoto');
+    await post.populate('reactions.user', 'username displayName profilePhoto');
+    await post.populate('comments.user', 'username displayName profilePhoto');
+    await post.populate({
+      path: 'originalPost',
+      populate: [
+        { path: 'author', select: 'username displayName profilePhoto' },
+        { path: 'likes', select: 'username displayName profilePhoto' },
+        { path: 'comments.user', select: 'username displayName profilePhoto' }
+      ]
+    });
+
+    res.json(post);
+  } catch (error) {
+    console.error('React to post error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   POST /api/posts/:id/comment/:commentId/react
+// @desc    Add a reaction to a comment
+// @access  Private
+router.post('/:id/comment/:commentId/react', auth, async (req, res) => {
+  try {
+    const { emoji } = req.body;
+
+    if (!emoji) {
+      return res.status(400).json({ message: 'Emoji is required' });
+    }
+
+    const post = await Post.findById(req.params.id);
+
+    if (!post) {
+      return res.status(404).json({ message: 'Post not found' });
+    }
+
+    const comment = post.comments.id(req.params.commentId);
+
+    if (!comment) {
+      return res.status(404).json({ message: 'Comment not found' });
+    }
+
+    const userId = req.userId || req.user._id;
+
+    // Initialize reactions array if it doesn't exist
+    if (!comment.reactions) {
+      comment.reactions = [];
+    }
+
+    // Check if user already reacted with this emoji
+    const existingReaction = comment.reactions.find(
+      r => r.user.toString() === userId.toString() && r.emoji === emoji
+    );
+
+    if (existingReaction) {
+      // Remove the reaction (toggle off)
+      comment.reactions = comment.reactions.filter(
+        r => !(r.user.toString() === userId.toString() && r.emoji === emoji)
+      );
+    } else {
+      // Remove any other reaction from this user first (only one reaction per user)
+      comment.reactions = comment.reactions.filter(
+        r => r.user.toString() !== userId.toString()
+      );
+
+      // Add new reaction
+      comment.reactions.push({
+        user: userId,
+        emoji,
+        createdAt: new Date()
+      });
+
+      // Create notification for comment author (don't notify yourself)
+      if (comment.user.toString() !== userId.toString()) {
+        const notification = new Notification({
+          recipient: comment.user,
+          sender: userId,
+          type: 'like',
+          message: `reacted ${emoji} to your comment`,
+          postId: post._id,
+          commentId: comment._id
+        });
+        await notification.save();
+      }
+    }
+
+    await post.save();
+    await post.populate('author', 'username displayName profilePhoto');
+    await post.populate('likes', 'username displayName profilePhoto');
+    await post.populate('reactions.user', 'username displayName profilePhoto');
+    await post.populate('comments.user', 'username displayName profilePhoto');
+    await post.populate('comments.reactions.user', 'username displayName profilePhoto');
+    await post.populate({
+      path: 'originalPost',
+      populate: [
+        { path: 'author', select: 'username displayName profilePhoto' },
+        { path: 'likes', select: 'username displayName profilePhoto' },
+        { path: 'comments.user', select: 'username displayName profilePhoto' }
+      ]
+    });
+
+    res.json(post);
+  } catch (error) {
+    console.error('React to comment error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // @route   POST /api/posts/:id/share
 // @desc    Share/Repost a post
 // @access  Private

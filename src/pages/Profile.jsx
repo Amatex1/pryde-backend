@@ -169,6 +169,26 @@ function Profile({ onOpenMiniChat }) {
     }
   };
 
+  const handlePostReaction = async (postId, emoji) => {
+    try {
+      const response = await api.post(`/posts/${postId}/react`, { emoji });
+      setPosts(posts.map(p => p._id === postId ? response.data : p));
+      setShowReactionPicker(null); // Hide picker after reaction
+    } catch (error) {
+      console.error('Failed to react to post:', error);
+    }
+  };
+
+  const handleCommentReaction = async (postId, commentId, emoji) => {
+    try {
+      const response = await api.post(`/posts/${postId}/comment/${commentId}/react`, { emoji });
+      setPosts(posts.map(p => p._id === postId ? response.data : p));
+      setShowReactionPicker(null); // Hide picker after reaction
+    } catch (error) {
+      console.error('Failed to react to comment:', error);
+    }
+  };
+
   const handleCommentSubmit = async (postId, e) => {
     e.preventDefault();
     const content = commentText[postId];
@@ -976,12 +996,37 @@ function Profile({ onOpenMiniChat }) {
                       </div>
 
                       <div className="post-actions">
-                        <button
-                          className={`action-btn ${isLiked ? 'liked' : ''}`}
-                          onClick={() => handleLike(post._id)}
-                        >
-                          {isLiked ? '❤️' : '🤍'} Like
-                        </button>
+                        <div className="reaction-container">
+                          <button
+                            className={`action-btn ${isLiked ? 'liked' : ''}`}
+                            onClick={() => handleLike(post._id)}
+                            onMouseEnter={() => setShowReactionPicker(`post-${post._id}`)}
+                          >
+                            {isLiked ? '❤️' : '🤍'} Like
+                          </button>
+                          {showReactionPicker === `post-${post._id}` && (
+                            <div
+                              className="reaction-picker"
+                              onMouseEnter={() => setShowReactionPicker(`post-${post._id}`)}
+                              onMouseLeave={() => setShowReactionPicker(null)}
+                            >
+                              <button className="reaction-btn" onClick={() => {/* TODO: Add reaction */}} title="Like">👍</button>
+                              <button className="reaction-btn" onClick={() => {/* TODO: Add reaction */}} title="Love">❤️</button>
+                              <button className="reaction-btn" onClick={() => {/* TODO: Add reaction */}} title="Haha">😂</button>
+                              <button className="reaction-btn" onClick={() => {/* TODO: Add reaction */}} title="Wow">😮</button>
+                              <button className="reaction-btn" onClick={() => {/* TODO: Add reaction */}} title="Sad">😢</button>
+                              <button className="reaction-btn" onClick={() => {/* TODO: Add reaction */}} title="Angry">😡</button>
+                              <button className="reaction-btn" onClick={() => {/* TODO: Add reaction */}} title="Care">🤗</button>
+                              <button className="reaction-btn" onClick={() => {/* TODO: Add reaction */}} title="Celebrate">🎉</button>
+                              <button className="reaction-btn" onClick={() => {/* TODO: Add reaction */}} title="Think">🤔</button>
+                              <button className="reaction-btn" onClick={() => {/* TODO: Add reaction */}} title="Fire">🔥</button>
+                              <button className="reaction-btn" onClick={() => {/* TODO: Add reaction */}} title="Clap">👏</button>
+                              <button className="reaction-btn" onClick={() => {/* TODO: Add reaction */}} title="Mind Blown">🤯</button>
+                              <button className="reaction-btn" onClick={() => {/* TODO: Add reaction */}} title="Disgust">🤢</button>
+                              <button className="reaction-btn" onClick={() => {/* TODO: Add reaction */}} title="Dislike">👎</button>
+                            </div>
+                          )}
+                        </div>
                         <button
                           className="action-btn"
                           onClick={() => setShowCommentBox(prev => ({ ...prev, [post._id]: !prev[post._id] }))}
