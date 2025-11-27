@@ -20,6 +20,7 @@ function Footer() {
           <ul className="footer-links">
             <li><Link to="/terms">Terms of Service</Link></li>
             <li><Link to="/privacy">Privacy Policy</Link></li>
+            <li><Link to="/security">Security</Link></li>
             <li><Link to="/community">Community Guidelines</Link></li>
           </ul>
         </div>
@@ -62,6 +63,8 @@ function Footer() {
           <Link to="/terms">Terms</Link>
           <span>•</span>
           <Link to="/privacy">Privacy</Link>
+          <span>•</span>
+          <Link to="/security">Security</Link>
           <span>•</span>
           <Link to="/community">Guidelines</Link>
           <span>•</span>

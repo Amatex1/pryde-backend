@@ -19,6 +19,7 @@ import Terms from './pages/legal/Terms';
 import Privacy from './pages/legal/Privacy';
 import Community from './pages/legal/Community';
 import Safety from './pages/legal/Safety';
+import Security from './pages/legal/Security';
 import Contact from './pages/legal/Contact';
 import FAQ from './pages/legal/FAQ';
 import LegalRequests from './pages/legal/LegalRequests';
@@ -151,6 +152,7 @@ function App() {
           <Route path="/community" element={<><Community /><Footer /></>} />
           <Route path="/community-guidelines" element={<><Community /><Footer /></>} />
           <Route path="/safety" element={<><Safety /><Footer /></>} />
+          <Route path="/security" element={<><Security /><Footer /></>} />
           <Route path="/contact" element={<><Contact /><Footer /></>} />
           <Route path="/faq" element={<><FAQ /><Footer /></>} />
           <Route path="/legal-requests" element={<><LegalRequests /><Footer /></>} />
