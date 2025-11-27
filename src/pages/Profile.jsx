@@ -998,11 +998,13 @@ function Profile({ onOpenMiniChat }) {
                       <div className="post-actions">
                         <div className="reaction-container">
                           <button
-                            className={`action-btn ${isLiked ? 'liked' : ''}`}
+                            className={`action-btn ${isLiked || post.reactions?.some(r => r.user?._id === currentUser?.id || r.user === currentUser?.id) ? 'liked' : ''}`}
                             onClick={() => handleLike(post._id)}
                             onMouseEnter={() => setShowReactionPicker(`post-${post._id}`)}
                           >
-                            {isLiked ? '❤️' : '🤍'} Like
+                            <span>
+                              {post.reactions?.find(r => r.user?._id === currentUser?.id || r.user === currentUser?.id)?.emoji || (isLiked ? '❤️' : '🤍')}
+                            </span> Like ({(post.reactions?.length || 0) + (post.likes?.length || 0)})
                           </button>
                           {showReactionPicker === `post-${post._id}` && (
                             <div
@@ -1118,11 +1120,12 @@ function Profile({ onOpenMiniChat }) {
                                           </span>
                                           <div className="reaction-container">
                                             <button
-                                              className="comment-action-btn"
+                                              className={`comment-action-btn ${comment.reactions?.some(r => r.user?._id === currentUser?.id || r.user === currentUser?.id) ? 'liked' : ''}`}
                                               onClick={() => {/* TODO: Add like functionality */}}
                                               onMouseEnter={() => setShowReactionPicker(`comment-${comment._id}`)}
                                             >
-                                              👍 Like
+                                              {comment.reactions?.find(r => r.user?._id === currentUser?.id || r.user === currentUser?.id)?.emoji || '👍'} Like
+                                              {comment.reactions?.length > 0 && ` (${comment.reactions.length})`}
                                             </button>
                                             {showReactionPicker === `comment-${comment._id}` && (
                                               <div
@@ -1295,11 +1298,12 @@ function Profile({ onOpenMiniChat }) {
                                                   </span>
                                                   <div className="reaction-container">
                                                     <button
-                                                      className="comment-action-btn"
+                                                      className={`comment-action-btn ${reply.reactions?.some(r => r.user?._id === currentUser?.id || r.user === currentUser?.id) ? 'liked' : ''}`}
                                                       onClick={() => {/* TODO: Add like functionality */}}
                                                       onMouseEnter={() => setShowReactionPicker(`reply-${reply._id}`)}
                                                     >
-                                                      👍 Like
+                                                      {reply.reactions?.find(r => r.user?._id === currentUser?.id || r.user === currentUser?.id)?.emoji || '👍'} Like
+                                                      {reply.reactions?.length > 0 && ` (${reply.reactions.length})`}
                                                     </button>
                                                     {showReactionPicker === `reply-${reply._id}` && (
                                                       <div
