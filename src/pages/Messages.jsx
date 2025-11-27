@@ -450,26 +450,9 @@ function Messages({ onOpenMiniChat }) {
     <div className="page-container">
       <Navbar onOpenMiniChat={onOpenMiniChat} />
 
-      {/* Mobile Sidebar Toggle Button */}
-      <button
-        className="mobile-sidebar-toggle"
-        onClick={() => setShowMobileSidebar(!showMobileSidebar)}
-        aria-label="Toggle conversations"
-      >
-        {showMobileSidebar ? '✕' : '💬'}
-      </button>
-
-      {/* Mobile Sidebar Overlay */}
-      {showMobileSidebar && (
-        <div
-          className="mobile-sidebar-overlay"
-          onClick={() => setShowMobileSidebar(false)}
-        />
-      )}
-
       <div className="messages-container">
         <div className="messages-layout glossy fade-in">
-          <div className={`conversations-sidebar ${showMobileSidebar ? 'mobile-visible' : ''}`}>
+          <div className={`conversations-sidebar ${selectedChat ? 'chat-active' : ''}`}>
             <div className="sidebar-header">
               <h2 className="sidebar-title">💬 Messages</h2>
               <div className="header-buttons">
@@ -595,10 +578,21 @@ function Messages({ onOpenMiniChat }) {
             </div>
           </div>
 
-          <div className="chat-area">
+          <div className={`chat-area ${selectedChat ? 'active' : ''}`}>
             {selectedChat ? (
               <>
                 <div className="chat-header">
+                  {/* Mobile Back Button */}
+                  <button
+                    className="mobile-back-btn"
+                    onClick={() => {
+                      setSelectedChat(null);
+                      setSelectedChatType(null);
+                    }}
+                    aria-label="Back to conversations"
+                  >
+                    ← Back
+                  </button>
                   <div className="chat-user">
                     <div className="chat-avatar">
                       {selectedChatType === 'group' ? (

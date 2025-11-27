@@ -189,6 +189,14 @@
   border-bottom: 1px solid var(--border-light);
   background: var(--card-surface);
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+/* Hide mobile back button on desktop */
+.mobile-back-btn {
+  display: none;
 }
 
 .chat-user {
@@ -864,47 +872,80 @@
 
 @media (max-width: 768px) {
   .messages-container {
-    padding: 0 1rem 1rem;
-    height: calc(100vh - 180px);
+    padding: 0;
+    height: calc(100vh - 70px);
   }
 
   .messages-layout {
     grid-template-columns: 1fr;
+    border-radius: 0;
+    height: 100%;
   }
 
+  /* Show sidebar by default on mobile */
   .conversations-sidebar {
-    position: fixed;
-    top: 0;
-    left: 0;
-    bottom: 0;
-    width: 300px;
-    max-width: 85vw;
+    position: relative;
+    top: auto;
+    left: auto;
+    bottom: auto;
+    width: 100%;
+    max-width: 100%;
     background: var(--card-surface);
-    box-shadow: 4px 0 12px rgba(0, 0, 0, 0.3);
-    z-index: 1001; /* Above overlay */
-    transform: translateX(-100%);
-    transition: transform 0.3s ease;
+    box-shadow: none;
+    z-index: auto;
+    transform: none;
+    transition: none;
     overflow-y: auto;
     overflow-x: hidden;
-    padding-top: 5rem; /* Account for navbar */
+    padding-top: 0;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
   }
 
-  .conversations-sidebar.mobile-visible {
-    transform: translateX(0);
+  /* Hide sidebar when chat is active */
+  .conversations-sidebar.chat-active {
+    display: none;
   }
 
-  .mobile-sidebar-toggle {
+  /* Chat area takes full screen when active */
+  .chat-area {
+    display: none;
+  }
+
+  .chat-area.active {
+    position: fixed;
+    top: 70px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1000;
+    background: var(--card-surface);
+    border-radius: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Mobile Back Button */
+  .mobile-back-btn {
     display: flex;
     align-items: center;
-    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    background: var(--soft-lavender);
+    color: var(--pryde-purple);
+    border: none;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-right: 1rem;
   }
 
-  .mobile-sidebar-overlay {
-    display: block;
-  }
-
-  .chat-window {
-    border-radius: 16px;
+  .mobile-back-btn:hover {
+    background: var(--pryde-purple);
+    color: white;
   }
 
   .chat-header {
