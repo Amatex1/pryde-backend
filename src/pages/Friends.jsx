@@ -39,6 +39,8 @@ function Friends({ onOpenMiniChat }) {
       fetchFriends();
     } else if (activeTab === 'requests') {
       fetchRequests();
+    } else if (activeTab === 'pending') {
+      fetchSentRequests();
     }
   }, [activeTab]);
 
@@ -214,6 +216,12 @@ function Friends({ onOpenMiniChat }) {
               Requests ({requests.length})
             </button>
             <button
+              className={`tab ${activeTab === 'pending' ? 'active' : ''}`}
+              onClick={() => setActiveTab('pending')}
+            >
+              Pending ({sentRequests.length})
+            </button>
+            <button
               className={`tab ${activeTab === 'search' ? 'active' : ''}`}
               onClick={() => setActiveTab('search')}
             >
@@ -299,6 +307,39 @@ function Friends({ onOpenMiniChat }) {
               ) : (
                 <div className="empty-state glossy">
                   <p>No pending friend requests</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeTab === 'pending' && (
+            <div className="pending-list fade-in">
+              {sentRequests.length > 0 ? (
+                <div className="user-grid">
+                  {sentRequests.map((request) => (
+                    <div key={request._id} className="user-card glossy">
+                      <Link to={`/profile/${request.receiver._id}`} className="user-link">
+                        <div className="user-avatar">
+                          {request.receiver.profilePhoto ? (
+                            <img src={getImageUrl(request.receiver.profilePhoto)} alt={request.receiver.username} />
+                          ) : (
+                            <span>{request.receiver.displayName?.charAt(0).toUpperCase()}</span>
+                          )}
+                        </div>
+                        <div className="user-info">
+                          <div className="user-name">{request.receiver.displayName || request.receiver.username}</div>
+                          <div className="user-username">@{request.receiver.username}</div>
+                        </div>
+                      </Link>
+                      <button className="btn-pending" disabled>
+                        ⏳ Pending
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="empty-state glossy">
+                  <p>No pending friend requests sent</p>
                 </div>
               )}
             </div>

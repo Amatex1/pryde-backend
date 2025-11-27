@@ -205,7 +205,7 @@
   box-shadow: var(--shadow-lg);
   min-width: 200px;
   padding: 0.5rem;
-  z-index: 1001;
+  z-index: 1150; /* Above mini chats (1002), mobile menu (1100), and modals (1100) */
   animation: dropdownSlide 0.2s ease;
 }
 
@@ -447,6 +447,14 @@
     display: flex;
     align-items: center;
     justify-content: flex-end;
+  }
+
+  /* Ensure profile dropdown appears above everything on mobile if it somehow shows */
+  .profile-dropdown {
+    z-index: 1200 !important;
+    position: fixed !important;
+    right: 1rem !important;
+    max-width: calc(100vw - 2rem);
   }
 
   .navbar {

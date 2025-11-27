@@ -240,7 +240,7 @@ function Profile({ onOpenMiniChat }) {
         return;
       }
 
-      // Check for pending requests
+      // Check for pending requests (received)
       const pendingResponse = await api.get('/friends/requests/pending');
       const receivedRequest = pendingResponse.data.find(req => req.sender._id === id);
 
@@ -250,8 +250,15 @@ function Profile({ onOpenMiniChat }) {
         return;
       }
 
-      // Check for sent requests (we need to check if we sent a request to this user)
-      // The backend doesn't have a route for this, so we'll try to send and catch the error
+      // Check for sent requests
+      const sentResponse = await api.get('/friends/requests/sent');
+      const sentRequest = sentResponse.data.find(req => req.receiver._id === id);
+
+      if (sentRequest) {
+        setFriendStatus('pending_sent');
+        return;
+      }
+
       setFriendStatus('none');
     } catch (error) {
       console.error('Failed to check friend status:', error);
