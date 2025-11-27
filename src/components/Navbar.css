@@ -1,7 +1,7 @@
 .navbar {
   position: sticky;
   top: 0;
-  z-index: 1000;
+  z-index: 2000; /* Increased to be above all page content */
   padding: 1rem 2rem;
   margin-bottom: 2rem;
   background: var(--card-surface);
@@ -96,6 +96,7 @@
   gap: 0.75rem;
   position: relative;
   flex-shrink: 0; /* Prevent shrinking on mobile */
+  z-index: 2100; /* Ensure dropdown parent is above content */
 }
 
 .messages-button {
@@ -205,7 +206,7 @@
   box-shadow: var(--shadow-lg);
   min-width: 200px;
   padding: 0.5rem;
-  z-index: 1150; /* Above mini chats (1002), mobile menu (1100), and modals (1100) */
+  z-index: 2100; /* Above navbar (2000) and all other content */
   animation: dropdownSlide 0.2s ease;
 }
 
@@ -275,9 +276,10 @@
   align-items: center;
   justify-content: center;
   transition: all 0.3s ease;
-  z-index: 1100;
+  z-index: 2100; /* Same as mobile menu */
   margin-left: auto; /* Push to the right */
   flex-shrink: 0;
+  position: relative; /* Ensure z-index works */
 }
 
 .mobile-hamburger-btn:hover {
@@ -293,7 +295,7 @@
   right: 0;
   bottom: 0;
   background: rgba(0, 0, 0, 0.5);
-  z-index: 1050;
+  z-index: 2050; /* Below mobile menu but above navbar */
 }
 
 .mobile-menu {
@@ -306,7 +308,7 @@
   max-width: 85vw;
   background: var(--card-surface);
   box-shadow: -4px 0 20px rgba(0, 0, 0, 0.2);
-  z-index: 1100;
+  z-index: 2100; /* Above overlay and navbar */
   transform: translateX(100%);
   transition: transform 0.3s ease;
   overflow-y: auto;
@@ -451,7 +453,7 @@
 
   /* Ensure profile dropdown appears above everything on mobile if it somehow shows */
   .profile-dropdown {
-    z-index: 1200 !important;
+    z-index: 2200 !important; /* Above all navbar elements */
     position: fixed !important;
     right: 1rem !important;
     max-width: calc(100vw - 2rem);

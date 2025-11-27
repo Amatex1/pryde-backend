@@ -310,7 +310,9 @@ function Profile({ onOpenMiniChat }) {
   };
 
   const handleRemoveFriend = async () => {
-    if (!window.confirm('Are you sure you want to remove this friend?')) {
+    const confirmMessage = `Are you sure you want to unfriend ${user?.displayName || user?.username}?\n\nYou will need to send a new friend request to connect again.`;
+
+    if (!window.confirm(confirmMessage)) {
       return;
     }
 
@@ -318,9 +320,9 @@ function Profile({ onOpenMiniChat }) {
       await api.delete(`/friends/${id}`);
       setFriendStatus('none');
       fetchUserProfile(); // Refresh to update friend count
-      alert('Friend removed');
+      showToast('Friend removed', 'success');
     } catch (error) {
-      alert(error.response?.data?.message || 'Failed to remove friend');
+      showToast(error.response?.data?.message || 'Failed to remove friend', 'error');
     }
   };
 
