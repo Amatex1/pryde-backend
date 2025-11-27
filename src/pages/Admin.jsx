@@ -597,9 +597,9 @@ function UsersTab({ users, onSuspend, onBan, onUnsuspend, onUnban, onChangeRole 
           <tbody>
             {users.map(user => (
               <tr key={user._id}>
-                <td>{user.username}</td>
-                <td>{user.email}</td>
-                <td>
+                <td data-label="Username">{user.username}</td>
+                <td data-label="Email">{user.email}</td>
+                <td data-label="Role">
                   {user.role?.toLowerCase() === 'super_admin' ? (
                     <span className={`role-badge role-${user.role}`}>
                       {user.role}
@@ -617,14 +617,14 @@ function UsersTab({ users, onSuspend, onBan, onUnsuspend, onUnban, onChangeRole 
                     </select>
                   )}
                 </td>
-                <td>
+                <td data-label="Status">
                   {user.isBanned && <span className="status-badge banned">Banned</span>}
                   {user.isSuspended && <span className="status-badge suspended">Suspended</span>}
                   {!user.isBanned && !user.isSuspended && user.isActive && <span className="status-badge active">Active</span>}
                   {!user.isActive && !user.isBanned && <span className="status-badge inactive">Inactive</span>}
                 </td>
-                <td>{new Date(user.createdAt).toLocaleDateString()}</td>
-                <td className="user-actions">
+                <td data-label="Joined">{new Date(user.createdAt).toLocaleDateString()}</td>
+                <td data-label="Actions" className="user-actions">
                   {(() => {
                     console.log(`User ${user.username}: role="${user.role}", checking super_admin...`);
                     const isSuperAdmin = user.role?.toLowerCase() === 'super_admin';
@@ -686,10 +686,10 @@ function BlocksTab({ blocks }) {
           <tbody>
             {blocks.map(block => (
               <tr key={block._id}>
-                <td>{block.blocker?.username} ({block.blocker?.email})</td>
-                <td>{block.blocked?.username} ({block.blocked?.email})</td>
-                <td>{new Date(block.createdAt).toLocaleDateString()}</td>
-                <td>{block.reason || 'No reason provided'}</td>
+                <td data-label="Blocker">{block.blocker?.username} ({block.blocker?.email})</td>
+                <td data-label="Blocked User">{block.blocked?.username} ({block.blocked?.email})</td>
+                <td data-label="Date">{new Date(block.createdAt).toLocaleDateString()}</td>
+                <td data-label="Reason">{block.reason || 'No reason provided'}</td>
               </tr>
             ))}
           </tbody>

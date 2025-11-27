@@ -2,22 +2,23 @@
 [data-theme="dark"] {
   /* Background Colors */
   --background-light: #1a1a2e;
+  --bg-light: #1a1a2e;
   --card-surface: #16213e;
   --border-light: #2d3561;
-  
+
   /* Text Colors */
   --text-main: #ffffff;
   --text-muted: #a1a1aa;
-  
+
   /* Keep brand colors the same */
   --pryde-purple: #6C5CE7;
   --electric-blue: #0984E3;
   --soft-lavender: #2d3561;
-  
+
   /* Gradients adjusted for dark mode */
   --gradient-primary: linear-gradient(135deg, #6C5CE7 0%, #0984E3 100%);
   --gradient-gold: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
-  
+
   /* Shadows adjusted for dark mode */
   --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.4);
   --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.5);
@@ -296,6 +297,62 @@
 [data-theme="dark"] .admin-card {
   background: var(--card-surface);
   border-color: var(--border-light);
+}
+
+/* Admin Activity Page */
+[data-theme="dark"] .activity-container {
+  background: var(--background-light);
+  color: var(--text-main);
+}
+
+[data-theme="dark"] .activity-section h3 {
+  color: var(--pryde-purple);
+}
+
+[data-theme="dark"] .activity-item {
+  background: var(--card-surface);
+  border: 1px solid var(--border-light);
+}
+
+[data-theme="dark"] .activity-user {
+  color: var(--pryde-purple);
+}
+
+[data-theme="dark"] .activity-content {
+  color: var(--text-main);
+}
+
+[data-theme="dark"] .activity-date {
+  color: var(--text-muted);
+}
+
+/* Admin Tables */
+[data-theme="dark"] .users-table,
+[data-theme="dark"] .blocks-table {
+  background: var(--card-surface);
+  border-color: var(--border-light);
+}
+
+[data-theme="dark"] .users-table td,
+[data-theme="dark"] .blocks-table td {
+  color: var(--text-main);
+  border-bottom-color: var(--border-light);
+}
+
+[data-theme="dark"] .users-table tbody tr:hover,
+[data-theme="dark"] .blocks-table tbody tr:hover {
+  background: rgba(108, 92, 231, 0.1);
+}
+
+/* Admin Report Cards */
+[data-theme="dark"] .report-card {
+  background: var(--card-surface);
+  border-left-color: var(--pryde-purple);
+}
+
+[data-theme="dark"] .stat-card {
+  background: var(--card-surface);
+  border: 1px solid var(--border-light);
 }
 
 /* Feed Page */
