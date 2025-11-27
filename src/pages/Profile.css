@@ -1010,6 +1010,27 @@
     font-size: 0.875rem;
     padding: 0.75rem 1rem;
   }
+
+  /* Prevent iOS zoom on inputs */
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  textarea,
+  select,
+  .reply-input,
+  .comment-input {
+    font-size: 16px !important;
+  }
+
+  /* Ensure all content fits on screen */
+  .profile-header,
+  .profile-content,
+  .post-card,
+  .comment-item {
+    max-width: 100%;
+    overflow-x: hidden;
+    word-wrap: break-word;
+  }
 }
 
 /* Extra small devices */
