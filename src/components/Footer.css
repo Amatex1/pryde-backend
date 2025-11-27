@@ -71,14 +71,11 @@
 }
 
 .footer-notice {
-  background: rgba(108, 92, 231, 0.08);
-  border: 1px solid rgba(108, 92, 231, 0.2);
-  border-radius: 8px;
-  padding: 1rem 1.5rem;
   margin-top: 1rem;
   max-width: 1200px;
   margin-left: auto;
   margin-right: auto;
+  text-align: center;
 }
 
 .footer-notice p {
@@ -92,11 +89,6 @@
 [data-theme="dark"] .app-footer {
   background: linear-gradient(135deg, rgba(108, 92, 231, 0.1) 0%, rgba(9, 132, 227, 0.1) 100%);
   border-top-color: rgba(108, 92, 231, 0.3);
-}
-
-[data-theme="dark"] .footer-notice {
-  background: rgba(108, 92, 231, 0.15);
-  border-color: rgba(108, 92, 231, 0.3);
 }
 
 /* Responsive Design */
