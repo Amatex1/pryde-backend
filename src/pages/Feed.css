@@ -477,6 +477,27 @@
   position: relative;
 }
 
+/* Vertical line connecting parent comment avatar to replies */
+.comment-thread > .comment::after {
+  content: '';
+  position: absolute;
+  left: 20px; /* Center of 40px avatar */
+  top: 50px; /* Below the avatar */
+  width: 2px;
+  height: calc(100% + 0.75rem);
+  background: var(--border-light);
+  z-index: 0;
+}
+
+[data-theme="dark"] .comment-thread > .comment::after {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* Hide the line if there are no replies */
+.comment-thread > .comment:not(:has(+ .comment-replies))::after {
+  display: none;
+}
+
 .comment-replies {
   margin-left: 2.5rem;
   padding-left: 1.5rem;
@@ -519,6 +540,22 @@
   position: relative;
 }
 
+/* Horizontal line connecting each reply to the vertical branch line */
+.comment.reply::before {
+  content: '';
+  position: absolute;
+  left: -1.5rem; /* Extend to the vertical line */
+  top: 20px; /* Center of 40px avatar */
+  width: 1rem;
+  height: 2px;
+  background: var(--border-light);
+  z-index: 0;
+}
+
+[data-theme="dark"] .comment.reply::before {
+  background: rgba(255, 255, 255, 0.1);
+}
+
 /* YouTube-style comment header (name only) */
 .comment-header {
   display: flex;
@@ -530,7 +567,7 @@
 .comment-author-name {
   font-weight: 600;
   color: var(--text-main);
-  font-size: 0.875rem;
+  font-size: 0.9375rem; /* Increased from 0.875rem */
 }
 
 [data-theme="dark"] .comment-author-name {
@@ -540,7 +577,7 @@
 /* Timestamp in actions row */
 .comment-timestamp {
   color: var(--text-muted);
-  font-size: 0.75rem;
+  font-size: 0.8125rem; /* Increased from 0.75rem */
   font-weight: 400;
 }
 
@@ -554,7 +591,7 @@
   align-items: center;
   gap: 1rem;
   margin-top: 0.5rem;
-  font-size: 0.75rem;
+  font-size: 0.8125rem; /* Increased from 0.75rem */
 }
 
 .comment-action-btn {
@@ -562,7 +599,7 @@
   border: none;
   color: var(--text-muted);
   font-weight: 600;
-  font-size: 0.8125rem;
+  font-size: 0.875rem; /* Increased from 0.8125rem */
   cursor: pointer;
   padding: 0;
   transition: color 0.2s ease;
@@ -650,7 +687,7 @@
 
 .comment-text {
   color: var(--text-main);
-  font-size: 0.875rem;
+  font-size: 0.9375rem; /* Increased from 0.875rem */
   line-height: 1.4;
   word-wrap: break-word;
   overflow-wrap: break-word;
@@ -663,7 +700,7 @@
 }
 
 .comment-text .edited-indicator {
-  font-size: 0.7rem;
+  font-size: 0.75rem; /* Increased from 0.7rem */
   color: var(--text-muted);
   font-style: italic;
   margin-left: 0.25rem;

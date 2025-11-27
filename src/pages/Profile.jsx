@@ -1016,10 +1016,6 @@ function Profile({ onOpenMiniChat }) {
                                     )}
                                   </Link>
                                   <div className="comment-content">
-                                    <Link to={`/profile/${comment.user?._id}`} className="comment-author" style={{ textDecoration: 'none', color: 'inherit' }}>
-                                      {comment.user?.displayName || comment.user?.username}
-                                    </Link>
-
                                     {isEditing ? (
                                       <div className="comment-edit-box">
                                         <input
@@ -1178,10 +1174,6 @@ function Profile({ onOpenMiniChat }) {
                                             )}
                                           </Link>
                                           <div className="comment-content">
-                                            <Link to={`/profile/${reply.user?._id}`} className="comment-author" style={{ textDecoration: 'none', color: 'inherit' }}>
-                                              {reply.user?.displayName || reply.user?.username}
-                                            </Link>
-
                                             {isEditingReply ? (
                                               <div className="comment-edit-box">
                                                 <input
