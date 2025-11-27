@@ -544,8 +544,8 @@ function Profile({ onOpenMiniChat }) {
                       </button>
                     )}
                     {friendStatus === 'pending_sent' && (
-                      <button className="btn-add-friend" disabled style={{ opacity: 0.6, cursor: 'not-allowed' }}>
-                        ⏳ Request Sent
+                      <button className="btn-cancel-request" onClick={handleCancelRequest}>
+                        ❌ Cancel Request
                       </button>
                     )}
                     {friendStatus === 'pending_received' && (
