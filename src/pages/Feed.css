@@ -120,20 +120,38 @@
 }
 
 .btn-dropdown {
-  background: transparent;
-  border: none;
+  background: var(--soft-lavender);
+  border: 1px solid var(--border-light);
   font-size: 1.5rem;
-  color: var(--text-muted);
+  color: var(--text-main);
   cursor: pointer;
-  padding: 0.25rem 0.5rem;
-  border-radius: 8px;
+  padding: 0.5rem 0.75rem;
+  border-radius: 50%;
   transition: all 0.2s ease;
   line-height: 1;
+  min-width: 40px;
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .btn-dropdown:hover {
-  background: var(--soft-lavender);
-  color: var(--pryde-purple);
+  background: var(--pryde-purple);
+  color: white;
+  border-color: var(--pryde-purple);
+}
+
+[data-theme="dark"] .btn-dropdown {
+  background: #2a2a2a;
+  border-color: #444;
+  color: var(--text-main);
+}
+
+[data-theme="dark"] .btn-dropdown:hover {
+  background: var(--pryde-purple);
+  color: white;
+  border-color: var(--pryde-purple);
 }
 
 .dropdown-menu {
@@ -460,17 +478,17 @@
 }
 
 .comment-replies {
-  margin-left: 2.5rem;
-  padding-left: 1rem;
-  border-left: 2px solid var(--pryde-purple);
+  margin-left: 0;
+  padding-left: 0;
+  border-left: none;
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.75rem;
 }
 
 .comment.reply {
-  background: rgba(108, 92, 231, 0.08);
-  padding: 0.875rem;
+  background: var(--soft-lavender);
+  padding: 0.75rem;
 }
 
 .comment-avatar {
@@ -656,11 +674,11 @@
 
 .reply-input-box {
   margin-top: 0.75rem;
-  margin-left: 2rem;
+  margin-left: 0;
   padding: 0.75rem;
   background: rgba(108, 92, 231, 0.05);
   border-radius: 10px;
-  border-left: 3px solid var(--pryde-purple);
+  border: 2px solid var(--pryde-purple);
 }
 
 .reply-input-wrapper {
@@ -1006,11 +1024,11 @@
 }
 
 [data-theme="dark"] .comment.reply {
-  background: rgba(108, 92, 231, 0.08);
+  background: #2d3561;
 }
 
 [data-theme="dark"] .comment-replies {
-  border-left-color: rgba(108, 92, 231, 0.5);
+  border-left: none;
 }
 
 /* Dark Mode - Friends Sidebar */
@@ -1322,14 +1340,14 @@
 
   /* Better reply styling on mobile */
   .comment-replies {
-    margin-left: 1rem;
-    padding-left: 0.75rem;
-    border-left: 3px solid var(--pryde-purple);
+    margin-left: 0;
+    padding-left: 0;
+    border-left: none;
   }
 
   .comment.reply {
-    background: rgba(108, 92, 231, 0.1);
-    padding: 1rem;
+    background: var(--soft-lavender);
+    padding: 0.75rem;
   }
 
   .comment-text {
