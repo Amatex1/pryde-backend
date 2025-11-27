@@ -892,15 +892,8 @@ function Feed({ onOpenMiniChat }) {
                                     </div>
                                   ) : (
                                     <>
-                                      <div className="comment-bubble">
-                                        <div className="comment-text">
-                                          {comment.content}
-                                          {comment.edited && <span className="edited-indicator"> (edited)</span>}
-                                        </div>
-                                      </div>
-
-                                      {/* Facebook-style actions below comment */}
-                                      <div className="comment-actions">
+                                      <div className="comment-header">
+                                        <span className="comment-author-name">{comment.user?.displayName || comment.user?.username}</span>
                                         <span className="comment-timestamp">
                                           {(() => {
                                             const now = new Date();
@@ -917,11 +910,20 @@ function Feed({ onOpenMiniChat }) {
                                             return commentDate.toLocaleDateString();
                                           })()}
                                         </span>
+                                      </div>
+
+                                      <div className="comment-text">
+                                        {comment.content}
+                                        {comment.edited && <span className="edited-indicator"> (edited)</span>}
+                                      </div>
+
+                                      {/* YouTube-style actions below comment */}
+                                      <div className="comment-actions">
                                         <button
                                           className="comment-action-btn"
                                           onClick={() => {/* TODO: Add like functionality */}}
                                         >
-                                          Like
+                                          👍 Like
                                         </button>
                                         <button
                                           className="comment-action-btn"
@@ -929,7 +931,7 @@ function Feed({ onOpenMiniChat }) {
                                             handleReplyToComment(post._id, comment._id);
                                           }}
                                         >
-                                          Reply
+                                          💬 Reply
                                         </button>
                                         <div className="comment-dropdown-container">
                                           <button
