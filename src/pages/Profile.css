@@ -768,6 +768,7 @@
 
 .comment-content {
   flex: 1;
+  background: transparent;
 }
 
 /* YouTube-style comment header (name + timestamp on same line) */
@@ -985,15 +986,15 @@
 
 /* Dark Mode - Comments */
 [data-theme="dark"] .comment {
-  background: rgba(108, 92, 231, 0.15);
+  background: transparent;
 }
 
 [data-theme="dark"] .comment.reply {
-  background: rgba(108, 92, 231, 0.08);
+  background: transparent;
 }
 
-[data-theme="dark"] .comment-replies {
-  border-left-color: rgba(108, 92, 231, 0.5);
+[data-theme="dark"] .comment-content {
+  background: transparent;
 }
 
 [data-theme="dark"] .comment-edit-input,

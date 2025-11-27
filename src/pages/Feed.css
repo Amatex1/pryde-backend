@@ -612,6 +612,7 @@
   flex-direction: column;
   gap: 0.125rem;
   min-width: 0;
+  background: transparent;
 }
 
 .comment-dropdown-container {
@@ -1094,8 +1095,8 @@
   background: transparent;
 }
 
-[data-theme="dark"] .comment-replies {
-  border-left: none;
+[data-theme="dark"] .comment-content {
+  background: transparent;
 }
 
 /* Dark Mode - Friends Sidebar */
