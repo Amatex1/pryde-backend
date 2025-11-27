@@ -11,7 +11,9 @@ function Navbar({ onOpenMiniChat }) {
   const navigate = useNavigate();
   const user = getCurrentUser();
   const [showDropdown, setShowDropdown] = useState(false);
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
   const dropdownRef = useRef(null);
+  const mobileMenuRef = useRef(null);
 
   const handleLogout = () => {
     logout();
@@ -24,6 +26,9 @@ function Navbar({ onOpenMiniChat }) {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setShowDropdown(false);
+      }
+      if (mobileMenuRef.current && !mobileMenuRef.current.contains(event.target)) {
+        setShowMobileMenu(false);
       }
     };
 
@@ -40,6 +45,76 @@ function Navbar({ onOpenMiniChat }) {
         </Link>
 
         <GlobalSearch />
+
+        {/* Mobile Hamburger Menu */}
+        <button
+          className="mobile-hamburger-btn"
+          onClick={() => setShowMobileMenu(!showMobileMenu)}
+          aria-label="Toggle menu"
+        >
+          {showMobileMenu ? '✕' : '☰'}
+        </button>
+
+        {/* Mobile Menu Overlay */}
+        {showMobileMenu && (
+          <div
+            className="mobile-menu-overlay"
+            onClick={() => setShowMobileMenu(false)}
+          />
+        )}
+
+        {/* Mobile Menu */}
+        <div className={`mobile-menu ${showMobileMenu ? 'mobile-menu-visible' : ''}`} ref={mobileMenuRef}>
+          <div className="mobile-menu-header">
+            <div className="mobile-menu-user">
+              <div className="mobile-menu-avatar">
+                {user?.profilePhoto ? (
+                  <img src={getImageUrl(user.profilePhoto)} alt={user.username} />
+                ) : (
+                  <span>{user?.username?.charAt(0).toUpperCase()}</span>
+                )}
+              </div>
+              <div className="mobile-menu-user-info">
+                <div className="mobile-menu-username">{user?.displayName || user?.username}</div>
+                <Link to={`/profile/${user?.id}`} className="mobile-menu-view-profile" onClick={() => setShowMobileMenu(false)}>
+                  View Profile
+                </Link>
+              </div>
+            </div>
+          </div>
+
+          <div className="mobile-menu-items">
+            <Link to="/messages" className="mobile-menu-item" onClick={() => setShowMobileMenu(false)}>
+              <span className="mobile-menu-icon">💬</span>
+              <span>Messages</span>
+            </Link>
+            <Link to="/notifications" className="mobile-menu-item" onClick={() => setShowMobileMenu(false)}>
+              <span className="mobile-menu-icon">🔔</span>
+              <span>Notifications</span>
+            </Link>
+            <Link to="/bookmarks" className="mobile-menu-item" onClick={() => setShowMobileMenu(false)}>
+              <span className="mobile-menu-icon">🔖</span>
+              <span>Bookmarks</span>
+            </Link>
+            {user?.role && ['moderator', 'admin', 'super_admin'].includes(user.role) && (
+              <Link to="/admin" className="mobile-menu-item" onClick={() => setShowMobileMenu(false)}>
+                <span className="mobile-menu-icon">🛡️</span>
+                <span>Admin Panel</span>
+              </Link>
+            )}
+            <Link to="/settings" className="mobile-menu-item" onClick={() => setShowMobileMenu(false)}>
+              <span className="mobile-menu-icon">⚙️</span>
+              <span>Settings</span>
+            </Link>
+            <div className="mobile-menu-divider"></div>
+            <DarkModeToggle />
+            <div className="mobile-menu-divider"></div>
+            <button onClick={() => { handleLogout(); setShowMobileMenu(false); }} className="mobile-menu-item mobile-menu-logout">
+              <span className="mobile-menu-icon">🚪</span>
+              <span>Logout</span>
+            </button>
+          </div>
+        </div>
 
         <div className="navbar-user" ref={dropdownRef}>
           <DarkModeToggle />

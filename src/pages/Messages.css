@@ -852,53 +852,14 @@
   }
 }
 
-/* Mobile Sidebar Toggle Button */
+/* Mobile Sidebar Toggle Button - HIDDEN (using navbar hamburger instead) */
 .mobile-sidebar-toggle {
-  display: none; /* Hidden by default on desktop */
-  position: fixed;
-  bottom: 20px;
-  right: 20px;
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  background: var(--gradient-primary);
-  color: white;
-  border: none;
-  font-size: 1.5rem;
-  cursor: pointer;
-  box-shadow: 0 4px 12px rgba(108, 92, 231, 0.4);
-  z-index: 1000; /* Below mini chats */
-  transition: all 0.3s ease;
+  display: none !important; /* Completely hidden */
 }
 
-.mobile-sidebar-toggle:hover {
-  transform: scale(1.1);
-  box-shadow: 0 6px 16px rgba(108, 92, 231, 0.6);
-}
-
-.mobile-sidebar-toggle:active {
-  transform: scale(0.95);
-}
-
-/* Adjust position when mini chats are open on mobile */
-@media (max-width: 768px) {
-  .mobile-sidebar-toggle {
-    bottom: 420px; /* Above mini chat on mobile */
-  }
-}
-
-/* Mobile Sidebar Overlay */
+/* Mobile Sidebar Overlay - HIDDEN (not needed with new design) */
 .mobile-sidebar-overlay {
-  display: none;
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  z-index: 999; /* Below sidebar but above content */
-  backdrop-filter: none; /* Remove blur effect */
-  -webkit-backdrop-filter: none; /* Remove blur on iOS */
+  display: none !important;
 }
 
 @media (max-width: 768px) {

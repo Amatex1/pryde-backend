@@ -503,23 +503,6 @@ function Feed({ onOpenMiniChat }) {
     <div className="page-container">
       <Navbar onOpenMiniChat={onOpenMiniChat} />
 
-      {/* Mobile Sidebar Toggle Button */}
-      <button
-        className="mobile-sidebar-toggle"
-        onClick={() => setShowMobileSidebar(!showMobileSidebar)}
-        aria-label="Toggle sidebar"
-      >
-        {showMobileSidebar ? '✕' : '☰'}
-      </button>
-
-      {/* Mobile Sidebar Overlay */}
-      {showMobileSidebar && (
-        <div
-          className="mobile-sidebar-overlay"
-          onClick={() => setShowMobileSidebar(false)}
-        />
-      )}
-
       <div className="feed-container">
         <div className="feed-content">
           <div className="create-post glossy fade-in">

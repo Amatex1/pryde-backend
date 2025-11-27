@@ -1081,28 +1081,9 @@
 
 /* Remove this breakpoint - now handled by the fluid layout above */
 
-/* Mobile Sidebar Toggle Button */
+/* Mobile Sidebar Toggle Button - HIDDEN (using navbar hamburger instead) */
 .mobile-sidebar-toggle {
-  display: none; /* Hidden by default on desktop */
-  position: fixed;
-  bottom: 20px;
-  right: 20px;
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  background: var(--gradient-primary);
-  color: white;
-  border: none;
-  font-size: 1.5rem;
-  cursor: pointer;
-  box-shadow: 0 4px 12px rgba(108, 92, 231, 0.4);
-  z-index: 1000; /* Below mini chats */
-  transition: all 0.3s ease;
-}
-
-.mobile-sidebar-toggle:hover {
-  transform: scale(1.1);
-  box-shadow: 0 6px 16px rgba(108, 92, 231, 0.6);
+  display: none !important; /* Completely hidden, using navbar hamburger instead */
 }
 
 .mobile-sidebar-toggle:active {
@@ -1158,13 +1139,16 @@
   }
 
   .mobile-sidebar-toggle {
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    display: none !important; /* Hidden - using navbar hamburger */
   }
 
   .mobile-sidebar-overlay {
-    display: block;
+    display: none !important; /* Not needed anymore */
+  }
+
+  /* Hide Friends list on mobile - only show Trending */
+  .feed-sidebar .sidebar-card:nth-child(2) {
+    display: none;
   }
 }
 
