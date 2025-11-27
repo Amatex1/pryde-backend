@@ -46,6 +46,9 @@ function Profile({ onOpenMiniChat }) {
   const { toasts, showToast, removeToast } = useToast();
   const actionsMenuRef = useRef(null);
   const isOwnProfile = currentUser?.id === id;
+  const [canSendFriendRequest, setCanSendFriendRequest] = useState(true);
+  const [canSendMessage, setCanSendMessage] = useState(false);
+  const [showUnfriendModal, setShowUnfriendModal] = useState(false);
 
   useEffect(() => {
     fetchUserProfile();
@@ -53,8 +56,16 @@ function Profile({ onOpenMiniChat }) {
     if (!isOwnProfile) {
       checkFriendStatus();
       checkBlockStatus();
+      checkPrivacyPermissions();
     }
   }, [id]);
+
+  // Update message permission when friend status changes
+  useEffect(() => {
+    if (!isOwnProfile && user) {
+      checkPrivacyPermissions();
+    }
+  }, [friendStatus, user]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -79,6 +90,42 @@ function Profile({ onOpenMiniChat }) {
       setIsBlocked(response.data.isBlocked);
     } catch (error) {
       console.error('Failed to check block status:', error);
+    }
+  };
+
+  const checkPrivacyPermissions = async () => {
+    try {
+      // Get the user's privacy settings
+      const response = await api.get(`/users/${id}`);
+      const targetUser = response.data;
+
+      // Check if user can send friend requests
+      const friendRequestSetting = targetUser.privacySettings?.whoCanSendFriendRequests || 'everyone';
+      if (friendRequestSetting === 'no-one') {
+        setCanSendFriendRequest(false);
+      } else if (friendRequestSetting === 'friends-of-friends') {
+        // This would require checking mutual friends - for now, we'll allow it
+        // The backend will validate this when the request is sent
+        setCanSendFriendRequest(true);
+      } else {
+        setCanSendFriendRequest(true);
+      }
+
+      // Check if user can send messages
+      const messageSetting = targetUser.privacySettings?.whoCanMessage || 'friends';
+      if (messageSetting === 'no-one') {
+        setCanSendMessage(false);
+      } else if (messageSetting === 'friends') {
+        // Can only message if friends - will be updated when friendStatus changes
+        setCanSendMessage(friendStatus === 'friends');
+      } else if (messageSetting === 'everyone') {
+        setCanSendMessage(true);
+      }
+    } catch (error) {
+      console.error('Failed to check privacy permissions:', error);
+      // Default to allowing if we can't check
+      setCanSendFriendRequest(true);
+      setCanSendMessage(false);
     }
   };
 
@@ -310,20 +357,28 @@ function Profile({ onOpenMiniChat }) {
   };
 
   const handleRemoveFriend = async () => {
-    const confirmMessage = `Are you sure you want to unfriend ${user?.displayName || user?.username}?\n\nYou will need to send a new friend request to connect again.`;
+    setShowUnfriendModal(true);
+  };
 
-    if (!window.confirm(confirmMessage)) {
-      return;
-    }
-
+  const confirmUnfriend = async () => {
     try {
       await api.delete(`/friends/${id}`);
       setFriendStatus('none');
       fetchUserProfile(); // Refresh to update friend count
       showToast('Friend removed', 'success');
+      setShowUnfriendModal(false);
     } catch (error) {
       showToast(error.response?.data?.message || 'Failed to remove friend', 'error');
+      setShowUnfriendModal(false);
     }
+  };
+
+  const handleMessage = () => {
+    if (!canSendMessage) {
+      showToast('You cannot message this user due to their privacy settings', 'error');
+      return;
+    }
+    onOpenMiniChat(user);
   };
 
   const handleBlockUser = async () => {
@@ -466,9 +521,14 @@ function Profile({ onOpenMiniChat }) {
               {!isOwnProfile && (
                 <div className="profile-action-buttons">
                   <div className="friend-actions">
-                    {friendStatus === 'none' && (
+                    {friendStatus === 'none' && canSendFriendRequest && (
                       <button className="btn-add-friend" onClick={handleAddFriend}>
                         ➕ Add Friend
+                      </button>
+                    )}
+                    {friendStatus === 'none' && !canSendFriendRequest && (
+                      <button className="btn-add-friend" disabled style={{ opacity: 0.6, cursor: 'not-allowed' }}>
+                        🔒 Friend Requests Disabled
                       </button>
                     )}
                     {friendStatus === 'pending_sent' && (
@@ -482,27 +542,29 @@ function Profile({ onOpenMiniChat }) {
                       </button>
                     )}
                     {friendStatus === 'friends' && (
-                      <>
-                        <button className="btn-add-friend" onClick={handleRemoveFriend} style={{ background: 'var(--soft-lavender)', color: 'var(--pryde-purple)' }}>
-                          ✓ Friends
-                        </button>
-                        <button
-                          className="btn-message"
-                          onClick={() => onOpenMiniChat(user)}
-                          style={{
-                            background: 'var(--gradient-primary)',
-                            color: 'white',
-                            padding: '10px 20px',
-                            borderRadius: '12px',
-                            border: 'none',
-                            cursor: 'pointer',
-                            fontWeight: '600',
-                            transition: 'all 0.3s ease'
-                          }}
-                        >
-                          💬 Message
-                        </button>
-                      </>
+                      <button className="btn-unfriend" onClick={handleRemoveFriend}>
+                        👥 Unfriend
+                      </button>
+                    )}
+
+                    {/* Message button - show based on privacy settings */}
+                    {canSendMessage && (
+                      <button
+                        className="btn-message"
+                        onClick={handleMessage}
+                      >
+                        💬 Message
+                      </button>
+                    )}
+                    {!canSendMessage && friendStatus !== 'friends' && (
+                      <button
+                        className="btn-message"
+                        disabled
+                        style={{ opacity: 0.6, cursor: 'not-allowed' }}
+                        title="You must be friends to message this user"
+                      >
+                        🔒 Message
+                      </button>
                     )}
                   </div>
 
@@ -1151,6 +1213,56 @@ function Profile({ onOpenMiniChat }) {
         user={user}
         onUpdate={handleProfileUpdate}
       />
+
+      {/* Unfriend Confirmation Modal */}
+      {showUnfriendModal && (
+        <CustomModal
+          isOpen={showUnfriendModal}
+          onClose={() => setShowUnfriendModal(false)}
+          title="Unfriend User"
+        >
+          <div style={{ padding: '1rem' }}>
+            <p style={{ marginBottom: '1.5rem', fontSize: '1rem', lineHeight: '1.6' }}>
+              Are you sure you want to unfriend <strong>{user?.displayName || user?.username}</strong>?
+            </p>
+            <p style={{ marginBottom: '1.5rem', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+              You will need to send a new friend request to connect again.
+            </p>
+            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => setShowUnfriendModal(false)}
+                style={{
+                  padding: '0.75rem 1.5rem',
+                  borderRadius: '12px',
+                  border: '2px solid var(--border-light)',
+                  background: 'transparent',
+                  color: 'var(--text-main)',
+                  cursor: 'pointer',
+                  fontWeight: '600',
+                  transition: 'all 0.3s ease'
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmUnfriend}
+                style={{
+                  padding: '0.75rem 1.5rem',
+                  borderRadius: '12px',
+                  border: 'none',
+                  background: '#e74c3c',
+                  color: 'white',
+                  cursor: 'pointer',
+                  fontWeight: '600',
+                  transition: 'all 0.3s ease'
+                }}
+              >
+                Unfriend
+              </button>
+            </div>
+          </div>
+        </CustomModal>
+      )}
     </div>
   );
 }
