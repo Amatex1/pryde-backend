@@ -942,37 +942,20 @@ function Feed({ onOpenMiniChat }) {
                                           </button>
                                         )}
                                         {isOwnComment ? (
-                                          <div className="comment-dropdown-container">
+                                          <>
                                             <button
-                                              className="btn-comment-dropdown"
-                                              onClick={() => setOpenCommentDropdownId(openCommentDropdownId === comment._id ? null : comment._id)}
-                                              title="More options"
+                                              className="comment-action-btn"
+                                              onClick={() => handleEditComment(comment._id, comment.content)}
                                             >
-                                              ⋮
+                                              ✏️ Edit
                                             </button>
-                                            {openCommentDropdownId === comment._id && (
-                                              <div className="dropdown-menu comment-dropdown">
-                                                <button
-                                                  className="dropdown-item"
-                                                  onClick={() => {
-                                                    handleEditComment(comment._id, comment.content);
-                                                    setOpenCommentDropdownId(null);
-                                                  }}
-                                                >
-                                                  ✏️ Edit
-                                                </button>
-                                                <button
-                                                  className="dropdown-item delete"
-                                                  onClick={() => {
-                                                    handleDeleteComment(post._id, comment._id);
-                                                    setOpenCommentDropdownId(null);
-                                                  }}
-                                                >
-                                                  🗑️ Delete
-                                                </button>
-                                              </div>
-                                            )}
-                                          </div>
+                                            <button
+                                              className="comment-action-btn delete-btn"
+                                              onClick={() => handleDeleteComment(post._id, comment._id)}
+                                            >
+                                              🗑️ Delete
+                                            </button>
+                                          </>
                                         ) : (
                                           <button
                                             className="comment-action-btn"
@@ -1100,37 +1083,20 @@ function Feed({ onOpenMiniChat }) {
                                                   💬 Reply
                                                 </button>
                                                 {isOwnReply ? (
-                                                  <div className="comment-dropdown-container">
+                                                  <>
                                                     <button
-                                                      className="btn-comment-dropdown"
-                                                      onClick={() => setOpenCommentDropdownId(openCommentDropdownId === reply._id ? null : reply._id)}
-                                                      title="More options"
+                                                      className="comment-action-btn"
+                                                      onClick={() => handleEditComment(reply._id, reply.content)}
                                                     >
-                                                      ⋮
+                                                      ✏️ Edit
                                                     </button>
-                                                    {openCommentDropdownId === reply._id && (
-                                                      <div className="dropdown-menu comment-dropdown">
-                                                        <button
-                                                          className="dropdown-item"
-                                                          onClick={() => {
-                                                            handleEditComment(reply._id, reply.content);
-                                                            setOpenCommentDropdownId(null);
-                                                          }}
-                                                        >
-                                                          ✏️ Edit
-                                                        </button>
-                                                        <button
-                                                          className="dropdown-item delete"
-                                                          onClick={() => {
-                                                            handleDeleteComment(post._id, reply._id);
-                                                            setOpenCommentDropdownId(null);
-                                                          }}
-                                                        >
-                                                          🗑️ Delete
-                                                        </button>
-                                                      </div>
-                                                    )}
-                                                  </div>
+                                                    <button
+                                                      className="comment-action-btn delete-btn"
+                                                      onClick={() => handleDeleteComment(post._id, reply._id)}
+                                                    >
+                                                      🗑️ Delete
+                                                    </button>
+                                                  </>
                                                 ) : (
                                                   <button
                                                     className="comment-action-btn"

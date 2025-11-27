@@ -850,6 +850,16 @@
   text-decoration: underline;
 }
 
+/* Delete button styling */
+.delete-btn {
+  color: #dc2626 !important; /* Red color */
+}
+
+.delete-btn:hover {
+  color: #b91c1c !important; /* Darker red on hover */
+  font-weight: 700;
+}
+
 .btn-comment-action {
   background: none;
   border: none;
