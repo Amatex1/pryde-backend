@@ -917,19 +917,20 @@ function Feed({ onOpenMiniChat }) {
                                             return commentDate.toLocaleDateString();
                                           })()}
                                         </span>
-                                        <div
-                                          className="reaction-container"
-                                          onMouseEnter={() => setShowReactionPicker(`comment-${comment._id}`)}
-                                          onMouseLeave={() => setShowReactionPicker(null)}
-                                        >
+                                        <div className="reaction-container">
                                           <button
                                             className="comment-action-btn"
                                             onClick={() => {/* TODO: Add like functionality */}}
+                                            onMouseEnter={() => setShowReactionPicker(`comment-${comment._id}`)}
                                           >
                                             👍 Like
                                           </button>
                                           {showReactionPicker === `comment-${comment._id}` && (
-                                            <div className="reaction-picker">
+                                            <div
+                                              className="reaction-picker"
+                                              onMouseEnter={() => setShowReactionPicker(`comment-${comment._id}`)}
+                                              onMouseLeave={() => setShowReactionPicker(null)}
+                                            >
                                               <button className="reaction-btn" onClick={() => {/* TODO: Add reaction */}} title="Like">👍</button>
                                               <button className="reaction-btn" onClick={() => {/* TODO: Add reaction */}} title="Love">❤️</button>
                                               <button className="reaction-btn" onClick={() => {/* TODO: Add reaction */}} title="Haha">😂</button>
@@ -942,6 +943,8 @@ function Feed({ onOpenMiniChat }) {
                                               <button className="reaction-btn" onClick={() => {/* TODO: Add reaction */}} title="Fire">🔥</button>
                                               <button className="reaction-btn" onClick={() => {/* TODO: Add reaction */}} title="Clap">👏</button>
                                               <button className="reaction-btn" onClick={() => {/* TODO: Add reaction */}} title="Mind Blown">🤯</button>
+                                              <button className="reaction-btn" onClick={() => {/* TODO: Add reaction */}} title="Disgust">🤢</button>
+                                              <button className="reaction-btn" onClick={() => {/* TODO: Add reaction */}} title="Dislike">👎</button>
                                             </div>
                                           )}
                                         </div>
@@ -1093,25 +1096,34 @@ function Feed({ onOpenMiniChat }) {
                                                     return replyDate.toLocaleDateString();
                                                   })()}
                                                 </span>
-                                                <div
-                                                  className="reaction-container"
-                                                  onMouseEnter={() => setShowReactionPicker(`reply-${reply._id}`)}
-                                                  onMouseLeave={() => setShowReactionPicker(null)}
-                                                >
+                                                <div className="reaction-container">
                                                   <button
                                                     className="comment-action-btn"
                                                     onClick={() => {/* TODO: Add like functionality */}}
+                                                    onMouseEnter={() => setShowReactionPicker(`reply-${reply._id}`)}
                                                   >
                                                     👍 Like
                                                   </button>
                                                   {showReactionPicker === `reply-${reply._id}` && (
-                                                    <div className="reaction-picker">
+                                                    <div
+                                                      className="reaction-picker"
+                                                      onMouseEnter={() => setShowReactionPicker(`reply-${reply._id}`)}
+                                                      onMouseLeave={() => setShowReactionPicker(null)}
+                                                    >
                                                       <button className="reaction-btn" onClick={() => {/* TODO: Add reaction */}} title="Like">👍</button>
                                                       <button className="reaction-btn" onClick={() => {/* TODO: Add reaction */}} title="Love">❤️</button>
                                                       <button className="reaction-btn" onClick={() => {/* TODO: Add reaction */}} title="Haha">😂</button>
                                                       <button className="reaction-btn" onClick={() => {/* TODO: Add reaction */}} title="Wow">😮</button>
                                                       <button className="reaction-btn" onClick={() => {/* TODO: Add reaction */}} title="Sad">😢</button>
                                                       <button className="reaction-btn" onClick={() => {/* TODO: Add reaction */}} title="Angry">😡</button>
+                                                      <button className="reaction-btn" onClick={() => {/* TODO: Add reaction */}} title="Care">🤗</button>
+                                                      <button className="reaction-btn" onClick={() => {/* TODO: Add reaction */}} title="Celebrate">🎉</button>
+                                                      <button className="reaction-btn" onClick={() => {/* TODO: Add reaction */}} title="Think">🤔</button>
+                                                      <button className="reaction-btn" onClick={() => {/* TODO: Add reaction */}} title="Fire">🔥</button>
+                                                      <button className="reaction-btn" onClick={() => {/* TODO: Add reaction */}} title="Clap">👏</button>
+                                                      <button className="reaction-btn" onClick={() => {/* TODO: Add reaction */}} title="Mind Blown">🤯</button>
+                                                      <button className="reaction-btn" onClick={() => {/* TODO: Add reaction */}} title="Disgust">🤢</button>
+                                                      <button className="reaction-btn" onClick={() => {/* TODO: Add reaction */}} title="Dislike">👎</button>
                                                     </div>
                                                   )}
                                                 </div>
