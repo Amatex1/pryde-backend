@@ -143,7 +143,7 @@ router.get('/:id', auth, async (req, res) => {
 // @access  Private
 router.post('/', auth, postLimiter, checkMuted, moderateContent, async (req, res) => {
   try {
-    const { content, images, media, visibility } = req.body;
+    const { content, images, media, visibility, hiddenFrom, sharedWith } = req.body;
 
     // Require either content or media
     if ((!content || content.trim() === '') && (!media || media.length === 0)) {
