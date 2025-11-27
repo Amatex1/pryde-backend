@@ -933,51 +933,48 @@ function Feed({ onOpenMiniChat }) {
                                         >
                                           💬 Reply
                                         </button>
-                                        <div className="comment-dropdown-container">
-                                          <button
-                                            className="btn-comment-dropdown"
-                                            onClick={() => setOpenCommentDropdownId(openCommentDropdownId === comment._id ? null : comment._id)}
-                                            title="More options"
-                                          >
-                                            ⋮
-                                          </button>
-                                          {openCommentDropdownId === comment._id && (
-                                            <div className="dropdown-menu comment-dropdown">
-                                              {isOwnComment ? (
-                                                <>
-                                                  <button
-                                                    className="dropdown-item"
-                                                    onClick={() => {
-                                                      handleEditComment(comment._id, comment.content);
-                                                      setOpenCommentDropdownId(null);
-                                                    }}
-                                                  >
-                                                    ✏️ Edit
-                                                  </button>
-                                                  <button
-                                                    className="dropdown-item delete"
-                                                    onClick={() => {
-                                                      handleDeleteComment(post._id, comment._id);
-                                                      setOpenCommentDropdownId(null);
-                                                    }}
-                                                  >
-                                                    🗑️ Delete
-                                                  </button>
-                                                </>
-                                              ) : (
+                                        {isOwnComment ? (
+                                          <div className="comment-dropdown-container">
+                                            <button
+                                              className="btn-comment-dropdown"
+                                              onClick={() => setOpenCommentDropdownId(openCommentDropdownId === comment._id ? null : comment._id)}
+                                              title="More options"
+                                            >
+                                              ⋮
+                                            </button>
+                                            {openCommentDropdownId === comment._id && (
+                                              <div className="dropdown-menu comment-dropdown">
                                                 <button
-                                                  className="dropdown-item report"
+                                                  className="dropdown-item"
                                                   onClick={() => {
-                                                    setReportModal({ isOpen: true, type: 'comment', contentId: comment._id, userId: comment.user?._id });
+                                                    handleEditComment(comment._id, comment.content);
                                                     setOpenCommentDropdownId(null);
                                                   }}
                                                 >
-                                                  🚩 Report
+                                                  ✏️ Edit
                                                 </button>
-                                              )}
-                                            </div>
-                                          )}
-                                        </div>
+                                                <button
+                                                  className="dropdown-item delete"
+                                                  onClick={() => {
+                                                    handleDeleteComment(post._id, comment._id);
+                                                    setOpenCommentDropdownId(null);
+                                                  }}
+                                                >
+                                                  🗑️ Delete
+                                                </button>
+                                              </div>
+                                            )}
+                                          </div>
+                                        ) : (
+                                          <button
+                                            className="comment-action-btn"
+                                            onClick={() => {
+                                              setReportModal({ isOpen: true, type: 'comment', contentId: comment._id, userId: comment.user?._id });
+                                            }}
+                                          >
+                                            🚩 Report
+                                          </button>
+                                        )}
                                       </div>
 
                                       {/* Reply Input Box */}
@@ -1098,51 +1095,48 @@ function Feed({ onOpenMiniChat }) {
                                                 >
                                                   💬 Reply
                                                 </button>
-                                                <div className="comment-dropdown-container">
-                                                  <button
-                                                    className="btn-comment-dropdown"
-                                                    onClick={() => setOpenCommentDropdownId(openCommentDropdownId === reply._id ? null : reply._id)}
-                                                    title="More options"
-                                                  >
-                                                    ⋮
-                                                  </button>
-                                                  {openCommentDropdownId === reply._id && (
-                                                    <div className="dropdown-menu comment-dropdown">
-                                                      {isOwnReply ? (
-                                                        <>
-                                                          <button
-                                                            className="dropdown-item"
-                                                            onClick={() => {
-                                                              handleEditComment(reply._id, reply.content);
-                                                              setOpenCommentDropdownId(null);
-                                                            }}
-                                                          >
-                                                            ✏️ Edit
-                                                          </button>
-                                                          <button
-                                                            className="dropdown-item delete"
-                                                            onClick={() => {
-                                                              handleDeleteComment(post._id, reply._id);
-                                                              setOpenCommentDropdownId(null);
-                                                            }}
-                                                          >
-                                                            🗑️ Delete
-                                                          </button>
-                                                        </>
-                                                      ) : (
+                                                {isOwnReply ? (
+                                                  <div className="comment-dropdown-container">
+                                                    <button
+                                                      className="btn-comment-dropdown"
+                                                      onClick={() => setOpenCommentDropdownId(openCommentDropdownId === reply._id ? null : reply._id)}
+                                                      title="More options"
+                                                    >
+                                                      ⋮
+                                                    </button>
+                                                    {openCommentDropdownId === reply._id && (
+                                                      <div className="dropdown-menu comment-dropdown">
                                                         <button
-                                                          className="dropdown-item report"
+                                                          className="dropdown-item"
                                                           onClick={() => {
-                                                            setReportModal({ isOpen: true, type: 'comment', contentId: reply._id, userId: reply.user?._id });
+                                                            handleEditComment(reply._id, reply.content);
                                                             setOpenCommentDropdownId(null);
                                                           }}
                                                         >
-                                                          🚩 Report
+                                                          ✏️ Edit
                                                         </button>
-                                                      )}
-                                                    </div>
-                                                  )}
-                                                </div>
+                                                        <button
+                                                          className="dropdown-item delete"
+                                                          onClick={() => {
+                                                            handleDeleteComment(post._id, reply._id);
+                                                            setOpenCommentDropdownId(null);
+                                                          }}
+                                                        >
+                                                          🗑️ Delete
+                                                        </button>
+                                                      </div>
+                                                    )}
+                                                  </div>
+                                                ) : (
+                                                  <button
+                                                    className="comment-action-btn"
+                                                    onClick={() => {
+                                                      setReportModal({ isOpen: true, type: 'comment', contentId: reply._id, userId: reply.user?._id });
+                                                    }}
+                                                  >
+                                                    🚩 Report
+                                                  </button>
+                                                )}
                                               </div>
                                             </>
                                           )}
