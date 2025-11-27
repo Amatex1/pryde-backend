@@ -95,6 +95,7 @@
   align-items: center;
   gap: 0.75rem;
   position: relative;
+  flex-shrink: 0; /* Prevent shrinking on mobile */
 }
 
 .messages-button {
@@ -268,8 +269,14 @@
 
   .navbar-container {
     flex-direction: row;
-    flex-wrap: wrap;
-    gap: 0.75rem;
+    flex-wrap: nowrap; /* Prevent wrapping */
+    gap: 0.5rem;
+    justify-content: space-between;
+  }
+
+  /* Hide global search on mobile to save space */
+  .global-search {
+    display: none;
   }
 
   .navbar-brand {
@@ -321,6 +328,32 @@
     left: auto;
     width: 200px;
   }
+
+  /* Fix profile picture and name overflow on mobile */
+  .navbar-user {
+    flex-wrap: wrap;
+    max-width: 100%;
+  }
+
+  .user-profile-trigger {
+    padding: 0.5rem;
+    max-width: 100%;
+  }
+
+  .user-name {
+    display: none; /* Hide username on very small screens */
+  }
+
+  .user-avatar {
+    width: 36px;
+    height: 36px;
+  }
+
+  .profile-dropdown {
+    right: 0;
+    left: auto;
+    min-width: 180px;
+  }
 }
 
 /* Extra small devices */
@@ -328,6 +361,42 @@
   .navbar {
     padding: 0.5rem 0.75rem;
   }
+
+  .navbar-container {
+    gap: 0.5rem;
+  }
+
+  .navbar-brand {
+    font-size: 1.1rem;
+  }
+
+  .brand-icon {
+    font-size: 1.3rem;
+  }
+
+  .user-avatar {
+    width: 32px;
+    height: 32px;
+  }
+
+  .messages-button {
+    width: 40px;
+    height: 40px;
+  }
+
+  .messages-button svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .user-profile-trigger {
+    padding: 0.25rem;
+  }
+
+  .dropdown-arrow {
+    display: none; /* Hide dropdown arrow on very small screens */
+  }
+}
 
   .navbar-container {
     gap: 0.5rem;

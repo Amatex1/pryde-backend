@@ -46,6 +46,32 @@
   font-size: 0.85rem;
 }
 
+/* Ensure footer text is always visible */
+.app-footer,
+.app-footer * {
+  color: var(--text-main);
+}
+
+.app-footer .footer-tagline,
+.app-footer .footer-copyright,
+.app-footer .footer-notice,
+.app-footer .footer-quick-links a,
+.app-footer .footer-quick-links span {
+  color: var(--text-muted) !important;
+}
+
+.app-footer .footer-links a {
+  color: var(--text-main) !important;
+}
+
+.app-footer .footer-links a:hover {
+  color: var(--pryde-purple) !important;
+}
+
+.app-footer .footer-quick-links a:hover {
+  color: var(--pryde-purple) !important;
+}
+
 .footer-section h4 {
   color: var(--pryde-purple);
   font-size: 1.1rem;
@@ -126,6 +152,32 @@
 
 [data-theme="dark"] .footer-content {
   border-bottom-color: rgba(108, 92, 231, 0.2);
+}
+
+/* Ensure dark mode footer text is visible */
+[data-theme="dark"] .app-footer,
+[data-theme="dark"] .app-footer * {
+  color: var(--text-main);
+}
+
+[data-theme="dark"] .app-footer .footer-tagline,
+[data-theme="dark"] .app-footer .footer-copyright,
+[data-theme="dark"] .app-footer .footer-notice,
+[data-theme="dark"] .app-footer .footer-quick-links a,
+[data-theme="dark"] .app-footer .footer-quick-links span {
+  color: var(--text-muted) !important;
+}
+
+[data-theme="dark"] .app-footer .footer-links a {
+  color: var(--text-main) !important;
+}
+
+[data-theme="dark"] .app-footer .footer-links a:hover {
+  color: var(--pryde-purple) !important;
+}
+
+[data-theme="dark"] .app-footer .footer-quick-links a:hover {
+  color: var(--pryde-purple) !important;
 }
 
 /* Responsive Design */
