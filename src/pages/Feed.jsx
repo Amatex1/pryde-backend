@@ -38,6 +38,7 @@ function Feed({ onOpenMiniChat }) {
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const [hiddenFromUsers, setHiddenFromUsers] = useState([]);
   const [sharedWithUsers, setSharedWithUsers] = useState([]);
+  const [showReplies, setShowReplies] = useState({}); // Track which comments have replies visible
   const [editPostVisibility, setEditPostVisibility] = useState('friends');
   const [editHiddenFromUsers, setEditHiddenFromUsers] = useState([]);
   const [editSharedWithUsers, setEditSharedWithUsers] = useState([]);
@@ -929,6 +930,17 @@ function Feed({ onOpenMiniChat }) {
                                         >
                                           💬 Reply
                                         </button>
+                                        {replies.length > 0 && (
+                                          <button
+                                            className="comment-action-btn view-replies-btn"
+                                            onClick={() => setShowReplies(prev => ({
+                                              ...prev,
+                                              [comment._id]: !prev[comment._id]
+                                            }))}
+                                          >
+                                            {showReplies[comment._id] ? '▲' : '▼'} {replies.length} {replies.length === 1 ? 'reply' : 'replies'}
+                                          </button>
+                                        )}
                                         {isOwnComment ? (
                                           <div className="comment-dropdown-container">
                                             <button
@@ -1002,7 +1014,7 @@ function Feed({ onOpenMiniChat }) {
                               </div>
 
                               {/* Nested Replies */}
-                              {replies.length > 0 && (
+                              {replies.length > 0 && showReplies[comment._id] && (
                                 <div className="comment-replies">
                                   {replies.map((reply) => {
                                     const isOwnReply = reply.user?._id === currentUser?._id;

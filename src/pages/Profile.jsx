@@ -32,6 +32,7 @@ function Profile({ onOpenMiniChat }) {
   const [replyText, setReplyText] = useState('');
   const [openCommentDropdownId, setOpenCommentDropdownId] = useState(null);
   const commentRefs = useRef({});
+  const [showReplies, setShowReplies] = useState({}); // Track which comments have replies visible
   const [editProfileModal, setEditProfileModal] = useState(false);
   const [friendStatus, setFriendStatus] = useState(null); // null, 'friends', 'pending_sent', 'pending_received', 'none'
   const [friendRequestId, setFriendRequestId] = useState(null);
@@ -1081,6 +1082,17 @@ function Profile({ onOpenMiniChat }) {
                                           >
                                             💬 Reply
                                           </button>
+                                          {replies.length > 0 && (
+                                            <button
+                                              className="comment-action-btn view-replies-btn"
+                                              onClick={() => setShowReplies(prev => ({
+                                                ...prev,
+                                                [comment._id]: !prev[comment._id]
+                                              }))}
+                                            >
+                                              {showReplies[comment._id] ? '▲' : '▼'} {replies.length} {replies.length === 1 ? 'reply' : 'replies'}
+                                            </button>
+                                          )}
                                           {isOwnComment ? (
                                             <div className="comment-dropdown-container">
                                               <button
@@ -1154,7 +1166,7 @@ function Profile({ onOpenMiniChat }) {
                                 </div>
 
                                 {/* Nested Replies */}
-                                {replies.length > 0 && (
+                                {replies.length > 0 && showReplies[comment._id] && (
                                   <div className="comment-replies">
                                     {replies.map((reply) => {
                                       const isOwnReply = reply.user?._id === currentUser?._id;

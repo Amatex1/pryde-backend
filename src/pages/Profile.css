@@ -700,33 +700,10 @@
   position: relative;
 }
 
-/* Vertical line connecting parent comment avatar to replies */
-.comment-thread > .comment::after {
-  content: '';
-  position: absolute;
-  left: 20px; /* Center of 40px avatar */
-  top: 50px; /* Below the avatar */
-  width: 2px;
-  height: calc(100% + 0.75rem);
-  background: var(--border-light);
-  z-index: 0;
-}
-
-[data-theme="dark"] .comment-thread > .comment::after {
-  background: rgba(255, 255, 255, 0.1);
-}
-
-/* Hide the line if there are no replies */
-.comment-thread > .comment:not(:has(+ .comment-replies))::after {
-  display: none;
-}
-
 .comment-replies {
   margin-left: 2.5rem;
   padding-left: 1.5rem;
   padding-top: 0.75rem;
-  border-left: 2px solid var(--border-light);
-  border-top: 1px solid var(--border-light);
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
@@ -734,49 +711,10 @@
   position: relative;
 }
 
-[data-theme="dark"] .comment-replies {
-  border-left-color: rgba(255, 255, 255, 0.1);
-  border-top-color: rgba(255, 255, 255, 0.1);
-}
-
-/* Branch connector from parent to first reply */
-.comment-replies::before {
-  content: '';
-  position: absolute;
-  left: -2px;
-  top: 0;
-  width: 20px;
-  height: 20px;
-  border-left: 2px solid var(--border-light);
-  border-bottom: 2px solid var(--border-light);
-  border-bottom-left-radius: 8px;
-}
-
-[data-theme="dark"] .comment-replies::before {
-  border-left-color: rgba(255, 255, 255, 0.1);
-  border-bottom-color: rgba(255, 255, 255, 0.1);
-}
-
 .comment.reply {
   background: transparent;
   padding: 0.5rem 0;
   position: relative;
-}
-
-/* Horizontal line connecting each reply to the vertical branch line */
-.comment.reply::before {
-  content: '';
-  position: absolute;
-  left: -1.5rem; /* Extend to the vertical line */
-  top: 20px; /* Center of 40px avatar */
-  width: 1rem;
-  height: 2px;
-  background: var(--border-light);
-  z-index: 0;
-}
-
-[data-theme="dark"] .comment.reply::before {
-  background: rgba(255, 255, 255, 0.1);
 }
 
 .comment-avatar {
@@ -899,6 +837,17 @@
 
 [data-theme="dark"] .comment-action-btn:hover {
   color: var(--pryde-purple);
+}
+
+/* Twitter/X style view replies button */
+.view-replies-btn {
+  color: var(--electric-blue) !important;
+  font-weight: 500;
+}
+
+.view-replies-btn:hover {
+  color: var(--pryde-purple) !important;
+  text-decoration: underline;
 }
 
 .btn-comment-action {
