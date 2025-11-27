@@ -936,6 +936,12 @@ function Feed({ onOpenMiniChat }) {
                                               <button className="reaction-btn" onClick={() => {/* TODO: Add reaction */}} title="Wow">😮</button>
                                               <button className="reaction-btn" onClick={() => {/* TODO: Add reaction */}} title="Sad">😢</button>
                                               <button className="reaction-btn" onClick={() => {/* TODO: Add reaction */}} title="Angry">😡</button>
+                                              <button className="reaction-btn" onClick={() => {/* TODO: Add reaction */}} title="Care">🤗</button>
+                                              <button className="reaction-btn" onClick={() => {/* TODO: Add reaction */}} title="Celebrate">🎉</button>
+                                              <button className="reaction-btn" onClick={() => {/* TODO: Add reaction */}} title="Think">🤔</button>
+                                              <button className="reaction-btn" onClick={() => {/* TODO: Add reaction */}} title="Fire">🔥</button>
+                                              <button className="reaction-btn" onClick={() => {/* TODO: Add reaction */}} title="Clap">👏</button>
+                                              <button className="reaction-btn" onClick={() => {/* TODO: Add reaction */}} title="Mind Blown">🤯</button>
                                             </div>
                                           )}
                                         </div>
