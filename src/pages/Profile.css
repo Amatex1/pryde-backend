@@ -310,7 +310,8 @@
 .btn-add-friend,
 .btn-edit-profile,
 .btn-message,
-.btn-unfriend {
+.btn-unfriend,
+.btn-cancel-request {
   padding: 0.75rem 1.5rem;
   border-radius: 12px;
   border: none;
@@ -334,6 +335,13 @@
   box-shadow: 0 4px 12px rgba(108, 92, 231, 0.15);
 }
 
+.btn-cancel-request {
+  background: var(--soft-lavender);
+  color: #e74c3c;
+  border: 2px solid #e74c3c;
+  box-shadow: 0 4px 12px rgba(231, 76, 60, 0.15);
+}
+
 .btn-add-friend:hover:not(:disabled),
 .btn-edit-profile:hover,
 .btn-message:hover {
@@ -342,6 +350,14 @@
 }
 
 .btn-unfriend:hover {
+  background: #e74c3c;
+  color: white;
+  border-color: #e74c3c;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(231, 76, 60, 0.3);
+}
+
+.btn-cancel-request:hover {
   background: #e74c3c;
   color: white;
   border-color: #e74c3c;
@@ -1022,7 +1038,8 @@
 
   .btn-add-friend,
   .btn-message,
-  .btn-unfriend {
+  .btn-unfriend,
+  .btn-cancel-request {
     flex: 1;
     min-width: calc(50% - 0.375rem);
     font-size: 0.875rem;
@@ -1099,7 +1116,8 @@
 
   .btn-add-friend,
   .btn-message,
-  .btn-unfriend {
+  .btn-unfriend,
+  .btn-cancel-request {
     width: 100%;
     min-width: 100%;
   }
