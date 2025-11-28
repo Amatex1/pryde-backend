@@ -2,6 +2,7 @@ import express from 'express';
 const router = express.Router();
 import GroupChat from '../models/GroupChat.js';
 import Message from '../models/Message.js';
+import Conversation from '../models/Conversation.js';
 import auth from '../middleware/auth.js';
 
 // Create a new group chat
@@ -191,6 +192,137 @@ router.put('/:id', auth, async (req, res) => {
     res.json(groupChat);
   } catch (error) {
     console.error('Update group error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// ========================================
+// GROUP CONVERSATION MANAGEMENT
+// ========================================
+
+// @route   POST /api/groupchats/:groupId/archive
+// @desc    Archive a group chat
+// @access  Private
+router.post('/:groupId/archive', auth, async (req, res) => {
+  try {
+    const currentUserId = req.user.id;
+    const groupId = req.params.groupId;
+
+    // Find or create conversation
+    let conversation = await Conversation.findOne({
+      groupChat: groupId
+    });
+
+    if (!conversation) {
+      conversation = new Conversation({
+        groupChat: groupId,
+        participants: []
+      });
+    }
+
+    // Add to archivedBy if not already archived
+    if (!conversation.archivedBy.includes(currentUserId)) {
+      conversation.archivedBy.push(currentUserId);
+      await conversation.save();
+    }
+
+    res.json({ message: 'Group chat archived', conversation });
+  } catch (error) {
+    console.error('Archive group chat error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   POST /api/groupchats/:groupId/unarchive
+// @desc    Unarchive a group chat
+// @access  Private
+router.post('/:groupId/unarchive', auth, async (req, res) => {
+  try {
+    const currentUserId = req.user.id;
+    const groupId = req.params.groupId;
+
+    const conversation = await Conversation.findOne({
+      groupChat: groupId
+    });
+
+    if (conversation) {
+      conversation.archivedBy = conversation.archivedBy.filter(
+        id => id.toString() !== currentUserId
+      );
+      await conversation.save();
+    }
+
+    res.json({ message: 'Group chat unarchived', conversation });
+  } catch (error) {
+    console.error('Unarchive group chat error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   POST /api/groupchats/:groupId/mute
+// @desc    Mute notifications for a group chat
+// @access  Private
+router.post('/:groupId/mute', auth, async (req, res) => {
+  try {
+    const currentUserId = req.user.id;
+    const groupId = req.params.groupId;
+    const { duration } = req.body; // duration in hours, null for indefinite
+
+    // Find or create conversation
+    let conversation = await Conversation.findOne({
+      groupChat: groupId
+    });
+
+    if (!conversation) {
+      conversation = new Conversation({
+        groupChat: groupId,
+        participants: []
+      });
+    }
+
+    // Remove existing mute for this user
+    conversation.mutedBy = conversation.mutedBy.filter(
+      m => m.user.toString() !== currentUserId
+    );
+
+    // Add new mute
+    const mutedUntil = duration ? new Date(Date.now() + duration * 60 * 60 * 1000) : null;
+    conversation.mutedBy.push({
+      user: currentUserId,
+      mutedUntil
+    });
+
+    await conversation.save();
+
+    res.json({ message: 'Group chat muted', conversation, mutedUntil });
+  } catch (error) {
+    console.error('Mute group chat error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   POST /api/groupchats/:groupId/unmute
+// @desc    Unmute notifications for a group chat
+// @access  Private
+router.post('/:groupId/unmute', auth, async (req, res) => {
+  try {
+    const currentUserId = req.user.id;
+    const groupId = req.params.groupId;
+
+    const conversation = await Conversation.findOne({
+      groupChat: groupId
+    });
+
+    if (conversation) {
+      conversation.mutedBy = conversation.mutedBy.filter(
+        m => m.user.toString() !== currentUserId
+      );
+      await conversation.save();
+    }
+
+    res.json({ message: 'Group chat unmuted', conversation });
+  } catch (error) {
+    console.error('Unmute group chat error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });

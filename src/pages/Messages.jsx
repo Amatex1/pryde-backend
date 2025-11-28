@@ -43,9 +43,12 @@ function Messages({ onOpenMiniChat }) {
   const [reactingToMessage, setReactingToMessage] = useState(null);
   const [editingMessageId, setEditingMessageId] = useState(null);
   const [editMessageText, setEditMessageText] = useState('');
-  const [activeTab, setActiveTab] = useState('all'); // 'all' or 'unread'
+  const [activeTab, setActiveTab] = useState('all'); // 'all' or 'unread' or 'archived'
   const [replyingTo, setReplyingTo] = useState(null); // Message being replied to
   const [showMobileSidebar, setShowMobileSidebar] = useState(false);
+  const [openDropdown, setOpenDropdown] = useState(null); // Track which dropdown is open
+  const [archivedConversations, setArchivedConversations] = useState([]);
+  const [mutedConversations, setMutedConversations] = useState([]);
   const messagesEndRef = useRef(null);
   const typingTimeoutRef = useRef(null);
 
@@ -448,6 +451,144 @@ function Messages({ onOpenMiniChat }) {
     fetchFriends();
   };
 
+  // Conversation management functions
+  const handleArchiveConversation = async (userId, isGroup = false) => {
+    try {
+      const endpoint = isGroup
+        ? `/groupchats/${userId}/archive`
+        : `/messages/conversations/${userId}/archive`;
+
+      await api.post(endpoint);
+
+      // Add to archived list
+      setArchivedConversations(prev => [...prev, userId]);
+
+      // Close dropdown
+      setOpenDropdown(null);
+
+      // Refresh conversations
+      fetchConversations();
+    } catch (error) {
+      console.error('Failed to archive conversation:', error);
+    }
+  };
+
+  const handleUnarchiveConversation = async (userId, isGroup = false) => {
+    try {
+      const endpoint = isGroup
+        ? `/groupchats/${userId}/unarchive`
+        : `/messages/conversations/${userId}/unarchive`;
+
+      await api.post(endpoint);
+
+      // Remove from archived list
+      setArchivedConversations(prev => prev.filter(id => id !== userId));
+
+      // Refresh conversations
+      fetchConversations();
+    } catch (error) {
+      console.error('Failed to unarchive conversation:', error);
+    }
+  };
+
+  const handleMuteConversation = async (userId, isGroup = false, duration = null) => {
+    try {
+      const endpoint = isGroup
+        ? `/groupchats/${userId}/mute`
+        : `/messages/conversations/${userId}/mute`;
+
+      await api.post(endpoint, { duration });
+
+      // Add to muted list
+      setMutedConversations(prev => [...prev, userId]);
+
+      // Close dropdown
+      setOpenDropdown(null);
+    } catch (error) {
+      console.error('Failed to mute conversation:', error);
+    }
+  };
+
+  const handleUnmuteConversation = async (userId, isGroup = false) => {
+    try {
+      const endpoint = isGroup
+        ? `/groupchats/${userId}/unmute`
+        : `/messages/conversations/${userId}/unmute`;
+
+      await api.post(endpoint);
+
+      // Remove from muted list
+      setMutedConversations(prev => prev.filter(id => id !== userId));
+    } catch (error) {
+      console.error('Failed to unmute conversation:', error);
+    }
+  };
+
+  const handleMarkAsUnread = async (userId) => {
+    try {
+      await api.post(`/messages/conversations/${userId}/mark-unread`);
+
+      // Close dropdown
+      setOpenDropdown(null);
+
+      // Refresh conversations
+      fetchConversations();
+    } catch (error) {
+      console.error('Failed to mark as unread:', error);
+    }
+  };
+
+  const handleDeleteConversation = async (userId) => {
+    if (!window.confirm('Are you sure you want to delete this entire conversation? This cannot be undone.')) {
+      return;
+    }
+
+    try {
+      await api.delete(`/messages/conversations/${userId}`);
+
+      // Close dropdown
+      setOpenDropdown(null);
+
+      // Clear selected chat if it was the deleted one
+      if (selectedChat === userId) {
+        setSelectedChat(null);
+        setSelectedChatType(null);
+      }
+
+      // Refresh conversations
+      fetchConversations();
+    } catch (error) {
+      console.error('Failed to delete conversation:', error);
+    }
+  };
+
+  const handleBlockUser = async (userId) => {
+    if (!window.confirm('Are you sure you want to block this user? They will not be able to message you or view your profile.')) {
+      return;
+    }
+
+    try {
+      await api.post('/blocks', { blockedUserId: userId });
+
+      // Close dropdown
+      setOpenDropdown(null);
+
+      // Clear selected chat
+      if (selectedChat === userId) {
+        setSelectedChat(null);
+        setSelectedChatType(null);
+      }
+
+      // Refresh conversations
+      fetchConversations();
+
+      alert('User blocked successfully');
+    } catch (error) {
+      console.error('Failed to block user:', error);
+      alert('Failed to block user');
+    }
+  };
+
   const handleCreateGroup = async (e) => {
     e.preventDefault();
     if (!groupName.trim() || selectedMembers.length === 0) {
@@ -496,10 +637,11 @@ function Messages({ onOpenMiniChat }) {
               <div className="header-buttons">
                 <button className="btn-new-chat" onClick={handleOpenNewChatModal} title="New Chat">💬</button>
                 <button className="btn-new-chat" onClick={() => setShowNewGroupModal(true)} title="New Group">👥</button>
+                <button className="btn-new-chat" onClick={() => setActiveTab('archived')} title="Archived">📦</button>
               </div>
             </div>
 
-            {/* Tabs for All/Unread */}
+            {/* Tabs for All/Unread/Archived */}
             <div className="messages-tabs">
               <button
                 className={`tab-button ${activeTab === 'all' ? 'active' : ''}`}
@@ -513,6 +655,12 @@ function Messages({ onOpenMiniChat }) {
               >
                 Unread
               </button>
+              <button
+                className={`tab-button ${activeTab === 'archived' ? 'active' : ''}`}
+                onClick={() => setActiveTab('archived')}
+              >
+                Archived
+              </button>
             </div>
 
             <div className="conversations-list">
@@ -524,33 +672,74 @@ function Messages({ onOpenMiniChat }) {
                   {groupChats.length > 0 && (
                     <>
                       <div className="section-label">Groups</div>
-                      {groupChats.map((group) => (
+                      {groupChats
+                        .filter(group => {
+                          const isArchived = archivedConversations.includes(group._id);
+                          if (activeTab === 'archived') return isArchived;
+                          return !isArchived; // Show non-archived in 'all' and 'unread' tabs
+                        })
+                        .map((group) => (
                         <div
                           key={group._id}
                           className={`conversation-item ${selectedChat === group._id && selectedChatType === 'group' ? 'active' : ''}`}
-                          onClick={() => {
-                            setSelectedChat(group._id);
-                            setSelectedChatType('group');
-                            setShowMobileSidebar(false);
-                          }}
                         >
-                          <div className="conv-avatar group-avatar">
-                            {group.avatar ? (
-                              <img src={group.avatar} alt={group.name} />
-                            ) : (
-                              <span>👥</span>
-                            )}
-                          </div>
-                          <div className="conv-info">
-                            <div className="conv-header">
-                              <div className="conv-name">{group.name}</div>
-                              <div className="conv-time">
-                                {group.lastMessage ? new Date(group.updatedAt).toLocaleTimeString() : ''}
+                          <div
+                            className="conv-clickable"
+                            onClick={() => {
+                              setSelectedChat(group._id);
+                              setSelectedChatType('group');
+                              setShowMobileSidebar(false);
+                            }}
+                          >
+                            <div className="conv-avatar group-avatar">
+                              {group.avatar ? (
+                                <img src={group.avatar} alt={group.name} />
+                              ) : (
+                                <span>👥</span>
+                              )}
+                            </div>
+                            <div className="conv-info">
+                              <div className="conv-header">
+                                <div className="conv-name">{group.name}</div>
+                                <div className="conv-time">
+                                  {group.lastMessage ? new Date(group.updatedAt).toLocaleTimeString() : ''}
+                                </div>
+                              </div>
+                              <div className="conv-last-message">
+                                {mutedConversations.includes(group._id) && '🔕 '}
+                                {group.members?.length || 0} members
                               </div>
                             </div>
-                            <div className="conv-last-message">
-                              {group.members?.length || 0} members
-                            </div>
+                          </div>
+
+                          {/* 3-dot dropdown menu for groups */}
+                          <div className="conv-actions">
+                            <button
+                              className="btn-conv-menu"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setOpenDropdown(openDropdown === group._id ? null : group._id);
+                              }}
+                            >
+                              ⋮
+                            </button>
+
+                            {openDropdown === group._id && (
+                              <div className="conv-dropdown">
+                                <button onClick={(e) => { e.stopPropagation(); handleArchiveConversation(group._id, true); }}>
+                                  📦 Archive
+                                </button>
+                                {mutedConversations.includes(group._id) ? (
+                                  <button onClick={(e) => { e.stopPropagation(); handleUnmuteConversation(group._id, true); }}>
+                                    🔔 Unmute
+                                  </button>
+                                ) : (
+                                  <button onClick={(e) => { e.stopPropagation(); handleMuteConversation(group._id, true); }}>
+                                    🔕 Mute
+                                  </button>
+                                )}
+                              </div>
+                            )}
                           </div>
                         </div>
                       ))}
@@ -562,7 +751,12 @@ function Messages({ onOpenMiniChat }) {
                     <>
                       <div className="section-label">Direct Messages</div>
                       {conversations
-                        .filter(conv => activeTab === 'all' || (activeTab === 'unread' && conv.unread > 0))
+                        .filter(conv => {
+                          const isArchived = archivedConversations.includes(conv._id);
+                          if (activeTab === 'archived') return isArchived;
+                          if (activeTab === 'unread') return !isArchived && conv.unread > 0;
+                          return !isArchived; // 'all' tab shows non-archived
+                        })
                         .map((conv) => {
                         // Use the otherUser field from backend, or fallback to lastMessage sender/recipient
                         const otherUser = conv.otherUser || (
@@ -575,35 +769,82 @@ function Messages({ onOpenMiniChat }) {
                           <div
                             key={conv._id}
                             className={`conversation-item ${selectedChat === conv._id && selectedChatType === 'user' ? 'active' : ''}`}
-                            onClick={() => {
-                              setSelectedChat(conv._id);
-                              setSelectedChatType('user');
-                              setShowMobileSidebar(false);
-                            }}
                           >
-                      <div className="conv-avatar">
-                        {otherUser?.profilePhoto ? (
-                          <img src={getImageUrl(otherUser.profilePhoto)} alt={otherUser.username} />
-                        ) : (
-                          <span>{otherUser?.username?.charAt(0).toUpperCase() || '?'}</span>
-                        )}
-                      </div>
-                      <div className="conv-info">
-                        <div className="conv-header">
-                          <div className="conv-name">{otherUser?.displayName || otherUser?.username || 'Unknown'}</div>
-                          <div className="conv-time">
-                            {conv.lastMessage?.createdAt ? new Date(conv.lastMessage.createdAt).toLocaleTimeString() : ''}
+                            <div
+                              className="conv-clickable"
+                              onClick={() => {
+                                setSelectedChat(conv._id);
+                                setSelectedChatType('user');
+                                setShowMobileSidebar(false);
+                              }}
+                            >
+                              <div className="conv-avatar">
+                                {otherUser?.profilePhoto ? (
+                                  <img src={getImageUrl(otherUser.profilePhoto)} alt={otherUser.username} />
+                                ) : (
+                                  <span>{otherUser?.username?.charAt(0).toUpperCase() || '?'}</span>
+                                )}
+                              </div>
+                              <div className="conv-info">
+                                <div className="conv-header">
+                                  <div className="conv-name">{otherUser?.displayName || otherUser?.username || 'Unknown'}</div>
+                                  <div className="conv-time">
+                                    {conv.lastMessage?.createdAt ? new Date(conv.lastMessage.createdAt).toLocaleTimeString() : ''}
+                                  </div>
+                                </div>
+                                <div className="conv-last-message">
+                                  {mutedConversations.includes(conv._id) && '🔕 '}
+                                  {conv.lastMessage?.content || 'No messages'}
+                                </div>
+                              </div>
+                              {conv.unread > 0 && (
+                                <div className="unread-badge">{conv.unread}</div>
+                              )}
+                            </div>
+
+                            {/* 3-dot dropdown menu */}
+                            <div className="conv-actions">
+                              <button
+                                className="btn-conv-menu"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setOpenDropdown(openDropdown === conv._id ? null : conv._id);
+                                }}
+                              >
+                                ⋮
+                              </button>
+
+                              {openDropdown === conv._id && (
+                                <div className="conv-dropdown">
+                                  <button onClick={(e) => { e.stopPropagation(); handleMarkAsUnread(conv._id); }}>
+                                    📧 Mark as Unread
+                                  </button>
+                                  <button onClick={(e) => { e.stopPropagation(); handleArchiveConversation(conv._id); }}>
+                                    📦 Archive
+                                  </button>
+                                  {mutedConversations.includes(conv._id) ? (
+                                    <button onClick={(e) => { e.stopPropagation(); handleUnmuteConversation(conv._id); }}>
+                                      🔔 Unmute
+                                    </button>
+                                  ) : (
+                                    <button onClick={(e) => { e.stopPropagation(); handleMuteConversation(conv._id); }}>
+                                      🔕 Mute
+                                    </button>
+                                  )}
+                                  <button onClick={(e) => { e.stopPropagation(); handleDeleteConversation(conv._id); }}>
+                                    🗑️ Delete
+                                  </button>
+                                  <button
+                                    onClick={(e) => { e.stopPropagation(); handleBlockUser(otherUser?._id); }}
+                                    className="danger"
+                                  >
+                                    🚫 Block User
+                                  </button>
+                                </div>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                        <div className="conv-last-message">
-                          {conv.lastMessage?.content || 'No messages'}
-                        </div>
-                      </div>
-                      {conv.unread > 0 && (
-                        <div className="unread-badge">{conv.unread}</div>
-                      )}
-                    </div>
-                  );
+                        );
                       })}
                     </>
                   )}
@@ -646,6 +887,7 @@ function Messages({ onOpenMiniChat }) {
                         {selectedChatType === 'group'
                           ? selectedGroup?.name || 'Group Chat'
                           : selectedUser?.displayName || selectedUser?.username || 'User'}
+                        {mutedConversations.includes(selectedChat) && <span className="muted-indicator">🔕</span>}
                       </div>
                       {selectedChatType !== 'group' && (
                         <div className={`chat-user-status ${onlineUsers.includes(selectedChat) ? 'online' : 'offline'}`}>
@@ -654,6 +896,21 @@ function Messages({ onOpenMiniChat }) {
                       )}
                     </div>
                   </div>
+
+                  {/* Chat Settings Button */}
+                  <button
+                    className="btn-chat-settings"
+                    onClick={() => {
+                      if (mutedConversations.includes(selectedChat)) {
+                        handleUnmuteConversation(selectedChat, selectedChatType === 'group');
+                      } else {
+                        handleMuteConversation(selectedChat, selectedChatType === 'group');
+                      }
+                    }}
+                    title={mutedConversations.includes(selectedChat) ? 'Unmute notifications' : 'Mute notifications'}
+                  >
+                    {mutedConversations.includes(selectedChat) ? '🔔' : '🔕'}
+                  </button>
                 </div>
 
                 <div className="chat-messages">

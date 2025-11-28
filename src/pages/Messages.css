@@ -100,9 +100,10 @@
   padding: 1rem 1.5rem;
   display: flex;
   gap: 1rem;
-  cursor: pointer;
+  align-items: center;
   transition: all 0.3s ease;
   border-bottom: 1px solid var(--border-light);
+  position: relative;
 }
 
 .conversation-item:hover {
@@ -112,6 +113,14 @@
 .conversation-item.active {
   background: var(--soft-lavender);
   border-left: 3px solid var(--pryde-purple);
+}
+
+.conv-clickable {
+  display: flex;
+  gap: 1rem;
+  flex: 1;
+  cursor: pointer;
+  align-items: center;
 }
 
 .conv-avatar {
@@ -177,6 +186,75 @@
   flex-shrink: 0;
 }
 
+/* Conversation Actions (3-dot menu) */
+.conv-actions {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.btn-conv-menu {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 1.5rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.btn-conv-menu:hover {
+  background: var(--border-light);
+  color: var(--pryde-purple);
+}
+
+.conv-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: var(--card-surface);
+  border: 1px solid var(--border-light);
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  min-width: 180px;
+  z-index: 1000;
+  overflow: hidden;
+  margin-top: 0.5rem;
+}
+
+.conv-dropdown button {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: none;
+  background: transparent;
+  color: var(--text-main);
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.conv-dropdown button:hover {
+  background: var(--soft-lavender);
+  color: var(--pryde-purple);
+}
+
+.conv-dropdown button.danger {
+  color: #ef4444;
+}
+
+.conv-dropdown button.danger:hover {
+  background: #fee;
+  color: #dc2626;
+}
+
 .chat-area {
   display: flex;
   flex-direction: column;
@@ -192,6 +270,7 @@
   display: flex;
   align-items: center;
   gap: 1rem;
+  justify-content: space-between;
 }
 
 /* Hide mobile back button on desktop */
