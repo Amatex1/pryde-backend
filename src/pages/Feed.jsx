@@ -86,13 +86,6 @@ function Feed({ onOpenMiniChat }) {
 
   // Socket listeners for online/offline status
   useEffect(() => {
-    const socket = getSocket();
-
-    if (!socket) {
-      console.error('❌ Socket not initialized in Feed');
-      return;
-    }
-
     const setupListeners = () => {
       console.log('🔌 Setting up online status listeners in Feed');
 
@@ -124,24 +117,42 @@ function Feed({ onOpenMiniChat }) {
       });
     };
 
-    // Set up listeners if already connected, or wait for connection
-    if (socket.connected) {
-      console.log('✅ Socket already connected, setting up listeners');
-      setupListeners();
-    } else {
-      console.log('⏳ Socket not connected yet, waiting...');
-      socket.on('connect', () => {
-        console.log('✅ Socket connected, setting up listeners');
+    // Try to get socket, retry if not available yet
+    const checkSocket = () => {
+      const socket = getSocket();
+
+      if (!socket) {
+        console.log('⏳ Socket not initialized yet, retrying in 100ms...');
+        setTimeout(checkSocket, 100);
+        return;
+      }
+
+      console.log('✅ Socket found, checking connection status');
+
+      // Set up listeners if already connected, or wait for connection
+      if (socket.connected) {
+        console.log('✅ Socket already connected, setting up listeners');
         setupListeners();
-      });
-    }
+      } else {
+        console.log('⏳ Socket not connected yet, waiting for connection...');
+        socket.on('connect', () => {
+          console.log('✅ Socket connected, setting up listeners');
+          setupListeners();
+        });
+      }
+    };
+
+    checkSocket();
 
     // Refresh friends list every 30 seconds
     const interval = setInterval(fetchFriends, 30000);
 
     return () => {
       clearInterval(interval);
-      socket.off('connect', setupListeners);
+      const socket = getSocket();
+      if (socket) {
+        socket.off('connect', setupListeners);
+      }
     };
   }, []);
 
