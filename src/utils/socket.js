@@ -136,15 +136,33 @@ export const onFriendRequestAccepted = (callback) => {
 // ONLINE STATUS
 // -----------------------------
 export const onUserOnline = (callback) => {
-    if (socket) socket.on("user_online", callback);
+    if (socket) {
+        socket.off("user_online"); // Remove previous listener
+        socket.on("user_online", (data) => {
+            console.log('🔌 Socket received user_online event:', data);
+            callback(data);
+        });
+    }
 };
 
 export const onUserOffline = (callback) => {
-    if (socket) socket.on("user_offline", callback);
+    if (socket) {
+        socket.off("user_offline"); // Remove previous listener
+        socket.on("user_offline", (data) => {
+            console.log('🔌 Socket received user_offline event:', data);
+            callback(data);
+        });
+    }
 };
 
 export const onOnlineUsers = (callback) => {
-    if (socket) socket.on("online_users", callback);
+    if (socket) {
+        socket.off("online_users"); // Remove previous listener
+        socket.on("online_users", (users) => {
+            console.log('🔌 Socket received online_users event:', users);
+            callback(users);
+        });
+    }
 };
 
 export default {

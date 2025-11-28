@@ -12,7 +12,7 @@ import { useModal } from '../hooks/useModal';
 import api from '../utils/api';
 import { getCurrentUser } from '../utils/auth';
 import { getImageUrl } from '../utils/imageUrl';
-import { onUserOnline, onUserOffline, onOnlineUsers } from '../utils/socket';
+import { onUserOnline, onUserOffline, onOnlineUsers, getSocket } from '../utils/socket';
 import { convertEmojiShortcuts } from '../utils/textFormatting';
 import './Feed.css';
 
@@ -86,37 +86,63 @@ function Feed({ onOpenMiniChat }) {
 
   // Socket listeners for online/offline status
   useEffect(() => {
-    // Get initial online users list
-    onOnlineUsers((users) => {
-      console.log('📋 Received online users list:', users);
-      setOnlineUsers(users);
-    });
+    const socket = getSocket();
 
-    // Listen for users coming online
-    onUserOnline((data) => {
-      console.log('✅ User came online:', data.userId);
-      setOnlineUsers((prev) => {
-        if (!prev.includes(data.userId)) {
-          return [...prev, data.userId];
-        }
-        return prev;
+    if (!socket) {
+      console.error('❌ Socket not initialized in Feed');
+      return;
+    }
+
+    const setupListeners = () => {
+      console.log('🔌 Setting up online status listeners in Feed');
+
+      // Get initial online users list
+      onOnlineUsers((users) => {
+        console.log('📋 Received online users list:', users);
+        setOnlineUsers(users);
       });
-      // Refresh friends list
-      fetchFriends();
-    });
 
-    // Listen for users going offline
-    onUserOffline((data) => {
-      console.log('❌ User went offline:', data.userId);
-      setOnlineUsers((prev) => prev.filter(id => id !== data.userId));
-      // Refresh friends list
-      fetchFriends();
-    });
+      // Listen for users coming online
+      onUserOnline((data) => {
+        console.log('✅ User came online:', data.userId);
+        setOnlineUsers((prev) => {
+          if (!prev.includes(data.userId)) {
+            return [...prev, data.userId];
+          }
+          return prev;
+        });
+        // Refresh friends list
+        fetchFriends();
+      });
+
+      // Listen for users going offline
+      onUserOffline((data) => {
+        console.log('❌ User went offline:', data.userId);
+        setOnlineUsers((prev) => prev.filter(id => id !== data.userId));
+        // Refresh friends list
+        fetchFriends();
+      });
+    };
+
+    // Set up listeners if already connected, or wait for connection
+    if (socket.connected) {
+      console.log('✅ Socket already connected, setting up listeners');
+      setupListeners();
+    } else {
+      console.log('⏳ Socket not connected yet, waiting...');
+      socket.on('connect', () => {
+        console.log('✅ Socket connected, setting up listeners');
+        setupListeners();
+      });
+    }
 
     // Refresh friends list every 30 seconds
     const interval = setInterval(fetchFriends, 30000);
 
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      socket.off('connect', setupListeners);
+    };
   }, []);
 
   // Handle scrolling to specific post/comment from notifications
