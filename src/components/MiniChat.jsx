@@ -118,14 +118,14 @@ function MiniChat({ friendId, friendName, friendPhoto, onClose, onMinimize, isMi
       }
     };
 
-    const handleUserOnline = (userId) => {
-      if (userId === friendId) {
+    const handleUserOnline = (data) => {
+      if (data.userId === friendId) {
         setIsOnline(true);
       }
     };
 
-    const handleUserOffline = (userId) => {
-      if (userId === friendId) {
+    const handleUserOffline = (data) => {
+      if (data.userId === friendId) {
         setIsOnline(false);
       }
     };
