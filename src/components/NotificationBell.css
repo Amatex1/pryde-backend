@@ -20,7 +20,7 @@
 
 .bell-button:hover {
   transform: scale(1.1);
-  box-shadow: 0 4px 16px rgba(108, 92, 231, 0.3);
+  box-shadow: 0 0.25rem 1rem rgba(108, 92, 231, 0.3);
   border-color: var(--pryde-purple);
 }
 
