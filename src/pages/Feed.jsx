@@ -93,17 +93,16 @@ function Feed({ onOpenMiniChat }) {
 
   // Socket listeners for online/offline status
   useEffect(() => {
+    // Check if listeners are already set up (prevents duplicate setup in Strict Mode)
+    if (listenersSetUpRef.current) {
+      console.log('⚠️ Feed listeners already initialized, skipping setup');
+      return;
+    }
+
     let cleanupFunctions = [];
 
     const setupListeners = () => {
-      // Prevent setting up listeners multiple times using ref
-      if (listenersSetUpRef.current) {
-        console.log('⚠️ Listeners already set up, skipping...');
-        return;
-      }
-
       console.log('🔌 Setting up online status listeners in Feed');
-      listenersSetUpRef.current = true;
 
       // Get initial online users list
       const cleanupOnlineUsers = onOnlineUsers((users) => {
@@ -136,6 +135,9 @@ function Feed({ onOpenMiniChat }) {
       cleanupFunctions.push(cleanupUserOffline);
     };
 
+    // Mark as set up immediately to prevent duplicate setup
+    listenersSetUpRef.current = true;
+
     // Try to get socket, retry if not available yet
     const checkSocket = () => {
       const socket = getSocket();
@@ -154,10 +156,11 @@ function Feed({ onOpenMiniChat }) {
         setupListeners();
       } else {
         console.log('⏳ Socket not connected yet, waiting for connection...');
-        socket.on('connect', () => {
+        const onConnect = () => {
           console.log('✅ Socket connected, setting up listeners');
           setupListeners();
-        });
+        };
+        socket.once('connect', onConnect);
       }
     };
 
@@ -170,10 +173,6 @@ function Feed({ onOpenMiniChat }) {
       clearInterval(interval);
       // Clean up all socket listeners
       cleanupFunctions.forEach(cleanup => cleanup?.());
-      const socket = getSocket();
-      if (socket) {
-        socket.off('connect', setupListeners);
-      }
       // Reset the flag when component unmounts
       listenersSetUpRef.current = false;
     };
