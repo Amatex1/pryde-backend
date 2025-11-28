@@ -82,17 +82,6 @@ router.post('/signup', signupLimiter, validateSignup, async (req, res) => {
       });
     }
 
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return res.status(400).json({ message: 'Invalid email format' });
-    }
-
-    // Validate password length
-    if (password.length < 6) {
-      return res.status(400).json({ message: 'Password must be at least 6 characters' });
-    }
-
     // Check if user exists
     let user = await User.findOne({ $or: [{ email }, { username }] });
     if (user) {

@@ -58,8 +58,15 @@ function Register({ setIsAuth }) {
     }
 
     // Frontend validation
-    if (formData.password.length < 6) {
-      setError('Password must be at least 6 characters');
+    if (formData.password.length < 8) {
+      setError('Password must be at least 8 characters');
+      return;
+    }
+
+    // Validate password complexity
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/;
+    if (!passwordRegex.test(formData.password)) {
+      setError('Password must contain at least one uppercase letter, one lowercase letter, and one number');
       return;
     }
 
@@ -164,10 +171,13 @@ function Register({ setIsAuth }) {
               value={formData.password}
               onChange={handleChange}
               required
-              minLength="6"
+              minLength="8"
               className="form-input glossy"
-              placeholder="Create a password (min 6 characters)"
+              placeholder="Create a password (min 8 characters)"
             />
+            <small style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginTop: '0.25rem', display: 'block' }}>
+              Must contain at least one uppercase letter, one lowercase letter, and one number
+            </small>
           </div>
 
           <div className="form-group">
