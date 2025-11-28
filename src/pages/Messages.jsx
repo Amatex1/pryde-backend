@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Navbar from '../components/Navbar';
 import EmojiPicker from '../components/EmojiPicker';
 import api from '../utils/api';
@@ -48,6 +48,44 @@ function Messages({ onOpenMiniChat }) {
   const [showMobileSidebar, setShowMobileSidebar] = useState(false);
   const messagesEndRef = useRef(null);
   const typingTimeoutRef = useRef(null);
+
+  // Helper function to format date headers
+  const formatDateHeader = (date) => {
+    const messageDate = new Date(date);
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    // Reset time to midnight for comparison
+    const messageDateMidnight = new Date(messageDate.getFullYear(), messageDate.getMonth(), messageDate.getDate());
+    const todayMidnight = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const yesterdayMidnight = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
+
+    if (messageDateMidnight.getTime() === todayMidnight.getTime()) {
+      return 'Today';
+    } else if (messageDateMidnight.getTime() === yesterdayMidnight.getTime()) {
+      return 'Yesterday';
+    } else {
+      // Format as "Monday, January 15, 2024"
+      return messageDate.toLocaleDateString('en-US', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+    }
+  };
+
+  // Helper function to check if we need a date header
+  const shouldShowDateHeader = (currentMsg, previousMsg) => {
+    if (!previousMsg) return true; // Always show header for first message
+
+    const currentDate = new Date(currentMsg.createdAt);
+    const previousDate = new Date(previousMsg.createdAt);
+
+    // Compare dates (ignoring time)
+    return currentDate.toDateString() !== previousDate.toDateString();
+  };
 
   // Fetch current user
   useEffect(() => {
@@ -619,12 +657,22 @@ function Messages({ onOpenMiniChat }) {
                 </div>
 
                 <div className="chat-messages">
-                  {messages.map((msg) => {
+                  {messages.map((msg, index) => {
                     const isSent = msg.sender._id === currentUser?._id;
                     const isEditing = editingMessageId === msg._id;
+                    const previousMsg = index > 0 ? messages[index - 1] : null;
+                    const showDateHeader = shouldShowDateHeader(msg, previousMsg);
 
                     return (
-                      <div key={msg._id} className={`message-group ${isSent ? 'sent' : 'received'}`}>
+                      <React.Fragment key={msg._id}>
+                        {/* Date Header */}
+                        {showDateHeader && (
+                          <div className="message-date-header">
+                            <span>{formatDateHeader(msg.createdAt)}</span>
+                          </div>
+                        )}
+
+                        <div className={`message-group ${isSent ? 'sent' : 'received'}`}>
                         {!isSent && (
                           <div className="message-avatar">
                             {msg.sender.profilePhoto ? (
@@ -733,6 +781,7 @@ function Messages({ onOpenMiniChat }) {
                           </div>
                         </div>
                       </div>
+                      </React.Fragment>
                     );
                   })}
                   {isTyping && (
