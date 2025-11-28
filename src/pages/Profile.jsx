@@ -7,6 +7,7 @@ import Toast from '../components/Toast';
 import CustomModal from '../components/CustomModal';
 import ShareModal from '../components/ShareModal';
 import EditProfileModal from '../components/EditProfileModal';
+import ReactionDetailsModal from '../components/ReactionDetailsModal';
 import { useModal } from '../hooks/useModal';
 import api from '../utils/api';
 import { getCurrentUser } from '../utils/auth';
@@ -56,6 +57,7 @@ function Profile({ onOpenMiniChat }) {
   const [editingPostId, setEditingPostId] = useState(null);
   const [editPostText, setEditPostText] = useState('');
   const [editPostVisibility, setEditPostVisibility] = useState('friends');
+  const [reactionDetailsModal, setReactionDetailsModal] = useState({ isOpen: false, reactions: [], likes: [] });
 
   useEffect(() => {
     fetchUserProfile();
@@ -1003,25 +1005,34 @@ function Profile({ onOpenMiniChat }) {
                         <div className="reaction-container">
                           <button
                             className={`action-btn ${isLiked || post.reactions?.some(r => r.user?._id === currentUser?.id || r.user === currentUser?.id) ? 'liked' : ''}`}
-                            onClick={(e) => {
-                              // On mobile, toggle picker; on desktop, like immediately
-                              if (window.innerWidth <= 768) {
-                                e.preventDefault();
-                                setShowReactionPicker(showReactionPicker === `post-${post._id}` ? null : `post-${post._id}`);
-                              } else {
-                                handleLike(post._id);
+                            onClick={() => {
+                              // Click shows reaction list
+                              if ((post.reactions?.length || 0) + (post.likes?.length || 0) > 0) {
+                                setReactionDetailsModal({
+                                  isOpen: true,
+                                  reactions: post.reactions || [],
+                                  likes: post.likes || []
+                                });
                               }
                             }}
                             onMouseEnter={() => {
-                              // Only show on hover for desktop
+                              // Hover shows emoji picker
                               if (window.innerWidth > 768) {
                                 setShowReactionPicker(`post-${post._id}`);
+                              }
+                            }}
+                            onMouseLeave={() => {
+                              // Hide picker when mouse leaves button
+                              if (window.innerWidth > 768) {
+                                setTimeout(() => {
+                                  setShowReactionPicker(null);
+                                }, 200);
                               }
                             }}
                           >
                             <span>
                               {post.reactions?.find(r => r.user?._id === currentUser?.id || r.user === currentUser?.id)?.emoji || (isLiked ? '❤️' : '🤍')}
-                            </span> Like ({(post.reactions?.length || 0) + (post.likes?.length || 0)})
+                            </span> Like {((post.reactions?.length || 0) + (post.likes?.length || 0)) > 0 && `(${(post.reactions?.length || 0) + (post.likes?.length || 0)})`}
                           </button>
                           {showReactionPicker === `post-${post._id}` && (
                             <div
@@ -1653,6 +1664,14 @@ function Profile({ onOpenMiniChat }) {
             </div>
           </div>
         </CustomModal>
+      )}
+
+      {reactionDetailsModal.isOpen && (
+        <ReactionDetailsModal
+          reactions={reactionDetailsModal.reactions}
+          likes={reactionDetailsModal.likes}
+          onClose={() => setReactionDetailsModal({ isOpen: false, reactions: [], likes: [] })}
+        />
       )}
     </div>
   );

@@ -847,38 +847,35 @@ function Feed({ onOpenMiniChat }) {
                       <div className="reaction-container">
                         <button
                           className={`action-btn ${isLiked || post.reactions?.some(r => r.user?._id === currentUser?.id || r.user === currentUser?.id) ? 'liked' : ''}`}
-                          onClick={(e) => {
-                            // On mobile, toggle picker; on desktop, like immediately
-                            if (window.innerWidth <= 768) {
-                              e.preventDefault();
-                              setShowReactionPicker(showReactionPicker === `post-${post._id}` ? null : `post-${post._id}`);
-                            } else {
-                              handleLike(post._id);
+                          onClick={() => {
+                            // Click shows reaction list
+                            if ((post.reactions?.length || 0) + (post.likes?.length || 0) > 0) {
+                              setReactionDetailsModal({
+                                isOpen: true,
+                                reactions: post.reactions || [],
+                                likes: post.likes || []
+                              });
                             }
                           }}
                           onMouseEnter={() => {
-                            // Only show on hover for desktop
+                            // Hover shows emoji picker
                             if (window.innerWidth > 768) {
                               setShowReactionPicker(`post-${post._id}`);
+                            }
+                          }}
+                          onMouseLeave={() => {
+                            // Hide picker when mouse leaves button
+                            if (window.innerWidth > 768) {
+                              setTimeout(() => {
+                                setShowReactionPicker(null);
+                              }, 200);
                             }
                           }}
                         >
                           <span>
                             {post.reactions?.find(r => r.user?._id === currentUser?.id || r.user === currentUser?.id)?.emoji || (isLiked ? '❤️' : '🤍')}
-                          </span> Like
+                          </span> Like {((post.reactions?.length || 0) + (post.likes?.length || 0)) > 0 && `(${(post.reactions?.length || 0) + (post.likes?.length || 0)})`}
                         </button>
-                        {((post.reactions?.length || 0) + (post.likes?.length || 0)) > 0 && (
-                          <button
-                            className="reaction-count-btn"
-                            onClick={() => setReactionDetailsModal({
-                              isOpen: true,
-                              reactions: post.reactions || [],
-                              likes: post.likes || []
-                            })}
-                          >
-                            ({(post.reactions?.length || 0) + (post.likes?.length || 0)})
-                          </button>
-                        )}
                         {showReactionPicker === `post-${post._id}` && (
                           <div
                             className="reaction-picker"

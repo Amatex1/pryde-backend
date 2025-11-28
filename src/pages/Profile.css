@@ -870,8 +870,7 @@
 .reaction-picker {
   position: absolute;
   bottom: 100%;
-  left: 50%;
-  transform: translateX(-50%);
+  left: 0;
   background: var(--card-surface);
   border: 1px solid var(--border-light);
   border-radius: 3.125rem;
@@ -897,11 +896,11 @@
 @keyframes reactionPopIn {
   from {
     opacity: 0;
-    transform: translateX(-50%) translateY(10px) scale(0.8);
+    transform: translateY(10px) scale(0.8);
   }
   to {
     opacity: 1;
-    transform: translateX(-50%) translateY(0) scale(1);
+    transform: translateY(0) scale(1);
   }
 }
 

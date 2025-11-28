@@ -54,6 +54,7 @@
   top: calc(100% + 0.75rem);
   right: 0;
   width: min(380px, 90vw);
+  min-width: 280px;
   max-height: min(500px, 70vh);
   background: var(--card-surface);
   border: 2px solid var(--border-light);
