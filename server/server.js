@@ -210,17 +210,33 @@ app.use('/api/2fa', twoFactorRoutes);
 app.use('/api/sessions', sessionsRoutes);
 app.use('/api/privacy', privacyRoutes);
 app.use('/api/bookmarks', bookmarksRoutes);
+
+// Debug: Log the passkey router before registering
+console.log('🔍 Passkey router type:', typeof passkeyRoutes);
+console.log('🔍 Passkey router stack length:', passkeyRoutes?.stack?.length);
+
 app.use('/api/passkey', passkeyRoutes);
 
 // Log passkey routes registration
 console.log('✅ Passkey routes registered at /api/passkey');
 console.log('   Available routes:');
+console.log('   - GET  /api/passkey/test');
 console.log('   - POST /api/passkey/register-start');
 console.log('   - POST /api/passkey/register-finish');
 console.log('   - POST /api/passkey/login-start');
 console.log('   - POST /api/passkey/login-finish');
 console.log('   - GET  /api/passkey/list');
 console.log('   - DELETE /api/passkey/:credentialId');
+
+// Debug: List all registered routes
+console.log('\n🔍 All registered /api routes:');
+app._router.stack.forEach((middleware) => {
+  if (middleware.route) {
+    console.log(`   ${Object.keys(middleware.route.methods)} ${middleware.route.path}`);
+  } else if (middleware.name === 'router') {
+    console.log(`   Router: ${middleware.regexp}`);
+  }
+});
 
 // Health check and status endpoints
 app.get('/', (req, res) => {
