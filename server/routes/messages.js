@@ -44,6 +44,19 @@ router.get('/:userId', authMiddleware, checkBlocked, async (req, res) => {
     });
     console.log('📊 Messages involving other user:', messagesWithOtherUser);
 
+    // Get a sample message to see the structure
+    const sampleMessage = await Message.findOne();
+    if (sampleMessage) {
+      console.log('📝 Sample message structure:', {
+        _id: sampleMessage._id,
+        sender: sampleMessage.sender,
+        senderType: typeof sampleMessage.sender,
+        recipient: sampleMessage.recipient,
+        recipientType: typeof sampleMessage.recipient,
+        content: sampleMessage.content?.substring(0, 20)
+      });
+    }
+
     // Try without ObjectId conversion first (Mongoose should handle it automatically)
     const messages = await Message.find({
       $or: [
@@ -56,6 +69,16 @@ router.get('/:userId', authMiddleware, checkBlocked, async (req, res) => {
       .sort({ createdAt: 1 });
 
     console.log('✅ Found messages:', messages.length);
+
+    if (messages.length === 0 && totalMessages > 0) {
+      console.log('⚠️ No messages found but database has messages. Checking all messages...');
+      const allMessages = await Message.find().limit(5);
+      console.log('📋 First 5 messages in DB:', allMessages.map(m => ({
+        sender: m.sender?.toString(),
+        recipient: m.recipient?.toString(),
+        content: m.content?.substring(0, 20)
+      })));
+    }
 
     console.log('✅ Found messages:', messages.length);
 
