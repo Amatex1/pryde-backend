@@ -70,6 +70,12 @@ router.get('/unread/counts', authMiddleware, async (req, res) => {
 
     console.log('📊 Unread counts aggregation result:', unreadCounts);
 
+    // Store original sender IDs before population
+    const senderIdsBeforePopulation = unreadCounts.map(item => ({
+      originalId: item._id,
+      count: item.count
+    }));
+
     // Populate sender details
     await Message.populate(unreadCounts, {
       path: '_id',
@@ -78,12 +84,35 @@ router.get('/unread/counts', authMiddleware, async (req, res) => {
 
     console.log('📊 After population:', unreadCounts);
 
+    // Filter out messages from deleted users (where _id is null after population)
+    const validUnreadCounts = unreadCounts.filter(item => item._id !== null);
+
+    // Get IDs of deleted users to clean up their messages
+    const deletedUserIds = [];
+    unreadCounts.forEach((item, index) => {
+      if (item._id === null) {
+        deletedUserIds.push(senderIdsBeforePopulation[index].originalId);
+      }
+    });
+
+    // Delete messages from deleted users (cleanup)
+    if (deletedUserIds.length > 0) {
+      console.log('🗑️ Cleaning up', deletedUserIds.length, 'messages from deleted users...');
+      const deleteResult = await Message.deleteMany({
+        recipient: new mongoose.Types.ObjectId(currentUserId),
+        sender: { $in: deletedUserIds }
+      });
+      console.log('🗑️ Deleted', deleteResult.deletedCount, 'orphaned messages');
+    }
+
+    console.log('📊 Valid unread counts (after filtering deleted users):', validUnreadCounts);
+
     // Calculate total unread count
-    const totalUnread = unreadCounts.reduce((sum, item) => sum + item.count, 0);
+    const totalUnread = validUnreadCounts.reduce((sum, item) => sum + item.count, 0);
 
     const response = {
       totalUnread,
-      unreadByUser: unreadCounts.map(item => ({
+      unreadByUser: validUnreadCounts.map(item => ({
         userId: item._id?._id || item._id,
         username: item._id?.username,
         displayName: item._id?.displayName,

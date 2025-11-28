@@ -143,18 +143,21 @@
 .message {
   display: flex;
   margin-bottom: 8px;
+  max-width: none !important;
 }
 
 .message.sent {
   justify-content: flex-end;
+  max-width: none !important;
 }
 
 .message.received {
   justify-content: flex-start;
+  max-width: none !important;
 }
 
 .message-bubble {
-  max-width: 70%;
+  max-width: 70% !important;
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -165,6 +168,8 @@
   border-radius: 16px;
   font-size: 14px;
   word-wrap: break-word;
+  max-width: none !important;
+  text-align: left !important;
 }
 
 .message.sent .message-content {
