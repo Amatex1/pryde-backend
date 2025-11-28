@@ -136,15 +136,15 @@ export const onFriendRequestAccepted = (callback) => {
 // ONLINE STATUS
 // -----------------------------
 export const onUserOnline = (callback) => {
-    if (socket) socket.on("userOnline", callback);
+    if (socket) socket.on("user_online", callback);
 };
 
 export const onUserOffline = (callback) => {
-    if (socket) socket.on("userOffline", callback);
+    if (socket) socket.on("user_offline", callback);
 };
 
 export const onOnlineUsers = (callback) => {
-    if (socket) socket.on("onlineUsers", callback);
+    if (socket) socket.on("online_users", callback);
 };
 
 export default {

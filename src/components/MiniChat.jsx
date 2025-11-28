@@ -17,6 +17,44 @@ function MiniChat({ friendId, friendName, friendPhoto, onClose, onMinimize, isMi
     return `${import.meta.env.VITE_API_URL || 'https://pryde-social.onrender.com'}${path}`;
   };
 
+  // Helper function to format date headers
+  const formatDateHeader = (date) => {
+    const messageDate = new Date(date);
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    // Reset time to midnight for comparison
+    const messageDateMidnight = new Date(messageDate.getFullYear(), messageDate.getMonth(), messageDate.getDate());
+    const todayMidnight = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const yesterdayMidnight = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
+
+    if (messageDateMidnight.getTime() === todayMidnight.getTime()) {
+      return 'Today';
+    } else if (messageDateMidnight.getTime() === yesterdayMidnight.getTime()) {
+      return 'Yesterday';
+    } else {
+      // Format as "Monday, January 15, 2024"
+      return messageDate.toLocaleDateString('en-US', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+    }
+  };
+
+  // Helper function to check if we need a date header
+  const shouldShowDateHeader = (currentMsg, previousMsg) => {
+    if (!previousMsg) return true; // Always show header for first message
+
+    const currentDate = new Date(currentMsg.createdAt);
+    const previousDate = new Date(previousMsg.createdAt);
+
+    // Compare dates (ignoring time)
+    return currentDate.toDateString() !== previousDate.toDateString();
+  };
+
   // Scroll to bottom
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -122,14 +160,32 @@ function MiniChat({ friendId, friendName, friendPhoto, onClose, onMinimize, isMi
         {isLoading ? (
           <div className="loading">Loading messages...</div>
         ) : messages.length > 0 ? (
-          messages.map((msg, index) => (
-            <div 
-              key={msg._id || index} 
-              className={`message ${msg.sender._id === currentUserId ? 'sent' : 'received'}`}
-            >
-              <div className="message-content">{msg.content}</div>
-            </div>
-          ))
+          messages.map((msg, index) => {
+            const isSent = msg.sender?._id === currentUserId || msg.sender === currentUserId;
+            const previousMsg = index > 0 ? messages[index - 1] : null;
+            const showDateHeader = shouldShowDateHeader(msg, previousMsg);
+
+            return (
+              <div key={msg._id || index}>
+                {/* Date Header */}
+                {showDateHeader && (
+                  <div className="message-date-header">
+                    <span>{formatDateHeader(msg.createdAt)}</span>
+                  </div>
+                )}
+
+                {/* Message */}
+                <div className={`message ${isSent ? 'sent' : 'received'}`}>
+                  <div className="message-bubble">
+                    <div className="message-content">{msg.content}</div>
+                    <div className="message-time">
+                      {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })
         ) : (
           <div className="no-messages">No messages yet. Say hi! 👋</div>
         )}
