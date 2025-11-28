@@ -113,8 +113,8 @@ function MiniChat({ friendId, friendName, friendPhoto, onClose, onMinimize, isMi
           <span className="header-name">{friendName}</span>
         </div>
         <div className="mini-chat-controls">
-          <button onClick={onMinimize} title="Minimize">−</button>
-          <button onClick={onClose} title="Close">×</button>
+          <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); onMinimize(); }} title="Minimize">−</button>
+          <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); onClose(); }} title="Close">×</button>
         </div>
       </div>
 

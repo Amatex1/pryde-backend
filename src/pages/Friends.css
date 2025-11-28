@@ -48,6 +48,15 @@
   min-height: 400px;
 }
 
+.friends-list,
+.requests-list,
+.pending-list {
+  /* Ensure no scroll container - let content expand naturally */
+  overflow: visible;
+  max-height: none;
+  height: auto;
+}
+
 .user-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));

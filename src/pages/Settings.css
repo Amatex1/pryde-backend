@@ -603,12 +603,27 @@
 
 .security-settings-info .section-title {
   margin: 0 0 5px 0;
+  color: var(--pryde-purple) !important;
 }
 
 .security-settings-description {
-  color: var(--text-muted);
+  color: var(--text-main) !important;
   margin: 0;
   font-size: 14px;
+}
+
+@media (prefers-color-scheme: dark) {
+  .security-settings-link {
+    background: linear-gradient(135deg, rgba(108, 92, 231, 0.15) 0%, rgba(108, 92, 231, 0.05) 100%);
+  }
+
+  .security-settings-info .section-title {
+    color: var(--electric-blue) !important;
+  }
+
+  .security-settings-description {
+    color: var(--text-light) !important;
+  }
 }
 
 @media (max-width: 768px) {
