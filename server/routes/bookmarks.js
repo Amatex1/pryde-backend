@@ -15,7 +15,9 @@ router.get('/', auth, async (req, res) => {
         populate: [
           { path: 'author', select: 'username displayName profilePhoto' },
           { path: 'comments.user', select: 'username displayName profilePhoto' },
-          { path: 'likes', select: 'username displayName profilePhoto' }
+          { path: 'likes', select: 'username displayName profilePhoto' },
+          { path: 'reactions.user', select: 'username displayName profilePhoto' },
+          { path: 'comments.reactions.user', select: 'username displayName profilePhoto' }
         ],
         options: { sort: { createdAt: -1 } }
       });

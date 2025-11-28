@@ -293,7 +293,9 @@ router.post('/login-finish', async (req, res) => {
         email: user.email,
         displayName: user.displayName,
         profilePhoto: user.profilePhoto,
-        coverPhoto: user.coverPhoto
+        coverPhoto: user.coverPhoto,
+        role: user.role,
+        permissions: user.permissions
       }
     });
   } catch (error) {

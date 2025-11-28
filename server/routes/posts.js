@@ -46,11 +46,14 @@ router.get('/', auth, async (req, res) => {
       .populate('author', 'username displayName profilePhoto')
       .populate('comments.user', 'username displayName profilePhoto')
       .populate('likes', 'username displayName profilePhoto')
+      .populate('reactions.user', 'username displayName profilePhoto')
+      .populate('comments.reactions.user', 'username displayName profilePhoto')
       .populate({
         path: 'originalPost',
         populate: [
           { path: 'author', select: 'username displayName profilePhoto' },
-          { path: 'likes', select: 'username displayName profilePhoto' }
+          { path: 'likes', select: 'username displayName profilePhoto' },
+          { path: 'reactions.user', select: 'username displayName profilePhoto' }
         ]
       })
       .sort({ createdAt: -1 })
@@ -102,11 +105,14 @@ router.get('/user/:userId', auth, async (req, res) => {
       .populate('author', 'username displayName profilePhoto')
       .populate('comments.user', 'username displayName profilePhoto')
       .populate('likes', 'username displayName profilePhoto')
+      .populate('reactions.user', 'username displayName profilePhoto')
+      .populate('comments.reactions.user', 'username displayName profilePhoto')
       .populate({
         path: 'originalPost',
         populate: [
           { path: 'author', select: 'username displayName profilePhoto' },
-          { path: 'likes', select: 'username displayName profilePhoto' }
+          { path: 'likes', select: 'username displayName profilePhoto' },
+          { path: 'reactions.user', select: 'username displayName profilePhoto' }
         ]
       })
       .sort({ createdAt: -1 });
@@ -126,7 +132,9 @@ router.get('/:id', auth, async (req, res) => {
     const post = await Post.findById(req.params.id)
       .populate('author', 'username displayName profilePhoto')
       .populate('comments.user', 'username displayName profilePhoto')
-      .populate('likes', 'username displayName profilePhoto');
+      .populate('likes', 'username displayName profilePhoto')
+      .populate('reactions.user', 'username displayName profilePhoto')
+      .populate('comments.reactions.user', 'username displayName profilePhoto');
 
     if (!post) {
       return res.status(404).json({ message: 'Post not found' });
