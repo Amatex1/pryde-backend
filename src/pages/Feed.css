@@ -620,24 +620,26 @@
 /* Reaction picker popup */
 .reaction-picker {
   position: absolute;
-  bottom: 100%;
-  background: transparent;
-  border: none;
+  top: -3.5rem;
+  left: 0;
+  background: var(--card-surface);
+  border: 1px solid var(--border-light);
   border-radius: 3.125rem;
   padding: 0.5rem 0.75rem;
   display: flex;
   flex-wrap: nowrap;
   gap: 0.5rem;
   width: max-content;
-  box-shadow: none;
-  margin-bottom: 0.5rem;
+  box-shadow: 0 0.25rem 0.75rem rgba(0, 0, 0, 0.15);
   z-index: 1000;
   animation: reactionPopIn 0.2s ease-out;
   touch-action: manipulation;
 }
 
 [data-theme="dark"] .reaction-picker {
-  background: transparent;
+  background: #1e293b;
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
 }
 
 @keyframes reactionPopIn {
@@ -1081,6 +1083,7 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
+  border-radius: 50%;
 }
 
 .friend-sidebar-avatar span {
