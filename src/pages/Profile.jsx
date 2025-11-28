@@ -8,11 +8,13 @@ import CustomModal from '../components/CustomModal';
 import ShareModal from '../components/ShareModal';
 import EditProfileModal from '../components/EditProfileModal';
 import ReactionDetailsModal from '../components/ReactionDetailsModal';
+import FormattedText from '../components/FormattedText';
 import { useModal } from '../hooks/useModal';
 import api from '../utils/api';
 import { getCurrentUser } from '../utils/auth';
 import { getImageUrl } from '../utils/imageUrl';
 import { useToast } from '../hooks/useToast';
+import { convertEmojiShortcuts } from '../utils/textFormatting';
 import './Profile.css';
 
 function Profile({ onOpenMiniChat }) {
@@ -201,7 +203,10 @@ function Profile({ onOpenMiniChat }) {
     if (!content || !content.trim()) return;
 
     try {
-      const response = await api.post(`/posts/${postId}/comment`, { content });
+      // Convert emoji shortcuts before posting
+      const contentWithEmojis = convertEmojiShortcuts(content);
+
+      const response = await api.post(`/posts/${postId}/comment`, { content: contentWithEmojis });
       setPosts(posts.map(p => p._id === postId ? response.data : p));
       setCommentText(prev => ({ ...prev, [postId]: '' }));
     } catch (error) {
@@ -271,8 +276,11 @@ function Profile({ onOpenMiniChat }) {
     const { postId, commentId } = replyingToComment;
 
     try {
+      // Convert emoji shortcuts before posting
+      const contentWithEmojis = convertEmojiShortcuts(replyText);
+
       const response = await api.post(`/posts/${postId}/comment/${commentId}/reply`, {
-        content: replyText
+        content: contentWithEmojis
       });
       setPosts(posts.map(p => p._id === postId ? response.data : p));
       setReplyText('');
@@ -944,7 +952,7 @@ function Profile({ onOpenMiniChat }) {
                                     </div>
                                   </div>
                                 </div>
-                                {post.originalPost.content && <p>{post.originalPost.content}</p>}
+                                {post.originalPost.content && <p><FormattedText text={post.originalPost.content} /></p>}
                                 {post.originalPost.media && post.originalPost.media.length > 0 && (
                                   <div className="post-media">
                                     {post.originalPost.media.map((mediaItem, index) => (
@@ -968,7 +976,7 @@ function Profile({ onOpenMiniChat }) {
                               </div>
                             ) : (
                               <>
-                                {post.content && <p>{post.content}</p>}
+                                {post.content && <p><FormattedText text={post.content} /></p>}
                                 {post.media && post.media.length > 0 && (
                                   <div className="post-media">
                                     {post.media.map((mediaItem, index) => (
@@ -1139,7 +1147,7 @@ function Profile({ onOpenMiniChat }) {
                                         </div>
 
                                         <div className="comment-text">
-                                          {comment.content}
+                                          <FormattedText text={comment.content} />
                                           {comment.edited && <span className="edited-indicator"> (edited)</span>}
                                         </div>
 
@@ -1337,7 +1345,7 @@ function Profile({ onOpenMiniChat }) {
                                                 </div>
 
                                                 <div className="comment-text">
-                                                  {reply.content}
+                                                  <FormattedText text={reply.content} />
                                                   {reply.edited && <span className="edited-indicator"> (edited)</span>}
                                                 </div>
 

@@ -7,11 +7,13 @@ import PhotoViewer from '../components/PhotoViewer';
 import CustomModal from '../components/CustomModal';
 import ShareModal from '../components/ShareModal';
 import ReactionDetailsModal from '../components/ReactionDetailsModal';
+import FormattedText from '../components/FormattedText';
 import { useModal } from '../hooks/useModal';
 import api from '../utils/api';
 import { getCurrentUser } from '../utils/auth';
 import { getImageUrl } from '../utils/imageUrl';
 import { onUserOnline, onUserOffline, onOnlineUsers } from '../utils/socket';
+import { convertEmojiShortcuts } from '../utils/textFormatting';
 import './Feed.css';
 
 function Feed({ onOpenMiniChat }) {
@@ -263,8 +265,11 @@ function Feed({ onOpenMiniChat }) {
 
     setLoading(true);
     try {
+      // Convert emoji shortcuts before posting
+      const contentWithEmojis = convertEmojiShortcuts(newPost);
+
       const postData = {
-        content: newPost,
+        content: contentWithEmojis,
         media: selectedMedia,
         visibility: postVisibility
       };
@@ -336,7 +341,10 @@ function Feed({ onOpenMiniChat }) {
     if (!content || !content.trim()) return;
 
     try {
-      const response = await api.post(`/posts/${postId}/comment`, { content });
+      // Convert emoji shortcuts before posting
+      const contentWithEmojis = convertEmojiShortcuts(content);
+
+      const response = await api.post(`/posts/${postId}/comment`, { content: contentWithEmojis });
       setPosts(posts.map(p => p._id === postId ? response.data : p));
       setCommentText(prev => ({ ...prev, [postId]: '' }));
     } catch (error) {
@@ -457,7 +465,10 @@ function Feed({ onOpenMiniChat }) {
 
     try {
       const { postId, commentId } = replyingToComment;
-      const response = await api.post(`/posts/${postId}/comment/${commentId}/reply`, { content: replyText });
+      // Convert emoji shortcuts before posting
+      const contentWithEmojis = convertEmojiShortcuts(replyText);
+
+      const response = await api.post(`/posts/${postId}/comment/${commentId}/reply`, { content: contentWithEmojis });
       setPosts(posts.map(p => p._id === postId ? response.data : p));
       setReplyingToComment(null);
       setReplyText('');
@@ -808,15 +819,7 @@ function Feed({ onOpenMiniChat }) {
                           ) : (
                             post.content && (
                               <p>
-                                {post.content.split(' ').map((word, index) =>
-                                  word.startsWith('#') ? (
-                                    <Link key={index} to={`/hashtag/${word.substring(1)}`} className="hashtag-link">
-                                      {word}{' '}
-                                    </Link>
-                                  ) : (
-                                    <span key={index}>{word} </span>
-                                  )
-                                )}
+                                <FormattedText text={post.content} />
                               </p>
                             )
                           )}
@@ -987,7 +990,7 @@ function Feed({ onOpenMiniChat }) {
                                       </div>
 
                                       <div className="comment-text">
-                                        {comment.content}
+                                        <FormattedText text={comment.content} />
                                         {comment.edited && <span className="edited-indicator"> (edited)</span>}
                                       </div>
 
@@ -1198,7 +1201,7 @@ function Feed({ onOpenMiniChat }) {
                                               </div>
 
                                               <div className="comment-text">
-                                                {reply.content}
+                                                <FormattedText text={reply.content} />
                                                 {reply.edited && <span className="edited-indicator"> (edited)</span>}
                                               </div>
 

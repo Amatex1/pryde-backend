@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
+import FormattedText from '../components/FormattedText';
 import api from '../utils/api';
 import { getImageUrl } from '../utils/imageUrl';
 import PhotoViewer from '../components/PhotoViewer';
@@ -84,15 +85,7 @@ function Hashtag({ onOpenMiniChat }) {
 
                   {post.content && (
                     <div className="post-content">
-                      {post.content.split(' ').map((word, index) => 
-                        word.startsWith('#') ? (
-                          <Link key={index} to={`/hashtag/${word.substring(1)}`} className="hashtag-link">
-                            {word}{' '}
-                          </Link>
-                        ) : (
-                          <span key={index}>{word} </span>
-                        )
-                      )}
+                      <FormattedText text={post.content} />
                     </div>
                   )}
 
@@ -142,7 +135,7 @@ function Hashtag({ onOpenMiniChat }) {
                           </div>
                           <div className="comment-content">
                             <div className="comment-author">{comment.user?.displayName || comment.user?.username}</div>
-                            <div className="comment-text">{comment.content}</div>
+                            <div className="comment-text"><FormattedText text={comment.content} /></div>
                           </div>
                         </div>
                       ))}

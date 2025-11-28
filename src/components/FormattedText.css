@@ -1,0 +1,62 @@
+.hashtag-link {
+  color: var(--electric-blue);
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.hashtag-link:hover {
+  color: var(--pryde-purple);
+  text-decoration: underline;
+}
+
+.mention-link {
+  color: var(--pryde-purple);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.mention-link:hover {
+  color: var(--electric-blue);
+  text-decoration: underline;
+}
+
+.url-link {
+  color: var(--electric-blue);
+  text-decoration: underline;
+  transition: all 0.2s ease;
+}
+
+.url-link:hover {
+  color: var(--pryde-purple);
+}
+
+/* Dark Mode */
+@media (prefers-color-scheme: dark) {
+  .hashtag-link {
+    color: #74b9ff;
+  }
+
+  .hashtag-link:hover {
+    color: #a29bfe;
+  }
+
+  .mention-link {
+    color: #a29bfe;
+  }
+
+  .mention-link:hover {
+    color: #74b9ff;
+  }
+
+  .url-link {
+    color: #74b9ff;
+  }
+
+  .url-link:hover {
+    color: #a29bfe;
+  }
+}
+
