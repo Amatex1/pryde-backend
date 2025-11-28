@@ -116,12 +116,14 @@
 }
 
 .conversation-item.manually-unread {
-  background: #fef3f2;
-  border-left: 3px solid #ef4444;
+  background: rgba(108, 92, 231, 0.1);
+  border-left: 3px solid var(--pryde-purple);
+  box-shadow: 0 0 20px rgba(108, 92, 231, 0.3);
 }
 
 .conversation-item.manually-unread:hover {
-  background: #fee2e2;
+  background: rgba(108, 92, 231, 0.15);
+  box-shadow: 0 0 25px rgba(108, 92, 231, 0.4);
 }
 
 .conv-clickable {
@@ -214,6 +216,19 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* Bold text for unread conversations */
+.conversation-item.has-unread .conv-name,
+.conversation-item.has-unread .conv-last-message,
+.conversation-item.manually-unread .conv-name,
+.conversation-item.manually-unread .conv-last-message {
+  font-weight: 700;
+}
+
+.conversation-item.has-unread .conv-name,
+.conversation-item.manually-unread .conv-name {
+  color: var(--pryde-purple);
 }
 
 .unread-badge {

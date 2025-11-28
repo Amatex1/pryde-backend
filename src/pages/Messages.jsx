@@ -883,7 +883,7 @@ function Messages() {
                         return (
                           <div
                             key={conv._id}
-                            className={`conversation-item ${selectedChat === conv._id && selectedChatType === 'user' ? 'active' : ''} ${conv.manuallyUnread ? 'manually-unread' : ''}`}
+                            className={`conversation-item ${selectedChat === conv._id && selectedChatType === 'user' ? 'active' : ''} ${conv.manuallyUnread ? 'manually-unread' : ''} ${conv.unread > 0 ? 'has-unread' : ''}`}
                           >
                             <div
                               className="conv-clickable"
