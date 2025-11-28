@@ -6,6 +6,7 @@ import ReportModal from '../components/ReportModal';
 import PhotoViewer from '../components/PhotoViewer';
 import CustomModal from '../components/CustomModal';
 import ShareModal from '../components/ShareModal';
+import ReactionDetailsModal from '../components/ReactionDetailsModal';
 import { useModal } from '../hooks/useModal';
 import api from '../utils/api';
 import { getCurrentUser } from '../utils/auth';
@@ -54,6 +55,7 @@ function Feed({ onOpenMiniChat }) {
   const [bookmarkedPosts, setBookmarkedPosts] = useState([]);
   const [shareModal, setShareModal] = useState({ isOpen: false, post: null });
   const [showMobileSidebar, setShowMobileSidebar] = useState(false);
+  const [reactionDetailsModal, setReactionDetailsModal] = useState({ isOpen: false, reactions: [], likes: [] });
   const currentUser = getCurrentUser();
   const postRefs = useRef({});
   const commentRefs = useRef({});
@@ -863,8 +865,20 @@ function Feed({ onOpenMiniChat }) {
                         >
                           <span>
                             {post.reactions?.find(r => r.user?._id === currentUser?.id || r.user === currentUser?.id)?.emoji || (isLiked ? '❤️' : '🤍')}
-                          </span> Like ({(post.reactions?.length || 0) + (post.likes?.length || 0)})
+                          </span> Like
                         </button>
+                        {((post.reactions?.length || 0) + (post.likes?.length || 0)) > 0 && (
+                          <button
+                            className="reaction-count-btn"
+                            onClick={() => setReactionDetailsModal({
+                              isOpen: true,
+                              reactions: post.reactions || [],
+                              likes: post.likes || []
+                            })}
+                          >
+                            ({(post.reactions?.length || 0) + (post.likes?.length || 0)})
+                          </button>
+                        )}
                         {showReactionPicker === `post-${post._id}` && (
                           <div
                             className="reaction-picker"
@@ -1010,8 +1024,19 @@ function Feed({ onOpenMiniChat }) {
                                             }}
                                           >
                                             {comment.reactions?.find(r => r.user?._id === currentUser?.id || r.user === currentUser?.id)?.emoji || '👍'} Like
-                                            {comment.reactions?.length > 0 && ` (${comment.reactions.length})`}
                                           </button>
+                                          {comment.reactions?.length > 0 && (
+                                            <button
+                                              className="reaction-count-btn"
+                                              onClick={() => setReactionDetailsModal({
+                                                isOpen: true,
+                                                reactions: comment.reactions || [],
+                                                likes: []
+                                              })}
+                                            >
+                                              ({comment.reactions.length})
+                                            </button>
+                                          )}
                                           {showReactionPicker === `comment-${comment._id}` && (
                                             <div
                                               className="reaction-picker"
@@ -1210,8 +1235,19 @@ function Feed({ onOpenMiniChat }) {
                                                     }}
                                                   >
                                                     {reply.reactions?.find(r => r.user?._id === currentUser?.id || r.user === currentUser?.id)?.emoji || '👍'} Like
-                                                    {reply.reactions?.length > 0 && ` (${reply.reactions.length})`}
                                                   </button>
+                                                  {reply.reactions?.length > 0 && (
+                                                    <button
+                                                      className="reaction-count-btn"
+                                                      onClick={() => setReactionDetailsModal({
+                                                        isOpen: true,
+                                                        reactions: reply.reactions || [],
+                                                        likes: []
+                                                      })}
+                                                    >
+                                                      ({reply.reactions.length})
+                                                    </button>
+                                                  )}
                                                   {showReactionPicker === `reply-${reply._id}` && (
                                                     <div
                                                       className="reaction-picker"
@@ -1675,6 +1711,14 @@ function Feed({ onOpenMiniChat }) {
         post={shareModal.post}
         onShare={handleShareComplete}
       />
+
+      {reactionDetailsModal.isOpen && (
+        <ReactionDetailsModal
+          reactions={reactionDetailsModal.reactions}
+          likes={reactionDetailsModal.likes}
+          onClose={() => setReactionDetailsModal({ isOpen: false, reactions: [], likes: [] })}
+        />
+      )}
     </div>
   );
 }

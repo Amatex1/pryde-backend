@@ -172,6 +172,9 @@
 .notif-content {
   flex: 1;
   min-width: 0;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  word-break: break-word;
 }
 
 .notif-text {
@@ -179,6 +182,9 @@
   font-size: 0.9rem;
   color: var(--text-main);
   line-height: 1.4;
+  white-space: normal;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
 }
 
 .notif-time {

@@ -418,6 +418,23 @@
   color: white;
 }
 
+.reaction-count-btn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  padding: 0 0.25rem;
+  transition: all 0.2s ease;
+  margin-left: -0.5rem;
+}
+
+.reaction-count-btn:hover {
+  color: var(--pryde-purple);
+  text-decoration: underline;
+}
+
 .btn-delete {
   padding: 0.5rem 1rem;
   border-radius: 8px;
