@@ -206,66 +206,87 @@ function Messages() {
 
   // Socket.IO listeners for online/offline status - set up ONCE on mount
   useEffect(() => {
-    const socket = getSocket();
+    const cleanupFunctions = [];
 
-    if (!socket) {
-      console.warn('⚠️ Socket not initialized yet, waiting...');
-      return;
-    }
+    const setupListeners = () => {
+      console.log('🔌 Setting up online/offline status listeners in Messages');
 
-    console.log('🔌 Setting up online/offline status listeners in Messages');
-
-    // Listen for online users list
-    const cleanupOnlineUsers = onOnlineUsers((users) => {
-      console.log('👥 Online users:', users);
-      setOnlineUsers(users);
-    });
-
-    // Listen for users coming online
-    const cleanupUserOnline = onUserOnline((data) => {
-      console.log('✅ User came online:', data.userId);
-      setOnlineUsers((prev) => {
-        if (!prev.includes(data.userId)) {
-          return [...prev, data.userId];
-        }
-        return prev;
+      // Listen for online users list
+      const cleanupOnlineUsers = onOnlineUsers((users) => {
+        console.log('👥 Online users:', users);
+        setOnlineUsers(users);
       });
-    });
+      cleanupFunctions.push(cleanupOnlineUsers);
 
-    // Listen for users going offline
-    const cleanupUserOffline = onUserOffline((data) => {
-      console.log('❌ User went offline:', data.userId);
-      setOnlineUsers((prev) => prev.filter(id => id !== data.userId));
-    });
+      // Listen for users coming online
+      const cleanupUserOnline = onUserOnline((data) => {
+        console.log('✅ User came online:', data.userId);
+        setOnlineUsers((prev) => {
+          if (!prev.includes(data.userId)) {
+            return [...prev, data.userId];
+          }
+          return prev;
+        });
+      });
+      cleanupFunctions.push(cleanupUserOnline);
 
-    // Request online users list after setting up listeners (important for mobile/slow connections)
-    if (socket.connected) {
-      setTimeout(() => requestOnlineUsers(), 500);
-    } else {
-      socket.once('connect', () => {
+      // Listen for users going offline
+      const cleanupUserOffline = onUserOffline((data) => {
+        console.log('❌ User went offline:', data.userId);
+        setOnlineUsers((prev) => prev.filter(id => id !== data.userId));
+      });
+      cleanupFunctions.push(cleanupUserOffline);
+    };
+
+    // Try to get socket, retry if not available yet
+    const checkSocket = () => {
+      const socket = getSocket();
+
+      if (!socket) {
+        console.log('⏳ Socket not initialized yet, retrying in 100ms...');
+        setTimeout(checkSocket, 100);
+        return;
+      }
+
+      console.log('✅ Socket found, checking connection status');
+
+      // Set up listeners if already connected, or wait for connection
+      if (socket.connected) {
+        console.log('✅ Socket already connected, setting up listeners');
+        setupListeners();
+        // Request online users list (important for mobile/slow connections)
         setTimeout(() => requestOnlineUsers(), 500);
-      });
-    }
+      } else {
+        console.log('⏳ Socket not connected yet, waiting for connection...');
+        const onConnect = () => {
+          console.log('✅ Socket connected, setting up listeners');
+          setupListeners();
+          // Request online users list (important for mobile/slow connections)
+          setTimeout(() => requestOnlineUsers(), 500);
+        };
+        socket.once('connect', onConnect);
+      }
+    };
+
+    checkSocket();
 
     // Cleanup on unmount
     return () => {
-      cleanupOnlineUsers?.();
-      cleanupUserOnline?.();
-      cleanupUserOffline?.();
+      cleanupFunctions.forEach(cleanup => cleanup?.());
     };
   }, []); // Empty dependency array - only run once on mount
 
   // Socket.IO listeners for messages and typing - depend on selectedChat
   useEffect(() => {
-    const socket = getSocket();
-
-    if (!socket) {
-      console.warn('⚠️ Socket not initialized yet, waiting...');
-      return;
-    }
-
     // Ensure socket is connected before setting up listeners
     const setupListeners = () => {
+      const socket = getSocket();
+
+      if (!socket) {
+        console.warn('⚠️ Socket not initialized yet for message listeners, retrying...');
+        setTimeout(setupListeners, 100);
+        return null;
+      }
       console.log('🎧 Setting up message socket listeners for chat:', selectedChat);
 
       // Listen for new messages
@@ -345,19 +366,14 @@ function Messages() {
       };
     };
 
-    if (socket.connected) {
-      const cleanup = setupListeners();
-      return () => {
-        cleanup?.();
-        socket.off('connect', setupListeners);
-      };
-    } else {
-      socket.on('connect', setupListeners);
-      return () => {
-        socket.off('connect', setupListeners);
-      };
-    }
-  }, [selectedChat]);
+    const cleanup = setupListeners();
+
+    return () => {
+      if (cleanup) {
+        cleanup();
+      }
+    };
+  }, [selectedChat, currentUser]);
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
