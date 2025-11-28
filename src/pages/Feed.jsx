@@ -879,7 +879,7 @@ function Feed({ onOpenMiniChat }) {
                         >
                           <span>
                             {post.reactions?.find(r => r.user?._id === currentUser?.id || r.user === currentUser?.id)?.emoji || (isLiked ? '❤️' : '🤍')}
-                          </span> Like {((post.reactions?.length || 0) + (post.likes?.length || 0)) > 0 && `(${(post.reactions?.length || 0) + (post.likes?.length || 0)})`}
+                          </span> React {((post.reactions?.length || 0) + (post.likes?.length || 0)) > 0 && `(${(post.reactions?.length || 0) + (post.likes?.length || 0)})`}
                         </button>
                         {showReactionPicker === `post-${post._id}` && (
                           <div
