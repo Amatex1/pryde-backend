@@ -18,8 +18,31 @@ router.get('/:userId', authMiddleware, checkBlocked, async (req, res) => {
 
     console.log('📥 Fetching messages between:', {
       currentUserId,
-      otherUserId: userId
+      currentUserIdType: typeof currentUserId,
+      otherUserId: userId,
+      otherUserIdType: typeof userId
     });
+
+    // Check total messages in database
+    const totalMessages = await Message.countDocuments();
+    console.log('📊 Total messages in database:', totalMessages);
+
+    // Check messages with either user
+    const messagesWithCurrentUser = await Message.countDocuments({
+      $or: [
+        { sender: currentUserId },
+        { recipient: currentUserId }
+      ]
+    });
+    console.log('📊 Messages involving current user:', messagesWithCurrentUser);
+
+    const messagesWithOtherUser = await Message.countDocuments({
+      $or: [
+        { sender: userId },
+        { recipient: userId }
+      ]
+    });
+    console.log('📊 Messages involving other user:', messagesWithOtherUser);
 
     const messages = await Message.find({
       $or: [
