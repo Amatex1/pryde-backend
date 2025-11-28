@@ -50,6 +50,7 @@ function Feed({ onOpenMiniChat }) {
   const [friends, setFriends] = useState([]);
   const [onlineUsers, setOnlineUsers] = useState([]);
   const [friendSearchQuery, setFriendSearchQuery] = useState('');
+  const [unreadMessageCounts, setUnreadMessageCounts] = useState({});
   const [trending, setTrending] = useState([]);
   const [bookmarkedPosts, setBookmarkedPosts] = useState([]);
   const [shareModal, setShareModal] = useState({ isOpen: false, post: null });
@@ -65,6 +66,11 @@ function Feed({ onOpenMiniChat }) {
     fetchFriends();
     fetchTrending();
     fetchBookmarkedPosts();
+    fetchUnreadMessageCounts();
+
+    // Poll for unread message counts every 30 seconds
+    const interval = setInterval(fetchUnreadMessageCounts, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   // Close dropdowns when clicking outside
@@ -193,6 +199,19 @@ function Feed({ onOpenMiniChat }) {
       }, 500);
     }
   }, [posts, searchParams]);
+
+  const fetchUnreadMessageCounts = async () => {
+    try {
+      const response = await api.get('/messages/unread/counts');
+      const countsMap = {};
+      response.data.unreadByUser.forEach(item => {
+        countsMap[item.userId] = item.count;
+      });
+      setUnreadMessageCounts(countsMap);
+    } catch (error) {
+      console.error('Failed to fetch unread message counts:', error);
+    }
+  };
 
   const fetchFriends = async () => {
     try {
@@ -1484,8 +1503,35 @@ function Feed({ onOpenMiniChat }) {
                     onlineUsers,
                     friendId: friend._id
                   });
+                  const unreadCount = unreadMessageCounts[friend._id] || 0;
                   return (
                     <div key={friend._id} className="friend-sidebar-item">
+                      <div className="friend-sidebar-actions-top">
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            if (onOpenMiniChat) {
+                              onOpenMiniChat(friend);
+                            }
+                          }}
+                          className="btn-friend-action"
+                          title="Chat"
+                          type="button"
+                        >
+                          💬
+                          {unreadCount > 0 && (
+                            <span className="friend-message-badge">{unreadCount > 99 ? '99+' : unreadCount}</span>
+                          )}
+                        </button>
+                        <Link
+                          to={`/profile/${friend._id}`}
+                          className="btn-friend-action"
+                          title="View Profile"
+                        >
+                          👤
+                        </Link>
+                      </div>
                       <div className="friend-sidebar-main">
                         <div className="friend-sidebar-avatar">
                           {friend.profilePhoto ? (
@@ -1501,29 +1547,6 @@ function Feed({ onOpenMiniChat }) {
                             {isOnline ? 'Online' : getTimeSince(friend.lastSeen)}
                           </div>
                         </div>
-                      </div>
-                      <div className="friend-sidebar-actions">
-                        <button
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            if (onOpenMiniChat) {
-                              onOpenMiniChat(friend);
-                            }
-                          }}
-                          className="btn-friend-action"
-                          title="Chat"
-                          type="button"
-                        >
-                          💬
-                        </button>
-                        <Link
-                          to={`/profile/${friend._id}`}
-                          className="btn-friend-action"
-                          title="View Profile"
-                        >
-                          👤
-                        </Link>
                       </div>
                     </div>
                   );

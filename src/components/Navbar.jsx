@@ -5,6 +5,7 @@ import { getImageUrl } from '../utils/imageUrl';
 import DarkModeToggle from './DarkModeToggle';
 import GlobalSearch from './GlobalSearch';
 import NotificationBell from './NotificationBell';
+import api from '../utils/api';
 import './Navbar.css';
 
 function Navbar({ onOpenMiniChat }) {
@@ -12,6 +13,7 @@ function Navbar({ onOpenMiniChat }) {
   const user = getCurrentUser();
   const [showDropdown, setShowDropdown] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const [totalUnreadMessages, setTotalUnreadMessages] = useState(0);
   const dropdownRef = useRef(null);
   const mobileMenuRef = useRef(null);
 
@@ -20,6 +22,23 @@ function Navbar({ onOpenMiniChat }) {
     // Use window.location.href for immediate redirect without flash
     window.location.href = '/login';
   };
+
+  // Fetch unread message counts
+  useEffect(() => {
+    const fetchUnreadCounts = async () => {
+      try {
+        const response = await api.get('/messages/unread/counts');
+        setTotalUnreadMessages(response.data.totalUnread);
+      } catch (error) {
+        console.error('Failed to fetch unread message counts:', error);
+      }
+    };
+
+    fetchUnreadCounts();
+    // Poll every 30 seconds
+    const interval = setInterval(fetchUnreadCounts, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -129,6 +148,9 @@ function Navbar({ onOpenMiniChat }) {
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M20 2H4C2.9 2 2.01 2.9 2.01 4L2 22L6 18H20C21.1 18 22 17.1 22 16V4C22 2.9 21.1 2 20 2ZM18 14H6V12H18V14ZM18 11H6V9H18V11ZM18 8H6V6H18V8Z" fill="currentColor"/>
             </svg>
+            {totalUnreadMessages > 0 && (
+              <span className="message-badge">{totalUnreadMessages > 99 ? '99+' : totalUnreadMessages}</span>
+            )}
           </Link>
           <div
             className="user-profile-trigger"

@@ -45,6 +45,51 @@ router.get('/:userId', authMiddleware, checkBlocked, async (req, res) => {
   }
 });
 
+// Get unread message counts per user
+router.get('/unread/counts', authMiddleware, async (req, res) => {
+  try {
+    const currentUserId = req.userId;
+
+    // Get unread messages grouped by sender
+    const unreadCounts = await Message.aggregate([
+      {
+        $match: {
+          recipient: new mongoose.Types.ObjectId(currentUserId),
+          read: false
+        }
+      },
+      {
+        $group: {
+          _id: '$sender',
+          count: { $sum: 1 }
+        }
+      }
+    ]);
+
+    // Populate sender details
+    await Message.populate(unreadCounts, {
+      path: '_id',
+      select: 'username profilePhoto'
+    });
+
+    // Calculate total unread count
+    const totalUnread = unreadCounts.reduce((sum, item) => sum + item.count, 0);
+
+    res.json({
+      totalUnread,
+      unreadByUser: unreadCounts.map(item => ({
+        userId: item._id._id,
+        username: item._id.username,
+        profilePhoto: item._id.profilePhoto,
+        count: item.count
+      }))
+    });
+  } catch (error) {
+    console.error('❌ Error fetching unread counts:', error);
+    res.status(500).json({ message: 'Error fetching unread counts', error: error.message });
+  }
+});
+
 // Get all conversations
 router.get('/', authMiddleware, async (req, res) => {
   try {
