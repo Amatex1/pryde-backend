@@ -15,7 +15,7 @@ function PasskeySetup({ onSuccess }) {
       setError('');
 
       // Step 1: Start registration
-      const { data: options } = await api.post('/api/passkey/register-start');
+      const { data: options } = await api.post('/passkey/register-start');
 
       // Step 2: Prompt user for biometric/PIN
       let credential;
@@ -46,7 +46,7 @@ function PasskeySetup({ onSuccess }) {
       setError('');
 
       // Step 4: Complete registration
-      const { data } = await api.post('/api/passkey/register-finish', {
+      const { data } = await api.post('/passkey/register-finish', {
         credential,
         deviceName: deviceName || 'My Device'
       });

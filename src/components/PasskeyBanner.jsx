@@ -21,9 +21,9 @@ function PasskeyBanner() {
       }
 
       // Check if user has any passkeys
-      const response = await api.get('/api/passkey/list');
+      const response = await api.get('/passkey/list');
       const hasPasskeys = response.data.passkeys && response.data.passkeys.length > 0;
-      
+
       // Show banner if user has no passkeys
       if (!hasPasskeys) {
         setShow(true);

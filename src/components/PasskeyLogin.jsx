@@ -14,7 +14,7 @@ function PasskeyLogin({ onSuccess, email }) {
       setError('');
 
       // Step 1: Start authentication
-      const { data: options } = await api.post('/api/passkey/login-start', {
+      const { data: options } = await api.post('/passkey/login-start', {
         email: email || undefined
       });
 
@@ -30,7 +30,7 @@ function PasskeyLogin({ onSuccess, email }) {
       }
 
       // Step 3: Complete authentication
-      const { data } = await api.post('/api/passkey/login-finish', {
+      const { data } = await api.post('/passkey/login-finish', {
         credential,
         challengeKey: options.challengeKey
       });

@@ -17,7 +17,7 @@ function PasskeyManager() {
   const fetchPasskeys = async () => {
     try {
       setLoading(true);
-      const { data } = await api.get('/api/passkey/list');
+      const { data } = await api.get('/passkey/list');
       setPasskeys(data.passkeys || []);
       setLoading(false);
     } catch (err) {
@@ -28,7 +28,7 @@ function PasskeyManager() {
 
   const handleDeletePasskey = async (credentialId) => {
     try {
-      await api.delete(`/api/passkey/${credentialId}`);
+      await api.delete(`/passkey/${credentialId}`);
       setPasskeys(passkeys.filter(pk => pk.id !== credentialId));
       setDeleteConfirm(null);
     } catch (err) {
