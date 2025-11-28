@@ -131,23 +131,9 @@ router.get('/unread/counts', authMiddleware, async (req, res) => {
     // Filter out messages from deleted users (where _id is null after population)
     const validUnreadCounts = unreadCounts.filter(item => item._id !== null);
 
-    // Get IDs of deleted users to clean up their messages
-    const deletedUserIds = [];
-    unreadCounts.forEach((item, index) => {
-      if (item._id === null) {
-        deletedUserIds.push(senderIdsBeforePopulation[index].originalId);
-      }
-    });
-
-    // Delete messages from deleted users (cleanup)
-    if (deletedUserIds.length > 0) {
-      console.log('🗑️ Cleaning up', deletedUserIds.length, 'messages from deleted users...');
-      const deleteResult = await Message.deleteMany({
-        recipient: new mongoose.Types.ObjectId(currentUserId),
-        sender: { $in: deletedUserIds }
-      });
-      console.log('🗑️ Deleted', deleteResult.deletedCount, 'orphaned messages');
-    }
+    // REMOVED: Aggressive cleanup that was deleting messages immediately after they were saved
+    // The cleanup was too aggressive and was deleting valid messages
+    // If we need cleanup, it should be done as a separate maintenance task, not on every request
 
     console.log('📊 Valid unread counts (after filtering deleted users):', validUnreadCounts);
 
