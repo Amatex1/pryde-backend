@@ -23,17 +23,17 @@
 
 .emoji-picker {
   background: var(--card-surface);
-  border-radius: 16px;
-  padding: 24px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-  max-width: 520px;
+  border-radius: 1rem;
+  padding: 1.5rem;
+  box-shadow: 0 0.625rem 2.5rem rgba(0, 0, 0, 0.2);
+  max-width: min(520px, 95vw);
   width: 95%;
   animation: slideUp 0.3s ease;
 }
 
 @keyframes slideUp {
   from {
-    transform: translateY(20px);
+    transform: translateY(1.25rem);
     opacity: 0;
   }
   to {
@@ -46,8 +46,8 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 15px;
-  padding-bottom: 10px;
+  margin-bottom: 0.9375rem;
+  padding-bottom: 0.625rem;
   border-bottom: 2px solid var(--border-light);
 }
 
@@ -63,10 +63,10 @@
   font-size: 1.5rem;
   cursor: pointer;
   color: var(--text-muted);
-  padding: 5px;
+  padding: 0.3125rem;
   border-radius: 50%;
-  width: 32px;
-  height: 32px;
+  width: 2rem;
+  height: 2rem;
   display: flex;
   align-items: center;
   justify-content: center;
