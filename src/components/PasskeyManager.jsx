@@ -51,7 +51,10 @@ function PasskeyManager() {
   };
 
   const getRelativeTime = (dateString) => {
+    if (!dateString) return 'Never';
     const date = new Date(dateString);
+    if (isNaN(date.getTime())) return 'Never';
+
     const now = new Date();
     const diffMs = now - date;
     const diffMins = Math.floor(diffMs / 60000);
