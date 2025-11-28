@@ -175,17 +175,18 @@
   min-width: 0;
   overflow-wrap: break-word;
   word-wrap: break-word;
-  word-break: break-word;
+  hyphens: auto;
 }
 
 .notif-text {
   margin: 0 0 0.25rem 0;
   font-size: 0.9rem;
   color: var(--text-main);
-  line-height: 1.4;
+  line-height: 1.5;
   white-space: normal;
   overflow-wrap: break-word;
   word-wrap: break-word;
+  display: block;
 }
 
 .notif-time {
