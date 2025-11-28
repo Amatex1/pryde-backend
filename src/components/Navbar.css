@@ -603,30 +603,3 @@
     display: none; /* Hide dropdown arrow on very small screens */
   }
 }
-
-  .navbar-container {
-    gap: 0.5rem;
-  }
-
-  .navbar-brand {
-    font-size: 1.125rem;
-  }
-
-  .brand-text {
-    display: none; /* Show only icon on very small screens */
-  }
-
-  .nav-link {
-    padding: 0.5rem;
-    min-width: 40px;
-    min-height: 40px;
-  }
-
-  .nav-icon {
-    font-size: 1.125rem;
-  }
-
-  .navbar-links {
-    gap: 0.25rem;
-  }
-}
