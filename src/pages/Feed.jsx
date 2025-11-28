@@ -92,17 +92,20 @@ function Feed({ onOpenMiniChat }) {
 
   // Socket listeners for online/offline status
   useEffect(() => {
+    let cleanupFunctions = [];
+
     const setupListeners = () => {
       console.log('🔌 Setting up online status listeners in Feed');
 
       // Get initial online users list
-      onOnlineUsers((users) => {
+      const cleanupOnlineUsers = onOnlineUsers((users) => {
         console.log('📋 Received online users list:', users);
         setOnlineUsers(users);
       });
+      cleanupFunctions.push(cleanupOnlineUsers);
 
       // Listen for users coming online
-      onUserOnline((data) => {
+      const cleanupUserOnline = onUserOnline((data) => {
         console.log('✅ User came online:', data.userId);
         setOnlineUsers((prev) => {
           if (!prev.includes(data.userId)) {
@@ -113,14 +116,16 @@ function Feed({ onOpenMiniChat }) {
         // Refresh friends list
         fetchFriends();
       });
+      cleanupFunctions.push(cleanupUserOnline);
 
       // Listen for users going offline
-      onUserOffline((data) => {
+      const cleanupUserOffline = onUserOffline((data) => {
         console.log('❌ User went offline:', data.userId);
         setOnlineUsers((prev) => prev.filter(id => id !== data.userId));
         // Refresh friends list
         fetchFriends();
       });
+      cleanupFunctions.push(cleanupUserOffline);
     };
 
     // Try to get socket, retry if not available yet
@@ -155,6 +160,8 @@ function Feed({ onOpenMiniChat }) {
 
     return () => {
       clearInterval(interval);
+      // Clean up all socket listeners
+      cleanupFunctions.forEach(cleanup => cleanup?.());
       const socket = getSocket();
       if (socket) {
         socket.off('connect', setupListeners);

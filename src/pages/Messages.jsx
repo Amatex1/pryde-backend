@@ -224,7 +224,7 @@ function Messages({ onOpenMiniChat }) {
       });
 
       // Listen for sent message confirmation
-      onMessageSent((sentMessage) => {
+      const cleanupMessageSent = onMessageSent((sentMessage) => {
         console.log('✅ Received message_sent event:', sentMessage);
         setMessages((prev) => [...prev, sentMessage]);
 
@@ -237,20 +237,20 @@ function Messages({ onOpenMiniChat }) {
       });
 
       // Listen for typing indicator
-      onUserTyping((data) => {
+      const cleanupTyping = onUserTyping((data) => {
         if (data.userId === selectedChat) {
           setIsTyping(data.isTyping);
         }
       });
 
       // Listen for online users list
-      onOnlineUsers((users) => {
+      const cleanupOnlineUsers = onOnlineUsers((users) => {
         console.log('👥 Online users:', users);
         setOnlineUsers(users);
       });
 
       // Listen for users coming online
-      onUserOnline((data) => {
+      const cleanupUserOnline = onUserOnline((data) => {
         console.log('✅ User came online:', data.userId);
         setOnlineUsers((prev) => {
           if (!prev.includes(data.userId)) {
@@ -261,21 +261,33 @@ function Messages({ onOpenMiniChat }) {
       });
 
       // Listen for users going offline
-      onUserOffline((data) => {
+      const cleanupUserOffline = onUserOffline((data) => {
         console.log('❌ User went offline:', data.userId);
         setOnlineUsers((prev) => prev.filter(id => id !== data.userId));
       });
+
+      // Return cleanup function
+      return () => {
+        cleanupMessageSent?.();
+        cleanupTyping?.();
+        cleanupOnlineUsers?.();
+        cleanupUserOnline?.();
+        cleanupUserOffline?.();
+      };
     };
 
     if (socket.connected) {
-      setupListeners();
+      const cleanup = setupListeners();
+      return () => {
+        cleanup?.();
+        socket.off('connect', setupListeners);
+      };
     } else {
       socket.on('connect', setupListeners);
+      return () => {
+        socket.off('connect', setupListeners);
+      };
     }
-
-    return () => {
-      socket.off('connect', setupListeners);
-    };
   }, [selectedChat]);
 
   const handleSendMessage = async (e) => {

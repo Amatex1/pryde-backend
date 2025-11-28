@@ -56,7 +56,7 @@ function OnlinePresence({ onOpenMiniChat }) {
 
   useEffect(() => {
     // Get initial online users list
-    onOnlineUsers((users) => {
+    const cleanupOnlineUsers = onOnlineUsers((users) => {
       setOnlineUsers(users);
     });
 
@@ -66,7 +66,7 @@ function OnlinePresence({ onOpenMiniChat }) {
     }
 
     // Listen for users coming online
-    onUserOnline((data) => {
+    const cleanupUserOnline = onUserOnline((data) => {
       setOnlineUsers((prev) => {
         if (!prev.includes(data.userId)) {
           return [...prev, data.userId];
@@ -80,7 +80,7 @@ function OnlinePresence({ onOpenMiniChat }) {
     });
 
     // Listen for users going offline
-    onUserOffline((data) => {
+    const cleanupUserOffline = onUserOffline((data) => {
       setOnlineUsers((prev) => prev.filter(id => id !== data.userId));
       // Refresh friends list
       if (showDropdown) {
@@ -96,6 +96,9 @@ function OnlinePresence({ onOpenMiniChat }) {
 
     return () => {
       if (interval) clearInterval(interval);
+      cleanupOnlineUsers?.();
+      cleanupUserOnline?.();
+      cleanupUserOffline?.();
     };
   }, [showDropdown]);
 

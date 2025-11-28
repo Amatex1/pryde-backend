@@ -120,9 +120,15 @@ export const emitTyping = (conversationId, userId) => {
 
 export const onUserTyping = (callback) => {
     if (socket) {
-        socket.off("typing"); // Remove previous listener
+        // Don't remove previous listeners - allow multiple components to listen
         socket.on("typing", callback);
     }
+    // Return cleanup function
+    return () => {
+        if (socket) {
+            socket.off("typing", callback);
+        }
+    };
 };
 
 // -----------------------------
