@@ -81,15 +81,15 @@
 .emoji-grid {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
-  gap: 14px;
-  padding: 4px;
+  gap: 0.875rem;
+  padding: 0.25rem;
 }
 
 .emoji-button {
   background: var(--bg-light);
   border: 2px solid transparent;
-  border-radius: 12px;
-  padding: 18px;
+  border-radius: 0.75rem;
+  padding: 1.125rem;
   font-size: 2rem;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -97,6 +97,7 @@
   align-items: center;
   justify-content: center;
   aspect-ratio: 1;
+  touch-action: manipulation;
 }
 
 .emoji-button:hover {
@@ -110,12 +111,17 @@
 }
 
 @media (max-width: 480px) {
+  .emoji-picker {
+    padding: 1rem;
+  }
+
   .emoji-grid {
     grid-template-columns: repeat(4, 1fr);
+    gap: 0.625rem;
   }
-  
+
   .emoji-button {
-    padding: 12px;
+    padding: 0.75rem;
     font-size: 1.5rem;
   }
 }
