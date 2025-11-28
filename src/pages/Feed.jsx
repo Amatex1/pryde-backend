@@ -88,11 +88,13 @@ function Feed({ onOpenMiniChat }) {
   useEffect(() => {
     // Get initial online users list
     onOnlineUsers((users) => {
+      console.log('📋 Received online users list:', users);
       setOnlineUsers(users);
     });
 
     // Listen for users coming online
     onUserOnline((data) => {
+      console.log('✅ User came online:', data.userId);
       setOnlineUsers((prev) => {
         if (!prev.includes(data.userId)) {
           return [...prev, data.userId];
@@ -105,6 +107,7 @@ function Feed({ onOpenMiniChat }) {
 
     // Listen for users going offline
     onUserOffline((data) => {
+      console.log('❌ User went offline:', data.userId);
       setOnlineUsers((prev) => prev.filter(id => id !== data.userId));
       // Refresh friends list
       fetchFriends();
@@ -1439,6 +1442,11 @@ function Feed({ onOpenMiniChat }) {
                 )
                 .map((friend) => {
                   const isOnline = onlineUsers.includes(friend._id);
+                  console.log(`Friend ${friend.displayName} (${friend._id}):`, {
+                    isOnline,
+                    onlineUsers,
+                    friendId: friend._id
+                  });
                   return (
                     <div key={friend._id} className="friend-sidebar-item">
                       <div className="friend-sidebar-main">
