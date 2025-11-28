@@ -19,8 +19,8 @@ function Navbar({ onOpenMiniChat }) {
 
   const handleLogout = () => {
     logout();
-    // Use window.location.href for immediate redirect without flash
-    window.location.href = '/login';
+    // Use navigate for SPA navigation without page refresh
+    navigate('/login');
   };
 
   // Fetch unread message counts

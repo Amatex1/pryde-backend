@@ -716,26 +716,20 @@ function ActivityTab({ activity }) {
           <div className="activity-list">
             {activity.recentPosts.slice(0, 10).map(post => (
               <div key={post._id} className="activity-item">
-                <a
-                  href={`/profile/${post.author?._id}`}
+                <span
                   className="activity-user-link"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    window.location.href = `/profile/${post.author?._id}`;
-                  }}
+                  onClick={() => navigate(`/profile/${post.author?._id}`)}
+                  style={{ cursor: 'pointer' }}
                 >
                   {post.author?.username}
-                </a>
-                <a
-                  href={`/feed`}
+                </span>
+                <span
                   className="activity-post-link"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    window.location.href = `/feed`;
-                  }}
+                  onClick={() => navigate('/feed')}
+                  style={{ cursor: 'pointer' }}
                 >
                   {post.content?.substring(0, 100)}...
-                </a>
+                </span>
                 <span className="activity-date">{new Date(post.createdAt).toLocaleString()}</span>
               </div>
             ))}
@@ -756,16 +750,13 @@ function ActivityTab({ activity }) {
             {activity.recentUsers.slice(0, 10).map(user => (
               <div key={user._id} className="activity-item">
                 <span className="activity-realname">{user.displayName || 'N/A'}</span>
-                <a
-                  href={`/profile/${user._id}`}
+                <span
                   className="activity-user-link"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    window.location.href = `/profile/${user._id}`;
-                  }}
+                  onClick={() => navigate(`/profile/${user._id}`)}
+                  style={{ cursor: 'pointer' }}
                 >
                   {user.username}
-                </a>
+                </span>
                 <span className="activity-email">{user.email}</span>
                 <span className="activity-date">{new Date(user.createdAt).toLocaleString()}</span>
               </div>
