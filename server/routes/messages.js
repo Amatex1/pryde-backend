@@ -144,7 +144,7 @@ router.get('/', authMiddleware, async (req, res) => {
     });
 
     // Also populate the _id field which contains the other user's ID
-    // and check for manual unread status
+    // and check for manual unread status and unread count
     const populatedConversations = await Promise.all(
       messages.map(async (conv) => {
         const otherUser = await User.findById(conv._id).select('username profilePhoto displayName');
@@ -158,10 +158,18 @@ router.get('/', authMiddleware, async (req, res) => {
           u => u.user.toString() === currentUserId
         );
 
+        // Count unread messages from this user
+        const unreadCount = await Message.countDocuments({
+          sender: conv._id,
+          recipient: currentUserId,
+          read: false
+        });
+
         return {
           ...conv,
           otherUser,
-          manuallyUnread: isManuallyUnread || false
+          manuallyUnread: isManuallyUnread || false,
+          unread: unreadCount
         };
       })
     );

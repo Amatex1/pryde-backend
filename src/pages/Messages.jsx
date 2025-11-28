@@ -899,6 +899,10 @@ function Messages() {
                                 ) : (
                                   <span>{otherUser?.username?.charAt(0).toUpperCase() || '?'}</span>
                                 )}
+                                {/* Unread indicator (red dot) */}
+                                {conv.unread > 0 && (
+                                  <span className="unread-indicator"></span>
+                                )}
                                 {/* Online status dot */}
                                 {onlineUsers.includes(conv._id) && (
                                   <span className="status-dot online"></span>

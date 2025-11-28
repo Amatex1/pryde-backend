@@ -116,12 +116,12 @@
 }
 
 .conversation-item.manually-unread {
-  background: #fff3cd;
-  border-left: 3px solid #ffc107;
+  background: #fef3f2;
+  border-left: 3px solid #ef4444;
 }
 
 .conversation-item.manually-unread:hover {
-  background: #ffe69c;
+  background: #fee2e2;
 }
 
 .conv-clickable {
@@ -171,6 +171,20 @@
 
 .conv-avatar .status-dot.offline {
   background: #6b7280;
+}
+
+/* Unread indicator dot (red dot) */
+.conv-avatar .unread-indicator {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #ef4444;
+  border: 2px solid var(--card-surface);
+  box-shadow: 0 0 8px rgba(239, 68, 68, 0.6);
+  z-index: 1;
 }
 
 .conv-info {
