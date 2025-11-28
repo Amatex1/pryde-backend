@@ -286,6 +286,12 @@ router.post('/login', loginLimiter, validateLogin, async (req, res) => {
       await user.resetLoginAttempts();
     }
 
+    // Reactivate account if it was deactivated
+    if (user.isActive === false) {
+      user.isActive = true;
+      await user.save();
+    }
+
     // Get device and IP info
     const ipAddress = getClientIp(req);
     const { browser, os, deviceInfo } = parseUserAgent(req.headers['user-agent']);
@@ -472,6 +478,12 @@ router.post('/verify-2fa-login', loginLimiter, async (req, res) => {
 
     if (!verified) {
       return res.status(400).json({ message: 'Invalid 2FA code' });
+    }
+
+    // Reactivate account if it was deactivated
+    if (user.isActive === false) {
+      user.isActive = true;
+      await user.save();
     }
 
     // Get device and IP info

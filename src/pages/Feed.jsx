@@ -48,10 +48,7 @@ function Feed({ onOpenMiniChat }) {
   const [editHiddenFromUsers, setEditHiddenFromUsers] = useState([]);
   const [editSharedWithUsers, setEditSharedWithUsers] = useState([]);
   const [friends, setFriends] = useState([]);
-  const [onlineFriends, setOnlineFriends] = useState([]);
-  const [offlineFriends, setOfflineFriends] = useState([]);
   const [onlineUsers, setOnlineUsers] = useState([]);
-  const [friendsTab, setFriendsTab] = useState('online'); // 'online' or 'offline'
   const [friendSearchQuery, setFriendSearchQuery] = useState('');
   const [trending, setTrending] = useState([]);
   const [bookmarkedPosts, setBookmarkedPosts] = useState([]);
@@ -159,13 +156,8 @@ function Feed({ onOpenMiniChat }) {
 
   const fetchFriends = async () => {
     try {
-      const [onlineRes, offlineRes] = await Promise.all([
-        api.get('/friends/online'),
-        api.get('/friends/offline')
-      ]);
-      setOnlineFriends(onlineRes.data);
-      setOfflineFriends(offlineRes.data);
-      setFriends([...onlineRes.data, ...offlineRes.data]);
+      const response = await api.get('/friends');
+      setFriends(response.data);
     } catch (error) {
       console.error('Failed to fetch friends:', error);
     }
@@ -1439,141 +1431,64 @@ function Feed({ onOpenMiniChat }) {
               />
             </div>
 
-            {/* Tabs */}
-            <div className="friends-tabs">
-              <button
-                className={`friends-tab ${friendsTab === 'online' ? 'active' : ''}`}
-                onClick={() => setFriendsTab('online')}
-              >
-                Online ({onlineFriends.filter(f =>
-                  (f.displayName || f.username).toLowerCase().includes(friendSearchQuery.toLowerCase())
-                ).length})
-              </button>
-              <button
-                className={`friends-tab ${friendsTab === 'offline' ? 'active' : ''}`}
-                onClick={() => setFriendsTab('offline')}
-              >
-                Offline ({offlineFriends.filter(f =>
-                  (f.displayName || f.username).toLowerCase().includes(friendSearchQuery.toLowerCase())
-                ).length})
-              </button>
-            </div>
-
             <div className="friends-sidebar-list">
-              {/* Online Friends Tab */}
-              {friendsTab === 'online' && (
-                <>
-                  {onlineFriends
-                    .filter(friend =>
-                      (friend.displayName || friend.username).toLowerCase().includes(friendSearchQuery.toLowerCase())
-                    )
-                    .map((friend) => (
-                      <div key={friend._id} className="friend-sidebar-item">
-                        <div className="friend-sidebar-main">
-                          <div className="friend-sidebar-avatar">
-                            {friend.profilePhoto ? (
-                              <img src={getImageUrl(friend.profilePhoto)} alt={friend.displayName} />
-                            ) : (
-                              <span>{friend.displayName?.charAt(0).toUpperCase() || 'U'}</span>
-                            )}
-                            <span className="status-dot online"></span>
-                          </div>
-                          <div className="friend-sidebar-info">
-                            <div className="friend-sidebar-name">{friend.displayName || friend.username}</div>
-                            <div className="friend-sidebar-status online-status">Online</div>
-                          </div>
+              {/* All Friends - Unified List */}
+              {friends
+                .filter(friend =>
+                  (friend.displayName || friend.username).toLowerCase().includes(friendSearchQuery.toLowerCase())
+                )
+                .map((friend) => {
+                  const isOnline = onlineUsers.includes(friend._id);
+                  return (
+                    <div key={friend._id} className="friend-sidebar-item">
+                      <div className="friend-sidebar-main">
+                        <div className="friend-sidebar-avatar">
+                          {friend.profilePhoto ? (
+                            <img src={getImageUrl(friend.profilePhoto)} alt={friend.displayName} />
+                          ) : (
+                            <span>{friend.displayName?.charAt(0).toUpperCase() || 'U'}</span>
+                          )}
+                          <span className={`status-dot ${isOnline ? 'online' : 'offline'}`}></span>
                         </div>
-                        <div className="friend-sidebar-actions">
-                          <button
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              if (onOpenMiniChat) {
-                                onOpenMiniChat(friend);
-                              }
-                            }}
-                            className="btn-friend-action"
-                            title="Chat"
-                            type="button"
-                          >
-                            💬
-                          </button>
-                          <Link
-                            to={`/profile/${friend._id}`}
-                            className="btn-friend-action"
-                            title="View Profile"
-                          >
-                            👤
-                          </Link>
+                        <div className="friend-sidebar-info">
+                          <div className="friend-sidebar-name">{friend.displayName || friend.username}</div>
+                          <div className={`friend-sidebar-status ${isOnline ? 'online-status' : 'offline-status'}`}>
+                            {isOnline ? 'Online' : getTimeSince(friend.lastSeen)}
+                          </div>
                         </div>
                       </div>
-                    ))}
-                  {onlineFriends.filter(f =>
-                    (f.displayName || f.username).toLowerCase().includes(friendSearchQuery.toLowerCase())
-                  ).length === 0 && (
-                    <div className="no-friends">
-                      <p>{friendSearchQuery ? 'No matching online friends' : 'No friends online'}</p>
-                    </div>
-                  )}
-                </>
-              )}
-
-              {/* Offline Friends Tab */}
-              {friendsTab === 'offline' && (
-                <>
-                  {offlineFriends
-                    .filter(friend =>
-                      (friend.displayName || friend.username).toLowerCase().includes(friendSearchQuery.toLowerCase())
-                    )
-                    .map((friend) => (
-                      <div key={friend._id} className="friend-sidebar-item">
-                        <div className="friend-sidebar-main">
-                          <div className="friend-sidebar-avatar">
-                            {friend.profilePhoto ? (
-                              <img src={getImageUrl(friend.profilePhoto)} alt={friend.displayName} />
-                            ) : (
-                              <span>{friend.displayName?.charAt(0).toUpperCase() || 'U'}</span>
-                            )}
-                            <span className="status-dot offline"></span>
-                          </div>
-                          <div className="friend-sidebar-info">
-                            <div className="friend-sidebar-name">{friend.displayName || friend.username}</div>
-                            <div className="friend-sidebar-status offline-status">{getTimeSince(friend.lastSeen)}</div>
-                          </div>
-                        </div>
-                        <div className="friend-sidebar-actions">
-                          <button
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              if (onOpenMiniChat) {
-                                onOpenMiniChat(friend);
-                              }
-                            }}
-                            className="btn-friend-action"
-                            title="Chat"
-                            type="button"
-                          >
-                            💬
-                          </button>
-                          <Link
-                            to={`/profile/${friend._id}`}
-                            className="btn-friend-action"
-                            title="View Profile"
-                          >
-                            👤
-                          </Link>
-                        </div>
+                      <div className="friend-sidebar-actions">
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            if (onOpenMiniChat) {
+                              onOpenMiniChat(friend);
+                            }
+                          }}
+                          className="btn-friend-action"
+                          title="Chat"
+                          type="button"
+                        >
+                          💬
+                        </button>
+                        <Link
+                          to={`/profile/${friend._id}`}
+                          className="btn-friend-action"
+                          title="View Profile"
+                        >
+                          👤
+                        </Link>
                       </div>
-                    ))}
-                  {offlineFriends.filter(f =>
-                    (f.displayName || f.username).toLowerCase().includes(friendSearchQuery.toLowerCase())
-                  ).length === 0 && (
-                    <div className="no-friends">
-                      <p>{friendSearchQuery ? 'No matching offline friends' : 'No friends offline'}</p>
                     </div>
-                  )}
-                </>
+                  );
+                })}
+              {friends.filter(f =>
+                (f.displayName || f.username).toLowerCase().includes(friendSearchQuery.toLowerCase())
+              ).length === 0 && friends.length > 0 && (
+                <div className="no-friends">
+                  <p>No matching friends</p>
+                </div>
               )}
 
               {/* No Friends at All */}
