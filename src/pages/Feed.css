@@ -1052,7 +1052,6 @@
   flex-direction: column;
   gap: 0.5rem;
   padding: 0.75rem;
-  padding-top: 2.5rem;
   border-radius: 12px;
   background: var(--background-light);
   transition: all 0.2s ease;
@@ -1067,6 +1066,7 @@
   display: flex;
   align-items: center;
   gap: 0.75rem;
+  position: relative;
 }
 
 .friend-sidebar-avatar {
@@ -1142,12 +1142,10 @@
 }
 
 .friend-sidebar-actions-top {
-  position: absolute;
-  top: 0.5rem;
-  right: 0.5rem;
   display: flex;
   gap: 0.5rem;
-  z-index: 10;
+  margin-left: auto;
+  flex-shrink: 0;
 }
 
 .friend-sidebar-actions {

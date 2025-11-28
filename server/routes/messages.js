@@ -50,6 +50,8 @@ router.get('/unread/counts', authMiddleware, async (req, res) => {
   try {
     const currentUserId = req.userId;
 
+    console.log('📊 Fetching unread counts for user:', currentUserId);
+
     // Get unread messages grouped by sender
     const unreadCounts = await Message.aggregate([
       {
@@ -66,24 +68,32 @@ router.get('/unread/counts', authMiddleware, async (req, res) => {
       }
     ]);
 
+    console.log('📊 Unread counts aggregation result:', unreadCounts);
+
     // Populate sender details
     await Message.populate(unreadCounts, {
       path: '_id',
-      select: 'username profilePhoto'
+      select: 'username profilePhoto displayName'
     });
+
+    console.log('📊 After population:', unreadCounts);
 
     // Calculate total unread count
     const totalUnread = unreadCounts.reduce((sum, item) => sum + item.count, 0);
 
-    res.json({
+    const response = {
       totalUnread,
       unreadByUser: unreadCounts.map(item => ({
-        userId: item._id._id,
-        username: item._id.username,
-        profilePhoto: item._id.profilePhoto,
+        userId: item._id?._id || item._id,
+        username: item._id?.username,
+        displayName: item._id?.displayName,
+        profilePhoto: item._id?.profilePhoto,
         count: item.count
       }))
-    });
+    };
+
+    console.log('✅ Sending unread counts response:', response);
+    res.json(response);
   } catch (error) {
     console.error('❌ Error fetching unread counts:', error);
     res.status(500).json({ message: 'Error fetching unread counts', error: error.message });

@@ -1506,32 +1506,6 @@ function Feed({ onOpenMiniChat }) {
                   const unreadCount = unreadMessageCounts[friend._id] || 0;
                   return (
                     <div key={friend._id} className="friend-sidebar-item">
-                      <div className="friend-sidebar-actions-top">
-                        <button
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            if (onOpenMiniChat) {
-                              onOpenMiniChat(friend);
-                            }
-                          }}
-                          className="btn-friend-action"
-                          title="Chat"
-                          type="button"
-                        >
-                          💬
-                          {unreadCount > 0 && (
-                            <span className="friend-message-badge">{unreadCount > 99 ? '99+' : unreadCount}</span>
-                          )}
-                        </button>
-                        <Link
-                          to={`/profile/${friend._id}`}
-                          className="btn-friend-action"
-                          title="View Profile"
-                        >
-                          👤
-                        </Link>
-                      </div>
                       <div className="friend-sidebar-main">
                         <div className="friend-sidebar-avatar">
                           {friend.profilePhoto ? (
@@ -1546,6 +1520,32 @@ function Feed({ onOpenMiniChat }) {
                           <div className={`friend-sidebar-status ${isOnline ? 'online-status' : 'offline-status'}`}>
                             {isOnline ? 'Online' : getTimeSince(friend.lastSeen)}
                           </div>
+                        </div>
+                        <div className="friend-sidebar-actions-top">
+                          <button
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              if (onOpenMiniChat) {
+                                onOpenMiniChat(friend);
+                              }
+                            }}
+                            className="btn-friend-action"
+                            title="Chat"
+                            type="button"
+                          >
+                            💬
+                            {unreadCount > 0 && (
+                              <span className="friend-message-badge">{unreadCount > 99 ? '99+' : unreadCount}</span>
+                            )}
+                          </button>
+                          <Link
+                            to={`/profile/${friend._id}`}
+                            className="btn-friend-action"
+                            title="View Profile"
+                          >
+                            👤
+                          </Link>
                         </div>
                       </div>
                     </div>

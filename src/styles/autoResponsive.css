@@ -205,9 +205,14 @@ p, span, div, a, li, td, th {
     max-width: 100vw;
   }
 
-  /* Exception for elements that need to be wider */
-  html, body, #root {
-    max-width: 100%;
+  /* Exception for elements that need to be wider or have specific sizing */
+  html, body, #root,
+  .mini-chat-box,
+  .mini-chat-box *,
+  .message,
+  .message-bubble,
+  .message-content {
+    max-width: none !important;
   }
 
   /* Ensure tables are responsive */
