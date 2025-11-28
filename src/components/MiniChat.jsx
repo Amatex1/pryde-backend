@@ -184,7 +184,18 @@ function MiniChat({ friendId, friendName, friendPhoto, onClose, onMinimize, isMi
           </div>
           <span className="minimized-name">{friendName}</span>
         </div>
-        <button type="button" className="btn-close-mini" onClick={(e) => { e.preventDefault(); e.stopPropagation(); onClose(); }}>×</button>
+        <button
+          type="button"
+          className="btn-close-mini"
+          onClick={(e) => {
+            console.log('🔴 Close button clicked (minimized)');
+            e.preventDefault();
+            e.stopPropagation();
+            onClose();
+          }}
+        >
+          ×
+        </button>
       </div>
     );
   }
@@ -211,8 +222,30 @@ function MiniChat({ friendId, friendName, friendPhoto, onClose, onMinimize, isMi
           </div>
         </div>
         <div className="mini-chat-controls">
-          <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); onMinimize(); }} title="Minimize">−</button>
-          <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); onClose(); }} title="Close">×</button>
+          <button
+            type="button"
+            onClick={(e) => {
+              console.log('➖ Minimize button clicked');
+              e.preventDefault();
+              e.stopPropagation();
+              onMinimize();
+            }}
+            title="Minimize"
+          >
+            −
+          </button>
+          <button
+            type="button"
+            onClick={(e) => {
+              console.log('🔴 Close button clicked (expanded)');
+              e.preventDefault();
+              e.stopPropagation();
+              onClose();
+            }}
+            title="Close"
+          >
+            ×
+          </button>
         </div>
       </div>
 

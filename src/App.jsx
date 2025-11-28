@@ -98,6 +98,7 @@ function App() {
 
   // Close a mini chat
   const closeMiniChat = (friendId) => {
+    console.log('🔴 Closing MiniChat for friend:', friendId);
     setOpenChats(prev => prev.filter(chat => chat.friendId !== friendId));
     setMinimizedChats(prev => prev.filter(id => id !== friendId));
   };
