@@ -90,10 +90,18 @@ function ReactionDetailsModal({ reactions = [], likes = [], onClose }) {
           ) : (
             displayReactions.map((reaction, index) => {
               const user = reaction.user;
-              const userId = user?._id || user;
-              const username = user?.username || 'Unknown User';
-              const displayName = user?.displayName || username;
-              const profilePhoto = user?.profilePhoto;
+
+              // Handle both populated user objects and user IDs
+              const isPopulated = user && typeof user === 'object' && user._id;
+              const userId = isPopulated ? user._id : user;
+              const username = isPopulated ? (user.username || 'Unknown User') : 'Unknown User';
+              const displayName = isPopulated ? (user.displayName || username) : 'Unknown User';
+              const profilePhoto = isPopulated ? user.profilePhoto : null;
+
+              // Skip reactions from deleted/invalid users
+              if (!userId || userId === 'Unknown User') {
+                return null;
+              }
 
               return (
                 <Link
@@ -116,7 +124,7 @@ function ReactionDetailsModal({ reactions = [], likes = [], onClose }) {
                   <div className="reaction-emoji">{reaction.emoji}</div>
                 </Link>
               );
-            })
+            }).filter(Boolean)
           )}
         </div>
       </div>
