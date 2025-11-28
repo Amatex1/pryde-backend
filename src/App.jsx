@@ -93,8 +93,13 @@ function App() {
       return;
     }
 
-    // Add new chat
-    setOpenChats(prev => [...prev, { friendId, friendName: name, friendPhoto: photo }]);
+    // Add new chat with unique timestamp to force component remount when reopened
+    setOpenChats(prev => [...prev, {
+      friendId,
+      friendName: name,
+      friendPhoto: photo,
+      openedAt: Date.now() // Unique key to force re-fetch when chat is reopened
+    }]);
   };
 
   // Close a mini chat
@@ -171,7 +176,7 @@ function App() {
           <div className="mini-chats-container">
             {openChats.map((chat, index) => (
               <div
-                key={chat.friendId}
+                key={`${chat.friendId}-${chat.openedAt}`}
                 style={{
                   right: `${20 + (index * 340)}px`,
                 }}

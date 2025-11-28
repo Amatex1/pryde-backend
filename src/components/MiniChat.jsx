@@ -82,7 +82,11 @@ function MiniChat({ friendId, friendName, friendPhoto, onClose, onMinimize, isMi
     const fetchFriendData = async () => {
       try {
         const response = await api.get(`/users/${friendId}`);
-        setLastSeen(response.data.lastSeen);
+        // Only set lastSeen if user is NOT currently online
+        // This prevents showing stale "Last seen" when user is actually online
+        if (!isOnline) {
+          setLastSeen(response.data.lastSeen);
+        }
       } catch (error) {
         console.error('Error fetching friend data:', error);
       }
@@ -93,6 +97,7 @@ function MiniChat({ friendId, friendName, friendPhoto, onClose, onMinimize, isMi
       try {
         setIsLoading(true);
         const response = await api.get(`/messages/${friendId}`);
+        console.log('📥 Fetched messages for', friendId, ':', response.data.length);
         setMessages(response.data);
       } catch (error) {
         console.error('Error fetching messages:', error);
@@ -100,6 +105,10 @@ function MiniChat({ friendId, friendName, friendPhoto, onClose, onMinimize, isMi
         setIsLoading(false);
       }
     };
+
+    // Reset messages when friendId changes or component mounts
+    setMessages([]);
+    setIsLoading(true);
 
     fetchCurrentUser();
     fetchFriendData();
@@ -120,18 +129,32 @@ function MiniChat({ friendId, friendName, friendPhoto, onClose, onMinimize, isMi
 
     const handleUserOnline = (data) => {
       if (data.userId === friendId) {
+        console.log('✅ Friend came online:', friendId);
         setIsOnline(true);
+        setLastSeen(null); // Clear lastSeen when user comes online
       }
     };
 
     const handleUserOffline = (data) => {
       if (data.userId === friendId) {
+        console.log('❌ Friend went offline:', friendId);
         setIsOnline(false);
+        // Fetch updated lastSeen from server
+        api.get(`/users/${friendId}`).then(response => {
+          setLastSeen(response.data.lastSeen);
+        }).catch(error => {
+          console.error('Error fetching lastSeen:', error);
+        });
       }
     };
 
     const handleOnlineUsers = (users) => {
-      setIsOnline(users.includes(friendId));
+      const friendIsOnline = users.includes(friendId);
+      console.log('📋 Online users list received. Friend online:', friendIsOnline);
+      setIsOnline(friendIsOnline);
+      if (friendIsOnline) {
+        setLastSeen(null); // Clear lastSeen if friend is online
+      }
     };
 
     // Add listeners and get cleanup functions
