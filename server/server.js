@@ -212,12 +212,23 @@ app.use('/api/privacy', privacyRoutes);
 app.use('/api/bookmarks', bookmarksRoutes);
 app.use('/api/passkey', passkeyRoutes);
 
+// Log passkey routes registration
+console.log('✅ Passkey routes registered at /api/passkey');
+console.log('   Available routes:');
+console.log('   - POST /api/passkey/register-start');
+console.log('   - POST /api/passkey/register-finish');
+console.log('   - POST /api/passkey/login-start');
+console.log('   - POST /api/passkey/login-finish');
+console.log('   - GET  /api/passkey/list');
+console.log('   - DELETE /api/passkey/:credentialId');
+
 // Health check and status endpoints
 app.get('/', (req, res) => {
   res.json({
     status: 'Pryde API running',
     timestamp: new Date().toISOString(),
-    passkeySupport: !!passkeyRoutes
+    passkeySupport: !!passkeyRoutes,
+    version: '1.0.1-passkey-debug'
   });
 });
 
