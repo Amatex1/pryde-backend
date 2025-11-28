@@ -211,7 +211,7 @@ function Messages({ onOpenMiniChat }) {
       console.log('🎧 Setting up socket listeners');
 
       // Listen for new messages
-      onNewMessage((newMessage) => {
+      const cleanupNewMessage = onNewMessage((newMessage) => {
         console.log('📨 Received new_message event:', newMessage);
         if (selectedChat === newMessage.sender._id) {
           setMessages((prev) => [...prev, newMessage]);
@@ -268,6 +268,7 @@ function Messages({ onOpenMiniChat }) {
 
       // Return cleanup function
       return () => {
+        cleanupNewMessage?.();
         cleanupMessageSent?.();
         cleanupTyping?.();
         cleanupOnlineUsers?.();

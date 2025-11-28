@@ -93,9 +93,17 @@ function Feed({ onOpenMiniChat }) {
   // Socket listeners for online/offline status
   useEffect(() => {
     let cleanupFunctions = [];
+    let listenersSetUp = false;
 
     const setupListeners = () => {
+      // Prevent setting up listeners multiple times
+      if (listenersSetUp) {
+        console.log('⚠️ Listeners already set up, skipping...');
+        return;
+      }
+
       console.log('🔌 Setting up online status listeners in Feed');
+      listenersSetUp = true;
 
       // Get initial online users list
       const cleanupOnlineUsers = onOnlineUsers((users) => {
