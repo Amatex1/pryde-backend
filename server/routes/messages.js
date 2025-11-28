@@ -44,21 +44,18 @@ router.get('/:userId', authMiddleware, checkBlocked, async (req, res) => {
     });
     console.log('📊 Messages involving other user:', messagesWithOtherUser);
 
+    // Try without ObjectId conversion first (Mongoose should handle it automatically)
     const messages = await Message.find({
       $or: [
-        {
-          sender: new mongoose.Types.ObjectId(currentUserId),
-          recipient: new mongoose.Types.ObjectId(userId)
-        },
-        {
-          sender: new mongoose.Types.ObjectId(userId),
-          recipient: new mongoose.Types.ObjectId(currentUserId)
-        }
+        { sender: currentUserId, recipient: userId },
+        { sender: userId, recipient: currentUserId }
       ]
     })
       .populate('sender', 'username profilePhoto')
       .populate('recipient', 'username profilePhoto')
       .sort({ createdAt: 1 });
+
+    console.log('✅ Found messages:', messages.length);
 
     console.log('✅ Found messages:', messages.length);
 
