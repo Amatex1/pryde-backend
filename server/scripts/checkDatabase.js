@@ -1,5 +1,7 @@
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import User from '../models/User.js';
 import Post from '../models/Post.js';
 import Message from '../models/Message.js';
@@ -11,7 +13,12 @@ import Block from '../models/Block.js';
 import Report from '../models/Report.js';
 import SecurityLog from '../models/SecurityLog.js';
 
-dotenv.config();
+// Get __dirname equivalent in ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Load .env from server directory
+dotenv.config({ path: path.join(__dirname, '../.env') });
 
 const checkDatabase = async () => {
   try {
