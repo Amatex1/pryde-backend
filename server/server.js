@@ -14,7 +14,6 @@ import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
 import helmet from "helmet";
 import mongoSanitize from "express-mongo-sanitize";
-import xssClean from "xss-clean";
 import cookieParser from "cookie-parser";
 
 // Import routes
@@ -177,8 +176,11 @@ app.use(mongoSanitize({
   },
 }));
 
-// XSS protection - sanitize user input
-app.use(xssClean());
+// XSS protection is handled by:
+// 1. express-mongo-sanitize (above) - prevents NoSQL injection
+// 2. helmet (above) - sets security headers including Content-Security-Policy
+// 3. express-validator in routes - validates and sanitizes input fields
+// Note: xss-clean is deprecated, so we use the combination above instead
 
 app.use(cors(corsOptions));
 app.use(cookieParser()); // Parse cookies for CSRF tokens
