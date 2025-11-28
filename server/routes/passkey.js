@@ -38,7 +38,7 @@ router.get('/test', (req, res) => {
 // @access  Private (user must be logged in)
 router.post('/register-start', auth, async (req, res) => {
   try {
-    const user = await User.findById(req.user.userId);
+    const user = await User.findById(req.userId);
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
@@ -66,7 +66,7 @@ router.post('/register-start', auth, async (req, res) => {
 // @access  Private
 router.post('/register-finish', auth, async (req, res) => {
   try {
-    const user = await User.findById(req.user.userId);
+    const user = await User.findById(req.userId);
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
@@ -252,7 +252,7 @@ router.post('/login-finish', async (req, res) => {
 // @access  Private
 router.get('/list', auth, async (req, res) => {
   try {
-    const user = await User.findById(req.user.userId);
+    const user = await User.findById(req.userId);
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
@@ -276,7 +276,7 @@ router.get('/list', auth, async (req, res) => {
 // @access  Private
 router.delete('/:credentialId', auth, async (req, res) => {
   try {
-    const user = await User.findById(req.user.userId);
+    const user = await User.findById(req.userId);
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
