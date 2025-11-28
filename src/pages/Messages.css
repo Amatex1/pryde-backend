@@ -1165,6 +1165,24 @@
     padding: 0.75rem 1rem;
   }
 
+  /* Fix sent messages alignment on mobile */
+  .message-content {
+    max-width: 85%;
+  }
+
+  .message-group.sent .message-content {
+    align-items: flex-end;
+  }
+
+  .message-group.received .message-content {
+    align-items: flex-start;
+  }
+
+  /* Make message actions always visible on mobile (no hover needed) */
+  .message-actions {
+    opacity: 1;
+  }
+
   .message-input-container {
     padding: 1rem;
     gap: 0.5rem;
@@ -1279,6 +1297,24 @@
     max-width: 90%;
     font-size: 0.875rem;
     padding: 0.625rem 0.875rem;
+  }
+
+  /* Fix sent messages alignment on mobile */
+  .message-content {
+    max-width: 85%;
+  }
+
+  .message-group.sent .message-content {
+    align-items: flex-end;
+  }
+
+  .message-group.received .message-content {
+    align-items: flex-start;
+  }
+
+  /* Make message actions always visible on mobile (no hover needed) */
+  .message-actions {
+    opacity: 1;
   }
 
   .chat-header {
