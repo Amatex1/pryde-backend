@@ -74,8 +74,8 @@ function Feed({ onOpenMiniChat }) {
         setOpenDropdownId(null);
         setOpenCommentDropdownId(null);
       }
-      // Close reaction picker on mobile when clicking outside
-      if (window.innerWidth <= 768 && !event.target.closest('.reaction-container')) {
+      // Close reaction picker when clicking outside
+      if (!event.target.closest('.reaction-container')) {
         setShowReactionPicker(null);
       }
     };

@@ -84,8 +84,8 @@ function Profile({ onOpenMiniChat }) {
       if (actionsMenuRef.current && !actionsMenuRef.current.contains(event.target)) {
         setShowActionsMenu(false);
       }
-      // Close reaction picker on mobile when clicking outside
-      if (window.innerWidth <= 768 && !event.target.closest('.reaction-container')) {
+      // Close reaction picker when clicking outside
+      if (!event.target.closest('.reaction-container')) {
         setShowReactionPicker(null);
       }
     };
