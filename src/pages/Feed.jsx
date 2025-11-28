@@ -59,6 +59,7 @@ function Feed({ onOpenMiniChat }) {
   const currentUser = getCurrentUser();
   const postRefs = useRef({});
   const commentRefs = useRef({});
+  const listenersSetUpRef = useRef(false);
 
   useEffect(() => {
     fetchPosts();
@@ -93,17 +94,16 @@ function Feed({ onOpenMiniChat }) {
   // Socket listeners for online/offline status
   useEffect(() => {
     let cleanupFunctions = [];
-    let listenersSetUp = false;
 
     const setupListeners = () => {
-      // Prevent setting up listeners multiple times
-      if (listenersSetUp) {
+      // Prevent setting up listeners multiple times using ref
+      if (listenersSetUpRef.current) {
         console.log('⚠️ Listeners already set up, skipping...');
         return;
       }
 
       console.log('🔌 Setting up online status listeners in Feed');
-      listenersSetUp = true;
+      listenersSetUpRef.current = true;
 
       // Get initial online users list
       const cleanupOnlineUsers = onOnlineUsers((users) => {
@@ -174,6 +174,8 @@ function Feed({ onOpenMiniChat }) {
       if (socket) {
         socket.off('connect', setupListeners);
       }
+      // Reset the flag when component unmounts
+      listenersSetUpRef.current = false;
     };
   }, []);
 
