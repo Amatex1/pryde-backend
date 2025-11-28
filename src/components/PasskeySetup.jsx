@@ -20,7 +20,8 @@ function PasskeySetup({ onSuccess }) {
       // Step 2: Prompt user for biometric/PIN
       let credential;
       try {
-        credential = await startRegistration(options);
+        // @simplewebauthn/browser v13+ requires optionsJSON wrapper
+        credential = await startRegistration({ optionsJSON: options });
       } catch (err) {
         if (err.name === 'NotAllowedError') {
           throw new Error('Passkey creation was cancelled');

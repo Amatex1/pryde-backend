@@ -21,7 +21,8 @@ function PasskeyLogin({ onSuccess, email }) {
       // Step 2: Prompt user for biometric/PIN
       let credential;
       try {
-        credential = await startAuthentication(options);
+        // @simplewebauthn/browser v13+ requires optionsJSON wrapper
+        credential = await startAuthentication({ optionsJSON: options });
       } catch (err) {
         if (err.name === 'NotAllowedError') {
           throw new Error('Passkey authentication was cancelled');
