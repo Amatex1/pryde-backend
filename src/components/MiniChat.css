@@ -34,6 +34,7 @@
   width: 32px;
   height: 32px;
   flex-shrink: 0;
+  position: relative;
 }
 
 .header-avatar img,
@@ -54,9 +55,38 @@
   font-size: 14px;
 }
 
+.status-dot {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 2px solid white;
+}
+
+.status-dot.online {
+  background: #4ade80;
+}
+
+.status-dot.offline {
+  background: #9ca3af;
+}
+
+.header-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
 .header-name {
   font-weight: 600;
   font-size: 14px;
+}
+
+.header-status {
+  font-size: 11px;
+  opacity: 0.9;
 }
 
 .mini-chat-controls {
@@ -144,6 +174,8 @@
   display: flex;
   margin-bottom: 8px;
   max-width: none !important;
+  gap: 8px;
+  align-items: flex-end;
 }
 
 .message.sent {
@@ -154,6 +186,32 @@
 .message.received {
   justify-content: flex-start;
   max-width: none !important;
+}
+
+.message-avatar {
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+}
+
+.message-avatar img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.avatar-placeholder-small {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: var(--gradient-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 600;
+  font-size: 12px;
 }
 
 .message-bubble {

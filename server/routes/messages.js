@@ -169,12 +169,24 @@ router.get('/', authMiddleware, async (req, res) => {
     });
 
     // Also populate the _id field which contains the other user's ID
+    // and check for manual unread status
     const populatedConversations = await Promise.all(
       messages.map(async (conv) => {
         const otherUser = await User.findById(conv._id).select('username profilePhoto displayName');
+
+        // Check if conversation is manually marked as unread
+        const conversation = await Conversation.findOne({
+          participants: { $all: [currentUserId, conv._id] }
+        });
+
+        const isManuallyUnread = conversation?.unreadFor?.some(
+          u => u.user.toString() === currentUserId
+        );
+
         return {
           ...conv,
-          otherUser
+          otherUser,
+          manuallyUnread: isManuallyUnread || false
         };
       })
     );

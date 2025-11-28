@@ -115,6 +115,15 @@
   border-left: 3px solid var(--pryde-purple);
 }
 
+.conversation-item.manually-unread {
+  background: #fff3cd;
+  border-left: 3px solid #ffc107;
+}
+
+.conversation-item.manually-unread:hover {
+  background: #ffe69c;
+}
+
 .conv-clickable {
   display: flex;
   gap: 1rem;

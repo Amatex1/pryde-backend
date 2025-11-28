@@ -738,9 +738,15 @@ function Messages({ onOpenMiniChat }) {
 
                             {openDropdown === group._id && (
                               <div className="conv-dropdown">
-                                <button onClick={(e) => { e.stopPropagation(); handleArchiveConversation(group._id, true); }}>
-                                  📦 Archive
-                                </button>
+                                {activeTab === 'archived' ? (
+                                  <button onClick={(e) => { e.stopPropagation(); handleUnarchiveConversation(group._id, true); }}>
+                                    📤 Unarchive
+                                  </button>
+                                ) : (
+                                  <button onClick={(e) => { e.stopPropagation(); handleArchiveConversation(group._id, true); }}>
+                                    📦 Archive
+                                  </button>
+                                )}
                                 {mutedConversations.includes(group._id) ? (
                                   <button onClick={(e) => { e.stopPropagation(); handleUnmuteConversation(group._id, true); }}>
                                     🔔 Unmute
@@ -766,7 +772,7 @@ function Messages({ onOpenMiniChat }) {
                         .filter(conv => {
                           const isArchived = archivedConversations.includes(conv._id);
                           if (activeTab === 'archived') return isArchived;
-                          if (activeTab === 'unread') return !isArchived && conv.unread > 0;
+                          if (activeTab === 'unread') return !isArchived && (conv.unread > 0 || conv.manuallyUnread);
                           return !isArchived; // 'all' tab shows non-archived
                         })
                         .map((conv) => {
@@ -780,7 +786,7 @@ function Messages({ onOpenMiniChat }) {
                         return (
                           <div
                             key={conv._id}
-                            className={`conversation-item ${selectedChat === conv._id && selectedChatType === 'user' ? 'active' : ''}`}
+                            className={`conversation-item ${selectedChat === conv._id && selectedChatType === 'user' ? 'active' : ''} ${conv.manuallyUnread ? 'manually-unread' : ''}`}
                           >
                             <div
                               className="conv-clickable"
@@ -828,12 +834,20 @@ function Messages({ onOpenMiniChat }) {
 
                               {openDropdown === conv._id && (
                                 <div className="conv-dropdown">
-                                  <button onClick={(e) => { e.stopPropagation(); handleMarkAsUnread(conv._id); }}>
-                                    📧 Mark as Unread
-                                  </button>
-                                  <button onClick={(e) => { e.stopPropagation(); handleArchiveConversation(conv._id); }}>
-                                    📦 Archive
-                                  </button>
+                                  {activeTab !== 'archived' && (
+                                    <button onClick={(e) => { e.stopPropagation(); handleMarkAsUnread(conv._id); }}>
+                                      📧 Mark as Unread
+                                    </button>
+                                  )}
+                                  {activeTab === 'archived' ? (
+                                    <button onClick={(e) => { e.stopPropagation(); handleUnarchiveConversation(conv._id); }}>
+                                      📤 Unarchive
+                                    </button>
+                                  ) : (
+                                    <button onClick={(e) => { e.stopPropagation(); handleArchiveConversation(conv._id); }}>
+                                      📦 Archive
+                                    </button>
+                                  )}
                                   {mutedConversations.includes(conv._id) ? (
                                     <button onClick={(e) => { e.stopPropagation(); handleUnmuteConversation(conv._id); }}>
                                       🔔 Unmute

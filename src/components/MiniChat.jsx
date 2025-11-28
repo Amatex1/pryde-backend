@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { sendMessage, onNewMessage, onMessageSent } from '../utils/socket';
+import { sendMessage, onNewMessage, onMessageSent, onUserOnline, onUserOffline, onOnlineUsers } from '../utils/socket';
 import api from '../utils/api';
 import './MiniChat.css';
 
@@ -7,6 +7,9 @@ function MiniChat({ friendId, friendName, friendPhoto, onClose, onMinimize, isMi
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [isOnline, setIsOnline] = useState(false);
+  const [lastSeen, setLastSeen] = useState(null);
+  const [currentUserData, setCurrentUserData] = useState(null);
   const messagesEndRef = useRef(null);
   const currentUserId = localStorage.getItem('userId');
 
@@ -65,6 +68,26 @@ function MiniChat({ friendId, friendName, friendPhoto, onClose, onMinimize, isMi
   }, [messages]);
 
   useEffect(() => {
+    // Fetch current user data
+    const fetchCurrentUser = async () => {
+      try {
+        const response = await api.get('/auth/me');
+        setCurrentUserData(response.data);
+      } catch (error) {
+        console.error('Error fetching current user:', error);
+      }
+    };
+
+    // Fetch friend data for online status
+    const fetchFriendData = async () => {
+      try {
+        const response = await api.get(`/users/${friendId}`);
+        setLastSeen(response.data.lastSeen);
+      } catch (error) {
+        console.error('Error fetching friend data:', error);
+      }
+    };
+
     // Fetch messages
     const fetchMessages = async () => {
       try {
@@ -78,6 +101,8 @@ function MiniChat({ friendId, friendName, friendPhoto, onClose, onMinimize, isMi
       }
     };
 
+    fetchCurrentUser();
+    fetchFriendData();
     fetchMessages();
 
     // Socket listeners
@@ -93,8 +118,27 @@ function MiniChat({ friendId, friendName, friendPhoto, onClose, onMinimize, isMi
       }
     };
 
+    const handleUserOnline = (userId) => {
+      if (userId === friendId) {
+        setIsOnline(true);
+      }
+    };
+
+    const handleUserOffline = (userId) => {
+      if (userId === friendId) {
+        setIsOnline(false);
+      }
+    };
+
+    const handleOnlineUsers = (users) => {
+      setIsOnline(users.includes(friendId));
+    };
+
     onNewMessage(handleNewMessage);
     onMessageSent(handleMessageSent);
+    onUserOnline(handleUserOnline);
+    onUserOffline(handleUserOffline);
+    onOnlineUsers(handleOnlineUsers);
   }, [friendId]);
 
   const handleSend = () => {
@@ -147,8 +191,14 @@ function MiniChat({ friendId, friendName, friendPhoto, onClose, onMinimize, isMi
                 {friendName.charAt(0).toUpperCase()}
               </div>
             )}
+            <div className={`status-dot ${isOnline ? 'online' : 'offline'}`}></div>
           </div>
-          <span className="header-name">{friendName}</span>
+          <div className="header-text">
+            <span className="header-name">{friendName}</span>
+            <span className="header-status">
+              {isOnline ? 'Online' : lastSeen ? `Last seen ${new Date(lastSeen).toLocaleString()}` : 'Offline'}
+            </span>
+          </div>
         </div>
         <div className="mini-chat-controls">
           <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); onMinimize(); }} title="Minimize">−</button>
@@ -176,12 +226,34 @@ function MiniChat({ friendId, friendName, friendPhoto, onClose, onMinimize, isMi
 
                 {/* Message */}
                 <div className={`message ${isSent ? 'sent' : 'received'}`}>
+                  {!isSent && (
+                    <div className="message-avatar">
+                      {friendPhoto ? (
+                        <img src={getImageUrl(friendPhoto)} alt={friendName} />
+                      ) : (
+                        <div className="avatar-placeholder-small">
+                          {friendName.charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                    </div>
+                  )}
                   <div className="message-bubble">
                     <div className="message-content">{msg.content}</div>
                     <div className="message-time">
                       {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </div>
                   </div>
+                  {isSent && (
+                    <div className="message-avatar">
+                      {currentUserData?.profilePhoto ? (
+                        <img src={getImageUrl(currentUserData.profilePhoto)} alt="You" />
+                      ) : (
+                        <div className="avatar-placeholder-small">
+                          {currentUserData?.username?.charAt(0).toUpperCase() || 'U'}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             );
