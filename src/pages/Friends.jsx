@@ -205,7 +205,7 @@ function Friends() {
 
   return (
     <div className="page-container">
-      <Navbar onOpenMiniChat={onOpenMiniChat} />
+      <Navbar />
       
       <div className="friends-container">
         <div className="friends-header glossy fade-in">

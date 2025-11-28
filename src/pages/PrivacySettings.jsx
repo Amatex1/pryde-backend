@@ -81,7 +81,7 @@ const PrivacySettings = () => {
   if (loading) {
     return (
       <div className="page-container">
-        <Navbar onOpenMiniChat={onOpenMiniChat} />
+        <Navbar />
         <div className="privacy-settings-container">
           <div className="loading">Loading privacy settings...</div>
         </div>
@@ -91,7 +91,7 @@ const PrivacySettings = () => {
 
   return (
     <div className="page-container">
-      <Navbar onOpenMiniChat={onOpenMiniChat} />
+      <Navbar />
       
       <div className="privacy-settings-container">
         <div className="privacy-settings-card glossy fade-in">

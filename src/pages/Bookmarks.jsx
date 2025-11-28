@@ -50,7 +50,7 @@ const Bookmarks = () => {
   if (loading) {
     return (
       <div className="page-container">
-        <Navbar onOpenMiniChat={onOpenMiniChat} />
+        <Navbar />
         <div className="bookmarks-container">
           <div className="bookmarks-header">
             <h1>📚 Bookmarks</h1>
@@ -63,7 +63,7 @@ const Bookmarks = () => {
 
   return (
     <div className="page-container">
-      <Navbar onOpenMiniChat={onOpenMiniChat} />
+      <Navbar />
       <div className="bookmarks-container">
         <div className="bookmarks-header">
           <h1>📚 Bookmarks</h1>

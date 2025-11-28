@@ -116,7 +116,7 @@ function Notifications() {
 
   return (
     <div className="notifications-page">
-      <Navbar onOpenMiniChat={onOpenMiniChat} />
+      <Navbar />
       
       <div className="notifications-container">
         <div className="notifications-header">

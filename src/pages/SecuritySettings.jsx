@@ -107,7 +107,7 @@ function SecuritySettings() {
   if (loading) {
     return (
       <div className="page-container">
-        <Navbar onOpenMiniChat={onOpenMiniChat} />
+        <Navbar />
         <div className="settings-container">
           <div className="settings-card glossy fade-in">
             <p>Loading security settings...</p>
@@ -119,7 +119,7 @@ function SecuritySettings() {
 
   return (
     <div className="page-container">
-      <Navbar onOpenMiniChat={onOpenMiniChat} />
+      <Navbar />
       
       <div className="settings-container">
         <div className="settings-card glossy fade-in">

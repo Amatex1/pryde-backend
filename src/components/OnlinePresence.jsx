@@ -5,7 +5,7 @@ import api from '../utils/api';
 import { getImageUrl } from '../utils/imageUtils';
 import './OnlinePresence.css';
 
-function OnlinePresence({ onOpenMiniChat }) {
+function OnlinePresence() {
   const [onlineUsers, setOnlineUsers] = useState([]);
   const [allFriends, setAllFriends] = useState([]);
   const [filteredFriends, setFilteredFriends] = useState([]);

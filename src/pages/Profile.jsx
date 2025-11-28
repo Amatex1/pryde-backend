@@ -519,7 +519,7 @@ function Profile() {
   if (loading) {
     return (
       <div className="page-container">
-        <Navbar onOpenMiniChat={onOpenMiniChat} />
+        <Navbar />
         <div className="loading">Loading profile...</div>
       </div>
     );
@@ -528,7 +528,7 @@ function Profile() {
   if (!user) {
     return (
       <div className="page-container">
-        <Navbar onOpenMiniChat={onOpenMiniChat} />
+        <Navbar />
         <div className="error">User not found</div>
       </div>
     );
@@ -536,7 +536,7 @@ function Profile() {
 
   return (
     <div className="page-container">
-      <Navbar onOpenMiniChat={onOpenMiniChat} />
+      <Navbar />
       
       <div className="profile-container">
         <div className="profile-header glossy fade-in">

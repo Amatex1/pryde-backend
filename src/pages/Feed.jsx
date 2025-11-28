@@ -607,7 +607,7 @@ function Feed() {
 
   return (
     <div className="page-container">
-      <Navbar onOpenMiniChat={onOpenMiniChat} />
+      <Navbar />
       <PasskeyBanner />
 
       <div className="feed-container">

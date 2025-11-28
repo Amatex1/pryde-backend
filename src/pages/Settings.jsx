@@ -256,7 +256,7 @@ function Settings() {
 
   return (
     <div className="page-container">
-      <Navbar onOpenMiniChat={onOpenMiniChat} />
+      <Navbar />
 
       <div className="settings-container">
         <div className="settings-card glossy fade-in">

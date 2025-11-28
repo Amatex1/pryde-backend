@@ -679,7 +679,7 @@ function Messages() {
 
   return (
     <div className="page-container">
-      <Navbar onOpenMiniChat={onOpenMiniChat} />
+      <Navbar />
 
       <div className="messages-container">
         <div className="messages-layout glossy fade-in">

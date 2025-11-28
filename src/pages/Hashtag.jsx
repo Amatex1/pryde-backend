@@ -49,7 +49,7 @@ function Hashtag() {
 
   return (
     <div className="page-container">
-      <Navbar onOpenMiniChat={onOpenMiniChat} />
+      <Navbar />
       <div className="feed-container">
         <div className="feed-content">
           <div className="hashtag-header glossy">

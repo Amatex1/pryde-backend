@@ -201,7 +201,7 @@ function Admin() {
   if (loading) {
     return (
       <div className="page-container">
-        <Navbar onOpenMiniChat={onOpenMiniChat} />
+        <Navbar />
         <div className="admin-loading">🔒 Verifying admin access...</div>
       </div>
     );
@@ -210,7 +210,7 @@ function Admin() {
   if (error) {
     return (
       <div className="page-container">
-        <Navbar onOpenMiniChat={onOpenMiniChat} />
+        <Navbar />
         <div className="admin-error">
           <h2>⛔ {error}</h2>
           <p>Redirecting to home...</p>
@@ -290,7 +290,7 @@ function Admin() {
 
   return (
     <div className="page-container">
-      <Navbar onOpenMiniChat={onOpenMiniChat} />
+      <Navbar />
       <div className="admin-container">
         <div className="admin-header">
           <h1>🛡️ Admin Panel</h1>

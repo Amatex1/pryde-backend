@@ -8,7 +8,7 @@ import NotificationBell from './NotificationBell';
 import api from '../utils/api';
 import './Navbar.css';
 
-function Navbar({ onOpenMiniChat }) {
+function Navbar() {
   const navigate = useNavigate();
   const user = getCurrentUser();
   const [showDropdown, setShowDropdown] = useState(false);
