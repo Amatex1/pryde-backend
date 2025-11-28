@@ -206,21 +206,28 @@ router.post('/login-start', async (req, res) => {
 // @access  Public
 router.post('/login-finish', async (req, res) => {
   try {
+    console.log('🔐 Starting passkey login finish...');
     const { credential, challengeKey } = req.body;
+    console.log('   Challenge key:', challengeKey);
+    console.log('   Credential ID:', credential?.id);
 
     // Get stored challenge
     const expectedChallenge = challenges.get(challengeKey);
     if (!expectedChallenge) {
+      console.error('❌ Challenge not found or expired');
       return res.status(400).json({ message: 'Challenge expired or not found' });
     }
+    console.log('✅ Challenge found');
 
     // Find user by credential ID
-    const credentialId = Buffer.from(credential.rawId, 'base64').toString('base64');
-    const user = await User.findOne({ 'passkeys.credentialId': credentialId });
+    console.log('🔍 Looking for user with credential ID:', credential.id);
+    const user = await User.findOne({ 'passkeys.credentialId': credential.id });
 
     if (!user) {
+      console.error('❌ User not found for credential ID:', credential.id);
       return res.status(404).json({ message: 'Passkey not found' });
     }
+    console.log('✅ User found:', user.username);
 
     // Check if account is suspended or banned
     if (user.isSuspended) {
@@ -241,12 +248,15 @@ router.post('/login-finish', async (req, res) => {
     }
 
     // Find the specific passkey
-    const passkey = user.passkeys.find(pk => pk.credentialId === credentialId);
+    const passkey = user.passkeys.find(pk => pk.credentialId === credential.id);
     if (!passkey) {
+      console.error('❌ Passkey not found in user passkeys');
       return res.status(404).json({ message: 'Passkey not found' });
     }
+    console.log('✅ Passkey found:', passkey.deviceName);
 
     // Verify authentication response
+    console.log('🔐 Verifying authentication...');
     const verification = await verifyPasskeyAuthentication(credential, expectedChallenge, passkey);
 
     if (!verification.verified) {
