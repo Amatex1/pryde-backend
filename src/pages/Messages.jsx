@@ -188,7 +188,49 @@ function Messages() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Socket.IO listeners - wait for socket to be ready
+  // Socket.IO listeners for online/offline status - set up ONCE on mount
+  useEffect(() => {
+    const socket = getSocket();
+
+    if (!socket) {
+      console.warn('⚠️ Socket not initialized yet, waiting...');
+      return;
+    }
+
+    console.log('🔌 Setting up online/offline status listeners in Messages');
+
+    // Listen for online users list
+    const cleanupOnlineUsers = onOnlineUsers((users) => {
+      console.log('👥 Online users:', users);
+      setOnlineUsers(users);
+    });
+
+    // Listen for users coming online
+    const cleanupUserOnline = onUserOnline((data) => {
+      console.log('✅ User came online:', data.userId);
+      setOnlineUsers((prev) => {
+        if (!prev.includes(data.userId)) {
+          return [...prev, data.userId];
+        }
+        return prev;
+      });
+    });
+
+    // Listen for users going offline
+    const cleanupUserOffline = onUserOffline((data) => {
+      console.log('❌ User went offline:', data.userId);
+      setOnlineUsers((prev) => prev.filter(id => id !== data.userId));
+    });
+
+    // Cleanup on unmount
+    return () => {
+      cleanupOnlineUsers?.();
+      cleanupUserOnline?.();
+      cleanupUserOffline?.();
+    };
+  }, []); // Empty dependency array - only run once on mount
+
+  // Socket.IO listeners for messages and typing - depend on selectedChat
   useEffect(() => {
     const socket = getSocket();
 
@@ -199,7 +241,7 @@ function Messages() {
 
     // Ensure socket is connected before setting up listeners
     const setupListeners = () => {
-      console.log('🎧 Setting up socket listeners');
+      console.log('🎧 Setting up message socket listeners for chat:', selectedChat);
 
       // Listen for new messages
       const cleanupNewMessage = onNewMessage((newMessage) => {
@@ -270,37 +312,11 @@ function Messages() {
         }
       });
 
-      // Listen for online users list
-      const cleanupOnlineUsers = onOnlineUsers((users) => {
-        console.log('👥 Online users:', users);
-        setOnlineUsers(users);
-      });
-
-      // Listen for users coming online
-      const cleanupUserOnline = onUserOnline((data) => {
-        console.log('✅ User came online:', data.userId);
-        setOnlineUsers((prev) => {
-          if (!prev.includes(data.userId)) {
-            return [...prev, data.userId];
-          }
-          return prev;
-        });
-      });
-
-      // Listen for users going offline
-      const cleanupUserOffline = onUserOffline((data) => {
-        console.log('❌ User went offline:', data.userId);
-        setOnlineUsers((prev) => prev.filter(id => id !== data.userId));
-      });
-
       // Return cleanup function
       return () => {
         cleanupNewMessage?.();
         cleanupMessageSent?.();
         cleanupTyping?.();
-        cleanupOnlineUsers?.();
-        cleanupUserOnline?.();
-        cleanupUserOffline?.();
       };
     };
 
@@ -841,6 +857,10 @@ function Messages() {
                                   <img src={getImageUrl(otherUser.profilePhoto)} alt={otherUser.username} />
                                 ) : (
                                   <span>{otherUser?.username?.charAt(0).toUpperCase() || '?'}</span>
+                                )}
+                                {/* Online status dot */}
+                                {onlineUsers.includes(conv._id) && (
+                                  <span className="status-dot online"></span>
                                 )}
                               </div>
                               <div className="conv-info">
