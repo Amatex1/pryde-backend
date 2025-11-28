@@ -87,16 +87,28 @@ export const sendMessage = (data) => {
 
 export const onMessageSent = (callback) => {
     if (socket) {
-        socket.off("message_sent"); // Remove previous listener
+        // Don't remove previous listeners - allow multiple components to listen
         socket.on("message_sent", callback);
     }
+    // Return cleanup function
+    return () => {
+        if (socket) {
+            socket.off("message_sent", callback);
+        }
+    };
 };
 
 export const onNewMessage = (callback) => {
     if (socket) {
-        socket.off("new_message"); // Remove previous listener
+        // Don't remove previous listeners - allow multiple components to listen
         socket.on("new_message", callback);
     }
+    // Return cleanup function
+    return () => {
+        if (socket) {
+            socket.off("new_message", callback);
+        }
+    };
 };
 
 // -----------------------------
@@ -137,32 +149,50 @@ export const onFriendRequestAccepted = (callback) => {
 // -----------------------------
 export const onUserOnline = (callback) => {
     if (socket) {
-        socket.off("user_online"); // Remove previous listener
+        // Don't remove previous listeners - allow multiple components to listen
         socket.on("user_online", (data) => {
             console.log('🔌 Socket received user_online event:', data);
             callback(data);
         });
     }
+    // Return cleanup function
+    return () => {
+        if (socket) {
+            socket.off("user_online", callback);
+        }
+    };
 };
 
 export const onUserOffline = (callback) => {
     if (socket) {
-        socket.off("user_offline"); // Remove previous listener
+        // Don't remove previous listeners - allow multiple components to listen
         socket.on("user_offline", (data) => {
             console.log('🔌 Socket received user_offline event:', data);
             callback(data);
         });
     }
+    // Return cleanup function
+    return () => {
+        if (socket) {
+            socket.off("user_offline", callback);
+        }
+    };
 };
 
 export const onOnlineUsers = (callback) => {
     if (socket) {
-        socket.off("online_users"); // Remove previous listener
+        // Don't remove previous listeners - allow multiple components to listen
         socket.on("online_users", (users) => {
             console.log('🔌 Socket received online_users event:', users);
             callback(users);
         });
     }
+    // Return cleanup function
+    return () => {
+        if (socket) {
+            socket.off("online_users", callback);
+        }
+    };
 };
 
 export default {

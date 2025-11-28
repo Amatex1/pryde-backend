@@ -134,11 +134,21 @@ function MiniChat({ friendId, friendName, friendPhoto, onClose, onMinimize, isMi
       setIsOnline(users.includes(friendId));
     };
 
-    onNewMessage(handleNewMessage);
-    onMessageSent(handleMessageSent);
-    onUserOnline(handleUserOnline);
-    onUserOffline(handleUserOffline);
-    onOnlineUsers(handleOnlineUsers);
+    // Add listeners and get cleanup functions
+    const cleanupNewMessage = onNewMessage(handleNewMessage);
+    const cleanupMessageSent = onMessageSent(handleMessageSent);
+    const cleanupUserOnline = onUserOnline(handleUserOnline);
+    const cleanupUserOffline = onUserOffline(handleUserOffline);
+    const cleanupOnlineUsers = onOnlineUsers(handleOnlineUsers);
+
+    // Cleanup function to prevent memory leaks and flickering
+    return () => {
+      cleanupNewMessage?.();
+      cleanupMessageSent?.();
+      cleanupUserOnline?.();
+      cleanupUserOffline?.();
+      cleanupOnlineUsers?.();
+    };
   }, [friendId]);
 
   const handleSend = () => {
@@ -174,7 +184,7 @@ function MiniChat({ friendId, friendName, friendPhoto, onClose, onMinimize, isMi
           </div>
           <span className="minimized-name">{friendName}</span>
         </div>
-        <button className="btn-close-mini" onClick={(e) => { e.stopPropagation(); onClose(); }}>×</button>
+        <button type="button" className="btn-close-mini" onClick={(e) => { e.preventDefault(); e.stopPropagation(); onClose(); }}>×</button>
       </div>
     );
   }
@@ -201,8 +211,8 @@ function MiniChat({ friendId, friendName, friendPhoto, onClose, onMinimize, isMi
           </div>
         </div>
         <div className="mini-chat-controls">
-          <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); onMinimize(); }} title="Minimize">−</button>
-          <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); onClose(); }} title="Close">×</button>
+          <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); onMinimize(); }} title="Minimize">−</button>
+          <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); onClose(); }} title="Close">×</button>
         </div>
       </div>
 
@@ -272,7 +282,7 @@ function MiniChat({ friendId, friendName, friendPhoto, onClose, onMinimize, isMi
           onKeyPress={handleKeyPress}
           placeholder="Type a message..."
         />
-        <button onClick={handleSend} disabled={!inputMessage.trim()}>
+        <button type="button" onClick={handleSend} disabled={!inputMessage.trim()}>
           Send
         </button>
       </div>
