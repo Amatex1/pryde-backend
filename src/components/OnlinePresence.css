@@ -96,33 +96,43 @@
   margin: 0;
 }
 
-/* Friends Tabs */
-.friends-tabs {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 1rem;
-  border-bottom: 1px solid var(--border-light);
+/* Friends Search */
+.friends-search {
+  padding: 0 1rem 1rem;
 }
 
-.friends-tabs .tab {
-  flex: 1;
-  padding: 10px;
-  background: none;
-  border: none;
-  border-bottom: 2px solid transparent;
-  color: var(--text-muted);
-  cursor: pointer;
+.search-input {
+  width: 100%;
+  padding: 10px 15px;
+  border: 1px solid var(--border-light);
+  border-radius: 12px;
+  background: var(--background-light);
+  color: var(--text-main);
+  font-size: 14px;
   transition: all 0.3s ease;
-  font-weight: 500;
 }
 
-.friends-tabs .tab:hover {
-  color: var(--pryde-purple);
+.search-input:focus {
+  outline: none;
+  border-color: var(--pryde-purple);
+  box-shadow: 0 0 0 3px rgba(108, 92, 231, 0.1);
 }
 
-.friends-tabs .tab.active {
-  color: var(--pryde-purple);
-  border-bottom-color: var(--pryde-purple);
+.search-input::placeholder {
+  color: var(--text-muted);
+}
+
+@media (prefers-color-scheme: dark) {
+  .search-input {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
+    color: var(--text-light);
+  }
+
+  .search-input:focus {
+    border-color: var(--electric-blue);
+    box-shadow: 0 0 0 3px rgba(9, 132, 227, 0.1);
+  }
 }
 
 /* Friends List */
