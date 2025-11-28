@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
+import PasskeyBanner from '../components/PasskeyBanner';
 import ReportModal from '../components/ReportModal';
 import PhotoViewer from '../components/PhotoViewer';
 import CustomModal from '../components/CustomModal';
@@ -528,6 +529,7 @@ function Feed({ onOpenMiniChat }) {
   return (
     <div className="page-container">
       <Navbar onOpenMiniChat={onOpenMiniChat} />
+      <PasskeyBanner />
 
       <div className="feed-container">
         <div className="feed-content">

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import TwoFactorSetup from '../components/security/TwoFactorSetup';
 import SessionManagement from '../components/security/SessionManagement';
+import PasskeyManager from '../components/PasskeyManager';
 import CustomModal from '../components/CustomModal';
 import { useModal } from '../hooks/useModal';
 import api from '../utils/api';
@@ -138,6 +139,11 @@ function SecuritySettings({ onOpenMiniChat }) {
               {message}
             </div>
           )}
+
+          {/* Passkeys Section */}
+          <div className="settings-section">
+            <PasskeyManager />
+          </div>
 
           {/* Two-Factor Authentication Section */}
           <div className="settings-section">

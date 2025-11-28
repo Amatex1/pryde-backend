@@ -3,6 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import api from '../utils/api';
 import { setAuthToken, setCurrentUser } from '../utils/auth';
 import { disconnectSocket, initializeSocket } from '../utils/socket';
+import PasskeyLogin from '../components/PasskeyLogin';
 import './Auth.css';
 
 function Login({ setIsAuth }) {
@@ -211,6 +212,21 @@ function Login({ setIsAuth }) {
           <button type="submit" disabled={loading} className="btn-primary glossy-gold">
             {loading ? 'Signing in...' : 'Sign In'}
           </button>
+
+          <div className="auth-divider">
+            <span>or</span>
+          </div>
+
+          <PasskeyLogin
+            email={formData.email}
+            onSuccess={(user) => {
+              disconnectSocket();
+              const userId = user.id || user._id;
+              initializeSocket(userId);
+              setIsAuth(true);
+              navigate('/feed');
+            }}
+          />
         </form>
         )}
 

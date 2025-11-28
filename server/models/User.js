@@ -198,6 +198,39 @@ const userSchema = new mongoose.Schema({
     type: Date,
     default: null
   },
+  // Passkeys (WebAuthn credentials)
+  passkeys: [{
+    credentialId: {
+      type: String,
+      required: true,
+      unique: true
+    },
+    publicKey: {
+      type: String,
+      required: true
+    },
+    counter: {
+      type: Number,
+      required: true,
+      default: 0
+    },
+    deviceName: {
+      type: String,
+      default: 'Unknown Device'
+    },
+    transports: [{
+      type: String,
+      enum: ['usb', 'nfc', 'ble', 'internal', 'hybrid']
+    }],
+    createdAt: {
+      type: Date,
+      default: Date.now
+    },
+    lastUsedAt: {
+      type: Date,
+      default: Date.now
+    }
+  }],
   createdAt: {
     type: Date,
     default: Date.now

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../utils/api';
 import { setAuthToken, setCurrentUser } from '../utils/auth';
+import PasskeySetup from '../components/PasskeySetup';
 import './Auth.css';
 
 function Register({ setIsAuth }) {
@@ -15,6 +16,7 @@ function Register({ setIsAuth }) {
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPasskeySetup, setShowPasskeySetup] = useState(false);
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -92,7 +94,9 @@ function Register({ setIsAuth }) {
       setAuthToken(response.data.token);
       setCurrentUser(response.data.user);
       setIsAuth(true);
-      navigate('/feed');
+
+      // Show passkey setup option
+      setShowPasskeySetup(true);
     } catch (err) {
       console.error('Registration error:', {
         status: err.response?.status,
@@ -115,12 +119,36 @@ function Register({ setIsAuth }) {
       <div className="auth-card glossy fade-in">
         <div className="auth-header">
           <h1 className="auth-title text-shadow">✨ Pryde Social</h1>
-          <p className="auth-subtitle">Create your account and start connecting!</p>
+          <p className="auth-subtitle">
+            {showPasskeySetup ? 'Secure Your Account' : 'Create your account and start connecting!'}
+          </p>
         </div>
 
         {error && <div className="error-message">{error}</div>}
 
-        <form onSubmit={handleSubmit} className="auth-form">
+        {showPasskeySetup ? (
+          <div className="passkey-setup-container">
+            <div className="passkey-setup-info">
+              <h3>🎉 Account Created Successfully!</h3>
+              <p>Add a passkey for faster, more secure sign-in</p>
+            </div>
+
+            <PasskeySetup
+              onSuccess={() => {
+                navigate('/feed');
+              }}
+            />
+
+            <button
+              onClick={() => navigate('/feed')}
+              className="btn-secondary"
+              style={{ marginTop: '1rem', width: '100%' }}
+            >
+              Skip for Now
+            </button>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="auth-form">
           <div className="form-group">
             <label htmlFor="username">Username</label>
             <input
@@ -230,8 +258,10 @@ function Register({ setIsAuth }) {
             {loading ? 'Creating account...' : 'Sign Up'}
           </button>
         </form>
+        )}
 
-        <div className="auth-footer">
+        {!showPasskeySetup && (
+          <div className="auth-footer">
           <p>Already have an account? <Link to="/login" className="auth-link">Sign in</Link></p>
           <div className="auth-legal-links">
             <Link to="/terms">Terms</Link>
@@ -245,6 +275,7 @@ function Register({ setIsAuth }) {
             <Link to="/contact">Contact</Link>
           </div>
         </div>
+        )}
       </div>
     </div>
   );

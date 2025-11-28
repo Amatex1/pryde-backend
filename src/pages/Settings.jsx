@@ -274,7 +274,7 @@ function Settings({ onOpenMiniChat }) {
               <div>
                 <h2 className="section-title" style={{ margin: 0, marginBottom: '5px' }}>🔐 Security Settings</h2>
                 <p style={{ color: 'var(--text-muted)', margin: 0, fontSize: '14px' }}>
-                  Manage 2FA, active sessions, and login alerts
+                  Manage passkeys, 2FA, active sessions, and login alerts
                 </p>
               </div>
               <button

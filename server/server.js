@@ -35,6 +35,7 @@ import twoFactorRoutes from './routes/twoFactor.js';
 import sessionsRoutes from './routes/sessions.js';
 import privacyRoutes from './routes/privacy.js';
 import bookmarksRoutes from './routes/bookmarks.js';
+import passkeyRoutes from './routes/passkey.js';
 
 // Import rate limiters
 import {
@@ -209,6 +210,7 @@ app.use('/api/2fa', twoFactorRoutes);
 app.use('/api/sessions', sessionsRoutes);
 app.use('/api/privacy', privacyRoutes);
 app.use('/api/bookmarks', bookmarksRoutes);
+app.use('/api/passkey', passkeyRoutes);
 
 // Health check and status endpoints
 app.get('/', (req, res) => {

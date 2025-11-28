@@ -1,0 +1,138 @@
+.passkey-banner {
+  position: sticky;
+  top: 60px;
+  z-index: 999;
+  width: 100%;
+  background: linear-gradient(135deg, var(--pryde-purple) 0%, var(--electric-blue) 100%);
+  color: white;
+  padding: 1rem 2rem;
+  box-shadow: 0 4px 12px rgba(108, 92, 231, 0.3);
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.passkey-banner-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.passkey-banner-icon {
+  font-size: 2.5rem;
+  flex-shrink: 0;
+}
+
+.passkey-banner-text {
+  flex: 1;
+}
+
+.passkey-banner-text h3 {
+  margin: 0 0 0.25rem 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.passkey-banner-text p {
+  margin: 0;
+  font-size: 0.875rem;
+  opacity: 0.95;
+}
+
+.passkey-banner-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-shrink: 0;
+}
+
+.passkey-banner-actions .btn-primary {
+  background: white;
+  color: var(--pryde-purple);
+  padding: 0.625rem 1.25rem;
+  border-radius: 8px;
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+.passkey-banner-actions .btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 255, 255, 0.3);
+}
+
+.passkey-banner-actions .btn-dismiss {
+  background: transparent;
+  color: white;
+  padding: 0.625rem 1.25rem;
+  border-radius: 8px;
+  border: 2px solid rgba(255, 255, 255, 0.5);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+.passkey-banner-actions .btn-dismiss:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: white;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .passkey-banner {
+    padding: 1rem;
+  }
+
+  .passkey-banner-content {
+    flex-direction: column;
+    text-align: center;
+    gap: 1rem;
+  }
+
+  .passkey-banner-icon {
+    font-size: 2rem;
+  }
+
+  .passkey-banner-text h3 {
+    font-size: 1rem;
+  }
+
+  .passkey-banner-text p {
+    font-size: 0.8125rem;
+  }
+
+  .passkey-banner-actions {
+    width: 100%;
+    flex-direction: column;
+  }
+
+  .passkey-banner-actions .btn-primary,
+  .passkey-banner-actions .btn-dismiss {
+    width: 100%;
+    padding: 0.75rem 1rem;
+  }
+}
+
+/* Dark Mode */
+[data-theme="dark"] .passkey-banner-actions .btn-primary {
+  background: var(--card-surface);
+  color: var(--pryde-purple);
+}
+
+[data-theme="dark"] .passkey-banner-actions .btn-primary:hover {
+  background: var(--background-light);
+}
+
