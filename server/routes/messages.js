@@ -16,48 +16,6 @@ router.get('/:userId', authMiddleware, checkBlocked, async (req, res) => {
     const { userId } = req.params;
     const currentUserId = req.userId;
 
-    console.log('📥 Fetching messages between:', {
-      currentUserId,
-      currentUserIdType: typeof currentUserId,
-      otherUserId: userId,
-      otherUserIdType: typeof userId
-    });
-
-    // Check total messages in database
-    const totalMessages = await Message.countDocuments();
-    console.log('📊 Total messages in database:', totalMessages);
-
-    // Check messages with either user
-    const messagesWithCurrentUser = await Message.countDocuments({
-      $or: [
-        { sender: currentUserId },
-        { recipient: currentUserId }
-      ]
-    });
-    console.log('📊 Messages involving current user:', messagesWithCurrentUser);
-
-    const messagesWithOtherUser = await Message.countDocuments({
-      $or: [
-        { sender: userId },
-        { recipient: userId }
-      ]
-    });
-    console.log('📊 Messages involving other user:', messagesWithOtherUser);
-
-    // Get a sample message to see the structure
-    const sampleMessage = await Message.findOne();
-    if (sampleMessage) {
-      console.log('📝 Sample message structure:', {
-        _id: sampleMessage._id,
-        sender: sampleMessage.sender,
-        senderType: typeof sampleMessage.sender,
-        recipient: sampleMessage.recipient,
-        recipientType: typeof sampleMessage.recipient,
-        content: sampleMessage.content?.substring(0, 20)
-      });
-    }
-
-    // Try without ObjectId conversion first (Mongoose should handle it automatically)
     const messages = await Message.find({
       $or: [
         { sender: currentUserId, recipient: userId },
@@ -67,18 +25,6 @@ router.get('/:userId', authMiddleware, checkBlocked, async (req, res) => {
       .populate('sender', 'username profilePhoto')
       .populate('recipient', 'username profilePhoto')
       .sort({ createdAt: 1 });
-
-    console.log('✅ Found messages:', messages.length);
-
-    if (messages.length === 0 && totalMessages > 0) {
-      console.log('⚠️ No messages found but database has messages. Checking all messages...');
-      const allMessages = await Message.find().limit(5);
-      console.log('📋 First 5 messages in DB:', allMessages.map(m => ({
-        sender: m.sender?.toString(),
-        recipient: m.recipient?.toString(),
-        content: m.content?.substring(0, 20)
-      })));
-    }
 
     console.log('✅ Found messages:', messages.length);
 

@@ -328,19 +328,7 @@ io.on('connection', (socket) => {
   
   // Handle real-time message
   socket.on('send_message', async (data) => {
-    console.log('🎯 send_message event received!', {
-      sender: userId,
-      recipientId: data.recipientId,
-      hasContent: !!data.content
-    });
-
     try {
-      console.log('📤 Saving message to DB:', {
-        sender: userId,
-        recipient: data.recipientId,
-        content: data.content.substring(0, 50)
-      });
-
       const message = new Message({
         sender: userId,
         recipient: data.recipientId,
@@ -348,15 +336,7 @@ io.on('connection', (socket) => {
         attachment: data.attachment || null
       });
 
-      console.log('💾 About to save message...');
       await message.save();
-      console.log('✅ Message saved to DB with ID:', message._id);
-      console.log('📊 Message details:', {
-        _id: message._id,
-        sender: message.sender,
-        recipient: message.recipient,
-        content: message.content?.substring(0, 20)
-      });
 
       await message.populate('sender', 'username profilePhoto');
       await message.populate('recipient', 'username profilePhoto');
