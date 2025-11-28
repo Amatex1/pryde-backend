@@ -88,11 +88,20 @@ export const verifyPasskeyRegistration = async (response, expectedChallenge) => 
  */
 export const generatePasskeyAuthenticationOptions = async (passkeys = []) => {
   // If user has passkeys, only allow those
-  const allowCredentials = passkeys.length > 0 ? passkeys.map(passkey => ({
-    id: Buffer.from(passkey.credentialId, 'base64'),
-    type: 'public-key',
-    transports: passkey.transports || []
-  })) : [];
+  const allowCredentials = passkeys.length > 0 ? passkeys
+    .filter(passkey => {
+      // Skip passkeys with invalid credentialId
+      if (!passkey.credentialId || typeof passkey.credentialId !== 'string') {
+        console.warn('⚠️ Skipping passkey with invalid credentialId:', passkey._id);
+        return false;
+      }
+      return true;
+    })
+    .map(passkey => ({
+      id: passkey.credentialId, // Already a base64url string from @simplewebauthn v13+
+      type: 'public-key',
+      transports: passkey.transports || []
+    })) : [];
 
   const options = await generateAuthenticationOptions({
     rpID,
@@ -117,10 +126,12 @@ export const verifyPasskeyAuthentication = async (response, expectedChallenge, p
     expectedChallenge,
     expectedOrigin: origin,
     expectedRPID: rpID,
-    authenticator: {
-      credentialID: Buffer.from(passkey.credentialId, 'base64'),
-      credentialPublicKey: Buffer.from(passkey.publicKey, 'base64'),
-      counter: passkey.counter
+    // @simplewebauthn v13+ uses 'credential' instead of 'authenticator'
+    credential: {
+      id: passkey.credentialId, // Already a base64url string
+      publicKey: Buffer.from(passkey.publicKey, 'base64'),
+      counter: passkey.counter,
+      transports: passkey.transports || []
     },
     requireUserVerification: true
   });
