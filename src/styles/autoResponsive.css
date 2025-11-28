@@ -156,7 +156,6 @@ html, body, #root {
 
 /* Prevent all containers from overflowing */
 div, section, article, aside, main, form, fieldset {
-  max-width: 100%;
   box-sizing: border-box;
 }
 
