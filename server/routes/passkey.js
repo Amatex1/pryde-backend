@@ -84,22 +84,33 @@ router.post('/register-finish', auth, async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
+    console.log('🔐 Finishing passkey registration for user:', user.username);
     const { credential, deviceName } = req.body;
+    console.log('   Device name:', deviceName);
+    console.log('   Credential type:', typeof credential);
 
     // Get stored challenge
     const expectedChallenge = challenges.get(user._id.toString());
     if (!expectedChallenge) {
+      console.error('❌ Challenge not found or expired');
       return res.status(400).json({ message: 'Challenge expired or not found' });
     }
+
+    console.log('✅ Challenge found, verifying registration...');
 
     // Verify registration response
     const verification = await verifyPasskeyRegistration(credential, expectedChallenge);
 
+    console.log('   Verification result:', verification.verified);
+
     if (!verification.verified) {
+      console.error('❌ Passkey verification failed');
       return res.status(400).json({ message: 'Passkey verification failed' });
     }
 
     const { registrationInfo } = verification;
+
+    console.log('✅ Verification successful, saving passkey...');
 
     // Save passkey to user account
     const newPasskey = {
@@ -115,6 +126,8 @@ router.post('/register-finish', auth, async (req, res) => {
     user.passkeys.push(newPasskey);
     await user.save();
 
+    console.log('✅ Passkey saved successfully');
+
     // Clean up challenge
     challenges.delete(user._id.toString());
 
@@ -128,8 +141,14 @@ router.post('/register-finish', auth, async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Passkey registration finish error:', error);
-    res.status(500).json({ message: 'Failed to complete passkey registration' });
+    console.error('❌ Passkey registration finish error:', error);
+    console.error('   Error name:', error.name);
+    console.error('   Error message:', error.message);
+    console.error('   Error stack:', error.stack);
+    res.status(500).json({
+      message: 'Failed to complete passkey registration',
+      error: config.nodeEnv === 'development' ? error.message : undefined
+    });
   }
 });
 
