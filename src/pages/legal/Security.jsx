@@ -20,7 +20,7 @@ function Security() {
           🏠 Home
         </Link>
         <h1>🌈 Pryde Social — Security</h1>
-        <p className="legal-subtitle">Last Updated: November 27, 2025</p>
+        <p className="legal-subtitle">Last Updated: December 28, 2024</p>
       </div>
 
       <div className="legal-content">

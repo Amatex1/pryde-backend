@@ -874,17 +874,18 @@
   transform: translateX(-50%);
   background: var(--card-surface);
   border: 1px solid var(--border-light);
-  border-radius: 50px;
+  border-radius: 3.125rem;
   padding: 0.5rem 0.75rem;
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
-  max-width: 500px;
+  max-width: min(500px, 90vw);
   width: max-content;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 0.25rem 0.75rem rgba(0, 0, 0, 0.15);
   margin-bottom: 0.5rem;
   z-index: 1000;
   animation: reactionPopIn 0.2s ease-out;
+  touch-action: manipulation;
 }
 
 [data-theme="dark"] .reaction-picker {

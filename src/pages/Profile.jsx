@@ -80,6 +80,10 @@ function Profile({ onOpenMiniChat }) {
       if (actionsMenuRef.current && !actionsMenuRef.current.contains(event.target)) {
         setShowActionsMenu(false);
       }
+      // Close reaction picker on mobile when clicking outside
+      if (window.innerWidth <= 768 && !event.target.closest('.reaction-container')) {
+        setShowReactionPicker(null);
+      }
     };
 
     if (showActionsMenu) {
@@ -999,8 +1003,21 @@ function Profile({ onOpenMiniChat }) {
                         <div className="reaction-container">
                           <button
                             className={`action-btn ${isLiked || post.reactions?.some(r => r.user?._id === currentUser?.id || r.user === currentUser?.id) ? 'liked' : ''}`}
-                            onClick={() => handleLike(post._id)}
-                            onMouseEnter={() => setShowReactionPicker(`post-${post._id}`)}
+                            onClick={(e) => {
+                              // On mobile, toggle picker; on desktop, like immediately
+                              if (window.innerWidth <= 768) {
+                                e.preventDefault();
+                                setShowReactionPicker(showReactionPicker === `post-${post._id}` ? null : `post-${post._id}`);
+                              } else {
+                                handleLike(post._id);
+                              }
+                            }}
+                            onMouseEnter={() => {
+                              // Only show on hover for desktop
+                              if (window.innerWidth > 768) {
+                                setShowReactionPicker(`post-${post._id}`);
+                              }
+                            }}
                           >
                             <span>
                               {post.reactions?.find(r => r.user?._id === currentUser?.id || r.user === currentUser?.id)?.emoji || (isLiked ? '❤️' : '🤍')}
@@ -1009,8 +1026,16 @@ function Profile({ onOpenMiniChat }) {
                           {showReactionPicker === `post-${post._id}` && (
                             <div
                               className="reaction-picker"
-                              onMouseEnter={() => setShowReactionPicker(`post-${post._id}`)}
-                              onMouseLeave={() => setShowReactionPicker(null)}
+                              onMouseEnter={() => {
+                                if (window.innerWidth > 768) {
+                                  setShowReactionPicker(`post-${post._id}`);
+                                }
+                              }}
+                              onMouseLeave={() => {
+                                if (window.innerWidth > 768) {
+                                  setShowReactionPicker(null);
+                                }
+                              }}
                             >
                               <button className="reaction-btn" onClick={() => handlePostReaction(post._id, '👍')} title="Like">👍</button>
                               <button className="reaction-btn" onClick={() => handlePostReaction(post._id, '❤️')} title="Love">❤️</button>
@@ -1121,8 +1146,20 @@ function Profile({ onOpenMiniChat }) {
                                           <div className="reaction-container">
                                             <button
                                               className={`comment-action-btn ${comment.reactions?.some(r => r.user?._id === currentUser?.id || r.user === currentUser?.id) ? 'liked' : ''}`}
-                                              onClick={() => {/* TODO: Add like functionality */}}
-                                              onMouseEnter={() => setShowReactionPicker(`comment-${comment._id}`)}
+                                              onClick={(e) => {
+                                                // On mobile, toggle picker; on desktop, like immediately
+                                                if (window.innerWidth <= 768) {
+                                                  e.preventDefault();
+                                                  setShowReactionPicker(showReactionPicker === `comment-${comment._id}` ? null : `comment-${comment._id}`);
+                                                } else {
+                                                  handleCommentReaction(post._id, comment._id, '👍');
+                                                }
+                                              }}
+                                              onMouseEnter={() => {
+                                                if (window.innerWidth > 768) {
+                                                  setShowReactionPicker(`comment-${comment._id}`);
+                                                }
+                                              }}
                                             >
                                               {comment.reactions?.find(r => r.user?._id === currentUser?.id || r.user === currentUser?.id)?.emoji || '👍'} Like
                                               {comment.reactions?.length > 0 && ` (${comment.reactions.length})`}
@@ -1130,8 +1167,16 @@ function Profile({ onOpenMiniChat }) {
                                             {showReactionPicker === `comment-${comment._id}` && (
                                               <div
                                                 className="reaction-picker"
-                                                onMouseEnter={() => setShowReactionPicker(`comment-${comment._id}`)}
-                                                onMouseLeave={() => setShowReactionPicker(null)}
+                                                onMouseEnter={() => {
+                                                  if (window.innerWidth > 768) {
+                                                    setShowReactionPicker(`comment-${comment._id}`);
+                                                  }
+                                                }}
+                                                onMouseLeave={() => {
+                                                  if (window.innerWidth > 768) {
+                                                    setShowReactionPicker(null);
+                                                  }
+                                                }}
                                               >
                                                 <button className="reaction-btn" onClick={() => handleCommentReaction(post._id, comment._id, '👍')} title="Like">👍</button>
                                                 <button className="reaction-btn" onClick={() => handleCommentReaction(post._id, comment._id, '❤️')} title="Love">❤️</button>
@@ -1299,8 +1344,20 @@ function Profile({ onOpenMiniChat }) {
                                                   <div className="reaction-container">
                                                     <button
                                                       className={`comment-action-btn ${reply.reactions?.some(r => r.user?._id === currentUser?.id || r.user === currentUser?.id) ? 'liked' : ''}`}
-                                                      onClick={() => {/* TODO: Add like functionality */}}
-                                                      onMouseEnter={() => setShowReactionPicker(`reply-${reply._id}`)}
+                                                      onClick={(e) => {
+                                                        // On mobile, toggle picker; on desktop, like immediately
+                                                        if (window.innerWidth <= 768) {
+                                                          e.preventDefault();
+                                                          setShowReactionPicker(showReactionPicker === `reply-${reply._id}` ? null : `reply-${reply._id}`);
+                                                        } else {
+                                                          handleCommentReaction(post._id, reply._id, '👍');
+                                                        }
+                                                      }}
+                                                      onMouseEnter={() => {
+                                                        if (window.innerWidth > 768) {
+                                                          setShowReactionPicker(`reply-${reply._id}`);
+                                                        }
+                                                      }}
                                                     >
                                                       {reply.reactions?.find(r => r.user?._id === currentUser?.id || r.user === currentUser?.id)?.emoji || '👍'} Like
                                                       {reply.reactions?.length > 0 && ` (${reply.reactions.length})`}
@@ -1308,8 +1365,16 @@ function Profile({ onOpenMiniChat }) {
                                                     {showReactionPicker === `reply-${reply._id}` && (
                                                       <div
                                                         className="reaction-picker"
-                                                        onMouseEnter={() => setShowReactionPicker(`reply-${reply._id}`)}
-                                                        onMouseLeave={() => setShowReactionPicker(null)}
+                                                        onMouseEnter={() => {
+                                                          if (window.innerWidth > 768) {
+                                                            setShowReactionPicker(`reply-${reply._id}`);
+                                                          }
+                                                        }}
+                                                        onMouseLeave={() => {
+                                                          if (window.innerWidth > 768) {
+                                                            setShowReactionPicker(null);
+                                                          }
+                                                        }}
                                                       >
                                                         <button className="reaction-btn" onClick={() => handleCommentReaction(post._id, reply._id, '👍')} title="Like">👍</button>
                                                         <button className="reaction-btn" onClick={() => handleCommentReaction(post._id, reply._id, '❤️')} title="Love">❤️</button>

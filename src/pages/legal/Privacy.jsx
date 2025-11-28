@@ -20,7 +20,7 @@ function Privacy() {
           🏠 Home
         </Link>
         <h1>🌈 Pryde Social — Privacy Policy</h1>
-        <p className="legal-subtitle">Last Updated: November 26, 2025</p>
+        <p className="legal-subtitle">Last Updated: December 28, 2024</p>
       </div>
 
       <div className="legal-content">
@@ -128,6 +128,26 @@ function Privacy() {
         </section>
 
         <section className="legal-section">
+          <h2>6A. Security Measures</h2>
+          <p>
+            <strong>We implement industry-standard security measures to protect your data:</strong>
+          </p>
+          <ul>
+            <li><strong>Encryption:</strong> All data transmitted between your device and our servers is encrypted using HTTPS/TLS</li>
+            <li><strong>Password Security:</strong> Passwords are hashed using bcrypt and never stored in plain text</li>
+            <li><strong>Account Protection:</strong> Automatic account lockout after 5 failed login attempts (15-minute lock)</li>
+            <li><strong>Two-Factor Authentication:</strong> Optional 2FA available for enhanced account security</li>
+            <li><strong>Session Management:</strong> Secure session tracking with device and IP monitoring</li>
+            <li><strong>Attack Prevention:</strong> Protection against XSS, CSRF, SQL injection, and other common attacks</li>
+            <li><strong>Security Monitoring:</strong> Automated detection of suspicious login attempts and security threats</li>
+            <li><strong>Rate Limiting:</strong> Protection against brute-force attacks and spam</li>
+          </ul>
+          <p>
+            For detailed information about our security practices, see our <Link to="/security" className="legal-link">Security</Link> page.
+          </p>
+        </section>
+
+        <section className="legal-section">
           <h2>7. User Rights</h2>
           <p>
             <strong>You may:</strong>
@@ -177,7 +197,7 @@ function Privacy() {
 
         <div className="legal-footer-note">
           <p className="last-updated">
-            Last Updated: November 26, 2025
+            Last Updated: December 28, 2024
           </p>
         </div>
       </div>

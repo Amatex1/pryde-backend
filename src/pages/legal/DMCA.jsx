@@ -20,7 +20,7 @@ function DMCA() {
           🏠 Home
         </Link>
         <h1>🌈 Pryde Social — DMCA Copyright Policy</h1>
-        <p className="legal-subtitle">Last Updated: November 26, 2025</p>
+        <p className="legal-subtitle">Last Updated: December 28, 2024</p>
       </div>
 
       <div className="legal-content">
