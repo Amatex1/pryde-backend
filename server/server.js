@@ -14,7 +14,7 @@ import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
 import helmet from "helmet";
 import mongoSanitize from "express-mongo-sanitize";
-import xss from "xss";
+import xssClean from "xss-clean";
 import cookieParser from "cookie-parser";
 
 // Import routes
@@ -176,6 +176,9 @@ app.use(mongoSanitize({
     }
   },
 }));
+
+// XSS protection - sanitize user input
+app.use(xssClean());
 
 app.use(cors(corsOptions));
 app.use(cookieParser()); // Parse cookies for CSRF tokens

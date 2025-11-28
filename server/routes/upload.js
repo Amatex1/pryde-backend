@@ -35,9 +35,27 @@ storage.on('connectionFailed', (err) => {
   console.error('❌ GridFsStorage connection failed:', err);
 });
 
+// File filter to only allow images and videos
+const fileFilter = (req, file, cb) => {
+  // Allowed file types
+  const allowedImageTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+  const allowedVideoTypes = ['video/mp4', 'video/webm', 'video/ogg', 'video/quicktime'];
+  const allowedTypes = [...allowedImageTypes, ...allowedVideoTypes];
+
+  if (allowedTypes.includes(file.mimetype)) {
+    cb(null, true);
+  } else {
+    cb(new Error(`Invalid file type. Only images (JPEG, PNG, GIF, WebP) and videos (MP4, WebM, OGG, MOV) are allowed. Received: ${file.mimetype}`), false);
+  }
+};
+
 const upload = multer({
   storage,
-  limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB limit
+    files: 1 // Only 1 file at a time
+  },
+  fileFilter: fileFilter
 });
 
 // Init GridFSBucket (modern API)
