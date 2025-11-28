@@ -214,7 +214,11 @@ app.use('/api/passkey', passkeyRoutes);
 
 // Health check and status endpoints
 app.get('/', (req, res) => {
-  res.json({ status: 'Pryde API running', timestamp: new Date().toISOString() });
+  res.json({
+    status: 'Pryde API running',
+    timestamp: new Date().toISOString(),
+    passkeySupport: !!passkeyRoutes
+  });
 });
 
 app.get('/api/health', (req, res) => {
