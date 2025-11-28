@@ -109,21 +109,32 @@ router.post('/register-finish', auth, async (req, res) => {
     }
 
     const { registrationInfo } = verification;
+    const { credential: registeredCredential, credentialDeviceType, credentialBackedUp } = registrationInfo;
 
     console.log('✅ Verification successful, saving passkey...');
-    console.log('   Registration info:', JSON.stringify(registrationInfo, null, 2));
+    console.log('   Credential ID:', registeredCredential.id);
+    console.log('   Device type:', credentialDeviceType);
+    console.log('   Backed up:', credentialBackedUp);
 
     // Save passkey to user account
-    // Note: @simplewebauthn v13+ uses different property names
+    // Note: @simplewebauthn v13+ structure
     const newPasskey = {
-      credentialId: Buffer.from(registrationInfo.credentialID || registrationInfo.credential?.id || registrationInfo.aaguid).toString('base64'),
-      publicKey: Buffer.from(registrationInfo.credentialPublicKey || registrationInfo.credential?.publicKey).toString('base64'),
-      counter: registrationInfo.counter || 0,
+      credentialId: registeredCredential.id,
+      publicKey: Buffer.from(registeredCredential.publicKey).toString('base64'),
+      counter: registeredCredential.counter,
       deviceName: deviceName || getDeviceName(req.headers['user-agent']),
-      transports: credential.response.transports || [],
+      transports: registeredCredential.transports || [],
+      deviceType: credentialDeviceType,
+      backedUp: credentialBackedUp,
       createdAt: new Date(),
       lastUsedAt: new Date()
     };
+
+    console.log('   New passkey object:', {
+      credentialId: newPasskey.credentialId,
+      credentialIdType: typeof newPasskey.credentialId,
+      deviceName: newPasskey.deviceName
+    });
 
     user.passkeys.push(newPasskey);
     await user.save();

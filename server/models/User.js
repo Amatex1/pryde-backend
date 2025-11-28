@@ -220,8 +220,17 @@ const userSchema = new mongoose.Schema({
     },
     transports: [{
       type: String,
-      enum: ['usb', 'nfc', 'ble', 'internal', 'hybrid']
+      enum: ['usb', 'nfc', 'ble', 'internal', 'hybrid', 'cable', 'smart-card']
     }],
+    deviceType: {
+      type: String,
+      enum: ['singleDevice', 'multiDevice'],
+      default: 'singleDevice'
+    },
+    backedUp: {
+      type: Boolean,
+      default: false
+    },
     createdAt: {
       type: Date,
       default: Date.now
