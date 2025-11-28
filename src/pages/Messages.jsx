@@ -90,6 +90,18 @@ function Messages({ onOpenMiniChat }) {
     return currentDate.toDateString() !== previousDate.toDateString();
   };
 
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (openDropdown && !e.target.closest('.conv-actions')) {
+        setOpenDropdown(null);
+      }
+    };
+
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, [openDropdown]);
+
   // Fetch current user
   useEffect(() => {
     const fetchCurrentUser = async () => {
