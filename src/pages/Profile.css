@@ -657,6 +657,40 @@
   text-align: center;
 }
 
+/* Deactivated Friend Styles */
+.deactivated-friend {
+  opacity: 0.6;
+  filter: grayscale(100%);
+  cursor: not-allowed !important;
+}
+
+.deactivated-friend:hover {
+  transform: none !important;
+}
+
+.deactivated-friend .deactivated-avatar {
+  background: var(--border-light) !important;
+  color: var(--text-muted) !important;
+  border-color: var(--border-light) !important;
+}
+
+.deactivated-friend .deactivated-avatar img {
+  display: none;
+}
+
+.deactivated-friend .deactivated-text {
+  color: var(--text-muted) !important;
+  text-decoration: line-through;
+}
+
+@media (prefers-color-scheme: dark) {
+  .deactivated-friend .deactivated-avatar {
+    background: #3a3a3a !important;
+    color: #888 !important;
+    border-color: #3a3a3a !important;
+  }
+}
+
 .empty-text {
   color: var(--text-muted);
   text-align: center;

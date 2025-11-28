@@ -240,3 +240,38 @@
     max-width: none;
   }
 }
+
+/* Deactivated User Styles */
+.deactivated-user {
+  opacity: 0.6;
+  filter: grayscale(100%);
+}
+
+.deactivated-avatar {
+  background: var(--border-light) !important;
+  color: var(--text-muted) !important;
+}
+
+.deactivated-avatar img {
+  display: none;
+}
+
+.deactivated-text {
+  color: var(--text-muted) !important;
+  text-decoration: line-through;
+}
+
+.deactivated-link {
+  cursor: not-allowed !important;
+}
+
+.deactivated-link:hover {
+  transform: none !important;
+}
+
+@media (prefers-color-scheme: dark) {
+  .deactivated-avatar {
+    background: #3a3a3a !important;
+    color: #888 !important;
+  }
+}

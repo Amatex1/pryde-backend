@@ -132,27 +132,44 @@ function OnlinePresence({ onOpenMiniChat }) {
             <div className="friends-list">
               {onlineFriends.length > 0 ? (
                 onlineFriends.map(friend => (
-                  <Link
-                    key={friend._id}
-                    to={`/profile/${friend._id}`}
-                    className="friend-item"
-                    style={{ textDecoration: 'none', color: 'inherit' }}
-                  >
-                    <div className="friend-avatar">
-                      {friend.profilePhoto ? (
-                        <img src={getImageUrl(friend.profilePhoto)} alt={friend.username} />
-                      ) : (
-                        <div className="avatar-placeholder">
-                          {(friend.displayName || friend.username).charAt(0).toUpperCase()}
-                        </div>
-                      )}
-                      <span className="status-dot online"></span>
+                  friend.isActive === false ? (
+                    <div
+                      key={friend._id}
+                      className="friend-item deactivated-friend"
+                      onClick={() => alert('This user has deactivated their account.')}
+                      style={{ textDecoration: 'none', color: 'inherit', cursor: 'pointer' }}
+                    >
+                      <div className="friend-avatar deactivated-avatar">
+                        <div className="avatar-placeholder">?</div>
+                      </div>
+                      <div className="friend-info">
+                        <span className="friend-name deactivated-text">{friend.displayName || friend.username}</span>
+                        <span className="friend-status deactivated-text">Deactivated</span>
+                      </div>
                     </div>
-                    <div className="friend-info">
-                      <span className="friend-name">{friend.displayName || friend.username}</span>
-                      <span className="friend-status">Online</span>
-                    </div>
-                  </Link>
+                  ) : (
+                    <Link
+                      key={friend._id}
+                      to={`/profile/${friend._id}`}
+                      className="friend-item"
+                      style={{ textDecoration: 'none', color: 'inherit' }}
+                    >
+                      <div className="friend-avatar">
+                        {friend.profilePhoto ? (
+                          <img src={getImageUrl(friend.profilePhoto)} alt={friend.username} />
+                        ) : (
+                          <div className="avatar-placeholder">
+                            {(friend.displayName || friend.username).charAt(0).toUpperCase()}
+                          </div>
+                        )}
+                        <span className="status-dot online"></span>
+                      </div>
+                      <div className="friend-info">
+                        <span className="friend-name">{friend.displayName || friend.username}</span>
+                        <span className="friend-status">Online</span>
+                      </div>
+                    </Link>
+                  )
                 ))
               ) : (
                 <p className="no-friends">No friends online</p>
@@ -165,27 +182,44 @@ function OnlinePresence({ onOpenMiniChat }) {
             <div className="friends-list">
               {offlineFriends.length > 0 ? (
                 offlineFriends.map(friend => (
-                  <Link
-                    key={friend._id}
-                    to={`/profile/${friend._id}`}
-                    className="friend-item"
-                    style={{ textDecoration: 'none', color: 'inherit' }}
-                  >
-                    <div className="friend-avatar">
-                      {friend.profilePhoto ? (
-                        <img src={getImageUrl(friend.profilePhoto)} alt={friend.username} />
-                      ) : (
-                        <div className="avatar-placeholder">
-                          {(friend.displayName || friend.username).charAt(0).toUpperCase()}
-                        </div>
-                      )}
-                      <span className="status-dot offline"></span>
+                  friend.isActive === false ? (
+                    <div
+                      key={friend._id}
+                      className="friend-item deactivated-friend"
+                      onClick={() => alert('This user has deactivated their account.')}
+                      style={{ textDecoration: 'none', color: 'inherit', cursor: 'pointer' }}
+                    >
+                      <div className="friend-avatar deactivated-avatar">
+                        <div className="avatar-placeholder">?</div>
+                      </div>
+                      <div className="friend-info">
+                        <span className="friend-name deactivated-text">{friend.displayName || friend.username}</span>
+                        <span className="friend-status deactivated-text">Deactivated</span>
+                      </div>
                     </div>
-                    <div className="friend-info">
-                      <span className="friend-name">{friend.displayName || friend.username}</span>
-                      <span className="friend-status">{getTimeSince(friend.lastSeen)}</span>
-                    </div>
-                  </Link>
+                  ) : (
+                    <Link
+                      key={friend._id}
+                      to={`/profile/${friend._id}`}
+                      className="friend-item"
+                      style={{ textDecoration: 'none', color: 'inherit' }}
+                    >
+                      <div className="friend-avatar">
+                        {friend.profilePhoto ? (
+                          <img src={getImageUrl(friend.profilePhoto)} alt={friend.username} />
+                        ) : (
+                          <div className="avatar-placeholder">
+                            {(friend.displayName || friend.username).charAt(0).toUpperCase()}
+                          </div>
+                        )}
+                        <span className="status-dot offline"></span>
+                      </div>
+                      <div className="friend-info">
+                        <span className="friend-name">{friend.displayName || friend.username}</span>
+                        <span className="friend-status">{getTimeSince(friend.lastSeen)}</span>
+                      </div>
+                    </Link>
+                  )
                 ))
               ) : (
                 <p className="no-friends">No offline friends</p>

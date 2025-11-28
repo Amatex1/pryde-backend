@@ -215,3 +215,48 @@
   padding: 2rem;
   margin: 0;
 }
+
+/* Deactivated Friend Styles */
+.deactivated-friend {
+  opacity: 0.6;
+  filter: grayscale(100%);
+  cursor: not-allowed !important;
+}
+
+.deactivated-friend:hover {
+  background: transparent !important;
+  transform: none !important;
+}
+
+.deactivated-friend .deactivated-avatar {
+  background: var(--border-light) !important;
+  border-color: var(--border-light) !important;
+}
+
+.deactivated-friend .deactivated-avatar .avatar-placeholder {
+  color: var(--text-muted) !important;
+}
+
+.deactivated-friend .deactivated-avatar img {
+  display: none;
+}
+
+.deactivated-friend .deactivated-text {
+  color: var(--text-muted) !important;
+  text-decoration: line-through;
+}
+
+.deactivated-friend .status-dot {
+  display: none;
+}
+
+@media (prefers-color-scheme: dark) {
+  .deactivated-friend .deactivated-avatar {
+    background: #3a3a3a !important;
+    border-color: #3a3a3a !important;
+  }
+
+  .deactivated-friend .deactivated-avatar .avatar-placeholder {
+    color: #888 !important;
+  }
+}

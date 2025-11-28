@@ -841,19 +841,32 @@ function Messages({ onOpenMiniChat }) {
                     {friends.map((friend) => (
                       <div
                         key={friend._id}
-                        className="user-result"
-                        onClick={() => handleStartChat(friend._id)}
+                        className={`user-result ${friend.isActive === false ? 'deactivated-user' : ''}`}
+                        onClick={() => {
+                          if (friend.isActive === false) {
+                            alert('You cannot message this user. Their account has been deactivated.');
+                          } else {
+                            handleStartChat(friend._id);
+                          }
+                        }}
+                        style={{ cursor: friend.isActive === false ? 'not-allowed' : 'pointer' }}
                       >
                         <div className="user-avatar">
-                          {friend.profilePhoto ? (
+                          {friend.isActive === false ? (
+                            <span>?</span>
+                          ) : friend.profilePhoto ? (
                             <img src={getImageUrl(friend.profilePhoto)} alt={friend.username} />
                           ) : (
                             <span>{friend.displayName?.charAt(0).toUpperCase() || friend.username?.charAt(0).toUpperCase()}</span>
                           )}
                         </div>
                         <div className="user-info">
-                          <div className="user-name">{friend.displayName || friend.username}</div>
-                          <div className="user-username">@{friend.username}</div>
+                          <div className={`user-name ${friend.isActive === false ? 'deactivated-text' : ''}`}>
+                            {friend.displayName || friend.username}
+                          </div>
+                          <div className={`user-username ${friend.isActive === false ? 'deactivated-text' : ''}`}>
+                            @{friend.username}
+                          </div>
                         </div>
                       </div>
                     ))}

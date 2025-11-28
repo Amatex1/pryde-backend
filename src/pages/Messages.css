@@ -1264,3 +1264,36 @@
     max-width: 80%;
   }
 }
+
+/* Deactivated User Styles */
+.user-result.deactivated-user {
+  opacity: 0.6;
+  filter: grayscale(100%);
+  cursor: not-allowed !important;
+}
+
+.user-result.deactivated-user .user-avatar {
+  background: var(--border-light) !important;
+  color: var(--text-muted) !important;
+}
+
+.user-result.deactivated-user .user-avatar img {
+  display: none;
+}
+
+.user-result.deactivated-user .deactivated-text {
+  color: var(--text-muted) !important;
+  text-decoration: line-through;
+}
+
+.user-result.deactivated-user:hover {
+  background: var(--card-surface) !important;
+  transform: none !important;
+}
+
+@media (prefers-color-scheme: dark) {
+  .user-result.deactivated-user .user-avatar {
+    background: #3a3a3a !important;
+    color: #888 !important;
+  }
+}

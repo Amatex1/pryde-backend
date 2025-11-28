@@ -1571,16 +1571,30 @@ function Profile({ onOpenMiniChat }) {
               {user.friends && user.friends.length > 0 ? (
                 <div className="friends-grid">
                   {user.friends.slice(0, 6).map((friend) => (
-                    <Link key={friend._id} to={`/profile/${friend._id}`} className="friend-item" style={{ textDecoration: 'none', color: 'inherit' }}>
-                      <div className="friend-avatar">
-                        {friend.profilePhoto ? (
-                          <img src={getImageUrl(friend.profilePhoto)} alt={friend.username} />
-                        ) : (
-                          <span>{friend.displayName?.charAt(0).toUpperCase()}</span>
-                        )}
+                    friend.isActive === false ? (
+                      <div
+                        key={friend._id}
+                        className="friend-item deactivated-friend"
+                        onClick={() => alert('This user has deactivated their account.')}
+                        style={{ textDecoration: 'none', color: 'inherit', cursor: 'pointer' }}
+                      >
+                        <div className="friend-avatar deactivated-avatar">
+                          <span>?</span>
+                        </div>
+                        <div className="friend-name deactivated-text">{friend.displayName}</div>
                       </div>
-                      <div className="friend-name">{friend.displayName}</div>
-                    </Link>
+                    ) : (
+                      <Link key={friend._id} to={`/profile/${friend._id}`} className="friend-item" style={{ textDecoration: 'none', color: 'inherit' }}>
+                        <div className="friend-avatar">
+                          {friend.profilePhoto ? (
+                            <img src={getImageUrl(friend.profilePhoto)} alt={friend.username} />
+                          ) : (
+                            <span>{friend.displayName?.charAt(0).toUpperCase()}</span>
+                          )}
+                        </div>
+                        <div className="friend-name">{friend.displayName}</div>
+                      </Link>
+                    )
                   ))}
                 </div>
               ) : (

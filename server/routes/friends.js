@@ -179,20 +179,40 @@ router.delete('/:friendId', auth, async (req, res) => {
 });
 
 // @route   GET /api/friends
-// @desc    Get user's friends list
+// @desc    Get user's friends list (includes deactivated users, excludes blocked users)
 // @access  Private
 router.get('/', auth, async (req, res) => {
   try {
-    const user = await User.findById(req.userId)
+    const currentUser = await User.findById(req.userId)
       .populate({
         path: 'friends',
-        match: { isActive: true, isBanned: { $ne: true } },
-        select: 'username displayName profilePhoto bio lastSeen'
-      });
+        match: { isBanned: { $ne: true } }, // Exclude banned users, but include deactivated
+        select: 'username displayName profilePhoto bio lastSeen isActive'
+      })
+      .select('blockedUsers');
 
-    // Filter out null values (deactivated/banned friends)
-    const activeFriends = user.friends.filter(friend => friend !== null);
-    res.json(activeFriends);
+    // Filter out null values (banned friends) and users who have blocked the current user
+    let friends = currentUser.friends.filter(friend => friend !== null);
+
+    // Filter out users who are in the current user's blocked list
+    friends = friends.filter(friend =>
+      !currentUser.blockedUsers.some(blockedId => blockedId.toString() === friend._id.toString())
+    );
+
+    // Filter out users who have blocked the current user
+    const friendsWithBlockCheck = await Promise.all(
+      friends.map(async (friend) => {
+        const friendUser = await User.findById(friend._id).select('blockedUsers');
+        const isBlockedByFriend = friendUser.blockedUsers.some(
+          blockedId => blockedId.toString() === req.userId
+        );
+        return isBlockedByFriend ? null : friend;
+      })
+    );
+
+    const filteredFriends = friendsWithBlockCheck.filter(friend => friend !== null);
+
+    res.json(filteredFriends);
   } catch (error) {
     console.error('Get friends error:', error);
     res.status(500).json({ message: 'Server error' });

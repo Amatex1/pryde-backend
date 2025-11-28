@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
+import CustomModal from '../components/CustomModal';
+import { useModal } from '../hooks/useModal';
 import api from '../utils/api';
 import { getImageUrl } from '../utils/imageUrl';
 import {
@@ -12,6 +14,7 @@ import {
 import './Friends.css';
 
 function Friends({ onOpenMiniChat }) {
+  const { modalState, closeModal, showAlert } = useModal();
   const [activeTab, setActiveTab] = useState('friends');
   const [friends, setFriends] = useState([]);
   const [requests, setRequests] = useState([]);
@@ -236,21 +239,41 @@ function Friends({ onOpenMiniChat }) {
               {friends.length > 0 ? (
                 <div className="user-grid">
                   {friends.map((friend) => (
-                    <div key={friend._id} className="user-card glossy">
-                      <Link to={`/profile/${friend._id}`} className="user-link">
-                        <div className="user-avatar">
-                          {friend.profilePhoto ? (
-                            <img src={getImageUrl(friend.profilePhoto)} alt={friend.username} />
-                          ) : (
-                            <span>{friend.displayName?.charAt(0).toUpperCase()}</span>
-                          )}
+                    <div
+                      key={friend._id}
+                      className={`user-card glossy ${friend.isActive === false ? 'deactivated-user' : ''}`}
+                    >
+                      {friend.isActive === false ? (
+                        <div
+                          className="user-link deactivated-link"
+                          onClick={() => showAlert('This user has deactivated their account.', 'Account Deactivated')}
+                          style={{ cursor: 'pointer' }}
+                        >
+                          <div className="user-avatar deactivated-avatar">
+                            <span>?</span>
+                          </div>
+                          <div className="user-info">
+                            <div className="user-name deactivated-text">{friend.displayName || friend.username}</div>
+                            <div className="user-username deactivated-text">@{friend.username}</div>
+                            {friend.bio && <div className="user-bio deactivated-text">{friend.bio}</div>}
+                          </div>
                         </div>
-                        <div className="user-info">
-                          <div className="user-name">{friend.displayName || friend.username}</div>
-                          <div className="user-username">@{friend.username}</div>
-                          {friend.bio && <div className="user-bio">{friend.bio}</div>}
-                        </div>
-                      </Link>
+                      ) : (
+                        <Link to={`/profile/${friend._id}`} className="user-link">
+                          <div className="user-avatar">
+                            {friend.profilePhoto ? (
+                              <img src={getImageUrl(friend.profilePhoto)} alt={friend.username} />
+                            ) : (
+                              <span>{friend.displayName?.charAt(0).toUpperCase()}</span>
+                            )}
+                          </div>
+                          <div className="user-info">
+                            <div className="user-name">{friend.displayName || friend.username}</div>
+                            <div className="user-username">@{friend.username}</div>
+                            {friend.bio && <div className="user-bio">{friend.bio}</div>}
+                          </div>
+                        </Link>
+                      )}
                       <button
                         onClick={() => handleRemoveFriend(friend._id)}
                         className="btn-remove"
@@ -415,6 +438,14 @@ function Friends({ onOpenMiniChat }) {
           )}
         </div>
       </div>
+
+      <CustomModal
+        isOpen={modalState.isOpen}
+        onClose={closeModal}
+        type={modalState.type}
+        title={modalState.title}
+        message={modalState.message}
+      />
     </div>
   );
 }
