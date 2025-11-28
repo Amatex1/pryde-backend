@@ -43,8 +43,15 @@ router.post('/register-start', auth, async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
+    console.log('🔐 Starting passkey registration for user:', user.username);
+    console.log('   User ID:', user._id.toString());
+    console.log('   Email:', user.email);
+    console.log('   Existing passkeys:', user.passkeys?.length || 0);
+
     // Generate registration options
     const options = await generatePasskeyRegistrationOptions(user);
+
+    console.log('✅ Registration options generated successfully');
 
     // Store challenge for verification
     challenges.set(user._id.toString(), options.challenge);
@@ -56,8 +63,14 @@ router.post('/register-start', auth, async (req, res) => {
 
     res.json(options);
   } catch (error) {
-    console.error('Passkey registration start error:', error);
-    res.status(500).json({ message: 'Failed to start passkey registration' });
+    console.error('❌ Passkey registration start error:', error);
+    console.error('   Error name:', error.name);
+    console.error('   Error message:', error.message);
+    console.error('   Error stack:', error.stack);
+    res.status(500).json({
+      message: 'Failed to start passkey registration',
+      error: config.nodeEnv === 'development' ? error.message : undefined
+    });
   }
 });
 

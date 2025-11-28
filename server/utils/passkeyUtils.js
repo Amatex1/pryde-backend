@@ -15,6 +15,12 @@ const rpName = 'Pryde Social';
 const rpID = process.env.RP_ID || 'localhost'; // Your domain (e.g., 'prydesocial.com')
 const origin = process.env.ORIGIN || 'http://localhost:3000'; // Your frontend URL
 
+// Log configuration on startup
+console.log('🔐 Passkey Configuration:');
+console.log('   RP Name:', rpName);
+console.log('   RP ID:', rpID);
+console.log('   Origin:', origin);
+
 /**
  * Generate registration options for creating a new passkey
  * @param {Object} user - User object from database
