@@ -169,6 +169,16 @@ export const onFriendRequestAccepted = (callback) => {
 // -----------------------------
 // ONLINE STATUS
 // -----------------------------
+// Request online users list from server
+export const requestOnlineUsers = () => {
+    if (socket && socket.connected) {
+        console.log('📡 Requesting online users list from server');
+        socket.emit('get_online_users');
+    } else {
+        console.warn('⚠️ Cannot request online users - socket not connected');
+    }
+};
+
 export const onUserOnline = (callback) => {
     if (socket) {
         // Create a named handler function so we can remove it later
@@ -239,6 +249,7 @@ export default {
     emitFriendRequestAccepted,
     onFriendRequestReceived,
     onFriendRequestAccepted,
+    requestOnlineUsers,
     onUserOnline,
     onUserOffline,
     onOnlineUsers

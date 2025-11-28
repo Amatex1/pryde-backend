@@ -13,7 +13,8 @@ import {
   getSocket,
   onUserOnline,
   onUserOffline,
-  onOnlineUsers
+  onOnlineUsers,
+  requestOnlineUsers
 } from '../utils/socket';
 import './Messages.css';
 
@@ -236,6 +237,15 @@ function Messages() {
       console.log('❌ User went offline:', data.userId);
       setOnlineUsers((prev) => prev.filter(id => id !== data.userId));
     });
+
+    // Request online users list after setting up listeners (important for mobile/slow connections)
+    if (socket.connected) {
+      setTimeout(() => requestOnlineUsers(), 500);
+    } else {
+      socket.once('connect', () => {
+        setTimeout(() => requestOnlineUsers(), 500);
+      });
+    }
 
     // Cleanup on unmount
     return () => {

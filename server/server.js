@@ -308,7 +308,13 @@ io.on('connection', (socket) => {
   
   // Join user to their personal room for targeted notifications
   socket.join(`user_${userId}`);
-  
+
+  // Handle request for online users list (for mobile/slow connections)
+  socket.on('get_online_users', () => {
+    console.log(`📡 User ${userId} requested online users list`);
+    socket.emit('online_users', Array.from(onlineUsers.keys()));
+  });
+
   // Handle typing indicator
   socket.on('typing', (data) => {
     const recipientSocketId = onlineUsers.get(data.recipientId);

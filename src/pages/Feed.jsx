@@ -12,7 +12,7 @@ import { useModal } from '../hooks/useModal';
 import api from '../utils/api';
 import { getCurrentUser } from '../utils/auth';
 import { getImageUrl } from '../utils/imageUrl';
-import { onUserOnline, onUserOffline, onOnlineUsers, getSocket } from '../utils/socket';
+import { onUserOnline, onUserOffline, onOnlineUsers, requestOnlineUsers, getSocket } from '../utils/socket';
 import { convertEmojiShortcuts } from '../utils/textFormatting';
 import './Feed.css';
 
@@ -154,11 +154,15 @@ function Feed() {
       if (socket.connected) {
         console.log('✅ Socket already connected, setting up listeners');
         setupListeners();
+        // Request online users list (important for mobile/slow connections)
+        setTimeout(() => requestOnlineUsers(), 500);
       } else {
         console.log('⏳ Socket not connected yet, waiting for connection...');
         const onConnect = () => {
           console.log('✅ Socket connected, setting up listeners');
           setupListeners();
+          // Request online users list (important for mobile/slow connections)
+          setTimeout(() => requestOnlineUsers(), 500);
         };
         socket.once('connect', onConnect);
       }
