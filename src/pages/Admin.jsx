@@ -707,27 +707,70 @@ function ActivityTab({ activity }) {
 
       <div className="activity-section">
         <h3>📝 Recent Posts ({activity.recentPosts.length})</h3>
-        <div className="activity-list">
-          {activity.recentPosts.slice(0, 10).map(post => (
-            <div key={post._id} className="activity-item">
-              <span className="activity-user">{post.author?.username}</span>
-              <span className="activity-content">{post.content?.substring(0, 100)}...</span>
-              <span className="activity-date">{new Date(post.createdAt).toLocaleString()}</span>
-            </div>
-          ))}
+        <div className="activity-table">
+          <div className="activity-table-header">
+            <span className="activity-header-username">Username</span>
+            <span className="activity-header-post">Post</span>
+            <span className="activity-header-date">Date Posted</span>
+          </div>
+          <div className="activity-list">
+            {activity.recentPosts.slice(0, 10).map(post => (
+              <div key={post._id} className="activity-item">
+                <a
+                  href={`/profile/${post.author?._id}`}
+                  className="activity-user-link"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    window.location.href = `/profile/${post.author?._id}`;
+                  }}
+                >
+                  {post.author?.username}
+                </a>
+                <a
+                  href={`/feed`}
+                  className="activity-post-link"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    window.location.href = `/feed`;
+                  }}
+                >
+                  {post.content?.substring(0, 100)}...
+                </a>
+                <span className="activity-date">{new Date(post.createdAt).toLocaleString()}</span>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
       <div className="activity-section">
         <h3>👥 New Users ({activity.recentUsers.length})</h3>
-        <div className="activity-list">
-          {activity.recentUsers.slice(0, 10).map(user => (
-            <div key={user._id} className="activity-item">
-              <span className="activity-user">{user.username}</span>
-              <span className="activity-content">{user.email}</span>
-              <span className="activity-date">{new Date(user.createdAt).toLocaleString()}</span>
-            </div>
-          ))}
+        <div className="activity-table">
+          <div className="activity-table-header">
+            <span className="activity-header-realname">Real Name</span>
+            <span className="activity-header-username">Username</span>
+            <span className="activity-header-email">Email</span>
+            <span className="activity-header-date">Date Joined</span>
+          </div>
+          <div className="activity-list">
+            {activity.recentUsers.slice(0, 10).map(user => (
+              <div key={user._id} className="activity-item">
+                <span className="activity-realname">{user.displayName || 'N/A'}</span>
+                <a
+                  href={`/profile/${user._id}`}
+                  className="activity-user-link"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    window.location.href = `/profile/${user._id}`;
+                  }}
+                >
+                  {user.username}
+                </a>
+                <span className="activity-email">{user.email}</span>
+                <span className="activity-date">{new Date(user.createdAt).toLocaleString()}</span>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
