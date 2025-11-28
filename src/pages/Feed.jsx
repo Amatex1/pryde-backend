@@ -173,8 +173,7 @@ function Feed({ onOpenMiniChat }) {
       clearInterval(interval);
       // Clean up all socket listeners
       cleanupFunctions.forEach(cleanup => cleanup?.());
-      // Reset the flag when component unmounts
-      listenersSetUpRef.current = false;
+      // DON'T reset the flag - keep it true to prevent duplicate setup in React Strict Mode
     };
   }, []);
 

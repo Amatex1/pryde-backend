@@ -50,7 +50,7 @@ function Friends({ onOpenMiniChat }) {
   // Real-time friend request notifications
   useEffect(() => {
     // Listen for incoming friend requests
-    onFriendRequestReceived((data) => {
+    const cleanupReceived = onFriendRequestReceived((data) => {
       // Refresh requests list if on requests tab
       if (activeTab === 'requests') {
         fetchRequests();
@@ -60,7 +60,7 @@ function Friends({ onOpenMiniChat }) {
     });
 
     // Listen for accepted friend requests
-    onFriendRequestAccepted((data) => {
+    const cleanupAccepted = onFriendRequestAccepted((data) => {
       // Refresh friends list if on friends tab
       if (activeTab === 'friends') {
         fetchFriends();
@@ -68,6 +68,12 @@ function Friends({ onOpenMiniChat }) {
       // Show notification
       showNotification(`${data.accepterUsername} accepted your friend request!`);
     });
+
+    // Cleanup listeners when component unmounts or activeTab changes
+    return () => {
+      cleanupReceived?.();
+      cleanupAccepted?.();
+    };
   }, [activeTab]);
 
   const fetchFriends = async () => {

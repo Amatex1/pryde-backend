@@ -143,11 +143,27 @@ export const emitFriendRequestAccepted = (data) => {
 };
 
 export const onFriendRequestReceived = (callback) => {
-    if (socket) socket.on("friendRequestReceived", callback);
+    if (socket) {
+        socket.on("friendRequestReceived", callback);
+        return () => {
+            if (socket) {
+                socket.off("friendRequestReceived", callback);
+            }
+        };
+    }
+    return () => {};
 };
 
 export const onFriendRequestAccepted = (callback) => {
-    if (socket) socket.on("friendRequestAccepted", callback);
+    if (socket) {
+        socket.on("friendRequestAccepted", callback);
+        return () => {
+            if (socket) {
+                socket.off("friendRequestAccepted", callback);
+            }
+        };
+    }
+    return () => {};
 };
 
 // -----------------------------
@@ -155,50 +171,59 @@ export const onFriendRequestAccepted = (callback) => {
 // -----------------------------
 export const onUserOnline = (callback) => {
     if (socket) {
-        // Don't remove previous listeners - allow multiple components to listen
-        socket.on("user_online", (data) => {
+        // Create a named handler function so we can remove it later
+        const handler = (data) => {
             console.log('🔌 Socket received user_online event:', data);
             callback(data);
-        });
+        };
+        socket.on("user_online", handler);
+
+        // Return cleanup function that removes THIS specific handler
+        return () => {
+            if (socket) {
+                socket.off("user_online", handler);
+            }
+        };
     }
-    // Return cleanup function
-    return () => {
-        if (socket) {
-            socket.off("user_online", callback);
-        }
-    };
+    return () => {}; // Return empty cleanup if no socket
 };
 
 export const onUserOffline = (callback) => {
     if (socket) {
-        // Don't remove previous listeners - allow multiple components to listen
-        socket.on("user_offline", (data) => {
+        // Create a named handler function so we can remove it later
+        const handler = (data) => {
             console.log('🔌 Socket received user_offline event:', data);
             callback(data);
-        });
+        };
+        socket.on("user_offline", handler);
+
+        // Return cleanup function that removes THIS specific handler
+        return () => {
+            if (socket) {
+                socket.off("user_offline", handler);
+            }
+        };
     }
-    // Return cleanup function
-    return () => {
-        if (socket) {
-            socket.off("user_offline", callback);
-        }
-    };
+    return () => {}; // Return empty cleanup if no socket
 };
 
 export const onOnlineUsers = (callback) => {
     if (socket) {
-        // Don't remove previous listeners - allow multiple components to listen
-        socket.on("online_users", (users) => {
+        // Create a named handler function so we can remove it later
+        const handler = (users) => {
             console.log('🔌 Socket received online_users event:', users);
             callback(users);
-        });
+        };
+        socket.on("online_users", handler);
+
+        // Return cleanup function that removes THIS specific handler
+        return () => {
+            if (socket) {
+                socket.off("online_users", handler);
+            }
+        };
     }
-    // Return cleanup function
-    return () => {
-        if (socket) {
-            socket.off("online_users", callback);
-        }
-    };
+    return () => {}; // Return empty cleanup if no socket
 };
 
 export default {
