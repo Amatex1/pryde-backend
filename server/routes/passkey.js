@@ -15,6 +15,24 @@ import {
 // Store challenges temporarily (in production, use Redis)
 const challenges = new Map();
 
+// @route   GET /api/passkey/test
+// @desc    Test endpoint to verify passkey routes are working
+// @access  Public
+router.get('/test', (req, res) => {
+  res.json({
+    message: 'Passkey routes are working!',
+    timestamp: new Date().toISOString(),
+    availableRoutes: [
+      'POST /api/passkey/register-start',
+      'POST /api/passkey/register-finish',
+      'POST /api/passkey/login-start',
+      'POST /api/passkey/login-finish',
+      'GET /api/passkey/list',
+      'DELETE /api/passkey/:credentialId'
+    ]
+  });
+});
+
 // @route   POST /api/passkey/register-start
 // @desc    Start passkey registration process
 // @access  Private (user must be logged in)
