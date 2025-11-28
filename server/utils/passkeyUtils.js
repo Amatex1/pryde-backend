@@ -34,10 +34,14 @@ export const generatePasskeyRegistrationOptions = async (user) => {
     transports: passkey.transports || []
   })) || [];
 
+  // Convert user ID to Uint8Array (required by @simplewebauthn v13+)
+  const userIdString = user._id.toString();
+  const userIdBuffer = Buffer.from(userIdString);
+
   const options = await generateRegistrationOptions({
     rpName,
     rpID,
-    userID: user._id.toString(),
+    userID: userIdBuffer, // Must be Uint8Array, not string
     userName: user.email,
     userDisplayName: user.displayName || user.username,
     // Don't prompt users for additional information about the authenticator
