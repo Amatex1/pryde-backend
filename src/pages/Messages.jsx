@@ -17,7 +17,7 @@ import {
 } from '../utils/socket';
 import './Messages.css';
 
-function Messages({ onOpenMiniChat }) {
+function Messages() {
   const [selectedChat, setSelectedChat] = useState(null);
   const [selectedChatType, setSelectedChatType] = useState('user'); // 'user' or 'group'
   const [selectedUser, setSelectedUser] = useState(null); // Store selected user info

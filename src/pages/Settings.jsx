@@ -13,7 +13,7 @@ import {
 } from '../utils/pushNotifications';
 import './Settings.css';
 
-function Settings({ onOpenMiniChat }) {
+function Settings() {
   const { modalState, closeModal, showAlert, showConfirm, showPrompt } = useModal();
   const navigate = useNavigate();
   const currentUser = getCurrentUser();

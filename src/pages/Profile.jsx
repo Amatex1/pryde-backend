@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import ReportModal from '../components/ReportModal';
 import PhotoViewer from '../components/PhotoViewer';
@@ -17,8 +17,9 @@ import { useToast } from '../hooks/useToast';
 import { convertEmojiShortcuts } from '../utils/textFormatting';
 import './Profile.css';
 
-function Profile({ onOpenMiniChat }) {
+function Profile() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const currentUser = getCurrentUser();
   const { modalState, closeModal, showAlert, showConfirm } = useModal();
   const [user, setUser] = useState(null);
@@ -484,7 +485,7 @@ function Profile({ onOpenMiniChat }) {
       showToast('You cannot message this user due to their privacy settings', 'error');
       return;
     }
-    onOpenMiniChat(user);
+    navigate('/messages');
   };
 
   const handleBlockUser = async () => {

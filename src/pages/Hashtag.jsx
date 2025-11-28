@@ -7,7 +7,7 @@ import { getImageUrl } from '../utils/imageUrl';
 import PhotoViewer from '../components/PhotoViewer';
 import './Feed.css';
 
-function Hashtag({ onOpenMiniChat }) {
+function Hashtag() {
   const { tag } = useParams();
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);

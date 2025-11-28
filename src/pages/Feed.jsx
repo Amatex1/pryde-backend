@@ -16,7 +16,7 @@ import { onUserOnline, onUserOffline, onOnlineUsers, getSocket } from '../utils/
 import { convertEmojiShortcuts } from '../utils/textFormatting';
 import './Feed.css';
 
-function Feed({ onOpenMiniChat }) {
+function Feed() {
   const [searchParams] = useSearchParams();
   const { modalState, closeModal, showAlert, showConfirm } = useModal();
   const [posts, setPosts] = useState([]);
@@ -1537,23 +1537,16 @@ function Feed({ onOpenMiniChat }) {
                           </div>
                         </div>
                         <div className="friend-sidebar-actions-top">
-                          <button
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              if (onOpenMiniChat) {
-                                onOpenMiniChat(friend);
-                              }
-                            }}
+                          <Link
+                            to="/messages"
                             className="btn-friend-action"
                             title="Chat"
-                            type="button"
                           >
                             💬
                             {unreadCount > 0 && (
                               <span className="friend-message-badge">{unreadCount > 99 ? '99+' : unreadCount}</span>
                             )}
-                          </button>
+                          </Link>
                           <Link
                             to={`/profile/${friend._id}`}
                             className="btn-friend-action"

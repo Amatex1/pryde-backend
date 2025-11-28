@@ -9,7 +9,7 @@ import { useModal } from '../hooks/useModal';
 import api from '../utils/api';
 import './Settings.css';
 
-function SecuritySettings({ onOpenMiniChat }) {
+function SecuritySettings() {
   const navigate = useNavigate();
   const { modalState, closeModal, showPrompt } = useModal();
   const [loading, setLoading] = useState(true);

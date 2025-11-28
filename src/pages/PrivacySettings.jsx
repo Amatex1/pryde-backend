@@ -4,7 +4,7 @@ import Navbar from '../components/Navbar';
 import api from '../utils/api';
 import './PrivacySettings.css';
 
-const PrivacySettings = ({ onOpenMiniChat }) => {
+const PrivacySettings = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState('');

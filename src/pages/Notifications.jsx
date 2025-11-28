@@ -5,7 +5,7 @@ import api from '../utils/api';
 import { getImageUrl } from '../utils/imageUrl';
 import './Notifications.css';
 
-function Notifications({ onOpenMiniChat }) {
+function Notifications() {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();

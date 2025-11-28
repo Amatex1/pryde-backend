@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { isAuthenticated } from '../utils/auth';
 import './Home.css';
 
-function Home({ onOpenMiniChat }) {
+function Home() {
   const isAuth = isAuthenticated();
 
   return (

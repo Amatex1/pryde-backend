@@ -5,7 +5,7 @@ import api from '../utils/api';
 import { getImageUrl } from '../utils/imageUrl';
 import './Bookmarks.css';
 
-const Bookmarks = ({ onOpenMiniChat }) => {
+const Bookmarks = () => {
   const [bookmarks, setBookmarks] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();

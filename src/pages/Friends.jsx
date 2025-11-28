@@ -13,7 +13,7 @@ import {
 } from '../utils/socket';
 import './Friends.css';
 
-function Friends({ onOpenMiniChat }) {
+function Friends() {
   const { modalState, closeModal, showAlert } = useModal();
   const [activeTab, setActiveTab] = useState('friends');
   const [friends, setFriends] = useState([]);

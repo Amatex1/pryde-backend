@@ -8,7 +8,7 @@ import { getCurrentUser } from '../utils/auth';
 import { getImageUrl } from '../utils/imageUrl';
 import './Admin.css';
 
-function Admin({ onOpenMiniChat }) {
+function Admin() {
   const { modalState, closeModal, showAlert, showConfirm, showPrompt } = useModal();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [stats, setStats] = useState(null);
