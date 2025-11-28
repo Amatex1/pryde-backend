@@ -18,8 +18,15 @@ import {
 import './Messages.css';
 
 function Messages() {
-  const [selectedChat, setSelectedChat] = useState(null);
-  const [selectedChatType, setSelectedChatType] = useState('user'); // 'user' or 'group'
+  // Restore selected chat from localStorage on mount
+  const [selectedChat, setSelectedChat] = useState(() => {
+    const saved = localStorage.getItem('selectedChat');
+    return saved || null;
+  });
+  const [selectedChatType, setSelectedChatType] = useState(() => {
+    const saved = localStorage.getItem('selectedChatType');
+    return saved || 'user';
+  });
   const [selectedUser, setSelectedUser] = useState(null); // Store selected user info
   const [selectedGroup, setSelectedGroup] = useState(null); // Store selected group info
   const [message, setMessage] = useState('');
@@ -101,6 +108,14 @@ function Messages() {
     document.addEventListener('click', handleClickOutside);
     return () => document.removeEventListener('click', handleClickOutside);
   }, [openDropdown]);
+
+  // Save selected chat to localStorage whenever it changes
+  useEffect(() => {
+    if (selectedChat) {
+      localStorage.setItem('selectedChat', selectedChat);
+      localStorage.setItem('selectedChatType', selectedChatType);
+    }
+  }, [selectedChat, selectedChatType]);
 
   // Fetch current user
   useEffect(() => {
