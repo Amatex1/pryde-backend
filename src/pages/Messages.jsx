@@ -114,20 +114,11 @@ function Messages({ onOpenMiniChat }) {
     };
     fetchCurrentUser();
 
-    // Log socket connection status
+    // Log socket connection status (but don't add listeners here - they're added in the other useEffect)
     console.log('🔌 Socket connection status:', isSocketConnected());
     const socket = getSocket();
     if (socket) {
       console.log('✅ Socket instance exists');
-      socket.on('connect', () => {
-        console.log('✅ Socket connected!');
-      });
-      socket.on('disconnect', () => {
-        console.log('❌ Socket disconnected!');
-      });
-      socket.on('connect_error', (error) => {
-        console.error('❌ Socket connection error:', error);
-      });
     } else {
       console.error('❌ Socket instance not found!');
     }

@@ -53,17 +53,18 @@ function App() {
         requestNotificationPermission();
 
         // Listen for new messages and play sound
-        onNewMessage((msg) => {
+        const cleanupNewMessage = onNewMessage((msg) => {
           playNotificationSound();
         });
-      }
 
-      // Cleanup on unmount or when user logs out
-      return () => {
-        if (!isAuthenticated()) {
-          disconnectSocket();
-        }
-      };
+        // Cleanup on unmount or when user logs out
+        return () => {
+          cleanupNewMessage?.();
+          if (!isAuthenticated()) {
+            disconnectSocket();
+          }
+        };
+      }
     }
   }, [isAuth]);
 
