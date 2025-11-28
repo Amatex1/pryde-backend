@@ -1082,7 +1082,6 @@
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  overflow: hidden;
   background: var(--pryde-purple);
   display: flex;
   align-items: center;
