@@ -204,20 +204,56 @@ function Messages({ onOpenMiniChat }) {
       // Listen for new messages
       const cleanupNewMessage = onNewMessage((newMessage) => {
         console.log('📨 Received new_message event:', newMessage);
-        if (selectedChat === newMessage.sender._id) {
-          setMessages((prev) => [...prev, newMessage]);
+
+        // Check if this message is for the currently selected chat
+        // Message is relevant if the sender is the selected chat OR the recipient is the selected chat
+        const isRelevantMessage =
+          selectedChat === newMessage.sender._id ||
+          selectedChat === newMessage.recipient._id;
+
+        if (isRelevantMessage) {
+          console.log('✅ Message is for selected chat, adding to messages');
+          setMessages((prev) => {
+            // Prevent duplicates - check if message already exists
+            if (prev.some(msg => msg._id === newMessage._id)) {
+              console.log('⚠️ Message already exists, skipping');
+              return prev;
+            }
+            return [...prev, newMessage];
+          });
         }
-        // Update conversations list
+
+        // Update conversations list - show the conversation with the OTHER person
+        const otherPersonId = currentUser?._id === newMessage.sender._id
+          ? newMessage.recipient._id
+          : newMessage.sender._id;
+
+        const otherPerson = currentUser?._id === newMessage.sender._id
+          ? newMessage.recipient
+          : newMessage.sender;
+
         setConversations((prev) => {
-          const updated = prev.filter(c => c._id !== newMessage.sender._id);
-          return [{ _id: newMessage.sender._id, lastMessage: newMessage, ...newMessage.sender }, ...updated];
+          const updated = prev.filter(c => c._id !== otherPersonId);
+          return [{ _id: otherPersonId, lastMessage: newMessage, ...otherPerson }, ...updated];
         });
       });
 
       // Listen for sent message confirmation
       const cleanupMessageSent = onMessageSent((sentMessage) => {
         console.log('✅ Received message_sent event:', sentMessage);
-        setMessages((prev) => [...prev, sentMessage]);
+
+        // Only add to messages if this is the selected chat
+        if (selectedChat === sentMessage.recipient._id) {
+          console.log('✅ Sent message is for selected chat, adding to messages');
+          setMessages((prev) => {
+            // Prevent duplicates - check if message already exists
+            if (prev.some(msg => msg._id === sentMessage._id)) {
+              console.log('⚠️ Message already exists, skipping');
+              return prev;
+            }
+            return [...prev, sentMessage];
+          });
+        }
 
         // Update conversations list with the sent message
         setConversations((prev) => {
