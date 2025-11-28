@@ -269,11 +269,11 @@ function Settings({ onOpenMiniChat }) {
           )}
 
           {/* Security Settings Link */}
-          <div className="settings-section" style={{ background: 'linear-gradient(135deg, #EDEAFF 0%, #F7F7F7 100%)', padding: '20px', borderRadius: '12px', marginBottom: '20px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <div>
-                <h2 className="section-title" style={{ margin: 0, marginBottom: '5px' }}>🔐 Security Settings</h2>
-                <p style={{ color: 'var(--text-muted)', margin: 0, fontSize: '14px' }}>
+          <div className="settings-section security-settings-link">
+            <div className="security-settings-content">
+              <div className="security-settings-info">
+                <h2 className="section-title">🔐 Security Settings</h2>
+                <p className="security-settings-description">
                   Manage passkeys, 2FA, active sessions, and login alerts
                 </p>
               </div>

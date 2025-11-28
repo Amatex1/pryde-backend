@@ -13,6 +13,7 @@ import PrivacySettings from './pages/PrivacySettings';
 import Bookmarks from './pages/Bookmarks';
 import Friends from './pages/Friends';
 import Messages from './pages/Messages';
+import Notifications from './pages/Notifications';
 import Admin from './pages/Admin';
 import Hashtag from './pages/Hashtag';
 import Terms from './pages/legal/Terms';
@@ -141,6 +142,7 @@ function App() {
           <Route path="/bookmarks" element={<PrivateRoute><Bookmarks onOpenMiniChat={openMiniChat} /></PrivateRoute>} />
           <Route path="/friends" element={<PrivateRoute><Friends onOpenMiniChat={openMiniChat} /></PrivateRoute>} />
           <Route path="/messages" element={<PrivateRoute><Messages onOpenMiniChat={openMiniChat} /></PrivateRoute>} />
+          <Route path="/notifications" element={<PrivateRoute><Notifications onOpenMiniChat={openMiniChat} /></PrivateRoute>} />
           <Route path="/hashtag/:tag" element={<PrivateRoute><Hashtag onOpenMiniChat={openMiniChat} /></PrivateRoute>} />
 
           {/* Admin Panel - Hidden Route (requires admin role) */}

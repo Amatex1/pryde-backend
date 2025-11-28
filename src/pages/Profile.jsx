@@ -1016,17 +1016,22 @@ function Profile({ onOpenMiniChat }) {
                               }
                             }}
                             onMouseEnter={() => {
-                              // Hover shows emoji picker
+                              // Hover shows emoji picker on desktop
                               if (window.innerWidth > 768) {
                                 setShowReactionPicker(`post-${post._id}`);
                               }
                             }}
-                            onMouseLeave={() => {
-                              // Hide picker when mouse leaves button
-                              if (window.innerWidth > 768) {
-                                setTimeout(() => {
-                                  setShowReactionPicker(null);
-                                }, 200);
+                            onTouchStart={(e) => {
+                              // Long press shows emoji picker on mobile
+                              const touchTimer = setTimeout(() => {
+                                setShowReactionPicker(`post-${post._id}`);
+                              }, 500);
+                              e.currentTarget.dataset.touchTimer = touchTimer;
+                            }}
+                            onTouchEnd={(e) => {
+                              // Clear long press timer
+                              if (e.currentTarget.dataset.touchTimer) {
+                                clearTimeout(e.currentTarget.dataset.touchTimer);
                               }
                             }}
                           >
@@ -1044,7 +1049,9 @@ function Profile({ onOpenMiniChat }) {
                               }}
                               onMouseLeave={() => {
                                 if (window.innerWidth > 768) {
-                                  setShowReactionPicker(null);
+                                  setTimeout(() => {
+                                    setShowReactionPicker(null);
+                                  }, 300);
                                 }
                               }}
                             >

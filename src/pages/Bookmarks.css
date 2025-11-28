@@ -174,9 +174,64 @@
   color: #616161;
 }
 
+/* Dark Mode */
+@media (prefers-color-scheme: dark) {
+  .bookmarks-subtitle,
+  .loading {
+    color: #b0b0b0;
+  }
+
+  .no-bookmarks {
+    background: linear-gradient(135deg, rgba(108, 92, 231, 0.15) 0%, #2a2a2a 100%);
+  }
+
+  .no-bookmarks h2 {
+    color: #e0e0e0;
+  }
+
+  .no-bookmarks p {
+    color: #b0b0b0;
+  }
+
+  .bookmark-card {
+    background: #2a2a2a;
+    border-color: #3a3a3a;
+  }
+
+  .bookmark-card:hover {
+    box-shadow: 0 8px 24px rgba(108, 92, 231, 0.3);
+    border-color: #6C5CE7;
+  }
+
+  .author-avatar {
+    border-color: rgba(108, 92, 231, 0.3);
+  }
+
+  .author-name {
+    color: #e0e0e0;
+  }
+
+  .author-username,
+  .post-date,
+  .post-stats {
+    color: #b0b0b0;
+  }
+
+  .post-content {
+    color: #e0e0e0;
+  }
+
+  .bookmark-footer {
+    border-top-color: #3a3a3a;
+  }
+
+  .remove-bookmark-btn:hover {
+    background: rgba(255, 107, 107, 0.2);
+  }
+}
+
 @media (max-width: 768px) {
   .bookmarks-grid {
     grid-template-columns: 1fr;
   }
 }
-
