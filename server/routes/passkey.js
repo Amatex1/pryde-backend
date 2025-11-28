@@ -111,12 +111,14 @@ router.post('/register-finish', auth, async (req, res) => {
     const { registrationInfo } = verification;
 
     console.log('✅ Verification successful, saving passkey...');
+    console.log('   Registration info:', JSON.stringify(registrationInfo, null, 2));
 
     // Save passkey to user account
+    // Note: @simplewebauthn v13+ uses different property names
     const newPasskey = {
-      credentialId: Buffer.from(registrationInfo.credentialID).toString('base64'),
-      publicKey: Buffer.from(registrationInfo.credentialPublicKey).toString('base64'),
-      counter: registrationInfo.counter,
+      credentialId: Buffer.from(registrationInfo.credentialID || registrationInfo.credential?.id || registrationInfo.aaguid).toString('base64'),
+      publicKey: Buffer.from(registrationInfo.credentialPublicKey || registrationInfo.credential?.publicKey).toString('base64'),
+      counter: registrationInfo.counter || 0,
       deviceName: deviceName || getDeviceName(req.headers['user-agent']),
       transports: credential.response.transports || [],
       createdAt: new Date(),
