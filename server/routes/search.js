@@ -43,13 +43,18 @@ router.get('/', auth, searchLimiter, async (req, res) => {
 
     // Search posts by content (if type is 'all' or 'posts')
     if (!type || type === 'all' || type === 'posts') {
-      results.posts = await Post.find({
-        content: { $regex: searchQuery, $options: 'i' },
-        // Only show public posts
-        visibility: 'public',
-        // Exclude posts where current user is hidden from
-        hiddenFrom: { $ne: req.userId }
-      })
+      // Build query - super_admin can see all posts
+      const postQuery = {
+        content: { $regex: searchQuery, $options: 'i' }
+      };
+
+      // Apply privacy filters only for non-admin users
+      if (req.user.role !== 'super_admin') {
+        postQuery.visibility = 'public';
+        postQuery.hiddenFrom = { $ne: req.userId };
+      }
+
+      results.posts = await Post.find(postQuery)
       .populate('author', 'username displayName profilePhoto')
       .sort({ createdAt: -1 })
       .limit(20);
@@ -59,16 +64,19 @@ router.get('/', auth, searchLimiter, async (req, res) => {
     if (!type || type === 'all' || type === 'hashtags') {
       const hashtagQuery = searchQuery.startsWith('#') ? searchQuery.toLowerCase() : `#${searchQuery.toLowerCase()}`;
 
+      // Build match query - super_admin can see all hashtags
+      const hashtagMatchQuery = {
+        hashtags: { $regex: hashtagQuery, $options: 'i' }
+      };
+
+      // Apply privacy filters only for non-admin users
+      if (req.user.role !== 'super_admin') {
+        hashtagMatchQuery.visibility = 'public';
+        hashtagMatchQuery.hiddenFrom = { $ne: req.userId };
+      }
+
       results.hashtags = await Post.aggregate([
-        {
-          $match: {
-            hashtags: { $regex: hashtagQuery, $options: 'i' },
-            // Only count public posts
-            visibility: 'public',
-            // Exclude posts where current user is hidden from
-            hiddenFrom: { $ne: req.userId }
-          }
-        },
+        { $match: hashtagMatchQuery },
         { $unwind: '$hashtags' },
         { $match: { hashtags: { $regex: hashtagQuery, $options: 'i' } } },
         { $group: { _id: '$hashtags', count: { $sum: 1 } } },
@@ -93,13 +101,18 @@ router.get('/hashtag/:tag', auth, async (req, res) => {
     const hashtag = req.params.tag.toLowerCase();
     const hashtagQuery = hashtag.startsWith('#') ? hashtag : `#${hashtag}`;
 
-    const posts = await Post.find({
-      hashtags: hashtagQuery,
-      // Only show public posts
-      visibility: 'public',
-      // Exclude posts where current user is hidden from
-      hiddenFrom: { $ne: req.userId }
-    })
+    // Build query - super_admin can see all posts
+    const query = {
+      hashtags: hashtagQuery
+    };
+
+    // Apply privacy filters only for non-admin users
+    if (req.user.role !== 'super_admin') {
+      query.visibility = 'public';
+      query.hiddenFrom = { $ne: req.userId };
+    }
+
+    const posts = await Post.find(query)
     .populate('author', 'username displayName profilePhoto')
     .populate('comments.user', 'username displayName profilePhoto')
     .sort({ createdAt: -1 })
@@ -119,16 +132,19 @@ router.get('/trending', auth, async (req, res) => {
   try {
     const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
+    // Build match query - super_admin can see all trending
+    const trendingMatchQuery = {
+      createdAt: { $gte: oneDayAgo }
+    };
+
+    // Apply privacy filters only for non-admin users
+    if (req.user.role !== 'super_admin') {
+      trendingMatchQuery.visibility = 'public';
+      trendingMatchQuery.hiddenFrom = { $ne: req.userId };
+    }
+
     const trending = await Post.aggregate([
-      {
-        $match: {
-          createdAt: { $gte: oneDayAgo },
-          // Only count public posts
-          visibility: 'public',
-          // Exclude posts where current user is hidden from
-          hiddenFrom: { $ne: req.userId }
-        }
-      },
+      { $match: trendingMatchQuery },
       { $unwind: '$hashtags' },
       { $group: { _id: '$hashtags', count: { $sum: 1 } } },
       { $sort: { count: -1 } },
