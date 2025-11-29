@@ -44,7 +44,11 @@ router.get('/', auth, searchLimiter, async (req, res) => {
     // Search posts by content (if type is 'all' or 'posts')
     if (!type || type === 'all' || type === 'posts') {
       results.posts = await Post.find({
-        content: { $regex: searchQuery, $options: 'i' }
+        content: { $regex: searchQuery, $options: 'i' },
+        // Only show public posts
+        visibility: 'public',
+        // Exclude posts where current user is hidden from
+        hiddenFrom: { $ne: req.userId }
       })
       .populate('author', 'username displayName profilePhoto')
       .sort({ createdAt: -1 })
@@ -54,9 +58,17 @@ router.get('/', auth, searchLimiter, async (req, res) => {
     // Search hashtags (if type is 'all' or 'hashtags')
     if (!type || type === 'all' || type === 'hashtags') {
       const hashtagQuery = searchQuery.startsWith('#') ? searchQuery.toLowerCase() : `#${searchQuery.toLowerCase()}`;
-      
+
       results.hashtags = await Post.aggregate([
-        { $match: { hashtags: { $regex: hashtagQuery, $options: 'i' } } },
+        {
+          $match: {
+            hashtags: { $regex: hashtagQuery, $options: 'i' },
+            // Only count public posts
+            visibility: 'public',
+            // Exclude posts where current user is hidden from
+            hiddenFrom: { $ne: req.userId }
+          }
+        },
         { $unwind: '$hashtags' },
         { $match: { hashtags: { $regex: hashtagQuery, $options: 'i' } } },
         { $group: { _id: '$hashtags', count: { $sum: 1 } } },
@@ -82,7 +94,11 @@ router.get('/hashtag/:tag', auth, async (req, res) => {
     const hashtagQuery = hashtag.startsWith('#') ? hashtag : `#${hashtag}`;
 
     const posts = await Post.find({
-      hashtags: hashtagQuery
+      hashtags: hashtagQuery,
+      // Only show public posts
+      visibility: 'public',
+      // Exclude posts where current user is hidden from
+      hiddenFrom: { $ne: req.userId }
     })
     .populate('author', 'username displayName profilePhoto')
     .populate('comments.user', 'username displayName profilePhoto')
@@ -104,7 +120,15 @@ router.get('/trending', auth, async (req, res) => {
     const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
     const trending = await Post.aggregate([
-      { $match: { createdAt: { $gte: oneDayAgo } } },
+      {
+        $match: {
+          createdAt: { $gte: oneDayAgo },
+          // Only count public posts
+          visibility: 'public',
+          // Exclude posts where current user is hidden from
+          hiddenFrom: { $ne: req.userId }
+        }
+      },
       { $unwind: '$hashtags' },
       { $group: { _id: '$hashtags', count: { $sum: 1 } } },
       { $sort: { count: -1 } },
