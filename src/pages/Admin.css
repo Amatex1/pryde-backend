@@ -405,6 +405,7 @@
   gap: 0.5rem;
 }
 
+/* Default table header - 3 columns (for Recent Posts and Recent Reports) */
 .activity-table-header {
   display: grid;
   grid-template-columns: 200px 1fr 220px;
@@ -422,47 +423,13 @@
   letter-spacing: 0.5px;
 }
 
-/* Headers for Recent Posts */
-.activity-header-author {
-  grid-column: 1;
-}
-
-.activity-header-post {
-  grid-column: 2;
-}
-
-.activity-header-date {
-  grid-column: 3;
-}
-
-/* Headers for Recent Reports */
-.activity-header-reporter {
-  grid-column: 1;
-}
-
-.activity-header-report {
-  grid-column: 2;
-}
-
-/* Headers for New Users - 4 columns */
-.activity-section:nth-child(2) .activity-table-header {
+/* New Users section - 4 columns */
+.activity-section:has(.activity-header-realname) .activity-table-header {
   grid-template-columns: 200px 180px 1fr 220px;
 }
 
-.activity-section:nth-child(2) .activity-item {
+.activity-section:has(.activity-header-realname) .activity-item {
   grid-template-columns: 200px 180px 1fr 220px;
-}
-
-.activity-header-realname {
-  grid-column: 1;
-}
-
-.activity-header-username {
-  grid-column: 2;
-}
-
-.activity-header-email {
-  grid-column: 3;
 }
 
 .activity-list {

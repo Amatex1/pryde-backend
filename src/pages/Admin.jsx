@@ -701,6 +701,8 @@ function BlocksTab({ blocks }) {
 
 // Activity Tab Component
 function ActivityTab({ activity }) {
+  const navigate = useNavigate();
+
   return (
     <div className="activity-container">
       <h2>Recent Activity ({activity.period})</h2>
