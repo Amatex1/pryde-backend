@@ -407,7 +407,7 @@
 
 .activity-table-header {
   display: grid;
-  grid-template-columns: 150px 1fr 200px;
+  grid-template-columns: 200px 1fr 220px;
   gap: 1rem;
   padding: 0.75rem 1rem;
   background: var(--pryde-purple);
@@ -423,7 +423,7 @@
 }
 
 /* Headers for Recent Posts */
-.activity-header-username {
+.activity-header-author {
   grid-column: 1;
 }
 
@@ -435,17 +435,30 @@
   grid-column: 3;
 }
 
+/* Headers for Recent Reports */
+.activity-header-reporter {
+  grid-column: 1;
+}
+
+.activity-header-report {
+  grid-column: 2;
+}
+
 /* Headers for New Users - 4 columns */
 .activity-section:nth-child(2) .activity-table-header {
-  grid-template-columns: 150px 150px 1fr 200px;
+  grid-template-columns: 200px 180px 1fr 220px;
 }
 
 .activity-section:nth-child(2) .activity-item {
-  grid-template-columns: 150px 150px 1fr 200px;
+  grid-template-columns: 200px 180px 1fr 220px;
 }
 
 .activity-header-realname {
   grid-column: 1;
+}
+
+.activity-header-username {
+  grid-column: 2;
 }
 
 .activity-header-email {
@@ -460,7 +473,7 @@
 
 .activity-item {
   display: grid;
-  grid-template-columns: 150px 1fr 200px;
+  grid-template-columns: 200px 1fr 220px;
   gap: 1rem;
   padding: 1rem;
   background: var(--bg-light);
@@ -484,6 +497,7 @@
   color: var(--pryde-purple);
   text-decoration: none;
   transition: all 0.2s ease;
+  cursor: pointer;
 }
 
 .activity-user-link:hover {
@@ -498,6 +512,7 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   transition: all 0.2s ease;
+  cursor: pointer;
 }
 
 .activity-post-link:hover {
