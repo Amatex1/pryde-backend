@@ -603,6 +603,38 @@ router.post('/conversations/:userId/mark-unread', authMiddleware, async (req, re
   }
 });
 
+// @route   DELETE /api/messages/conversations/:userId/mark-unread
+// @desc    Remove manual unread status from conversation
+// @access  Private
+router.delete('/conversations/:userId/mark-unread', authMiddleware, async (req, res) => {
+  try {
+    const currentUserId = req.userId;
+    const otherUserId = req.params.userId;
+
+    // Find conversation
+    const conversation = await Conversation.findOne({
+      participants: { $all: [currentUserId, otherUserId] },
+      groupChat: null
+    });
+
+    if (!conversation) {
+      return res.json({ message: 'No conversation found' });
+    }
+
+    // Remove unread marker for current user
+    conversation.unreadFor = conversation.unreadFor.filter(
+      u => u.user.toString() !== currentUserId
+    );
+
+    await conversation.save();
+
+    res.json({ message: 'Conversation marked as read', conversation });
+  } catch (error) {
+    console.error('Mark read error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // @route   DELETE /api/messages/conversations/:userId
 // @desc    Delete entire conversation with a user
 // @access  Private

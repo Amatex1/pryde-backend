@@ -171,6 +171,33 @@ function Messages() {
           const response = await api.get(endpoint);
           console.log('✅ Loaded messages:', response.data.length);
           setMessages(response.data);
+
+          // Mark all unread messages as read and remove manual unread status
+          if (selectedChatType === 'user') {
+            const unreadMessages = response.data.filter(
+              msg => msg.sender._id === selectedChat && !msg.read
+            );
+
+            for (const msg of unreadMessages) {
+              try {
+                await api.put(`/messages/${msg._id}/read`);
+              } catch (error) {
+                console.error('Error marking message as read:', error);
+              }
+            }
+
+            // Remove manual unread status
+            try {
+              await api.delete(`/messages/conversations/${selectedChat}/mark-unread`);
+            } catch (error) {
+              console.error('Error removing manual unread status:', error);
+            }
+
+            // Refresh conversations to update unread counts
+            if (unreadMessages.length > 0) {
+              fetchConversations();
+            }
+          }
         } catch (error) {
           console.error('Error fetching messages:', error);
         }
@@ -644,6 +671,17 @@ function Messages() {
       fetchConversations();
     } catch (error) {
       console.error('Failed to mark as unread:', error);
+    }
+  };
+
+  const handleMarkAsRead = async (userId) => {
+    try {
+      await api.delete(`/messages/conversations/${userId}/mark-unread`);
+
+      // Refresh conversations
+      fetchConversations();
+    } catch (error) {
+      console.error('Failed to mark as read:', error);
     }
   };
 
