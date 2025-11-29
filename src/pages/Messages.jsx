@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import EmojiPicker from '../components/EmojiPicker';
 import api from '../utils/api';
@@ -19,6 +20,8 @@ import {
 import './Messages.css';
 
 function Messages() {
+  const [searchParams, setSearchParams] = useSearchParams();
+
   // Restore selected chat from localStorage on mount
   const [selectedChat, setSelectedChat] = useState(() => {
     const saved = localStorage.getItem('selectedChat');
@@ -139,6 +142,17 @@ function Messages() {
       console.error('❌ Socket instance not found!');
     }
   }, []);
+
+  // Check for chat parameter in URL and open that chat
+  useEffect(() => {
+    const chatId = searchParams.get('chat');
+    if (chatId) {
+      setSelectedChat(chatId);
+      setSelectedChatType('user');
+      // Remove the parameter from URL after opening the chat
+      setSearchParams({});
+    }
+  }, [searchParams, setSearchParams]);
 
   // Fetch conversations and group chats
   useEffect(() => {

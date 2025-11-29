@@ -485,7 +485,7 @@ function Profile() {
       showToast('You cannot message this user due to their privacy settings', 'error');
       return;
     }
-    navigate('/messages');
+    navigate(`/messages?chat=${id}`);
   };
 
   const handleBlockUser = async () => {

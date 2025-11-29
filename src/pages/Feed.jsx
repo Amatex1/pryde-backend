@@ -1542,7 +1542,7 @@ function Feed() {
                         </div>
                         <div className="friend-sidebar-actions-top">
                           <Link
-                            to="/messages"
+                            to={`/messages?chat=${friend._id}`}
                             className="btn-friend-action"
                             title="Chat"
                           >
