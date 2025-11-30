@@ -107,12 +107,14 @@
   justify-content: center;
   width: 1.5rem;
   height: 1.5rem;
-  background: var(--electric-blue);
+  background: linear-gradient(135deg, #FFD700, #FFA500);
   color: white;
   border-radius: 50%;
   font-size: 1rem;
   font-weight: bold;
   flex-shrink: 0;
+  box-shadow: 0 0 0 2px #FFD700, 0 2px 8px rgba(255, 215, 0, 0.4);
+  position: relative;
 }
 
 .nickname {
