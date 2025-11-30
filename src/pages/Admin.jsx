@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import CustomModal from '../components/CustomModal';
 import { useModal } from '../hooks/useModal';
@@ -10,7 +10,16 @@ import './Admin.css';
 
 function Admin() {
   const { modalState, closeModal, showAlert, showConfirm, showPrompt } = useModal();
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  // Get tab from URL or default to dashboard
+  const getTabFromUrl = () => {
+    const params = new URLSearchParams(location.search);
+    return params.get('tab') || 'dashboard';
+  };
+
+  const [activeTab, setActiveTab] = useState(getTabFromUrl());
   const [stats, setStats] = useState(null);
   const [reports, setReports] = useState([]);
   const [users, setUsers] = useState([]);
@@ -23,7 +32,6 @@ function Admin() {
   const [error, setError] = useState('');
   const [currentUser, setCurrentUser] = useState(null);
   const [selectedReport, setSelectedReport] = useState(null);
-  const navigate = useNavigate();
 
   useEffect(() => {
     checkAdminAccess();
@@ -34,6 +42,19 @@ function Admin() {
       loadTabData();
     }
   }, [activeTab, currentUser]);
+
+  // Sync tab with URL
+  useEffect(() => {
+    const tab = getTabFromUrl();
+    if (tab !== activeTab) {
+      setActiveTab(tab);
+    }
+  }, [location.search]);
+
+  const handleTabChange = (tab) => {
+    setActiveTab(tab);
+    navigate(`/admin?tab=${tab}`);
+  };
 
   const checkAdminAccess = async () => {
     try {
@@ -323,43 +344,43 @@ function Admin() {
         <div className="admin-tabs">
           <button
             className={`admin-tab ${activeTab === 'dashboard' ? 'active' : ''}`}
-            onClick={() => setActiveTab('dashboard')}
+            onClick={() => handleTabChange('dashboard')}
           >
             📊 Dashboard
           </button>
           <button
             className={`admin-tab ${activeTab === 'reports' ? 'active' : ''}`}
-            onClick={() => setActiveTab('reports')}
+            onClick={() => handleTabChange('reports')}
           >
             🚩 Reports
           </button>
           <button
             className={`admin-tab ${activeTab === 'users' ? 'active' : ''}`}
-            onClick={() => setActiveTab('users')}
+            onClick={() => handleTabChange('users')}
           >
             👥 Users
           </button>
           <button
             className={`admin-tab ${activeTab === 'blocks' ? 'active' : ''}`}
-            onClick={() => setActiveTab('blocks')}
+            onClick={() => handleTabChange('blocks')}
           >
             🚫 Blocks
           </button>
           <button
             className={`admin-tab ${activeTab === 'activity' ? 'active' : ''}`}
-            onClick={() => setActiveTab('activity')}
+            onClick={() => handleTabChange('activity')}
           >
             📈 Activity
           </button>
           <button
             className={`admin-tab ${activeTab === 'security' ? 'active' : ''}`}
-            onClick={() => setActiveTab('security')}
+            onClick={() => handleTabChange('security')}
           >
             🔒 Security
           </button>
           <button
             className={`admin-tab ${activeTab === 'verification' ? 'active' : ''}`}
-            onClick={() => setActiveTab('verification')}
+            onClick={() => handleTabChange('verification')}
           >
             ✓ Verification
           </button>
