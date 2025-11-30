@@ -691,9 +691,9 @@ function Friends() {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search for users..."
-                  className="search-input glossy"
+                  className="search-input"
                 />
-                <button type="submit" disabled={loading} className="btn-search glossy-gold">
+                <button type="submit" disabled={loading} className="btn-search">
                   {loading ? 'Searching...' : 'Search'}
                 </button>
               </form>
