@@ -1,8 +1,14 @@
 import mongoose from 'mongoose';
 import User from '../models/User.js';
 import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-dotenv.config();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Load .env from server directory
+dotenv.config({ path: path.join(__dirname, '../.env') });
 
 /**
  * Migration Script: Convert Friends to Followers/Following
@@ -19,10 +25,13 @@ const migrateUsers = async () => {
     console.log('🔄 Starting migration: Friends → Followers/Following...\n');
 
     // Connect to MongoDB
-    const MONGO_URL = process.env.MONGO_URL || process.env.MONGODB_URI;
+    const MONGO_URL = process.env.MONGODB_URI || process.env.MONGO_URL;
     if (!MONGO_URL) {
+      console.error('Environment variables:', Object.keys(process.env));
       throw new Error('MONGO_URL or MONGODB_URI not found in environment variables');
     }
+
+    console.log('Using MongoDB URI:', MONGO_URL.substring(0, 20) + '...');
 
     await mongoose.connect(MONGO_URL);
     console.log('✅ Connected to MongoDB\n');
