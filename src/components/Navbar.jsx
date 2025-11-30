@@ -155,22 +155,24 @@ function Navbar() {
         </div>
 
         <div className="navbar-user" ref={dropdownRef}>
-          <DarkModeToggle />
-          {/* Admin Panel Button - Only visible to moderators, admins, and super admins */}
-          {user?.role && ['moderator', 'admin', 'super_admin'].includes(user.role) && (
-            <Link to="/admin" className="admin-button" title="Admin Panel">
-              🛡️
-            </Link>
-          )}
-          <NotificationBell />
-          <Link to="/messages" className="messages-button" title="Messages">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M20 2H4C2.9 2 2.01 2.9 2.01 4L2 22L6 18H20C21.1 18 22 17.1 22 16V4C22 2.9 21.1 2 20 2ZM18 14H6V12H18V14ZM18 11H6V9H18V11ZM18 8H6V6H18V8Z" fill="currentColor"/>
-            </svg>
+          {/* Main Navigation Buttons */}
+          <Link to="/feed" className="nav-button" title="Feed">
+            <span className="nav-icon">🏠</span>
+            <span className="nav-label">Feed</span>
+          </Link>
+          <Link to="/connections" className="nav-button" title="Connections">
+            <span className="nav-icon">👥</span>
+            <span className="nav-label">Connections</span>
+          </Link>
+          <Link to="/messages" className="nav-button" title="Messages">
+            <span className="nav-icon">💬</span>
+            <span className="nav-label">Messages</span>
             {totalUnreadMessages > 0 && (
-              <span className="message-badge">{totalUnreadMessages > 99 ? '99+' : totalUnreadMessages}</span>
+              <span className="nav-badge">{totalUnreadMessages > 99 ? '99+' : totalUnreadMessages}</span>
             )}
           </Link>
+          <NotificationBell />
+
           <div
             className="user-profile-trigger"
             onClick={() => setShowDropdown(!showDropdown)}
@@ -188,13 +190,9 @@ function Navbar() {
 
           {showDropdown && (
             <div className="profile-dropdown">
-              <Link to="/connections" className="dropdown-item" onClick={() => setShowDropdown(false)}>
-                <span className="dropdown-icon">👥</span>
-                <span>Connections</span>
-              </Link>
               <Link to={`/profile/${user?.id}`} className="dropdown-item" onClick={() => setShowDropdown(false)}>
                 <span className="dropdown-icon">👤</span>
-                <span>Profile</span>
+                <span>My Profile</span>
               </Link>
               <Link to="/bookmarks" className="dropdown-item" onClick={() => setShowDropdown(false)}>
                 <span className="dropdown-icon">🔖</span>
@@ -204,6 +202,17 @@ function Navbar() {
                 <span className="dropdown-icon">⚙️</span>
                 <span>Settings</span>
               </Link>
+              {user?.role && ['moderator', 'admin', 'super_admin'].includes(user.role) && (
+                <Link to="/admin" className="dropdown-item" onClick={() => setShowDropdown(false)}>
+                  <span className="dropdown-icon">🛡️</span>
+                  <span>Admin Panel</span>
+                </Link>
+              )}
+              <div className="dropdown-item dropdown-dark-mode">
+                <span className="dropdown-icon">🌙</span>
+                <span>Dark Mode</span>
+                <DarkModeToggle />
+              </div>
               <div className="dropdown-divider"></div>
               <button onClick={handleLogout} className="dropdown-item logout-item">
                 <span className="dropdown-icon">🚪</span>

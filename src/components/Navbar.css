@@ -102,36 +102,39 @@
   z-index: 2100; /* Ensure dropdown parent is above content */
 }
 
-.messages-button {
+/* New Navigation Buttons */
+.nav-button {
   position: relative;
-  width: 45px;
-  height: 45px;
-  border-radius: 50%;
-  border: 2px solid var(--border-light);
-  background: var(--card-surface);
   display: flex;
   align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 8px rgba(108, 92, 231, 0.1);
+  gap: 0.5rem;
+  padding: 0.625rem 1rem;
+  border-radius: 12px;
+  background: transparent;
   color: var(--text-main);
   text-decoration: none;
+  font-size: 0.95rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  border: 2px solid transparent;
 }
 
-.messages-button:hover {
-  transform: scale(1.1);
-  box-shadow: 0 4px 16px rgba(108, 92, 231, 0.3);
-  border-color: var(--pryde-purple);
+.nav-button:hover {
+  background: var(--soft-lavender);
   color: var(--pryde-purple);
+  border-color: var(--pryde-purple);
+  transform: translateY(-2px);
 }
 
-.messages-button svg {
-  width: 24px;
-  height: 24px;
+.nav-button .nav-icon {
+  font-size: 1.25rem;
 }
 
-.message-badge {
+.nav-button .nav-label {
+  font-weight: 600;
+}
+
+.nav-badge {
   position: absolute;
   top: -5px;
   right: -5px;
@@ -148,30 +151,6 @@
   padding: 0 5px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
   border: 2px solid var(--card-surface);
-}
-
-.admin-button {
-  position: relative;
-  width: 45px;
-  height: 45px;
-  border-radius: 50%;
-  border: 2px solid var(--border-light);
-  background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 8px rgba(255, 215, 0, 0.3);
-  color: white;
-  text-decoration: none;
-  font-size: 1.3rem;
-}
-
-.admin-button:hover {
-  transform: scale(1.1) rotate(10deg);
-  box-shadow: 0 4px 16px rgba(255, 215, 0, 0.5);
-  border-color: #FFD700;
 }
 
 .user-profile-trigger {
@@ -273,6 +252,17 @@
   height: 1px;
   background: var(--border-light);
   margin: 0.5rem 0;
+}
+
+.dropdown-dark-mode {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: default;
+}
+
+.dropdown-dark-mode:hover {
+  background: transparent;
 }
 
 .logout-item {
@@ -447,6 +437,18 @@
 .mobile-menu-logout:hover {
   background: rgba(231, 76, 60, 0.1);
   color: #c0392b;
+}
+
+/* Tablet - hide nav button labels, show only icons */
+@media (max-width: 1024px) {
+  .nav-button .nav-label {
+    display: none;
+  }
+
+  .nav-button {
+    padding: 0.625rem;
+    min-width: 44px;
+  }
 }
 
 @media (max-width: 768px) {
