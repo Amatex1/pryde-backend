@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import CustomModal from '../components/CustomModal';
 import { useModal } from '../hooks/useModal';
@@ -15,7 +15,11 @@ import './Friends.css';
 
 function Friends() {
   const { modalState, closeModal, showAlert } = useModal();
-  const [activeTab, setActiveTab] = useState('followers');
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Get tab from URL or default to 'followers'
+  const tabFromUrl = searchParams.get('tab') || 'followers';
+  const [activeTab, setActiveTab] = useState(tabFromUrl);
   const [friends, setFriends] = useState([]);
   const navigate = useNavigate();
   const [requests, setRequests] = useState([]);
@@ -31,6 +35,20 @@ function Friends() {
   const [loading, setLoading] = useState(false);
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
+
+  // Sync activeTab with URL parameter
+  useEffect(() => {
+    const tabFromUrl = searchParams.get('tab') || 'followers';
+    if (tabFromUrl !== activeTab) {
+      setActiveTab(tabFromUrl);
+    }
+  }, [searchParams]);
+
+  // Helper function to change tab and update URL
+  const changeTab = (newTab) => {
+    setActiveTab(newTab);
+    setSearchParams({ tab: newTab });
+  };
 
   // Fetch current user
   useEffect(() => {
@@ -386,25 +404,25 @@ function Friends() {
           <div className="tabs">
             <button
               className={`tab ${activeTab === 'followers' ? 'active' : ''}`}
-              onClick={() => setActiveTab('followers')}
+              onClick={() => changeTab('followers')}
             >
               Followers ({followers.length})
             </button>
             <button
               className={`tab ${activeTab === 'following' ? 'active' : ''}`}
-              onClick={() => setActiveTab('following')}
+              onClick={() => changeTab('following')}
             >
               Following ({following.length})
             </button>
             <button
               className={`tab ${activeTab === 'followRequests' ? 'active' : ''}`}
-              onClick={() => setActiveTab('followRequests')}
+              onClick={() => changeTab('followRequests')}
             >
               Requests ({followRequests.length})
             </button>
             <button
               className={`tab ${activeTab === 'search' ? 'active' : ''}`}
-              onClick={() => setActiveTab('search')}
+              onClick={() => changeTab('search')}
             >
               Find People
             </button>
