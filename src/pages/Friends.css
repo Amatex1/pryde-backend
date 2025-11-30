@@ -82,8 +82,8 @@
   color: inherit;
   flex: 1; /* Allow link to grow and push button to bottom */
   padding: 0 1.5rem 1rem 1.5rem; /* Add padding to content area only */
-  padding-top: 4rem; /* Space for overlapping profile photo (50px below cover) + name */
-  min-height: 180px; /* Ensure consistent minimum height for cards */
+  padding-top: 0; /* No top padding - user-info has margin-top instead */
+  min-height: 200px; /* Ensure consistent minimum height for cards */
 }
 
 .user-card .user-avatar {
@@ -116,7 +116,7 @@
 .user-info {
   text-align: center;
   flex: 1;
-  margin-top: 0; /* Remove extra margin */
+  margin-top: 60px; /* Push content below the absolutely positioned profile photo */
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
