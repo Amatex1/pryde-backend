@@ -532,6 +532,19 @@
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
 }
 
+/* Dark mode for content warning button */
+.dark-mode .btn-reveal-content {
+  background: var(--card-bg);
+  color: var(--electric-blue);
+  border-color: var(--electric-blue);
+}
+
+.dark-mode .btn-reveal-content:hover {
+  background: rgba(9, 132, 227, 0.1);
+  border-color: var(--electric-blue);
+  color: var(--electric-blue);
+}
+
 .post-time,
 .post-timestamp {
   font-size: 0.875rem;

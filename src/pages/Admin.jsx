@@ -18,6 +18,7 @@ function Admin() {
   const [activity, setActivity] = useState(null);
   const [securityLogs, setSecurityLogs] = useState([]);
   const [securityStats, setSecurityStats] = useState(null);
+  const [verificationRequests, setVerificationRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [currentUser, setCurrentUser] = useState(null);
@@ -88,6 +89,9 @@ function Admin() {
         const response = await api.get('/admin/security-logs?limit=100');
         setSecurityLogs(response.data.logs);
         setSecurityStats(response.data.stats);
+      } else if (activeTab === 'verification') {
+        const response = await api.get('/admin/verification-requests?status=pending');
+        setVerificationRequests(response.data.requests);
       }
     } catch (error) {
       console.error('Load data error:', error);
@@ -195,6 +199,25 @@ function Admin() {
     } catch (error) {
       console.error('Resolve security log error:', error);
       showAlert('Failed to resolve security log', 'Error');
+    }
+  };
+
+  const handleVerificationAction = async (userId, action) => {
+    try {
+      const actionText = action === 'approve' ? 'approve' : 'deny';
+      const confirmed = await showConfirm(
+        `Are you sure you want to ${actionText} this verification request?`,
+        `${actionText.charAt(0).toUpperCase() + actionText.slice(1)} Verification`
+      );
+
+      if (!confirmed) return;
+
+      await api.put(`/admin/verification-requests/${userId}`, { action });
+      showAlert(`Verification ${action === 'approve' ? 'approved' : 'denied'} successfully`, 'Success');
+      loadTabData();
+    } catch (error) {
+      console.error('Verification action error:', error);
+      showAlert('Failed to process verification request', 'Error');
     }
   };
 
@@ -334,6 +357,12 @@ function Admin() {
           >
             🔒 Security
           </button>
+          <button
+            className={`admin-tab ${activeTab === 'verification' ? 'active' : ''}`}
+            onClick={() => setActiveTab('verification')}
+          >
+            ✓ Verification
+          </button>
         </div>
 
         <div className="admin-content">
@@ -364,6 +393,12 @@ function Admin() {
               logs={securityLogs}
               stats={securityStats}
               onResolve={handleResolveSecurityLog}
+            />
+          )}
+          {activeTab === 'verification' && (
+            <VerificationTab
+              requests={verificationRequests}
+              onAction={handleVerificationAction}
             />
           )}
         </div>
@@ -941,6 +976,95 @@ function SecurityTab({ logs, stats, onResolve }) {
                 >
                   Mark as Resolved
                 </button>
+              )}
+            </div>
+          ))
+        )}
+      </div>
+    </div>
+  );
+}
+
+function VerificationTab({ requests, onAction }) {
+  return (
+    <div className="tab-content">
+      <div className="tab-header">
+        <h2>✓ Verification Requests</h2>
+        <p className="tab-subtitle">Review and approve user verification requests</p>
+      </div>
+
+      <div className="verification-requests">
+        {requests.length === 0 ? (
+          <div className="no-data">
+            <p>No pending verification requests</p>
+          </div>
+        ) : (
+          requests.map(request => (
+            <div key={request._id} className="verification-card">
+              <div className="verification-user">
+                <Link to={`/profile/${request.username}`} className="user-link">
+                  {request.profilePhoto ? (
+                    <img src={getImageUrl(request.profilePhoto)} alt={request.username} />
+                  ) : (
+                    <div className="user-avatar">{request.displayName?.charAt(0) || 'U'}</div>
+                  )}
+                  <div className="user-info">
+                    <div className="user-name">
+                      {request.displayName || request.username}
+                      {request.isVerified && <span className="verified-badge">✓</span>}
+                    </div>
+                    <div className="user-username">@{request.username}</div>
+                    <div className="user-email">{request.email}</div>
+                  </div>
+                </Link>
+              </div>
+
+              <div className="verification-details">
+                <div className="detail-row">
+                  <span className="detail-label">Requested:</span>
+                  <span className="detail-value">
+                    {new Date(request.verificationRequestDate).toLocaleDateString('en-US', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}
+                  </span>
+                </div>
+                <div className="detail-row">
+                  <span className="detail-label">Member Since:</span>
+                  <span className="detail-value">
+                    {new Date(request.createdAt).toLocaleDateString('en-US', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric'
+                    })}
+                  </span>
+                </div>
+                {request.verificationRequestReason && (
+                  <div className="detail-row reason">
+                    <span className="detail-label">Reason:</span>
+                    <p className="detail-value">{request.verificationRequestReason}</p>
+                  </div>
+                )}
+              </div>
+
+              {!request.isVerified && (
+                <div className="verification-actions">
+                  <button
+                    className="btn-approve"
+                    onClick={() => onAction(request._id, 'approve')}
+                  >
+                    ✓ Approve
+                  </button>
+                  <button
+                    className="btn-deny"
+                    onClick={() => onAction(request._id, 'deny')}
+                  >
+                    ✗ Deny
+                  </button>
+                </div>
               )}
             </div>
           ))

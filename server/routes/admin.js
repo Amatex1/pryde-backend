@@ -530,5 +530,69 @@ router.put('/security-logs/:id/resolve', checkPermission('canManageUsers'), asyn
   }
 });
 
+// @route   GET /api/admin/verification-requests
+// @desc    Get all verification requests
+// @access  Admin (canManageUsers)
+router.get('/verification-requests', checkPermission('canManageUsers'), async (req, res) => {
+  try {
+    const { status } = req.query;
+
+    let query = { verificationRequested: true };
+
+    if (status === 'pending') {
+      query.isVerified = false;
+    } else if (status === 'approved') {
+      query.isVerified = true;
+    }
+
+    const requests = await User.find(query)
+      .select('username displayName profilePhoto isVerified verificationRequested verificationRequestDate verificationRequestReason email createdAt')
+      .sort({ verificationRequestDate: -1 });
+
+    res.json({ requests });
+  } catch (error) {
+    console.error('Get verification requests error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   PUT /api/admin/verification-requests/:userId
+// @desc    Approve or deny verification request
+// @access  Admin (canManageUsers)
+router.put('/verification-requests/:userId', checkPermission('canManageUsers'), async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { action } = req.body; // 'approve' or 'deny'
+
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    if (!user.verificationRequested) {
+      return res.status(400).json({ message: 'User has not requested verification' });
+    }
+
+    if (action === 'approve') {
+      user.isVerified = true;
+      user.verificationRequested = false;
+      await user.save();
+      res.json({ message: 'Verification approved', user });
+    } else if (action === 'deny') {
+      user.verificationRequested = false;
+      user.verificationRequestDate = null;
+      user.verificationRequestReason = null;
+      await user.save();
+      res.json({ message: 'Verification denied', user });
+    } else {
+      return res.status(400).json({ message: 'Invalid action. Use "approve" or "deny"' });
+    }
+  } catch (error) {
+    console.error('Update verification request error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 export default router;
 
