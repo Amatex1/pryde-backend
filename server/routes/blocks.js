@@ -1,5 +1,6 @@
 import express from 'express';
 const router = express.Router();
+import mongoose from 'mongoose';
 import Block from '../models/Block.js';
 import User from '../models/User.js';
 import auth from '../middleware/auth.js';
@@ -73,13 +74,26 @@ router.get('/', auth, async (req, res) => {
   }
 });
 
-// @route   GET /api/blocks/check/:userId
-// @desc    Check if a user is blocked
+// @route   GET /api/blocks/check/:identifier
+// @desc    Check if a user is blocked (by ID or username)
 // @access  Private
-router.get('/check/:userId', auth, async (req, res) => {
+router.get('/check/:identifier', auth, async (req, res) => {
   try {
     const userId = req.userId || req.user._id;
-    const targetUserId = req.params.userId;
+    const { identifier } = req.params;
+    let targetUserId;
+
+    // Check if identifier is a valid MongoDB ObjectId
+    if (mongoose.Types.ObjectId.isValid(identifier) && identifier.length === 24) {
+      targetUserId = identifier;
+    } else {
+      // Try to find user by username
+      const targetUser = await User.findOne({ username: identifier });
+      if (!targetUser) {
+        return res.json({ isBlocked: false }); // User doesn't exist, so not blocked
+      }
+      targetUserId = targetUser._id;
+    }
 
     const block = await Block.findOne({
       blocker: userId,

@@ -1,5 +1,6 @@
 import express from 'express';
 const router = express.Router();
+import mongoose from 'mongoose';
 import Post from '../models/Post.js';
 import User from '../models/User.js';
 import Notification from '../models/Notification.js';
@@ -105,18 +106,31 @@ router.get('/', auth, async (req, res) => {
   }
 });
 
-// @route   GET /api/posts/user/:userId
-// @desc    Get posts by user
+// @route   GET /api/posts/user/:identifier
+// @desc    Get posts by user (by ID or username)
 // @access  Private
-router.get('/user/:userId', auth, async (req, res) => {
+router.get('/user/:identifier', auth, async (req, res) => {
   try {
     const currentUserId = req.userId || req.user._id;
-    const profileUserId = req.params.userId;
+    const { identifier } = req.params;
+    let profileUserId;
+
+    // Check if identifier is a valid MongoDB ObjectId
+    if (mongoose.Types.ObjectId.isValid(identifier) && identifier.length === 24) {
+      profileUserId = identifier;
+    } else {
+      // Try to find user by username
+      const profileUser = await User.findOne({ username: identifier });
+      if (!profileUser) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+      profileUserId = profileUser._id;
+    }
 
     // Get current user to check friendship
     const currentUser = await User.findById(currentUserId);
-    const isFriend = currentUser.friends.some(friendId => friendId.toString() === profileUserId);
-    const isOwnProfile = currentUserId.toString() === profileUserId;
+    const isFriend = currentUser.friends.some(friendId => friendId.toString() === profileUserId.toString());
+    const isOwnProfile = currentUserId.toString() === profileUserId.toString();
 
     // Build query based on relationship
     let query = { author: profileUserId };
