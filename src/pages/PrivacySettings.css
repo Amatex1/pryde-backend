@@ -296,3 +296,18 @@
   }
 }
 
+/* Dark Mode Support */
+[data-theme="dark"] .setting-item select {
+  background: var(--background-dark);
+  border-color: var(--border-dark);
+  color: var(--text-light);
+}
+
+[data-theme="dark"] .setting-item select option {
+  background: var(--background-dark);
+  color: var(--text-light);
+}
+
+[data-theme="dark"] .setting-item select:hover {
+  border-color: var(--pryde-purple);
+}

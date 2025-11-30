@@ -288,7 +288,7 @@ function EditProfileModal({ isOpen, onClose, user, onUpdate }) {
                   value={formData.sexualOrientation}
                   onChange={handleChange}
                 >
-                  <option value="">Select orientation (optional)</option>
+                  <option value="">Select Orientation (Optional)</option>
                   <option value="heterosexual">Heterosexual/Straight</option>
                   <option value="gay">Gay</option>
                   <option value="lesbian">Lesbian</option>
@@ -298,7 +298,7 @@ function EditProfileModal({ isOpen, onClose, user, onUpdate }) {
                   <option value="demisexual">Demisexual</option>
                   <option value="queer">Queer</option>
                   <option value="questioning">Questioning</option>
-                  <option value="prefer_not_to_say">Prefer not to say</option>
+                  <option value="prefer_not_to_say">Prefer Not to Say</option>
                   <option value="other">Other</option>
                 </select>
               </div>
@@ -310,14 +310,14 @@ function EditProfileModal({ isOpen, onClose, user, onUpdate }) {
                   value={formData.relationshipStatus}
                   onChange={handleChange}
                 >
-                  <option value="">Select status (optional)</option>
+                  <option value="">Select Status (Optional)</option>
                   <option value="single">Single</option>
                   <option value="in_relationship">In a Relationship</option>
                   <option value="engaged">Engaged</option>
                   <option value="married">Married</option>
                   <option value="complicated">It's Complicated</option>
                   <option value="open">Open Relationship</option>
-                  <option value="prefer_not_to_say">Prefer not to say</option>
+                  <option value="prefer_not_to_say">Prefer Not to Say</option>
                 </select>
               </div>
 

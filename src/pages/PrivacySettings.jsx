@@ -114,7 +114,7 @@ const PrivacySettings = () => {
               <h2 className="section-title">👤 Profile Visibility</h2>
               
               <div className="setting-item">
-                <label>Who can see my profile?</label>
+                <label>Who Can See My Profile?</label>
                 <select
                   value={privacySettings.profileVisibility}
                   onChange={(e) => handleSettingChange('profileVisibility', e.target.value)}
@@ -126,7 +126,7 @@ const PrivacySettings = () => {
               </div>
 
               <div className="setting-item">
-                <label>Who can see my followers/following list?</label>
+                <label>Who Can See My Followers/Following List?</label>
                 <select
                   value={privacySettings.whoCanSeeFollowersList}
                   onChange={(e) => handleSettingChange('whoCanSeeFollowersList', e.target.value)}
@@ -186,7 +186,7 @@ const PrivacySettings = () => {
               <h2 className="section-title">💬 Messaging</h2>
 
               <div className="setting-item">
-                <label>Who can send me messages?</label>
+                <label>Who Can Send Me Messages?</label>
                 <select
                   value={privacySettings.whoCanMessage}
                   onChange={(e) => handleSettingChange('whoCanMessage', e.target.value)}
@@ -203,7 +203,7 @@ const PrivacySettings = () => {
               <h2 className="section-title">📝 Posts & Content</h2>
 
               <div className="setting-item">
-                <label>Who can see my posts?</label>
+                <label>Who Can See My Posts?</label>
                 <select
                   value={privacySettings.whoCanSeeMyPosts}
                   onChange={(e) => handleSettingChange('whoCanSeeMyPosts', e.target.value)}
@@ -215,7 +215,7 @@ const PrivacySettings = () => {
               </div>
 
               <div className="setting-item">
-                <label>Who can comment on my posts?</label>
+                <label>Who Can Comment on My Posts?</label>
                 <select
                   value={privacySettings.whoCanCommentOnMyPosts}
                   onChange={(e) => handleSettingChange('whoCanCommentOnMyPosts', e.target.value)}
@@ -227,7 +227,7 @@ const PrivacySettings = () => {
               </div>
 
               <div className="setting-item">
-                <label>Who can tag me in posts?</label>
+                <label>Who Can Tag Me in Posts?</label>
                 <select
                   value={privacySettings.whoCanTagMe}
                   onChange={(e) => handleSettingChange('whoCanTagMe', e.target.value)}

@@ -425,6 +425,13 @@
 [data-theme="dark"] .add-tag input {
   background: var(--background-dark);
   border-color: var(--border-dark);
+  color: var(--text-light);
+}
+
+/* Dark mode for select dropdown options */
+[data-theme="dark"] .form-group select option {
+  background: var(--background-dark);
+  color: var(--text-light);
 }
 
 [data-theme="dark"] .photo-preview,
