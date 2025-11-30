@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import CustomModal from '../components/CustomModal';
 import { useModal } from '../hooks/useModal';
@@ -17,6 +17,7 @@ function Friends() {
   const { modalState, closeModal, showAlert } = useModal();
   const [activeTab, setActiveTab] = useState('followers');
   const [friends, setFriends] = useState([]);
+  const navigate = useNavigate();
   const [requests, setRequests] = useState([]);
   const [sentRequests, setSentRequests] = useState([]); // Track sent friend requests
   // New follow system states
@@ -335,16 +336,22 @@ function Friends() {
     }
   };
 
-  const handleRemoveFollower = async (userId) => {
-    if (!confirm('Are you sure you want to remove this follower?')) return;
+  const handleBlockUser = async (userId) => {
+    if (!confirm('Are you sure you want to block this user? They will not be able to see your content or contact you.')) return;
 
     try {
-      await api.delete(`/follow/${userId}`);
+      await api.post('/blocks', { blockedUserId: userId });
+      // Remove from followers list after blocking
       fetchFollowers();
       // Silently update - no success alert
     } catch (error) {
-      alert('Failed to remove follower');
+      alert(error.response?.data?.message || 'Failed to block user');
     }
+  };
+
+  const handleMessageUser = (userId) => {
+    // Navigate to messages page with this user selected
+    navigate(`/messages?user=${userId}`);
   };
 
   const handleAcceptFollowRequest = async (requestId) => {
@@ -565,12 +572,20 @@ function Friends() {
                           {follower.bio && <div className="user-bio">{follower.bio}</div>}
                         </div>
                       </Link>
-                      <button
-                        onClick={() => handleRemoveFollower(follower._id)}
-                        className="btn-remove"
-                      >
-                        Remove Follower
-                      </button>
+                      <div className="follower-actions">
+                        <button
+                          onClick={() => handleMessageUser(follower._id)}
+                          className="btn-message"
+                        >
+                          💬 Message
+                        </button>
+                        <button
+                          onClick={() => handleBlockUser(follower._id)}
+                          className="btn-block"
+                        >
+                          🚫 Block
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
