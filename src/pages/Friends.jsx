@@ -31,7 +31,7 @@ function Friends() {
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
 
-  // Fetch current user and initial counts
+  // Fetch current user
   useEffect(() => {
     const fetchCurrentUser = async () => {
       try {
@@ -42,13 +42,17 @@ function Friends() {
       }
     };
     fetchCurrentUser();
-
-    // Fetch all counts on mount
-    fetchFollowers();
-    fetchFollowing();
-    fetchFollowRequests();
-    fetchSentFollowRequests();
   }, []);
+
+  // Fetch all counts when currentUser is available
+  useEffect(() => {
+    if (currentUser) {
+      fetchFollowers();
+      fetchFollowing();
+      fetchFollowRequests();
+      fetchSentFollowRequests();
+    }
+  }, [currentUser]);
 
   useEffect(() => {
     if (activeTab === 'friends') {

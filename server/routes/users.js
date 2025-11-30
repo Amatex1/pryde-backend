@@ -53,10 +53,10 @@ router.get('/suggested', auth, async (req, res) => {
     // Build exclusion list (convert to ObjectId)
     const mongoose = require('mongoose');
     const excludeIds = [
-      mongoose.Types.ObjectId(req.userId), // Current user
-      ...(currentUser.following || []).map(id => mongoose.Types.ObjectId(id)),
-      ...(currentUser.followers || []).map(id => mongoose.Types.ObjectId(id)),
-      ...(currentUser.blockedUsers || []).map(id => mongoose.Types.ObjectId(id))
+      new mongoose.Types.ObjectId(req.userId), // Current user
+      ...(currentUser.following || []).map(id => new mongoose.Types.ObjectId(id)),
+      ...(currentUser.followers || []).map(id => new mongoose.Types.ObjectId(id)),
+      ...(currentUser.blockedUsers || []).map(id => new mongoose.Types.ObjectId(id))
     ];
 
     // Build match criteria
