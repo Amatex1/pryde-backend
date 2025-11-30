@@ -8,6 +8,7 @@ import CustomModal from '../components/CustomModal';
 import ShareModal from '../components/ShareModal';
 import ReactionDetailsModal from '../components/ReactionDetailsModal';
 import FormattedText from '../components/FormattedText';
+import PostSkeleton from '../components/PostSkeleton';
 import { useModal } from '../hooks/useModal';
 import api from '../utils/api';
 import { getCurrentUser } from '../utils/auth';
@@ -762,7 +763,11 @@ function Feed() {
 
           <div className="posts-list">
             {fetchingPosts ? (
-              <div className="loading-state">Loading posts...</div>
+              <>
+                <PostSkeleton />
+                <PostSkeleton />
+                <PostSkeleton />
+              </>
             ) : posts.length === 0 ? (
               <div className="empty-state glossy">
                 <h3>No posts yet</h3>

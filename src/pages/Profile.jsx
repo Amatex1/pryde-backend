@@ -9,6 +9,8 @@ import ShareModal from '../components/ShareModal';
 import EditProfileModal from '../components/EditProfileModal';
 import ReactionDetailsModal from '../components/ReactionDetailsModal';
 import FormattedText from '../components/FormattedText';
+import ProfileSkeleton from '../components/ProfileSkeleton';
+import PostSkeleton from '../components/PostSkeleton';
 import { useModal } from '../hooks/useModal';
 import api from '../utils/api';
 import { getCurrentUser } from '../utils/auth';
@@ -640,7 +642,13 @@ function Profile() {
     return (
       <div className="page-container">
         <Navbar />
-        <div className="loading">Loading profile...</div>
+        <div className="profile-container">
+          <ProfileSkeleton />
+          <div className="profile-posts">
+            <PostSkeleton />
+            <PostSkeleton />
+          </div>
+        </div>
       </div>
     );
   }

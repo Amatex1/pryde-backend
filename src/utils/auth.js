@@ -28,6 +28,9 @@ export const logout = () => {
   sessionStorage.setItem('manualLogout', 'true');
   localStorage.removeItem('token');
   localStorage.removeItem('user');
+
+  // Immediately redirect to login to prevent flash of protected content
+  window.location.href = '/login';
 };
 
 export const isManualLogout = () => {

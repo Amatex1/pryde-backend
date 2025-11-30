@@ -41,8 +41,7 @@ function Navbar() {
 
   const handleLogout = () => {
     logout();
-    // Use navigate for SPA navigation without page refresh
-    navigate('/login');
+    // logout() now handles redirect internally with window.location.href
   };
 
   // Fetch current user data
