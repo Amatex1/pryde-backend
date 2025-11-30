@@ -1,6 +1,6 @@
 import { API_BASE_URL } from "../config/api.js"; // include .js extension
 import axios from "axios";
-import { getAuthToken, logout } from "./auth";
+import { getAuthToken, logout, isManualLogout } from "./auth";
 
 const api = axios.create({
   baseURL: API_BASE_URL
@@ -23,6 +23,9 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
+      // Check if this is a manual logout or session expiration
+      const wasManualLogout = isManualLogout();
+
       // Token is invalid or expired
       console.warn('🔒 Authentication failed - logging out');
       logout();
@@ -30,7 +33,12 @@ api.interceptors.response.use(
       // Only redirect if not already on login/register page
       const currentPath = window.location.pathname;
       if (currentPath !== '/login' && currentPath !== '/register') {
-        window.location.href = '/login?expired=true';
+        // Only add expired=true if it was NOT a manual logout
+        if (wasManualLogout) {
+          window.location.href = '/login';
+        } else {
+          window.location.href = '/login?expired=true';
+        }
       }
     }
     return Promise.reject(error);

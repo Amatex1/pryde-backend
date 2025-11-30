@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import api from '../utils/api';
-import { setAuthToken, setCurrentUser } from '../utils/auth';
+import { setAuthToken, setCurrentUser, clearManualLogoutFlag } from '../utils/auth';
 import { disconnectSocket, initializeSocket } from '../utils/socket';
 import PasskeyLogin from '../components/PasskeyLogin';
 import './Auth.css';
@@ -21,6 +21,9 @@ function Login({ setIsAuth }) {
 
   // Check if redirected due to expired token
   useEffect(() => {
+    // Clear manual logout flag when login page loads
+    clearManualLogoutFlag();
+
     if (searchParams.get('expired') === 'true') {
       setError('Your session has expired. Please log in again.');
     }

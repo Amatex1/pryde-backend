@@ -24,8 +24,18 @@ export const getCurrentUser = () => {
 };
 
 export const logout = () => {
+  // Set flag to indicate manual logout (not session expiration)
+  sessionStorage.setItem('manualLogout', 'true');
   localStorage.removeItem('token');
   localStorage.removeItem('user');
+};
+
+export const isManualLogout = () => {
+  return sessionStorage.getItem('manualLogout') === 'true';
+};
+
+export const clearManualLogoutFlag = () => {
+  sessionStorage.removeItem('manualLogout');
 };
 
 export const isAuthenticated = () => {
