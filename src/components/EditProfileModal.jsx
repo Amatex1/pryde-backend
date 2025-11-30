@@ -10,7 +10,9 @@ function EditProfileModal({ isOpen, onClose, user, onUpdate }) {
     displayNameType: 'fullName', // 'fullName', 'nickname', 'custom'
     customDisplayName: '',
     pronouns: '',
+    customPronouns: '',
     gender: '',
+    customGender: '',
     sexualOrientation: '',
     relationshipStatus: '',
     birthday: '',
@@ -41,7 +43,9 @@ function EditProfileModal({ isOpen, onClose, user, onUpdate }) {
         displayNameType: user.displayNameType || 'fullName',
         customDisplayName: user.customDisplayName || '',
         pronouns: user.pronouns || '',
+        customPronouns: user.customPronouns || '',
         gender: user.gender || '',
+        customGender: user.customGender || '',
         sexualOrientation: user.sexualOrientation || '',
         relationshipStatus: user.relationshipStatus || '',
         birthday: user.birthday ? user.birthday.split('T')[0] : '',
@@ -261,24 +265,68 @@ function EditProfileModal({ isOpen, onClose, user, onUpdate }) {
 
               <div className="form-group">
                 <label>Pronouns</label>
-                <input
-                  type="text"
+                <select
                   name="pronouns"
                   value={formData.pronouns}
                   onChange={handleChange}
-                  placeholder="e.g., she/her, he/him, they/them"
-                />
+                >
+                  <option value="">Select Pronouns (Optional)</option>
+                  <option value="she/her">she/her</option>
+                  <option value="he/him">he/him</option>
+                  <option value="they/them">they/them</option>
+                  <option value="she/they">she/they</option>
+                  <option value="he/they">he/they</option>
+                  <option value="any pronouns">any pronouns</option>
+                  <option value="ask me">ask me</option>
+                  <option value="ze/zir">ze/zir</option>
+                  <option value="xe/xem">xe/xem</option>
+                  <option value="prefer not to say">prefer not to say</option>
+                  <option value="custom">Custom (type below)</option>
+                </select>
+                {formData.pronouns === 'custom' && (
+                  <input
+                    type="text"
+                    name="customPronouns"
+                    value={formData.customPronouns || ''}
+                    onChange={(e) => setFormData({...formData, customPronouns: e.target.value, pronouns: e.target.value})}
+                    placeholder="Enter your pronouns"
+                    className="mt-2"
+                  />
+                )}
               </div>
 
               <div className="form-group">
                 <label>Gender</label>
-                <input
-                  type="text"
+                <select
                   name="gender"
                   value={formData.gender}
                   onChange={handleChange}
-                  placeholder="Enter your gender (optional)"
-                />
+                >
+                  <option value="">Select Gender (Optional)</option>
+                  <option value="woman">Woman</option>
+                  <option value="man">Man</option>
+                  <option value="non-binary">Non-binary</option>
+                  <option value="genderqueer">Genderqueer</option>
+                  <option value="genderfluid">Genderfluid</option>
+                  <option value="agender">Agender</option>
+                  <option value="bigender">Bigender</option>
+                  <option value="two-spirit">Two-Spirit</option>
+                  <option value="transgender woman">Transgender Woman</option>
+                  <option value="transgender man">Transgender Man</option>
+                  <option value="questioning">Questioning</option>
+                  <option value="prefer not to say">Prefer Not to Say</option>
+                  <option value="custom">Custom (type below)</option>
+                </select>
+                {formData.gender === 'custom' && (
+                  <input
+                    type="text"
+                    name="customGender"
+                    value={formData.customGender || ''}
+                    onChange={(e) => setFormData({...formData, customGender: e.target.value, gender: e.target.value})}
+                    placeholder="Enter your gender"
+                    className="mt-2"
+                  />
+                )}
               </div>
 
               <div className="form-group">
@@ -315,8 +363,14 @@ function EditProfileModal({ isOpen, onClose, user, onUpdate }) {
                   <option value="in_relationship">In a Relationship</option>
                   <option value="engaged">Engaged</option>
                   <option value="married">Married</option>
-                  <option value="complicated">It's Complicated</option>
+                  <option value="domestic_partnership">Domestic Partnership</option>
+                  <option value="civil_union">Civil Union</option>
+                  <option value="polyamorous">Polyamorous</option>
                   <option value="open">Open Relationship</option>
+                  <option value="complicated">It's Complicated</option>
+                  <option value="separated">Separated</option>
+                  <option value="divorced">Divorced</option>
+                  <option value="widowed">Widowed</option>
                   <option value="prefer_not_to_say">Prefer Not to Say</option>
                 </select>
               </div>
@@ -442,28 +496,98 @@ function EditProfileModal({ isOpen, onClose, user, onUpdate }) {
                   ))}
                 </div>
                 <div className="add-tag">
-                  <input
-                    type="text"
+                  <select
                     value={newInterest}
                     onChange={(e) => setNewInterest(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddInterest())}
-                    placeholder="Add an interest..."
-                  />
+                    className="interest-dropdown"
+                  >
+                    <option value="">Select an interest...</option>
+                    <optgroup label="Arts & Creativity">
+                      <option value="Art">Art</option>
+                      <option value="Crafts">Crafts</option>
+                      <option value="Dance">Dance</option>
+                      <option value="Drawing">Drawing</option>
+                      <option value="Fashion">Fashion</option>
+                      <option value="Music">Music</option>
+                      <option value="Painting">Painting</option>
+                      <option value="Photography">Photography</option>
+                      <option value="Theater">Theater</option>
+                      <option value="Writing">Writing</option>
+                    </optgroup>
+                    <optgroup label="Entertainment">
+                      <option value="Anime">Anime</option>
+                      <option value="Comics">Comics</option>
+                      <option value="Gaming">Gaming</option>
+                      <option value="Movies">Movies</option>
+                      <option value="TV Shows">TV Shows</option>
+                    </optgroup>
+                    <optgroup label="Sports & Fitness">
+                      <option value="Basketball">Basketball</option>
+                      <option value="Cycling">Cycling</option>
+                      <option value="Fitness">Fitness</option>
+                      <option value="Football">Football</option>
+                      <option value="Hiking">Hiking</option>
+                      <option value="Running">Running</option>
+                      <option value="Soccer">Soccer</option>
+                      <option value="Swimming">Swimming</option>
+                      <option value="Yoga">Yoga</option>
+                    </optgroup>
+                    <optgroup label="Food & Drink">
+                      <option value="Baking">Baking</option>
+                      <option value="Coffee">Coffee</option>
+                      <option value="Cooking">Cooking</option>
+                      <option value="Food">Food</option>
+                      <option value="Wine">Wine</option>
+                    </optgroup>
+                    <optgroup label="Technology">
+                      <option value="Coding">Coding</option>
+                      <option value="Cryptocurrency">Cryptocurrency</option>
+                      <option value="Tech">Tech</option>
+                      <option value="Web Development">Web Development</option>
+                    </optgroup>
+                    <optgroup label="Lifestyle">
+                      <option value="Books">Books</option>
+                      <option value="DIY">DIY</option>
+                      <option value="Gardening">Gardening</option>
+                      <option value="Meditation">Meditation</option>
+                      <option value="Pets">Pets</option>
+                      <option value="Travel">Travel</option>
+                    </optgroup>
+                    <optgroup label="LGBTQ+ Specific">
+                      <option value="Activism">Activism</option>
+                      <option value="Drag">Drag</option>
+                      <option value="LGBTQ+ History">LGBTQ+ History</option>
+                      <option value="Pride Events">Pride Events</option>
+                      <option value="Queer Culture">Queer Culture</option>
+                    </optgroup>
+                    <optgroup label="Other">
+                      <option value="Astrology">Astrology</option>
+                      <option value="Board Games">Board Games</option>
+                      <option value="Karaoke">Karaoke</option>
+                      <option value="Languages">Languages</option>
+                      <option value="Nature">Nature</option>
+                      <option value="Podcasts">Podcasts</option>
+                      <option value="Science">Science</option>
+                      <option value="Volunteering">Volunteering</option>
+                    </optgroup>
+                  </select>
                   <button
                     type="button"
                     onClick={handleAddInterest}
-                    className="btn-add"
+                    className="btn-add-compact"
+                    disabled={!newInterest}
                   >
-                    + Add
+                    +
                   </button>
                 </div>
               </div>
 
               <div className="form-group">
                 <label>Looking For</label>
+                <p className="field-description">Select what you're hoping to find on Pryde Social</p>
                 <div className="checkbox-group">
                   {['Friends', 'Support', 'Community', 'Networking'].map(option => (
-                    <label key={option} className="checkbox-label">
+                    <label key={option} className="checkbox-label-compact">
                       <input
                         type="checkbox"
                         checked={formData.lookingFor.includes(option.toLowerCase())}

@@ -50,6 +50,11 @@
   border-bottom: none;
 }
 
+.mt-2 {
+  margin-top: 0.5rem;
+}
+}
+
 .form-section h3 {
   margin: 0 0 1rem 0;
   color: var(--text-main);
@@ -326,6 +331,46 @@
   font-weight: 600;
 }
 
+/* Compact checkbox for Looking For section */
+.checkbox-label-compact {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--background-light);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 2px solid transparent;
+}
+
+.checkbox-label-compact:hover {
+  background: var(--soft-lavender);
+}
+
+.checkbox-label-compact input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.checkbox-label-compact span {
+  font-size: 0.9rem;
+}
+
+.checkbox-label-compact input[type="checkbox"]:checked + span {
+  color: var(--pryde-purple);
+  font-weight: 600;
+}
+
+.field-description {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin: -0.25rem 0 0.75rem 0;
+  font-style: italic;
+}
+
 /* Buttons */
 .btn-add,
 .btn-remove {
@@ -342,6 +387,46 @@
   background: var(--gradient-primary);
   color: white;
   white-space: nowrap;
+}
+
+.btn-add-compact {
+  padding: 0.75rem 1rem;
+  border: none;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background: var(--gradient-primary);
+  color: white;
+  white-space: nowrap;
+  min-width: 50px;
+}
+
+.btn-add-compact:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(108, 92, 231, 0.4);
+}
+
+.btn-add-compact:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.interest-dropdown {
+  flex: 1;
+  padding: 0.75rem;
+  border: 2px solid var(--border-light);
+  border-radius: 8px;
+  background: var(--background-light);
+  color: var(--text-main);
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.interest-dropdown:focus {
+  outline: none;
+  border-color: var(--pryde-purple);
 }
 
 .btn-add:hover {
