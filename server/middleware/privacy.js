@@ -38,22 +38,42 @@ export const checkBlocked = async (req, res, next) => {
 export const checkProfileVisibility = async (req, res, next) => {
   try {
     const currentUserId = req.userId;
-    const profileUserId = req.params.id;
+    // Support both 'id' and 'identifier' parameter names
+    const profileIdentifier = req.params.identifier || req.params.id;
 
-    // User can always view their own profile
-    if (currentUserId === profileUserId) {
-      return next();
+    if (!profileIdentifier) {
+      return res.status(400).json({ message: 'User identifier is required' });
     }
 
-    const profileUser = await User.findById(profileUserId).select('privacySettings friends followers blockedUsers');
-    const currentUser = await User.findById(currentUserId).select('blockedUsers');
+    // Find user by ID or username
+    let profileUser;
+    const mongoose = (await import('mongoose')).default;
+
+    if (mongoose.Types.ObjectId.isValid(profileIdentifier) && profileIdentifier.length === 24) {
+      profileUser = await User.findById(profileIdentifier).select('_id privacySettings friends followers blockedUsers');
+    }
+
+    if (!profileUser) {
+      profileUser = await User.findOne({ username: profileIdentifier }).select('_id privacySettings friends followers blockedUsers');
+    }
 
     if (!profileUser) {
       return res.status(404).json({ message: 'User not found' });
     }
 
+    // User can always view their own profile
+    if (currentUserId === profileUser._id.toString()) {
+      return next();
+    }
+
+    const currentUser = await User.findById(currentUserId).select('blockedUsers');
+
+    if (!currentUser) {
+      return res.status(401).json({ message: 'Authentication required' });
+    }
+
     // Check if blocked
-    if (profileUser.blockedUsers.includes(currentUserId) || currentUser.blockedUsers.includes(profileUserId)) {
+    if (profileUser.blockedUsers.includes(currentUserId) || currentUser.blockedUsers.includes(profileUser._id)) {
       return res.status(403).json({ message: 'Profile not accessible' });
     }
 
