@@ -210,7 +210,9 @@ router.get('/:id', auth, checkProfileVisibility, async (req, res) => {
   try {
     const user = await User.findById(req.params.id)
       .select('-password')
-      .populate('friends', 'username displayName profilePhoto');
+      .populate('friends', 'username displayName profilePhoto')
+      .populate('followers', 'username displayName profilePhoto')
+      .populate('following', 'username displayName profilePhoto');
 
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
