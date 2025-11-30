@@ -55,6 +55,10 @@ function Profile() {
   const [newPost, setNewPost] = useState('');
   const [selectedMedia, setSelectedMedia] = useState([]);
   const [uploadingMedia, setUploadingMedia] = useState(false);
+  const [postVisibility, setPostVisibility] = useState('followers');
+  const [contentWarning, setContentWarning] = useState('');
+  const [showContentWarning, setShowContentWarning] = useState(false);
+  const [postLoading, setPostLoading] = useState(false);
   const [bookmarkedPosts, setBookmarkedPosts] = useState([]);
   const { toasts, showToast, removeToast } = useToast();
   const actionsMenuRef = useRef(null);
@@ -192,6 +196,85 @@ function Profile() {
       setShowReactionPicker(null); // Hide picker after reaction
     } catch (error) {
       console.error('Failed to react to post:', error);
+    }
+  };
+
+  const handleMediaSelect = async (e) => {
+    const files = Array.from(e.target.files);
+    if (files.length === 0) return;
+
+    // Validate file types
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'video/mp4', 'video/webm', 'video/ogg'];
+    const invalidFiles = files.filter(file => !validTypes.includes(file.type));
+
+    if (invalidFiles.length > 0) {
+      showAlert('Please select only images (JPEG, PNG, GIF) or videos (MP4, WebM, OGG)', 'Invalid File Type');
+      return;
+    }
+
+    // Limit to 3 files
+    if (selectedMedia.length + files.length > 3) {
+      showAlert('You can only upload up to 3 media files per post', 'Upload Limit Reached');
+      return;
+    }
+
+    setUploadingMedia(true);
+    try {
+      const formData = new FormData();
+      files.forEach(file => {
+        formData.append('media', file);
+      });
+
+      const response = await api.post('/upload/post-media', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+
+      setSelectedMedia([...selectedMedia, ...response.data.media]);
+    } catch (error) {
+      console.error('Failed to upload media:', error);
+      showAlert('Failed to upload media. Please try again.', 'Upload Failed');
+    } finally {
+      setUploadingMedia(false);
+    }
+  };
+
+  const removeMedia = (index) => {
+    setSelectedMedia(selectedMedia.filter((_, i) => i !== index));
+  };
+
+  const handlePostSubmit = async (e) => {
+    e.preventDefault();
+    if (!newPost.trim() && selectedMedia.length === 0) {
+      showAlert('Please add some content or media to your post', 'Empty Post');
+      return;
+    }
+
+    setPostLoading(true);
+    try {
+      // Convert emoji shortcuts before posting
+      const contentWithEmojis = convertEmojiShortcuts(newPost);
+
+      const postData = {
+        content: contentWithEmojis,
+        media: selectedMedia,
+        visibility: postVisibility,
+        contentWarning: contentWarning
+      };
+
+      const response = await api.post('/posts', postData);
+      setPosts([response.data, ...posts]);
+      setNewPost('');
+      setSelectedMedia([]);
+      setContentWarning('');
+      setShowContentWarning(false);
+      showToast('Post created successfully!', 'success');
+    } catch (error) {
+      console.error('Failed to create post:', error);
+      showAlert('Failed to create post. Please try again.', 'Post Failed');
+    } finally {
+      setPostLoading(false);
     }
   };
 
@@ -885,24 +968,101 @@ function Profile() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
               <h2 className="section-title">Posts</h2>
               {isOwnProfile && (
-                <Link
-                  to="/feed"
-                  className="btn-primary"
-                  style={{
-                    padding: '10px 20px',
-                    borderRadius: '12px',
-                    background: 'linear-gradient(135deg, #6C5CE7 0%, #0984E3 100%)',
-                    color: 'white',
-                    border: 'none',
-                    cursor: 'pointer',
-                    fontWeight: '600',
-                    transition: 'all 0.3s ease',
-                    textDecoration: 'none',
-                    display: 'inline-block'
-                  }}
-                >
-                  ✨ Create Post
-                </Link>
+                <div className="create-post glossy fade-in">
+                  <h2 className="section-title">What's on your mind?</h2>
+                  <form onSubmit={handlePostSubmit}>
+                    <textarea
+                      value={newPost}
+                      onChange={(e) => setNewPost(e.target.value)}
+                      placeholder="Share something amazing..."
+                      className="post-input glossy"
+                      rows="4"
+                    />
+
+                    {selectedMedia.length > 0 && (
+                      <div className="media-preview">
+                        {selectedMedia.map((media, index) => (
+                          <div key={index} className="media-preview-item">
+                            {media.type === 'video' ? (
+                              <video src={getImageUrl(media.url)} controls />
+                            ) : (
+                              <img src={getImageUrl(media.url)} alt={`Upload ${index + 1}`} />
+                            )}
+                            <button
+                              type="button"
+                              className="remove-media"
+                              onClick={() => removeMedia(index)}
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {showContentWarning && (
+                      <div className="content-warning-input">
+                        <select
+                          value={contentWarning}
+                          onChange={(e) => setContentWarning(e.target.value)}
+                          className="cw-input glossy"
+                        >
+                          <option value="">Select a content warning...</option>
+                          <option value="Mental Health">Mental Health</option>
+                          <option value="Violence">Violence</option>
+                          <option value="Sexual Content">Sexual Content</option>
+                          <option value="Substance Use">Substance Use</option>
+                          <option value="Self-Harm">Self-Harm</option>
+                          <option value="Death/Grief">Death/Grief</option>
+                          <option value="Eating Disorders">Eating Disorders</option>
+                          <option value="Abuse">Abuse</option>
+                          <option value="Discrimination">Discrimination</option>
+                          <option value="Medical Content">Medical Content</option>
+                          <option value="Flashing Lights">Flashing Lights</option>
+                          <option value="Other">Other</option>
+                        </select>
+                      </div>
+                    )}
+
+                    <div className="post-actions-bar">
+                      <label className="btn-media-upload">
+                        <input
+                          type="file"
+                          multiple
+                          accept="image/*,video/*"
+                          onChange={handleMediaSelect}
+                          disabled={uploadingMedia || selectedMedia.length >= 3}
+                          style={{ display: 'none' }}
+                        />
+                        {uploadingMedia ? '⏳ Uploading...' : '📷 Add Photos/Videos'}
+                      </label>
+
+                      <button
+                        type="button"
+                        className={`btn-content-warning ${showContentWarning ? 'active' : ''}`}
+                        onClick={() => setShowContentWarning(!showContentWarning)}
+                        title="Add content warning"
+                      >
+                        ⚠️ CW
+                      </button>
+
+                      <select
+                        value={postVisibility}
+                        onChange={(e) => setPostVisibility(e.target.value)}
+                        className="privacy-selector glossy"
+                      >
+                        <option value="public">🌍 Public</option>
+                        <option value="followers">👥 Followers</option>
+                        <option value="friends">👫 Friends (Legacy)</option>
+                        <option value="private">🔒 Only Me</option>
+                      </select>
+
+                      <button type="submit" disabled={postLoading || uploadingMedia} className="btn-post glossy-gold">
+                        {postLoading ? 'Posting...' : 'Share Post ✨'}
+                      </button>
+                    </div>
+                  </form>
+                </div>
               )}
             </div>
 
