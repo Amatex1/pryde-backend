@@ -34,53 +34,30 @@ export const checkBlocked = async (req, res, next) => {
   }
 };
 
-// Check profile visibility (works for both authenticated and unauthenticated users)
+// Check profile visibility
 export const checkProfileVisibility = async (req, res, next) => {
   try {
-    const currentUserId = req.userId; // May be undefined for unauthenticated users
-    const profileIdentifier = req.params.identifier || req.params.id;
+    const currentUserId = req.userId;
+    const profileUserId = req.params.id;
 
-    // Find profile user by ID or username
-    let profileUser;
-    const mongoose = (await import('mongoose')).default;
-
-    if (mongoose.Types.ObjectId.isValid(profileIdentifier) && profileIdentifier.length === 24) {
-      profileUser = await User.findById(profileIdentifier).select('privacySettings friends followers blockedUsers');
+    // User can always view their own profile
+    if (currentUserId === profileUserId) {
+      return next();
     }
 
-    if (!profileUser) {
-      profileUser = await User.findOne({ username: profileIdentifier }).select('privacySettings friends followers blockedUsers');
-    }
+    const profileUser = await User.findById(profileUserId).select('privacySettings friends followers blockedUsers');
+    const currentUser = await User.findById(currentUserId).select('blockedUsers');
 
     if (!profileUser) {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // User can always view their own profile
-    if (currentUserId && currentUserId === profileUser._id.toString()) {
-      return next();
-    }
-
-    // If user is authenticated, check if blocked
-    if (currentUserId) {
-      const currentUser = await User.findById(currentUserId).select('blockedUsers');
-
-      if (currentUser && (profileUser.blockedUsers.includes(currentUserId) || currentUser.blockedUsers.includes(profileUser._id))) {
-        return res.status(403).json({ message: 'Profile not accessible' });
-      }
+    // Check if blocked
+    if (profileUser.blockedUsers.includes(currentUserId) || currentUser.blockedUsers.includes(profileUserId)) {
+      return res.status(403).json({ message: 'Profile not accessible' });
     }
 
     const visibility = profileUser.privacySettings?.profileVisibility || 'public';
-
-    // Public profiles are accessible to everyone (including unauthenticated users)
-    if (visibility === 'public') {
-      return next();
-    }
-
-    // Private and restricted profiles require authentication
-    if (!currentUserId) {
-      return res.status(401).json({ message: 'Authentication required to view this profile' });
-    }
 
     if (visibility === 'private') {
       return res.status(403).json({ message: 'This profile is private' });
