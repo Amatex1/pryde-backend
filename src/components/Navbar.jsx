@@ -208,7 +208,8 @@ function Navbar() {
                   <span>Admin Panel</span>
                 </Link>
               )}
-              <div className="dropdown-item dropdown-dark-mode-wrapper">
+              <div className="dropdown-item dropdown-dark-mode">
+                <span>Dark Mode</span>
                 <DarkModeToggle />
               </div>
               <div className="dropdown-divider"></div>

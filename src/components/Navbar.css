@@ -254,29 +254,32 @@
   margin: 0.5rem 0;
 }
 
-.dropdown-dark-mode-wrapper {
+.dropdown-dark-mode {
   display: flex;
   align-items: center;
-  justify-content: center;
-  padding: 0.5rem 1rem;
+  justify-content: space-between;
   cursor: default;
 }
 
-.dropdown-dark-mode-wrapper:hover {
-  background: transparent;
+.dropdown-dark-mode:hover {
+  background: var(--soft-lavender);
 }
 
-.dropdown-dark-mode-wrapper .dark-mode-toggle {
-  width: 36px;
-  height: 36px;
+.dropdown-dark-mode .dark-mode-toggle {
+  width: auto;
+  height: auto;
   font-size: 1.1rem;
+  border-radius: 0;
+  border: none;
+  background: transparent;
   box-shadow: none;
-  border: 1px solid var(--border-light);
+  padding: 0;
 }
 
-.dropdown-dark-mode-wrapper .dark-mode-toggle:hover {
-  transform: scale(1.1);
-  box-shadow: 0 2px 8px rgba(108, 92, 231, 0.2);
+.dropdown-dark-mode .dark-mode-toggle:hover {
+  transform: scale(1.2);
+  box-shadow: none;
+  background: transparent;
 }
 
 .logout-item {
