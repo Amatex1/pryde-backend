@@ -43,7 +43,7 @@ function Events() {
       if (filterCategory !== 'all') params.append('category', filterCategory);
       if (filterType !== 'all') params.append('type', filterType);
       
-      const response = await api.get(`/events?${params.toString()}`);
+      const response = await api.get(/events?);
       setEvents(response.data);
     } catch (error) {
       console.error('Failed to fetch events:', error);
@@ -111,7 +111,7 @@ function Events() {
 
   const handleRSVP = async (eventId, status) => {
     try {
-      await api.post(`/events/${eventId}/rsvp`, { status });
+      await api.post(/events//rsvp, { status });
       fetchEvents();
     } catch (error) {
       console.error('Failed to RSVP:', error);
@@ -140,20 +140,20 @@ function Events() {
   };
 
   const categoryEmojis = {
-    pride: '≡ƒÅ│∩╕ÅΓÇì≡ƒîê',
-    'support-group': '≡ƒñ¥',
-    social: '≡ƒÄë',
-    activism: 'Γ£è',
-    education: '≡ƒôÜ',
-    arts: '≡ƒÄ¿',
-    sports: 'ΓÜ╜',
-    other: '≡ƒôî'
+    pride: '🏳️‍🌈',
+    'support-group': '🤝',
+    social: '🎉',
+    activism: '✊',
+    education: '📚',
+    arts: '🎨',
+    sports: '⚽',
+    other: '📌'
   };
 
   const typeEmojis = {
-    'in-person': '≡ƒôì',
-    virtual: '≡ƒÆ╗',
-    hybrid: '≡ƒöä'
+    'in-person': '📍',
+    virtual: '💻',
+    hybrid: '🔄'
   };
 
   return (
@@ -161,9 +161,9 @@ function Events() {
       <Navbar />
       <div className="events-container">
         <div className="events-header">
-          <h1 className="page-title">≡ƒÅ│∩╕ÅΓÇì≡ƒîê LGBTQ+ Events</h1>
+          <h1 className="page-title">🏳️‍🌈 LGBTQ+ Events</h1>
           <button className="btn-create-event" onClick={() => setShowCreateModal(true)}>
-            Γ₧ò Create Event
+            ➕ Create Event
           </button>
         </div>
 
@@ -174,14 +174,14 @@ function Events() {
             className="filter-select"
           >
             <option value="all">All Categories</option>
-            <option value="pride">≡ƒÅ│∩╕ÅΓÇì≡ƒîê Pride</option>
-            <option value="support-group">≡ƒñ¥ Support Group</option>
-            <option value="social">≡ƒÄë Social</option>
-            <option value="activism">Γ£è Activism</option>
-            <option value="education">≡ƒôÜ Education</option>
-            <option value="arts">≡ƒÄ¿ Arts</option>
-            <option value="sports">ΓÜ╜ Sports</option>
-            <option value="other">≡ƒôî Other</option>
+            <option value="pride">🏳️‍🌈 Pride</option>
+            <option value="support-group">🤝 Support Group</option>
+            <option value="social">🎉 Social</option>
+            <option value="activism">✊ Activism</option>
+            <option value="education">📚 Education</option>
+            <option value="arts">🎨 Arts</option>
+            <option value="sports">⚽ Sports</option>
+            <option value="other">📌 Other</option>
           </select>
 
           <select
@@ -190,9 +190,9 @@ function Events() {
             className="filter-select"
           >
             <option value="all">All Types</option>
-            <option value="in-person">≡ƒôì In-Person</option>
-            <option value="virtual">≡ƒÆ╗ Virtual</option>
-            <option value="hybrid">≡ƒöä Hybrid</option>
+            <option value="in-person">📍 In-Person</option>
+            <option value="virtual">💻 Virtual</option>
+            <option value="hybrid">🔄 Hybrid</option>
           </select>
         </div>
 
@@ -231,18 +231,18 @@ function Events() {
 
                     <div className="event-details">
                       <div className="event-detail">
-                        <span className="detail-icon">≡ƒôà</span>
+                        <span className="detail-icon">📅</span>
                         <span>{formatDate(event.startDate)}</span>
                       </div>
                       {event.eventType !== 'virtual' && event.location?.city && (
                         <div className="event-detail">
-                          <span className="detail-icon">≡ƒôì</span>
+                          <span className="detail-icon">📍</span>
                           <span>{event.location.city}, {event.location.country}</span>
                         </div>
                       )}
                       {event.eventType !== 'in-person' && event.location?.virtualLink && (
                         <div className="event-detail">
-                          <span className="detail-icon">≡ƒÆ╗</span>
+                          <span className="detail-icon">💻</span>
                           <a href={event.location.virtualLink} target="_blank" rel="noopener noreferrer">
                             Join Online
                           </a>
@@ -263,14 +263,14 @@ function Events() {
                           <span>{event.creator?.displayName?.charAt(0) || 'U'}</span>
                         )}
                         <span>{event.creator?.displayName || event.creator?.username}</span>
-                        {event.creator?.isVerified && <span className="verified-badge">Γ£ô</span>}
+                        {event.creator?.isVerified && <span className="verified-badge">✓</span>}
                       </Link>
                     </div>
 
                     <div className="event-actions">
                       {userRSVP?.status === 'going' ? (
                         <button className="btn-rsvp active" onClick={() => handleRSVP(event._id, 'not-going')}>
-                          Γ£ô Going
+                          ✓ Going
                         </button>
                       ) : (
                         <button className="btn-rsvp" onClick={() => handleRSVP(event._id, 'going')}>
@@ -279,7 +279,7 @@ function Events() {
                       )}
                       {userRSVP?.status === 'interested' ? (
                         <button className="btn-interested active" onClick={() => handleRSVP(event._id, 'not-going')}>
-                          Γ¡É Interested
+                          ⭐ Interested
                         </button>
                       ) : (
                         <button className="btn-interested" onClick={() => handleRSVP(event._id, 'interested')}>
@@ -291,6 +291,210 @@ function Events() {
                 </div>
               );
             })}
+          </div>
+        )}
+
+        {showCreateModal && (
+          <div className="modal-overlay" onClick={() => setShowCreateModal(false)}>
+            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-header">
+                <h2>Create New Event</h2>
+                <button className="btn-close" onClick={() => setShowCreateModal(false)}>×</button>
+              </div>
+              <form onSubmit={handleCreateEvent} className="event-form">
+                <div className="form-group">
+                  <label>Event Title *</label>
+                  <input
+                    type="text"
+                    name="title"
+                    value={formData.title}
+                    onChange={handleInputChange}
+                    required
+                    placeholder="Pride Parade 2024"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Description *</label>
+                  <textarea
+                    name="description"
+                    value={formData.description}
+                    onChange={handleInputChange}
+                    required
+                    rows="4"
+                    placeholder="Tell people about your event..."
+                  />
+                </div>
+
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>Category *</label>
+                    <select name="category" value={formData.category} onChange={handleInputChange} required>
+                      <option value="pride">🏳️‍🌈 Pride</option>
+                      <option value="support-group">🤝 Support Group</option>
+                      <option value="social">🎉 Social</option>
+                      <option value="activism">✊ Activism</option>
+                      <option value="education">📚 Education</option>
+                      <option value="arts">🎨 Arts</option>
+                      <option value="sports">⚽ Sports</option>
+                      <option value="other">📌 Other</option>
+                    </select>
+                  </div>
+
+                  <div className="form-group">
+                    <label>Event Type *</label>
+                    <select name="eventType" value={formData.eventType} onChange={handleInputChange} required>
+                      <option value="in-person">📍 In-Person</option>
+                      <option value="virtual">💻 Virtual</option>
+                      <option value="hybrid">🔄 Hybrid</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>Start Date & Time *</label>
+                    <input
+                      type="datetime-local"
+                      name="startDate"
+                      value={formData.startDate}
+                      onChange={handleInputChange}
+                      required
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label>End Date & Time</label>
+                    <input
+                      type="datetime-local"
+                      name="endDate"
+                      value={formData.endDate}
+                      onChange={handleInputChange}
+                    />
+                  </div>
+                </div>
+
+                {(formData.eventType === 'in-person' || formData.eventType === 'hybrid') && (
+                  <>
+                    <div className="form-group">
+                      <label>Venue</label>
+                      <input
+                        type="text"
+                        name="venue"
+                        value={formData.venue}
+                        onChange={handleInputChange}
+                        placeholder="Rainbow Community Center"
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label>Address</label>
+                      <input
+                        type="text"
+                        name="address"
+                        value={formData.address}
+                        onChange={handleInputChange}
+                        placeholder="123 Pride Street"
+                      />
+                    </div>
+
+                    <div className="form-row">
+                      <div className="form-group">
+                        <label>City</label>
+                        <input
+                          type="text"
+                          name="city"
+                          value={formData.city}
+                          onChange={handleInputChange}
+                          placeholder="San Francisco"
+                        />
+                      </div>
+
+                      <div className="form-group">
+                        <label>Country</label>
+                        <input
+                          type="text"
+                          name="country"
+                          value={formData.country}
+                          onChange={handleInputChange}
+                          placeholder="USA"
+                        />
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {(formData.eventType === 'virtual' || formData.eventType === 'hybrid') && (
+                  <div className="form-group">
+                    <label>Virtual Link</label>
+                    <input
+                      type="url"
+                      name="virtualLink"
+                      value={formData.virtualLink}
+                      onChange={handleInputChange}
+                      placeholder="https://zoom.us/j/..."
+                    />
+                  </div>
+                )}
+
+                <div className="form-group">
+                  <label>Cover Image URL</label>
+                  <input
+                    type="url"
+                    name="coverImage"
+                    value={formData.coverImage}
+                    onChange={handleInputChange}
+                    placeholder="https://example.com/image.jpg"
+                  />
+                </div>
+
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>Max Attendees</label>
+                    <input
+                      type="number"
+                      name="maxAttendees"
+                      value={formData.maxAttendees}
+                      onChange={handleInputChange}
+                      placeholder="Leave empty for unlimited"
+                      min="1"
+                    />
+                  </div>
+
+                  <div className="form-group checkbox-group">
+                    <label>
+                      <input
+                        type="checkbox"
+                        name="isPrivate"
+                        checked={formData.isPrivate}
+                        onChange={handleInputChange}
+                      />
+                      Private Event
+                    </label>
+                  </div>
+                </div>
+
+                <div className="form-group">
+                  <label>Tags (comma-separated)</label>
+                  <input
+                    type="text"
+                    name="tags"
+                    value={formData.tags}
+                    onChange={handleInputChange}
+                    placeholder="lgbtq, pride, community"
+                  />
+                </div>
+
+                <div className="form-actions">
+                  <button type="button" className="btn-cancel" onClick={() => setShowCreateModal(false)}>
+                    Cancel
+                  </button>
+                  <button type="submit" className="btn-submit">
+                    Create Event
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
         )}
       </div>
