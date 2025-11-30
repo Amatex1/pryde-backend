@@ -77,15 +77,16 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1rem;
+  gap: 0.5rem;
   text-decoration: none;
   color: inherit;
   flex: 1; /* Allow link to grow and push button to bottom */
   padding: 0 1.5rem 1rem 1.5rem; /* Add padding to content area only */
-  padding-top: 3rem; /* Space for overlapping profile photo */
+  padding-top: 4rem; /* Space for overlapping profile photo (50px below cover) + name */
+  min-height: 180px; /* Ensure consistent minimum height for cards */
 }
 
-.user-avatar {
+.user-card .user-avatar {
   width: 100px;
   height: 100px;
   border-radius: 50%;
@@ -99,14 +100,14 @@
   overflow: hidden;
   border: 4px solid var(--card-surface);
   position: absolute; /* Position over cover photo */
-  top: 80px; /* Position to overlap cover */
+  top: 70px; /* Position to overlap cover - centered on cover bottom edge */
   left: 50%;
   transform: translateX(-50%); /* Center horizontally */
   z-index: 2; /* Ensure it's above cover photo */
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); /* Add depth */
 }
 
-.user-avatar img {
+.user-card .user-avatar img {
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -115,7 +116,10 @@
 .user-info {
   text-align: center;
   flex: 1;
-  margin-top: 0.5rem; /* Space below profile photo */
+  margin-top: 0; /* Remove extra margin */
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
 }
 
 .user-name {
@@ -388,7 +392,7 @@
 /* User Card Cover Photo */
 .user-card-cover {
   width: 100%;
-  height: 140px; /* Taller cover photo */
+  height: 120px; /* Cover photo height */
   overflow: hidden;
   border-radius: 0; /* No border radius - card handles it */
   margin: 0; /* No margin - full width */
