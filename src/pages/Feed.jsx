@@ -60,6 +60,7 @@ function Feed() {
   const [showMobileSidebar, setShowMobileSidebar] = useState(false);
   const [reactionDetailsModal, setReactionDetailsModal] = useState({ isOpen: false, reactions: [], likes: [] });
   const [feedFilter, setFeedFilter] = useState('followers'); // 'followers', 'public'
+  const [autoHideContentWarnings, setAutoHideContentWarnings] = useState(false);
   const currentUser = getCurrentUser();
   const postRefs = useRef({});
   const commentRefs = useRef({});
@@ -72,6 +73,7 @@ function Feed() {
     fetchTrending();
     fetchBookmarkedPosts();
     fetchUnreadMessageCounts();
+    fetchPrivacySettings();
 
     // Poll for unread message counts every 30 seconds
     const interval = setInterval(fetchUnreadMessageCounts, 30000);
@@ -276,6 +278,15 @@ function Feed() {
       setBlockedUsers(blockedIds);
     } catch (error) {
       console.error('Failed to fetch blocked users:', error);
+    }
+  };
+
+  const fetchPrivacySettings = async () => {
+    try {
+      const response = await api.get('/privacy');
+      setAutoHideContentWarnings(response.data.privacySettings.autoHideContentWarnings || false);
+    } catch (error) {
+      console.error('Failed to fetch privacy settings:', error);
     }
   };
 
@@ -663,14 +674,25 @@ function Feed() {
 
               {showContentWarning && (
                 <div className="content-warning-input">
-                  <input
-                    type="text"
+                  <select
                     value={contentWarning}
                     onChange={(e) => setContentWarning(e.target.value)}
-                    placeholder="e.g., Mental health, Violence, etc."
-                    maxLength={100}
                     className="cw-input glossy"
-                  />
+                  >
+                    <option value="">Select a content warning...</option>
+                    <option value="Mental Health">Mental Health</option>
+                    <option value="Violence">Violence</option>
+                    <option value="Sexual Content">Sexual Content</option>
+                    <option value="Substance Use">Substance Use</option>
+                    <option value="Self-Harm">Self-Harm</option>
+                    <option value="Death/Grief">Death/Grief</option>
+                    <option value="Eating Disorders">Eating Disorders</option>
+                    <option value="Abuse">Abuse</option>
+                    <option value="Discrimination">Discrimination</option>
+                    <option value="Medical Content">Medical Content</option>
+                    <option value="Flashing Lights">Flashing Lights</option>
+                    <option value="Other">Other</option>
+                  </select>
                 </div>
               )}
 

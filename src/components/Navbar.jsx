@@ -157,7 +157,7 @@ function Navbar() {
               <span>Bookmarks</span>
             </Link>
             <Link to="/events" className="mobile-menu-item" onClick={() => setShowMobileMenu(false)}>
-              <span className="mobile-menu-icon">🏳️‍🌈</span>
+              <span className="mobile-menu-icon">📅</span>
               <span>Events</span>
             </Link>
             {user?.role && ['moderator', 'admin', 'super_admin'].includes(user.role) && (
@@ -197,10 +197,6 @@ function Navbar() {
               <span className="nav-badge">{totalUnreadMessages > 99 ? '99+' : totalUnreadMessages}</span>
             )}
           </Link>
-          <Link to="/events" className="nav-button" title="Events">
-            <span className="nav-icon">🏳️‍🌈</span>
-            <span className="nav-label">Events</span>
-          </Link>
           <NotificationBell />
 
           <div
@@ -227,6 +223,10 @@ function Navbar() {
               <Link to="/bookmarks" className="dropdown-item" onClick={() => setShowDropdown(false)}>
                 <span className="dropdown-icon">🔖</span>
                 <span>Bookmarks</span>
+              </Link>
+              <Link to="/events" className="dropdown-item" onClick={() => setShowDropdown(false)}>
+                <span className="dropdown-icon">📅</span>
+                <span>Events</span>
               </Link>
               <Link to="/settings" className="dropdown-item" onClick={() => setShowDropdown(false)}>
                 <span className="dropdown-icon">⚙️</span>

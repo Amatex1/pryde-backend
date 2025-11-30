@@ -182,6 +182,19 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
+  verificationRequested: {
+    type: Boolean,
+    default: false
+  },
+  verificationRequestDate: {
+    type: Date,
+    default: null
+  },
+  verificationRequestReason: {
+    type: String,
+    default: '',
+    maxlength: 500
+  },
   isSuspended: {
     type: Boolean,
     default: false
@@ -444,6 +457,10 @@ const userSchema = new mongoose.Schema({
       type: String,
       enum: ['everyone', 'friends', 'no-one'],
       default: 'friends'
+    },
+    autoHideContentWarnings: {
+      type: Boolean,
+      default: false
     }
   },
   // Blocked Users

@@ -17,7 +17,8 @@ const PrivacySettings = () => {
     whoCanSeeMyPosts: 'public',
     whoCanCommentOnMyPosts: 'everyone',
     whoCanSeeFollowersList: 'everyone',
-    whoCanTagMe: 'followers'
+    whoCanTagMe: 'followers',
+    autoHideContentWarnings: false
   });
   const [blockedUsers, setBlockedUsers] = useState([]);
 
@@ -236,6 +237,23 @@ const PrivacySettings = () => {
                   <option value="followers">Followers Only</option>
                   <option value="no-one">No One</option>
                 </select>
+              </div>
+
+              <div className="setting-item toggle-item">
+                <div className="toggle-info">
+                  <label>Auto-Hide Content Warnings</label>
+                  <p className="setting-description">
+                    Automatically hide all posts with content warnings. You can still reveal them by clicking "Show Content".
+                  </p>
+                </div>
+                <label className="toggle-switch">
+                  <input
+                    type="checkbox"
+                    checked={privacySettings.autoHideContentWarnings}
+                    onChange={(e) => handleSettingChange('autoHideContentWarnings', e.target.checked)}
+                  />
+                  <span className="toggle-slider"></span>
+                </label>
               </div>
             </div>
 

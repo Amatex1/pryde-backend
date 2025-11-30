@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import api from '../utils/api';
@@ -140,20 +140,20 @@ function Events() {
   };
 
   const categoryEmojis = {
-    pride: '🏳️‍🌈',
-    'support-group': '🤝',
-    social: '🎉',
-    activism: '✊',
-    education: '📚',
-    arts: '🎨',
-    sports: '⚽',
-    other: '📌'
+    pride: '≡ƒÅ│∩╕ÅΓÇì≡ƒîê',
+    'support-group': '≡ƒñ¥',
+    social: '≡ƒÄë',
+    activism: 'Γ£è',
+    education: '≡ƒôÜ',
+    arts: '≡ƒÄ¿',
+    sports: 'ΓÜ╜',
+    other: '≡ƒôî'
   };
 
   const typeEmojis = {
-    'in-person': '📍',
-    virtual: '💻',
-    hybrid: '🔄'
+    'in-person': '≡ƒôì',
+    virtual: '≡ƒÆ╗',
+    hybrid: '≡ƒöä'
   };
 
   return (
@@ -161,9 +161,9 @@ function Events() {
       <Navbar />
       <div className="events-container">
         <div className="events-header">
-          <h1 className="page-title">🏳️‍🌈 LGBTQ+ Events</h1>
+          <h1 className="page-title">≡ƒÅ│∩╕ÅΓÇì≡ƒîê LGBTQ+ Events</h1>
           <button className="btn-create-event" onClick={() => setShowCreateModal(true)}>
-            ➕ Create Event
+            Γ₧ò Create Event
           </button>
         </div>
 
@@ -174,14 +174,14 @@ function Events() {
             className="filter-select"
           >
             <option value="all">All Categories</option>
-            <option value="pride">🏳️‍🌈 Pride</option>
-            <option value="support-group">🤝 Support Group</option>
-            <option value="social">🎉 Social</option>
-            <option value="activism">✊ Activism</option>
-            <option value="education">📚 Education</option>
-            <option value="arts">🎨 Arts</option>
-            <option value="sports">⚽ Sports</option>
-            <option value="other">📌 Other</option>
+            <option value="pride">≡ƒÅ│∩╕ÅΓÇì≡ƒîê Pride</option>
+            <option value="support-group">≡ƒñ¥ Support Group</option>
+            <option value="social">≡ƒÄë Social</option>
+            <option value="activism">Γ£è Activism</option>
+            <option value="education">≡ƒôÜ Education</option>
+            <option value="arts">≡ƒÄ¿ Arts</option>
+            <option value="sports">ΓÜ╜ Sports</option>
+            <option value="other">≡ƒôî Other</option>
           </select>
 
           <select
@@ -190,9 +190,9 @@ function Events() {
             className="filter-select"
           >
             <option value="all">All Types</option>
-            <option value="in-person">📍 In-Person</option>
-            <option value="virtual">💻 Virtual</option>
-            <option value="hybrid">🔄 Hybrid</option>
+            <option value="in-person">≡ƒôì In-Person</option>
+            <option value="virtual">≡ƒÆ╗ Virtual</option>
+            <option value="hybrid">≡ƒöä Hybrid</option>
           </select>
         </div>
 
@@ -231,18 +231,18 @@ function Events() {
 
                     <div className="event-details">
                       <div className="event-detail">
-                        <span className="detail-icon">📅</span>
+                        <span className="detail-icon">≡ƒôà</span>
                         <span>{formatDate(event.startDate)}</span>
                       </div>
                       {event.eventType !== 'virtual' && event.location?.city && (
                         <div className="event-detail">
-                          <span className="detail-icon">📍</span>
+                          <span className="detail-icon">≡ƒôì</span>
                           <span>{event.location.city}, {event.location.country}</span>
                         </div>
                       )}
                       {event.eventType !== 'in-person' && event.location?.virtualLink && (
                         <div className="event-detail">
-                          <span className="detail-icon">💻</span>
+                          <span className="detail-icon">≡ƒÆ╗</span>
                           <a href={event.location.virtualLink} target="_blank" rel="noopener noreferrer">
                             Join Online
                           </a>
@@ -263,14 +263,14 @@ function Events() {
                           <span>{event.creator?.displayName?.charAt(0) || 'U'}</span>
                         )}
                         <span>{event.creator?.displayName || event.creator?.username}</span>
-                        {event.creator?.isVerified && <span className="verified-badge">✓</span>}
+                        {event.creator?.isVerified && <span className="verified-badge">Γ£ô</span>}
                       </Link>
                     </div>
 
                     <div className="event-actions">
                       {userRSVP?.status === 'going' ? (
                         <button className="btn-rsvp active" onClick={() => handleRSVP(event._id, 'not-going')}>
-                          ✓ Going
+                          Γ£ô Going
                         </button>
                       ) : (
                         <button className="btn-rsvp" onClick={() => handleRSVP(event._id, 'going')}>
@@ -279,7 +279,7 @@ function Events() {
                       )}
                       {userRSVP?.status === 'interested' ? (
                         <button className="btn-interested active" onClick={() => handleRSVP(event._id, 'not-going')}>
-                          ⭐ Interested
+                          Γ¡É Interested
                         </button>
                       ) : (
                         <button className="btn-interested" onClick={() => handleRSVP(event._id, 'interested')}>

@@ -11,12 +11,12 @@ import Settings from './pages/Settings';
 import SecuritySettings from './pages/SecuritySettings';
 import PrivacySettings from './pages/PrivacySettings';
 import Bookmarks from './pages/Bookmarks';
+import Events from './pages/Events';
 import Friends from './pages/Friends';
 import Messages from './pages/Messages';
 import Notifications from './pages/Notifications';
 import Admin from './pages/Admin';
 import Hashtag from './pages/Hashtag';
-import Events from './pages/Events';
 import Terms from './pages/legal/Terms';
 import Privacy from './pages/legal/Privacy';
 import Community from './pages/legal/Community';
@@ -93,12 +93,12 @@ function App() {
           <Route path="/settings/security" element={<PrivateRoute><SecuritySettings /></PrivateRoute>} />
           <Route path="/settings/privacy" element={<PrivateRoute><PrivacySettings /></PrivateRoute>} />
           <Route path="/bookmarks" element={<PrivateRoute><Bookmarks /></PrivateRoute>} />
+          <Route path="/events" element={<PrivateRoute><Events /></PrivateRoute>} />
           <Route path="/connections" element={<PrivateRoute><Friends /></PrivateRoute>} />
           <Route path="/friends" element={<PrivateRoute><Friends /></PrivateRoute>} /> {/* Legacy redirect */}
           <Route path="/messages" element={<PrivateRoute><Messages /></PrivateRoute>} />
           <Route path="/notifications" element={<PrivateRoute><Notifications /></PrivateRoute>} />
           <Route path="/hashtag/:tag" element={<PrivateRoute><Hashtag /></PrivateRoute>} />
-          <Route path="/events" element={<PrivateRoute><Events /></PrivateRoute>} />
 
           {/* Admin Panel - Hidden Route (requires admin role) */}
           <Route path="/admin" element={<PrivateRoute><Admin /></PrivateRoute>} />

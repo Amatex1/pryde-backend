@@ -34,15 +34,30 @@ function Settings() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [pushEnabled, setPushEnabled] = useState(false);
+  const [verificationStatus, setVerificationStatus] = useState({
+    isVerified: false,
+    verificationRequested: false,
+    verificationRequestDate: null
+  });
 
   useEffect(() => {
     fetchUserData();
     checkPushStatus();
+    fetchVerificationStatus();
   }, []);
 
   const checkPushStatus = async () => {
     const isSubscribed = await isPushNotificationSubscribed();
     setPushEnabled(isSubscribed);
+  };
+
+  const fetchVerificationStatus = async () => {
+    try {
+      const response = await api.get('/users/verification-status');
+      setVerificationStatus(response.data);
+    } catch (error) {
+      console.error('Failed to fetch verification status:', error);
+    }
   };
 
   const fetchUserData = async () => {
@@ -254,6 +269,32 @@ function Settings() {
     }
   };
 
+  const handleRequestVerification = async () => {
+    const reason = await showPrompt(
+      'Please explain why you would like to be verified (e.g., LGBTQ+ activist, content creator, community leader):',
+      'Request Verification',
+      'Enter reason (max 500 characters)'
+    );
+
+    if (!reason || reason.trim().length === 0) {
+      return;
+    }
+
+    if (reason.length > 500) {
+      showAlert('Reason must be 500 characters or less', 'Too Long');
+      return;
+    }
+
+    try {
+      const response = await api.post('/users/verification-request', { reason });
+      showAlert(response.data.message, 'Request Submitted');
+      fetchVerificationStatus();
+    } catch (error) {
+      console.error('Verification request error:', error);
+      showAlert(error.response?.data?.message || 'Failed to submit verification request', 'Error');
+    }
+  };
+
   return (
     <div className="page-container">
       <Navbar />
@@ -309,6 +350,45 @@ function Settings() {
           </div>
 
           {/* Basic Information moved to Edit Profile modal on Profile page */}
+
+          {/* Verification Request Section */}
+          {!verificationStatus.isVerified && (
+            <div className="settings-section">
+              <h2 className="section-title">✓ Account Verification</h2>
+
+              <div className="verification-info">
+                <p>
+                  Verified accounts receive a blue checkmark badge on their profile and posts.
+                  Verification is available for LGBTQ+ activists, content creators, community leaders,
+                  and other notable members of the community.
+                </p>
+
+                {verificationStatus.verificationRequested ? (
+                  <div className="verification-pending">
+                    <div className="pending-icon">⏳</div>
+                    <div className="pending-text">
+                      <h3>Verification Request Pending</h3>
+                      <p>
+                        Your verification request is under review.
+                        Submitted on {new Date(verificationStatus.verificationRequestDate).toLocaleDateString()}
+                      </p>
+                      <p className="muted-text">
+                        An admin will review your request and contact you if additional information is needed.
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleRequestVerification}
+                    className="btn-verification"
+                  >
+                    ✓ Request Verification
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
 
           <div className="settings-section">
             <h2 className="section-title">Notifications</h2>
