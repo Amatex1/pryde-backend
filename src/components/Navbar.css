@@ -254,15 +254,29 @@
   margin: 0.5rem 0;
 }
 
-.dropdown-dark-mode {
+.dropdown-dark-mode-wrapper {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
+  padding: 0.5rem 1rem;
   cursor: default;
 }
 
-.dropdown-dark-mode:hover {
+.dropdown-dark-mode-wrapper:hover {
   background: transparent;
+}
+
+.dropdown-dark-mode-wrapper .dark-mode-toggle {
+  width: 36px;
+  height: 36px;
+  font-size: 1.1rem;
+  box-shadow: none;
+  border: 1px solid var(--border-light);
+}
+
+.dropdown-dark-mode-wrapper .dark-mode-toggle:hover {
+  transform: scale(1.1);
+  box-shadow: 0 2px 8px rgba(108, 92, 231, 0.2);
 }
 
 .logout-item {
