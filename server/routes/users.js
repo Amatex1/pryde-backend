@@ -8,6 +8,7 @@ import GroupChat from '../models/GroupChat.js';
 import Notification from '../models/Notification.js';
 import auth from '../middleware/auth.js';
 import { checkProfileVisibility, checkBlocked } from '../middleware/privacy.js';
+import mongoose from 'mongoose';
 
 // @route   GET /api/users/search
 // @desc    Search users
@@ -51,7 +52,6 @@ router.get('/suggested', auth, async (req, res) => {
     }
 
     // Build exclusion list (convert to ObjectId)
-    const mongoose = require('mongoose');
     const excludeIds = [
       new mongoose.Types.ObjectId(req.userId), // Current user
       ...(currentUser.following || []).map(id => new mongoose.Types.ObjectId(id)),
