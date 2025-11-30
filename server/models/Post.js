@@ -123,8 +123,8 @@ const postSchema = new mongoose.Schema({
   },
   visibility: {
     type: String,
-    enum: ['public', 'friends', 'private', 'custom'],
-    default: 'friends'
+    enum: ['public', 'friends', 'followers', 'private', 'custom'],
+    default: 'followers'
   },
   hiddenFrom: [{
     type: mongoose.Schema.Types.ObjectId,

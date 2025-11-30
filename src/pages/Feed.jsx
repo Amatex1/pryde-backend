@@ -38,7 +38,7 @@ function Feed() {
   const [editingPostId, setEditingPostId] = useState(null);
   const [editPostText, setEditPostText] = useState('');
   const [openCommentDropdownId, setOpenCommentDropdownId] = useState(null);
-  const [postVisibility, setPostVisibility] = useState('friends');
+  const [postVisibility, setPostVisibility] = useState('followers');
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const [hiddenFromUsers, setHiddenFromUsers] = useState([]);
   const [sharedWithUsers, setSharedWithUsers] = useState([]);
@@ -56,6 +56,7 @@ function Feed() {
   const [shareModal, setShareModal] = useState({ isOpen: false, post: null });
   const [showMobileSidebar, setShowMobileSidebar] = useState(false);
   const [reactionDetailsModal, setReactionDetailsModal] = useState({ isOpen: false, reactions: [], likes: [] });
+  const [feedFilter, setFeedFilter] = useState('followers'); // 'followers', 'public'
   const currentUser = getCurrentUser();
   const postRefs = useRef({});
   const commentRefs = useRef({});
@@ -73,6 +74,11 @@ function Feed() {
     const interval = setInterval(fetchUnreadMessageCounts, 30000);
     return () => clearInterval(interval);
   }, []);
+
+  // Refetch posts when filter changes
+  useEffect(() => {
+    fetchPosts();
+  }, [feedFilter]);
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -272,7 +278,8 @@ function Feed() {
 
   const fetchPosts = async () => {
     try {
-      const response = await api.get('/posts');
+      setFetchingPosts(true);
+      const response = await api.get(`/posts?filter=${feedFilter}`);
       setPosts(response.data.posts || []);
     } catch (error) {
       console.error('Failed to fetch posts:', error);
@@ -358,7 +365,7 @@ function Feed() {
       setPosts([response.data, ...posts]);
       setNewPost('');
       setSelectedMedia([]);
-      setPostVisibility('friends');
+      setPostVisibility('followers');
       setHiddenFromUsers([]);
       setSharedWithUsers([]);
     } catch (error) {
@@ -672,7 +679,8 @@ function Feed() {
                   className="privacy-selector glossy"
                 >
                   <option value="public">🌍 Public</option>
-                  <option value="friends">👥 Friends</option>
+                  <option value="followers">👥 Followers</option>
+                  <option value="friends">👫 Friends (Legacy)</option>
                   <option value="custom">⚙️ Custom</option>
                   <option value="private">🔒 Only Me</option>
                 </select>
@@ -684,13 +692,35 @@ function Feed() {
             </form>
           </div>
 
+          {/* Feed Filter Tabs */}
+          <div className="feed-tabs glossy">
+            <button
+              className={`feed-tab ${feedFilter === 'followers' ? 'active' : ''}`}
+              onClick={() => setFeedFilter('followers')}
+            >
+              <span className="tab-icon">👥</span>
+              <span className="tab-label">Following</span>
+            </button>
+            <button
+              className={`feed-tab ${feedFilter === 'public' ? 'active' : ''}`}
+              onClick={() => setFeedFilter('public')}
+            >
+              <span className="tab-icon">🌍</span>
+              <span className="tab-label">Public</span>
+            </button>
+          </div>
+
           <div className="posts-list">
             {fetchingPosts ? (
               <div className="loading-state">Loading posts...</div>
             ) : posts.length === 0 ? (
               <div className="empty-state glossy">
                 <h3>No posts yet</h3>
-                <p>Be the first to share something!</p>
+                <p>
+                  {feedFilter === 'followers'
+                    ? 'Follow some users to see their posts here!'
+                    : 'No public posts available yet.'}
+                </p>
               </div>
             ) : (
               posts
@@ -721,8 +751,11 @@ function Feed() {
                           </Link>
                           <div className="post-time">
                             {new Date(post.createdAt).toLocaleDateString()}
-                            <span className="post-privacy-icon" title={`Visible to: ${post.visibility || 'friends'}`}>
-                              {post.visibility === 'public' ? '🌍' : post.visibility === 'private' ? '🔒' : '👥'}
+                            <span className="post-privacy-icon" title={`Visible to: ${post.visibility || 'followers'}`}>
+                              {post.visibility === 'public' ? '🌍' :
+                               post.visibility === 'private' ? '🔒' :
+                               post.visibility === 'followers' ? '👥' :
+                               post.visibility === 'friends' ? '👫' : '👥'}
                             </span>
                           </div>
                         </div>
@@ -866,7 +899,8 @@ function Feed() {
                                   style={{ fontSize: '0.9rem', padding: '0.5rem 1rem' }}
                                 >
                                   <option value="public">🌍 Public</option>
-                                  <option value="friends">👥 Friends</option>
+                                  <option value="followers">👥 Followers</option>
+                                  <option value="friends">👫 Friends (Legacy)</option>
                                   <option value="custom">⚙️ Custom</option>
                                   <option value="private">🔒 Only Me</option>
                                 </select>

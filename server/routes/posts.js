@@ -13,34 +13,66 @@ import { sanitizeFields } from '../utils/sanitize.js';
 // @access  Private
 router.get('/', auth, async (req, res) => {
   try {
-    const { page = 1, limit = 20 } = req.query;
+    const { page = 1, limit = 20, filter = 'followers' } = req.query;
 
-    // Get posts from user and their friends only
     const userId = req.userId || req.user._id;
     const currentUser = await User.findById(userId);
     const friendIds = currentUser.friends || [];
+    const followingIds = currentUser.following || [];
 
-    // Build query with privacy filtering
-    const query = {
-      $or: [
-        { author: userId }, // User's own posts (always visible)
-        {
-          author: { $in: friendIds },
-          visibility: 'public',
-          hiddenFrom: { $ne: userId } // Not hidden from current user
-        },
-        {
-          author: { $in: friendIds },
-          visibility: 'friends',
-          hiddenFrom: { $ne: userId } // Not hidden from current user
-        },
-        {
-          visibility: 'custom',
-          sharedWith: userId, // Explicitly shared with current user
-          hiddenFrom: { $ne: userId }
-        }
-      ]
-    };
+    let query = {};
+
+    if (filter === 'public') {
+      // Public feed: All public posts from everyone (not hidden from user)
+      query = {
+        visibility: 'public',
+        hiddenFrom: { $ne: userId }
+      };
+    } else if (filter === 'followers') {
+      // Followers feed: Posts from people you follow + your own posts
+      query = {
+        $or: [
+          { author: userId }, // User's own posts (always visible)
+          {
+            author: { $in: followingIds },
+            visibility: 'public',
+            hiddenFrom: { $ne: userId }
+          },
+          {
+            author: { $in: followingIds },
+            visibility: 'followers',
+            hiddenFrom: { $ne: userId }
+          },
+          {
+            visibility: 'custom',
+            sharedWith: userId,
+            hiddenFrom: { $ne: userId }
+          }
+        ]
+      };
+    } else {
+      // Default: Friends feed (backward compatibility)
+      query = {
+        $or: [
+          { author: userId },
+          {
+            author: { $in: friendIds },
+            visibility: 'public',
+            hiddenFrom: { $ne: userId }
+          },
+          {
+            author: { $in: friendIds },
+            visibility: 'friends',
+            hiddenFrom: { $ne: userId }
+          },
+          {
+            visibility: 'custom',
+            sharedWith: userId,
+            hiddenFrom: { $ne: userId }
+          }
+        ]
+      };
+    }
 
     const posts = await Post.find(query)
       .populate('author', 'username displayName profilePhoto')
