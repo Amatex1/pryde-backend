@@ -24,11 +24,13 @@ function Friends() {
   const [following, setFollowing] = useState([]);
   const [followRequests, setFollowRequests] = useState([]);
   const [searchResults, setSearchResults] = useState([]);
+  const [suggestedUsers, setSuggestedUsers] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(false);
+  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
 
-  // Fetch current user
+  // Fetch current user and initial counts
   useEffect(() => {
     const fetchCurrentUser = async () => {
       try {
@@ -39,6 +41,11 @@ function Friends() {
       }
     };
     fetchCurrentUser();
+
+    // Fetch all counts on mount
+    fetchFollowers();
+    fetchFollowing();
+    fetchFollowRequests();
   }, []);
 
   useEffect(() => {
@@ -54,6 +61,11 @@ function Friends() {
       fetchFollowing();
     } else if (activeTab === 'followRequests') {
       fetchFollowRequests();
+    } else if (activeTab === 'search') {
+      // Fetch suggested users when search tab is opened
+      if (suggestedUsers.length === 0 && !searchQuery) {
+        fetchSuggestedUsers();
+      }
     }
   }, [activeTab]);
 
@@ -143,9 +155,26 @@ function Friends() {
     }
   };
 
+  const fetchSuggestedUsers = async () => {
+    setLoadingSuggestions(true);
+    try {
+      const response = await api.get('/users/suggested');
+      setSuggestedUsers(response.data);
+    } catch (error) {
+      console.error('Failed to fetch suggested users:', error);
+    } finally {
+      setLoadingSuggestions(false);
+    }
+  };
+
   const handleSearch = async (e) => {
     e.preventDefault();
-    if (!searchQuery.trim()) return;
+    if (!searchQuery.trim()) {
+      // If search is empty, show suggested users
+      fetchSuggestedUsers();
+      setSearchResults([]);
+      return;
+    }
 
     setLoading(true);
     try {
@@ -594,55 +623,131 @@ function Friends() {
                 </button>
               </form>
 
+              {/* Show search results if available */}
               {searchResults.length > 0 && (
-                <div className="user-grid">
-                  {searchResults.map((user) => {
-                    // Check if already friends
-                    const isFriend = friends.some(f => f._id === user._id);
-                    // Check if request already sent
-                    const requestSent = sentRequests.some(r => r.receiver._id === user._id);
-                    // Check if request received
-                    const requestReceived = requests.some(r => r.sender._id === user._id);
+                <>
+                  <h3 className="section-subtitle">Search Results</h3>
+                  <div className="user-grid">
+                    {searchResults.map((user) => {
+                      // Check if already friends
+                      const isFriend = friends.some(f => f._id === user._id);
+                      // Check if request already sent
+                      const requestSent = sentRequests.some(r => r.receiver._id === user._id);
+                      // Check if request received
+                      const requestReceived = requests.some(r => r.sender._id === user._id);
 
-                    return (
-                      <div key={user._id} className="user-card glossy">
-                        <Link to={`/profile/${user._id}`} className="user-link">
-                          <div className="user-avatar">
-                            {user.profilePhoto ? (
-                              <img src={getImageUrl(user.profilePhoto)} alt={user.username} />
-                            ) : (
-                              <span>{user.displayName?.charAt(0).toUpperCase()}</span>
-                            )}
-                          </div>
-                          <div className="user-info">
-                            <div className="user-name">{user.displayName || user.username}</div>
-                            <div className="user-username">@{user.username}</div>
-                            {user.bio && <div className="user-bio">{user.bio}</div>}
-                          </div>
-                        </Link>
-                        {isFriend ? (
-                          <button className="btn-friends" disabled>
-                            Friends ✓
-                          </button>
-                        ) : requestSent ? (
-                          <button className="btn-pending" disabled>
-                            Pending
-                          </button>
-                        ) : requestReceived ? (
-                          <button className="btn-respond" onClick={() => setActiveTab('requests')}>
-                            Respond
-                          </button>
-                        ) : (
-                          <button
-                            onClick={() => handleSendRequest(user._id)}
-                            className="btn-add glossy-gold"
-                          >
-                            Add Friend
-                          </button>
-                        )}
-                      </div>
-                    );
-                  })}
+                      return (
+                        <div key={user._id} className="user-card glossy">
+                          <Link to={`/profile/${user._id}`} className="user-link">
+                            <div className="user-avatar">
+                              {user.profilePhoto ? (
+                                <img src={getImageUrl(user.profilePhoto)} alt={user.username} />
+                              ) : (
+                                <span>{user.displayName?.charAt(0).toUpperCase()}</span>
+                              )}
+                            </div>
+                            <div className="user-info">
+                              <div className="user-name">{user.displayName || user.username}</div>
+                              <div className="user-username">@{user.username}</div>
+                              {user.bio && <div className="user-bio">{user.bio}</div>}
+                            </div>
+                          </Link>
+                          {isFriend ? (
+                            <button className="btn-friends" disabled>
+                              Friends ✓
+                            </button>
+                          ) : requestSent ? (
+                            <button className="btn-pending" disabled>
+                              Pending
+                            </button>
+                          ) : requestReceived ? (
+                            <button className="btn-respond" onClick={() => setActiveTab('requests')}>
+                              Respond
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => handleFollow(user._id)}
+                              className="btn-add glossy-gold"
+                            >
+                              ➕ Follow
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </>
+              )}
+
+              {/* Show suggested users when no search query */}
+              {!searchQuery && suggestedUsers.length > 0 && (
+                <>
+                  <h3 className="section-subtitle">✨ Suggested For You</h3>
+                  <p className="section-description">Based on your interests, location, and preferences</p>
+                  <div className="user-grid">
+                    {suggestedUsers.map((user) => {
+                      const isFollowing = following.some(f => f._id === user._id);
+                      const isFollower = followers.some(f => f._id === user._id);
+
+                      return (
+                        <div key={user._id} className="user-card glossy suggested-user">
+                          <Link to={`/profile/${user._id}`} className="user-link">
+                            <div className="user-avatar">
+                              {user.profilePhoto ? (
+                                <img src={getImageUrl(user.profilePhoto)} alt={user.username} />
+                              ) : (
+                                <span>{user.displayName?.charAt(0).toUpperCase()}</span>
+                              )}
+                            </div>
+                            <div className="user-info">
+                              <div className="user-name">{user.displayName || user.username}</div>
+                              <div className="user-username">@{user.username}</div>
+                              {user.bio && <div className="user-bio">{user.bio}</div>}
+
+                              {/* Show match reasons */}
+                              <div className="match-tags">
+                                {user.interests && user.interests.length > 0 && currentUser?.interests?.some(i => user.interests.includes(i)) && (
+                                  <span className="match-tag">🎯 Shared Interests</span>
+                                )}
+                                {user.city && currentUser?.city && user.city === currentUser.city && (
+                                  <span className="match-tag">📍 Same City</span>
+                                )}
+                                {user.sexualOrientation && currentUser?.sexualOrientation && user.sexualOrientation === currentUser.sexualOrientation && (
+                                  <span className="match-tag">🌈 Same Orientation</span>
+                                )}
+                              </div>
+                            </div>
+                          </Link>
+                          {isFollowing ? (
+                            <button className="btn-following" onClick={() => handleUnfollow(user._id)}>
+                              ✓ Following
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => handleFollow(user._id)}
+                              className="btn-add glossy-gold"
+                            >
+                              ➕ Follow
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </>
+              )}
+
+              {/* Loading state */}
+              {loadingSuggestions && (
+                <div className="empty-state glossy">
+                  <p>Loading suggestions...</p>
+                </div>
+              )}
+
+              {/* Empty state */}
+              {!searchQuery && !loadingSuggestions && suggestedUsers.length === 0 && (
+                <div className="empty-state glossy">
+                  <p>No suggestions available. Try searching for users!</p>
                 </div>
               )}
             </div>

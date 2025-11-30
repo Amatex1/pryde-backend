@@ -92,7 +92,8 @@ function App() {
           <Route path="/settings/security" element={<PrivateRoute><SecuritySettings /></PrivateRoute>} />
           <Route path="/settings/privacy" element={<PrivateRoute><PrivacySettings /></PrivateRoute>} />
           <Route path="/bookmarks" element={<PrivateRoute><Bookmarks /></PrivateRoute>} />
-          <Route path="/friends" element={<PrivateRoute><Friends /></PrivateRoute>} />
+          <Route path="/connections" element={<PrivateRoute><Friends /></PrivateRoute>} />
+          <Route path="/friends" element={<PrivateRoute><Friends /></PrivateRoute>} /> {/* Legacy redirect */}
           <Route path="/messages" element={<PrivateRoute><Messages /></PrivateRoute>} />
           <Route path="/notifications" element={<PrivateRoute><Notifications /></PrivateRoute>} />
           <Route path="/hashtag/:tag" element={<PrivateRoute><Hashtag /></PrivateRoute>} />

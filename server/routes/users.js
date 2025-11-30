@@ -39,6 +39,134 @@ router.get('/search', auth, async (req, res) => {
   }
 });
 
+// @route   GET /api/users/suggested
+// @desc    Get suggested users based on interests, location, and sexual orientation
+// @access  Private
+router.get('/suggested', auth, async (req, res) => {
+  try {
+    const currentUser = await User.findById(req.userId);
+
+    if (!currentUser) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Build match criteria
+    const matchCriteria = {
+      _id: {
+        $ne: req.userId, // Exclude current user
+        $nin: [...(currentUser.following || []), ...(currentUser.followers || []), ...(currentUser.blockedUsers || [])] // Exclude already following, followers, and blocked users
+      },
+      isActive: true,
+      isBanned: { $ne: true }
+    };
+
+    // Score-based matching
+    const pipeline = [
+      { $match: matchCriteria },
+      {
+        $addFields: {
+          score: {
+            $add: [
+              // Match by interests (highest priority)
+              {
+                $cond: [
+                  {
+                    $gt: [
+                      {
+                        $size: {
+                          $ifNull: [
+                            { $setIntersection: [{ $ifNull: ['$interests', []] }, currentUser.interests || []] },
+                            []
+                          ]
+                        }
+                      },
+                      0
+                    ]
+                  },
+                  {
+                    $multiply: [
+                      {
+                        $size: {
+                          $setIntersection: [{ $ifNull: ['$interests', []] }, currentUser.interests || []]
+                        }
+                      },
+                      10
+                    ]
+                  },
+                  0
+                ]
+              },
+              // Match by sexual orientation
+              {
+                $cond: [
+                  {
+                    $and: [
+                      { $ne: ['$sexualOrientation', ''] },
+                      { $ne: [currentUser.sexualOrientation, ''] },
+                      { $eq: ['$sexualOrientation', currentUser.sexualOrientation] }
+                    ]
+                  },
+                  5,
+                  0
+                ]
+              },
+              // Match by city
+              {
+                $cond: [
+                  {
+                    $and: [
+                      { $ne: ['$city', ''] },
+                      { $ne: [currentUser.city, ''] },
+                      { $eq: ['$city', currentUser.city] }
+                    ]
+                  },
+                  3,
+                  0
+                ]
+              },
+              // Match by postcode (same area)
+              {
+                $cond: [
+                  {
+                    $and: [
+                      { $ne: ['$postcode', ''] },
+                      { $ne: [currentUser.postcode, ''] },
+                      { $eq: ['$postcode', currentUser.postcode] }
+                    ]
+                  },
+                  2,
+                  0
+                ]
+              }
+            ]
+          }
+        }
+      },
+      { $sort: { score: -1, createdAt: -1 } },
+      { $limit: 50 },
+      {
+        $project: {
+          username: 1,
+          displayName: 1,
+          profilePhoto: 1,
+          bio: 1,
+          interests: 1,
+          city: 1,
+          sexualOrientation: 1,
+          score: 1
+        }
+      }
+    ];
+
+    const suggestedUsers = await User.aggregate(pipeline);
+
+    res.json(suggestedUsers);
+  } catch (error) {
+    console.error('Suggested users error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // @route   GET /api/users/download-data
 // @desc    Download all user data
 // @access  Private
