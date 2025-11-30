@@ -257,29 +257,16 @@
 .dropdown-dark-mode {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  cursor: default;
+  gap: 0.75rem;
+  cursor: pointer;
 }
 
 .dropdown-dark-mode:hover {
   background: var(--soft-lavender);
 }
 
-.dropdown-dark-mode .dark-mode-toggle {
-  width: auto;
-  height: auto;
+.dropdown-dark-mode .dark-mode-icon {
   font-size: 1.1rem;
-  border-radius: 0;
-  border: none;
-  background: transparent;
-  box-shadow: none;
-  padding: 0;
-}
-
-.dropdown-dark-mode .dark-mode-toggle:hover {
-  transform: scale(1.2);
-  box-shadow: none;
-  background: transparent;
 }
 
 .logout-item {

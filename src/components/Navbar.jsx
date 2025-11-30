@@ -8,12 +8,34 @@ import NotificationBell from './NotificationBell';
 import api from '../utils/api';
 import './Navbar.css';
 
+// Hook to get dark mode state
+function useDarkMode() {
+  const [isDark, setIsDark] = useState(() => {
+    const saved = localStorage.getItem('darkMode');
+    return saved === 'true';
+  });
+
+  const toggleDarkMode = () => {
+    const newValue = !isDark;
+    setIsDark(newValue);
+    localStorage.setItem('darkMode', newValue);
+    if (newValue) {
+      document.documentElement.setAttribute('data-theme', 'dark');
+    } else {
+      document.documentElement.removeAttribute('data-theme');
+    }
+  };
+
+  return [isDark, toggleDarkMode];
+}
+
 function Navbar() {
   const navigate = useNavigate();
   const [user, setUser] = useState(getCurrentUser());
   const [showDropdown, setShowDropdown] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [totalUnreadMessages, setTotalUnreadMessages] = useState(0);
+  const [isDark, toggleDarkMode] = useDarkMode();
   const dropdownRef = useRef(null);
   const mobileMenuRef = useRef(null);
 
@@ -208,9 +230,9 @@ function Navbar() {
                   <span>Admin Panel</span>
                 </Link>
               )}
-              <div className="dropdown-item dropdown-dark-mode">
+              <div className="dropdown-item dropdown-dark-mode" onClick={toggleDarkMode}>
+                <span className="dark-mode-icon">{isDark ? '☀️' : '🌙'}</span>
                 <span>Dark Mode</span>
-                <DarkModeToggle />
               </div>
               <div className="dropdown-divider"></div>
               <button onClick={handleLogout} className="dropdown-item logout-item">

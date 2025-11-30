@@ -687,7 +687,7 @@ function Profile() {
                 )}
                 {user.sexualOrientation && (
                   <span className="badge">
-                    {user.sexualOrientation}
+                    {user.sexualOrientation.charAt(0).toUpperCase() + user.sexualOrientation.slice(1)}
                   </span>
                 )}
                 {user.relationshipStatus && (

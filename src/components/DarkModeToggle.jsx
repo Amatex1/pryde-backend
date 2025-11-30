@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import './DarkModeToggle.css';
 
-function DarkModeToggle() {
+function DarkModeToggle({ asIcon = false, onClick }) {
   const [isDark, setIsDark] = useState(() => {
     // Check localStorage for saved preference
     const saved = localStorage.getItem('darkMode');
@@ -15,18 +15,24 @@ function DarkModeToggle() {
     } else {
       document.documentElement.removeAttribute('data-theme');
     }
-    
+
     // Save preference
     localStorage.setItem('darkMode', isDark);
   }, [isDark]);
 
   const toggleDarkMode = () => {
     setIsDark(!isDark);
+    if (onClick) onClick();
   };
 
+  // If used as icon only (in dropdown), just return the icon
+  if (asIcon) {
+    return <span className="dark-mode-icon">{isDark ? '☀️' : '🌙'}</span>;
+  }
+
   return (
-    <button 
-      className="dark-mode-toggle" 
+    <button
+      className="dark-mode-toggle"
       onClick={toggleDarkMode}
       title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
     >
