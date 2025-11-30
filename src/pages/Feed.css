@@ -533,16 +533,18 @@
 }
 
 /* Dark mode for content warning button */
-.dark-mode .btn-reveal-content {
-  background: var(--card-bg);
-  color: var(--electric-blue);
-  border-color: var(--electric-blue);
+[data-theme="dark"] .btn-reveal-content {
+  background: white;
+  color: var(--pryde-purple);
+  border-color: white;
 }
 
-.dark-mode .btn-reveal-content:hover {
-  background: rgba(9, 132, 227, 0.1);
-  border-color: var(--electric-blue);
-  color: var(--electric-blue);
+[data-theme="dark"] .btn-reveal-content:hover {
+  background: rgba(255, 255, 255, 0.9);
+  border-color: white;
+  color: var(--pryde-purple);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255, 255, 255, 0.2);
 }
 
 .post-time,
