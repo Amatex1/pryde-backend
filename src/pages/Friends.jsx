@@ -296,10 +296,10 @@ function Friends() {
 
       // Check if it was a follow or a follow request
       if (response.data.message === 'Follow request sent') {
-        alert('Follow request sent! Waiting for approval.');
+        // Silently update sent requests list
         await fetchSentFollowRequests();
       } else {
-        alert('Now following!');
+        // Silently update following list
         await fetchFollowing();
       }
 
@@ -310,6 +310,7 @@ function Friends() {
         await fetchSuggestedUsers();
       }
     } catch (error) {
+      // Only show error alerts
       alert(error.response?.data?.message || 'Failed to follow user');
     }
   };
@@ -328,7 +329,7 @@ function Friends() {
         await fetchSuggestedUsers();
       }
 
-      alert('Unfollowed successfully');
+      // Silently update - no success alert
     } catch (error) {
       alert('Failed to unfollow user');
     }
@@ -340,7 +341,7 @@ function Friends() {
     try {
       await api.delete(`/follow/${userId}`);
       fetchFollowers();
-      alert('Follower removed successfully');
+      // Silently update - no success alert
     } catch (error) {
       alert('Failed to remove follower');
     }
@@ -351,7 +352,7 @@ function Friends() {
       await api.post(`/follow/requests/${requestId}/accept`);
       fetchFollowRequests();
       fetchFollowers();
-      alert('Follow request accepted!');
+      // Silently update - no success alert
     } catch (error) {
       alert('Failed to accept follow request');
     }
@@ -361,7 +362,7 @@ function Friends() {
     try {
       await api.post(`/follow/requests/${requestId}/reject`);
       fetchFollowRequests();
-      alert('Follow request rejected');
+      // Silently update - no success alert
     } catch (error) {
       alert('Failed to reject follow request');
     }
