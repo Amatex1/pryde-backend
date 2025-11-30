@@ -293,6 +293,7 @@
   color: var(--text-main);
   background: var(--card-surface);
   transition: all 0.3s ease;
+  text-align: left; /* Left-align text */
 }
 
 .search-input::placeholder {
