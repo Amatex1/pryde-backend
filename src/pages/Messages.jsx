@@ -797,7 +797,8 @@ function Messages() {
               <h2 className="sidebar-title">💬 Messages</h2>
               <div className="header-buttons">
                 <button className="btn-new-chat" onClick={handleOpenNewChatModal} title="New Chat">💬</button>
-                <button className="btn-new-chat" onClick={() => setShowNewGroupModal(true)} title="New Group">👥</button>
+                {/* Group chat hidden for Plan A - keeping backend for future */}
+                {/* <button className="btn-new-chat" onClick={() => setShowNewGroupModal(true)} title="New Group">👥</button> */}
                 <button className="btn-new-chat" onClick={() => setActiveTab('archived')} title="Archived">📦</button>
               </div>
             </div>
@@ -829,8 +830,8 @@ function Messages() {
                 <div className="loading-state">Loading conversations...</div>
               ) : (
                 <>
-                  {/* Group Chats */}
-                  {groupChats.length > 0 && (
+                  {/* Group Chats - Hidden for Plan A */}
+                  {false && groupChats.length > 0 && (
                     <>
                       <div className="section-label">Groups</div>
                       {groupChats
@@ -1368,8 +1369,8 @@ function Messages() {
           </div>
         )}
 
-        {/* New Group Modal */}
-        {showNewGroupModal && (
+        {/* New Group Modal - Hidden for Plan A */}
+        {false && showNewGroupModal && (
           <div className="modal-overlay" onClick={() => setShowNewGroupModal(false)}>
             <div className="modal-content glossy" onClick={(e) => e.stopPropagation()}>
               <div className="modal-header">

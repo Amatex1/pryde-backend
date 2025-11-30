@@ -45,7 +45,7 @@ export const checkProfileVisibility = async (req, res, next) => {
       return next();
     }
 
-    const profileUser = await User.findById(profileUserId).select('privacySettings friends blockedUsers');
+    const profileUser = await User.findById(profileUserId).select('privacySettings friends followers blockedUsers');
     const currentUser = await User.findById(currentUserId).select('blockedUsers');
 
     if (!profileUser) {
@@ -63,10 +63,14 @@ export const checkProfileVisibility = async (req, res, next) => {
       return res.status(403).json({ message: 'This profile is private' });
     }
 
-    if (visibility === 'friends') {
-      const isFriend = profileUser.friends.some(friendId => friendId.toString() === currentUserId);
-      if (!isFriend) {
-        return res.status(403).json({ message: 'This profile is only visible to friends' });
+    // Check for both 'friends' and 'followers' for backward compatibility
+    if (visibility === 'friends' || visibility === 'followers') {
+      // Check followers first (new system), then friends (legacy)
+      const isFollower = profileUser.followers?.some(followerId => followerId.toString() === currentUserId);
+      const isFriend = profileUser.friends?.some(friendId => friendId.toString() === currentUserId);
+
+      if (!isFollower && !isFriend) {
+        return res.status(403).json({ message: 'This profile is only visible to followers' });
       }
     }
 
@@ -137,7 +141,7 @@ export const checkMessagingPermission = async (req, res, next) => {
       return res.status(400).json({ message: 'Cannot send message to yourself' });
     }
 
-    const recipient = await User.findById(recipientId).select('privacySettings friends blockedUsers');
+    const recipient = await User.findById(recipientId).select('privacySettings friends followers blockedUsers');
     const currentUser = await User.findById(currentUserId).select('blockedUsers');
 
     if (!recipient) {
@@ -149,16 +153,20 @@ export const checkMessagingPermission = async (req, res, next) => {
       return res.status(403).json({ message: 'Cannot send message to this user' });
     }
 
-    const permission = recipient.privacySettings?.whoCanMessage || 'friends';
+    const permission = recipient.privacySettings?.whoCanMessage || 'followers';
 
     if (permission === 'no-one') {
       return res.status(403).json({ message: 'This user is not accepting messages' });
     }
 
-    if (permission === 'friends') {
-      const isFriend = recipient.friends.some(friendId => friendId.toString() === currentUserId);
-      if (!isFriend) {
-        return res.status(403).json({ message: 'You must be friends to send a message' });
+    // Check for both 'friends' and 'followers' for backward compatibility
+    if (permission === 'friends' || permission === 'followers') {
+      // Check followers first (new system), then friends (legacy)
+      const isFollower = recipient.followers?.some(followerId => followerId.toString() === currentUserId);
+      const isFriend = recipient.friends?.some(friendId => friendId.toString() === currentUserId);
+
+      if (!isFollower && !isFriend) {
+        return res.status(403).json({ message: 'You must be a follower to send a message' });
       }
     }
 

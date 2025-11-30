@@ -294,9 +294,9 @@ function Feed() {
       return;
     }
 
-    // Limit to 10 files
-    if (selectedMedia.length + files.length > 10) {
-      showAlert('You can only upload up to 10 media files per post', 'Upload Limit Reached');
+    // Limit to 3 files
+    if (selectedMedia.length + files.length > 3) {
+      showAlert('You can only upload up to 3 media files per post', 'Upload Limit Reached');
       return;
     }
 
@@ -655,7 +655,7 @@ function Feed() {
                     multiple
                     accept="image/*,video/*"
                     onChange={handleMediaSelect}
-                    disabled={uploadingMedia || selectedMedia.length >= 10}
+                    disabled={uploadingMedia || selectedMedia.length >= 3}
                     style={{ display: 'none' }}
                   />
                   {uploadingMedia ? '⏳ Uploading...' : '📷 Add Photos/Videos'}

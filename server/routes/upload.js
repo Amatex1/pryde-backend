@@ -164,9 +164,9 @@ router.post('/chat-attachment', auth, uploadLimiter, upload.single('file'), asyn
 });
 
 // @route   POST /api/upload/post-media
-// @desc    Upload media for posts (images, videos, gifs)
+// @desc    Upload media for posts (images, videos, gifs) - Max 3 files
 // @access  Private
-router.post('/post-media', auth, uploadLimiter, upload.array('media', 10), async (req, res) => {
+router.post('/post-media', auth, uploadLimiter, upload.array('media', 3), async (req, res) => {
   try {
     if (!req.files || req.files.length === 0) {
       return res.status(400).json({ message: 'No files uploaded' });

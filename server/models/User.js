@@ -135,6 +135,15 @@ const userSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
   }],
+  // New follow system
+  followers: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  }],
+  following: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  }],
   bookmarkedPosts: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Post'
@@ -379,9 +388,15 @@ const userSchema = new mongoose.Schema({
   privacySettings: {
     profileVisibility: {
       type: String,
-      enum: ['public', 'friends', 'private'],
+      enum: ['public', 'friends', 'followers', 'private'],
       default: 'public'
     },
+    // New: Private account toggle (replaces whoCanSendFriendRequests)
+    isPrivateAccount: {
+      type: Boolean,
+      default: false
+    },
+    // Legacy: Keep for backward compatibility
     whoCanSendFriendRequests: {
       type: String,
       enum: ['everyone', 'friends-of-friends', 'no-one'],
@@ -389,8 +404,8 @@ const userSchema = new mongoose.Schema({
     },
     whoCanMessage: {
       type: String,
-      enum: ['everyone', 'friends', 'no-one'],
-      default: 'friends'
+      enum: ['everyone', 'friends', 'followers', 'no-one'],
+      default: 'followers'
     },
     showOnlineStatus: {
       type: Boolean,
@@ -402,17 +417,23 @@ const userSchema = new mongoose.Schema({
     },
     whoCanSeeMyPosts: {
       type: String,
-      enum: ['public', 'friends', 'only-me'],
+      enum: ['public', 'friends', 'followers', 'only-me'],
       default: 'public'
     },
     whoCanCommentOnMyPosts: {
       type: String,
-      enum: ['everyone', 'friends', 'no-one'],
+      enum: ['everyone', 'friends', 'followers', 'no-one'],
       default: 'everyone'
     },
+    // Renamed from whoCanSeeFriendsList
     whoCanSeeFriendsList: {
       type: String,
-      enum: ['everyone', 'friends', 'only-me'],
+      enum: ['everyone', 'friends', 'followers', 'only-me'],
+      default: 'everyone'
+    },
+    whoCanSeeFollowersList: {
+      type: String,
+      enum: ['everyone', 'friends', 'followers', 'only-me'],
       default: 'everyone'
     },
     whoCanTagMe: {

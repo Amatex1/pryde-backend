@@ -120,6 +120,13 @@
   accent-color: #6C5CE7;
 }
 
+.setting-description {
+  margin: 8px 0 0 30px;
+  font-size: 13px;
+  color: #616161;
+  font-style: italic;
+}
+
 .no-blocked-users {
   color: #616161;
   font-size: 15px;
