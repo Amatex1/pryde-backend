@@ -1608,7 +1608,7 @@ function Feed() {
 
           {/* Friends List */}
           <div className="sidebar-card glossy">
-            <h3 className="sidebar-title">Friends</h3>
+            <h3 className="sidebar-title">Recent Chats</h3>
 
             {/* Search Bar */}
             <div className="friends-search-bar">
