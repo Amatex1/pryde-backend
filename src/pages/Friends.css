@@ -116,7 +116,7 @@
 .user-info {
   text-align: center;
   flex: 1;
-  margin-top: 60px; /* Push content below the absolutely positioned profile photo */
+  margin-top: 70px; /* Push content below the absolutely positioned profile photo (100px photo + border) */
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
