@@ -496,6 +496,11 @@ function Friends() {
                 <div className="user-grid">
                   {followers.map((follower) => (
                     <div key={follower._id} className="user-card glossy">
+                      {follower.coverPhoto && (
+                        <div className="user-card-cover">
+                          <img src={getImageUrl(follower.coverPhoto)} alt="Cover" />
+                        </div>
+                      )}
                       <Link to={`/profile/${follower._id}`} className="user-link">
                         <div className="user-avatar">
                           {follower.profilePhoto ? (
@@ -533,6 +538,11 @@ function Friends() {
                 <div className="user-grid">
                   {following.map((user) => (
                     <div key={user._id} className="user-card glossy">
+                      {user.coverPhoto && (
+                        <div className="user-card-cover">
+                          <img src={getImageUrl(user.coverPhoto)} alt="Cover" />
+                        </div>
+                      )}
                       <Link to={`/profile/${user._id}`} className="user-link">
                         <div className="user-avatar">
                           {user.profilePhoto ? (
@@ -691,6 +701,13 @@ function Friends() {
 
                       return (
                         <div key={user._id} className="user-card glossy suggested-user">
+                          {/* Cover Photo */}
+                          {user.coverPhoto && (
+                            <div className="user-card-cover">
+                              <img src={getImageUrl(user.coverPhoto)} alt="Cover" />
+                            </div>
+                          )}
+
                           <Link to={`/profile/${user._id}`} className="user-link">
                             <div className="user-avatar">
                               {user.profilePhoto ? (
@@ -725,7 +742,7 @@ function Friends() {
                           ) : (
                             <button
                               onClick={() => handleFollow(user._id)}
-                              className="btn-add glossy-gold"
+                              className="btn-add"
                             >
                               ➕ Follow
                             </button>

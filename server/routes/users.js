@@ -50,12 +50,18 @@ router.get('/suggested', auth, async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
+    // Build exclusion list (convert to ObjectId)
+    const mongoose = require('mongoose');
+    const excludeIds = [
+      mongoose.Types.ObjectId(req.userId), // Current user
+      ...(currentUser.following || []).map(id => mongoose.Types.ObjectId(id)),
+      ...(currentUser.followers || []).map(id => mongoose.Types.ObjectId(id)),
+      ...(currentUser.blockedUsers || []).map(id => mongoose.Types.ObjectId(id))
+    ];
+
     // Build match criteria
     const matchCriteria = {
-      _id: {
-        $ne: req.userId, // Exclude current user
-        $nin: [...(currentUser.following || []), ...(currentUser.followers || []), ...(currentUser.blockedUsers || [])] // Exclude already following, followers, and blocked users
-      },
+      _id: { $nin: excludeIds },
       isActive: true,
       isBanned: { $ne: true }
     };
@@ -149,6 +155,7 @@ router.get('/suggested', auth, async (req, res) => {
           username: 1,
           displayName: 1,
           profilePhoto: 1,
+          coverPhoto: 1,
           bio: 1,
           interests: 1,
           city: 1,
@@ -338,9 +345,9 @@ router.get('/:id', auth, checkProfileVisibility, async (req, res) => {
   try {
     const user = await User.findById(req.params.id)
       .select('-password')
-      .populate('friends', 'username displayName profilePhoto')
-      .populate('followers', 'username displayName profilePhoto')
-      .populate('following', 'username displayName profilePhoto');
+      .populate('friends', 'username displayName profilePhoto coverPhoto bio')
+      .populate('followers', 'username displayName profilePhoto coverPhoto bio')
+      .populate('following', 'username displayName profilePhoto coverPhoto bio');
 
     if (!user) {
       return res.status(404).json({ message: 'User not found' });

@@ -10,7 +10,7 @@ import './Navbar.css';
 
 function Navbar() {
   const navigate = useNavigate();
-  const user = getCurrentUser();
+  const [user, setUser] = useState(getCurrentUser());
   const [showDropdown, setShowDropdown] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [totalUnreadMessages, setTotalUnreadMessages] = useState(0);
@@ -22,6 +22,25 @@ function Navbar() {
     // Use navigate for SPA navigation without page refresh
     navigate('/login');
   };
+
+  // Fetch current user data
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const response = await api.get('/auth/me');
+        setUser(response.data);
+        // Update localStorage with fresh data
+        localStorage.setItem('user', JSON.stringify(response.data));
+      } catch (error) {
+        console.error('Failed to fetch user data:', error);
+      }
+    };
+
+    fetchUserData();
+    // Poll every 60 seconds to keep profile updated
+    const interval = setInterval(fetchUserData, 60000);
+    return () => clearInterval(interval);
+  }, []);
 
   // Fetch unread message counts
   useEffect(() => {
