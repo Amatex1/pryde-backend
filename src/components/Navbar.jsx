@@ -114,7 +114,7 @@ function Navbar() {
               </div>
               <div className="mobile-menu-user-info">
                 <div className="mobile-menu-username">{user?.displayName || user?.username}</div>
-                <Link to={`/profile/${user?.id}`} className="mobile-menu-view-profile" onClick={() => setShowMobileMenu(false)}>
+                <Link to={`/profile/${user?.username}`} className="mobile-menu-view-profile" onClick={() => setShowMobileMenu(false)}>
                   View Profile
                 </Link>
               </div>
@@ -190,7 +190,7 @@ function Navbar() {
 
           {showDropdown && (
             <div className="profile-dropdown">
-              <Link to={`/profile/${user?.id}`} className="dropdown-item" onClick={() => setShowDropdown(false)}>
+              <Link to={`/profile/${user?.username}`} className="dropdown-item" onClick={() => setShowDropdown(false)}>
                 <span className="dropdown-icon">👤</span>
                 <span>My Profile</span>
               </Link>

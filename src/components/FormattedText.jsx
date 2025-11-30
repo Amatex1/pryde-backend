@@ -15,9 +15,8 @@ function FormattedText({ text, className = '' }) {
 
   const handleMentionClick = async (username) => {
     try {
-      // You could add an API call here to get user ID from username
-      // For now, we'll just navigate to a search or show a message
-      navigate(`/feed?search=@${username}`);
+      // Navigate directly to the user's profile using their username
+      navigate(`/profile/${username}`);
     } catch (error) {
       console.error('Error handling mention click:', error);
     }

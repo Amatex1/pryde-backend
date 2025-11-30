@@ -355,16 +355,32 @@ router.get('/download-data', auth, async (req, res) => {
   }
 });
 
-// @route   GET /api/users/:id
-// @desc    Get user by ID
+// @route   GET /api/users/:identifier
+// @desc    Get user by ID or username
 // @access  Private
-router.get('/:id', auth, checkProfileVisibility, async (req, res) => {
+router.get('/:identifier', auth, checkProfileVisibility, async (req, res) => {
   try {
-    const user = await User.findById(req.params.id)
-      .select('-password')
-      .populate('friends', 'username displayName profilePhoto coverPhoto bio')
-      .populate('followers', 'username displayName profilePhoto coverPhoto bio')
-      .populate('following', 'username displayName profilePhoto coverPhoto bio');
+    const { identifier } = req.params;
+    let user;
+
+    // Check if identifier is a valid MongoDB ObjectId
+    if (mongoose.Types.ObjectId.isValid(identifier) && identifier.length === 24) {
+      // Try to find by ID first
+      user = await User.findById(identifier)
+        .select('-password')
+        .populate('friends', 'username displayName profilePhoto coverPhoto bio')
+        .populate('followers', 'username displayName profilePhoto coverPhoto bio')
+        .populate('following', 'username displayName profilePhoto coverPhoto bio');
+    }
+
+    // If not found by ID or not a valid ID, try username
+    if (!user) {
+      user = await User.findOne({ username: identifier })
+        .select('-password')
+        .populate('friends', 'username displayName profilePhoto coverPhoto bio')
+        .populate('followers', 'username displayName profilePhoto coverPhoto bio')
+        .populate('following', 'username displayName profilePhoto coverPhoto bio');
+    }
 
     if (!user) {
       return res.status(404).json({ message: 'User not found' });

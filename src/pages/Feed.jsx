@@ -738,7 +738,7 @@ function Feed() {
                   >
                     <div className="post-header">
                       <div className="post-author">
-                        <Link to={`/profile/${post.author?._id}`} className="author-avatar" style={{ textDecoration: 'none' }}>
+                        <Link to={`/profile/${post.author?.username}`} className="author-avatar" style={{ textDecoration: 'none' }}>
                           {post.author?.profilePhoto ? (
                             <img src={getImageUrl(post.author.profilePhoto)} alt={post.author.username} />
                           ) : (
@@ -746,7 +746,7 @@ function Feed() {
                           )}
                         </Link>
                         <div className="author-info">
-                          <Link to={`/profile/${post.author?._id}`} className="author-name" style={{ textDecoration: 'none', color: 'inherit' }}>
+                          <Link to={`/profile/${post.author?.username}`} className="author-name" style={{ textDecoration: 'none', color: 'inherit' }}>
                             {post.author?.displayName || post.author?.username || 'User'}
                           </Link>
                           <div className="post-time">
@@ -1055,7 +1055,7 @@ function Feed() {
                                 className="comment"
                                 ref={(el) => commentRefs.current[comment._id] = el}
                               >
-                                <Link to={`/profile/${comment.user?._id}`} className="comment-avatar" style={{ textDecoration: 'none' }}>
+                                <Link to={`/profile/${comment.user?.username}`} className="comment-avatar" style={{ textDecoration: 'none' }}>
                                   {comment.user?.profilePhoto ? (
                                     <img src={getImageUrl(comment.user.profilePhoto)} alt={comment.user.username} />
                                   ) : (

@@ -455,7 +455,7 @@ function Friends() {
                           </div>
                         </div>
                       ) : (
-                        <Link to={`/profile/${friend._id}`} className="user-link">
+                        <Link to={`/profile/${friend.username}`} className="user-link">
                           <div className="user-avatar">
                             {friend.profilePhoto ? (
                               <img src={getImageUrl(friend.profilePhoto)} alt={friend.username} />
@@ -576,7 +576,7 @@ function Friends() {
                           <img src={getImageUrl(follower.coverPhoto)} alt="Cover" />
                         </div>
                       )}
-                      <Link to={`/profile/${follower._id}`} className="user-link">
+                      <Link to={`/profile/${follower.username}`} className="user-link">
                         <div className="user-avatar">
                           {follower.profilePhoto ? (
                             <img src={getImageUrl(follower.profilePhoto)} alt={follower.username} />
@@ -735,7 +735,7 @@ function Friends() {
                               <img src={getImageUrl(user.coverPhoto)} alt="Cover" />
                             </div>
                           )}
-                          <Link to={`/profile/${user._id}`} className="user-link">
+                          <Link to={`/profile/${user.username}`} className="user-link">
                             <div className="user-avatar">
                               {user.profilePhoto ? (
                                 <img src={getImageUrl(user.profilePhoto)} alt={user.username} />

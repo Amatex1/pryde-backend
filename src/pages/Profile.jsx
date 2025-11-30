@@ -1193,7 +1193,7 @@ function Profile() {
                                   className="comment"
                                   ref={(el) => commentRefs.current[comment._id] = el}
                                 >
-                                  <Link to={`/profile/${comment.user?._id}`} className="comment-avatar" style={{ textDecoration: 'none' }}>
+                                  <Link to={`/profile/${comment.user?.username}`} className="comment-avatar" style={{ textDecoration: 'none' }}>
                                     {comment.user?.profilePhoto ? (
                                       <img src={getImageUrl(comment.user.profilePhoto)} alt={comment.user.username} />
                                     ) : (
@@ -1391,7 +1391,7 @@ function Profile() {
                                           className="comment reply"
                                           ref={(el) => commentRefs.current[reply._id] = el}
                                         >
-                                          <Link to={`/profile/${reply.user?._id}`} className="comment-avatar" style={{ textDecoration: 'none' }}>
+                                          <Link to={`/profile/${reply.user?.username}`} className="comment-avatar" style={{ textDecoration: 'none' }}>
                                             {reply.user?.profilePhoto ? (
                                               <img src={getImageUrl(reply.user.profilePhoto)} alt={reply.user.username} />
                                             ) : (
@@ -1669,7 +1669,7 @@ function Profile() {
                         <div className="friend-name deactivated-text">{follower.displayName}</div>
                       </div>
                     ) : (
-                      <Link key={follower._id} to={`/profile/${follower._id}`} className="friend-item" style={{ textDecoration: 'none', color: 'inherit' }}>
+                      <Link key={follower._id} to={`/profile/${follower.username}`} className="friend-item" style={{ textDecoration: 'none', color: 'inherit' }}>
                         <div className="friend-avatar">
                           {follower.profilePhoto ? (
                             <img src={getImageUrl(follower.profilePhoto)} alt={follower.username} />
