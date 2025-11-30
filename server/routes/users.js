@@ -165,7 +165,24 @@ router.get('/suggested', auth, async (req, res) => {
       }
     ];
 
-    const suggestedUsers = await User.aggregate(pipeline);
+    let suggestedUsers = await User.aggregate(pipeline);
+
+    // Debug logging
+    console.log('🔍 Suggested users debug:');
+    console.log('  - Current user:', req.userId);
+    console.log('  - Excluded IDs count:', excludeIds.length);
+    console.log('  - Suggested users found:', suggestedUsers.length);
+
+    // If no suggestions found, return random users (fallback)
+    if (suggestedUsers.length === 0) {
+      console.log('  - No scored matches, fetching random users...');
+      suggestedUsers = await User.find(matchCriteria)
+        .select('username displayName profilePhoto coverPhoto bio interests city sexualOrientation')
+        .sort({ createdAt: -1 })
+        .limit(20);
+
+      console.log('  - Random users found:', suggestedUsers.length);
+    }
 
     res.json(suggestedUsers);
   } catch (error) {
