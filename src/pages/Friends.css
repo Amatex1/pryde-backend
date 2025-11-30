@@ -78,6 +78,7 @@
   gap: 1rem;
   text-decoration: none;
   color: inherit;
+  flex: 1; /* Allow link to grow and push button to bottom */
 }
 
 .user-avatar {
@@ -160,7 +161,9 @@
   transition: all 0.3s ease;
   font-size: 0.9rem;
   font-weight: 600;
-  flex: 1;
+  /* Removed flex: 1 to prevent buttons from stretching */
+  width: 100%; /* Full width of card but not stretching vertically */
+  margin-top: auto; /* Push to bottom of flex container */
 }
 
 .search-section {
