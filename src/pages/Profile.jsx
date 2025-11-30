@@ -41,6 +41,10 @@ function Profile() {
   const [editProfileModal, setEditProfileModal] = useState(false);
   const [friendStatus, setFriendStatus] = useState(null); // null, 'friends', 'pending_sent', 'pending_received', 'none'
   const [friendRequestId, setFriendRequestId] = useState(null);
+  // New follow system states
+  const [followStatus, setFollowStatus] = useState(null); // null, 'following', 'pending', 'none'
+  const [followRequestId, setFollowRequestId] = useState(null);
+  const [isPrivateAccount, setIsPrivateAccount] = useState(false);
   const [isBlocked, setIsBlocked] = useState(false);
   const [reportModal, setReportModal] = useState({ isOpen: false, type: '', contentId: null, userId: null });
   const [photoViewerImage, setPhotoViewerImage] = useState(null);
@@ -67,17 +71,18 @@ function Profile() {
     fetchUserPosts();
     if (!isOwnProfile) {
       checkFriendStatus();
+      checkFollowStatus(); // Check follow status for new system
       checkBlockStatus();
       checkPrivacyPermissions();
     }
   }, [id]);
 
-  // Update message permission when friend status changes
+  // Update message permission when friend/follow status changes
   useEffect(() => {
     if (!isOwnProfile && user) {
       checkPrivacyPermissions();
     }
-  }, [friendStatus, user]);
+  }, [friendStatus, followStatus, user]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -128,12 +133,12 @@ function Profile() {
       }
 
       // Check if user can send messages
-      const messageSetting = targetUser.privacySettings?.whoCanMessage || 'friends';
+      const messageSetting = targetUser.privacySettings?.whoCanMessage || 'followers';
       if (messageSetting === 'no-one') {
         setCanSendMessage(false);
-      } else if (messageSetting === 'friends') {
-        // Can only message if friends - will be updated when friendStatus changes
-        setCanSendMessage(friendStatus === 'friends');
+      } else if (messageSetting === 'friends' || messageSetting === 'followers') {
+        // Can only message if following (or friends for backward compatibility)
+        setCanSendMessage(followStatus === 'following' || friendStatus === 'friends');
       } else if (messageSetting === 'everyone') {
         setCanSendMessage(true);
       }
@@ -409,6 +414,40 @@ function Profile() {
     }
   };
 
+  const checkFollowStatus = async () => {
+    try {
+      // Get user info to check if private account
+      const userResponse = await api.get(`/users/${id}`);
+      setIsPrivateAccount(userResponse.data.privacySettings?.isPrivateAccount || false);
+
+      // Check if already following
+      const followingResponse = await api.get(`/follow/following/${currentUser.id}`);
+      const isFollowing = followingResponse.data.some(user => user._id === id);
+
+      if (isFollowing) {
+        setFollowStatus('following');
+        return;
+      }
+
+      // Check for pending follow requests (if private account)
+      if (userResponse.data.privacySettings?.isPrivateAccount) {
+        const requestsResponse = await api.get('/follow/requests');
+        const pendingRequest = requestsResponse.data.find(req => req.receiver._id === id);
+
+        if (pendingRequest) {
+          setFollowStatus('pending');
+          setFollowRequestId(pendingRequest._id);
+          return;
+        }
+      }
+
+      setFollowStatus('none');
+    } catch (error) {
+      console.error('Failed to check follow status:', error);
+      setFollowStatus('none');
+    }
+  };
+
   const handlePhotoUpload = async (e, type) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -486,6 +525,48 @@ function Profile() {
       return;
     }
     navigate(`/messages?chat=${id}`);
+  };
+
+  // New follow system handlers
+  const handleFollow = async () => {
+    try {
+      const response = await api.post(`/follow/${id}`);
+
+      if (isPrivateAccount) {
+        setFollowStatus('pending');
+        showToast('Follow request sent! 🎉', 'success');
+      } else {
+        setFollowStatus('following');
+        fetchUserProfile(); // Refresh to update follower count
+        showToast('Now following! 🎉', 'success');
+      }
+    } catch (error) {
+      showToast(error.response?.data?.message || 'Failed to follow user', 'error');
+    }
+  };
+
+  const handleUnfollow = async () => {
+    try {
+      await api.delete(`/follow/${id}`);
+      setFollowStatus('none');
+      fetchUserProfile(); // Refresh to update follower count
+      showToast('Unfollowed', 'success');
+    } catch (error) {
+      showToast(error.response?.data?.message || 'Failed to unfollow user', 'error');
+    }
+  };
+
+  const handleCancelFollowRequest = async () => {
+    try {
+      if (followRequestId) {
+        await api.delete(`/follow/requests/${followRequestId}`);
+        setFollowStatus('none');
+        setFollowRequestId(null);
+        showToast('Follow request cancelled', 'success');
+      }
+    } catch (error) {
+      showToast(error.response?.data?.message || 'Failed to cancel follow request', 'error');
+    }
   };
 
   const handleBlockUser = async () => {
@@ -628,29 +709,20 @@ function Profile() {
               {!isOwnProfile && (
                 <div className="profile-action-buttons">
                   <div className="friend-actions">
-                    {friendStatus === 'none' && canSendFriendRequest && (
-                      <button className="btn-add-friend" onClick={handleAddFriend}>
-                        ➕ Add Friend
+                    {/* New Follow System Buttons */}
+                    {followStatus === 'none' && (
+                      <button className="btn-add-friend" onClick={handleFollow}>
+                        ➕ Follow
                       </button>
                     )}
-                    {friendStatus === 'none' && !canSendFriendRequest && (
-                      <button className="btn-add-friend" disabled style={{ opacity: 0.6, cursor: 'not-allowed' }}>
-                        🔒 Friend Requests Disabled
+                    {followStatus === 'pending' && (
+                      <button className="btn-cancel-request" onClick={handleCancelFollowRequest}>
+                        ⏳ Pending
                       </button>
                     )}
-                    {friendStatus === 'pending_sent' && (
-                      <button className="btn-cancel-request" onClick={handleCancelRequest}>
-                        ❌ Cancel Request
-                      </button>
-                    )}
-                    {friendStatus === 'pending_received' && (
-                      <button className="btn-add-friend" onClick={handleAcceptFriend}>
-                        ✅ Accept Friend Request
-                      </button>
-                    )}
-                    {friendStatus === 'friends' && (
-                      <button className="btn-unfriend" onClick={handleRemoveFriend}>
-                        👥 Unfriend
+                    {followStatus === 'following' && (
+                      <button className="btn-unfriend" onClick={handleUnfollow}>
+                        ✓ Following
                       </button>
                     )}
 
@@ -663,12 +735,12 @@ function Profile() {
                         💬 Message
                       </button>
                     )}
-                    {!canSendMessage && friendStatus !== 'friends' && (
+                    {!canSendMessage && followStatus !== 'following' && (
                       <button
                         className="btn-message"
                         disabled
                         style={{ opacity: 0.6, cursor: 'not-allowed' }}
-                        title="You must be friends to message this user"
+                        title="You must be following to message this user"
                       >
                         🔒 Message
                       </button>
