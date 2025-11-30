@@ -407,6 +407,13 @@
   gap: 0.25rem;
 }
 
+.author-name-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
 .author-name,
 .post-author-name {
   font-weight: 600;
@@ -417,6 +424,106 @@
 .author-name:hover,
 .post-author-name:hover {
   color: var(--electric-blue);
+}
+
+.author-pronouns {
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  font-weight: normal;
+}
+
+.verified-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.25rem;
+  height: 1.25rem;
+  background: var(--electric-blue);
+  color: white;
+  border-radius: 50%;
+  font-size: 0.75rem;
+  font-weight: bold;
+  flex-shrink: 0;
+}
+
+.content-warning-input {
+  margin: 1rem 0;
+}
+
+.cw-input {
+  width: 100%;
+  padding: 0.75rem;
+  border: 2px solid var(--electric-blue);
+  border-radius: 12px;
+  font-size: 0.9rem;
+  background: var(--card-surface);
+  color: var(--text-main);
+}
+
+.btn-content-warning {
+  padding: 0.75rem 1.25rem;
+  border-radius: 12px;
+  border: 2px solid var(--border-light);
+  background: var(--card-surface);
+  color: var(--text-main);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-content-warning:hover {
+  border-color: var(--electric-blue);
+  background: var(--soft-lavender);
+}
+
+.btn-content-warning.active {
+  border-color: var(--electric-blue);
+  background: var(--electric-blue);
+  color: white;
+}
+
+.content-warning-overlay {
+  background: linear-gradient(135deg, rgba(108, 92, 231, 0.1), rgba(9, 132, 227, 0.1));
+  border: 2px solid var(--electric-blue);
+  border-radius: 12px;
+  padding: 2rem;
+  text-align: center;
+  margin: 1rem 0;
+}
+
+.cw-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.cw-icon {
+  font-size: 1.5rem;
+}
+
+.cw-text {
+  font-weight: 600;
+  color: var(--text-main);
+  font-size: 1.1rem;
+}
+
+.btn-reveal-content {
+  padding: 0.75rem 2rem;
+  border-radius: 12px;
+  border: none;
+  background: var(--electric-blue);
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-reveal-content:hover {
+  background: var(--pryde-purple);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(108, 92, 231, 0.3);
 }
 
 .post-time,

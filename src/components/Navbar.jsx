@@ -156,6 +156,10 @@ function Navbar() {
               <span className="mobile-menu-icon">🔖</span>
               <span>Bookmarks</span>
             </Link>
+            <Link to="/events" className="mobile-menu-item" onClick={() => setShowMobileMenu(false)}>
+              <span className="mobile-menu-icon">🏳️‍🌈</span>
+              <span>Events</span>
+            </Link>
             {user?.role && ['moderator', 'admin', 'super_admin'].includes(user.role) && (
               <Link to="/admin" className="mobile-menu-item" onClick={() => setShowMobileMenu(false)}>
                 <span className="mobile-menu-icon">🛡️</span>
@@ -192,6 +196,10 @@ function Navbar() {
             {totalUnreadMessages > 0 && (
               <span className="nav-badge">{totalUnreadMessages > 99 ? '99+' : totalUnreadMessages}</span>
             )}
+          </Link>
+          <Link to="/events" className="nav-button" title="Events">
+            <span className="nav-icon">🏳️‍🌈</span>
+            <span className="nav-label">Events</span>
           </Link>
           <NotificationBell />
 

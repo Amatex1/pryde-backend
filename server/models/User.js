@@ -178,6 +178,10 @@ const userSchema = new mongoose.Schema({
     canViewAnalytics: { type: Boolean, default: false },
     canManageAdmins: { type: Boolean, default: false }
   },
+  isVerified: {
+    type: Boolean,
+    default: false
+  },
   isSuspended: {
     type: Boolean,
     default: false

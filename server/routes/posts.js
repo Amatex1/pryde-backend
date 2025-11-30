@@ -76,8 +76,8 @@ router.get('/', auth, async (req, res) => {
     }
 
     const posts = await Post.find(query)
-      .populate('author', 'username displayName profilePhoto')
-      .populate('comments.user', 'username displayName profilePhoto')
+      .populate('author', 'username displayName profilePhoto isVerified pronouns')
+      .populate('comments.user', 'username displayName profilePhoto isVerified pronouns')
       .populate('likes', 'username displayName profilePhoto')
       .populate('reactions.user', 'username displayName profilePhoto')
       .populate('comments.reactions.user', 'username displayName profilePhoto')
@@ -148,8 +148,8 @@ router.get('/user/:identifier', auth, async (req, res) => {
     }
 
     const posts = await Post.find(query)
-      .populate('author', 'username displayName profilePhoto')
-      .populate('comments.user', 'username displayName profilePhoto')
+      .populate('author', 'username displayName profilePhoto isVerified pronouns')
+      .populate('comments.user', 'username displayName profilePhoto isVerified pronouns')
       .populate('likes', 'username displayName profilePhoto')
       .populate('reactions.user', 'username displayName profilePhoto')
       .populate('comments.reactions.user', 'username displayName profilePhoto')
@@ -176,8 +176,8 @@ router.get('/user/:identifier', auth, async (req, res) => {
 router.get('/:id', auth, async (req, res) => {
   try {
     const post = await Post.findById(req.params.id)
-      .populate('author', 'username displayName profilePhoto')
-      .populate('comments.user', 'username displayName profilePhoto')
+      .populate('author', 'username displayName profilePhoto isVerified pronouns')
+      .populate('comments.user', 'username displayName profilePhoto isVerified pronouns')
       .populate('likes', 'username displayName profilePhoto')
       .populate('reactions.user', 'username displayName profilePhoto')
       .populate('comments.reactions.user', 'username displayName profilePhoto');
@@ -196,9 +196,9 @@ router.get('/:id', auth, async (req, res) => {
 // @route   POST /api/posts
 // @desc    Create a new post
 // @access  Private
-router.post('/', auth, postLimiter, sanitizeFields(['content']), checkMuted, moderateContent, async (req, res) => {
+router.post('/', auth, postLimiter, sanitizeFields(['content', 'contentWarning']), checkMuted, moderateContent, async (req, res) => {
   try {
-    const { content, images, media, visibility, hiddenFrom, sharedWith } = req.body;
+    const { content, images, media, visibility, hiddenFrom, sharedWith, contentWarning } = req.body;
 
     // Require either content or media
     if ((!content || content.trim() === '') && (!media || media.length === 0)) {
@@ -214,11 +214,12 @@ router.post('/', auth, postLimiter, sanitizeFields(['content']), checkMuted, mod
       media: media || [],
       visibility: visibility || 'public',
       hiddenFrom: hiddenFrom || [],
-      sharedWith: sharedWith || []
+      sharedWith: sharedWith || [],
+      contentWarning: contentWarning || ''
     });
 
     await post.save();
-    await post.populate('author', 'username displayName profilePhoto');
+    await post.populate('author', 'username displayName profilePhoto isVerified pronouns');
 
     res.status(201).json(post);
   } catch (error) {
@@ -254,9 +255,9 @@ router.put('/:id', auth, async (req, res) => {
     if (sharedWith !== undefined) post.sharedWith = sharedWith;
 
     await post.save();
-    await post.populate('author', 'username displayName profilePhoto');
+    await post.populate('author', 'username displayName profilePhoto isVerified pronouns');
     await post.populate('likes', 'username displayName profilePhoto');
-    await post.populate('comments.user', 'username displayName profilePhoto');
+    await post.populate('comments.user', 'username displayName profilePhoto isVerified pronouns');
     await post.populate({
       path: 'originalPost',
       populate: [
@@ -335,9 +336,9 @@ router.post('/:id/like', auth, async (req, res) => {
     }
 
     await post.save();
-    await post.populate('author', 'username displayName profilePhoto');
+    await post.populate('author', 'username displayName profilePhoto isVerified pronouns');
     await post.populate('likes', 'username displayName profilePhoto');
-    await post.populate('comments.user', 'username displayName profilePhoto');
+    await post.populate('comments.user', 'username displayName profilePhoto isVerified pronouns');
     await post.populate({
       path: 'originalPost',
       populate: [
@@ -410,10 +411,10 @@ router.post('/:id/react', auth, async (req, res) => {
     }
 
     await post.save();
-    await post.populate('author', 'username displayName profilePhoto');
+    await post.populate('author', 'username displayName profilePhoto isVerified pronouns');
     await post.populate('likes', 'username displayName profilePhoto');
     await post.populate('reactions.user', 'username displayName profilePhoto');
-    await post.populate('comments.user', 'username displayName profilePhoto');
+    await post.populate('comments.user', 'username displayName profilePhoto isVerified pronouns');
     await post.populate({
       path: 'originalPost',
       populate: [
@@ -498,10 +499,10 @@ router.post('/:id/comment/:commentId/react', auth, async (req, res) => {
     }
 
     await post.save();
-    await post.populate('author', 'username displayName profilePhoto');
+    await post.populate('author', 'username displayName profilePhoto isVerified pronouns');
     await post.populate('likes', 'username displayName profilePhoto');
     await post.populate('reactions.user', 'username displayName profilePhoto');
-    await post.populate('comments.user', 'username displayName profilePhoto');
+    await post.populate('comments.user', 'username displayName profilePhoto isVerified pronouns');
     await post.populate('comments.reactions.user', 'username displayName profilePhoto');
     await post.populate({
       path: 'originalPost',
@@ -580,7 +581,7 @@ router.post('/:id/share', auth, postLimiter, checkMuted, async (req, res) => {
     }
 
     // Populate the shared post
-    await sharedPost.populate('author', 'username displayName profilePhoto');
+    await sharedPost.populate('author', 'username displayName profilePhoto isVerified pronouns');
     await sharedPost.populate({
       path: 'originalPost',
       populate: [
@@ -677,8 +678,8 @@ router.post('/:id/comment', auth, commentLimiter, sanitizeFields(['content']), c
       await notification.save();
     }
 
-    await post.populate('author', 'username displayName profilePhoto');
-    await post.populate('comments.user', 'username displayName profilePhoto');
+    await post.populate('author', 'username displayName profilePhoto isVerified pronouns');
+    await post.populate('comments.user', 'username displayName profilePhoto isVerified pronouns');
     await post.populate('likes', 'username displayName profilePhoto');
     await post.populate({
       path: 'originalPost',
@@ -737,8 +738,8 @@ router.post('/:id/comment/:commentId/reply', auth, commentLimiter, checkMuted, m
 
     await post.save();
 
-    await post.populate('author', 'username displayName profilePhoto');
-    await post.populate('comments.user', 'username displayName profilePhoto');
+    await post.populate('author', 'username displayName profilePhoto isVerified pronouns');
+    await post.populate('comments.user', 'username displayName profilePhoto isVerified pronouns');
     await post.populate('likes', 'username displayName profilePhoto');
     await post.populate({
       path: 'originalPost',
@@ -791,8 +792,8 @@ router.put('/:id/comment/:commentId', auth, async (req, res) => {
     comment.editedAt = new Date();
     await post.save();
 
-    await post.populate('author', 'username displayName profilePhoto');
-    await post.populate('comments.user', 'username displayName profilePhoto');
+    await post.populate('author', 'username displayName profilePhoto isVerified pronouns');
+    await post.populate('comments.user', 'username displayName profilePhoto isVerified pronouns');
     await post.populate('likes', 'username displayName profilePhoto');
     await post.populate({
       path: 'originalPost',
@@ -837,8 +838,8 @@ router.delete('/:id/comment/:commentId', auth, async (req, res) => {
     comment.deleteOne();
     await post.save();
 
-    await post.populate('author', 'username displayName profilePhoto');
-    await post.populate('comments.user', 'username displayName profilePhoto');
+    await post.populate('author', 'username displayName profilePhoto isVerified pronouns');
+    await post.populate('comments.user', 'username displayName profilePhoto isVerified pronouns');
     await post.populate('likes', 'username displayName profilePhoto');
     await post.populate({
       path: 'originalPost',

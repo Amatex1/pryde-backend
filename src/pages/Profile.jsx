@@ -700,6 +700,7 @@ function Profile() {
             <div className="profile-details">
               <h1 className="profile-name text-shadow">
                 {user.displayName || user.fullName || user.username}
+                {user.isVerified && <span className="verified-badge" title="Verified">✓</span>}
                 {user.nickname && <span className="nickname"> "{user.nickname}"</span>}
               </h1>
               <p className="profile-username">@{user.username}</p>

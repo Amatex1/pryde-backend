@@ -16,6 +16,7 @@ import Messages from './pages/Messages';
 import Notifications from './pages/Notifications';
 import Admin from './pages/Admin';
 import Hashtag from './pages/Hashtag';
+import Events from './pages/Events';
 import Terms from './pages/legal/Terms';
 import Privacy from './pages/legal/Privacy';
 import Community from './pages/legal/Community';
@@ -97,6 +98,7 @@ function App() {
           <Route path="/messages" element={<PrivateRoute><Messages /></PrivateRoute>} />
           <Route path="/notifications" element={<PrivateRoute><Notifications /></PrivateRoute>} />
           <Route path="/hashtag/:tag" element={<PrivateRoute><Hashtag /></PrivateRoute>} />
+          <Route path="/events" element={<PrivateRoute><Events /></PrivateRoute>} />
 
           {/* Admin Panel - Hidden Route (requires admin role) */}
           <Route path="/admin" element={<PrivateRoute><Admin /></PrivateRoute>} />

@@ -36,6 +36,7 @@ import sessionsRoutes from './routes/sessions.js';
 import privacyRoutes from './routes/privacy.js';
 import bookmarksRoutes from './routes/bookmarks.js';
 import passkeyRoutes from './routes/passkey.js';
+import eventsRoutes from './routes/events.js';
 
 // Import rate limiters
 import {
@@ -217,6 +218,7 @@ app.use('/api/2fa', twoFactorRoutes);
 app.use('/api/sessions', sessionsRoutes);
 app.use('/api/privacy', privacyRoutes);
 app.use('/api/bookmarks', bookmarksRoutes);
+app.use('/api/events', eventsRoutes);
 
 // Debug: Log the passkey router before registering
 console.log('🔍 Passkey router type:', typeof passkeyRoutes);

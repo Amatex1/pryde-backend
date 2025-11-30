@@ -42,6 +42,9 @@ function Feed() {
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const [hiddenFromUsers, setHiddenFromUsers] = useState([]);
   const [sharedWithUsers, setSharedWithUsers] = useState([]);
+  const [contentWarning, setContentWarning] = useState('');
+  const [showContentWarning, setShowContentWarning] = useState(false);
+  const [revealedPosts, setRevealedPosts] = useState({});
   const [showReplies, setShowReplies] = useState({}); // Track which comments have replies visible
   const [showReactionPicker, setShowReactionPicker] = useState(null); // Track which comment shows reaction picker
   const [editPostVisibility, setEditPostVisibility] = useState('friends');
@@ -348,7 +351,8 @@ function Feed() {
       const postData = {
         content: contentWithEmojis,
         media: selectedMedia,
-        visibility: postVisibility
+        visibility: postVisibility,
+        contentWarning: contentWarning
       };
 
       // Add custom privacy settings if applicable
@@ -368,6 +372,8 @@ function Feed() {
       setPostVisibility('followers');
       setHiddenFromUsers([]);
       setSharedWithUsers([]);
+      setContentWarning('');
+      setShowContentWarning(false);
     } catch (error) {
       console.error('Post creation failed:', error);
       showAlert('Failed to create post. Please try again.', 'Post Failed');
@@ -655,6 +661,19 @@ function Feed() {
                 </div>
               )}
 
+              {showContentWarning && (
+                <div className="content-warning-input">
+                  <input
+                    type="text"
+                    value={contentWarning}
+                    onChange={(e) => setContentWarning(e.target.value)}
+                    placeholder="e.g., Mental health, Violence, etc."
+                    maxLength={100}
+                    className="cw-input glossy"
+                  />
+                </div>
+              )}
+
               <div className="post-actions-bar">
                 <label className="btn-media-upload">
                   <input
@@ -667,6 +686,15 @@ function Feed() {
                   />
                   {uploadingMedia ? '⏳ Uploading...' : '📷 Add Photos/Videos'}
                 </label>
+
+                <button
+                  type="button"
+                  className={`btn-content-warning ${showContentWarning ? 'active' : ''}`}
+                  onClick={() => setShowContentWarning(!showContentWarning)}
+                  title="Add content warning"
+                >
+                  ⚠️ CW
+                </button>
 
                 <select
                   value={postVisibility}
@@ -746,9 +774,15 @@ function Feed() {
                           )}
                         </Link>
                         <div className="author-info">
-                          <Link to={`/profile/${post.author?.username}`} className="author-name" style={{ textDecoration: 'none', color: 'inherit' }}>
-                            {post.author?.displayName || post.author?.username || 'User'}
-                          </Link>
+                          <div className="author-name-row">
+                            <Link to={`/profile/${post.author?.username}`} className="author-name" style={{ textDecoration: 'none', color: 'inherit' }}>
+                              {post.author?.displayName || post.author?.username || 'User'}
+                            </Link>
+                            {post.author?.isVerified && <span className="verified-badge" title="Verified">✓</span>}
+                            {post.author?.pronouns && (
+                              <span className="author-pronouns">({post.author.pronouns})</span>
+                            )}
+                          </div>
                           <div className="post-time">
                             {new Date(post.createdAt).toLocaleDateString()}
                             <span className="post-privacy-icon" title={`Visible to: ${post.visibility || 'followers'}`}>
@@ -921,14 +955,31 @@ function Feed() {
                               </div>
                             </div>
                           ) : (
-                            post.content && (
-                              <p>
-                                <FormattedText text={post.content} />
-                              </p>
-                            )
+                            <>
+                              {post.contentWarning && !revealedPosts[post._id] ? (
+                                <div className="content-warning-overlay">
+                                  <div className="cw-header">
+                                    <span className="cw-icon">⚠️</span>
+                                    <span className="cw-text">Content Warning: {post.contentWarning}</span>
+                                  </div>
+                                  <button
+                                    className="btn-reveal-content"
+                                    onClick={() => setRevealedPosts({...revealedPosts, [post._id]: true})}
+                                  >
+                                    Show Content
+                                  </button>
+                                </div>
+                              ) : (
+                                post.content && (
+                                  <p>
+                                    <FormattedText text={post.content} />
+                                  </p>
+                                )
+                              )}
+                            </>
                           )}
 
-                          {post.media && post.media.length > 0 && (
+                          {post.media && post.media.length > 0 && (!post.contentWarning || revealedPosts[post._id]) && (
                             <div className={`post-media-grid ${post.media.length === 1 ? 'single' : post.media.length === 2 ? 'double' : 'multiple'}`}>
                               {post.media.map((media, index) => (
                                 <div key={index} className="post-media-item">
