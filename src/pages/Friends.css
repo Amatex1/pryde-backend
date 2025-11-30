@@ -73,6 +73,7 @@
   position: relative; /* For positioning profile photo */
 }
 
+/* User link when there's NO cover photo - normal padding */
 .user-link {
   display: flex;
   flex-direction: column;
@@ -80,12 +81,17 @@
   gap: 0.5rem;
   text-decoration: none;
   color: inherit;
-  flex: 1; /* Allow link to grow and push button to bottom */
-  padding: 0 1.5rem 1rem 1.5rem; /* Add padding to content area only */
-  padding-top: 0; /* No top padding - user-info has margin-top instead */
-  min-height: 200px; /* Ensure consistent minimum height for cards */
+  flex: 1;
+  padding: 1.5rem; /* Normal padding all around */
+  min-height: 200px; /* Ensure consistent minimum height */
 }
 
+/* User link when there IS a cover photo - no top padding */
+.user-card:has(.user-card-cover) .user-link {
+  padding-top: 0; /* No top padding - profile photo overlaps cover */
+}
+
+/* Profile photo when there's NO cover photo - normal flow */
 .user-card .user-avatar {
   width: 100px;
   height: 100px;
@@ -99,12 +105,17 @@
   color: white;
   overflow: hidden;
   border: 4px solid var(--card-surface);
-  position: absolute; /* Position over cover photo */
-  top: 70px; /* Position to overlap cover - centered on cover bottom edge */
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  flex-shrink: 0; /* Don't shrink the avatar */
+}
+
+/* Profile photo when there IS a cover photo - absolutely positioned */
+.user-card:has(.user-card-cover) .user-avatar {
+  position: absolute;
+  top: 70px; /* Position to overlap cover */
   left: 50%;
-  transform: translateX(-50%); /* Center horizontally */
-  z-index: 2; /* Ensure it's above cover photo */
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); /* Add depth */
+  transform: translateX(-50%);
+  z-index: 2;
 }
 
 .user-card .user-avatar img {
@@ -113,13 +124,19 @@
   object-fit: cover;
 }
 
+/* User info when there's NO cover photo - normal spacing */
 .user-info {
   text-align: center;
   flex: 1;
-  margin-top: 70px; /* Push content below the absolutely positioned profile photo (100px photo + border) */
+  margin-top: 0.5rem; /* Small gap after profile photo */
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
+}
+
+/* User info when there IS a cover photo - push below absolutely positioned photo */
+.user-card:has(.user-card-cover) .user-info {
+  margin-top: 70px; /* Push content below the absolutely positioned profile photo */
 }
 
 .user-name {
