@@ -111,10 +111,10 @@ router.delete('/:userId', auth, async (req, res) => {
 router.get('/followers/:userId', auth, async (req, res) => {
   try {
     const userId = req.params.userId;
-    
+
     const user = await User.findById(userId)
       .select('followers username')
-      .populate('followers', 'username displayName profilePhoto');
+      .populate('followers', 'username displayName profilePhoto coverPhoto bio');
 
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
@@ -133,10 +133,10 @@ router.get('/followers/:userId', auth, async (req, res) => {
 router.get('/following/:userId', auth, async (req, res) => {
   try {
     const userId = req.params.userId;
-    
+
     const user = await User.findById(userId)
       .select('following username')
-      .populate('following', 'username displayName profilePhoto');
+      .populate('following', 'username displayName profilePhoto coverPhoto bio');
 
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
@@ -150,7 +150,7 @@ router.get('/following/:userId', auth, async (req, res) => {
 });
 
 // @route   GET /api/follow/requests
-// @desc    Get pending follow requests
+// @desc    Get pending follow requests (received)
 // @access  Private
 router.get('/requests', auth, async (req, res) => {
   try {
@@ -164,6 +164,25 @@ router.get('/requests', auth, async (req, res) => {
     res.json({ followRequests });
   } catch (error) {
     console.error('Get follow requests error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   GET /api/follow/requests/sent
+// @desc    Get sent follow requests (pending)
+// @access  Private
+router.get('/requests/sent', auth, async (req, res) => {
+  try {
+    const sentRequests = await FollowRequest.find({
+      sender: req.userId,
+      status: 'pending'
+    })
+    .populate('receiver', 'username displayName profilePhoto')
+    .sort({ createdAt: -1 });
+
+    res.json({ sentRequests });
+  } catch (error) {
+    console.error('Get sent follow requests error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });

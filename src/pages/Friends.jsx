@@ -23,6 +23,7 @@ function Friends() {
   const [followers, setFollowers] = useState([]);
   const [following, setFollowing] = useState([]);
   const [followRequests, setFollowRequests] = useState([]);
+  const [sentFollowRequests, setSentFollowRequests] = useState([]);
   const [searchResults, setSearchResults] = useState([]);
   const [suggestedUsers, setSuggestedUsers] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -46,6 +47,7 @@ function Friends() {
     fetchFollowers();
     fetchFollowing();
     fetchFollowRequests();
+    fetchSentFollowRequests();
   }, []);
 
   useEffect(() => {
@@ -129,7 +131,8 @@ function Friends() {
   const fetchFollowers = async () => {
     try {
       if (!currentUser) return;
-      const response = await api.get(`/follow/followers/${currentUser.id}`);
+      const userId = currentUser._id || currentUser.id;
+      const response = await api.get(`/follow/followers/${userId}`);
       setFollowers(response.data.followers || []);
     } catch (error) {
       console.error('Failed to fetch followers:', error);
@@ -139,7 +142,8 @@ function Friends() {
   const fetchFollowing = async () => {
     try {
       if (!currentUser) return;
-      const response = await api.get(`/follow/following/${currentUser.id}`);
+      const userId = currentUser._id || currentUser.id;
+      const response = await api.get(`/follow/following/${userId}`);
       setFollowing(response.data.following || []);
     } catch (error) {
       console.error('Failed to fetch following:', error);
@@ -152,6 +156,15 @@ function Friends() {
       setFollowRequests(response.data.followRequests || []);
     } catch (error) {
       console.error('Failed to fetch follow requests:', error);
+    }
+  };
+
+  const fetchSentFollowRequests = async () => {
+    try {
+      const response = await api.get('/follow/requests/sent');
+      setSentFollowRequests(response.data.sentRequests || []);
+    } catch (error) {
+      console.error('Failed to fetch sent follow requests:', error);
     }
   };
 
@@ -273,12 +286,44 @@ function Friends() {
   };
 
   // New follow system handlers
+  const handleFollow = async (userId) => {
+    try {
+      const response = await api.post(`/follow/${userId}`);
+
+      // Check if it was a follow or a follow request
+      if (response.data.message === 'Follow request sent') {
+        alert('Follow request sent! Waiting for approval.');
+        await fetchSentFollowRequests();
+      } else {
+        alert('Now following!');
+        await fetchFollowing();
+      }
+
+      // Refresh search results and suggested users to update button states
+      if (searchQuery) {
+        await handleSearch({ preventDefault: () => {} });
+      } else {
+        await fetchSuggestedUsers();
+      }
+    } catch (error) {
+      alert(error.response?.data?.message || 'Failed to follow user');
+    }
+  };
+
   const handleUnfollow = async (userId) => {
     if (!confirm('Are you sure you want to unfollow this user?')) return;
 
     try {
       await api.delete(`/follow/${userId}`);
-      fetchFollowing();
+      await fetchFollowing();
+
+      // Refresh search results and suggested users to update button states
+      if (searchQuery) {
+        await handleSearch({ preventDefault: () => {} });
+      } else {
+        await fetchSuggestedUsers();
+      }
+
       alert('Unfollowed successfully');
     } catch (error) {
       alert('Failed to unfollow user');
@@ -639,15 +684,19 @@ function Friends() {
                   <h3 className="section-subtitle">Search Results</h3>
                   <div className="user-grid">
                     {searchResults.map((user) => {
-                      // Check if already friends
-                      const isFriend = friends.some(f => f._id === user._id);
-                      // Check if request already sent
-                      const requestSent = sentRequests.some(r => r.receiver._id === user._id);
-                      // Check if request received
-                      const requestReceived = requests.some(r => r.sender._id === user._id);
+                      // Check follow status
+                      const isFollowing = following.some(f => f._id === user._id);
+                      const isFollower = followers.some(f => f._id === user._id);
+                      // Check if follow request pending (sent by me)
+                      const requestPending = sentFollowRequests.some(r => r.receiver?._id === user._id);
 
                       return (
                         <div key={user._id} className="user-card glossy">
+                          {user.coverPhoto && (
+                            <div className="user-card-cover">
+                              <img src={getImageUrl(user.coverPhoto)} alt="Cover" />
+                            </div>
+                          )}
                           <Link to={`/profile/${user._id}`} className="user-link">
                             <div className="user-avatar">
                               {user.profilePhoto ? (
@@ -662,22 +711,18 @@ function Friends() {
                               {user.bio && <div className="user-bio">{user.bio}</div>}
                             </div>
                           </Link>
-                          {isFriend ? (
-                            <button className="btn-friends" disabled>
-                              Friends ✓
+                          {isFollowing ? (
+                            <button className="btn-following" onClick={() => handleUnfollow(user._id)}>
+                              ✓ Following
                             </button>
-                          ) : requestSent ? (
+                          ) : requestPending ? (
                             <button className="btn-pending" disabled>
-                              Pending
-                            </button>
-                          ) : requestReceived ? (
-                            <button className="btn-respond" onClick={() => setActiveTab('requests')}>
-                              Respond
+                              ⏳ Requested
                             </button>
                           ) : (
                             <button
                               onClick={() => handleFollow(user._id)}
-                              className="btn-add glossy-gold"
+                              className="btn-add"
                             >
                               ➕ Follow
                             </button>
