@@ -420,9 +420,17 @@ function Profile() {
       const userResponse = await api.get(`/users/${id}`);
       setIsPrivateAccount(userResponse.data.privacySettings?.isPrivateAccount || false);
 
-      // Check if already following
-      const followingResponse = await api.get(`/follow/following/${currentUser.id}`);
-      const isFollowing = followingResponse.data.some(user => user._id === id);
+      // Check if already following - get MY following list
+      const myUserId = currentUser?.id || currentUser?._id;
+      if (!myUserId) {
+        console.error('Current user ID not available');
+        setFollowStatus('none');
+        return;
+      }
+
+      const followingResponse = await api.get(`/follow/following/${myUserId}`);
+      const followingList = followingResponse.data.following || followingResponse.data;
+      const isFollowing = followingList.some(user => user._id === id);
 
       if (isFollowing) {
         setFollowStatus('following');

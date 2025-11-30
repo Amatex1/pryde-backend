@@ -118,7 +118,7 @@ function Friends() {
     try {
       if (!currentUser) return;
       const response = await api.get(`/follow/followers/${currentUser.id}`);
-      setFollowers(response.data);
+      setFollowers(response.data.followers || []);
     } catch (error) {
       console.error('Failed to fetch followers:', error);
     }
@@ -128,7 +128,7 @@ function Friends() {
     try {
       if (!currentUser) return;
       const response = await api.get(`/follow/following/${currentUser.id}`);
-      setFollowing(response.data);
+      setFollowing(response.data.following || []);
     } catch (error) {
       console.error('Failed to fetch following:', error);
     }
@@ -137,7 +137,7 @@ function Friends() {
   const fetchFollowRequests = async () => {
     try {
       const response = await api.get('/follow/requests');
-      setFollowRequests(response.data);
+      setFollowRequests(response.data.followRequests || []);
     } catch (error) {
       console.error('Failed to fetch follow requests:', error);
     }
