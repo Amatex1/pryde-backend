@@ -6,7 +6,7 @@ import Message from '../models/Message.js';
 import FriendRequest from '../models/FriendRequest.js';
 import GroupChat from '../models/GroupChat.js';
 import Notification from '../models/Notification.js';
-import auth from '../middleware/auth.js';
+import auth, { optionalAuth } from '../middleware/auth.js';
 import { checkProfileVisibility, checkBlocked } from '../middleware/privacy.js';
 import mongoose from 'mongoose';
 
@@ -357,8 +357,8 @@ router.get('/download-data', auth, async (req, res) => {
 
 // @route   GET /api/users/:identifier
 // @desc    Get user by ID or username
-// @access  Private
-router.get('/:identifier', auth, checkProfileVisibility, async (req, res) => {
+// @access  Public (with optional authentication for private profiles)
+router.get('/:identifier', optionalAuth, checkProfileVisibility, async (req, res) => {
   try {
     const { identifier } = req.params;
     let user;

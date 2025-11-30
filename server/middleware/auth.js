@@ -111,6 +111,45 @@ const auth = async (req, res, next) => {
   }
 };
 
+// Optional auth middleware - sets req.userId if token is valid, but doesn't reject if missing
+export const optionalAuth = async (req, res, next) => {
+  try {
+    // Get token from header
+    const token = req.header('Authorization')?.replace('Bearer ', '');
+
+    if (!token) {
+      // No token is fine for optional auth - just continue without setting userId
+      return next();
+    }
+
+    // Verify token
+    const decoded = jwt.verify(token, config.jwtSecret);
+
+    // Get user from database
+    const user = await User.findById(decoded.userId).select('-password');
+
+    if (!user) {
+      // Invalid user - continue without setting userId
+      return next();
+    }
+
+    // Check if user is banned or suspended
+    if (user.isBanned || (user.isSuspended && user.suspendedUntil > new Date())) {
+      // Banned/suspended users can't access anything
+      return res.status(403).json({ message: 'Your account has been restricted' });
+    }
+
+    // Set user info if valid
+    req.user = user;
+    req.userId = decoded.userId;
+    req.sessionId = decoded.sessionId;
+    next();
+  } catch (error) {
+    // Token verification failed - continue without setting userId
+    next();
+  }
+};
+
 // Named export for consistency
 export const authenticateToken = auth;
 
