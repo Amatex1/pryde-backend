@@ -1652,13 +1652,13 @@ function Profile() {
             )}
 
             <div className="sidebar-card glossy">
-              <h3 className="sidebar-title">Friends</h3>
-              {user.friends && user.friends.length > 0 ? (
+              <h3 className="sidebar-title">Followers</h3>
+              {user.followers && user.followers.length > 0 ? (
                 <div className="friends-grid">
-                  {user.friends.slice(0, 6).map((friend) => (
-                    friend.isActive === false ? (
+                  {user.followers.slice(0, 6).map((follower) => (
+                    follower.isActive === false ? (
                       <div
-                        key={friend._id}
+                        key={follower._id}
                         className="friend-item deactivated-friend"
                         onClick={() => alert('This user has deactivated their account.')}
                         style={{ textDecoration: 'none', color: 'inherit', cursor: 'pointer' }}
@@ -1666,24 +1666,24 @@ function Profile() {
                         <div className="friend-avatar deactivated-avatar">
                           <span>?</span>
                         </div>
-                        <div className="friend-name deactivated-text">{friend.displayName}</div>
+                        <div className="friend-name deactivated-text">{follower.displayName}</div>
                       </div>
                     ) : (
-                      <Link key={friend._id} to={`/profile/${friend._id}`} className="friend-item" style={{ textDecoration: 'none', color: 'inherit' }}>
+                      <Link key={follower._id} to={`/profile/${follower._id}`} className="friend-item" style={{ textDecoration: 'none', color: 'inherit' }}>
                         <div className="friend-avatar">
-                          {friend.profilePhoto ? (
-                            <img src={getImageUrl(friend.profilePhoto)} alt={friend.username} />
+                          {follower.profilePhoto ? (
+                            <img src={getImageUrl(follower.profilePhoto)} alt={follower.username} />
                           ) : (
-                            <span>{friend.displayName?.charAt(0).toUpperCase()}</span>
+                            <span>{follower.displayName?.charAt(0).toUpperCase()}</span>
                           )}
                         </div>
-                        <div className="friend-name">{friend.displayName}</div>
+                        <div className="friend-name">{follower.displayName}</div>
                       </Link>
                     )
                   ))}
                 </div>
               ) : (
-                <p className="empty-text">No friends yet</p>
+                <p className="empty-text">No followers yet</p>
               )}
             </div>
           </div>

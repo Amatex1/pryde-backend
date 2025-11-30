@@ -171,7 +171,7 @@ function Navbar() {
             <div className="profile-dropdown">
               <Link to="/friends" className="dropdown-item" onClick={() => setShowDropdown(false)}>
                 <span className="dropdown-icon">👥</span>
-                <span>Friends</span>
+                <span>Connections</span>
               </Link>
               <Link to={`/profile/${user?.id}`} className="dropdown-item" onClick={() => setShowDropdown(false)}>
                 <span className="dropdown-icon">👤</span>
