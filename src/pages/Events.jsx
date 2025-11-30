@@ -42,8 +42,8 @@ function Events() {
       const params = new URLSearchParams();
       if (filterCategory !== 'all') params.append('category', filterCategory);
       if (filterType !== 'all') params.append('type', filterType);
-      
-      const response = await api.get(/events?);
+
+      const response = await api.get(`/events?${params.toString()}`);
       setEvents(response.data);
     } catch (error) {
       console.error('Failed to fetch events:', error);
