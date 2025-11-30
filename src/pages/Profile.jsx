@@ -56,7 +56,7 @@ function Profile() {
   const [bookmarkedPosts, setBookmarkedPosts] = useState([]);
   const { toasts, showToast, removeToast } = useToast();
   const actionsMenuRef = useRef(null);
-  const isOwnProfile = currentUser?.id === id;
+  const isOwnProfile = currentUser?.username === id;
   const [canSendFriendRequest, setCanSendFriendRequest] = useState(true);
   const [canSendMessage, setCanSendMessage] = useState(false);
   const [showUnfriendModal, setShowUnfriendModal] = useState(false);
@@ -418,6 +418,7 @@ function Profile() {
     try {
       // Get user info to check if private account
       const userResponse = await api.get(`/users/${id}`);
+      const profileUserId = userResponse.data._id;
       setIsPrivateAccount(userResponse.data.privacySettings?.isPrivateAccount || false);
 
       // Check if already following - get MY following list
@@ -430,7 +431,7 @@ function Profile() {
 
       const followingResponse = await api.get(`/follow/following/${myUserId}`);
       const followingList = followingResponse.data.following || followingResponse.data;
-      const isFollowing = followingList.some(user => user._id === id);
+      const isFollowing = followingList.some(user => user._id === profileUserId);
 
       if (isFollowing) {
         setFollowStatus('following');
@@ -441,7 +442,7 @@ function Profile() {
       if (userResponse.data.privacySettings?.isPrivateAccount) {
         const requestsResponse = await api.get('/follow/requests/sent');
         const sentRequests = requestsResponse.data.sentRequests || requestsResponse.data;
-        const pendingRequest = sentRequests.find(req => req.receiver._id === id);
+        const pendingRequest = sentRequests.find(req => req.receiver._id === profileUserId);
 
         if (pendingRequest) {
           setFollowStatus('pending');
@@ -481,7 +482,11 @@ function Profile() {
 
   const handleAddFriend = async () => {
     try {
-      await api.post(`/friends/request/${id}`);
+      if (!user?._id) {
+        showToast('User not loaded yet', 'error');
+        return;
+      }
+      await api.post(`/friends/request/${user._id}`);
       setFriendStatus('pending_sent');
       showToast('Friend request sent! 🎉', 'success');
     } catch (error) {
@@ -517,7 +522,12 @@ function Profile() {
 
   const confirmUnfriend = async () => {
     try {
-      await api.delete(`/friends/${id}`);
+      if (!user?._id) {
+        showToast('User not loaded yet', 'error');
+        setShowUnfriendModal(false);
+        return;
+      }
+      await api.delete(`/friends/${user._id}`);
       setFriendStatus('none');
       fetchUserProfile(); // Refresh to update friend count
       showToast('Friend removed', 'success');
@@ -533,13 +543,21 @@ function Profile() {
       showToast('You cannot message this user due to their privacy settings', 'error');
       return;
     }
-    navigate(`/messages?chat=${id}`);
+    if (!user?._id) {
+      showToast('User not loaded yet', 'error');
+      return;
+    }
+    navigate(`/messages?chat=${user._id}`);
   };
 
   // New follow system handlers
   const handleFollow = async () => {
     try {
-      const response = await api.post(`/follow/${id}`);
+      if (!user?._id) {
+        showToast('User not loaded yet', 'error');
+        return;
+      }
+      const response = await api.post(`/follow/${user._id}`);
 
       if (isPrivateAccount) {
         setFollowStatus('pending');
@@ -556,7 +574,11 @@ function Profile() {
 
   const handleUnfollow = async () => {
     try {
-      await api.delete(`/follow/${id}`);
+      if (!user?._id) {
+        showToast('User not loaded yet', 'error');
+        return;
+      }
+      await api.delete(`/follow/${user._id}`);
       setFollowStatus('none');
       fetchUserProfile(); // Refresh to update follower count
       showToast('Unfollowed', 'success');
@@ -584,7 +606,11 @@ function Profile() {
     }
 
     try {
-      await api.post('/blocks', { blockedUserId: id });
+      if (!user?._id) {
+        alert('User not loaded yet');
+        return;
+      }
+      await api.post('/blocks', { blockedUserId: user._id });
       setIsBlocked(true);
       alert('User blocked successfully');
     } catch (error) {
@@ -598,7 +624,11 @@ function Profile() {
     }
 
     try {
-      await api.delete(`/blocks/${id}`);
+      if (!user?._id) {
+        alert('User not loaded yet');
+        return;
+      }
+      await api.delete(`/blocks/${user._id}`);
       setIsBlocked(false);
       alert('User unblocked successfully');
     } catch (error) {
@@ -706,11 +736,7 @@ function Profile() {
                     🎂 {new Date().getFullYear() - new Date(user.birthday).getFullYear()} years old
                   </span>
                 )}
-                {user.city && (
-                  <span className="badge">
-                    📍 {user.city}
-                  </span>
-                )}
+
               </div>
 
               {user.bio && <p className="profile-bio">{user.bio}</p>}
@@ -776,7 +802,7 @@ function Profile() {
                         )}
                         <button
                           className="dropdown-item dropdown-item-danger"
-                          onClick={() => { setReportModal({ isOpen: true, type: 'user', contentId: null, userId: id }); setShowActionsMenu(false); }}
+                          onClick={() => { setReportModal({ isOpen: true, type: 'user', contentId: null, userId: user?._id }); setShowActionsMenu(false); }}
                         >
                           🚩 Report User
                         </button>
