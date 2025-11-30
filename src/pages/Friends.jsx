@@ -15,10 +15,14 @@ import './Friends.css';
 
 function Friends() {
   const { modalState, closeModal, showAlert } = useModal();
-  const [activeTab, setActiveTab] = useState('friends');
+  const [activeTab, setActiveTab] = useState('followers');
   const [friends, setFriends] = useState([]);
   const [requests, setRequests] = useState([]);
   const [sentRequests, setSentRequests] = useState([]); // Track sent friend requests
+  // New follow system states
+  const [followers, setFollowers] = useState([]);
+  const [following, setFollowing] = useState([]);
+  const [followRequests, setFollowRequests] = useState([]);
   const [searchResults, setSearchResults] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(false);
@@ -44,6 +48,12 @@ function Friends() {
       fetchRequests();
     } else if (activeTab === 'pending') {
       fetchSentRequests();
+    } else if (activeTab === 'followers') {
+      fetchFollowers();
+    } else if (activeTab === 'following') {
+      fetchFollowing();
+    } else if (activeTab === 'followRequests') {
+      fetchFollowRequests();
     }
   }, [activeTab]);
 
@@ -100,6 +110,36 @@ function Friends() {
       setSentRequests(response.data);
     } catch (error) {
       console.error('Failed to fetch sent requests:', error);
+    }
+  };
+
+  // New follow system fetch functions
+  const fetchFollowers = async () => {
+    try {
+      if (!currentUser) return;
+      const response = await api.get(`/follow/followers/${currentUser.id}`);
+      setFollowers(response.data);
+    } catch (error) {
+      console.error('Failed to fetch followers:', error);
+    }
+  };
+
+  const fetchFollowing = async () => {
+    try {
+      if (!currentUser) return;
+      const response = await api.get(`/follow/following/${currentUser.id}`);
+      setFollowing(response.data);
+    } catch (error) {
+      console.error('Failed to fetch following:', error);
+    }
+  };
+
+  const fetchFollowRequests = async () => {
+    try {
+      const response = await api.get('/follow/requests');
+      setFollowRequests(response.data);
+    } catch (error) {
+      console.error('Failed to fetch follow requests:', error);
     }
   };
 
@@ -203,38 +243,84 @@ function Friends() {
     }
   };
 
+  // New follow system handlers
+  const handleUnfollow = async (userId) => {
+    if (!confirm('Are you sure you want to unfollow this user?')) return;
+
+    try {
+      await api.delete(`/follow/${userId}`);
+      fetchFollowing();
+      alert('Unfollowed successfully');
+    } catch (error) {
+      alert('Failed to unfollow user');
+    }
+  };
+
+  const handleRemoveFollower = async (userId) => {
+    if (!confirm('Are you sure you want to remove this follower?')) return;
+
+    try {
+      await api.delete(`/follow/${userId}`);
+      fetchFollowers();
+      alert('Follower removed successfully');
+    } catch (error) {
+      alert('Failed to remove follower');
+    }
+  };
+
+  const handleAcceptFollowRequest = async (requestId) => {
+    try {
+      await api.post(`/follow/requests/${requestId}/accept`);
+      fetchFollowRequests();
+      fetchFollowers();
+      alert('Follow request accepted!');
+    } catch (error) {
+      alert('Failed to accept follow request');
+    }
+  };
+
+  const handleRejectFollowRequest = async (requestId) => {
+    try {
+      await api.post(`/follow/requests/${requestId}/reject`);
+      fetchFollowRequests();
+      alert('Follow request rejected');
+    } catch (error) {
+      alert('Failed to reject follow request');
+    }
+  };
+
   return (
     <div className="page-container">
       <Navbar />
       
       <div className="friends-container">
         <div className="friends-header glossy fade-in">
-          <h1 className="page-title text-shadow">👥 Friends</h1>
-          
+          <h1 className="page-title text-shadow">👥 Connections</h1>
+
           <div className="tabs">
             <button
-              className={`tab ${activeTab === 'friends' ? 'active' : ''}`}
-              onClick={() => setActiveTab('friends')}
+              className={`tab ${activeTab === 'followers' ? 'active' : ''}`}
+              onClick={() => setActiveTab('followers')}
             >
-              My Friends
+              Followers ({followers.length})
             </button>
             <button
-              className={`tab ${activeTab === 'requests' ? 'active' : ''}`}
-              onClick={() => setActiveTab('requests')}
+              className={`tab ${activeTab === 'following' ? 'active' : ''}`}
+              onClick={() => setActiveTab('following')}
             >
-              Requests ({requests.length})
+              Following ({following.length})
             </button>
             <button
-              className={`tab ${activeTab === 'pending' ? 'active' : ''}`}
-              onClick={() => setActiveTab('pending')}
+              className={`tab ${activeTab === 'followRequests' ? 'active' : ''}`}
+              onClick={() => setActiveTab('followRequests')}
             >
-              Pending ({sentRequests.length})
+              Requests ({followRequests.length})
             </button>
             <button
               className={`tab ${activeTab === 'search' ? 'active' : ''}`}
               onClick={() => setActiveTab('search')}
             >
-              Find Friends
+              Find People
             </button>
           </div>
         </div>
@@ -369,6 +455,125 @@ function Friends() {
               ) : (
                 <div className="empty-state glossy">
                   <p>No pending friend requests sent</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* New Follow System Tabs */}
+          {activeTab === 'followers' && (
+            <div className="followers-list fade-in">
+              {followers.length > 0 ? (
+                <div className="user-grid">
+                  {followers.map((follower) => (
+                    <div key={follower._id} className="user-card glossy">
+                      <Link to={`/profile/${follower._id}`} className="user-link">
+                        <div className="user-avatar">
+                          {follower.profilePhoto ? (
+                            <img src={getImageUrl(follower.profilePhoto)} alt={follower.username} />
+                          ) : (
+                            <span>{follower.displayName?.charAt(0).toUpperCase()}</span>
+                          )}
+                        </div>
+                        <div className="user-info">
+                          <div className="user-name">{follower.displayName || follower.username}</div>
+                          <div className="user-username">@{follower.username}</div>
+                          {follower.bio && <div className="user-bio">{follower.bio}</div>}
+                        </div>
+                      </Link>
+                      <button
+                        onClick={() => handleRemoveFollower(follower._id)}
+                        className="btn-remove"
+                      >
+                        Remove Follower
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="empty-state glossy">
+                  <p>No followers yet. Share your profile to get followers!</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeTab === 'following' && (
+            <div className="following-list fade-in">
+              {following.length > 0 ? (
+                <div className="user-grid">
+                  {following.map((user) => (
+                    <div key={user._id} className="user-card glossy">
+                      <Link to={`/profile/${user._id}`} className="user-link">
+                        <div className="user-avatar">
+                          {user.profilePhoto ? (
+                            <img src={getImageUrl(user.profilePhoto)} alt={user.username} />
+                          ) : (
+                            <span>{user.displayName?.charAt(0).toUpperCase()}</span>
+                          )}
+                        </div>
+                        <div className="user-info">
+                          <div className="user-name">{user.displayName || user.username}</div>
+                          <div className="user-username">@{user.username}</div>
+                          {user.bio && <div className="user-bio">{user.bio}</div>}
+                        </div>
+                      </Link>
+                      <button
+                        onClick={() => handleUnfollow(user._id)}
+                        className="btn-remove"
+                      >
+                        Unfollow
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="empty-state glossy">
+                  <p>Not following anyone yet. Find people to follow!</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeTab === 'followRequests' && (
+            <div className="follow-requests-list fade-in">
+              {followRequests.length > 0 ? (
+                <div className="user-grid">
+                  {followRequests.map((request) => (
+                    <div key={request._id} className="user-card glossy">
+                      <Link to={`/profile/${request.sender._id}`} className="user-link">
+                        <div className="user-avatar">
+                          {request.sender.profilePhoto ? (
+                            <img src={getImageUrl(request.sender.profilePhoto)} alt={request.sender.username} />
+                          ) : (
+                            <span>{request.sender.displayName?.charAt(0).toUpperCase()}</span>
+                          )}
+                        </div>
+                        <div className="user-info">
+                          <div className="user-name">{request.sender.displayName || request.sender.username}</div>
+                          <div className="user-username">@{request.sender.username}</div>
+                        </div>
+                      </Link>
+                      <div className="request-actions">
+                        <button
+                          onClick={() => handleAcceptFollowRequest(request._id)}
+                          className="btn-accept glossy-gold"
+                        >
+                          Accept
+                        </button>
+                        <button
+                          onClick={() => handleRejectFollowRequest(request._id)}
+                          className="btn-decline"
+                        >
+                          Decline
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="empty-state glossy">
+                  <p>No pending follow requests</p>
                 </div>
               )}
             </div>

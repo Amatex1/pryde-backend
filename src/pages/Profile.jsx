@@ -820,8 +820,12 @@ function Profile() {
 
               <div className="profile-stats">
                 <div className="stat-item">
-                  <span className="stat-value">{user.friends?.length || 0}</span>
-                  <span className="stat-label">Friends</span>
+                  <span className="stat-value">{user.followers?.length || 0}</span>
+                  <span className="stat-label">Followers</span>
+                </div>
+                <div className="stat-item">
+                  <span className="stat-value">{user.following?.length || 0}</span>
+                  <span className="stat-label">Following</span>
                 </div>
                 <div className="stat-item">
                   <span className="stat-value">{posts.length}</span>
