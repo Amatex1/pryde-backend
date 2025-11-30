@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import EmojiPicker from '../components/EmojiPicker';
+import CustomModal from '../components/CustomModal';
+import { useModal } from '../hooks/useModal';
 import api from '../utils/api';
 import { getImageUrl } from '../utils/imageUrl';
 import {
@@ -21,6 +23,7 @@ import './Messages.css';
 
 function Messages() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const { modalState, closeModal, showAlert, showConfirm } = useModal();
 
   // Restore selected chat from localStorage on mount
   const [selectedChat, setSelectedChat] = useState(() => {
@@ -503,7 +506,7 @@ function Messages() {
       setEditMessageText('');
     } catch (error) {
       console.error('❌ Error editing message:', error);
-      alert('Failed to edit message');
+      showAlert('Failed to edit message. Please try again.', 'Edit Failed');
     }
   };
 
@@ -513,7 +516,13 @@ function Messages() {
   };
 
   const handleDeleteMessage = async (messageId) => {
-    if (!confirm('Are you sure you want to delete this message?')) return;
+    const confirmed = await showConfirm(
+      'Are you sure you want to delete this message?',
+      'Delete Message',
+      'Delete',
+      'Cancel'
+    );
+    if (!confirmed) return;
 
     try {
       await api.delete(`/messages/${messageId}`);
@@ -522,7 +531,7 @@ function Messages() {
       setMessages((prev) => prev.filter((msg) => msg._id !== messageId));
     } catch (error) {
       console.error('❌ Error deleting message:', error);
-      alert('Failed to delete message');
+      showAlert('Failed to delete message. Please try again.', 'Delete Failed');
     }
   };
 
@@ -700,9 +709,13 @@ function Messages() {
   };
 
   const handleDeleteConversation = async (userId) => {
-    if (!window.confirm('Are you sure you want to delete this entire conversation? This cannot be undone.')) {
-      return;
-    }
+    const confirmed = await showConfirm(
+      'Are you sure you want to delete this entire conversation? This cannot be undone.',
+      'Delete Conversation',
+      'Delete',
+      'Cancel'
+    );
+    if (!confirmed) return;
 
     try {
       await api.delete(`/messages/conversations/${userId}`);
@@ -720,13 +733,18 @@ function Messages() {
       fetchConversations();
     } catch (error) {
       console.error('Failed to delete conversation:', error);
+      showAlert('Failed to delete conversation. Please try again.', 'Delete Failed');
     }
   };
 
   const handleBlockUser = async (userId) => {
-    if (!window.confirm('Are you sure you want to block this user? They will not be able to message you or view your profile.')) {
-      return;
-    }
+    const confirmed = await showConfirm(
+      'Are you sure you want to block this user? They will not be able to message you or view your profile.',
+      'Block User',
+      'Block',
+      'Cancel'
+    );
+    if (!confirmed) return;
 
     try {
       await api.post('/blocks', { blockedUserId: userId });
@@ -743,10 +761,10 @@ function Messages() {
       // Refresh conversations
       fetchConversations();
 
-      alert('User blocked successfully');
+      showAlert('User blocked successfully', 'User Blocked');
     } catch (error) {
       console.error('Failed to block user:', error);
-      alert('Failed to block user');
+      showAlert('Failed to block user. Please try again.', 'Block Failed');
     }
   };
 
@@ -1477,6 +1495,21 @@ function Messages() {
             }}
           />
         )}
+
+        {/* Custom Modal */}
+        <CustomModal
+          isOpen={modalState.isOpen}
+          onClose={closeModal}
+          type={modalState.type}
+          title={modalState.title}
+          message={modalState.message}
+          placeholder={modalState.placeholder}
+          confirmText={modalState.confirmText}
+          cancelText={modalState.cancelText}
+          onConfirm={modalState.onConfirm}
+          inputType={modalState.inputType}
+          defaultValue={modalState.defaultValue}
+        />
       </div>
     </div>
   );
