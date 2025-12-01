@@ -331,7 +331,6 @@ router.put('/:id', auth, async (req, res) => {
     });
 
     // PHASE 1 REFACTOR: Sanitize post to hide like counts
-    const userId = req.userId || req.user._id;
     const sanitizedPost = sanitizePostForPrivateLikes(post, userId);
 
     res.json(sanitizedPost);
@@ -838,7 +837,6 @@ router.post('/:id/comment/:commentId/reply', auth, commentLimiter, checkMuted, m
     });
 
     // PHASE 1 REFACTOR: Sanitize post to hide like counts
-    const userId = req.userId || req.user._id;
     const sanitizedPost = sanitizePostForPrivateLikes(post, userId);
 
     res.json(sanitizedPost);
