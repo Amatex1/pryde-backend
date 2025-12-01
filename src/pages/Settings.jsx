@@ -84,11 +84,11 @@ function Settings() {
       const quietMode = user.privacySettings?.quietModeEnabled || false;
       setQuietModeEnabled(quietMode);
 
-      // Apply quiet mode class to body if enabled
+      // Apply quiet mode attribute to html element if enabled
       if (quietMode) {
-        document.body.classList.add('quiet-mode');
+        document.documentElement.setAttribute('data-quiet-mode', 'true');
       } else {
-        document.body.classList.remove('quiet-mode');
+        document.documentElement.removeAttribute('data-quiet-mode');
       }
 
       // PHASE 5: Load creator mode setting
@@ -154,11 +154,11 @@ function Settings() {
       setQuietModeEnabled(newValue);
       setMessage(newValue ? 'Quiet Mode enabled' : 'Quiet Mode disabled');
 
-      // Apply quiet mode class to body
+      // Apply quiet mode attribute to html element
       if (newValue) {
-        document.body.classList.add('quiet-mode');
+        document.documentElement.setAttribute('data-quiet-mode', 'true');
       } else {
-        document.body.classList.remove('quiet-mode');
+        document.documentElement.removeAttribute('data-quiet-mode');
       }
     } catch (error) {
       console.error('Failed to toggle quiet mode:', error);

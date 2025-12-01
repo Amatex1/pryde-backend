@@ -23,6 +23,9 @@ html {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
+
+  /* Smooth transitions for theme changes */
+  transition: background-color 0.25s ease-in-out, color 0.25s ease-in-out;
 }
 
 body {

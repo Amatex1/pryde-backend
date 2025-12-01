@@ -1,101 +1,270 @@
 /**
- * PHASE 2: Quiet Mode Styles
- * Softer colors, reduced visual noise, calmer experience
+ * QUIET MODE THEME
+ * Soft midnight violet palette with calm, reduced visual noise
  */
 
-body.quiet-mode {
-  /* Softer background */
-  --bg-light: #F9F9F9;
-  --background-light: #F9F9F9;
-  --card-surface: #FAFAFA;
+/* ========================================
+   QUIET MODE COLOR VARIABLES
+   ======================================== */
 
-  /* Desaturated theme colors */
-  --pryde-purple: #8B7FC7;
-  --electric-blue: #6BA3D4;
-  --soft-lavender: #F2F0FF;
+:root[data-quiet-mode="true"] {
+  /* Backgrounds */
+  --bg-main: #0F1021;                /* Soft midnight violet */
+  --bg-light: #0F1021;               /* Alias for compatibility */
+  --bg-surface: #1A1B2D;             /* Navy-lavender surface cards */
+  --card-surface: #1A1B2D;           /* Card backgrounds */
+  --background-light: #0F1021;       /* Legacy support */
 
-  /* Softer text colors */
-  --text-main: #4A4A4A;
-  --text-muted: #7A7A7A;
+  /* Borders & subtle outlines */
+  --border-soft: #4C4E75;            /* Low-contrast lavender-grey */
+  --border-light: #4C4E75;           /* Alias for compatibility */
 
-  /* Softer borders */
-  --border-light: #ECECEC;
+  /* Text */
+  --text-primary: #FFFFFF;           /* High readability */
+  --text-main: #FFFFFF;              /* Alias for compatibility */
+  --text-secondary: #A4A7C2;         /* Soft lavender */
+  --text-muted: #65677E;             /* Placeholders */
+
+  /* Accents */
+  --accent-primary: #C6B9F8;         /* Pastel lavender */
+  --accent-hover: #DAD3FF;           /* Lighter lavender on hover */
+  --accent-soft: rgba(198,185,248,0.15); /* Subtle accent background */
+
+  /* Theme colors (adjusted for quiet mode) */
+  --pryde-purple: #C6B9F8;           /* Pastel lavender */
+  --electric-blue: #A4A7C2;          /* Soft lavender-blue */
+  --soft-lavender: rgba(198,185,248,0.15); /* Very subtle */
+
+  /* Quiet Mode Icon (Leaf) */
+  --quiet-leaf: #9BE7C4;             /* Soft mint green */
+
+  /* Buttons */
+  --btn-bg: #1F2035;
+  --btn-bg-hover: #2A2B46;
+  --btn-text: #E8E8FF;
+
+  /* Cards & shadows */
+  --card-shadow: 0px 4px 16px rgba(0,0,0,0.35);
 }
 
-/* Reduce visual emphasis on buttons in quiet mode */
-body.quiet-mode .btn-post,
-body.quiet-mode .btn-submit,
-body.quiet-mode .glossy-gold {
-  background: linear-gradient(135deg, var(--pryde-purple), var(--electric-blue));
-  box-shadow: 0 2px 8px rgba(108, 92, 231, 0.15);
+/* ========================================
+   SMOOTH TRANSITIONS
+   ======================================== */
+
+html[data-quiet-mode="true"],
+html:not([data-quiet-mode="true"]) {
+  transition: background-color 0.25s ease-in-out, color 0.25s ease-in-out;
 }
 
-body.quiet-mode .btn-post:hover,
-body.quiet-mode .btn-submit:hover,
-body.quiet-mode .glossy-gold:hover {
-  box-shadow: 0 4px 12px rgba(108, 92, 231, 0.2);
+html[data-quiet-mode="true"] * {
+  transition: background-color 0.25s ease-in-out,
+              color 0.25s ease-in-out,
+              border-color 0.25s ease-in-out;
 }
 
-/* Softer notification badges */
-body.quiet-mode .notification-badge {
-  background: var(--pryde-purple);
+/* ========================================
+   BACKGROUNDS
+   ======================================== */
+
+[data-quiet-mode="true"] body {
+  background-color: var(--bg-main);
+}
+
+[data-quiet-mode="true"] .feed-container,
+[data-quiet-mode="true"] .global-feed-container,
+[data-quiet-mode="true"] .journal-container,
+[data-quiet-mode="true"] .longform-container,
+[data-quiet-mode="true"] .discover-container,
+[data-quiet-mode="true"] .messages-container,
+[data-quiet-mode="true"] main {
+  background-color: var(--bg-main);
+}
+
+/* ========================================
+   CARDS & PANELS
+   ======================================== */
+
+[data-quiet-mode="true"] .post-card,
+[data-quiet-mode="true"] .glossy,
+[data-quiet-mode="true"] .card,
+[data-quiet-mode="true"] .panel,
+[data-quiet-mode="true"] .sidebar,
+[data-quiet-mode="true"] .message-card,
+[data-quiet-mode="true"] .notification-card {
+  background: var(--bg-surface);
+  border-color: var(--border-soft);
+  box-shadow: var(--card-shadow);
+}
+
+/* ========================================
+   TEXT
+   ======================================== */
+
+[data-quiet-mode="true"] body,
+[data-quiet-mode="true"] .text-primary,
+[data-quiet-mode="true"] h1,
+[data-quiet-mode="true"] h2,
+[data-quiet-mode="true"] h3,
+[data-quiet-mode="true"] h4,
+[data-quiet-mode="true"] h5,
+[data-quiet-mode="true"] h6,
+[data-quiet-mode="true"] p {
+  color: var(--text-primary);
+}
+
+[data-quiet-mode="true"] .text-secondary,
+[data-quiet-mode="true"] .subtitle,
+[data-quiet-mode="true"] .description {
+  color: var(--text-secondary);
+}
+
+[data-quiet-mode="true"] .text-muted,
+[data-quiet-mode="true"] ::placeholder {
+  color: var(--text-muted);
+}
+
+/* ========================================
+   LINKS
+   ======================================== */
+
+[data-quiet-mode="true"] a {
+  color: var(--accent-primary);
+}
+
+[data-quiet-mode="true"] a:hover {
+  color: var(--accent-hover);
+}
+
+/* ========================================
+   ICONS
+   ======================================== */
+
+[data-quiet-mode="true"] .icon,
+[data-quiet-mode="true"] .nav-icon,
+[data-quiet-mode="true"] .btn-icon {
+  color: var(--accent-primary);
+}
+
+/* Quiet Mode leaf icon */
+[data-quiet-mode="true"] .mode-toggle .nav-icon {
+  filter: none;
+}
+
+[data-quiet-mode="true"] .nav-button.mode-toggle:last-of-type .nav-icon {
+  color: var(--quiet-leaf);
+}
+
+/* ========================================
+   BUTTONS
+   ======================================== */
+
+[data-quiet-mode="true"] button,
+[data-quiet-mode="true"] .btn,
+[data-quiet-mode="true"] .btn-post,
+[data-quiet-mode="true"] .btn-submit {
+  background-color: var(--btn-bg);
+  color: var(--btn-text);
+  border-color: var(--border-soft);
+}
+
+[data-quiet-mode="true"] button:hover,
+[data-quiet-mode="true"] .btn:hover,
+[data-quiet-mode="true"] .btn-post:hover,
+[data-quiet-mode="true"] .btn-submit:hover {
+  background-color: var(--btn-bg-hover);
+}
+
+/* Gradient buttons */
+[data-quiet-mode="true"] .glossy-gradient,
+[data-quiet-mode="true"] .btn-primary {
+  background: linear-gradient(135deg, var(--accent-primary), var(--accent-hover));
+  color: var(--bg-main);
+}
+
+/* ========================================
+   INPUTS & TEXTAREAS
+   ======================================== */
+
+[data-quiet-mode="true"] input,
+[data-quiet-mode="true"] textarea,
+[data-quiet-mode="true"] select {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-soft);
+  color: var(--text-primary);
+}
+
+[data-quiet-mode="true"] input:focus,
+[data-quiet-mode="true"] textarea:focus,
+[data-quiet-mode="true"] select:focus {
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+/* ========================================
+   NAVBAR
+   ======================================== */
+
+[data-quiet-mode="true"] .navbar {
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border-soft);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+[data-quiet-mode="true"] .nav-button:hover {
+  background: var(--accent-soft);
+  border-color: var(--accent-primary);
+}
+
+/* ========================================
+   HIDE METRICS IN QUIET MODE
+   ======================================== */
+
+[data-quiet-mode="true"] .like-count,
+[data-quiet-mode="true"] .follower-count,
+[data-quiet-mode="true"] .following-count,
+[data-quiet-mode="true"] .share-count,
+[data-quiet-mode="true"] .comment-count,
+[data-quiet-mode="true"] .metric-count {
+  display: none !important;
+}
+
+/* Keep icons visible, only hide numbers */
+[data-quiet-mode="true"] .like-button,
+[data-quiet-mode="true"] .comment-button,
+[data-quiet-mode="true"] .share-button {
+  display: inline-flex;
+}
+
+/* ========================================
+   REDUCED VISUAL NOISE
+   ======================================== */
+
+[data-quiet-mode="true"] .notification-badge {
+  background: var(--accent-primary);
   opacity: 0.8;
 }
 
-/* Reduce emphasis on reaction buttons */
-body.quiet-mode .btn-action {
-  opacity: 0.7;
+[data-quiet-mode="true"] .btn-action {
+  opacity: 0.8;
   transition: opacity 0.3s ease;
 }
 
-body.quiet-mode .btn-action:hover {
+[data-quiet-mode="true"] .btn-action:hover {
   opacity: 1;
 }
 
-/* Softer post cards */
-body.quiet-mode .post-card,
-body.quiet-mode .glossy {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-}
-
-/* Reduce visual noise in feed */
-body.quiet-mode .post-actions {
-  opacity: 0.8;
-}
-
-/* Softer verified badges */
-body.quiet-mode .verified-badge {
+[data-quiet-mode="true"] .verified-badge {
   opacity: 0.7;
 }
 
-/* Calmer navbar */
-body.quiet-mode .navbar {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-}
-
-/* Softer focus states */
-body.quiet-mode input:focus,
-body.quiet-mode textarea:focus,
-body.quiet-mode select:focus {
-  border-color: var(--pryde-purple);
-  box-shadow: 0 0 0 3px rgba(108, 92, 231, 0.1);
-}
-
 /* Reduce animation intensity */
-body.quiet-mode * {
+[data-quiet-mode="true"] * {
   animation-duration: 0.5s !important;
-  transition-duration: 0.3s !important;
 }
 
 /* Softer hover effects */
-body.quiet-mode .nav-button:hover,
-body.quiet-mode .btn:hover {
+[data-quiet-mode="true"] .nav-button:hover,
+[data-quiet-mode="true"] .btn:hover {
   transform: translateY(-1px);
-}
-
-/* Hide like counts (already hidden, but ensure in quiet mode) */
-body.quiet-mode .like-count,
-body.quiet-mode .follower-count {
-  display: none;
 }
 

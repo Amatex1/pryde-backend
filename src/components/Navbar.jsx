@@ -38,7 +38,14 @@ function Navbar() {
   const [isDark, toggleDarkMode] = useDarkMode();
   const [quietMode, setQuietMode] = useState(() => {
     const saved = localStorage.getItem('quietMode');
-    return saved === 'true';
+    const isQuiet = saved === 'true';
+    // Apply quiet mode attribute on initial load
+    if (isQuiet) {
+      document.documentElement.setAttribute('data-quiet-mode', 'true');
+    } else {
+      document.documentElement.removeAttribute('data-quiet-mode');
+    }
+    return isQuiet;
   });
   const dropdownRef = useRef(null);
   const mobileMenuRef = useRef(null);
@@ -53,11 +60,11 @@ function Navbar() {
     setQuietMode(newValue);
     localStorage.setItem('quietMode', newValue);
 
-    // Apply quiet mode class to body
+    // Apply quiet mode attribute to html element
     if (newValue) {
-      document.body.classList.add('quiet-mode');
+      document.documentElement.setAttribute('data-quiet-mode', 'true');
     } else {
-      document.body.classList.remove('quiet-mode');
+      document.documentElement.removeAttribute('data-quiet-mode');
     }
 
     // Sync with backend
@@ -83,9 +90,9 @@ function Navbar() {
           setQuietMode(backendQuietMode);
           localStorage.setItem('quietMode', backendQuietMode);
           if (backendQuietMode) {
-            document.body.classList.add('quiet-mode');
+            document.documentElement.setAttribute('data-quiet-mode', 'true');
           } else {
-            document.body.classList.remove('quiet-mode');
+            document.documentElement.removeAttribute('data-quiet-mode');
           }
         }
       } catch (error) {
