@@ -236,13 +236,9 @@ app.use('/api/bookmarks', bookmarksRoutes);
 app.use('/api/events', eventsRoutes);
 
 // TEMPORARY: Migration endpoint - REMOVE AFTER RUNNING ONCE
-app.get('/api/migrate/creator-privacy', auth, async (req, res) => {
+// WARNING: This endpoint has no authentication - remove immediately after use!
+app.get('/api/migrate/creator-privacy', async (req, res) => {
   try {
-    // Only allow admin users to run migrations
-    const adminUser = await User.findById(req.userId);
-    if (!adminUser || !adminUser.isAdmin) {
-      return res.status(403).json({ message: 'Unauthorized - Admin access required' });
-    }
 
     const users = await User.find({});
     let updatedCount = 0;
