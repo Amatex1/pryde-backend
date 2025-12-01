@@ -1,0 +1,100 @@
+/**
+ * PHASE 2: Quiet Mode Styles
+ * Softer colors, reduced visual noise, calmer experience
+ */
+
+body.quiet-mode {
+  /* Softer background */
+  --background-light: #F9F9F9;
+  --card-surface: #FAFAFA;
+  
+  /* Desaturated theme colors */
+  --pryde-purple: #8B7FC7;
+  --electric-blue: #6BA3D4;
+  --soft-lavender: #F2F0FF;
+  
+  /* Softer text colors */
+  --text-main: #4A4A4A;
+  --text-muted: #7A7A7A;
+  
+  /* Softer borders */
+  --border-light: #ECECEC;
+}
+
+/* Reduce visual emphasis on buttons in quiet mode */
+body.quiet-mode .btn-post,
+body.quiet-mode .btn-submit,
+body.quiet-mode .glossy-gold {
+  background: linear-gradient(135deg, var(--pryde-purple), var(--electric-blue));
+  box-shadow: 0 2px 8px rgba(108, 92, 231, 0.15);
+}
+
+body.quiet-mode .btn-post:hover,
+body.quiet-mode .btn-submit:hover,
+body.quiet-mode .glossy-gold:hover {
+  box-shadow: 0 4px 12px rgba(108, 92, 231, 0.2);
+}
+
+/* Softer notification badges */
+body.quiet-mode .notification-badge {
+  background: var(--pryde-purple);
+  opacity: 0.8;
+}
+
+/* Reduce emphasis on reaction buttons */
+body.quiet-mode .btn-action {
+  opacity: 0.7;
+  transition: opacity 0.3s ease;
+}
+
+body.quiet-mode .btn-action:hover {
+  opacity: 1;
+}
+
+/* Softer post cards */
+body.quiet-mode .post-card,
+body.quiet-mode .glossy {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+/* Reduce visual noise in feed */
+body.quiet-mode .post-actions {
+  opacity: 0.8;
+}
+
+/* Softer verified badges */
+body.quiet-mode .verified-badge {
+  opacity: 0.7;
+}
+
+/* Calmer navbar */
+body.quiet-mode .navbar {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+/* Softer focus states */
+body.quiet-mode input:focus,
+body.quiet-mode textarea:focus,
+body.quiet-mode select:focus {
+  border-color: var(--pryde-purple);
+  box-shadow: 0 0 0 3px rgba(108, 92, 231, 0.1);
+}
+
+/* Reduce animation intensity */
+body.quiet-mode * {
+  animation-duration: 0.5s !important;
+  transition-duration: 0.3s !important;
+}
+
+/* Softer hover effects */
+body.quiet-mode .nav-button:hover,
+body.quiet-mode .btn:hover {
+  transform: translateY(-1px);
+}
+
+/* Hide like counts (already hidden, but ensure in quiet mode) */
+body.quiet-mode .like-count,
+body.quiet-mode .follower-count {
+  display: none;
+}
+

@@ -6,6 +6,8 @@ import Register from './pages/Register';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import Feed from './pages/Feed';
+import GlobalFeed from './pages/GlobalFeed'; // PHASE 2: Global feed
+import FollowingFeed from './pages/FollowingFeed'; // PHASE 2: Following feed
 import Profile from './pages/Profile';
 import Settings from './pages/Settings';
 import SecuritySettings from './pages/SecuritySettings';
@@ -89,6 +91,8 @@ function App() {
 
           {/* Protected Routes */}
           <Route path="/feed" element={<PrivateRoute><Feed /></PrivateRoute>} />
+          <Route path="/feed/global" element={<PrivateRoute><GlobalFeed /></PrivateRoute>} /> {/* PHASE 2 */}
+          <Route path="/feed/following" element={<PrivateRoute><FollowingFeed /></PrivateRoute>} /> {/* PHASE 2 */}
           <Route path="/profile/:id" element={<PrivateRoute><Profile /></PrivateRoute>} />
           <Route path="/settings" element={<PrivateRoute><Settings /></PrivateRoute>} />
           <Route path="/settings/security" element={<PrivateRoute><SecuritySettings /></PrivateRoute>} />

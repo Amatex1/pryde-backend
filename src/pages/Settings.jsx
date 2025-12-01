@@ -34,6 +34,7 @@ function Settings() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [pushEnabled, setPushEnabled] = useState(false);
+  const [quietModeEnabled, setQuietModeEnabled] = useState(false); // PHASE 2: Quiet Mode
   const [verificationStatus, setVerificationStatus] = useState({
     isVerified: false,
     verificationRequested: false,
@@ -78,6 +79,16 @@ function Settings() {
         website: user.website || '',
         socialLinks: user.socialLinks || []
       });
+      // PHASE 2: Load quiet mode setting
+      const quietMode = user.privacySettings?.quietModeEnabled || false;
+      setQuietModeEnabled(quietMode);
+
+      // Apply quiet mode class to body if enabled
+      if (quietMode) {
+        document.body.classList.add('quiet-mode');
+      } else {
+        document.body.classList.remove('quiet-mode');
+      }
     } catch (error) {
       console.error('Failed to fetch user data:', error);
     }
@@ -131,7 +142,25 @@ function Settings() {
     }
   };
 
+  // PHASE 2: Handle Quiet Mode toggle
+  const handleQuietModeToggle = async () => {
+    try {
+      const newValue = !quietModeEnabled;
+      await api.patch('/users/me/settings', { quietModeEnabled: newValue });
+      setQuietModeEnabled(newValue);
+      setMessage(newValue ? 'Quiet Mode enabled' : 'Quiet Mode disabled');
 
+      // Apply quiet mode class to body
+      if (newValue) {
+        document.body.classList.add('quiet-mode');
+      } else {
+        document.body.classList.remove('quiet-mode');
+      }
+    } catch (error) {
+      console.error('Failed to toggle quiet mode:', error);
+      setMessage('Failed to update quiet mode');
+    }
+  };
 
   const handlePushToggle = async () => {
     try {
@@ -389,6 +418,28 @@ function Settings() {
               </div>
             </div>
           )}
+
+          {/* PHASE 2: Quiet Mode */}
+          <div className="settings-section">
+            <h2 className="section-title">🌙 Quiet Mode</h2>
+
+            <div className="notification-settings">
+              <div className="notification-item">
+                <div className="notification-info">
+                  <h3>Enable Quiet Mode</h3>
+                  <p>Softer colors, reduced visual noise, and a calmer experience. Perfect for deep focus and reflection.</p>
+                </div>
+                <label className="toggle-switch">
+                  <input
+                    type="checkbox"
+                    checked={quietModeEnabled}
+                    onChange={handleQuietModeToggle}
+                  />
+                  <span className="toggle-slider"></span>
+                </label>
+              </div>
+            </div>
+          </div>
 
           <div className="settings-section">
             <h2 className="section-title">Notifications</h2>

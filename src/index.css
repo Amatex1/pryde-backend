@@ -1,3 +1,6 @@
+/* PHASE 2: Import Quiet Mode styles */
+@import './styles/quiet-mode.css';
+
 * {
   margin: 0;
   padding: 0;

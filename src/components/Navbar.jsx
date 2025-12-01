@@ -185,6 +185,15 @@ function Navbar() {
             <span className="nav-icon">🏠</span>
             <span className="nav-label">Feed</span>
           </Link>
+          {/* PHASE 2: Global and Following feeds */}
+          <Link to="/feed/global" className="nav-button" title="Global Feed">
+            <span className="nav-icon">🌍</span>
+            <span className="nav-label">Global</span>
+          </Link>
+          <Link to="/feed/following" className="nav-button" title="Following Feed">
+            <span className="nav-icon">👥</span>
+            <span className="nav-label">Following</span>
+          </Link>
           {/* PHASE 1 REFACTOR: Connections link removed */}
           {/* <Link to="/connections" className="nav-button" title="Connections">
             <span className="nav-icon">👥</span>
