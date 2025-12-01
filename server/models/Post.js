@@ -121,18 +121,22 @@ const postSchema = new mongoose.Schema({
     maxlength: 500,
     default: ''
   },
+  // PHASE 1 REFACTOR: Simplified to 3 options (removed 'friends' and 'custom')
   visibility: {
     type: String,
-    enum: ['public', 'friends', 'followers', 'private', 'custom'],
+    enum: ['public', 'followers', 'private'],
     default: 'followers'
   },
+  // PHASE 1 REFACTOR: Deprecated custom privacy fields (kept for legacy data)
   hiddenFrom: [{
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'User'
+    ref: 'User',
+    select: false // Hide from queries by default
   }],
   sharedWith: [{
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'User'
+    ref: 'User',
+    select: false // Hide from queries by default
   }],
   contentWarning: {
     type: String,

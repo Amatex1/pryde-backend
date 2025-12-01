@@ -405,10 +405,11 @@ const userSchema = new mongoose.Schema({
     }
   }],
   // Privacy Settings
+  // PHASE 1 REFACTOR: Simplified privacy options
   privacySettings: {
     profileVisibility: {
       type: String,
-      enum: ['public', 'friends', 'followers', 'private'],
+      enum: ['public', 'followers', 'private'], // REMOVED: 'friends'
       default: 'public'
     },
     // New: Private account toggle (replaces whoCanSendFriendRequests)
@@ -416,15 +417,16 @@ const userSchema = new mongoose.Schema({
       type: Boolean,
       default: false
     },
-    // Legacy: Keep for backward compatibility
+    // PHASE 1 REFACTOR: Deprecated (friends system removed)
     whoCanSendFriendRequests: {
       type: String,
       enum: ['everyone', 'friends-of-friends', 'no-one'],
-      default: 'everyone'
+      default: 'everyone',
+      select: false // Hide from queries by default
     },
     whoCanMessage: {
       type: String,
-      enum: ['everyone', 'friends', 'followers', 'no-one'],
+      enum: ['everyone', 'followers', 'no-one'], // REMOVED: 'friends'
       default: 'followers'
     },
     showOnlineStatus: {
@@ -437,29 +439,32 @@ const userSchema = new mongoose.Schema({
     },
     whoCanSeeMyPosts: {
       type: String,
-      enum: ['public', 'friends', 'followers', 'only-me'],
+      enum: ['public', 'followers', 'only-me'], // REMOVED: 'friends'
       default: 'public'
     },
     whoCanCommentOnMyPosts: {
       type: String,
-      enum: ['everyone', 'friends', 'followers', 'no-one'],
+      enum: ['everyone', 'followers', 'no-one'], // REMOVED: 'friends'
       default: 'everyone'
     },
-    // Renamed from whoCanSeeFriendsList
+    // PHASE 1 REFACTOR: Deprecated (friends system removed)
     whoCanSeeFriendsList: {
       type: String,
       enum: ['everyone', 'friends', 'followers', 'only-me'],
-      default: 'everyone'
+      default: 'everyone',
+      select: false // Hide from queries by default
     },
+    // PHASE 1 REFACTOR: Deprecated (follower counts hidden)
     whoCanSeeFollowersList: {
       type: String,
       enum: ['everyone', 'friends', 'followers', 'only-me'],
-      default: 'everyone'
+      default: 'everyone',
+      select: false // Hide from queries by default
     },
     whoCanTagMe: {
       type: String,
-      enum: ['everyone', 'friends', 'no-one'],
-      default: 'friends'
+      enum: ['everyone', 'followers', 'no-one'], // REMOVED: 'friends'
+      default: 'followers'
     },
     autoHideContentWarnings: {
       type: Boolean,
