@@ -74,7 +74,6 @@ function GlobalSearch() {
   return (
     <div className="global-search" ref={searchRef}>
       <div className="search-input-wrapper">
-        <span className="search-icon">🔍</span>
         <input
           type="text"
           value={searchQuery}

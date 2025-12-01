@@ -226,10 +226,6 @@ function Navbar() {
 
         <div className="navbar-user" ref={dropdownRef}>
           {/* Main Navigation Buttons */}
-          <Link to="/feed" className="nav-button" title="Home">
-            <span className="nav-icon">🏠</span>
-            <span className="nav-label">Home</span>
-          </Link>
           <Link to="/discover" className="nav-button" title="Tags">
             <span className="nav-icon">🏷️</span>
             <span className="nav-label">Tags</span>
