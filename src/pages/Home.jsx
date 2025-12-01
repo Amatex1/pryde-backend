@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { isAuthenticated } from '../utils/auth';
+import prydeLogo from '../assets/pryde-logo.png';
 import './Home.css';
 
 function Home() {
@@ -11,6 +12,9 @@ function Home() {
       <section className="hero-section">
         <div className="hero-content">
           <div className="hero-text">
+            <div className="hero-logo-container">
+              <img src={prydeLogo} alt="Pryde Social Logo" className="hero-logo" />
+            </div>
             <h1 className="hero-title">
               A Calm, Queer-First Social Platform Built for Introverts & Deep Thinkers
             </h1>
@@ -265,6 +269,7 @@ function Home() {
       <footer className="home-footer">
         <div className="footer-content">
           <div className="footer-brand">
+            <img src={prydeLogo} alt="Pryde Social Logo" className="footer-logo" />
             <h3 className="brand-gradient">Pryde Social</h3>
             <p>A calm, queer-first space for introverts and deep thinkers.</p>
           </div>

@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import prydeLogo from '../assets/pryde-logo.png';
 import './Footer.css';
 
 function Footer() {
@@ -9,6 +10,7 @@ function Footer() {
       <div className="footer-content">
         {/* Site Name and Copyright */}
         <div className="footer-branding">
+          <img src={prydeLogo} alt="Pryde Social Logo" className="footer-logo-img" />
           <h3 className="footer-logo">Pryde Social</h3>
           <p className="footer-copyright">
             © {currentYear} Pryde Social. All rights reserved.

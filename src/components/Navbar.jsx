@@ -7,6 +7,7 @@ import GlobalSearch from './GlobalSearch';
 import NotificationBell from './NotificationBell';
 import api from '../utils/api';
 import { applyQuietMode } from '../utils/quietMode';
+import prydeLogo from '../assets/pryde-logo.png';
 import './Navbar.css';
 
 // Hook to get dark mode state
@@ -143,7 +144,7 @@ function Navbar() {
     <nav className="navbar glossy">
       <div className="navbar-container">
         <Link to="/feed" className="navbar-brand">
-          <span className="brand-icon">✨</span>
+          <img src={prydeLogo} alt="Pryde Social" className="brand-logo" />
           <span className="brand-text">Pryde Social</span>
         </Link>
 

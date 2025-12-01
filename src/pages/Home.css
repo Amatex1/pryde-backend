@@ -28,6 +28,34 @@
   z-index: 2;
 }
 
+.hero-logo-container {
+  margin-bottom: 2rem;
+  animation: fadeInDown 1s ease-out;
+}
+
+.hero-logo {
+  height: 120px;
+  width: auto;
+  filter: drop-shadow(0 4px 20px rgba(108, 92, 231, 0.3));
+  transition: all 0.3s ease;
+}
+
+.hero-logo:hover {
+  transform: scale(1.05);
+  filter: drop-shadow(0 8px 30px rgba(108, 92, 231, 0.4));
+}
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .hero-title {
   font-size: 3rem;
   font-weight: 800;
@@ -568,6 +596,20 @@
   margin-bottom: 2rem;
 }
 
+.footer-logo {
+  height: 50px;
+  width: auto;
+  margin-bottom: 1rem;
+  filter: brightness(0) invert(1);
+  opacity: 0.9;
+  transition: all 0.3s ease;
+}
+
+.footer-logo:hover {
+  opacity: 1;
+  transform: scale(1.05);
+}
+
 .footer-brand h3 {
   font-size: 1.5rem;
   margin-bottom: 0.5rem;
@@ -644,6 +686,10 @@
     height: 300px;
   }
 
+  .hero-logo {
+    height: 80px;
+  }
+
   .philosophy-section,
   .privacy-section,
   .creator-section,
@@ -713,6 +759,14 @@
 
   .hero-image {
     height: 250px;
+  }
+
+  .hero-logo {
+    height: 60px;
+  }
+
+  .footer-logo {
+    height: 40px;
   }
 
   .section-title {
