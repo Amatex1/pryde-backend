@@ -642,12 +642,12 @@ function Feed() {
       <div className="feed-container">
         <div className="feed-content">
           <div className="create-post glossy fade-in">
-            <h2 className="section-title">What's on your mind?</h2>
+            <h2 className="section-title">✨ Share a thought...</h2>
             <form onSubmit={handlePostSubmit}>
               <textarea
                 value={newPost}
                 onChange={(e) => setNewPost(e.target.value)}
-                placeholder="Share something amazing..."
+                placeholder="What are you reflecting on today?"
                 className="post-input glossy"
                 rows="4"
               />
@@ -731,7 +731,7 @@ function Feed() {
                 </select>
 
                 <button type="submit" disabled={loading || uploadingMedia} className="btn-post glossy-gold">
-                  {loading ? 'Posting...' : 'Share Post ✨'}
+                  {loading ? 'Publishing...' : 'Publish ✨'}
                 </button>
               </div>
             </form>

@@ -180,28 +180,28 @@ function Navbar() {
         </div>
 
         <div className="navbar-user" ref={dropdownRef}>
-          {/* Main Navigation Buttons */}
-          <Link to="/feed" className="nav-button" title="Feed">
+          {/* Main Navigation Buttons - PHASE 6: Rebranded labels */}
+          <Link to="/feed" className="nav-button" title="Home">
             <span className="nav-icon">🏠</span>
-            <span className="nav-label">Feed</span>
+            <span className="nav-label">Home</span>
           </Link>
           {/* PHASE 2: Global and Following feeds */}
-          <Link to="/feed/global" className="nav-button" title="Global Feed">
+          <Link to="/feed/global" className="nav-button" title="Explore">
             <span className="nav-icon">🌍</span>
-            <span className="nav-label">Global</span>
+            <span className="nav-label">Explore</span>
           </Link>
-          <Link to="/feed/following" className="nav-button" title="Following Feed">
+          <Link to="/feed/following" className="nav-button" title="Community">
             <span className="nav-icon">👥</span>
-            <span className="nav-label">Following</span>
+            <span className="nav-label">Community</span>
           </Link>
           {/* PHASE 3: Journal and Longform */}
           <Link to="/journal" className="nav-button" title="Journal">
             <span className="nav-icon">📔</span>
             <span className="nav-label">Journal</span>
           </Link>
-          <Link to="/longform" className="nav-button" title="Longform">
+          <Link to="/longform" className="nav-button" title="Stories">
             <span className="nav-icon">📝</span>
-            <span className="nav-label">Longform</span>
+            <span className="nav-label">Stories</span>
           </Link>
           {/* PHASE 4: Discover */}
           <Link to="/discover" className="nav-button" title="Discover">
@@ -213,9 +213,9 @@ function Navbar() {
             <span className="nav-icon">👥</span>
             <span className="nav-label">Connections</span>
           </Link> */}
-          <Link to="/messages" className="nav-button" title="Messages">
+          <Link to="/messages" className="nav-button" title="Conversations">
             <span className="nav-icon">💬</span>
-            <span className="nav-label">Messages</span>
+            <span className="nav-label">Conversations</span>
             {totalUnreadMessages > 0 && (
               <span className="nav-badge">{totalUnreadMessages > 99 ? '99+' : totalUnreadMessages}</span>
             )}

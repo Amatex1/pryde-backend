@@ -12,7 +12,8 @@ function Register({ setIsAuth }) {
     password: '',
     displayName: '',
     birthday: '',
-    termsAccepted: false
+    termsAccepted: false,
+    isAlly: false // PHASE 6: Ally system
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -239,6 +240,38 @@ function Register({ setIsAuth }) {
             </label>
           </div>
 
+          {/* PHASE 6: Ally Selection */}
+          <div className="form-group" style={{ marginTop: '1.5rem', padding: '1rem', background: 'var(--soft-lavender)', borderRadius: '8px' }}>
+            <label style={{ fontWeight: 'bold', color: 'var(--pryde-purple)', marginBottom: '0.75rem', display: 'block' }}>
+              🌈 How do you identify on Pryde?
+            </label>
+            <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: '1rem', lineHeight: '1.5' }}>
+              Pryde is a calm, queer-first creative platform for LGBTQ+ introverts, deep thinkers, and supportive allies.
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              <label className="checkbox-label" style={{ padding: '0.75rem', background: formData.isAlly === false ? 'var(--pryde-purple)' : 'white', color: formData.isAlly === false ? 'white' : 'var(--text-main)', borderRadius: '6px', cursor: 'pointer', transition: 'all 0.3s ease' }}>
+                <input
+                  type="radio"
+                  name="identityType"
+                  checked={formData.isAlly === false}
+                  onChange={() => setFormData({ ...formData, isAlly: false })}
+                  style={{ marginRight: '0.5rem' }}
+                />
+                <span>I am LGBTQ+</span>
+              </label>
+              <label className="checkbox-label" style={{ padding: '0.75rem', background: formData.isAlly === true ? 'var(--pryde-purple)' : 'white', color: formData.isAlly === true ? 'white' : 'var(--text-main)', borderRadius: '6px', cursor: 'pointer', transition: 'all 0.3s ease' }}>
+                <input
+                  type="radio"
+                  name="identityType"
+                  checked={formData.isAlly === true}
+                  onChange={() => setFormData({ ...formData, isAlly: true })}
+                  style={{ marginRight: '0.5rem' }}
+                />
+                <span>I am an ally and agree to respect queer spaces</span>
+              </label>
+            </div>
+          </div>
+
           <div className="form-group checkbox-group">
             <label className="checkbox-label">
               <input
@@ -255,7 +288,7 @@ function Register({ setIsAuth }) {
           </div>
 
           <button type="submit" disabled={loading || !formData.birthday || !formData.termsAccepted} className="btn-primary glossy-gold">
-            {loading ? 'Creating account...' : 'Sign Up'}
+            {loading ? 'Join Pryde' : 'Create Account'}
           </button>
         </form>
         )}
