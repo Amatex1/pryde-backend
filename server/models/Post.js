@@ -17,6 +17,11 @@ const postSchema = new mongoose.Schema({
     lowercase: true,
     trim: true
   }],
+  // PHASE 4: Community tags for discovery
+  tags: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Tag'
+  }],
   images: [{
     type: String
   }],

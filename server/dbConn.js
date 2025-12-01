@@ -19,6 +19,10 @@ const connectDB = async () => {
     });
 
     console.log("✅ MongoDB Connected Successfully");
+
+    // PHASE 4: Initialize core tags after DB connection
+    const { initializeTags } = await import('./routes/tags.js');
+    await initializeTags();
   } catch (error) {
     console.error("❌ MongoDB connection error:", error);
     process.exit(1);

@@ -240,7 +240,7 @@ router.get('/:id', auth, async (req, res) => {
 // @access  Private
 router.post('/', auth, postLimiter, sanitizeFields(['content', 'contentWarning']), checkMuted, moderateContent, async (req, res) => {
   try {
-    const { content, images, media, visibility, hiddenFrom, sharedWith, contentWarning } = req.body;
+    const { content, images, media, visibility, hiddenFrom, sharedWith, contentWarning, tags } = req.body;
 
     // Require either content or media
     if ((!content || content.trim() === '') && (!media || media.length === 0)) {
@@ -248,6 +248,23 @@ router.post('/', auth, postLimiter, sanitizeFields(['content', 'contentWarning']
     }
 
     const userId = req.userId || req.user._id;
+
+    // PHASE 4: Handle tags
+    let tagIds = [];
+    if (tags && Array.isArray(tags) && tags.length > 0) {
+      const Tag = (await import('../models/Tag.js')).default;
+      tagIds = await Promise.all(tags.map(async (tagSlug) => {
+        const tag = await Tag.findOne({ slug: tagSlug.toLowerCase() });
+        if (tag) {
+          // Increment post count
+          tag.postCount += 1;
+          await tag.save();
+          return tag._id;
+        }
+        return null;
+      }));
+      tagIds = tagIds.filter(id => id !== null);
+    }
 
     const post = new Post({
       author: userId,
@@ -257,11 +274,13 @@ router.post('/', auth, postLimiter, sanitizeFields(['content', 'contentWarning']
       visibility: visibility || 'public',
       hiddenFrom: hiddenFrom || [],
       sharedWith: sharedWith || [],
-      contentWarning: contentWarning || ''
+      contentWarning: contentWarning || '',
+      tags: tagIds // PHASE 4: Add tags
     });
 
     await post.save();
     await post.populate('author', 'username displayName profilePhoto isVerified pronouns');
+    await post.populate('tags', 'slug label icon'); // PHASE 4: Populate tags
 
     res.status(201).json(post);
   } catch (error) {
