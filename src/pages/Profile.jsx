@@ -185,6 +185,37 @@ function Profile() {
     }
   };
 
+  // OPTIONAL FEATURES: Fetch creator content
+  const fetchJournals = async () => {
+    try {
+      const response = await api.get(`/journals/user/${id}`);
+      setJournals(response.data || []);
+    } catch (error) {
+      console.error('Failed to fetch journals:', error);
+      setJournals([]);
+    }
+  };
+
+  const fetchLongformPosts = async () => {
+    try {
+      const response = await api.get(`/longform/user/${id}`);
+      setLongformPosts(response.data || []);
+    } catch (error) {
+      console.error('Failed to fetch longform posts:', error);
+      setLongformPosts([]);
+    }
+  };
+
+  const fetchPhotoEssays = async () => {
+    try {
+      const response = await api.get(`/photo-essays/user/${id}`);
+      setPhotoEssays(response.data || []);
+    } catch (error) {
+      console.error('Failed to fetch photo essays:', error);
+      setPhotoEssays([]);
+    }
+  };
+
   const handleLike = async (postId) => {
     try {
       const response = await api.post(`/posts/${postId}/like`);
