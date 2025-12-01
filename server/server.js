@@ -258,16 +258,31 @@ app.get('/api/migrate/creator-privacy', async (req, res) => {
             whoCanSeeFollowing: 'everyone',
             whoCanComment: 'everyone',
             whoCanMessageMe: 'everyone',
+            whoCanTagMe: 'followers',
             showOnlineStatus: true,
             showLastSeen: true,
             allowTagging: true,
             quietModeEnabled: false
           };
           needsUpdate = true;
-        } else if (user.privacySettings.quietModeEnabled === undefined) {
+        } else {
           // Add quietModeEnabled if it's missing
-          user.privacySettings.quietModeEnabled = false;
-          needsUpdate = true;
+          if (user.privacySettings.quietModeEnabled === undefined) {
+            user.privacySettings.quietModeEnabled = false;
+            needsUpdate = true;
+          }
+
+          // Convert 'friends' to 'followers' for whoCanTagMe (migration from friends to followers system)
+          if (user.privacySettings.whoCanTagMe === 'friends') {
+            user.privacySettings.whoCanTagMe = 'followers';
+            needsUpdate = true;
+          }
+
+          // Initialize whoCanTagMe if it's missing
+          if (!user.privacySettings.whoCanTagMe) {
+            user.privacySettings.whoCanTagMe = 'followers';
+            needsUpdate = true;
+          }
         }
 
         // Initialize creator fields if they don't exist
