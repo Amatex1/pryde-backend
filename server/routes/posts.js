@@ -47,7 +47,6 @@ router.get('/', auth, async (req, res) => {
 
     const userId = req.userId || req.user._id;
     const currentUser = await User.findById(userId);
-    const friendIds = currentUser.friends || [];
     const followingIds = currentUser.following || [];
 
     let query = {};
@@ -81,18 +80,18 @@ router.get('/', auth, async (req, res) => {
         ]
       };
     } else {
-      // Default: Friends feed (backward compatibility)
+      // Default: Followers feed (same as 'followers' filter)
       query = {
         $or: [
           { author: userId },
           {
-            author: { $in: friendIds },
+            author: { $in: followingIds },
             visibility: 'public',
             hiddenFrom: { $ne: userId }
           },
           {
-            author: { $in: friendIds },
-            visibility: 'friends',
+            author: { $in: followingIds },
+            visibility: 'followers',
             hiddenFrom: { $ne: userId }
           },
           {
@@ -160,9 +159,9 @@ router.get('/user/:identifier', auth, async (req, res) => {
       profileUserId = profileUser._id;
     }
 
-    // Get current user to check friendship
+    // Get current user to check following relationship
     const currentUser = await User.findById(currentUserId);
-    const isFriend = currentUser.friends.some(friendId => friendId.toString() === profileUserId.toString());
+    const isFollowing = currentUser.following && currentUser.following.some(followId => followId.toString() === profileUserId.toString());
     const isOwnProfile = currentUserId.toString() === profileUserId.toString();
 
     // Build query based on relationship
@@ -174,7 +173,7 @@ router.get('/user/:identifier', auth, async (req, res) => {
         author: profileUserId,
         $or: [
           { visibility: 'public', hiddenFrom: { $ne: currentUserId } },
-          { visibility: 'friends', hiddenFrom: { $ne: currentUserId }, ...(isFriend ? {} : { _id: null }) }, // Only if friends
+          { visibility: 'followers', hiddenFrom: { $ne: currentUserId }, ...(isFollowing ? {} : { _id: null }) }, // Only if following
           { visibility: 'custom', sharedWith: currentUserId, hiddenFrom: { $ne: currentUserId } }
         ]
       };
