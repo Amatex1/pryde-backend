@@ -1,50 +1,56 @@
 /**
  * QUIET MODE THEME
  * Soft midnight violet palette with calm, reduced visual noise
+ *
+ * IMPORTANT: This file MUST be loaded AFTER darkMode.css
+ * Uses !important to ensure it overrides both light and dark mode
  */
 
 /* ========================================
    QUIET MODE COLOR VARIABLES
    ======================================== */
 
-:root[data-quiet-mode="true"] {
+html[data-quiet-mode="true"] {
   /* Backgrounds */
-  --bg-main: #0F1021;                /* Soft midnight violet */
-  --bg-light: #0F1021;               /* Alias for compatibility */
-  --bg-surface: #1A1B2D;             /* Navy-lavender surface cards */
-  --card-surface: #1A1B2D;           /* Card backgrounds */
-  --background-light: #0F1021;       /* Legacy support */
+  --bg-main: #0F1021 !important;                /* Soft midnight violet */
+  --bg-light: #0F1021 !important;               /* Alias for compatibility */
+  --bg-surface: #1A1B2D !important;             /* Navy-lavender surface cards */
+  --card-surface: #1A1B2D !important;           /* Card backgrounds */
+  --background-light: #0F1021 !important;       /* Legacy support */
+  --background-dark: #0F1021 !important;        /* Override dark mode */
 
   /* Borders & subtle outlines */
-  --border-soft: #4C4E75;            /* Low-contrast lavender-grey */
-  --border-light: #4C4E75;           /* Alias for compatibility */
+  --border-soft: #4C4E75 !important;            /* Low-contrast lavender-grey */
+  --border-light: #4C4E75 !important;           /* Alias for compatibility */
+  --border-dark: #4C4E75 !important;            /* Override dark mode */
 
   /* Text */
-  --text-primary: #FFFFFF;           /* High readability */
-  --text-main: #FFFFFF;              /* Alias for compatibility */
-  --text-secondary: #A4A7C2;         /* Soft lavender */
-  --text-muted: #65677E;             /* Placeholders */
+  --text-primary: #FFFFFF !important;           /* High readability */
+  --text-main: #FFFFFF !important;              /* Alias for compatibility */
+  --text-light: #FFFFFF !important;             /* Override dark mode */
+  --text-secondary: #A4A7C2 !important;         /* Soft lavender */
+  --text-muted: #65677E !important;             /* Placeholders */
 
   /* Accents */
-  --accent-primary: #C6B9F8;         /* Pastel lavender */
-  --accent-hover: #DAD3FF;           /* Lighter lavender on hover */
-  --accent-soft: rgba(198,185,248,0.15); /* Subtle accent background */
+  --accent-primary: #C6B9F8 !important;         /* Pastel lavender */
+  --accent-hover: #DAD3FF !important;           /* Lighter lavender on hover */
+  --accent-soft: rgba(198,185,248,0.15) !important; /* Subtle accent background */
 
   /* Theme colors (adjusted for quiet mode) */
-  --pryde-purple: #C6B9F8;           /* Pastel lavender */
-  --electric-blue: #A4A7C2;          /* Soft lavender-blue */
-  --soft-lavender: rgba(198,185,248,0.15); /* Very subtle */
+  --pryde-purple: #C6B9F8 !important;           /* Pastel lavender */
+  --electric-blue: #A4A7C2 !important;          /* Soft lavender-blue */
+  --soft-lavender: rgba(198,185,248,0.15) !important; /* Very subtle */
 
   /* Quiet Mode Icon (Leaf) */
-  --quiet-leaf: #9BE7C4;             /* Soft mint green */
+  --quiet-leaf: #9BE7C4 !important;             /* Soft mint green */
 
   /* Buttons */
-  --btn-bg: #1F2035;
-  --btn-bg-hover: #2A2B46;
-  --btn-text: #E8E8FF;
+  --btn-bg: #1F2035 !important;
+  --btn-bg-hover: #2A2B46 !important;
+  --btn-text: #E8E8FF !important;
 
   /* Cards & shadows */
-  --card-shadow: 0px 4px 16px rgba(0,0,0,0.35);
+  --card-shadow: 0px 4px 16px rgba(0,0,0,0.35) !important;
 }
 
 /* ========================================
@@ -66,8 +72,9 @@ html[data-quiet-mode="true"] * {
    BACKGROUNDS
    ======================================== */
 
-[data-quiet-mode="true"] body {
-  background-color: var(--bg-main);
+html[data-quiet-mode="true"] body {
+  background-color: var(--bg-main) !important;
+  color: var(--text-main) !important;
 }
 
 [data-quiet-mode="true"] .feed-container,

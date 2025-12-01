@@ -114,23 +114,8 @@ body {
   --text-light: var(--text-main);
 }
 
-/* Dark Mode Theme */
-[data-theme="dark"] {
-  /* Dark Mode Neutrals */
-  --bg-light: #1a1a2e;
-  --background-dark: #16213e;
-  --card-surface: #0f3460;
-  --border-light: #2a2a4a;
-  --border-dark: #2a2a4a;
-  --text-main: #e0e0e0;
-  --text-light: #ffffff;
-  --text-muted: #a0a0a0;
-
-  /* Dark mode specific */
-  --dark-bg: #1a1a2e;
-  --dark-secondary: #2a2a4a;
-  --dark-card: #0f3460;
-}
+/* NOTE: Dark Mode CSS is in darkMode.css, loaded separately in main.jsx */
+/* NOTE: Quiet Mode CSS is in quiet-mode.css, loaded after darkMode.css */
 
 /* Scrollbar styling */
 ::-webkit-scrollbar {
