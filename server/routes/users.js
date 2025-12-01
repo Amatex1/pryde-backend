@@ -558,11 +558,11 @@ router.put('/profile', auth, async (req, res) => {
 });
 
 // @route   PATCH /api/users/me/settings
-// @desc    Update user settings (PHASE 2: Quiet Mode)
+// @desc    Update user settings (PHASE 2: Quiet Mode + Auto Quiet Hours)
 // @access  Private
 router.patch('/me/settings', auth, async (req, res) => {
   try {
-    const { quietModeEnabled } = req.body;
+    const { quietModeEnabled, autoQuietHoursEnabled } = req.body;
     const user = await User.findById(req.userId);
 
     if (!user) {
@@ -577,7 +577,12 @@ router.patch('/me/settings', auth, async (req, res) => {
     // Update quiet mode setting
     if (typeof quietModeEnabled === 'boolean') {
       user.privacySettings.quietModeEnabled = quietModeEnabled;
-      // Mark the nested object as modified so Mongoose saves it
+      user.markModified('privacySettings');
+    }
+
+    // Update auto quiet hours setting
+    if (typeof autoQuietHoursEnabled === 'boolean') {
+      user.privacySettings.autoQuietHoursEnabled = autoQuietHoursEnabled;
       user.markModified('privacySettings');
     }
 
@@ -585,7 +590,8 @@ router.patch('/me/settings', auth, async (req, res) => {
 
     res.json({
       message: 'Settings updated successfully',
-      quietModeEnabled: user.privacySettings.quietModeEnabled
+      quietModeEnabled: user.privacySettings.quietModeEnabled,
+      autoQuietHoursEnabled: user.privacySettings.autoQuietHoursEnabled
     });
   } catch (error) {
     console.error('Update settings error:', error);

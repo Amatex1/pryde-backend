@@ -42,12 +42,41 @@ import SafetyWarning from './components/SafetyWarning';
 import { isAuthenticated, getCurrentUser } from './utils/auth';
 import { initializeSocket, disconnectSocket, onNewMessage } from './utils/socket';
 import { playNotificationSound, requestNotificationPermission } from './utils/notifications';
+import { initializeQuietMode, shouldQuietModeBeActive, applyQuietMode } from './utils/quietMode';
+import api from './utils/api';
 
 function App() {
   const [isAuth, setIsAuth] = useState(isAuthenticated());
 
   useEffect(() => {
     setIsAuth(isAuthenticated());
+
+    // Initialize Quiet Mode globally
+    const initQuietMode = async () => {
+      if (isAuthenticated()) {
+        try {
+          const response = await api.get('/auth/me');
+          const user = response.data;
+
+          // Initialize quiet mode with user settings
+          initializeQuietMode(user);
+
+          // Set up interval to check quiet hours every minute
+          const quietHoursInterval = setInterval(() => {
+            const manualQuietMode = user.privacySettings?.quietModeEnabled || false;
+            const autoQuietHours = user.privacySettings?.autoQuietHoursEnabled !== false;
+            const isActive = shouldQuietModeBeActive(manualQuietMode, autoQuietHours);
+            applyQuietMode(isActive);
+          }, 60000); // Check every minute
+
+          return () => clearInterval(quietHoursInterval);
+        } catch (error) {
+          console.error('Failed to initialize quiet mode:', error);
+        }
+      }
+    };
+
+    initQuietMode();
 
     // Initialize Socket.IO when user is authenticated
     if (isAuthenticated()) {

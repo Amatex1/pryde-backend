@@ -6,6 +6,7 @@ import DarkModeToggle from './DarkModeToggle';
 import GlobalSearch from './GlobalSearch';
 import NotificationBell from './NotificationBell';
 import api from '../utils/api';
+import { shouldQuietModeBeActive, applyQuietMode } from '../utils/quietMode';
 import './Navbar.css';
 
 // Hook to get dark mode state
@@ -60,12 +61,12 @@ function Navbar() {
     setQuietMode(newValue);
     localStorage.setItem('quietMode', newValue);
 
-    // Apply quiet mode attribute to html element
-    if (newValue) {
-      document.documentElement.setAttribute('data-quiet-mode', 'true');
-    } else {
-      document.documentElement.removeAttribute('data-quiet-mode');
-    }
+    // Get auto quiet hours setting
+    const autoQuietHours = localStorage.getItem('autoQuietHours') !== 'false';
+
+    // Determine if quiet mode should be active
+    const isActive = shouldQuietModeBeActive(newValue, autoQuietHours);
+    applyQuietMode(isActive);
 
     // Sync with backend
     try {

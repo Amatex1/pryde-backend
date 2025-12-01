@@ -442,6 +442,11 @@ const userSchema = new mongoose.Schema({
       type: Boolean,
       default: false
     },
+    // Automatic Quiet Hours (21:00-06:00 local time)
+    autoQuietHoursEnabled: {
+      type: Boolean,
+      default: true
+    },
     whoCanSeeMyPosts: {
       type: String,
       enum: ['public', 'followers', 'only-me'], // REMOVED: 'friends'
