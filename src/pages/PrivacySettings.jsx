@@ -126,7 +126,8 @@ const PrivacySettings = () => {
                 </select>
               </div>
 
-              <div className="setting-item">
+              {/* PHASE 1 REFACTOR: Follower list visibility removed (follower counts hidden) */}
+              {/* <div className="setting-item">
                 <label>Who Can See My Followers/Following List?</label>
                 <select
                   value={privacySettings.whoCanSeeFollowersList}
@@ -136,7 +137,7 @@ const PrivacySettings = () => {
                   <option value="followers">Followers Only</option>
                   <option value="only-me">Only Me</option>
                 </select>
-              </div>
+              </div> */}
 
               <div className="setting-item checkbox-item">
                 <label>

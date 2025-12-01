@@ -367,15 +367,15 @@ function Feed() {
         contentWarning: contentWarning
       };
 
-      // Add custom privacy settings if applicable
-      if (postVisibility === 'custom') {
-        if (hiddenFromUsers.length > 0) {
-          postData.hiddenFrom = hiddenFromUsers;
-        }
-        if (sharedWithUsers.length > 0) {
-          postData.sharedWith = sharedWithUsers;
-        }
-      }
+      // PHASE 1 REFACTOR: Custom privacy removed
+      // if (postVisibility === 'custom') {
+      //   if (hiddenFromUsers.length > 0) {
+      //     postData.hiddenFrom = hiddenFromUsers;
+      //   }
+      //   if (sharedWithUsers.length > 0) {
+      //     postData.sharedWith = sharedWithUsers;
+      //   }
+      // }
 
       const response = await api.post('/posts', postData);
       setPosts([response.data, ...posts]);
@@ -719,20 +719,14 @@ function Feed() {
                   ⚠️ CW
                 </button>
 
+                {/* PHASE 1 REFACTOR: Simplified privacy options */}
                 <select
                   value={postVisibility}
-                  onChange={(e) => {
-                    setPostVisibility(e.target.value);
-                    if (e.target.value === 'custom') {
-                      setShowPrivacyModal(true);
-                    }
-                  }}
+                  onChange={(e) => setPostVisibility(e.target.value)}
                   className="privacy-selector glossy"
                 >
                   <option value="public">🌍 Public</option>
                   <option value="followers">👥 Followers</option>
-                  <option value="friends">👫 Friends (Legacy)</option>
-                  <option value="custom">⚙️ Custom</option>
                   <option value="private">🔒 Only Me</option>
                 </select>
 
@@ -952,6 +946,7 @@ function Feed() {
                                 <label style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginRight: '0.5rem' }}>
                                   Privacy:
                                 </label>
+                                {/* PHASE 1 REFACTOR: Simplified privacy options */}
                                 <select
                                   value={editPostVisibility}
                                   onChange={(e) => setEditPostVisibility(e.target.value)}
@@ -960,8 +955,6 @@ function Feed() {
                                 >
                                   <option value="public">🌍 Public</option>
                                   <option value="followers">👥 Followers</option>
-                                  <option value="friends">👫 Friends (Legacy)</option>
-                                  <option value="custom">⚙️ Custom</option>
                                   <option value="private">🔒 Only Me</option>
                                 </select>
                               </div>

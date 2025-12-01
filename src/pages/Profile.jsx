@@ -1039,6 +1039,7 @@ function Profile() {
                         ⚠️ CW
                       </button>
 
+                      {/* PHASE 1 REFACTOR: Simplified privacy options */}
                       <select
                         value={postVisibility}
                         onChange={(e) => setPostVisibility(e.target.value)}
@@ -1046,7 +1047,6 @@ function Profile() {
                       >
                         <option value="public">🌍 Public</option>
                         <option value="followers">👥 Followers</option>
-                        <option value="friends">👫 Friends (Legacy)</option>
                         <option value="private">🔒 Only Me</option>
                       </select>
 
@@ -1150,13 +1150,14 @@ function Profile() {
                               placeholder="What's on your mind?"
                             />
                             <div className="edit-post-actions">
+                              {/* PHASE 1 REFACTOR: Simplified privacy options */}
                               <select
                                 value={editPostVisibility}
                                 onChange={(e) => setEditPostVisibility(e.target.value)}
                                 className="visibility-select"
                               >
                                 <option value="public">🌍 Public</option>
-                                <option value="friends">👥 Friends</option>
+                                <option value="followers">👥 Followers</option>
                                 <option value="private">🔒 Private</option>
                               </select>
                               <div className="edit-post-buttons">
