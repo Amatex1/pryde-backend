@@ -1,0 +1,173 @@
+.photo-essay-page {
+  min-height: 100vh;
+  background: var(--background-light);
+  padding-top: 80px;
+}
+
+.photo-essay-container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.photo-essay-header {
+  text-align: center;
+  padding: 30px;
+  margin-bottom: 30px;
+  border-radius: 12px;
+}
+
+.photo-essay-header h1 {
+  margin: 0 0 10px 0;
+  color: var(--pryde-purple);
+  font-size: 2rem;
+}
+
+.photo-essay-header p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 1.1rem;
+}
+
+.photo-essay-form {
+  padding: 30px;
+  border-radius: 12px;
+}
+
+.form-group {
+  margin-bottom: 25px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 10px;
+  font-weight: bold;
+  color: var(--pryde-purple);
+}
+
+.input-field,
+.select-field {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid var(--border-light);
+  border-radius: 8px;
+  font-size: 1rem;
+  background: white;
+  transition: all 0.3s ease;
+}
+
+.input-field:focus,
+.select-field:focus {
+  outline: none;
+  border-color: var(--pryde-purple);
+  box-shadow: 0 0 0 3px rgba(108, 92, 231, 0.1);
+}
+
+.photo-upload-area {
+  margin-bottom: 20px;
+}
+
+.upload-button {
+  display: inline-block;
+  padding: 12px 24px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: all 0.3s ease;
+}
+
+.upload-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.photos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.photo-item {
+  position: relative;
+  border-radius: 12px;
+  padding: 10px;
+  overflow: hidden;
+}
+
+.photo-item img {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: 8px;
+  margin-bottom: 10px;
+}
+
+.remove-photo-btn {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 0, 0, 0.8);
+  color: white;
+  font-size: 1.2rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.remove-photo-btn:hover {
+  background: rgba(255, 0, 0, 1);
+  transform: scale(1.1);
+}
+
+.caption-input {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid var(--border-light);
+  border-radius: 6px;
+  font-size: 0.9rem;
+  background: white;
+}
+
+.caption-input:focus {
+  outline: none;
+  border-color: var(--pryde-purple);
+}
+
+.form-actions {
+  display: flex;
+  gap: 15px;
+  justify-content: flex-end;
+  margin-top: 30px;
+}
+
+.btn-secondary,
+.btn-primary {
+  padding: 12px 30px;
+  border-radius: 8px;
+  border: none;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-secondary {
+  background: var(--border-light);
+  color: var(--text-main);
+}
+
+.btn-secondary:hover {
+  background: #d0d0d0;
+}
+
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+

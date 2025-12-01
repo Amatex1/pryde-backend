@@ -956,4 +956,39 @@ router.delete('/:id/comment/:commentId', auth, async (req, res) => {
   }
 });
 
+// @route   POST /api/posts/:id/pin
+// @desc    Pin/unpin a post (OPTIONAL FEATURES)
+// @access  Private
+router.post('/:id/pin', auth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.userId;
+
+    const post = await Post.findById(id);
+
+    if (!post) {
+      return res.status(404).json({ message: 'Post not found' });
+    }
+
+    // Only author can pin their own posts
+    if (post.author.toString() !== userId) {
+      return res.status(403).json({ message: 'You can only pin your own posts' });
+    }
+
+    // Toggle pin status
+    post.isPinned = !post.isPinned;
+    post.pinnedAt = post.isPinned ? new Date() : null;
+
+    await post.save();
+
+    // PHASE 1 REFACTOR: Sanitize post to hide like counts
+    const sanitizedPost = sanitizePostForPrivateLikes(post, userId);
+
+    res.json(sanitizedPost);
+  } catch (error) {
+    console.error('Pin post error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 export default router;

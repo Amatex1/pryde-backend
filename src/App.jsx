@@ -12,6 +12,7 @@ import Journal from './pages/Journal'; // PHASE 3: Journaling
 import Longform from './pages/Longform'; // PHASE 3: Longform posts
 import Discover from './pages/Discover'; // PHASE 4: Community tags
 import TagFeed from './pages/TagFeed'; // PHASE 4: Tag feed
+import PhotoEssay from './pages/PhotoEssay'; // OPTIONAL: Photo essay creation
 import Profile from './pages/Profile';
 import Settings from './pages/Settings';
 import SecuritySettings from './pages/SecuritySettings';
@@ -101,6 +102,8 @@ function App() {
           <Route path="/longform" element={<PrivateRoute><Longform /></PrivateRoute>} /> {/* PHASE 3 */}
           <Route path="/discover" element={<PrivateRoute><Discover /></PrivateRoute>} /> {/* PHASE 4 */}
           <Route path="/tags/:slug" element={<PrivateRoute><TagFeed /></PrivateRoute>} /> {/* PHASE 4 */}
+          <Route path="/photo-essay" element={<PrivateRoute><PhotoEssay /></PrivateRoute>} /> {/* OPTIONAL */}
+          <Route path="/photo-essay/:id" element={<PrivateRoute><PhotoEssay /></PrivateRoute>} /> {/* OPTIONAL */}
           <Route path="/profile/:id" element={<PrivateRoute><Profile /></PrivateRoute>} />
           <Route path="/settings" element={<PrivateRoute><Settings /></PrivateRoute>} />
           <Route path="/settings/security" element={<PrivateRoute><SecuritySettings /></PrivateRoute>} />

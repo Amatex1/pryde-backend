@@ -160,6 +160,15 @@ const postSchema = new mongoose.Schema({
   promotedUntil: {
     type: Date,
     default: null
+  },
+  // OPTIONAL FEATURES: Pinned posts
+  isPinned: {
+    type: Boolean,
+    default: false
+  },
+  pinnedAt: {
+    type: Date,
+    default: null
   }
 });
 

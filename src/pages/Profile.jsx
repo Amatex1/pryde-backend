@@ -236,6 +236,18 @@ function Profile() {
     }
   };
 
+  // OPTIONAL FEATURES: Pin/unpin post
+  const handlePinPost = async (postId) => {
+    try {
+      const response = await api.post(`/posts/${postId}/pin`);
+      setPosts(posts.map(p => p._id === postId ? response.data : p));
+      showToast(response.data.isPinned ? 'Post pinned' : 'Post unpinned', 'success');
+    } catch (error) {
+      console.error('Failed to pin post:', error);
+      showToast('Failed to pin post', 'error');
+    }
+  };
+
   const handlePostReaction = async (postId, emoji) => {
     try {
       const response = await api.post(`/posts/${postId}/react`, { emoji });
@@ -1187,12 +1199,23 @@ function Profile() {
                   </div>
                 ) : (
                   <div className="posts-list">
-                    {posts.map((post) => {
+                    {/* OPTIONAL FEATURES: Sort posts to show pinned first */}
+                    {posts.sort((a, b) => {
+                      if (a.isPinned && !b.isPinned) return -1;
+                      if (!a.isPinned && b.isPinned) return 1;
+                      return new Date(b.createdAt) - new Date(a.createdAt);
+                    }).map((post) => {
                   // PHASE 1 REFACTOR: Use hasLiked boolean instead of checking likes array
                   const isLiked = post.hasLiked || false;
 
                   return (
-                    <div key={post._id} className="post-card glossy fade-in">
+                    <div key={post._id} className="post-card glossy fade-in" style={{ borderTop: post.isPinned ? '3px solid var(--pryde-purple)' : 'none' }}>
+                      {/* OPTIONAL FEATURES: Pinned post indicator */}
+                      {post.isPinned && (
+                        <div style={{ padding: '8px 15px', background: 'var(--soft-lavender)', color: 'var(--pryde-purple)', fontSize: '0.85rem', fontWeight: 'bold', borderRadius: '8px 8px 0 0', marginBottom: '10px' }}>
+                          📌 Pinned Post
+                        </div>
+                      )}
                       <div className="post-header">
                         <div className="post-author">
                           <div className="author-avatar">
@@ -1225,6 +1248,16 @@ function Profile() {
                               <div className="dropdown-menu">
                                 {(post.author?._id === currentUser?.id || post.author?._id === currentUser?._id) ? (
                                   <>
+                                    {/* OPTIONAL FEATURES: Pin/unpin button */}
+                                    <button
+                                      className="dropdown-item"
+                                      onClick={() => {
+                                        handlePinPost(post._id);
+                                        setOpenDropdownId(null);
+                                      }}
+                                    >
+                                      {post.isPinned ? '📌 Unpin' : '📍 Pin'}
+                                    </button>
                                     {!post.isShared && (
                                       <button
                                         className="dropdown-item"
@@ -1884,7 +1917,108 @@ function Profile() {
                       )}
                     </div>
                   );
-                })}
+                    })}
+                  </div>
+                )}
+              </>
+            )}
+
+            {/* OPTIONAL FEATURES: Journals tab */}
+            {activeTab === 'journals' && (
+              <div className="journals-list">
+                {journals.length === 0 ? (
+                  <div className="empty-state glossy">
+                    <p>No journal entries yet</p>
+                  </div>
+                ) : (
+                  journals.map((journal) => (
+                    <div key={journal._id} className="journal-card glossy fade-in" style={{ marginBottom: '20px', padding: '20px', borderRadius: '12px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '15px' }}>
+                        <div>
+                          <h3 style={{ margin: '0 0 10px 0', color: 'var(--pryde-purple)' }}>{journal.title || 'Untitled Entry'}</h3>
+                          <div style={{ display: 'flex', gap: '10px', fontSize: '0.9rem', color: 'var(--text-muted)' }}>
+                            <span>📅 {new Date(journal.createdAt).toLocaleDateString()}</span>
+                            {journal.mood && <span>😊 {journal.mood}</span>}
+                            <span>🔒 {journal.visibility}</span>
+                          </div>
+                        </div>
+                      </div>
+                      <p style={{ whiteSpace: 'pre-wrap', lineHeight: '1.6' }}>{journal.content}</p>
+                      {journal.tags && journal.tags.length > 0 && (
+                        <div style={{ marginTop: '15px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                          {journal.tags.map((tag, idx) => (
+                            <span key={idx} style={{ padding: '4px 12px', background: 'var(--soft-lavender)', borderRadius: '12px', fontSize: '0.85rem', color: 'var(--pryde-purple)' }}>
+                              #{tag}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
+
+            {/* OPTIONAL FEATURES: Longform tab */}
+            {activeTab === 'longform' && (
+              <div className="longform-list">
+                {longformPosts.length === 0 ? (
+                  <div className="empty-state glossy">
+                    <p>No stories yet</p>
+                  </div>
+                ) : (
+                  longformPosts.map((longform) => (
+                    <div key={longform._id} className="longform-card glossy fade-in" style={{ marginBottom: '20px', padding: '20px', borderRadius: '12px' }}>
+                      {longform.coverImage && (
+                        <img src={getImageUrl(longform.coverImage)} alt={longform.title} style={{ width: '100%', borderRadius: '8px', marginBottom: '15px' }} />
+                      )}
+                      <h2 style={{ margin: '0 0 10px 0', color: 'var(--pryde-purple)' }}>{longform.title}</h2>
+                      <div style={{ display: 'flex', gap: '10px', fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: '15px' }}>
+                        <span>📅 {new Date(longform.createdAt).toLocaleDateString()}</span>
+                        {longform.readTime && <span>⏱️ {longform.readTime} min read</span>}
+                        <span>🔒 {longform.visibility}</span>
+                      </div>
+                      <p style={{ whiteSpace: 'pre-wrap', lineHeight: '1.6' }}>{longform.body.substring(0, 300)}...</p>
+                      <Link to={`/longform/${longform._id}`} style={{ color: 'var(--pryde-purple)', fontWeight: 'bold', textDecoration: 'none' }}>
+                        Read more →
+                      </Link>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
+
+            {/* OPTIONAL FEATURES: Photo Essays tab */}
+            {activeTab === 'photoEssays' && (
+              <div className="photo-essays-list">
+                {photoEssays.length === 0 ? (
+                  <div className="empty-state glossy">
+                    <p>No photo essays yet</p>
+                  </div>
+                ) : (
+                  photoEssays.map((essay) => (
+                    <div key={essay._id} className="photo-essay-card glossy fade-in" style={{ marginBottom: '20px', padding: '20px', borderRadius: '12px' }}>
+                      <h3 style={{ margin: '0 0 15px 0', color: 'var(--pryde-purple)' }}>{essay.title}</h3>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '15px', marginBottom: '15px' }}>
+                        {essay.photos && essay.photos.slice(0, 4).map((photo, idx) => (
+                          <div key={idx} style={{ position: 'relative' }}>
+                            <img src={getImageUrl(photo.url)} alt={photo.caption || `Photo ${idx + 1}`} style={{ width: '100%', borderRadius: '8px', aspectRatio: '1', objectFit: 'cover' }} />
+                            {photo.caption && (
+                              <p style={{ marginTop: '8px', fontSize: '0.85rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>{photo.caption}</p>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                      {essay.photos && essay.photos.length > 4 && (
+                        <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>+{essay.photos.length - 4} more photos</p>
+                      )}
+                      <div style={{ display: 'flex', gap: '10px', fontSize: '0.9rem', color: 'var(--text-muted)', marginTop: '10px' }}>
+                        <span>📅 {new Date(essay.createdAt).toLocaleDateString()}</span>
+                        <span>🔒 {essay.visibility}</span>
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             )}
           </div>

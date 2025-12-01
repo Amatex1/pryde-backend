@@ -208,6 +208,13 @@ function Navbar() {
             <span className="nav-icon">🌟</span>
             <span className="nav-label">Discover</span>
           </Link>
+          {/* OPTIONAL: Photo Essay (for creators) */}
+          {user?.isCreator && (
+            <Link to="/photo-essay" className="nav-button" title="Photo Essay">
+              <span className="nav-icon">📸</span>
+              <span className="nav-label">Photo Essay</span>
+            </Link>
+          )}
           {/* PHASE 1 REFACTOR: Connections link removed */}
           {/* <Link to="/connections" className="nav-button" title="Connections">
             <span className="nav-icon">👥</span>
