@@ -194,6 +194,15 @@ function Navbar() {
             <span className="nav-icon">👥</span>
             <span className="nav-label">Following</span>
           </Link>
+          {/* PHASE 3: Journal and Longform */}
+          <Link to="/journal" className="nav-button" title="Journal">
+            <span className="nav-icon">📔</span>
+            <span className="nav-label">Journal</span>
+          </Link>
+          <Link to="/longform" className="nav-button" title="Longform">
+            <span className="nav-icon">📝</span>
+            <span className="nav-label">Longform</span>
+          </Link>
           {/* PHASE 1 REFACTOR: Connections link removed */}
           {/* <Link to="/connections" className="nav-button" title="Connections">
             <span className="nav-icon">👥</span>

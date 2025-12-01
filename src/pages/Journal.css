@@ -1,0 +1,160 @@
+.journal-container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+
+.journal-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.journal-header h1 {
+  font-size: 2.5rem;
+  color: var(--pryde-purple);
+  margin-bottom: 0.5rem;
+}
+
+.journal-subtitle {
+  color: var(--text-muted);
+  margin-bottom: 1.5rem;
+}
+
+.btn-create-journal {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.journal-create-form {
+  background: white;
+  padding: 2rem;
+  border-radius: 12px;
+  margin-bottom: 2rem;
+}
+
+.journal-title-input,
+.journal-body-input {
+  width: 100%;
+  padding: 1rem;
+  border: 1px solid var(--border-light);
+  border-radius: 8px;
+  font-size: 1rem;
+  margin-bottom: 1rem;
+  font-family: inherit;
+}
+
+.journal-title-input {
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.journal-body-input {
+  resize: vertical;
+  min-height: 200px;
+  line-height: 1.6;
+}
+
+.journal-form-footer {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.journal-visibility-select,
+.journal-mood-select {
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--border-light);
+  border-radius: 8px;
+  font-size: 0.9rem;
+}
+
+.btn-submit-journal {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  cursor: pointer;
+  margin-left: auto;
+}
+
+.journals-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.journal-card {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 12px;
+}
+
+.journal-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.journal-card-header h3 {
+  font-size: 1.25rem;
+  color: var(--text-main);
+}
+
+.journal-date {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.journal-preview {
+  color: var(--text-main);
+  line-height: 1.6;
+  margin-bottom: 1rem;
+}
+
+.journal-card-footer {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-light);
+}
+
+.journal-visibility,
+.journal-mood {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+.btn-delete {
+  margin-left: auto;
+  padding: 0.5rem 1rem;
+  background: #ff4444;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.btn-delete:hover {
+  background: #cc0000;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 3rem;
+  color: var(--text-muted);
+}
+
+.loading {
+  text-align: center;
+  padding: 3rem;
+  color: var(--text-muted);
+}
+
