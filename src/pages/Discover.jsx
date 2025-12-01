@@ -112,8 +112,21 @@ function Discover() {
     setNewTag({ ...newTag, icon: emoji });
   };
 
-  // Common emoji icons for tags
-  const commonIcons = ['🏷️', '🏳️‍🌈', '🎨', '📸', '💚', '📚', '🎵', '💖', '✍️', '🤔', '🧘', '🌈', '✨', '🌟', '💫', '🔥', '💜', '🌸', '🌺', '🦋'];
+  // Expanded emoji icons for tags (60+ options organized by category)
+  const commonIcons = [
+    // Pride & Identity
+    '🏳️‍🌈', '🏳️‍⚧️', '💖', '💜', '💙', '💚', '🧡', '❤️', '💛', '🤍', '🖤', '🤎',
+    // Nature & Symbols
+    '🌈', '✨', '🌟', '💫', '⭐', '🌙', '☀️', '🌸', '🌺', '🌻', '🌹', '🌷', '🦋', '🐝', '🌿', '🍀',
+    // Activities & Hobbies
+    '🎨', '📸', '📚', '🎵', '🎭', '🎬', '🎮', '🎲', '🧩', '✍️', '📝', '🖊️', '🖌️', '🎸', '🎹', '🎤',
+    // Emotions & Expressions
+    '😊', '🥰', '😌', '🤔', '💭', '💬', '🗨️', '💡', '🧠', '🫶', '👋', '✌️', '🤝', '💪',
+    // Wellness & Self-Care
+    '🧘', '🧘‍♀️', '🧘‍♂️', '💆', '💆‍♀️', '💆‍♂️', '🛀', '☕', '🍵', '🕯️', '🔥',
+    // Misc & Fun
+    '🏷️', '📌', '🔖', '🎯', '🎪', '🎨', '🌍', '🌎', '🌏', '🗺️', '🧭', '🔮', '🎁', '🎉', '🎊'
+  ];
 
   return (
     <>
@@ -288,7 +301,7 @@ function Discover() {
                     padding: '1rem',
                     background: 'var(--bg-light)',
                     borderRadius: '8px',
-                    maxHeight: '150px',
+                    maxHeight: '250px',
                     overflowY: 'auto'
                   }}>
                     {commonIcons.map((emoji, index) => (
@@ -301,7 +314,7 @@ function Discover() {
                           padding: '0.5rem',
                           border: newTag.icon === emoji ? '2px solid var(--pryde-purple)' : '1px solid var(--border-light)',
                           borderRadius: '6px',
-                          background: newTag.icon === emoji ? 'var(--soft-lavender)' : 'white',
+                          background: newTag.icon === emoji ? 'var(--soft-lavender)' : 'var(--card-surface)',
                           cursor: 'pointer',
                           transition: 'all 0.2s'
                         }}
@@ -320,11 +333,14 @@ function Discover() {
                       padding: '0.75rem 1.5rem',
                       border: '1px solid var(--border-light)',
                       borderRadius: '6px',
-                      background: 'white',
+                      background: 'var(--card-surface)',
                       color: 'var(--text-main)',
                       cursor: 'pointer',
-                      fontWeight: '600'
+                      fontWeight: '600',
+                      transition: 'all 0.2s'
                     }}
+                    onMouseEnter={(e) => e.target.style.background = 'var(--soft-lavender)'}
+                    onMouseLeave={(e) => e.target.style.background = 'var(--card-surface)'}
                   >
                     Cancel
                   </button>
