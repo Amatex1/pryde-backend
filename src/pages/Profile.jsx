@@ -1175,8 +1175,8 @@ function Profile() {
                         className="privacy-selector glossy"
                       >
                         <option value="public">🌍 Public</option>
-                        <option value="followers">👥 Followers</option>
-                        <option value="private">🔒 Only Me</option>
+                        <option value="followers">👥 Connections</option>
+                        <option value="private">🔒 Private</option>
                       </select>
 
                       <button type="submit" disabled={postLoading || uploadingMedia} className="btn-post glossy-gold">
@@ -1310,7 +1310,7 @@ function Profile() {
                                 className="visibility-select"
                               >
                                 <option value="public">🌍 Public</option>
-                                <option value="followers">👥 Followers</option>
+                                <option value="followers">👥 Connections</option>
                                 <option value="private">🔒 Private</option>
                               </select>
                               <div className="edit-post-buttons">

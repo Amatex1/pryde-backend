@@ -123,7 +123,7 @@ function Longform() {
                 onChange={(e) => setFormData({ ...formData, visibility: e.target.value })}
                 className="longform-visibility-select"
               >
-                <option value="followers">👥 Followers</option>
+                <option value="followers">👥 Connections</option>
                 <option value="public">🌍 Public</option>
                 <option value="private">🔒 Private</option>
               </select>

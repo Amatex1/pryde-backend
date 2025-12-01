@@ -172,8 +172,8 @@ function PhotoEssay() {
               className="select-field glossy"
             >
               <option value="public">🌍 Public</option>
-              <option value="followers">👥 Followers</option>
-              <option value="private">🔒 Only Me</option>
+              <option value="followers">👥 Connections</option>
+              <option value="private">🔒 Private</option>
             </select>
           </div>
 

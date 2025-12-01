@@ -123,7 +123,7 @@ function Journal() {
                 className="journal-visibility-select"
               >
                 <option value="private">🔒 Private</option>
-                <option value="followers">👥 Followers</option>
+                <option value="followers">👥 Connections</option>
                 <option value="public">🌍 Public</option>
               </select>
 

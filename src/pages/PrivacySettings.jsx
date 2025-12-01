@@ -2,10 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import api from '../utils/api';
+import { getCurrentUser } from '../utils/auth';
 import './PrivacySettings.css';
 
 const PrivacySettings = () => {
   const navigate = useNavigate();
+  const currentUser = getCurrentUser();
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState('');
   const [privacySettings, setPrivacySettings] = useState({
@@ -113,35 +115,22 @@ const PrivacySettings = () => {
             {/* Profile Visibility */}
             <div className="privacy-section">
               <h2 className="section-title">👤 Profile Visibility</h2>
-              
+
               <div className="setting-item">
                 <label>Who Can See My Profile?</label>
                 <select
                   value={privacySettings.profileVisibility}
                   onChange={(e) => handleSettingChange('profileVisibility', e.target.value)}
                 >
-                  <option value="public">Everyone</option>
-                  <option value="followers">Followers Only</option>
-                  <option value="private">Only Me</option>
+                  <option value="public">Public</option>
+                  <option value="followers">Connections</option>
+                  <option value="private">Private</option>
                 </select>
               </div>
 
-              {/* PHASE 1 REFACTOR: Follower list visibility removed (follower counts hidden) */}
-              {/* <div className="setting-item">
-                <label>Who Can See My Followers/Following List?</label>
-                <select
-                  value={privacySettings.whoCanSeeFollowersList}
-                  onChange={(e) => handleSettingChange('whoCanSeeFollowersList', e.target.value)}
-                >
-                  <option value="everyone">Everyone</option>
-                  <option value="followers">Followers Only</option>
-                  <option value="only-me">Only Me</option>
-                </select>
-              </div> */}
-
               <div className="setting-item checkbox-item">
                 <label>
-                  <input 
+                  <input
                     type="checkbox"
                     checked={privacySettings.showOnlineStatus}
                     onChange={(e) => handleSettingChange('showOnlineStatus', e.target.checked)}
@@ -177,9 +166,27 @@ const PrivacySettings = () => {
                 </label>
                 <p className="setting-description">
                   {privacySettings.isPrivateAccount
-                    ? "Your account is private. New followers need your approval."
-                    : "Your account is public. Anyone can follow you instantly."}
+                    ? "Your account is private. New connections need your approval."
+                    : "Your account is public. Anyone can connect with you instantly."}
                 </p>
+              </div>
+
+              <div className="setting-item" style={{ marginTop: '1rem' }}>
+                <button
+                  type="button"
+                  onClick={() => navigate(`/profile/${currentUser?.username}`)}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: 'var(--pryde-purple)',
+                    cursor: 'pointer',
+                    fontSize: '0.95rem',
+                    textDecoration: 'underline',
+                    padding: 0
+                  }}
+                >
+                  → Manage your connections
+                </button>
               </div>
             </div>
 
@@ -194,7 +201,7 @@ const PrivacySettings = () => {
                   onChange={(e) => handleSettingChange('whoCanMessage', e.target.value)}
                 >
                   <option value="everyone">Everyone</option>
-                  <option value="followers">Followers Only</option>
+                  <option value="followers">Connections</option>
                   <option value="no-one">No One</option>
                 </select>
               </div>
@@ -210,9 +217,9 @@ const PrivacySettings = () => {
                   value={privacySettings.whoCanSeeMyPosts}
                   onChange={(e) => handleSettingChange('whoCanSeeMyPosts', e.target.value)}
                 >
-                  <option value="public">Everyone</option>
-                  <option value="followers">Followers Only</option>
-                  <option value="only-me">Only Me</option>
+                  <option value="public">Public</option>
+                  <option value="followers">Connections</option>
+                  <option value="only-me">Private</option>
                 </select>
               </div>
 
@@ -223,7 +230,7 @@ const PrivacySettings = () => {
                   onChange={(e) => handleSettingChange('whoCanCommentOnMyPosts', e.target.value)}
                 >
                   <option value="everyone">Everyone</option>
-                  <option value="followers">Followers Only</option>
+                  <option value="followers">Connections</option>
                   <option value="no-one">No One</option>
                 </select>
               </div>
@@ -235,7 +242,7 @@ const PrivacySettings = () => {
                   onChange={(e) => handleSettingChange('whoCanTagMe', e.target.value)}
                 >
                   <option value="everyone">Everyone</option>
-                  <option value="followers">Followers Only</option>
+                  <option value="followers">Connections</option>
                   <option value="no-one">No One</option>
                 </select>
               </div>

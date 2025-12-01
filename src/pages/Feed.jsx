@@ -726,8 +726,8 @@ function Feed() {
                   className="privacy-selector glossy"
                 >
                   <option value="public">🌍 Public</option>
-                  <option value="followers">👥 Followers</option>
-                  <option value="private">🔒 Only Me</option>
+                  <option value="followers">👥 Connections</option>
+                  <option value="private">🔒 Private</option>
                 </select>
 
                 <button type="submit" disabled={loading || uploadingMedia} className="btn-post glossy-gold">
@@ -954,8 +954,8 @@ function Feed() {
                                   style={{ fontSize: '0.9rem', padding: '0.5rem 1rem' }}
                                 >
                                   <option value="public">🌍 Public</option>
-                                  <option value="followers">👥 Followers</option>
-                                  <option value="private">🔒 Only Me</option>
+                                  <option value="followers">👥 Connections</option>
+                                  <option value="private">🔒 Private</option>
                                 </select>
                               </div>
                               <div className="post-edit-actions">
