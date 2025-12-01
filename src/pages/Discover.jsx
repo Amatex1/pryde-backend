@@ -6,6 +6,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../utils/api';
+import Navbar from '../components/Navbar';
 import './Discover.css';
 
 function Discover() {
@@ -34,33 +35,36 @@ function Discover() {
   };
 
   return (
-    <div className="discover-container">
-      <div className="discover-header">
-        <h1>🏷️ Community Tags</h1>
-        <p className="discover-subtitle">Find your space and connect with like-minded people</p>
-      </div>
-
-      {loading ? (
-        <div className="loading">Loading communities...</div>
-      ) : (
-        <div className="tags-grid">
-          {tags.map(tag => (
-            <div 
-              key={tag._id} 
-              className="tag-card glossy"
-              onClick={() => handleTagClick(tag.slug)}
-            >
-              <div className="tag-icon">{tag.icon}</div>
-              <h3 className="tag-label">{tag.label}</h3>
-              <p className="tag-description">{tag.description}</p>
-              <div className="tag-stats">
-                <span className="tag-post-count">{tag.postCount} posts</span>
-              </div>
-            </div>
-          ))}
+    <>
+      <Navbar />
+      <div className="discover-container">
+        <div className="discover-header">
+          <h1>🏷️ Community Tags</h1>
+          <p className="discover-subtitle">Find your space and connect with like-minded people</p>
         </div>
-      )}
-    </div>
+
+        {loading ? (
+          <div className="loading">Loading communities...</div>
+        ) : (
+          <div className="tags-grid">
+            {tags.map(tag => (
+              <div
+                key={tag._id}
+                className="tag-card glossy"
+                onClick={() => handleTagClick(tag.slug)}
+              >
+                <div className="tag-icon">{tag.icon}</div>
+                <h3 className="tag-label">{tag.label}</h3>
+                <p className="tag-description">{tag.description}</p>
+                <div className="tag-stats">
+                  <span className="tag-post-count">{tag.postCount} posts</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </>
   );
 }
 

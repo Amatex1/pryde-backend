@@ -7,6 +7,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../utils/api';
 import { getCurrentUser } from '../utils/auth';
+import Navbar from '../components/Navbar';
 import './Longform.css';
 
 function Longform() {
@@ -81,17 +82,19 @@ function Longform() {
   };
 
   return (
-    <div className="longform-container">
-      <div className="longform-header">
-        <h1>📝 My Longform Posts</h1>
-        <p className="longform-subtitle">Share your stories, essays, and creative writing</p>
-        <button 
-          className="btn-create-longform glossy-gold"
-          onClick={() => setShowCreateForm(!showCreateForm)}
-        >
-          {showCreateForm ? '✕ Cancel' : '✍️ New Post'}
-        </button>
-      </div>
+    <>
+      <Navbar />
+      <div className="longform-container">
+        <div className="longform-header">
+          <h1>📝 My Longform Posts</h1>
+          <p className="longform-subtitle">Share your stories, essays, and creative writing</p>
+          <button
+            className="btn-create-longform glossy-gold"
+            onClick={() => setShowCreateForm(!showCreateForm)}
+          >
+            {showCreateForm ? '✕ Cancel' : '✍️ New Post'}
+          </button>
+        </div>
 
       {showCreateForm && (
         <div className="longform-create-form glossy">

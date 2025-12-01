@@ -8,6 +8,7 @@ import { Link } from 'react-router-dom';
 import api from '../utils/api';
 import { getCurrentUser } from '../utils/auth';
 import { getImageUrl } from '../utils/imageUrl';
+import Navbar from '../components/Navbar';
 import './GlobalFeed.css';
 import './Feed.css';
 
@@ -68,22 +69,27 @@ function GlobalFeed() {
 
   if (loading && posts.length === 0) {
     return (
-      <div className="feed-container">
-        <div className="feed-header">
-          <h1>🌟 Discover</h1>
-          <p className="feed-subtitle">Explore posts from the entire community</p>
+      <>
+        <Navbar />
+        <div className="global-feed-container">
+          <div className="feed-header">
+            <h1>🌟 Discover</h1>
+            <p className="feed-subtitle">Explore posts from the entire community</p>
+          </div>
+          <div className="loading">Loading...</div>
         </div>
-        <div className="loading">Loading...</div>
-      </div>
+      </>
     );
   }
 
   return (
-    <div className="feed-container">
-      <div className="feed-header">
-        <h1>🌟 Discover</h1>
-        <p className="feed-subtitle">Explore posts from the entire community</p>
-      </div>
+    <>
+      <Navbar />
+      <div className="global-feed-container">
+        <div className="feed-header">
+          <h1>🌟 Discover</h1>
+          <p className="feed-subtitle">Explore posts from the entire community</p>
+        </div>
 
       <div className="posts-list">
         {posts.map(post => (
@@ -139,7 +145,8 @@ function GlobalFeed() {
           {loading ? 'Loading...' : 'Load More'}
         </button>
       )}
-    </div>
+      </div>
+    </>
   );
 }
 

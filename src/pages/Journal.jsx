@@ -7,6 +7,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../utils/api';
 import { getCurrentUser } from '../utils/auth';
+import Navbar from '../components/Navbar';
 import './Journal.css';
 
 function Journal() {
@@ -81,17 +82,19 @@ function Journal() {
   };
 
   return (
-    <div className="journal-container">
-      <div className="journal-header">
-        <h1>📔 My Journal</h1>
-        <p className="journal-subtitle">A private space for your thoughts and reflections</p>
-        <button 
-          className="btn-create-journal glossy-gold"
-          onClick={() => setShowCreateForm(!showCreateForm)}
-        >
-          {showCreateForm ? '✕ Cancel' : '✍️ New Entry'}
-        </button>
-      </div>
+    <>
+      <Navbar />
+      <div className="journal-container">
+        <div className="journal-header">
+          <h1>📔 My Journal</h1>
+          <p className="journal-subtitle">A private space for your thoughts and reflections</p>
+          <button
+            className="btn-create-journal glossy-gold"
+            onClick={() => setShowCreateForm(!showCreateForm)}
+          >
+            {showCreateForm ? '✕ Cancel' : '✍️ New Entry'}
+          </button>
+        </div>
 
       {showCreateForm && (
         <div className="journal-create-form glossy">
@@ -173,7 +176,8 @@ function Journal() {
           ))
         )}
       </div>
-    </div>
+      </div>
+    </>
   );
 }
 
