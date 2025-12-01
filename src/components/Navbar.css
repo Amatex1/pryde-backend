@@ -156,6 +156,18 @@
   border: 2px solid var(--card-surface);
 }
 
+.nav-button.mode-toggle {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0.625rem 0.875rem;
+}
+
+.nav-button.mode-toggle:hover {
+  background: var(--soft-lavender);
+  border-color: var(--pryde-purple);
+}
+
 .user-profile-trigger {
   display: flex;
   align-items: center;

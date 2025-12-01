@@ -229,20 +229,14 @@ function Navbar() {
             <span className="nav-icon">🌟</span>
             <span className="nav-label">Discover</span>
           </Link>
-          <Link to="/longform" className="nav-button" title="Longform">
-            <span className="nav-icon">📝</span>
-            <span className="nav-label">Longform</span>
-          </Link>
           <Link to="/journal" className="nav-button" title="Journal">
             <span className="nav-icon">📔</span>
             <span className="nav-label">Journal</span>
           </Link>
-          {user?.isCreator && (
-            <Link to="/photo-essay" className="nav-button" title="Photo Essay">
-              <span className="nav-icon">📸</span>
-              <span className="nav-label">Photo Essay</span>
-            </Link>
-          )}
+          <Link to="/longform" className="nav-button" title="Longform">
+            <span className="nav-icon">📝</span>
+            <span className="nav-label">Longform</span>
+          </Link>
           <Link to="/messages" className="nav-button" title="Messages">
             <span className="nav-icon">💬</span>
             <span className="nav-label">Messages</span>
@@ -251,6 +245,22 @@ function Navbar() {
             )}
           </Link>
           <NotificationBell />
+
+          {/* Mode Toggle Icons */}
+          <button
+            className="nav-button mode-toggle"
+            onClick={toggleDarkMode}
+            title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+          >
+            <span className="nav-icon">{isDark ? '☀️' : '🌙'}</span>
+          </button>
+          <button
+            className="nav-button mode-toggle"
+            onClick={toggleQuietMode}
+            title={quietMode ? 'Disable Quiet Mode' : 'Enable Quiet Mode'}
+          >
+            <span className="nav-icon">🌿</span>
+          </button>
 
           <div
             className="user-profile-trigger"
