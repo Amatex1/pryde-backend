@@ -10,6 +10,8 @@ import GlobalFeed from './pages/GlobalFeed'; // PHASE 2: Global feed
 import FollowingFeed from './pages/FollowingFeed'; // PHASE 2: Following feed
 import Journal from './pages/Journal'; // PHASE 3: Journaling
 import Longform from './pages/Longform'; // PHASE 3: Longform posts
+import Discover from './pages/Discover'; // PHASE 4: Community tags
+import TagFeed from './pages/TagFeed'; // PHASE 4: Tag feed
 import Profile from './pages/Profile';
 import Settings from './pages/Settings';
 import SecuritySettings from './pages/SecuritySettings';
@@ -97,6 +99,8 @@ function App() {
           <Route path="/feed/following" element={<PrivateRoute><FollowingFeed /></PrivateRoute>} /> {/* PHASE 2 */}
           <Route path="/journal" element={<PrivateRoute><Journal /></PrivateRoute>} /> {/* PHASE 3 */}
           <Route path="/longform" element={<PrivateRoute><Longform /></PrivateRoute>} /> {/* PHASE 3 */}
+          <Route path="/discover" element={<PrivateRoute><Discover /></PrivateRoute>} /> {/* PHASE 4 */}
+          <Route path="/tags/:slug" element={<PrivateRoute><TagFeed /></PrivateRoute>} /> {/* PHASE 4 */}
           <Route path="/profile/:id" element={<PrivateRoute><Profile /></PrivateRoute>} />
           <Route path="/settings" element={<PrivateRoute><Settings /></PrivateRoute>} />
           <Route path="/settings/security" element={<PrivateRoute><SecuritySettings /></PrivateRoute>} />

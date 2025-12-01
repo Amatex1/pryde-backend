@@ -203,6 +203,11 @@ function Navbar() {
             <span className="nav-icon">📝</span>
             <span className="nav-label">Longform</span>
           </Link>
+          {/* PHASE 4: Discover */}
+          <Link to="/discover" className="nav-button" title="Discover">
+            <span className="nav-icon">🌟</span>
+            <span className="nav-label">Discover</span>
+          </Link>
           {/* PHASE 1 REFACTOR: Connections link removed */}
           {/* <Link to="/connections" className="nav-button" title="Connections">
             <span className="nav-icon">👥</span>

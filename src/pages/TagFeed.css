@@ -1,0 +1,170 @@
+.tag-feed-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+
+.tag-feed-header {
+  background: white;
+  padding: 2rem;
+  border-radius: 12px;
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.tag-feed-icon {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+}
+
+.tag-feed-header h1 {
+  font-size: 2rem;
+  color: var(--pryde-purple);
+  margin-bottom: 0.5rem;
+}
+
+.tag-feed-description {
+  color: var(--text-muted);
+  margin-bottom: 1rem;
+  line-height: 1.6;
+}
+
+.tag-feed-stats {
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-light);
+  color: var(--pryde-purple);
+  font-weight: 600;
+}
+
+.tag-feed-posts {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.post-card {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 12px;
+}
+
+.post-header {
+  margin-bottom: 1rem;
+}
+
+.post-author {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  text-decoration: none;
+  color: inherit;
+}
+
+.author-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.author-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.author-name {
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.verified-badge {
+  color: var(--gold);
+  margin-left: 0.25rem;
+}
+
+.post-date {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.post-content p {
+  line-height: 1.6;
+  color: var(--text-main);
+  margin-bottom: 1rem;
+}
+
+.post-images {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.post-images img {
+  width: 100%;
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+.post-actions {
+  display: flex;
+  gap: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-light);
+  margin-top: 1rem;
+}
+
+.btn-action {
+  padding: 0.5rem 1rem;
+  background: transparent;
+  border: 1px solid var(--border-light);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  color: var(--text-main);
+}
+
+.btn-action:hover {
+  background: var(--soft-lavender);
+  border-color: var(--pryde-purple);
+}
+
+.btn-action.liked {
+  color: #ff4444;
+  border-color: #ff4444;
+}
+
+.post-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-light);
+}
+
+.post-tag {
+  padding: 0.25rem 0.75rem;
+  background: var(--soft-lavender);
+  border-radius: 16px;
+  font-size: 0.85rem;
+  text-decoration: none;
+  color: var(--pryde-purple);
+  transition: all 0.3s ease;
+}
+
+.post-tag:hover {
+  background: var(--pryde-purple);
+  color: white;
+}
+
+.empty-state,
+.loading,
+.error {
+  text-align: center;
+  padding: 3rem;
+  color: var(--text-muted);
+}
+
