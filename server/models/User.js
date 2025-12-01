@@ -476,6 +476,25 @@ const userSchema = new mongoose.Schema({
       default: false
     }
   },
+  // PHASE 5: Creator Mode
+  isCreator: {
+    type: Boolean,
+    default: false
+  },
+  creatorTagline: {
+    type: String,
+    maxlength: 100,
+    default: ''
+  },
+  creatorBio: {
+    type: String,
+    maxlength: 1000,
+    default: ''
+  },
+  featuredPosts: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Post'
+  }],
   // Blocked Users
   blockedUsers: [{
     type: mongoose.Schema.Types.ObjectId,
