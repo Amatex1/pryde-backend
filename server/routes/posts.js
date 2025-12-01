@@ -9,6 +9,35 @@ import { postLimiter, commentLimiter } from '../middleware/rateLimiter.js';
 import { checkMuted, moderateContent } from '../middleware/moderation.js';
 import { sanitizeFields } from '../utils/sanitize.js';
 
+// PHASE 1 REFACTOR: Helper function to sanitize post for private likes
+// Removes like count and list of who liked, only shows if current user liked
+const sanitizePostForPrivateLikes = (post, currentUserId) => {
+  const postObj = post.toObject ? post.toObject() : post;
+
+  // Check if current user liked this post
+  const hasLiked = postObj.likes?.some(like =>
+    (like._id || like).toString() === currentUserId.toString()
+  );
+
+  // Replace likes array with just a boolean
+  postObj.hasLiked = hasLiked;
+  delete postObj.likes;
+
+  // Do the same for reactions - keep them but remove counts from UI later
+  // For now, keep reactions as they show different emotions, not just counts
+
+  // Handle originalPost (shared posts)
+  if (postObj.originalPost) {
+    const originalHasLiked = postObj.originalPost.likes?.some(like =>
+      (like._id || like).toString() === currentUserId.toString()
+    );
+    postObj.originalPost.hasLiked = originalHasLiked;
+    delete postObj.originalPost.likes;
+  }
+
+  return postObj;
+};
+
 // @route   GET /api/posts
 // @desc    Get all posts (feed)
 // @access  Private
@@ -75,17 +104,18 @@ router.get('/', auth, async (req, res) => {
       };
     }
 
+    // PHASE 1 REFACTOR: Don't populate likes (keep private)
     const posts = await Post.find(query)
       .populate('author', 'username displayName profilePhoto isVerified pronouns')
       .populate('comments.user', 'username displayName profilePhoto isVerified pronouns')
-      .populate('likes', 'username displayName profilePhoto')
+      // .populate('likes', 'username displayName profilePhoto') // REMOVED - private likes
       .populate('reactions.user', 'username displayName profilePhoto')
       .populate('comments.reactions.user', 'username displayName profilePhoto')
       .populate({
         path: 'originalPost',
         populate: [
           { path: 'author', select: 'username displayName profilePhoto' },
-          { path: 'likes', select: 'username displayName profilePhoto' },
+          // { path: 'likes', select: 'username displayName profilePhoto' }, // REMOVED - private likes
           { path: 'reactions.user', select: 'username displayName profilePhoto' }
         ]
       })
@@ -95,8 +125,11 @@ router.get('/', auth, async (req, res) => {
 
     const count = await Post.countDocuments(query);
 
+    // PHASE 1 REFACTOR: Sanitize posts to hide like counts
+    const sanitizedPosts = posts.map(post => sanitizePostForPrivateLikes(post, userId));
+
     res.json({
-      posts,
+      posts: sanitizedPosts,
       totalPages: Math.ceil(count / limit),
       currentPage: page
     });
@@ -147,23 +180,27 @@ router.get('/user/:identifier', auth, async (req, res) => {
       };
     }
 
+    // PHASE 1 REFACTOR: Don't populate likes (keep private)
     const posts = await Post.find(query)
       .populate('author', 'username displayName profilePhoto isVerified pronouns')
       .populate('comments.user', 'username displayName profilePhoto isVerified pronouns')
-      .populate('likes', 'username displayName profilePhoto')
+      // .populate('likes', 'username displayName profilePhoto') // REMOVED - private likes
       .populate('reactions.user', 'username displayName profilePhoto')
       .populate('comments.reactions.user', 'username displayName profilePhoto')
       .populate({
         path: 'originalPost',
         populate: [
           { path: 'author', select: 'username displayName profilePhoto' },
-          { path: 'likes', select: 'username displayName profilePhoto' },
+          // { path: 'likes', select: 'username displayName profilePhoto' }, // REMOVED - private likes
           { path: 'reactions.user', select: 'username displayName profilePhoto' }
         ]
       })
       .sort({ createdAt: -1 });
 
-    res.json(posts);
+    // PHASE 1 REFACTOR: Sanitize posts to hide like counts
+    const sanitizedPosts = posts.map(post => sanitizePostForPrivateLikes(post, currentUserId));
+
+    res.json(sanitizedPosts);
   } catch (error) {
     console.error('Get user posts error:', error);
     res.status(500).json({ message: 'Server error' });
@@ -175,10 +212,11 @@ router.get('/user/:identifier', auth, async (req, res) => {
 // @access  Private
 router.get('/:id', auth, async (req, res) => {
   try {
+    // PHASE 1 REFACTOR: Don't populate likes (keep private)
     const post = await Post.findById(req.params.id)
       .populate('author', 'username displayName profilePhoto isVerified pronouns')
       .populate('comments.user', 'username displayName profilePhoto isVerified pronouns')
-      .populate('likes', 'username displayName profilePhoto')
+      // .populate('likes', 'username displayName profilePhoto') // REMOVED - private likes
       .populate('reactions.user', 'username displayName profilePhoto')
       .populate('comments.reactions.user', 'username displayName profilePhoto');
 
@@ -186,7 +224,11 @@ router.get('/:id', auth, async (req, res) => {
       return res.status(404).json({ message: 'Post not found' });
     }
 
-    res.json(post);
+    // PHASE 1 REFACTOR: Sanitize post to hide like counts
+    const userId = req.userId || req.user._id;
+    const sanitizedPost = sanitizePostForPrivateLikes(post, userId);
+
+    res.json(sanitizedPost);
   } catch (error) {
     console.error('Get post error:', error);
     res.status(500).json({ message: 'Server error' });
@@ -255,19 +297,25 @@ router.put('/:id', auth, async (req, res) => {
     if (sharedWith !== undefined) post.sharedWith = sharedWith;
 
     await post.save();
+
+    // PHASE 1 REFACTOR: Don't populate likes (keep private)
     await post.populate('author', 'username displayName profilePhoto isVerified pronouns');
-    await post.populate('likes', 'username displayName profilePhoto');
+    // await post.populate('likes', 'username displayName profilePhoto'); // REMOVED - private likes
     await post.populate('comments.user', 'username displayName profilePhoto isVerified pronouns');
     await post.populate({
       path: 'originalPost',
       populate: [
         { path: 'author', select: 'username displayName profilePhoto' },
-        { path: 'likes', select: 'username displayName profilePhoto' },
+        // { path: 'likes', select: 'username displayName profilePhoto' }, // REMOVED - private likes
         { path: 'comments.user', select: 'username displayName profilePhoto' }
       ]
     });
 
-    res.json(post);
+    // PHASE 1 REFACTOR: Sanitize post to hide like counts
+    const userId = req.userId || req.user._id;
+    const sanitizedPost = sanitizePostForPrivateLikes(post, userId);
+
+    res.json(sanitizedPost);
   } catch (error) {
     console.error('Update post error:', error);
     res.status(500).json({ message: 'Server error' });
@@ -336,19 +384,24 @@ router.post('/:id/like', auth, async (req, res) => {
     }
 
     await post.save();
+
+    // PHASE 1 REFACTOR: Don't populate likes (keep private)
     await post.populate('author', 'username displayName profilePhoto isVerified pronouns');
-    await post.populate('likes', 'username displayName profilePhoto');
+    // await post.populate('likes', 'username displayName profilePhoto'); // REMOVED - private likes
     await post.populate('comments.user', 'username displayName profilePhoto isVerified pronouns');
     await post.populate({
       path: 'originalPost',
       populate: [
         { path: 'author', select: 'username displayName profilePhoto' },
-        { path: 'likes', select: 'username displayName profilePhoto' },
+        // { path: 'likes', select: 'username displayName profilePhoto' }, // REMOVED - private likes
         { path: 'comments.user', select: 'username displayName profilePhoto' }
       ]
     });
 
-    res.json(post);
+    // PHASE 1 REFACTOR: Sanitize post to hide like counts
+    const sanitizedPost = sanitizePostForPrivateLikes(post, userId);
+
+    res.json(sanitizedPost);
   } catch (error) {
     console.error('Like post error:', error);
     res.status(500).json({ message: 'Server error' });
@@ -411,20 +464,25 @@ router.post('/:id/react', auth, async (req, res) => {
     }
 
     await post.save();
+
+    // PHASE 1 REFACTOR: Don't populate likes (keep private)
     await post.populate('author', 'username displayName profilePhoto isVerified pronouns');
-    await post.populate('likes', 'username displayName profilePhoto');
+    // await post.populate('likes', 'username displayName profilePhoto'); // REMOVED - private likes
     await post.populate('reactions.user', 'username displayName profilePhoto');
     await post.populate('comments.user', 'username displayName profilePhoto isVerified pronouns');
     await post.populate({
       path: 'originalPost',
       populate: [
         { path: 'author', select: 'username displayName profilePhoto' },
-        { path: 'likes', select: 'username displayName profilePhoto' },
+        // { path: 'likes', select: 'username displayName profilePhoto' }, // REMOVED - private likes
         { path: 'comments.user', select: 'username displayName profilePhoto' }
       ]
     });
 
-    res.json(post);
+    // PHASE 1 REFACTOR: Sanitize post to hide like counts
+    const sanitizedPost = sanitizePostForPrivateLikes(post, userId);
+
+    res.json(sanitizedPost);
   } catch (error) {
     console.error('React to post error:', error);
     res.status(500).json({ message: 'Server error' });
@@ -499,8 +557,10 @@ router.post('/:id/comment/:commentId/react', auth, async (req, res) => {
     }
 
     await post.save();
+
+    // PHASE 1 REFACTOR: Don't populate likes (keep private)
     await post.populate('author', 'username displayName profilePhoto isVerified pronouns');
-    await post.populate('likes', 'username displayName profilePhoto');
+    // await post.populate('likes', 'username displayName profilePhoto'); // REMOVED - private likes
     await post.populate('reactions.user', 'username displayName profilePhoto');
     await post.populate('comments.user', 'username displayName profilePhoto isVerified pronouns');
     await post.populate('comments.reactions.user', 'username displayName profilePhoto');
@@ -508,12 +568,15 @@ router.post('/:id/comment/:commentId/react', auth, async (req, res) => {
       path: 'originalPost',
       populate: [
         { path: 'author', select: 'username displayName profilePhoto' },
-        { path: 'likes', select: 'username displayName profilePhoto' },
+        // { path: 'likes', select: 'username displayName profilePhoto' }, // REMOVED - private likes
         { path: 'comments.user', select: 'username displayName profilePhoto' }
       ]
     });
 
-    res.json(post);
+    // PHASE 1 REFACTOR: Sanitize post to hide like counts
+    const sanitizedPost = sanitizePostForPrivateLikes(post, userId);
+
+    res.json(sanitizedPost);
   } catch (error) {
     console.error('React to comment error:', error);
     res.status(500).json({ message: 'Server error' });
@@ -678,19 +741,23 @@ router.post('/:id/comment', auth, commentLimiter, sanitizeFields(['content']), c
       await notification.save();
     }
 
+    // PHASE 1 REFACTOR: Don't populate likes (keep private)
     await post.populate('author', 'username displayName profilePhoto isVerified pronouns');
     await post.populate('comments.user', 'username displayName profilePhoto isVerified pronouns');
-    await post.populate('likes', 'username displayName profilePhoto');
+    // await post.populate('likes', 'username displayName profilePhoto'); // REMOVED - private likes
     await post.populate({
       path: 'originalPost',
       populate: [
         { path: 'author', select: 'username displayName profilePhoto' },
-        { path: 'likes', select: 'username displayName profilePhoto' },
+        // { path: 'likes', select: 'username displayName profilePhoto' }, // REMOVED - private likes
         { path: 'comments.user', select: 'username displayName profilePhoto' }
       ]
     });
 
-    res.json(post);
+    // PHASE 1 REFACTOR: Sanitize post to hide like counts
+    const sanitizedPost = sanitizePostForPrivateLikes(post, userId);
+
+    res.json(sanitizedPost);
   } catch (error) {
     console.error('Comment post error:', error);
     res.status(500).json({ message: 'Server error' });
@@ -738,19 +805,24 @@ router.post('/:id/comment/:commentId/reply', auth, commentLimiter, checkMuted, m
 
     await post.save();
 
+    // PHASE 1 REFACTOR: Don't populate likes (keep private)
     await post.populate('author', 'username displayName profilePhoto isVerified pronouns');
     await post.populate('comments.user', 'username displayName profilePhoto isVerified pronouns');
-    await post.populate('likes', 'username displayName profilePhoto');
+    // await post.populate('likes', 'username displayName profilePhoto'); // REMOVED - private likes
     await post.populate({
       path: 'originalPost',
       populate: [
         { path: 'author', select: 'username displayName profilePhoto' },
-        { path: 'likes', select: 'username displayName profilePhoto' },
+        // { path: 'likes', select: 'username displayName profilePhoto' }, // REMOVED - private likes
         { path: 'comments.user', select: 'username displayName profilePhoto' }
       ]
     });
 
-    res.json(post);
+    // PHASE 1 REFACTOR: Sanitize post to hide like counts
+    const userId = req.userId || req.user._id;
+    const sanitizedPost = sanitizePostForPrivateLikes(post, userId);
+
+    res.json(sanitizedPost);
   } catch (error) {
     console.error('Reply to comment error:', error);
     res.status(500).json({ message: 'Server error' });
@@ -792,19 +864,23 @@ router.put('/:id/comment/:commentId', auth, async (req, res) => {
     comment.editedAt = new Date();
     await post.save();
 
+    // PHASE 1 REFACTOR: Don't populate likes (keep private)
     await post.populate('author', 'username displayName profilePhoto isVerified pronouns');
     await post.populate('comments.user', 'username displayName profilePhoto isVerified pronouns');
-    await post.populate('likes', 'username displayName profilePhoto');
+    // await post.populate('likes', 'username displayName profilePhoto'); // REMOVED - private likes
     await post.populate({
       path: 'originalPost',
       populate: [
         { path: 'author', select: 'username displayName profilePhoto' },
-        { path: 'likes', select: 'username displayName profilePhoto' },
+        // { path: 'likes', select: 'username displayName profilePhoto' }, // REMOVED - private likes
         { path: 'comments.user', select: 'username displayName profilePhoto' }
       ]
     });
 
-    res.json(post);
+    // PHASE 1 REFACTOR: Sanitize post to hide like counts
+    const sanitizedPost = sanitizePostForPrivateLikes(post, userId);
+
+    res.json(sanitizedPost);
   } catch (error) {
     console.error('Edit comment error:', error);
     res.status(500).json({ message: 'Server error' });
@@ -838,19 +914,23 @@ router.delete('/:id/comment/:commentId', auth, async (req, res) => {
     comment.deleteOne();
     await post.save();
 
+    // PHASE 1 REFACTOR: Don't populate likes (keep private)
     await post.populate('author', 'username displayName profilePhoto isVerified pronouns');
     await post.populate('comments.user', 'username displayName profilePhoto isVerified pronouns');
-    await post.populate('likes', 'username displayName profilePhoto');
+    // await post.populate('likes', 'username displayName profilePhoto'); // REMOVED - private likes
     await post.populate({
       path: 'originalPost',
       populate: [
         { path: 'author', select: 'username displayName profilePhoto' },
-        { path: 'likes', select: 'username displayName profilePhoto' },
+        // { path: 'likes', select: 'username displayName profilePhoto' }, // REMOVED - private likes
         { path: 'comments.user', select: 'username displayName profilePhoto' }
       ]
     });
 
-    res.json(post);
+    // PHASE 1 REFACTOR: Sanitize post to hide like counts
+    const sanitizedPost = sanitizePostForPrivateLikes(post, userId);
+
+    res.json(sanitizedPost);
   } catch (error) {
     console.error('Delete comment error:', error);
     res.status(500).json({ message: 'Server error' });
