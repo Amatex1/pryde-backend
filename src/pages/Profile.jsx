@@ -1088,7 +1088,9 @@ function Profile() {
 
           <div className="profile-posts">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-              <h2 className="section-title">{activeTab === 'posts' ? 'Posts' : activeTab === 'journals' ? 'Journals' : activeTab === 'longform' ? 'Stories' : 'Photo Essays'}</h2>
+              {activeTab !== 'posts' && (
+                <h2 className="section-title">{activeTab === 'journals' ? 'Journals' : activeTab === 'longform' ? 'Stories' : 'Photo Essays'}</h2>
+              )}
               {isOwnProfile && activeTab === 'posts' && (
                 <div className="create-post glossy fade-in">
                   <h2 className="section-title">✨ Share a thought...</h2>

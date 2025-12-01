@@ -1,7 +1,8 @@
 .global-search {
   position: relative;
   flex: 1;
-  max-width: 500px;
+  max-width: 600px;
+  min-width: 300px;
 }
 
 .search-input-wrapper {
