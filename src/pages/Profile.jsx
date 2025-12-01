@@ -48,6 +48,11 @@ function Profile() {
   const [followRequestId, setFollowRequestId] = useState(null);
   const [isPrivateAccount, setIsPrivateAccount] = useState(false);
   const [isBlocked, setIsBlocked] = useState(false);
+  // OPTIONAL FEATURES: Creator profile tabs
+  const [activeTab, setActiveTab] = useState('posts');
+  const [journals, setJournals] = useState([]);
+  const [longformPosts, setLongformPosts] = useState([]);
+  const [photoEssays, setPhotoEssays] = useState([]);
   const [reportModal, setReportModal] = useState({ isOpen: false, type: '', contentId: null, userId: null });
   const [photoViewerImage, setPhotoViewerImage] = useState(null);
   const [showActionsMenu, setShowActionsMenu] = useState(false);
