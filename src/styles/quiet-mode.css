@@ -5,18 +5,19 @@
 
 body.quiet-mode {
   /* Softer background */
+  --bg-light: #F9F9F9;
   --background-light: #F9F9F9;
   --card-surface: #FAFAFA;
-  
+
   /* Desaturated theme colors */
   --pryde-purple: #8B7FC7;
   --electric-blue: #6BA3D4;
   --soft-lavender: #F2F0FF;
-  
+
   /* Softer text colors */
   --text-main: #4A4A4A;
   --text-muted: #7A7A7A;
-  
+
   /* Softer borders */
   --border-light: #ECECEC;
 }
