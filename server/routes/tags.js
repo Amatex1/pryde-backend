@@ -6,6 +6,7 @@
 import express from 'express';
 import Tag from '../models/Tag.js';
 import Post from '../models/Post.js';
+import User from '../models/User.js';
 import { authenticateToken } from '../middleware/auth.js';
 
 const router = express.Router();
@@ -121,8 +122,67 @@ router.get('/:slug/posts', authenticateToken, async (req, res) => {
   }
 });
 
+// @route   POST /api/tags/create
+// @desc    Create a new tag (admin and super_admin only)
+// @access  Private (Admin only)
+router.post('/create', authenticateToken, async (req, res) => {
+  try {
+    const { name, description, icon } = req.body;
+
+    // Check if user is admin or super_admin
+    const user = await User.findById(req.user.id);
+    if (!user || !['admin', 'super_admin'].includes(user.role)) {
+      return res.status(403).json({ message: 'Access denied. Admin privileges required.' });
+    }
+
+    if (!name) {
+      return res.status(400).json({ message: 'Tag name is required' });
+    }
+
+    // Validate name length
+    if (name.length > 40) {
+      return res.status(400).json({ message: 'Tag name must be 40 characters or less' });
+    }
+
+    // Validate description length
+    if (description && description.length > 200) {
+      return res.status(400).json({ message: 'Tag description must be 200 characters or less' });
+    }
+
+    // Validate name format (only letters, numbers, spaces, and hyphens)
+    const nameRegex = /^[a-zA-Z0-9\s-]+$/;
+    if (!nameRegex.test(name)) {
+      return res.status(400).json({ message: 'Tag name can only contain letters, numbers, spaces, and hyphens' });
+    }
+
+    // Generate slug from name
+    const slug = name.toLowerCase().replace(/\s+/g, '').replace(/-+/g, '');
+
+    // Check if tag already exists
+    const existingTag = await Tag.findOne({ slug });
+    if (existingTag) {
+      return res.status(400).json({ message: 'A tag with this name already exists' });
+    }
+
+    // Create new tag
+    const tag = new Tag({
+      slug,
+      label: name,
+      description: description || '',
+      icon: icon || '🏷️',
+      createdBy: req.user.id
+    });
+
+    await tag.save();
+    res.status(201).json({ success: true, tag });
+  } catch (error) {
+    console.error('Create tag error:', error);
+    res.status(500).json({ message: 'Failed to create tag' });
+  }
+});
+
 // @route   POST /api/tags
-// @desc    Create a new tag (admin only or allow users to create)
+// @desc    Create a new tag (legacy endpoint - kept for backward compatibility)
 // @access  Private
 router.post('/', authenticateToken, async (req, res) => {
   try {
