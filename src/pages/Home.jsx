@@ -12,10 +12,10 @@ function Home() {
         <div className="hero-content">
           <div className="hero-text">
             <h1 className="hero-title">
-              Welcome to <span className="brand-gradient">Pryde Social</span>
+              A Calm, Queer-First Social Platform Built for Introverts & Deep Thinkers
             </h1>
             <p className="hero-subtitle">
-              Connect with friends, share your moments, and build meaningful relationships in a safe and inclusive community.
+              Where LGBTQ+ people and supportive allies can create, reflect, and connect — peacefully.
             </p>
             <div className="hero-buttons">
               {isAuth ? (
@@ -25,10 +25,10 @@ function Home() {
               ) : (
                 <>
                   <Link to="/register" className="btn-primary">
-                    Get Started
+                    Join Pryde
                   </Link>
-                  <Link to="/login" className="btn-secondary">
-                    Sign In
+                  <Link to="#features" className="btn-secondary">
+                    Explore Features
                   </Link>
                 </>
               )}
@@ -44,53 +44,220 @@ function Home() {
         </div>
       </section>
 
-      {/* Features Section */}
-      <section className="features-section">
-        <h2 className="section-title">Why Choose Pryde Social?</h2>
-        <div className="features-grid">
-          <div className="feature-card">
-            <div className="feature-icon">💬</div>
-            <h3>Real-time Messaging</h3>
-            <p>Chat with friends instantly with our lightning-fast messaging system. Create group chats and stay connected.</p>
+      {/* Quiet Mode + Slow Feed Section */}
+      <section className="philosophy-section" id="features">
+        <div className="philosophy-grid">
+          <div className="philosophy-card">
+            <div className="philosophy-icon">🍃</div>
+            <h3>Quiet Mode</h3>
+            <p>A soothing browsing experience with hidden metrics, softer colors, and reduced noise.</p>
           </div>
-          <div className="feature-card">
-            <div className="feature-icon">👥</div>
-            <h3>Build Your Network</h3>
-            <p>Connect with friends, send requests, and grow your social circle in a safe and welcoming environment.</p>
-          </div>
-          <div className="feature-card">
-            <div className="feature-icon">📱</div>
-            <h3>Share Your Story</h3>
-            <p>Post updates, photos, and thoughts. Like, comment, and engage with your community's content.</p>
-          </div>
-          <div className="feature-card">
-            <div className="feature-icon">🎨</div>
-            <h3>Personalize Your Profile</h3>
-            <p>Customize your profile with photos, bio, and social links. Make it uniquely yours.</p>
-          </div>
-          <div className="feature-card">
-            <div className="feature-icon">🔒</div>
-            <h3>Privacy First</h3>
-            <p>Your data is secure. Control who sees your content and manage your privacy settings.</p>
-          </div>
-          <div className="feature-card">
-            <div className="feature-icon">🌈</div>
-            <h3>Inclusive Community</h3>
-            <p>A safe space for everyone. We celebrate diversity and promote respect and kindness.</p>
+          <div className="philosophy-card">
+            <div className="philosophy-icon">⏳</div>
+            <h3>Slow Feed Philosophy</h3>
+            <p>Chronological posts. No algorithms. No viral pressure. A calmer, more intentional social space.</p>
           </div>
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="cta-section">
-        <div className="cta-content">
-          <h2 className="cta-title">Ready to Join?</h2>
-          <p className="cta-subtitle">Start connecting with the Pryde Social community</p>
-          {!isAuth && (
-            <Link to="/register" className="btn-cta">
-              Create Your Account
+      {/* Privacy & Safety Section */}
+      <section className="privacy-section">
+        <div className="privacy-content">
+          <h2 className="section-title">Your Identity. Your Pace. Your Privacy.</h2>
+          <div className="privacy-grid">
+            <div className="privacy-item">
+              <span className="privacy-icon">🔞</span>
+              <span>18+ only platform</span>
+            </div>
+            <div className="privacy-item">
+              <span className="privacy-icon">🏳️‍🌈</span>
+              <span>LGBTQ+ safety guidance</span>
+            </div>
+            <div className="privacy-item">
+              <span className="privacy-icon">👁️</span>
+              <span>Hidden like counts & follower counts</span>
+            </div>
+            <div className="privacy-item">
+              <span className="privacy-icon">🔐</span>
+              <span>Private connections</span>
+            </div>
+            <div className="privacy-item">
+              <span className="privacy-icon">💬</span>
+              <span>Who-can-message controls</span>
+            </div>
+            <div className="privacy-item">
+              <span className="privacy-icon">⚠️</span>
+              <span>Content warnings</span>
+            </div>
+            <div className="privacy-item">
+              <span className="privacy-icon">🔑</span>
+              <span>2FA + passkeys</span>
+            </div>
+            <div className="privacy-item">
+              <span className="privacy-icon">📱</span>
+              <span>Session management</span>
+            </div>
+            <div className="privacy-item">
+              <span className="privacy-icon">🚨</span>
+              <span>Suspicious login alerts</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Creator Expression Section */}
+      <section className="creator-section">
+        <h2 className="section-title">Express Yourself, Your Way</h2>
+        <div className="creator-grid">
+          <div className="creator-card">
+            <div className="creator-icon">📝</div>
+            <h3>Posts</h3>
+            <p>Share text, images, videos, and GIFs with content warnings and visibility controls.</p>
+          </div>
+          <div className="creator-card">
+            <div className="creator-icon">📔</div>
+            <h3>Journals</h3>
+            <p>Private or public long-form reflections with mood tracking.</p>
+          </div>
+          <div className="creator-card">
+            <div className="creator-icon">✍️</div>
+            <h3>Longform Writing</h3>
+            <p>Essays and deep thought pieces with clean reading mode.</p>
+          </div>
+          <div className="creator-card">
+            <div className="creator-icon">📸</div>
+            <h3>Photo Essays</h3>
+            <p>Curated visual storytelling for creators.</p>
+          </div>
+        </div>
+      </section>
+
+      {/* Community Tags Section */}
+      <section className="tags-section">
+        <div className="tags-content">
+          <h2 className="section-title">Find Your Community</h2>
+          <p className="tags-subtitle">
+            Explore curated Community Tags made for queer life, creativity, self-care, and deep reflection.
+          </p>
+          <div className="tags-grid">
+            <div className="tag-badge">🛋️ Introverts Lounge</div>
+            <div className="tag-badge">🏳️‍🌈 Queer Life</div>
+            <div className="tag-badge">🧠 Mental Health Corner</div>
+            <div className="tag-badge">💭 Deep Thoughts</div>
+            <div className="tag-badge">✍️ Writing & Poetry</div>
+            <div className="tag-badge">🎨 Creative Hub</div>
+            <div className="tag-badge">📷 Photography</div>
+            <div className="tag-badge">🌿 Self-Care</div>
+            <div className="tag-badge">🎵 Music & Audio</div>
+          </div>
+          {isAuth ? (
+            <Link to="/discover" className="btn-tags">
+              Browse All Tags
+            </Link>
+          ) : (
+            <Link to="/register" className="btn-tags">
+              Browse All Tags
             </Link>
           )}
+        </div>
+      </section>
+
+      {/* Messaging Section */}
+      <section className="messaging-section">
+        <div className="messaging-content">
+          <h2 className="section-title">Private, Comfortable Messaging</h2>
+          <p className="messaging-description">
+            1-on-1 real-time conversations with read receipts, reactions, attachments, and message editing.
+            All messaging now happens in the dedicated Messages page for clarity and calm.
+          </p>
+          {isAuth ? (
+            <Link to="/messages" className="btn-messaging">
+              Open Messages
+            </Link>
+          ) : (
+            <Link to="/register" className="btn-messaging">
+              Join to Message
+            </Link>
+          )}
+        </div>
+      </section>
+
+      {/* Notifications Section */}
+      <section className="notifications-section">
+        <div className="notifications-content">
+          <h2 className="section-title">Stay Informed — Calmly</h2>
+          <div className="notifications-list">
+            <div className="notification-item">
+              <span className="notif-icon">⚡</span>
+              <span>Real-time updates via Socket.IO</span>
+            </div>
+            <div className="notification-item">
+              <span className="notif-icon">🔔</span>
+              <span>Push notifications</span>
+            </div>
+            <div className="notification-item">
+              <span className="notif-icon">💬</span>
+              <span>Comment, like, share, mention alerts</span>
+            </div>
+            <div className="notification-item">
+              <span className="notif-icon">📨</span>
+              <span>Message notifications</span>
+            </div>
+            <div className="notification-item">
+              <span className="notif-icon">⚙️</span>
+              <span>Notification preferences</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Themes Section */}
+      <section className="themes-section">
+        <h2 className="section-title">Choose Your Vibe</h2>
+        <div className="themes-grid">
+          <div className="theme-card theme-light">
+            <div className="theme-preview"></div>
+            <h3>Light Mode</h3>
+            <p>Clean and bright</p>
+          </div>
+          <div className="theme-card theme-dark">
+            <div className="theme-preview"></div>
+            <h3>Dark Mode</h3>
+            <p>Deep navy-purple</p>
+          </div>
+          <div className="theme-card theme-quiet">
+            <div className="theme-preview"></div>
+            <h3>Quiet Mode</h3>
+            <p>Midnight violet calm</p>
+          </div>
+        </div>
+      </section>
+
+      {/* Final CTA Section */}
+      <section className="final-cta-section">
+        <div className="final-cta-content">
+          <h2 className="final-cta-title">Join a Social Space Built for You</h2>
+          <div className="final-cta-buttons">
+            {isAuth ? (
+              <>
+                <Link to="/feed" className="btn-cta-primary">
+                  Go to Feed
+                </Link>
+                <Link to="/discover" className="btn-cta-secondary">
+                  Explore Community Tags
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link to="/register" className="btn-cta-primary">
+                  Create Your Profile
+                </Link>
+                <Link to="/register" className="btn-cta-secondary">
+                  Explore Community Tags
+                </Link>
+              </>
+            )}
+          </div>
         </div>
       </section>
 
@@ -99,7 +266,7 @@ function Home() {
         <div className="footer-content">
           <div className="footer-brand">
             <h3 className="brand-gradient">Pryde Social</h3>
-            <p>Building connections, one post at a time.</p>
+            <p>A calm, queer-first space for introverts and deep thinkers.</p>
           </div>
           <div className="footer-links">
             <div className="footer-column">
@@ -112,11 +279,12 @@ function Home() {
             <div className="footer-column">
               <h4>Support</h4>
               <Link to="/contact">Contact Us</Link>
+              <Link to="/faq">FAQ</Link>
             </div>
           </div>
         </div>
         <div className="footer-bottom">
-          <p>&copy; 2024 Pryde Social. All rights reserved.</p>
+          <p>&copy; 2024 Pryde Social. All rights reserved. 18+ only.</p>
         </div>
       </footer>
     </div>
