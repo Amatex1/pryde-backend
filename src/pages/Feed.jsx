@@ -781,9 +781,8 @@ function Feed() {
               posts
                 .filter(post => !blockedUsers.includes(post.author?._id))
                 .map((post) => {
-                const isLiked = post.likes?.some(like =>
-                  (typeof like === 'string' ? like : like._id) === (currentUser?.id || currentUser?._id)
-                );
+                // PHASE 1 REFACTOR: Use hasLiked boolean instead of checking likes array
+                const isLiked = post.hasLiked || false;
 
                 return (
                   <div
@@ -1033,14 +1032,9 @@ function Feed() {
                         <button
                           className={`action-btn ${isLiked || post.reactions?.some(r => r.user?._id === currentUser?.id || r.user === currentUser?.id) ? 'liked' : ''}`}
                           onClick={() => {
-                            // Click shows reaction list
-                            if ((post.reactions?.length || 0) + (post.likes?.length || 0) > 0) {
-                              setReactionDetailsModal({
-                                isOpen: true,
-                                reactions: post.reactions || [],
-                                likes: post.likes || []
-                              });
-                            }
+                            // PHASE 1 REFACTOR: Removed reaction list modal (like counts hidden)
+                            // Just toggle like on click
+                            handleLike(post._id);
                           }}
                           onMouseEnter={() => {
                             // Hover shows emoji picker on desktop
@@ -1064,7 +1058,7 @@ function Feed() {
                         >
                           <span>
                             {post.reactions?.find(r => r.user?._id === currentUser?.id || r.user === currentUser?.id)?.emoji || (isLiked ? '❤️' : '🤍')}
-                          </span> React {((post.reactions?.length || 0) + (post.likes?.length || 0)) > 0 && `(${(post.reactions?.length || 0) + (post.likes?.length || 0)})`}
+                          </span> React {/* PHASE 1 REFACTOR: Like count removed */}
                         </button>
                         {showReactionPicker === `post-${post._id}` && (
                           <div

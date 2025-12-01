@@ -1075,9 +1075,8 @@ function Profile() {
             ) : (
               <div className="posts-list">
                 {posts.map((post) => {
-                  const isLiked = post.likes?.some(like =>
-                    (typeof like === 'string' ? like : like._id) === (currentUser?.id || currentUser?._id)
-                  );
+                  // PHASE 1 REFACTOR: Use hasLiked boolean instead of checking likes array
+                  const isLiked = post.hasLiked || false;
 
                   return (
                     <div key={post._id} className="post-card glossy fade-in">
@@ -1284,8 +1283,8 @@ function Profile() {
                         )}
                       </div>
 
+                      {/* PHASE 1 REFACTOR: Post stats removed (like counts hidden) */}
                       <div className="post-stats">
-                        <span>{post.likes?.length || 0} likes</span>
                         <span>{post.comments?.length || 0} comments</span>
                         <span>{post.shares?.length || 0} shares</span>
                       </div>
@@ -1295,14 +1294,9 @@ function Profile() {
                           <button
                             className={`action-btn ${isLiked || post.reactions?.some(r => r.user?._id === currentUser?.id || r.user === currentUser?.id) ? 'liked' : ''}`}
                             onClick={() => {
-                              // Click shows reaction list
-                              if ((post.reactions?.length || 0) + (post.likes?.length || 0) > 0) {
-                                setReactionDetailsModal({
-                                  isOpen: true,
-                                  reactions: post.reactions || [],
-                                  likes: post.likes || []
-                                });
-                              }
+                              // PHASE 1 REFACTOR: Removed reaction list modal (like counts hidden)
+                              // Just toggle like on click
+                              handleLike(post._id);
                             }}
                             onMouseEnter={() => {
                               // Hover shows emoji picker on desktop
@@ -1326,7 +1320,7 @@ function Profile() {
                           >
                             <span>
                               {post.reactions?.find(r => r.user?._id === currentUser?.id || r.user === currentUser?.id)?.emoji || (isLiked ? '❤️' : '🤍')}
-                            </span> React {((post.reactions?.length || 0) + (post.likes?.length || 0)) > 0 && `(${(post.reactions?.length || 0) + (post.likes?.length || 0)})`}
+                            </span> React {/* PHASE 1 REFACTOR: Like count removed */}
                           </button>
                           {showReactionPicker === `post-${post._id}` && (
                             <div

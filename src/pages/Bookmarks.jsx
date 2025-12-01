@@ -114,8 +114,8 @@ const Bookmarks = () => {
 
               <div className="bookmark-footer">
                 <span className="post-date">{formatDate(post.createdAt)}</span>
+                {/* PHASE 1 REFACTOR: Like counts removed */}
                 <div className="post-stats">
-                  <span>❤️ {post.likes?.length || 0}</span>
                   <span>💬 {post.comments?.length || 0}</span>
                   <span>🔄 {post.shares?.length || 0}</span>
                 </div>
