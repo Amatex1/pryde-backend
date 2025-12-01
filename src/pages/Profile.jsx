@@ -88,6 +88,17 @@ function Profile() {
     }
   }, [id]);
 
+  // OPTIONAL FEATURES: Fetch content when tab changes
+  useEffect(() => {
+    if (activeTab === 'journals') {
+      fetchJournals();
+    } else if (activeTab === 'longform') {
+      fetchLongformPosts();
+    } else if (activeTab === 'photoEssays') {
+      fetchPhotoEssays();
+    }
+  }, [activeTab, id]);
+
   // Update message permission when friend/follow status changes
   useEffect(() => {
     if (!isOwnProfile && user) {
@@ -993,9 +1004,79 @@ function Profile() {
         </div>
 
         <div className="profile-content">
+          {/* OPTIONAL FEATURES: Creator profile tabs */}
+          {user?.isCreator && (
+            <div className="profile-tabs glossy" style={{ marginBottom: '20px', padding: '10px', borderRadius: '12px', display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+              <button
+                className={`tab-button ${activeTab === 'posts' ? 'active' : ''}`}
+                onClick={() => setActiveTab('posts')}
+                style={{
+                  padding: '10px 20px',
+                  borderRadius: '8px',
+                  border: 'none',
+                  background: activeTab === 'posts' ? 'var(--pryde-purple)' : 'var(--background-light)',
+                  color: activeTab === 'posts' ? 'white' : 'var(--text-main)',
+                  cursor: 'pointer',
+                  fontWeight: activeTab === 'posts' ? 'bold' : 'normal',
+                  transition: 'all 0.3s ease'
+                }}
+              >
+                📝 Posts
+              </button>
+              <button
+                className={`tab-button ${activeTab === 'journals' ? 'active' : ''}`}
+                onClick={() => setActiveTab('journals')}
+                style={{
+                  padding: '10px 20px',
+                  borderRadius: '8px',
+                  border: 'none',
+                  background: activeTab === 'journals' ? 'var(--pryde-purple)' : 'var(--background-light)',
+                  color: activeTab === 'journals' ? 'white' : 'var(--text-main)',
+                  cursor: 'pointer',
+                  fontWeight: activeTab === 'journals' ? 'bold' : 'normal',
+                  transition: 'all 0.3s ease'
+                }}
+              >
+                📔 Journals
+              </button>
+              <button
+                className={`tab-button ${activeTab === 'longform' ? 'active' : ''}`}
+                onClick={() => setActiveTab('longform')}
+                style={{
+                  padding: '10px 20px',
+                  borderRadius: '8px',
+                  border: 'none',
+                  background: activeTab === 'longform' ? 'var(--pryde-purple)' : 'var(--background-light)',
+                  color: activeTab === 'longform' ? 'white' : 'var(--text-main)',
+                  cursor: 'pointer',
+                  fontWeight: activeTab === 'longform' ? 'bold' : 'normal',
+                  transition: 'all 0.3s ease'
+                }}
+              >
+                📖 Stories
+              </button>
+              <button
+                className={`tab-button ${activeTab === 'photoEssays' ? 'active' : ''}`}
+                onClick={() => setActiveTab('photoEssays')}
+                style={{
+                  padding: '10px 20px',
+                  borderRadius: '8px',
+                  border: 'none',
+                  background: activeTab === 'photoEssays' ? 'var(--pryde-purple)' : 'var(--background-light)',
+                  color: activeTab === 'photoEssays' ? 'white' : 'var(--text-main)',
+                  cursor: 'pointer',
+                  fontWeight: activeTab === 'photoEssays' ? 'bold' : 'normal',
+                  transition: 'all 0.3s ease'
+                }}
+              >
+                📸 Photo Essays
+              </button>
+            </div>
+          )}
+
           <div className="profile-posts">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-              <h2 className="section-title">Posts</h2>
+              <h2 className="section-title">{activeTab === 'posts' ? 'Posts' : activeTab === 'journals' ? 'Journals' : activeTab === 'longform' ? 'Stories' : 'Photo Essays'}</h2>
               {isOwnProfile && (
                 <div className="create-post glossy fade-in">
                   <h2 className="section-title">What's on your mind?</h2>
@@ -1095,15 +1176,18 @@ function Profile() {
               )}
             </div>
 
-            {loadingPosts ? (
-              <div className="loading-state">Loading posts...</div>
-            ) : posts.length === 0 ? (
-              <div className="empty-state glossy">
-                <p>No posts yet</p>
-              </div>
-            ) : (
-              <div className="posts-list">
-                {posts.map((post) => {
+            {/* OPTIONAL FEATURES: Conditional rendering based on active tab */}
+            {activeTab === 'posts' && (
+              <>
+                {loadingPosts ? (
+                  <div className="loading-state">Loading posts...</div>
+                ) : posts.length === 0 ? (
+                  <div className="empty-state glossy">
+                    <p>No posts yet</p>
+                  </div>
+                ) : (
+                  <div className="posts-list">
+                    {posts.map((post) => {
                   // PHASE 1 REFACTOR: Use hasLiked boolean instead of checking likes array
                   const isLiked = post.hasLiked || false;
 
