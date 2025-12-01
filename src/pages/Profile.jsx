@@ -1089,14 +1089,14 @@ function Profile() {
           <div className="profile-posts">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
               <h2 className="section-title">{activeTab === 'posts' ? 'Posts' : activeTab === 'journals' ? 'Journals' : activeTab === 'longform' ? 'Stories' : 'Photo Essays'}</h2>
-              {isOwnProfile && (
+              {isOwnProfile && activeTab === 'posts' && (
                 <div className="create-post glossy fade-in">
-                  <h2 className="section-title">What's on your mind?</h2>
+                  <h2 className="section-title">✨ Share a thought...</h2>
                   <form onSubmit={handlePostSubmit}>
                     <textarea
                       value={newPost}
                       onChange={(e) => setNewPost(e.target.value)}
-                      placeholder="Share something amazing..."
+                      placeholder="What are you reflecting on today?"
                       className="post-input glossy"
                       rows="4"
                     />
@@ -1180,7 +1180,7 @@ function Profile() {
                       </select>
 
                       <button type="submit" disabled={postLoading || uploadingMedia} className="btn-post glossy-gold">
-                        {postLoading ? 'Posting...' : 'Share Post ✨'}
+                        {postLoading ? 'Publishing...' : 'Publish ✨'}
                       </button>
                     </div>
                   </form>
