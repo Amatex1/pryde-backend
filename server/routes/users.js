@@ -10,6 +10,30 @@ import auth from '../middleware/auth.js';
 import { checkProfileVisibility, checkBlocked } from '../middleware/privacy.js';
 import mongoose from 'mongoose';
 
+// PHASE 1 REFACTOR: Helper function to sanitize user data for private follower counts
+// Removes follower/following arrays and counts, only shows if current user follows them
+const sanitizeUserForPrivateFollowers = (user, currentUserId) => {
+  const userObj = user.toObject ? user.toObject() : user;
+
+  // Check if current user follows this user
+  const isFollowing = userObj.followers?.some(follower =>
+    (follower._id || follower).toString() === currentUserId.toString()
+  );
+
+  // Check if this user follows current user
+  const followsYou = userObj.following?.some(following =>
+    (following._id || following).toString() === currentUserId.toString()
+  );
+
+  // Replace follower/following arrays with just booleans
+  userObj.isFollowing = isFollowing; // Does current user follow this profile?
+  userObj.followsYou = followsYou;   // Does this profile follow current user?
+  delete userObj.followers;
+  delete userObj.following;
+
+  return userObj;
+};
+
 // @route   GET /api/users/search
 // @desc    Search users
 // @access  Private
@@ -430,6 +454,7 @@ router.get('/:identifier', auth, checkProfileVisibility, async (req, res) => {
     // Check if identifier is a valid MongoDB ObjectId
     if (mongoose.Types.ObjectId.isValid(identifier) && identifier.length === 24) {
       // Try to find by ID first
+      // PHASE 1 REFACTOR: Still populate to check relationships, but will sanitize before sending
       user = await User.findById(identifier)
         .select('-password')
         .populate('friends', 'username displayName profilePhoto coverPhoto bio')
@@ -439,6 +464,7 @@ router.get('/:identifier', auth, checkProfileVisibility, async (req, res) => {
 
     // If not found by ID or not a valid ID, try username
     if (!user) {
+      // PHASE 1 REFACTOR: Still populate to check relationships, but will sanitize before sending
       user = await User.findOne({ username: identifier })
         .select('-password')
         .populate('friends', 'username displayName profilePhoto coverPhoto bio')
@@ -450,7 +476,11 @@ router.get('/:identifier', auth, checkProfileVisibility, async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    res.json(user);
+    // PHASE 1 REFACTOR: Sanitize user to hide follower/following counts
+    const currentUserId = req.userId || req.user._id;
+    const sanitizedUser = sanitizeUserForPrivateFollowers(user, currentUserId);
+
+    res.json(sanitizedUser);
   } catch (error) {
     console.error('Get user error:', error);
     res.status(500).json({ message: 'Server error' });
