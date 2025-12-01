@@ -233,6 +233,94 @@ app.use('/api/privacy', privacyRoutes);
 app.use('/api/bookmarks', bookmarksRoutes);
 app.use('/api/events', eventsRoutes);
 
+// TEMPORARY: Migration endpoint - REMOVE AFTER RUNNING ONCE
+app.get('/api/migrate/creator-privacy', auth, async (req, res) => {
+  try {
+    // Only allow admin users to run migrations
+    const adminUser = await User.findById(req.userId);
+    if (!adminUser || !adminUser.isAdmin) {
+      return res.status(403).json({ message: 'Unauthorized - Admin access required' });
+    }
+
+    const users = await User.find({});
+    let updatedCount = 0;
+    let errorCount = 0;
+    const errors = [];
+
+    for (const user of users) {
+      try {
+        let needsUpdate = false;
+
+        // Initialize privacySettings if it doesn't exist
+        if (!user.privacySettings) {
+          user.privacySettings = {
+            whoCanSeeProfile: 'everyone',
+            whoCanSeePosts: 'everyone',
+            whoCanSeeFollowers: 'everyone',
+            whoCanSeeFollowing: 'everyone',
+            whoCanComment: 'everyone',
+            whoCanMessageMe: 'everyone',
+            showOnlineStatus: true,
+            showLastSeen: true,
+            allowTagging: true,
+            quietModeEnabled: false
+          };
+          needsUpdate = true;
+        } else if (user.privacySettings.quietModeEnabled === undefined) {
+          // Add quietModeEnabled if it's missing
+          user.privacySettings.quietModeEnabled = false;
+          needsUpdate = true;
+        }
+
+        // Initialize creator fields if they don't exist
+        if (user.isCreator === undefined) {
+          user.isCreator = false;
+          needsUpdate = true;
+        }
+        if (!user.creatorTagline) {
+          user.creatorTagline = '';
+          needsUpdate = true;
+        }
+        if (!user.creatorBio) {
+          user.creatorBio = '';
+          needsUpdate = true;
+        }
+        if (!user.featuredPosts) {
+          user.featuredPosts = [];
+          needsUpdate = true;
+        }
+
+        // Initialize isAlly if it doesn't exist
+        if (user.isAlly === undefined) {
+          user.isAlly = false;
+          needsUpdate = true;
+        }
+
+        if (needsUpdate) {
+          user.markModified('privacySettings');
+          await user.save();
+          updatedCount++;
+        }
+      } catch (error) {
+        errorCount++;
+        errors.push({ userId: user._id, error: error.message });
+      }
+    }
+
+    res.json({
+      success: true,
+      message: 'Migration completed',
+      totalUsers: users.length,
+      updatedUsers: updatedCount,
+      errors: errorCount,
+      errorDetails: errors.slice(0, 10) // Only show first 10 errors
+    });
+  } catch (error) {
+    console.error('Migration error:', error);
+    res.status(500).json({ message: 'Migration failed', error: error.message });
+  }
+});
+
 // Debug: Log the passkey router before registering
 console.log('🔍 Passkey router type:', typeof passkeyRoutes);
 console.log('🔍 Passkey router stack length:', passkeyRoutes?.stack?.length);
