@@ -7,7 +7,6 @@
 .feed-container {
   max-width: 1100px;
   margin: 0 auto;
-  padding: 0 2rem 2rem;
   display: grid;
   grid-template-columns: 1fr minmax(280px, 320px);
   gap: 2rem;
