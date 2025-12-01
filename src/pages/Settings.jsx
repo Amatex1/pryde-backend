@@ -11,7 +11,7 @@ import {
   isPushNotificationSubscribed,
   sendTestNotification
 } from '../utils/pushNotifications';
-import { shouldQuietModeBeActive, applyQuietMode, getQuietHoursRange, getQuietHoursStatus } from '../utils/quietMode';
+import { applyQuietMode } from '../utils/quietMode';
 import './Settings.css';
 
 function Settings() {
@@ -36,7 +36,6 @@ function Settings() {
   const [message, setMessage] = useState('');
   const [pushEnabled, setPushEnabled] = useState(false);
   const [quietModeEnabled, setQuietModeEnabled] = useState(false); // PHASE 2: Quiet Mode
-  const [autoQuietHoursEnabled, setAutoQuietHoursEnabled] = useState(true); // PHASE 2: Auto Quiet Hours
   const [isCreator, setIsCreator] = useState(false); // PHASE 5: Creator Mode
   const [verificationStatus, setVerificationStatus] = useState({
     isVerified: false,
@@ -84,17 +83,9 @@ function Settings() {
       });
       // PHASE 2: Load quiet mode settings
       const quietMode = user.privacySettings?.quietModeEnabled || false;
-      const autoQuietHours = user.privacySettings?.autoQuietHoursEnabled !== false; // Default true
       setQuietModeEnabled(quietMode);
-      setAutoQuietHoursEnabled(autoQuietHours);
-
-      // Apply quiet mode based on manual setting and auto quiet hours
-      const isActive = shouldQuietModeBeActive(quietMode, autoQuietHours);
-      applyQuietMode(isActive);
-
-      // Store in localStorage
+      applyQuietMode(quietMode);
       localStorage.setItem('quietMode', quietMode);
-      localStorage.setItem('autoQuietHours', autoQuietHours);
 
       // PHASE 5: Load creator mode setting
       setIsCreator(user.isCreator || false);
@@ -158,36 +149,11 @@ function Settings() {
       await api.patch('/users/me/settings', { quietModeEnabled: newValue });
       setQuietModeEnabled(newValue);
       setMessage(newValue ? 'Quiet Mode enabled' : 'Quiet Mode disabled');
-
-      // Apply quiet mode based on manual setting and auto quiet hours
-      const isActive = shouldQuietModeBeActive(newValue, autoQuietHoursEnabled);
-      applyQuietMode(isActive);
-
-      // Update localStorage
+      applyQuietMode(newValue);
       localStorage.setItem('quietMode', newValue);
     } catch (error) {
       console.error('Failed to toggle quiet mode:', error);
       setMessage('Failed to update quiet mode');
-    }
-  };
-
-  // PHASE 2: Handle Auto Quiet Hours toggle
-  const handleAutoQuietHoursToggle = async () => {
-    try {
-      const newValue = !autoQuietHoursEnabled;
-      await api.patch('/users/me/settings', { autoQuietHoursEnabled: newValue });
-      setAutoQuietHoursEnabled(newValue);
-      setMessage(newValue ? 'Automatic Quiet Hours enabled' : 'Automatic Quiet Hours disabled');
-
-      // Apply quiet mode based on manual setting and auto quiet hours
-      const isActive = shouldQuietModeBeActive(quietModeEnabled, newValue);
-      applyQuietMode(isActive);
-
-      // Update localStorage
-      localStorage.setItem('autoQuietHours', newValue);
-    } catch (error) {
-      console.error('Failed to toggle auto quiet hours:', error);
-      setMessage('Failed to update auto quiet hours');
     }
   };
 
@@ -483,56 +449,6 @@ function Settings() {
                   />
                   <span className="toggle-slider"></span>
                 </label>
-              </div>
-            </div>
-          </div>
-
-          {/* PHASE 2: Automatic Quiet Hours */}
-          <div className="settings-section">
-            <h2 className="section-title">⏱️ Automatic Quiet Hours</h2>
-            <p className="section-description">
-              Quiet Mode turns on automatically during your calm nighttime hours.
-              You can still manually enable or disable Quiet Mode at any time.
-            </p>
-
-            <div className="notification-settings">
-              <div className="notification-item">
-                <div className="notification-info">
-                  <h3>Turn on automatic Quiet Hours</h3>
-                  <p>Automatically enable Quiet Mode from 9:00 PM to 6:00 AM.</p>
-                </div>
-                <label className="toggle-switch">
-                  <input
-                    type="checkbox"
-                    checked={autoQuietHoursEnabled}
-                    onChange={handleAutoQuietHoursToggle}
-                  />
-                  <span className="toggle-slider"></span>
-                </label>
-              </div>
-            </div>
-
-            {/* Quiet Hours Schedule */}
-            <div className="quiet-hours-schedule">
-              <h3 style={{ fontSize: '1rem', marginBottom: '0.5rem', color: 'var(--text-main)' }}>
-                Quiet Hours Schedule (fixed)
-              </h3>
-              <div style={{
-                padding: '1rem',
-                background: 'var(--bg-light)',
-                borderRadius: '8px',
-                border: '1px solid var(--border-light)'
-              }}>
-                <p style={{ margin: '0 0 0.5rem 0', fontWeight: '600', color: 'var(--text-main)' }}>
-                  🌙 Quiet Hours Active: <strong>{getQuietHoursRange()}</strong>
-                </p>
-                <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-muted)' }}>
-                  {getQuietHoursStatus().message}
-                </p>
-                <p style={{ margin: '0.75rem 0 0 0', fontSize: '0.85rem', color: 'var(--text-muted)', lineHeight: '1.5' }}>
-                  Quiet Hours will automatically enable Quiet Mode during this time.
-                  If you manually disable Quiet Mode during Quiet Hours, it will stay off until the next night cycle.
-                </p>
               </div>
             </div>
           </div>

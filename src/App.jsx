@@ -42,7 +42,7 @@ import SafetyWarning from './components/SafetyWarning';
 import { isAuthenticated, getCurrentUser } from './utils/auth';
 import { initializeSocket, disconnectSocket, onNewMessage } from './utils/socket';
 import { playNotificationSound, requestNotificationPermission } from './utils/notifications';
-import { initializeQuietMode, shouldQuietModeBeActive, applyQuietMode } from './utils/quietMode';
+import { initializeQuietMode } from './utils/quietMode';
 import api from './utils/api';
 
 function App() {
@@ -60,17 +60,6 @@ function App() {
 
           // Initialize quiet mode with user settings
           initializeQuietMode(user);
-
-          // Set up interval to check quiet hours every minute
-          // IMPORTANT: Read from localStorage to get the latest user preferences
-          const quietHoursInterval = setInterval(() => {
-            const manualQuietMode = localStorage.getItem('quietMode') === 'true';
-            const autoQuietHours = localStorage.getItem('autoQuietHours') !== 'false';
-            const isActive = shouldQuietModeBeActive(manualQuietMode, autoQuietHours);
-            applyQuietMode(isActive);
-          }, 60000); // Check every minute
-
-          return () => clearInterval(quietHoursInterval);
         } catch (error) {
           console.error('Failed to initialize quiet mode:', error);
         }

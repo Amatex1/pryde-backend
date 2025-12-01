@@ -1,13 +1,14 @@
-import nodemailer from 'nodemailer';
+import pkg from 'nodemailer';
+const { createTransport, getTestMessageUrl } = pkg;
 import config from '../config/config.js';
 
 // Create transporter
 const createTransporter = () => {
   // For development, use ethereal email (fake SMTP)
   // For production, use a real SMTP service like SendGrid, Gmail, etc.
-  
+
   if (config.nodeEnv === 'production' && process.env.EMAIL_HOST) {
-    return nodemailer.createTransporter({
+    return createTransport({
       host: process.env.EMAIL_HOST,
       port: process.env.EMAIL_PORT || 587,
       secure: process.env.EMAIL_SECURE === 'true',
@@ -17,9 +18,9 @@ const createTransporter = () => {
       }
     });
   }
-  
+
   // For development/testing - logs to console
-  return nodemailer.createTransporter({
+  return createTransport({
     host: 'smtp.ethereal.email',
     port: 587,
     secure: false,
@@ -121,7 +122,7 @@ export const sendPasswordResetEmail = async (email, resetToken, username) => {
     
     // For development, log the preview URL
     if (config.nodeEnv !== 'production') {
-      console.log('Preview URL:', nodemailer.getTestMessageUrl(info));
+      console.log('Preview URL:', getTestMessageUrl(info));
     }
     
     return { success: true, messageId: info.messageId };
@@ -297,7 +298,7 @@ export const sendLoginAlertEmail = async (email, username, loginInfo) => {
 
     // For development, log the preview URL
     if (config.nodeEnv !== 'production') {
-      console.log('Preview URL:', nodemailer.getTestMessageUrl(info));
+      console.log('Preview URL:', getTestMessageUrl(info));
     }
 
     return { success: true, messageId: info.messageId };
@@ -478,7 +479,7 @@ export const sendSuspiciousLoginEmail = async (email, username, loginInfo) => {
 
     // For development, log the preview URL
     if (config.nodeEnv !== 'production') {
-      console.log('Preview URL:', nodemailer.getTestMessageUrl(info));
+      console.log('Preview URL:', getTestMessageUrl(info));
     }
 
     return { success: true, messageId: info.messageId };

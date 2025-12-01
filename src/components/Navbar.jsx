@@ -6,7 +6,7 @@ import DarkModeToggle from './DarkModeToggle';
 import GlobalSearch from './GlobalSearch';
 import NotificationBell from './NotificationBell';
 import api from '../utils/api';
-import { shouldQuietModeBeActive, applyQuietMode } from '../utils/quietMode';
+import { applyQuietMode } from '../utils/quietMode';
 import './Navbar.css';
 
 // Hook to get dark mode state
@@ -67,27 +67,11 @@ function Navbar() {
     const newValue = !quietMode;
     setQuietMode(newValue);
     localStorage.setItem('quietMode', newValue);
-
-    // When manually toggling OFF, also disable auto quiet hours to prevent it from re-enabling
-    if (!newValue) {
-      localStorage.setItem('autoQuietHours', 'false');
-    }
-
-    // Get auto quiet hours setting
-    const autoQuietHours = !newValue ? false : (localStorage.getItem('autoQuietHours') !== 'false');
-
-    // Determine if quiet mode should be active
-    const isActive = shouldQuietModeBeActive(newValue, autoQuietHours);
-    applyQuietMode(isActive);
+    applyQuietMode(newValue);
 
     // Sync with backend
     try {
-      const updateData = { quietModeEnabled: newValue };
-      // If turning off, also disable auto quiet hours
-      if (!newValue) {
-        updateData.autoQuietHoursEnabled = false;
-      }
-      await api.patch('/users/me/settings', updateData);
+      await api.patch('/users/me/settings', { quietModeEnabled: newValue });
     } catch (error) {
       console.error('Failed to sync quiet mode:', error);
     }
@@ -107,14 +91,9 @@ function Navbar() {
         if (localQuietMode === null) {
           // First time loading - use backend value
           const backendQuietMode = response.data.privacySettings?.quietModeEnabled || false;
-          const backendAutoQuietHours = response.data.privacySettings?.autoQuietHoursEnabled !== false;
-
           setQuietMode(backendQuietMode);
           localStorage.setItem('quietMode', backendQuietMode);
-          localStorage.setItem('autoQuietHours', backendAutoQuietHours);
-
-          const isActive = shouldQuietModeBeActive(backendQuietMode, backendAutoQuietHours);
-          applyQuietMode(isActive);
+          applyQuietMode(backendQuietMode);
         }
         // If already set locally, don't override (user may have just toggled it)
       } catch (error) {
