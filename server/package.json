@@ -6,7 +6,8 @@
   "type": "module",
   "scripts": {
     "start": "node server.js",
-    "dev": "nodemon server.js"
+    "dev": "nodemon server.js",
+    "migrate:creator-privacy": "node migrations/add-creator-and-privacy-fields.js"
   },
   "dependencies": {
     "@simplewebauthn/browser": "^13.2.2",

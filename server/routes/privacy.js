@@ -36,16 +36,25 @@ router.put('/', auth, async (req, res) => {
     }
 
     const user = await User.findById(req.userId);
-    
+
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // Update privacy settings
+    // Initialize privacySettings if it doesn't exist
+    if (!user.privacySettings) {
+      user.privacySettings = {};
+    }
+
+    // Update privacy settings - convert to plain object first to avoid Mongoose issues
+    const currentSettings = user.privacySettings.toObject ? user.privacySettings.toObject() : user.privacySettings;
     user.privacySettings = {
-      ...user.privacySettings,
+      ...currentSettings,
       ...privacySettings
     };
+
+    // Mark the nested object as modified so Mongoose saves it
+    user.markModified('privacySettings');
 
     await user.save();
 
@@ -55,7 +64,8 @@ router.put('/', auth, async (req, res) => {
     });
   } catch (error) {
     console.error('Update privacy settings error:', error);
-    res.status(500).json({ message: 'Server error' });
+    console.error('Error details:', error.message);
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
 

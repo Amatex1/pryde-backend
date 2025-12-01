@@ -182,3 +182,79 @@ If you encounter issues during migration:
 **Version:** 1.0.0
 **Status:** ✅ Ready for Production
 
+---
+
+# 🔄 Creator & Privacy Fields Migration
+
+## Issue
+The production database is returning 500 errors when trying to update:
+- Privacy settings (`PUT /api/privacy`)
+- Quiet mode settings (`PATCH /api/users/me/settings`)
+- Creator mode settings (`PATCH /api/users/me/creator`)
+
+## Root Cause
+Existing user documents in the production database were created before the following fields were added to the User schema:
+- `privacySettings.quietModeEnabled`
+- `isCreator`
+- `creatorTagline`
+- `creatorBio`
+- `featuredPosts`
+- `isAlly`
+
+When the backend tries to update these fields on old user documents, Mongoose encounters validation or save errors because the nested objects aren't properly initialized.
+
+## Solution
+
+### 1. Code Fixes (Already Applied)
+The following route handlers have been updated with better error handling and initialization:
+
+**server/routes/privacy.js:**
+- Added initialization check for `privacySettings`
+- Added `user.markModified('privacySettings')` to ensure Mongoose saves nested object changes
+- Added detailed error logging
+
+**server/routes/users.js:**
+- Added initialization check for `privacySettings` in `/me/settings` endpoint
+- Added `user.markModified('privacySettings')` for quiet mode updates
+- Added detailed error logging for both `/me/settings` and `/me/creator` endpoints
+
+### 2. Database Migration Script
+**Location:** `server/migrations/add-creator-and-privacy-fields.js`
+
+**To run the migration:**
+```bash
+cd server
+npm run migrate:creator-privacy
+```
+
+**What the migration does:**
+- Finds all users in the database
+- Initializes `privacySettings` with default values if missing
+- Adds `quietModeEnabled: false` to existing `privacySettings` objects
+- Initializes creator fields (`isCreator`, `creatorTagline`, `creatorBio`, `featuredPosts`)
+- Initializes `isAlly` field
+- Properly marks modified fields for Mongoose to save
+
+### 3. Running the Migration on Render
+
+Since you can't SSH into Render's free tier, you have two options:
+
+**Option A: Run locally with production credentials**
+1. Temporarily add your production MongoDB URI to your local `.env` file
+2. Run: `cd server && npm run migrate:creator-privacy`
+3. Remove the production credentials from your local `.env`
+
+**Option B: Deploy and run via Render Shell**
+1. Commit and push the migration script
+2. Deploy to Render
+3. Use Render's Shell feature to run: `npm run migrate:creator-privacy`
+
+## Verification
+
+After running the migration:
+1. Check the migration output for the number of users updated
+2. Test the privacy settings page
+3. Test the quiet mode toggle
+4. Test the creator mode toggle
+5. All should work without 500 errors
+

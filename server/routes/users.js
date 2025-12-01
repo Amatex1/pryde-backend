@@ -569,9 +569,16 @@ router.patch('/me/settings', auth, async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
+    // Initialize privacySettings if it doesn't exist
+    if (!user.privacySettings) {
+      user.privacySettings = {};
+    }
+
     // Update quiet mode setting
     if (typeof quietModeEnabled === 'boolean') {
       user.privacySettings.quietModeEnabled = quietModeEnabled;
+      // Mark the nested object as modified so Mongoose saves it
+      user.markModified('privacySettings');
     }
 
     await user.save();
@@ -582,7 +589,8 @@ router.patch('/me/settings', auth, async (req, res) => {
     });
   } catch (error) {
     console.error('Update settings error:', error);
-    res.status(500).json({ message: 'Server error' });
+    console.error('Error details:', error.message);
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
 
@@ -623,7 +631,8 @@ router.patch('/me/creator', auth, async (req, res) => {
     });
   } catch (error) {
     console.error('Update creator settings error:', error);
-    res.status(500).json({ message: 'Server error' });
+    console.error('Error details:', error.message);
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
 
