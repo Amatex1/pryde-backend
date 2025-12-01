@@ -35,7 +35,8 @@ router.post('/signup', signupLimiter, validateSignup, async (req, res) => {
       gender,
       customGender,
       relationshipStatus,
-      birthday
+      birthday,
+      isAlly // PHASE 6: Ally system
     } = req.body;
 
     // Validation
@@ -104,7 +105,9 @@ router.post('/signup', signupLimiter, validateSignup, async (req, res) => {
       gender: gender || '',
       customGender: customGender || '',
       relationshipStatus: relationshipStatus || '',
-      birthday: birthDate
+      birthday: birthDate,
+      isAlly: isAlly || false, // PHASE 6: Ally system
+      onboardingCompleted: true // PHASE 6: Mark onboarding as complete
     });
 
     await user.save();

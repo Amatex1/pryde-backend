@@ -627,6 +627,35 @@ router.patch('/me/creator', auth, async (req, res) => {
   }
 });
 
+// @route   PATCH /api/users/me/ally
+// @desc    Update ally status (PHASE 6)
+// @access  Private
+router.patch('/me/ally', auth, async (req, res) => {
+  try {
+    const { isAlly } = req.body;
+    const user = await User.findById(req.userId);
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    if (typeof isAlly === 'boolean') {
+      user.isAlly = isAlly;
+      user.onboardingCompleted = true;
+    }
+
+    await user.save();
+
+    res.json({
+      message: 'Ally status updated successfully',
+      isAlly: user.isAlly
+    });
+  } catch (error) {
+    console.error('Update ally status error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // @route   PUT /api/users/deactivate
 // @desc    Deactivate user account
 // @access  Private

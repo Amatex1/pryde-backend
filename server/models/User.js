@@ -495,6 +495,15 @@ const userSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Post'
   }],
+  // PHASE 6: Ally System
+  isAlly: {
+    type: Boolean,
+    default: false
+  },
+  onboardingCompleted: {
+    type: Boolean,
+    default: false
+  },
   // Blocked Users
   blockedUsers: [{
     type: mongoose.Schema.Types.ObjectId,
