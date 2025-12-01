@@ -27,9 +27,9 @@ html {
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-  background: var(--bg-light);
+  background: var(--bg-light) !important;
   min-height: 100vh;
-  color: var(--text-main);
+  color: var(--text-main) !important;
   transition: background-color 0.3s ease, color 0.3s ease;
 
   /* Prevent horizontal overflow */
@@ -39,6 +39,11 @@ body {
 
   /* Better touch scrolling on mobile */
   -webkit-overflow-scrolling: touch;
+}
+
+/* Ensure html element also gets the background */
+html {
+  background: var(--bg-light) !important;
 }
 
 /* Root container responsive sizing */

@@ -1,34 +1,38 @@
 /* Dark Mode Theme */
 [data-theme="dark"] {
   /* Background Colors */
-  --background-light: #1a1a2e;
-  --bg-light: #1a1a2e;
-  --card-surface: #16213e;
-  --border-light: #2d3561;
+  --background-light: #1a1a2e !important;
+  --bg-light: #1a1a2e !important;
+  --card-surface: #16213e !important;
+  --border-light: #2d3561 !important;
 
   /* Text Colors */
-  --text-main: #ffffff;
-  --text-muted: #a1a1aa;
+  --text-main: #ffffff !important;
+  --text-muted: #a1a1aa !important;
 
   /* Keep brand colors the same */
-  --pryde-purple: #6C5CE7;
-  --electric-blue: #0984E3;
-  --soft-lavender: #2d3561;
+  --pryde-purple: #6C5CE7 !important;
+  --electric-blue: #0984E3 !important;
+  --soft-lavender: #2d3561 !important;
 
   /* Gradients adjusted for dark mode */
-  --gradient-primary: linear-gradient(135deg, #6C5CE7 0%, #0984E3 100%);
-  --gradient-gold: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+  --gradient-primary: linear-gradient(135deg, #6C5CE7 0%, #0984E3 100%) !important;
+  --gradient-gold: linear-gradient(135deg, #FFD700 0%, #FFA500 100%) !important;
 
   /* Shadows adjusted for dark mode */
-  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.4);
-  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.5);
-  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.6);
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.4) !important;
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.5) !important;
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.6) !important;
 }
 
 /* Dark mode specific adjustments */
 [data-theme="dark"] body {
-  background: var(--background-light);
-  color: var(--text-main);
+  background: var(--background-light) !important;
+  color: var(--text-main) !important;
+}
+
+[data-theme="dark"] html {
+  background: var(--background-light) !important;
 }
 
 /* Labels in dark mode */
