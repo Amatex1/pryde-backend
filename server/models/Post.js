@@ -150,6 +150,11 @@ const postSchema = new mongoose.Schema({
   updatedAt: {
     type: Date,
     default: Date.now
+  },
+  // PHASE 2: Slow Feed - optional manual promotion
+  promotedUntil: {
+    type: Date,
+    default: null
   }
 });
 

@@ -437,6 +437,11 @@ const userSchema = new mongoose.Schema({
       type: Boolean,
       default: true
     },
+    // PHASE 2: Quiet Mode - calm UX with reduced metrics
+    quietModeEnabled: {
+      type: Boolean,
+      default: false
+    },
     whoCanSeeMyPosts: {
       type: String,
       enum: ['public', 'followers', 'only-me'], // REMOVED: 'friends'

@@ -557,6 +557,35 @@ router.put('/profile', auth, async (req, res) => {
   }
 });
 
+// @route   PATCH /api/users/me/settings
+// @desc    Update user settings (PHASE 2: Quiet Mode)
+// @access  Private
+router.patch('/me/settings', auth, async (req, res) => {
+  try {
+    const { quietModeEnabled } = req.body;
+    const user = await User.findById(req.userId);
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Update quiet mode setting
+    if (typeof quietModeEnabled === 'boolean') {
+      user.privacySettings.quietModeEnabled = quietModeEnabled;
+    }
+
+    await user.save();
+
+    res.json({
+      message: 'Settings updated successfully',
+      quietModeEnabled: user.privacySettings.quietModeEnabled
+    });
+  } catch (error) {
+    console.error('Update settings error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // @route   PUT /api/users/deactivate
 // @desc    Deactivate user account
 // @access  Private
