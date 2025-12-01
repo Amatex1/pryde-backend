@@ -8,6 +8,7 @@ import { Link } from 'react-router-dom';
 import api from '../utils/api';
 import { getCurrentUser } from '../utils/auth';
 import { getImageUrl } from '../utils/imageUrl';
+import './GlobalFeed.css';
 import './Feed.css';
 
 function GlobalFeed() {

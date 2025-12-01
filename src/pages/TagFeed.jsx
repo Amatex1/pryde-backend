@@ -13,6 +13,8 @@ function TagFeed() {
   const [tag, setTag] = useState(null);
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [newPost, setNewPost] = useState('');
+  const [posting, setPosting] = useState(false);
 
   useEffect(() => {
     fetchTagAndPosts();
@@ -39,7 +41,7 @@ function TagFeed() {
   const handleLike = async (postId) => {
     try {
       await api.post(`/posts/${postId}/like`);
-      
+
       // Update local state
       setPosts(posts.map(post => {
         if (post._id === postId) {
@@ -49,6 +51,28 @@ function TagFeed() {
       }));
     } catch (error) {
       console.error('Failed to like post:', error);
+    }
+  };
+
+  const handlePostSubmit = async (e) => {
+    e.preventDefault();
+    if (!newPost.trim()) return;
+
+    setPosting(true);
+    try {
+      const response = await api.post('/posts', {
+        content: newPost,
+        tags: [tag._id],
+        visibility: 'public'
+      });
+
+      setPosts([response.data, ...posts]);
+      setNewPost('');
+    } catch (error) {
+      console.error('Failed to create post:', error);
+      alert('Failed to create post. Please try again.');
+    } finally {
+      setPosting(false);
     }
   };
 
@@ -69,6 +93,27 @@ function TagFeed() {
         <div className="tag-feed-stats">
           <span>{tag.postCount} posts</span>
         </div>
+      </div>
+
+      {/* Create Post Box */}
+      <div className="create-post glossy">
+        <h2 className="section-title">✨ Share with {tag.label}</h2>
+        <form onSubmit={handlePostSubmit}>
+          <textarea
+            value={newPost}
+            onChange={(e) => setNewPost(e.target.value)}
+            placeholder={`What would you like to share with ${tag.label}?`}
+            className="post-input"
+            rows="4"
+          />
+          <button
+            type="submit"
+            disabled={posting || !newPost.trim()}
+            className="btn-post"
+          >
+            {posting ? 'Posting...' : 'Post ✨'}
+          </button>
+        </form>
       </div>
 
       <div className="tag-feed-posts">

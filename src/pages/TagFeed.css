@@ -36,6 +36,64 @@
   font-weight: 600;
 }
 
+.create-post {
+  background: var(--card-surface);
+  padding: 2rem;
+  border-radius: 20px;
+  box-shadow: 0 2px 10px rgba(108, 92, 231, 0.08);
+  margin-bottom: 2rem;
+}
+
+.section-title {
+  color: var(--pryde-purple);
+  margin-bottom: 1rem;
+  font-size: 1.3rem;
+  font-weight: 600;
+}
+
+.post-input {
+  width: 100%;
+  padding: 1rem;
+  border: 2px solid var(--border-light);
+  border-radius: 12px;
+  background: var(--bg-light);
+  color: var(--text-main);
+  font-size: 1rem;
+  resize: vertical;
+  min-height: 100px;
+  font-family: inherit;
+  transition: all 0.3s ease;
+  margin-bottom: 1rem;
+}
+
+.post-input:focus {
+  outline: none;
+  border-color: var(--pryde-purple);
+  box-shadow: 0 0 0 3px rgba(108, 92, 231, 0.1);
+}
+
+.btn-post {
+  padding: 0.75rem 2rem;
+  border-radius: 12px;
+  border: none;
+  background: var(--gradient-primary);
+  color: white;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-post:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(108, 92, 231, 0.3);
+}
+
+.btn-post:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .tag-feed-posts {
   display: flex;
   flex-direction: column;

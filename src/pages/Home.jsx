@@ -85,7 +85,7 @@ function Home() {
       <section className="cta-section">
         <div className="cta-content">
           <h2 className="cta-title">Ready to Join?</h2>
-          <p className="cta-subtitle">Join thousands of users already connecting on Pryde Social</p>
+          <p className="cta-subtitle">Start connecting with the Pryde Social community</p>
           {!isAuth && (
             <Link to="/register" className="btn-cta">
               Create Your Account
