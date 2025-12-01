@@ -101,8 +101,16 @@ export const checkProfileVisibility = async (req, res, next) => {
   }
 };
 
-// Check if user can send friend request
+// PHASE 1 REFACTOR: Friend request permission check deprecated
+// This middleware is no longer used as friends system is removed
 export const checkFriendRequestPermission = async (req, res, next) => {
+  // Friends system removed - return error
+  return res.status(410).json({
+    message: 'Friend requests are no longer supported. Please use the follow system instead.',
+    deprecated: true
+  });
+
+  /* LEGACY CODE - KEPT FOR REFERENCE
   try {
     const currentUserId = req.userId;
     const targetUserId = req.params.userId;
@@ -131,7 +139,7 @@ export const checkFriendRequestPermission = async (req, res, next) => {
 
     if (permission === 'friends-of-friends') {
       // Check if they have mutual friends
-      const mutualFriends = currentUser.friends.filter(friendId => 
+      const mutualFriends = currentUser.friends.filter(friendId =>
         targetUser.friends.some(targetFriendId => targetFriendId.toString() === friendId.toString())
       );
 
@@ -145,6 +153,7 @@ export const checkFriendRequestPermission = async (req, res, next) => {
     console.error('Check friend request permission error:', error);
     res.status(500).json({ message: 'Server error' });
   }
+  */
 };
 
 // Check if user can send message
@@ -161,7 +170,8 @@ export const checkMessagingPermission = async (req, res, next) => {
       return res.status(400).json({ message: 'Cannot send message to yourself' });
     }
 
-    const recipient = await User.findById(recipientId).select('privacySettings friends followers blockedUsers');
+    // PHASE 1 REFACTOR: Use followers only (friends system removed)
+    const recipient = await User.findById(recipientId).select('privacySettings followers blockedUsers');
     const currentUser = await User.findById(currentUserId).select('blockedUsers');
 
     if (!recipient) {
@@ -179,13 +189,11 @@ export const checkMessagingPermission = async (req, res, next) => {
       return res.status(403).json({ message: 'This user is not accepting messages' });
     }
 
-    // Check for both 'friends' and 'followers' for backward compatibility
+    // PHASE 1 REFACTOR: Only check followers (friends removed)
     if (permission === 'friends' || permission === 'followers') {
-      // Check followers first (new system), then friends (legacy)
       const isFollower = recipient.followers?.some(followerId => followerId.toString() === currentUserId);
-      const isFriend = recipient.friends?.some(friendId => friendId.toString() === currentUserId);
 
-      if (!isFollower && !isFriend) {
+      if (!isFollower) {
         return res.status(403).json({ message: 'You must be a follower to send a message' });
       }
     }

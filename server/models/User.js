@@ -131,11 +131,14 @@ const userSchema = new mongoose.Schema({
     default: '',
     trim: true
   },
+  // PHASE 1 REFACTOR: Friends field deprecated - kept for legacy data only
+  // Use followers/following system instead
   friends: [{
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'User'
+    ref: 'User',
+    select: false // Hide from queries by default
   }],
-  // New follow system
+  // Follow system (primary social graph)
   followers: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
