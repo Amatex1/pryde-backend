@@ -36,7 +36,7 @@ function Discover() {
   return (
     <div className="discover-container">
       <div className="discover-header">
-        <h1>🌟 Discover Communities</h1>
+        <h1>🏷️ Community Tags</h1>
         <p className="discover-subtitle">Find your space and connect with like-minded people</p>
       </div>
 

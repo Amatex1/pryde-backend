@@ -751,7 +751,7 @@ function Feed() {
               onClick={() => setFeedFilter('public')}
             >
               <span className="tab-icon">🌍</span>
-              <span className="tab-label">Public</span>
+              <span className="tab-label">Everyone</span>
             </button>
           </div>
 
@@ -1537,9 +1537,9 @@ function Feed() {
         </div>
 
         <div className={`feed-sidebar ${showMobileSidebar ? 'mobile-visible' : ''}`}>
-          {/* Trending Topics */}
+          {/* Featured Tags */}
           <div className="sidebar-card glossy">
-            <h3 className="sidebar-title">Trending Topics</h3>
+            <h3 className="sidebar-title">Featured Tags</h3>
             <div className="trending-list">
               {trending.length > 0 ? (
                 trending.map((item, index) => (
@@ -1595,7 +1595,7 @@ function Feed() {
 
           {/* Friends List */}
           <div className="sidebar-card glossy">
-            <h3 className="sidebar-title">Recent Chats</h3>
+            <h3 className="sidebar-title">Recent Conversations</h3>
 
             {/* Search Bar */}
             <div className="friends-search-bar">

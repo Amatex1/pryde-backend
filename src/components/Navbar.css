@@ -272,6 +272,28 @@
   font-size: 1.1rem;
 }
 
+.dropdown-quiet-mode {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+  position: relative;
+}
+
+.dropdown-quiet-mode:hover {
+  background: var(--soft-lavender);
+}
+
+.dropdown-quiet-mode .quiet-mode-icon {
+  font-size: 1.1rem;
+}
+
+.dropdown-quiet-mode .mode-indicator {
+  margin-left: auto;
+  color: var(--pryde-purple);
+  font-weight: bold;
+}
+
 .logout-item {
   color: #ff6b6b;
 }

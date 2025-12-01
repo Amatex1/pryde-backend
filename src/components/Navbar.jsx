@@ -36,6 +36,10 @@ function Navbar() {
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [totalUnreadMessages, setTotalUnreadMessages] = useState(0);
   const [isDark, toggleDarkMode] = useDarkMode();
+  const [quietMode, setQuietMode] = useState(() => {
+    const saved = localStorage.getItem('quietMode');
+    return saved === 'true';
+  });
   const dropdownRef = useRef(null);
   const mobileMenuRef = useRef(null);
 
@@ -44,7 +48,27 @@ function Navbar() {
     // logout() now handles redirect internally with window.location.href
   };
 
-  // Fetch current user data
+  const toggleQuietMode = async () => {
+    const newValue = !quietMode;
+    setQuietMode(newValue);
+    localStorage.setItem('quietMode', newValue);
+
+    // Apply quiet mode class to body
+    if (newValue) {
+      document.body.classList.add('quiet-mode');
+    } else {
+      document.body.classList.remove('quiet-mode');
+    }
+
+    // Sync with backend
+    try {
+      await api.patch('/users/me/settings', { quietModeEnabled: newValue });
+    } catch (error) {
+      console.error('Failed to sync quiet mode:', error);
+    }
+  };
+
+  // Fetch current user data and sync quiet mode
   useEffect(() => {
     const fetchUserData = async () => {
       try {
@@ -52,6 +76,18 @@ function Navbar() {
         setUser(response.data);
         // Update localStorage with fresh data
         localStorage.setItem('user', JSON.stringify(response.data));
+
+        // Sync quiet mode from backend
+        const backendQuietMode = response.data.privacySettings?.quietModeEnabled || false;
+        if (backendQuietMode !== quietMode) {
+          setQuietMode(backendQuietMode);
+          localStorage.setItem('quietMode', backendQuietMode);
+          if (backendQuietMode) {
+            document.body.classList.add('quiet-mode');
+          } else {
+            document.body.classList.remove('quiet-mode');
+          }
+        }
       } catch (error) {
         console.error('Failed to fetch user data:', error);
       }
@@ -180,49 +216,36 @@ function Navbar() {
         </div>
 
         <div className="navbar-user" ref={dropdownRef}>
-          {/* Main Navigation Buttons - PHASE 6: Rebranded labels */}
+          {/* Main Navigation Buttons */}
           <Link to="/feed" className="nav-button" title="Home">
             <span className="nav-icon">🏠</span>
             <span className="nav-label">Home</span>
           </Link>
-          {/* PHASE 2: Global and Following feeds */}
-          <Link to="/feed/global" className="nav-button" title="Explore">
-            <span className="nav-icon">🌍</span>
-            <span className="nav-label">Explore</span>
+          <Link to="/discover" className="nav-button" title="Tags">
+            <span className="nav-icon">🏷️</span>
+            <span className="nav-label">Tags</span>
           </Link>
-          <Link to="/feed/following" className="nav-button" title="Community">
-            <span className="nav-icon">👥</span>
-            <span className="nav-label">Community</span>
+          <Link to="/feed/global" className="nav-button" title="Discover">
+            <span className="nav-icon">🌟</span>
+            <span className="nav-label">Discover</span>
           </Link>
-          {/* PHASE 3: Journal and Longform */}
+          <Link to="/longform" className="nav-button" title="Longform">
+            <span className="nav-icon">📝</span>
+            <span className="nav-label">Longform</span>
+          </Link>
           <Link to="/journal" className="nav-button" title="Journal">
             <span className="nav-icon">📔</span>
             <span className="nav-label">Journal</span>
           </Link>
-          <Link to="/longform" className="nav-button" title="Stories">
-            <span className="nav-icon">📝</span>
-            <span className="nav-label">Stories</span>
-          </Link>
-          {/* PHASE 4: Discover */}
-          <Link to="/discover" className="nav-button" title="Discover">
-            <span className="nav-icon">🌟</span>
-            <span className="nav-label">Discover</span>
-          </Link>
-          {/* OPTIONAL: Photo Essay (for creators) */}
           {user?.isCreator && (
             <Link to="/photo-essay" className="nav-button" title="Photo Essay">
               <span className="nav-icon">📸</span>
               <span className="nav-label">Photo Essay</span>
             </Link>
           )}
-          {/* PHASE 1 REFACTOR: Connections link removed */}
-          {/* <Link to="/connections" className="nav-button" title="Connections">
-            <span className="nav-icon">👥</span>
-            <span className="nav-label">Connections</span>
-          </Link> */}
-          <Link to="/messages" className="nav-button" title="Conversations">
+          <Link to="/messages" className="nav-button" title="Messages">
             <span className="nav-icon">💬</span>
-            <span className="nav-label">Conversations</span>
+            <span className="nav-label">Messages</span>
             {totalUnreadMessages > 0 && (
               <span className="nav-badge">{totalUnreadMessages > 99 ? '99+' : totalUnreadMessages}</span>
             )}
@@ -271,6 +294,11 @@ function Navbar() {
               <div className="dropdown-item dropdown-dark-mode" onClick={toggleDarkMode}>
                 <span className="dark-mode-icon">{isDark ? '☀️' : '🌙'}</span>
                 <span>Dark Mode</span>
+              </div>
+              <div className="dropdown-item dropdown-quiet-mode" onClick={toggleQuietMode}>
+                <span className="quiet-mode-icon">🍃</span>
+                <span>Quiet Mode</span>
+                {quietMode && <span className="mode-indicator">✓</span>}
               </div>
               <div className="dropdown-divider"></div>
               <button onClick={handleLogout} className="dropdown-item logout-item">

@@ -70,8 +70,8 @@ function GlobalFeed() {
     return (
       <div className="feed-container">
         <div className="feed-header">
-          <h1>🌍 Global Feed</h1>
-          <p className="feed-subtitle">Discover posts from the entire community</p>
+          <h1>🌟 Discover</h1>
+          <p className="feed-subtitle">Explore posts from the entire community</p>
         </div>
         <div className="loading">Loading...</div>
       </div>
@@ -81,8 +81,8 @@ function GlobalFeed() {
   return (
     <div className="feed-container">
       <div className="feed-header">
-        <h1>🌍 Global Feed</h1>
-        <p className="feed-subtitle">Discover posts from the entire community</p>
+        <h1>🌟 Discover</h1>
+        <p className="feed-subtitle">Explore posts from the entire community</p>
       </div>
 
       <div className="posts-list">
