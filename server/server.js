@@ -44,6 +44,8 @@ import bookmarksRoutes from './routes/bookmarks.js';
 import passkeyRoutes from './routes/passkey.js';
 import eventsRoutes from './routes/events.js';
 
+// Import middleware
+import auth from './middleware/auth.js';
 
 // Import rate limiters
 import {
@@ -66,6 +68,7 @@ connectDB();
 
 // Import models
 import Notification from './models/Notification.js';
+import User from './models/User.js';
 import Message from './models/Message.js';
 import User from './models/User.js';
 
