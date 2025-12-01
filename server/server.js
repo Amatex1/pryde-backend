@@ -19,8 +19,8 @@ import cookieParser from "cookie-parser";
 // Import routes
 import authRoutes from './routes/auth.js';
 import usersRoutes from './routes/users.js';
-// PHASE 1 REFACTOR: Friends system removed - use follow system instead
-// import friendsRoutes from './routes/friends.js';
+// PHASE 1 REFACTOR: Friends system kept for backward compatibility
+import friendsRoutes from './routes/friends.js';
 import followRoutes from './routes/follow.js';
 import postsRoutes from './routes/posts.js';
 import feedRoutes from './routes/feed.js'; // PHASE 2: Global and Following feeds
@@ -209,8 +209,8 @@ const onlineUsers = new Map(); // userId -> socketId
 // Routes with specific rate limiters
 app.use('/api/auth', authRoutes);
 app.use('/api/users', usersRoutes);
-// PHASE 1 REFACTOR: Friends routes disabled - use /api/follow instead
-// app.use('/api/friends', friendsRoutes);
+// PHASE 1 REFACTOR: Friends routes kept for backward compatibility
+app.use('/api/friends', friendsRoutes);
 app.use('/api/follow', followRoutes);
 app.use('/api/posts', postsRoutes);
 app.use('/api/feed', feedRoutes); // PHASE 2: Global and Following feeds
