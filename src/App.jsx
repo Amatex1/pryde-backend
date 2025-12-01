@@ -12,7 +12,8 @@ import SecuritySettings from './pages/SecuritySettings';
 import PrivacySettings from './pages/PrivacySettings';
 import Bookmarks from './pages/Bookmarks';
 import Events from './pages/Events';
-import Friends from './pages/Friends';
+// PHASE 1 REFACTOR: Friends page removed
+// import Friends from './pages/Friends';
 import Messages from './pages/Messages';
 import Notifications from './pages/Notifications';
 import Admin from './pages/Admin';
@@ -94,8 +95,9 @@ function App() {
           <Route path="/settings/privacy" element={<PrivateRoute><PrivacySettings /></PrivateRoute>} />
           <Route path="/bookmarks" element={<PrivateRoute><Bookmarks /></PrivateRoute>} />
           <Route path="/events" element={<PrivateRoute><Events /></PrivateRoute>} />
-          <Route path="/connections" element={<PrivateRoute><Friends /></PrivateRoute>} />
-          <Route path="/friends" element={<PrivateRoute><Friends /></PrivateRoute>} /> {/* Legacy redirect */}
+          {/* PHASE 1 REFACTOR: Friends/Connections routes removed */}
+          {/* <Route path="/connections" element={<PrivateRoute><Friends /></PrivateRoute>} /> */}
+          {/* <Route path="/friends" element={<PrivateRoute><Friends /></PrivateRoute>} /> */}
           <Route path="/messages" element={<PrivateRoute><Messages /></PrivateRoute>} />
           <Route path="/notifications" element={<PrivateRoute><Notifications /></PrivateRoute>} />
           <Route path="/hashtag/:tag" element={<PrivateRoute><Hashtag /></PrivateRoute>} />

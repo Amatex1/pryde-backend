@@ -185,10 +185,11 @@ function Navbar() {
             <span className="nav-icon">🏠</span>
             <span className="nav-label">Feed</span>
           </Link>
-          <Link to="/connections" className="nav-button" title="Connections">
+          {/* PHASE 1 REFACTOR: Connections link removed */}
+          {/* <Link to="/connections" className="nav-button" title="Connections">
             <span className="nav-icon">👥</span>
             <span className="nav-label">Connections</span>
-          </Link>
+          </Link> */}
           <Link to="/messages" className="nav-button" title="Messages">
             <span className="nav-icon">💬</span>
             <span className="nav-label">Messages</span>
