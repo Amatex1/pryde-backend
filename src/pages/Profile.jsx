@@ -945,15 +945,8 @@ function Profile() {
                 </div>
               )}
 
+              {/* PHASE 1 REFACTOR: Follower/following counts removed */}
               <div className="profile-stats">
-                <div className="stat-item">
-                  <span className="stat-value">{user.followers?.length || 0}</span>
-                  <span className="stat-label">Followers</span>
-                </div>
-                <div className="stat-item">
-                  <span className="stat-value">{user.following?.length || 0}</span>
-                  <span className="stat-label">Following</span>
-                </div>
                 <div className="stat-item">
                   <span className="stat-value">{posts.length}</span>
                   <span className="stat-label">Posts</span>
@@ -1841,41 +1834,7 @@ function Profile() {
               </div>
             )}
 
-            <div className="sidebar-card glossy">
-              <h3 className="sidebar-title">Followers</h3>
-              {user.followers && user.followers.length > 0 ? (
-                <div className="friends-grid">
-                  {user.followers.slice(0, 6).map((follower) => (
-                    follower.isActive === false ? (
-                      <div
-                        key={follower._id}
-                        className="friend-item deactivated-friend"
-                        onClick={() => alert('This user has deactivated their account.')}
-                        style={{ textDecoration: 'none', color: 'inherit', cursor: 'pointer' }}
-                      >
-                        <div className="friend-avatar deactivated-avatar">
-                          <span>?</span>
-                        </div>
-                        <div className="friend-name deactivated-text">{follower.displayName}</div>
-                      </div>
-                    ) : (
-                      <Link key={follower._id} to={`/profile/${follower.username}`} className="friend-item" style={{ textDecoration: 'none', color: 'inherit' }}>
-                        <div className="friend-avatar">
-                          {follower.profilePhoto ? (
-                            <img src={getImageUrl(follower.profilePhoto)} alt={follower.username} />
-                          ) : (
-                            <span>{follower.displayName?.charAt(0).toUpperCase()}</span>
-                          )}
-                        </div>
-                        <div className="friend-name">{follower.displayName}</div>
-                      </Link>
-                    )
-                  ))}
-                </div>
-              ) : (
-                <p className="empty-text">No followers yet</p>
-              )}
-            </div>
+            {/* PHASE 1 REFACTOR: Followers sidebar removed (follower counts hidden) */}
           </div>
         </div>
       </div>
