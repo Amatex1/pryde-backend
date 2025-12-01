@@ -62,9 +62,10 @@ function App() {
           initializeQuietMode(user);
 
           // Set up interval to check quiet hours every minute
+          // IMPORTANT: Read from localStorage to get the latest user preferences
           const quietHoursInterval = setInterval(() => {
-            const manualQuietMode = user.privacySettings?.quietModeEnabled || false;
-            const autoQuietHours = user.privacySettings?.autoQuietHoursEnabled !== false;
+            const manualQuietMode = localStorage.getItem('quietMode') === 'true';
+            const autoQuietHours = localStorage.getItem('autoQuietHours') !== 'false';
             const isActive = shouldQuietModeBeActive(manualQuietMode, autoQuietHours);
             applyQuietMode(isActive);
           }, 60000); // Check every minute

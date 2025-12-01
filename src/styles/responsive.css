@@ -253,14 +253,16 @@
 
 @media (prefers-contrast: high) {
   /* Increase contrast for better readability */
+  /* Respect theme system - don't force dark background */
   body {
-    background: #000;
-    color: #fff;
+    /* Use theme colors instead of forcing black */
+    background: var(--bg-light);
+    color: var(--text-main);
   }
 
   .card-surface {
-    background: #1a1a1a;
-    border: 2px solid #fff;
+    background: var(--card-surface);
+    border: 2px solid var(--border-light);
   }
 
   button {

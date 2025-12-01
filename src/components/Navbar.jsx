@@ -13,7 +13,14 @@ import './Navbar.css';
 function useDarkMode() {
   const [isDark, setIsDark] = useState(() => {
     const saved = localStorage.getItem('darkMode');
-    return saved === 'true';
+    const darkModeEnabled = saved === 'true';
+    // Apply immediately on mount to prevent flickering
+    if (darkModeEnabled) {
+      document.documentElement.setAttribute('data-theme', 'dark');
+    } else {
+      document.documentElement.removeAttribute('data-theme');
+    }
+    return darkModeEnabled;
   });
 
   const toggleDarkMode = () => {
@@ -61,8 +68,13 @@ function Navbar() {
     setQuietMode(newValue);
     localStorage.setItem('quietMode', newValue);
 
+    // When manually toggling OFF, also disable auto quiet hours to prevent it from re-enabling
+    if (!newValue) {
+      localStorage.setItem('autoQuietHours', 'false');
+    }
+
     // Get auto quiet hours setting
-    const autoQuietHours = localStorage.getItem('autoQuietHours') !== 'false';
+    const autoQuietHours = !newValue ? false : (localStorage.getItem('autoQuietHours') !== 'false');
 
     // Determine if quiet mode should be active
     const isActive = shouldQuietModeBeActive(newValue, autoQuietHours);
@@ -70,13 +82,18 @@ function Navbar() {
 
     // Sync with backend
     try {
-      await api.patch('/users/me/settings', { quietModeEnabled: newValue });
+      const updateData = { quietModeEnabled: newValue };
+      // If turning off, also disable auto quiet hours
+      if (!newValue) {
+        updateData.autoQuietHoursEnabled = false;
+      }
+      await api.patch('/users/me/settings', updateData);
     } catch (error) {
       console.error('Failed to sync quiet mode:', error);
     }
   };
 
-  // Fetch current user data and sync quiet mode
+  // Fetch current user data and sync quiet mode (only on mount, not continuously)
   useEffect(() => {
     const fetchUserData = async () => {
       try {
@@ -85,17 +102,21 @@ function Navbar() {
         // Update localStorage with fresh data
         localStorage.setItem('user', JSON.stringify(response.data));
 
-        // Sync quiet mode from backend
-        const backendQuietMode = response.data.privacySettings?.quietModeEnabled || false;
-        if (backendQuietMode !== quietMode) {
+        // Only sync quiet mode from backend on initial load if not already set locally
+        const localQuietMode = localStorage.getItem('quietMode');
+        if (localQuietMode === null) {
+          // First time loading - use backend value
+          const backendQuietMode = response.data.privacySettings?.quietModeEnabled || false;
+          const backendAutoQuietHours = response.data.privacySettings?.autoQuietHoursEnabled !== false;
+
           setQuietMode(backendQuietMode);
           localStorage.setItem('quietMode', backendQuietMode);
-          if (backendQuietMode) {
-            document.documentElement.setAttribute('data-quiet-mode', 'true');
-          } else {
-            document.documentElement.removeAttribute('data-quiet-mode');
-          }
+          localStorage.setItem('autoQuietHours', backendAutoQuietHours);
+
+          const isActive = shouldQuietModeBeActive(backendQuietMode, backendAutoQuietHours);
+          applyQuietMode(isActive);
         }
+        // If already set locally, don't override (user may have just toggled it)
       } catch (error) {
         console.error('Failed to fetch user data:', error);
       }
