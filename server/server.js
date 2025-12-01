@@ -24,6 +24,8 @@ import usersRoutes from './routes/users.js';
 import followRoutes from './routes/follow.js';
 import postsRoutes from './routes/posts.js';
 import feedRoutes from './routes/feed.js'; // PHASE 2: Global and Following feeds
+import journalsRoutes from './routes/journals.js'; // PHASE 3: Journaling
+import longformRoutes from './routes/longform.js'; // PHASE 3: Longform posts
 import uploadRoutes from './routes/upload.js';
 import notificationsRoutes from './routes/notifications.js';
 import messagesRoutes from './routes/messages.js';
@@ -210,6 +212,8 @@ app.use('/api/users', usersRoutes);
 app.use('/api/follow', followRoutes);
 app.use('/api/posts', postsRoutes);
 app.use('/api/feed', feedRoutes); // PHASE 2: Global and Following feeds
+app.use('/api/journals', journalsRoutes); // PHASE 3: Journaling
+app.use('/api/longform', longformRoutes); // PHASE 3: Longform posts
 app.use('/api/upload', uploadRoutes);
 app.use('/api/notifications', notificationsRoutes);
 app.use('/api/messages', messagesRoutes);
