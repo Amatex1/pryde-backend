@@ -17,7 +17,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 2rem;
+  gap: 1rem;
 }
 
 .navbar-brand {
@@ -28,6 +28,7 @@
   font-size: 1.5rem;
   font-weight: bold;
   transition: all 0.3s ease;
+  flex-shrink: 0;
 }
 
 .navbar-brand:hover {
@@ -486,6 +487,22 @@
   color: #c0392b;
 }
 
+/* Large tablets and small desktops - adjust spacing */
+@media (max-width: 1200px) {
+  .navbar-container {
+    gap: 0.75rem;
+  }
+
+  .global-search {
+    max-width: 400px;
+    min-width: 150px;
+  }
+
+  .brand-text {
+    font-size: 1.25rem;
+  }
+}
+
 /* Tablet - hide nav button labels, show only icons */
 @media (max-width: 1024px) {
   .nav-button .nav-label {
@@ -495,6 +512,14 @@
   .nav-button {
     padding: 0.625rem;
     min-width: 44px;
+  }
+
+  .global-search {
+    max-width: 300px;
+  }
+
+  .navbar-container {
+    gap: 0.5rem;
   }
 }
 

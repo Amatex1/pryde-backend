@@ -30,7 +30,13 @@ function Longform() {
   const fetchLongforms = async () => {
     try {
       setLoading(true);
-      const response = await api.get(`/longform/user/${currentUser.id}`);
+      const userId = currentUser?._id || currentUser?.id;
+      if (!userId) {
+        console.error('No user ID found');
+        setLoading(false);
+        return;
+      }
+      const response = await api.get(`/longform/user/${userId}`);
       setLongforms(response.data);
     } catch (error) {
       console.error('Failed to fetch longforms:', error);

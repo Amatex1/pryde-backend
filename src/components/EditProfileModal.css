@@ -465,6 +465,8 @@
   cursor: pointer;
   transition: all 0.3s ease;
   font-size: 1rem;
+  min-width: 120px;
+  text-align: center;
 }
 
 .btn-cancel {
@@ -515,8 +517,27 @@
 
 /* Dark mode for select dropdown options */
 [data-theme="dark"] .form-group select option {
+  background: #2d2d2d;
+  color: #ffffff;
+}
+
+/* Ensure select dropdowns are visible in dark mode */
+[data-theme="dark"] .form-group select {
   background: var(--background-dark);
+  border-color: var(--border-dark);
   color: var(--text-light);
+}
+
+/* Fix for interest dropdown in dark mode */
+[data-theme="dark"] .interest-dropdown {
+  background: var(--background-dark);
+  border-color: var(--border-dark);
+  color: var(--text-light);
+}
+
+[data-theme="dark"] .interest-dropdown option {
+  background: #2d2d2d;
+  color: #ffffff;
 }
 
 [data-theme="dark"] .photo-preview,
