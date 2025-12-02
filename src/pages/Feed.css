@@ -437,21 +437,47 @@
   justify-content: center;
   width: 1.25rem;
   height: 1.25rem;
-  background: linear-gradient(135deg, #FFD700 0%, #FFA500 50%, #FFD700 100%);
-  color: #1a1a1a;
+  background: linear-gradient(135deg, var(--pryde-purple) 0%, var(--electric-blue) 100%);
+  color: white;
   border-radius: 50%;
-  font-size: 0.7rem;
+  font-size: 0.65rem;
   font-weight: 900;
   flex-shrink: 0;
   box-shadow:
-    0 0 0 2.5px #FFD700,
-    0 0 0 3px rgba(255, 215, 0, 0.3),
-    0 2px 8px rgba(255, 215, 0, 0.5),
-    inset 0 1px 3px rgba(255, 255, 255, 0.5),
-    inset 0 -1px 3px rgba(0, 0, 0, 0.2);
+    0 0 0 2px rgba(108, 92, 231, 0.2),
+    0 2px 8px rgba(108, 92, 231, 0.3);
   position: relative;
-  text-shadow: 0 0.5px 1px rgba(255, 255, 255, 0.8);
-  animation: shimmer 3s ease-in-out infinite;
+  margin-left: 0.3rem;
+  transition: all 0.3s ease;
+}
+
+.verified-badge::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.3) 0%, transparent 50%);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.verified-badge:hover {
+  transform: scale(1.1);
+  box-shadow:
+    0 0 0 2px rgba(108, 92, 231, 0.3),
+    0 4px 12px rgba(108, 92, 231, 0.4);
+}
+
+[data-theme="dark"] .verified-badge {
+  background: linear-gradient(135deg, var(--electric-blue) 0%, var(--pryde-purple) 100%);
+  box-shadow:
+    0 0 0 2px rgba(9, 132, 227, 0.2),
+    0 2px 8px rgba(9, 132, 227, 0.3);
+}
+
+[data-theme="dark"] .verified-badge:hover {
+  box-shadow:
+    0 0 0 2px rgba(9, 132, 227, 0.3),
+    0 4px 12px rgba(9, 132, 227, 0.4);
 }
 
 .verified-badge::before {
