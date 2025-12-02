@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { isAuthenticated } from '../utils/auth';
 import prydeLogo from '../assets/pryde-logo.png';
+import Footer from '../components/Footer';
 import './Home.css';
 
 function Home() {
@@ -23,9 +24,14 @@ function Home() {
             </p>
             <div className="hero-buttons">
               {isAuth ? (
-                <Link to="/feed" className="btn-primary">
-                  Go to Feed
-                </Link>
+                <>
+                  <Link to="/feed" className="btn-primary">
+                    Go to Feed
+                  </Link>
+                  <Link to="/discover" className="btn-secondary">
+                    Explore Community Tags
+                  </Link>
+                </>
               ) : (
                 <>
                   <Link to="/register" className="btn-primary">
@@ -266,32 +272,7 @@ function Home() {
       </section>
 
       {/* Footer */}
-      <footer className="home-footer">
-        <div className="footer-content">
-          <div className="footer-brand">
-            <img src={prydeLogo} alt="Pryde Social Logo" className="footer-logo" />
-            <h3 className="brand-gradient">Pryde Social</h3>
-            <p>A calm, queer-first space for introverts and deep thinkers.</p>
-          </div>
-          <div className="footer-links">
-            <div className="footer-column">
-              <h4>Legal</h4>
-              <Link to="/terms">Terms of Service</Link>
-              <Link to="/privacy">Privacy Policy</Link>
-              <Link to="/community">Community Guidelines</Link>
-              <Link to="/safety">Safety Center</Link>
-            </div>
-            <div className="footer-column">
-              <h4>Support</h4>
-              <Link to="/contact">Contact Us</Link>
-              <Link to="/faq">FAQ</Link>
-            </div>
-          </div>
-        </div>
-        <div className="footer-bottom">
-          <p>&copy; 2024 Pryde Social. All rights reserved. 18+ only.</p>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }
