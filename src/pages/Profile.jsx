@@ -76,6 +76,7 @@ function Profile() {
   const [editPostText, setEditPostText] = useState('');
   const [editPostVisibility, setEditPostVisibility] = useState('friends');
   const [reactionDetailsModal, setReactionDetailsModal] = useState({ isOpen: false, reactions: [], likes: [] });
+  const editTextareaRef = useRef(null);
 
   useEffect(() => {
     fetchUserProfile();
@@ -87,6 +88,15 @@ function Profile() {
       checkPrivacyPermissions();
     }
   }, [id]);
+
+  // Auto-resize edit textarea based on content
+  useEffect(() => {
+    if (editTextareaRef.current && editingPostId) {
+      const textarea = editTextareaRef.current;
+      textarea.style.height = 'auto';
+      textarea.style.height = Math.max(textarea.scrollHeight, 100) + 'px';
+    }
+  }, [editPostText, editingPostId]);
 
   // OPTIONAL FEATURES: Fetch content when tab changes
   useEffect(() => {
@@ -1270,9 +1280,9 @@ function Profile() {
                                     )}
                                     <button
                                       className="dropdown-item delete"
-                                      onClick={() => {
-                                        handleDeletePost(post._id);
+                                      onClick={async () => {
                                         setOpenDropdownId(null);
+                                        await handleDeletePost(post._id);
                                       }}
                                     >
                                       🗑️ Delete
@@ -1299,10 +1309,12 @@ function Profile() {
                         {editingPostId === post._id ? (
                           <div className="edit-post-container">
                             <textarea
+                              ref={editTextareaRef}
                               value={editPostText}
                               onChange={(e) => setEditPostText(e.target.value)}
                               className="edit-post-textarea"
                               placeholder="What's on your mind?"
+                              autoFocus
                             />
                             <div className="edit-post-actions">
                               {/* PHASE 1 REFACTOR: Simplified privacy options */}
@@ -1443,9 +1455,8 @@ function Profile() {
                           <button
                             className={`action-btn ${isLiked || post.reactions?.some(r => r.user?._id === currentUser?.id || r.user === currentUser?.id) ? 'liked' : ''}`}
                             onClick={() => {
-                              // PHASE 1 REFACTOR: Removed reaction list modal (like counts hidden)
-                              // Just toggle like on click
-                              handleLike(post._id);
+                              // Click to react with default emoji (heart)
+                              handlePostReaction(post._id, '❤️');
                             }}
                             onMouseEnter={() => {
                               // Hover shows emoji picker on desktop
@@ -1468,9 +1479,22 @@ function Profile() {
                             }}
                           >
                             <span>
-                              {post.reactions?.find(r => r.user?._id === currentUser?.id || r.user === currentUser?.id)?.emoji || (isLiked ? '❤️' : '🤍')}
-                            </span> React {/* PHASE 1 REFACTOR: Like count removed */}
+                              {post.reactions?.find(r => r.user?._id === currentUser?.id || r.user === currentUser?.id)?.emoji || '🤍'}
+                            </span> React
                           </button>
+                          {post.reactions?.length > 0 && (
+                            <button
+                              className="reaction-count-btn"
+                              onClick={() => setReactionDetailsModal({
+                                isOpen: true,
+                                reactions: post.reactions || [],
+                                likes: post.likes || []
+                              })}
+                              title="See who reacted"
+                            >
+                              ({post.reactions.length})
+                            </button>
+                          )}
                           {showReactionPicker === `post-${post._id}` && (
                             <div
                               className="reaction-picker"
@@ -1612,8 +1636,20 @@ function Profile() {
                                               }}
                                             >
                                               {comment.reactions?.find(r => r.user?._id === currentUser?.id || r.user === currentUser?.id)?.emoji || '👍'} Like
-                                              {comment.reactions?.length > 0 && ` (${comment.reactions.length})`}
                                             </button>
+                                            {comment.reactions?.length > 0 && (
+                                              <button
+                                                className="reaction-count-btn"
+                                                onClick={() => setReactionDetailsModal({
+                                                  isOpen: true,
+                                                  reactions: comment.reactions || [],
+                                                  likes: []
+                                                })}
+                                                title="See who reacted"
+                                              >
+                                                ({comment.reactions.length})
+                                              </button>
+                                            )}
                                             {showReactionPicker === `comment-${comment._id}` && (
                                               <div
                                                 className="reaction-picker"
@@ -1810,8 +1846,20 @@ function Profile() {
                                                       }}
                                                     >
                                                       {reply.reactions?.find(r => r.user?._id === currentUser?.id || r.user === currentUser?.id)?.emoji || '👍'} Like
-                                                      {reply.reactions?.length > 0 && ` (${reply.reactions.length})`}
                                                     </button>
+                                                    {reply.reactions?.length > 0 && (
+                                                      <button
+                                                        className="reaction-count-btn"
+                                                        onClick={() => setReactionDetailsModal({
+                                                          isOpen: true,
+                                                          reactions: reply.reactions || [],
+                                                          likes: []
+                                                        })}
+                                                        title="See who reacted"
+                                                      >
+                                                        ({reply.reactions.length})
+                                                      </button>
+                                                    )}
                                                     {showReactionPicker === `reply-${reply._id}` && (
                                                       <div
                                                         className="reaction-picker"

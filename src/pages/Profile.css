@@ -1140,7 +1140,33 @@
 /* Reaction picker container */
 .reaction-container {
   position: relative;
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+/* Reaction count button */
+.reaction-count-btn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  font-weight: 500;
+}
+
+.reaction-count-btn:hover {
+  background: var(--soft-lavender);
+  color: var(--pryde-purple);
+  transform: scale(1.05);
+}
+
+[data-theme="dark"] .reaction-count-btn:hover {
+  background: rgba(108, 92, 231, 0.2);
+  color: var(--electric-blue);
 }
 
 /* Reaction picker popup */
@@ -1613,4 +1639,118 @@
     min-height: 48px;
     flex: 1;
   }
+}
+
+/* Edit Post Styles */
+.edit-post-container {
+  margin: 1rem 0;
+}
+
+.edit-post-textarea {
+  width: 100%;
+  padding: 1rem;
+  border-radius: 12px;
+  border: 2px solid var(--border-light);
+  outline: none;
+  font-size: 1rem;
+  color: var(--text-main);
+  background: var(--card-surface);
+  resize: none;
+  font-family: inherit;
+  min-height: 100px;
+  transition: all 0.3s ease;
+  overflow: hidden;
+}
+
+.edit-post-textarea:focus {
+  border-color: var(--pryde-purple);
+  box-shadow: 0 0 0 3px rgba(108, 92, 231, 0.1);
+}
+
+[data-theme="dark"] .edit-post-textarea {
+  background: var(--background-dark);
+  border-color: var(--border-dark);
+  color: var(--text-light);
+}
+
+.edit-post-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 0.75rem;
+}
+
+.edit-post-buttons {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.visibility-select {
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  border: 2px solid var(--border-light);
+  background: var(--background-light);
+  color: var(--text-main);
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.visibility-select:focus {
+  outline: none;
+  border-color: var(--pryde-purple);
+  box-shadow: 0 0 0 3px rgba(108, 92, 231, 0.1);
+}
+
+[data-theme="dark"] .visibility-select {
+  background: var(--background-dark);
+  border-color: var(--border-dark);
+  color: var(--text-light);
+}
+
+[data-theme="dark"] .visibility-select option {
+  background: #2d2d2d;
+  color: #ffffff;
+}
+
+.btn-save-edit,
+.btn-cancel-edit {
+  padding: 0.5rem 1.5rem;
+  border-radius: 8px;
+  border: none;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-save-edit {
+  background: var(--pryde-purple);
+  color: white;
+}
+
+.btn-save-edit:hover {
+  background: var(--electric-blue);
+  transform: translateY(-2px);
+}
+
+.btn-cancel-edit {
+  background: var(--background-light);
+  color: var(--text-main);
+  border: 2px solid var(--border-light);
+}
+
+.btn-cancel-edit:hover {
+  background: var(--border-light);
+}
+
+[data-theme="dark"] .btn-cancel-edit {
+  background: var(--background-dark);
+  border-color: var(--border-dark);
+  color: var(--text-light);
+}
+
+[data-theme="dark"] .btn-cancel-edit:hover {
+  background: rgba(255, 255, 255, 0.1);
 }
