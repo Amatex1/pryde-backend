@@ -188,9 +188,33 @@ function Navbar() {
           </div>
 
           <div className="mobile-menu-items">
+            <Link to="/feed" className="mobile-menu-item" onClick={() => setShowMobileMenu(false)}>
+              <span className="mobile-menu-icon">🏠</span>
+              <span>Feed</span>
+            </Link>
+            <Link to="/feed/global" className="mobile-menu-item" onClick={() => setShowMobileMenu(false)}>
+              <span className="mobile-menu-icon">🌟</span>
+              <span>Discover</span>
+            </Link>
+            <Link to="/discover" className="mobile-menu-item" onClick={() => setShowMobileMenu(false)}>
+              <span className="mobile-menu-icon">🏷️</span>
+              <span>Tags</span>
+            </Link>
+            <Link to="/journal" className="mobile-menu-item" onClick={() => setShowMobileMenu(false)}>
+              <span className="mobile-menu-icon">📔</span>
+              <span>Journal</span>
+            </Link>
+            <Link to="/longform" className="mobile-menu-item" onClick={() => setShowMobileMenu(false)}>
+              <span className="mobile-menu-icon">📝</span>
+              <span>Longform</span>
+            </Link>
+            <div className="mobile-menu-divider"></div>
             <Link to="/messages" className="mobile-menu-item" onClick={() => setShowMobileMenu(false)}>
               <span className="mobile-menu-icon">💬</span>
               <span>Messages</span>
+              {totalUnreadMessages > 0 && (
+                <span className="mobile-menu-badge">{totalUnreadMessages}</span>
+              )}
             </Link>
             <Link to="/notifications" className="mobile-menu-item" onClick={() => setShowMobileMenu(false)}>
               <span className="mobile-menu-icon">🔔</span>
@@ -210,11 +234,11 @@ function Navbar() {
                 <span>Admin Panel</span>
               </Link>
             )}
+            <div className="mobile-menu-divider"></div>
             <Link to="/settings" className="mobile-menu-item" onClick={() => setShowMobileMenu(false)}>
               <span className="mobile-menu-icon">⚙️</span>
               <span>Settings</span>
             </Link>
-            <div className="mobile-menu-divider"></div>
             <DarkModeToggle />
             <div className="mobile-menu-divider"></div>
             <button onClick={() => { handleLogout(); setShowMobileMenu(false); }} className="mobile-menu-item mobile-menu-logout">

@@ -2,20 +2,34 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.json" />
+
+    <!-- Icons -->
     <link rel="icon" type="image/png" href="/pryde-logo.png" />
     <link rel="apple-touch-icon" href="/pryde-logo.png" />
+    <link rel="apple-touch-icon" sizes="192x192" href="/pryde-logo.png" />
+    <link rel="apple-touch-icon" sizes="512x512" href="/pryde-logo.png" />
 
     <!-- Optimized viewport for all devices: phones, tablets, and desktops -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover" />
 
-    <!-- Mobile app capabilities -->
+    <!-- PWA Meta Tags -->
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Pryde Social" />
 
-    <!-- Theme color for mobile browsers -->
+    <!-- Theme colors -->
     <meta name="theme-color" content="#6C5CE7" />
     <meta name="msapplication-TileColor" content="#6C5CE7" />
+    <meta name="msapplication-navbutton-color" content="#6C5CE7" />
+
+    <!-- SEO and Description -->
+    <meta name="description" content="A calm, queer-first social platform built for introverts and deep thinkers. Connect with the LGBTQ+ community in a safe, supportive space." />
+    <meta name="keywords" content="LGBTQ+, social network, queer, pride, community, safe space" />
+    <meta name="author" content="Pryde Social" />
 
     <!-- Prevent automatic phone number detection on iOS -->
     <meta name="format-detection" content="telephone=no" />
@@ -23,7 +37,10 @@
     <!-- Optimize for high DPI screens (Retina, etc.) -->
     <meta name="HandheldFriendly" content="true" />
 
-    <title>Pryde Social - Connect with Friends</title>
+    <!-- iOS Splash Screens -->
+    <link rel="apple-touch-startup-image" href="/pryde-logo.png" />
+
+    <title>Pryde Social - LGBTQ+ Social Network</title>
   </head>
   <body>
     <div id="root"></div>
