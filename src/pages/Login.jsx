@@ -19,6 +19,16 @@ function Login({ setIsAuth }) {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
+  // Apply user's dark mode preference
+  useEffect(() => {
+    const savedDarkMode = localStorage.getItem('darkMode');
+    if (savedDarkMode === 'true') {
+      document.documentElement.setAttribute('data-theme', 'dark');
+    } else {
+      document.documentElement.removeAttribute('data-theme');
+    }
+  }, []);
+
   // Check if redirected due to expired token
   useEffect(() => {
     // Clear manual logout flag when login page loads

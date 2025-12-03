@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { useEffect } from 'react';
 import { isAuthenticated } from '../utils/auth';
 import prydeLogo from '../assets/pryde-logo.png';
 import Footer from '../components/Footer';
@@ -6,6 +7,16 @@ import './Home.css';
 
 function Home() {
   const isAuth = isAuthenticated();
+
+  // Apply user's dark mode preference
+  useEffect(() => {
+    const savedDarkMode = localStorage.getItem('darkMode');
+    if (savedDarkMode === 'true') {
+      document.documentElement.setAttribute('data-theme', 'dark');
+    } else {
+      document.documentElement.removeAttribute('data-theme');
+    }
+  }, []);
 
   return (
     <div className="home-page">

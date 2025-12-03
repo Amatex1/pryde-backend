@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../utils/api';
 import { setAuthToken, setCurrentUser } from '../utils/auth';
@@ -19,6 +19,16 @@ function Register({ setIsAuth }) {
   const [loading, setLoading] = useState(false);
   const [showPasskeySetup, setShowPasskeySetup] = useState(false);
   const navigate = useNavigate();
+
+  // Apply user's dark mode preference
+  useEffect(() => {
+    const savedDarkMode = localStorage.getItem('darkMode');
+    if (savedDarkMode === 'true') {
+      document.documentElement.setAttribute('data-theme', 'dark');
+    } else {
+      document.documentElement.removeAttribute('data-theme');
+    }
+  }, []);
 
   const handleChange = (e) => {
     const value = e.target.type === 'checkbox' ? e.target.checked : e.target.value;

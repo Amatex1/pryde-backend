@@ -1025,9 +1025,8 @@ function Feed() {
                         <button
                           className={`action-btn ${isLiked || post.reactions?.some(r => r.user?._id === currentUser?.id || r.user === currentUser?.id) ? 'liked' : ''}`}
                           onClick={() => {
-                            // PHASE 1 REFACTOR: Removed reaction list modal (like counts hidden)
-                            // Just toggle like on click
-                            handleLike(post._id);
+                            // Click to react with default emoji (heart)
+                            handlePostReaction(post._id, '❤️');
                           }}
                           onMouseEnter={() => {
                             // Hover shows emoji picker on desktop
@@ -1050,8 +1049,8 @@ function Feed() {
                           }}
                         >
                           <span>
-                            {post.reactions?.find(r => r.user?._id === currentUser?.id || r.user === currentUser?.id)?.emoji || (isLiked ? '❤️' : '🤍')}
-                          </span> React {/* PHASE 1 REFACTOR: Like count removed */}
+                            {post.reactions?.find(r => r.user?._id === currentUser?.id || r.user === currentUser?.id)?.emoji || '🤍'}
+                          </span> React
                         </button>
                         {showReactionPicker === `post-${post._id}` && (
                           <div
