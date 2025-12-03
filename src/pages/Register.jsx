@@ -12,6 +12,9 @@ function Register({ setIsAuth }) {
     password: '',
     displayName: '',
     birthday: '',
+    birthMonth: '',
+    birthDay: '',
+    birthYear: '',
     termsAccepted: false,
     isAlly: false // PHASE 6: Ally system
   });
@@ -42,14 +45,17 @@ function Register({ setIsAuth }) {
     e.preventDefault();
     setError('');
 
-    // Validate birthday is provided
-    if (!formData.birthday) {
+    // Validate birthday dropdowns are all filled
+    if (!formData.birthMonth || !formData.birthDay || !formData.birthYear) {
       setError('Please enter your full birthday');
       return;
     }
 
+    // Construct birthday from dropdowns (YYYY-MM-DD format)
+    const birthday = `${formData.birthYear}-${formData.birthMonth.padStart(2, '0')}-${formData.birthDay.padStart(2, '0')}`;
+
     // Calculate age from birthday
-    const birthDate = new Date(formData.birthday);
+    const birthDate = new Date(birthday);
     const today = new Date();
     let age = today.getFullYear() - birthDate.getFullYear();
     const monthDiff = today.getMonth() - birthDate.getMonth();
@@ -63,6 +69,9 @@ function Register({ setIsAuth }) {
       setError('You must be 18 years or older to register');
       return;
     }
+
+    // Update formData with constructed birthday
+    formData.birthday = birthday;
 
     // Validate terms accepted
     if (!formData.termsAccepted) {
@@ -220,17 +229,57 @@ function Register({ setIsAuth }) {
           </div>
 
           <div className="form-group">
-            <label htmlFor="birthday">Birthday <span style={{ color: 'var(--pryde-purple)', fontWeight: 'bold' }}>*</span></label>
-            <input
-              type="date"
-              id="birthday"
-              name="birthday"
-              value={formData.birthday}
-              onChange={handleChange}
-              required
-              max={new Date(new Date().setFullYear(new Date().getFullYear() - 18)).toISOString().split('T')[0]}
-              className="form-input glossy"
-            />
+            <label>Birthday <span style={{ color: 'var(--pryde-purple)', fontWeight: 'bold' }}>*</span></label>
+            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1.5fr', gap: '0.75rem' }}>
+              <select
+                name="birthMonth"
+                value={formData.birthMonth}
+                onChange={handleChange}
+                required
+                className="form-input glossy"
+                style={{ padding: '0.75rem' }}
+              >
+                <option value="">Month</option>
+                <option value="1">January</option>
+                <option value="2">February</option>
+                <option value="3">March</option>
+                <option value="4">April</option>
+                <option value="5">May</option>
+                <option value="6">June</option>
+                <option value="7">July</option>
+                <option value="8">August</option>
+                <option value="9">September</option>
+                <option value="10">October</option>
+                <option value="11">November</option>
+                <option value="12">December</option>
+              </select>
+              <select
+                name="birthDay"
+                value={formData.birthDay}
+                onChange={handleChange}
+                required
+                className="form-input glossy"
+                style={{ padding: '0.75rem' }}
+              >
+                <option value="">Day</option>
+                {Array.from({ length: 31 }, (_, i) => i + 1).map(day => (
+                  <option key={day} value={day}>{day}</option>
+                ))}
+              </select>
+              <select
+                name="birthYear"
+                value={formData.birthYear}
+                onChange={handleChange}
+                required
+                className="form-input glossy"
+                style={{ padding: '0.75rem' }}
+              >
+                <option value="">Year</option>
+                {Array.from({ length: 100 }, (_, i) => new Date().getFullYear() - 18 - i).map(year => (
+                  <option key={year} value={year}>{year}</option>
+                ))}
+              </select>
+            </div>
             <small style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginTop: '0.25rem', display: 'block' }}>
               You must be 18 or older to register. Only your age will be shown on your profile.
             </small>
@@ -259,7 +308,15 @@ function Register({ setIsAuth }) {
               Pryde is a calm, queer-first creative platform for LGBTQ+ introverts, deep thinkers, and supportive allies.
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-              <label className="checkbox-label" style={{ padding: '0.75rem', background: formData.isAlly === false ? 'var(--pryde-purple)' : 'white', color: formData.isAlly === false ? 'white' : 'var(--text-main)', borderRadius: '6px', cursor: 'pointer', transition: 'all 0.3s ease' }}>
+              <label className="checkbox-label" style={{
+                padding: '0.75rem',
+                background: formData.isAlly === false ? 'var(--pryde-purple)' : 'var(--card-surface)',
+                color: formData.isAlly === false ? 'white' : 'var(--text-main)',
+                border: formData.isAlly === false ? '2px solid var(--pryde-purple)' : '2px solid var(--border-light)',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                transition: 'all 0.3s ease'
+              }}>
                 <input
                   type="radio"
                   name="identityType"
@@ -269,7 +326,15 @@ function Register({ setIsAuth }) {
                 />
                 <span>I am LGBTQ+</span>
               </label>
-              <label className="checkbox-label" style={{ padding: '0.75rem', background: formData.isAlly === true ? 'var(--pryde-purple)' : 'white', color: formData.isAlly === true ? 'white' : 'var(--text-main)', borderRadius: '6px', cursor: 'pointer', transition: 'all 0.3s ease' }}>
+              <label className="checkbox-label" style={{
+                padding: '0.75rem',
+                background: formData.isAlly === true ? 'var(--pryde-purple)' : 'var(--card-surface)',
+                color: formData.isAlly === true ? 'white' : 'var(--text-main)',
+                border: formData.isAlly === true ? '2px solid var(--pryde-purple)' : '2px solid var(--border-light)',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                transition: 'all 0.3s ease'
+              }}>
                 <input
                   type="radio"
                   name="identityType"
@@ -297,7 +362,7 @@ function Register({ setIsAuth }) {
             </label>
           </div>
 
-          <button type="submit" disabled={loading || !formData.birthday || !formData.termsAccepted} className="btn-primary glossy-gold">
+          <button type="submit" disabled={loading || !formData.birthMonth || !formData.birthDay || !formData.birthYear || !formData.termsAccepted} className="btn-primary glossy-gold">
             {loading ? 'Join Pryde' : 'Create Account'}
           </button>
         </form>

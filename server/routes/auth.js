@@ -643,8 +643,13 @@ router.post('/forgot-password', passwordResetLimiter, async (req, res) => {
     user.resetPasswordExpires = Date.now() + 3600000; // 1 hour
     await user.save();
 
-    // Send email with unhashed token
-    await sendPasswordResetEmail(user.email, resetToken, user.username);
+    // Send email with unhashed token (non-blocking - don't fail if email fails)
+    try {
+      await sendPasswordResetEmail(user.email, resetToken, user.username);
+    } catch (emailError) {
+      console.error('Failed to send password reset email:', emailError);
+      // Continue anyway - token is saved in database
+    }
 
     res.json({
       success: true,

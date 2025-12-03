@@ -48,9 +48,16 @@ function Home() {
                   <Link to="/register" className="btn-primary">
                     Join Pryde
                   </Link>
-                  <Link to="#features" className="btn-secondary">
+                  <a
+                    href="#features"
+                    className="btn-secondary"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' });
+                    }}
+                  >
                     Explore Features
-                  </Link>
+                  </a>
                 </>
               )}
             </div>
