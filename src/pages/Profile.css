@@ -119,6 +119,7 @@
   position: relative;
   margin-left: 0.35rem;
   transition: all 0.3s ease;
+  z-index: 1;
 }
 
 .verified-badge::before {
@@ -128,6 +129,7 @@
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.3) 0%, transparent 50%);
   border-radius: 50%;
   pointer-events: none;
+  z-index: -1;
 }
 
 .verified-badge:hover {
@@ -1188,9 +1190,22 @@
   gap: 0.5rem;
   width: max-content;
   box-shadow: 0 0.25rem 0.75rem rgba(0, 0, 0, 0.15);
-  z-index: 1000;
+  z-index: 9999;
   animation: reactionPopIn 0.2s ease-out;
   touch-action: manipulation;
+}
+
+/* Mobile reaction picker adjustments */
+@media (max-width: 768px) {
+  .reaction-picker {
+    position: fixed;
+    top: auto;
+    bottom: 5rem;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 99999;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  }
 }
 
 [data-theme="dark"] .reaction-picker {

@@ -1068,20 +1068,20 @@ function Feed() {
                               }
                             }}
                           >
-                            <button className="reaction-btn" onClick={() => handlePostReaction(post._id, '👍')} title="Like">👍</button>
-                            <button className="reaction-btn" onClick={() => handlePostReaction(post._id, '❤️')} title="Love">❤️</button>
-                            <button className="reaction-btn" onClick={() => handlePostReaction(post._id, '😂')} title="Haha">😂</button>
-                            <button className="reaction-btn" onClick={() => handlePostReaction(post._id, '😮')} title="Wow">😮</button>
-                            <button className="reaction-btn" onClick={() => handlePostReaction(post._id, '😢')} title="Sad">😢</button>
-                            <button className="reaction-btn" onClick={() => handlePostReaction(post._id, '😡')} title="Angry">😡</button>
-                            <button className="reaction-btn" onClick={() => handlePostReaction(post._id, '🤗')} title="Care">🤗</button>
-                            <button className="reaction-btn" onClick={() => handlePostReaction(post._id, '🎉')} title="Celebrate">🎉</button>
-                            <button className="reaction-btn" onClick={() => handlePostReaction(post._id, '🤔')} title="Think">🤔</button>
-                            <button className="reaction-btn" onClick={() => handlePostReaction(post._id, '🔥')} title="Fire">🔥</button>
-                            <button className="reaction-btn" onClick={() => handlePostReaction(post._id, '👏')} title="Clap">👏</button>
-                            <button className="reaction-btn" onClick={() => handlePostReaction(post._id, '🤯')} title="Mind Blown">🤯</button>
-                            <button className="reaction-btn" onClick={() => handlePostReaction(post._id, '🤢')} title="Disgust">🤢</button>
-                            <button className="reaction-btn" onClick={() => handlePostReaction(post._id, '👎')} title="Dislike">👎</button>
+                            <button className="reaction-btn" onClick={() => { handlePostReaction(post._id, '👍'); setShowReactionPicker(null); }} title="Like">👍</button>
+                            <button className="reaction-btn" onClick={() => { handlePostReaction(post._id, '❤️'); setShowReactionPicker(null); }} title="Love">❤️</button>
+                            <button className="reaction-btn" onClick={() => { handlePostReaction(post._id, '😂'); setShowReactionPicker(null); }} title="Haha">😂</button>
+                            <button className="reaction-btn" onClick={() => { handlePostReaction(post._id, '😮'); setShowReactionPicker(null); }} title="Wow">😮</button>
+                            <button className="reaction-btn" onClick={() => { handlePostReaction(post._id, '😢'); setShowReactionPicker(null); }} title="Sad">😢</button>
+                            <button className="reaction-btn" onClick={() => { handlePostReaction(post._id, '😡'); setShowReactionPicker(null); }} title="Angry">😡</button>
+                            <button className="reaction-btn" onClick={() => { handlePostReaction(post._id, '🤗'); setShowReactionPicker(null); }} title="Care">🤗</button>
+                            <button className="reaction-btn" onClick={() => { handlePostReaction(post._id, '🎉'); setShowReactionPicker(null); }} title="Celebrate">🎉</button>
+                            <button className="reaction-btn" onClick={() => { handlePostReaction(post._id, '🤔'); setShowReactionPicker(null); }} title="Think">🤔</button>
+                            <button className="reaction-btn" onClick={() => { handlePostReaction(post._id, '🔥'); setShowReactionPicker(null); }} title="Fire">🔥</button>
+                            <button className="reaction-btn" onClick={() => { handlePostReaction(post._id, '👏'); setShowReactionPicker(null); }} title="Clap">👏</button>
+                            <button className="reaction-btn" onClick={() => { handlePostReaction(post._id, '🤯'); setShowReactionPicker(null); }} title="Mind Blown">🤯</button>
+                            <button className="reaction-btn" onClick={() => { handlePostReaction(post._id, '🤢'); setShowReactionPicker(null); }} title="Disgust">🤢</button>
+                            <button className="reaction-btn" onClick={() => { handlePostReaction(post._id, '👎'); setShowReactionPicker(null); }} title="Dislike">👎</button>
                           </div>
                         )}
                       </div>
@@ -1226,20 +1226,20 @@ function Feed() {
                                                 }
                                               }}
                                             >
-                                              <button className="reaction-btn" onClick={() => handleCommentReaction(post._id, comment._id, '👍')} title="Like">👍</button>
-                                              <button className="reaction-btn" onClick={() => handleCommentReaction(post._id, comment._id, '❤️')} title="Love">❤️</button>
-                                              <button className="reaction-btn" onClick={() => handleCommentReaction(post._id, comment._id, '😂')} title="Haha">😂</button>
-                                              <button className="reaction-btn" onClick={() => handleCommentReaction(post._id, comment._id, '😮')} title="Wow">😮</button>
-                                              <button className="reaction-btn" onClick={() => handleCommentReaction(post._id, comment._id, '😢')} title="Sad">😢</button>
-                                              <button className="reaction-btn" onClick={() => handleCommentReaction(post._id, comment._id, '😡')} title="Angry">😡</button>
-                                              <button className="reaction-btn" onClick={() => handleCommentReaction(post._id, comment._id, '🤗')} title="Care">🤗</button>
-                                              <button className="reaction-btn" onClick={() => handleCommentReaction(post._id, comment._id, '🎉')} title="Celebrate">🎉</button>
-                                              <button className="reaction-btn" onClick={() => handleCommentReaction(post._id, comment._id, '🤔')} title="Think">🤔</button>
-                                              <button className="reaction-btn" onClick={() => handleCommentReaction(post._id, comment._id, '🔥')} title="Fire">🔥</button>
-                                              <button className="reaction-btn" onClick={() => handleCommentReaction(post._id, comment._id, '👏')} title="Clap">👏</button>
-                                              <button className="reaction-btn" onClick={() => handleCommentReaction(post._id, comment._id, '🤯')} title="Mind Blown">🤯</button>
-                                              <button className="reaction-btn" onClick={() => handleCommentReaction(post._id, comment._id, '🤢')} title="Disgust">🤢</button>
-                                              <button className="reaction-btn" onClick={() => handleCommentReaction(post._id, comment._id, '👎')} title="Dislike">👎</button>
+                                              <button className="reaction-btn" onClick={() => { handleCommentReaction(post._id, comment._id, '👍'); setShowReactionPicker(null); }} title="Like">👍</button>
+                                              <button className="reaction-btn" onClick={() => { handleCommentReaction(post._id, comment._id, '❤️'); setShowReactionPicker(null); }} title="Love">❤️</button>
+                                              <button className="reaction-btn" onClick={() => { handleCommentReaction(post._id, comment._id, '😂'); setShowReactionPicker(null); }} title="Haha">😂</button>
+                                              <button className="reaction-btn" onClick={() => { handleCommentReaction(post._id, comment._id, '😮'); setShowReactionPicker(null); }} title="Wow">😮</button>
+                                              <button className="reaction-btn" onClick={() => { handleCommentReaction(post._id, comment._id, '😢'); setShowReactionPicker(null); }} title="Sad">😢</button>
+                                              <button className="reaction-btn" onClick={() => { handleCommentReaction(post._id, comment._id, '😡'); setShowReactionPicker(null); }} title="Angry">😡</button>
+                                              <button className="reaction-btn" onClick={() => { handleCommentReaction(post._id, comment._id, '🤗'); setShowReactionPicker(null); }} title="Care">🤗</button>
+                                              <button className="reaction-btn" onClick={() => { handleCommentReaction(post._id, comment._id, '🎉'); setShowReactionPicker(null); }} title="Celebrate">🎉</button>
+                                              <button className="reaction-btn" onClick={() => { handleCommentReaction(post._id, comment._id, '🤔'); setShowReactionPicker(null); }} title="Think">🤔</button>
+                                              <button className="reaction-btn" onClick={() => { handleCommentReaction(post._id, comment._id, '🔥'); setShowReactionPicker(null); }} title="Fire">🔥</button>
+                                              <button className="reaction-btn" onClick={() => { handleCommentReaction(post._id, comment._id, '👏'); setShowReactionPicker(null); }} title="Clap">👏</button>
+                                              <button className="reaction-btn" onClick={() => { handleCommentReaction(post._id, comment._id, '🤯'); setShowReactionPicker(null); }} title="Mind Blown">🤯</button>
+                                              <button className="reaction-btn" onClick={() => { handleCommentReaction(post._id, comment._id, '🤢'); setShowReactionPicker(null); }} title="Disgust">🤢</button>
+                                              <button className="reaction-btn" onClick={() => { handleCommentReaction(post._id, comment._id, '👎'); setShowReactionPicker(null); }} title="Dislike">👎</button>
                                             </div>
                                           )}
                                         </div>
@@ -1437,20 +1437,20 @@ function Feed() {
                                                         }
                                                       }}
                                                     >
-                                                      <button className="reaction-btn" onClick={() => handleCommentReaction(post._id, reply._id, '👍')} title="Like">👍</button>
-                                                      <button className="reaction-btn" onClick={() => handleCommentReaction(post._id, reply._id, '❤️')} title="Love">❤️</button>
-                                                      <button className="reaction-btn" onClick={() => handleCommentReaction(post._id, reply._id, '😂')} title="Haha">😂</button>
-                                                      <button className="reaction-btn" onClick={() => handleCommentReaction(post._id, reply._id, '😮')} title="Wow">😮</button>
-                                                      <button className="reaction-btn" onClick={() => handleCommentReaction(post._id, reply._id, '😢')} title="Sad">😢</button>
-                                                      <button className="reaction-btn" onClick={() => handleCommentReaction(post._id, reply._id, '😡')} title="Angry">😡</button>
-                                                      <button className="reaction-btn" onClick={() => handleCommentReaction(post._id, reply._id, '🤗')} title="Care">🤗</button>
-                                                      <button className="reaction-btn" onClick={() => handleCommentReaction(post._id, reply._id, '🎉')} title="Celebrate">🎉</button>
-                                                      <button className="reaction-btn" onClick={() => handleCommentReaction(post._id, reply._id, '🤔')} title="Think">🤔</button>
-                                                      <button className="reaction-btn" onClick={() => handleCommentReaction(post._id, reply._id, '🔥')} title="Fire">🔥</button>
-                                                      <button className="reaction-btn" onClick={() => handleCommentReaction(post._id, reply._id, '👏')} title="Clap">👏</button>
-                                                      <button className="reaction-btn" onClick={() => handleCommentReaction(post._id, reply._id, '🤯')} title="Mind Blown">🤯</button>
-                                                      <button className="reaction-btn" onClick={() => handleCommentReaction(post._id, reply._id, '🤢')} title="Disgust">🤢</button>
-                                                      <button className="reaction-btn" onClick={() => handleCommentReaction(post._id, reply._id, '👎')} title="Dislike">👎</button>
+                                                      <button className="reaction-btn" onClick={() => { handleCommentReaction(post._id, reply._id, '👍'); setShowReactionPicker(null); }} title="Like">👍</button>
+                                                      <button className="reaction-btn" onClick={() => { handleCommentReaction(post._id, reply._id, '❤️'); setShowReactionPicker(null); }} title="Love">❤️</button>
+                                                      <button className="reaction-btn" onClick={() => { handleCommentReaction(post._id, reply._id, '😂'); setShowReactionPicker(null); }} title="Haha">😂</button>
+                                                      <button className="reaction-btn" onClick={() => { handleCommentReaction(post._id, reply._id, '😮'); setShowReactionPicker(null); }} title="Wow">😮</button>
+                                                      <button className="reaction-btn" onClick={() => { handleCommentReaction(post._id, reply._id, '😢'); setShowReactionPicker(null); }} title="Sad">😢</button>
+                                                      <button className="reaction-btn" onClick={() => { handleCommentReaction(post._id, reply._id, '😡'); setShowReactionPicker(null); }} title="Angry">😡</button>
+                                                      <button className="reaction-btn" onClick={() => { handleCommentReaction(post._id, reply._id, '🤗'); setShowReactionPicker(null); }} title="Care">🤗</button>
+                                                      <button className="reaction-btn" onClick={() => { handleCommentReaction(post._id, reply._id, '🎉'); setShowReactionPicker(null); }} title="Celebrate">🎉</button>
+                                                      <button className="reaction-btn" onClick={() => { handleCommentReaction(post._id, reply._id, '🤔'); setShowReactionPicker(null); }} title="Think">🤔</button>
+                                                      <button className="reaction-btn" onClick={() => { handleCommentReaction(post._id, reply._id, '🔥'); setShowReactionPicker(null); }} title="Fire">🔥</button>
+                                                      <button className="reaction-btn" onClick={() => { handleCommentReaction(post._id, reply._id, '👏'); setShowReactionPicker(null); }} title="Clap">👏</button>
+                                                      <button className="reaction-btn" onClick={() => { handleCommentReaction(post._id, reply._id, '🤯'); setShowReactionPicker(null); }} title="Mind Blown">🤯</button>
+                                                      <button className="reaction-btn" onClick={() => { handleCommentReaction(post._id, reply._id, '🤢'); setShowReactionPicker(null); }} title="Disgust">🤢</button>
+                                                      <button className="reaction-btn" onClick={() => { handleCommentReaction(post._id, reply._id, '👎'); setShowReactionPicker(null); }} title="Dislike">👎</button>
                                                     </div>
                                                   )}
                                                 </div>

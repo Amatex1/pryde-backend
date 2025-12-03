@@ -156,7 +156,7 @@
   box-shadow: 0 2px 10px rgba(108, 92, 231, 0.08);
   transition: all 0.3s ease;
   min-width: 0; /* Prevent overflow */
-  overflow: hidden; /* Contain content */
+  overflow: visible; /* Allow reaction picker to show */
   word-wrap: break-word; /* Break long words */
 }
 
@@ -633,6 +633,8 @@
   gap: 1rem;
   padding-top: 1rem;
   border-top: 1px solid var(--border-light);
+  overflow: visible;
+  position: relative;
 }
 
 .action-btn {
@@ -876,9 +878,22 @@
   gap: 0.5rem;
   width: max-content;
   box-shadow: 0 0.25rem 0.75rem rgba(0, 0, 0, 0.15);
-  z-index: 1000;
+  z-index: 9999;
   animation: reactionPopIn 0.2s ease-out;
   touch-action: manipulation;
+}
+
+/* Mobile reaction picker adjustments */
+@media (max-width: 768px) {
+  .reaction-picker {
+    position: fixed;
+    top: auto;
+    bottom: 5rem;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 99999;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  }
 }
 
 [data-theme="dark"] .reaction-picker {
