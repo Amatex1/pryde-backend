@@ -112,6 +112,7 @@
   border-radius: 50%;
   font-size: 0.75rem;
   font-weight: 900;
+  line-height: 1;
   flex-shrink: 0;
   box-shadow:
     0 0 0 2px rgba(108, 92, 231, 0.2),
@@ -119,7 +120,7 @@
   position: relative;
   margin-left: 0.35rem;
   transition: all 0.3s ease;
-  z-index: 1;
+  isolation: isolate;
 }
 
 .verified-badge::before {
@@ -150,6 +151,18 @@
   box-shadow:
     0 0 0 2px rgba(9, 132, 227, 0.3),
     0 4px 12px rgba(9, 132, 227, 0.4);
+}
+
+.verified-badge::before {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 3px;
+  right: 3px;
+  height: 40%;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.6) 0%, transparent 100%);
+  border-radius: 50% 50% 0 0;
+  pointer-events: none;
 }
 
 .nickname {
