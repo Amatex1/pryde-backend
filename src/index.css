@@ -55,31 +55,54 @@ html {
 }
 
 /* Automatic responsive font scaling based on device size */
-@media screen and (max-width: 1920px) {
+
+/* Ultra-Wide Monitors (3440px+) */
+@media screen and (min-width: 3440px) {
+  html { font-size: 19px; } /* Super ultra-wide */
+}
+
+/* Ultra-Wide Monitors (2560px - 3440px) */
+@media screen and (min-width: 2560px) and (max-width: 3439px) {
+  html { font-size: 18px; } /* Ultra-wide */
+}
+
+/* Large Desktop (1920px - 2560px) */
+@media screen and (min-width: 1920px) and (max-width: 2559px) {
+  html { font-size: 17px; } /* Large desktop */
+}
+
+/* Standard Desktop (1440px - 1920px) */
+@media screen and (min-width: 1440px) and (max-width: 1919px) {
   html { font-size: 16px; } /* Desktop */
 }
 
-@media screen and (max-width: 1440px) {
+/* Laptop (1024px - 1440px) */
+@media screen and (min-width: 1024px) and (max-width: 1439px) {
   html { font-size: 15px; } /* Laptop */
 }
 
-@media screen and (max-width: 1024px) {
+/* Tablet Landscape (768px - 1024px) */
+@media screen and (min-width: 768px) and (max-width: 1023px) {
   html { font-size: 14px; } /* Tablet landscape */
 }
 
-@media screen and (max-width: 768px) {
+/* Tablet Portrait & Large Phones (480px - 768px) */
+@media screen and (min-width: 480px) and (max-width: 767px) {
   html { font-size: 14px; } /* Tablet portrait */
 }
 
-@media screen and (max-width: 480px) {
+/* Large Phones (375px - 480px) */
+@media screen and (min-width: 375px) and (max-width: 479px) {
   html { font-size: 13px; } /* Large phones */
 }
 
-@media screen and (max-width: 375px) {
+/* Small Phones (320px - 375px) */
+@media screen and (min-width: 320px) and (max-width: 374px) {
   html { font-size: 12px; } /* Small phones */
 }
 
-@media screen and (max-width: 320px) {
+/* Very Small Phones (<320px) */
+@media screen and (max-width: 319px) {
   html { font-size: 11px; } /* Very small phones */
 }
 

@@ -874,8 +874,9 @@
   border-radius: 3.125rem;
   padding: 0.5rem 0.75rem;
   display: flex;
-  flex-wrap: nowrap;
+  flex-wrap: wrap; /* Allow wrapping on small screens */
   gap: 0.5rem;
+  max-width: 90vw; /* Prevent overflow on small screens */
   width: max-content;
   box-shadow: 0 0.25rem 0.75rem rgba(0, 0, 0, 0.15);
   z-index: 9999;
@@ -893,6 +894,51 @@
     transform: translateX(-50%);
     z-index: 99999;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    padding: 1rem 1.25rem;
+    gap: 0.875rem;
+    max-width: 95vw; /* Ensure it fits on screen */
+    width: auto;
+    justify-content: center; /* Center emojis */
+    flex-wrap: wrap; /* Allow wrapping to multiple rows if needed */
+  }
+
+  .reaction-btn {
+    font-size: 2.25rem; /* Slightly larger for better visibility */
+    padding: 0.625rem;
+    min-width: 3rem; /* Larger touch targets */
+    min-height: 3rem;
+    flex-shrink: 0; /* Prevent shrinking */
+  }
+}
+
+/* Small phones - ensure emojis are still visible */
+@media (max-width: 480px) {
+  .reaction-picker {
+    padding: 0.875rem 1rem;
+    gap: 0.75rem;
+    max-width: 98vw;
+  }
+
+  .reaction-btn {
+    font-size: 2rem;
+    padding: 0.5rem;
+    min-width: 2.75rem;
+    min-height: 2.75rem;
+  }
+}
+
+/* Very small phones - compact but visible */
+@media (max-width: 375px) {
+  .reaction-picker {
+    padding: 0.75rem 0.875rem;
+    gap: 0.625rem;
+  }
+
+  .reaction-btn {
+    font-size: 1.875rem;
+    padding: 0.5rem;
+    min-width: 2.5rem;
+    min-height: 2.5rem;
   }
 }
 
