@@ -40,10 +40,10 @@ function Lounge() {
     const fetchMessages = async () => {
       try {
         setLoading(true);
-        const response = await api.get('/api/global-chat/messages?limit=50');
+        const response = await api.get('/global-chat/messages?limit=50');
         setMessages(response.data.messages || []);
         setHasMore(response.data.hasMore || false);
-        
+
         // Scroll to bottom after loading
         setTimeout(scrollToBottom, 100);
       } catch (error) {
@@ -120,8 +120,8 @@ function Lounge() {
     try {
       setLoadingMore(true);
       const oldestMessage = messages[0];
-      const response = await api.get(`/api/global-chat/messages?before=${oldestMessage.createdAt}&limit=50`);
-      
+      const response = await api.get(`/global-chat/messages?before=${oldestMessage.createdAt}&limit=50`);
+
       const newMessages = response.data.messages || [];
       setMessages(prev => [...newMessages, ...prev]);
       setHasMore(response.data.hasMore || false);
@@ -186,7 +186,7 @@ function Lounge() {
     if (!window.confirm('Are you sure you want to delete this message?')) return;
 
     try {
-      await api.delete(`/api/global-chat/messages/${messageId}`);
+      await api.delete(`/global-chat/messages/${messageId}`);
       // Message will be updated via Socket.IO event
     } catch (error) {
       console.error('Error deleting message:', error);
