@@ -1,23 +1,27 @@
-﻿.events-page {
+﻿/* ========================================
+   EVENTS PAGE - POLISHED WITH DESIGN SYSTEM
+   ======================================== */
+
+.events-page {
   min-height: 100vh;
-  background: var(--background-light);
+  background: var(--bg);
 }
 
 .events-container {
   max-width: 1400px;
   margin: 0 auto;
-  padding: 2rem;
+  padding: var(--space-6) var(--space-4);
 }
 
 .events-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 2rem;
+  margin-bottom: var(--space-6);
 }
 
 .page-title {
-  font-size: 2.5rem;
+  font-size: 32px;
   background: var(--gradient-primary);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -26,38 +30,40 @@
 }
 
 .btn-create-event {
-  padding: 1rem 2rem;
-  border-radius: 12px;
+  padding: var(--space-3) var(--space-6);
+  border-radius: var(--radius-pill);
   border: none;
-  background: var(--pryde-purple);
+  background: var(--color-primary);
   color: white;
+  font-size: 15px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(108, 92, 231, 0.3);
+  transition: all 0.15s ease;
+  box-shadow: var(--shadow-medium);
 }
 
 .btn-create-event:hover {
-  background: var(--electric-blue);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(9, 132, 227, 0.4);
+  background: var(--color-accent);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-strong);
 }
 
 .events-filters {
   display: flex;
-  gap: 1rem;
-  margin-bottom: 2rem;
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
 }
 
 .filter-select {
-  padding: 0.75rem 1.5rem;
-  border-radius: 12px;
-  border: 2px solid var(--border-light);
-  background: var(--card-surface);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-card);
   color: var(--text-main);
+  font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.15s ease;
 }
 
 .filter-select:hover {

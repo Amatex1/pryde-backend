@@ -1,47 +1,53 @@
+/* ========================================
+   SETTINGS PAGES - POLISHED WITH DESIGN SYSTEM
+   ======================================== */
+
 .settings-container {
   max-width: 800px;
   margin: 0 auto;
-  padding: 0 2rem 2rem;
+  padding: 0 var(--space-4) var(--space-6);
 }
 
 .settings-card {
-  padding: 3rem;
-  border-radius: 24px;
-  background: var(--card-surface);
-  box-shadow: 0 4px 20px rgba(108, 92, 231, 0.1);
+  padding: var(--space-8);
+  border-radius: var(--radius-card);
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  box-shadow: var(--shadow-medium);
 }
 
 .settings-title {
-  font-size: 2rem;
+  font-size: 28px;
   background: var(--gradient-primary);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  margin-bottom: 2rem;
+  margin-bottom: var(--space-6);
   font-weight: 700;
 }
 
 .message {
-  padding: 1rem;
-  border-radius: 12px;
-  margin-bottom: 2rem;
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-6);
   text-align: center;
+  font-size: 14px;
 }
 
 .message.success {
-  background: rgba(40, 167, 69, 0.15);
-  border: 1px solid var(--success);
-  color: var(--success);
+  background: var(--color-success-soft);
+  border: 1px solid var(--color-success);
+  color: var(--color-success);
 }
 
 .message.error {
-  background: rgba(255, 107, 107, 0.15);
-  border: 1px solid var(--error);
-  color: var(--error);
+  background: var(--color-danger-soft);
+  border: 1px solid var(--color-danger);
+  color: var(--color-danger);
 }
 
 .settings-section {
-  margin-bottom: 2.5rem;
+  margin-bottom: var(--space-6);
 }
 
 .settings-section:last-child {
@@ -51,33 +57,34 @@
 .photo-uploads {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 1.5rem;
+  gap: var(--space-4);
 }
 
 .upload-group {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: var(--space-3);
 }
 
 .upload-label {
-  color: var(--pryde-purple);
+  color: var(--color-primary);
   font-weight: 600;
-  font-size: 0.9rem;
+  font-size: 14px;
 }
 
 .file-input {
-  padding: 0.875rem;
-  border-radius: 12px;
-  border: 2px dashed var(--pryde-purple);
-  background: var(--soft-lavender);
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  border: 2px dashed var(--color-primary);
+  background: var(--color-primary-soft);
   color: var(--text-main);
+  font-size: 14px;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.15s ease;
 }
 
 .file-input:hover {
-  border-color: var(--electric-blue);
+  border-color: var(--color-accent);
   background: var(--pryde-purple);
   color: white;
 }
