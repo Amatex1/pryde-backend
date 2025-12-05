@@ -1,8 +1,10 @@
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
+/* ========================================
+   PRYDE SOCIAL - MAIN STYLES
+   Import global design system first
+   ======================================== */
+
+@import './styles/theme.css';
+@import './styles/components.css';
 
 /* Responsive HTML base - automatically scales for all devices */
 html {
@@ -26,8 +28,8 @@ html {
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-  background: var(--bg-light) !important;
+  /* Font family is now set in theme.css */
+  background: var(--bg) !important;
   min-height: 100vh;
   color: var(--text-main) !important;
   transition: background-color 0.3s ease, color 0.3s ease;
@@ -43,7 +45,7 @@ body {
 
 /* Ensure html element also gets the background */
 html {
-  background: var(--bg-light) !important;
+  background: var(--bg) !important;
 }
 
 /* Root container responsive sizing */
@@ -106,40 +108,38 @@ html {
   html { font-size: 11px; } /* Very small phones */
 }
 
+/* ========================================
+   LEGACY VARIABLE MAPPINGS
+   Map old variables to new theme system for backward compatibility
+   ======================================== */
+
 :root {
-  /* ========================================
-     OFFICIAL PRYDE THEME COLORS
-     ======================================== */
+  /* Map old color names to new theme system */
+  --pryde-purple: var(--color-primary);
+  --electric-blue: var(--color-accent);
+  --soft-lavender: var(--color-primary-soft);
 
-  /* Primary Colors */
-  --pryde-purple: #6C5CE7;
-  --electric-blue: #0984E3;
-  --soft-lavender: #EDEAFF;
-
-  /* Neutrals */
-  --bg-light: #F7F7F7;
-  --card-surface: #FFFFFF;
-  --border-light: #E0E0E0;
-  --text-main: #2B2B2B;
-  --text-muted: #616161;
+  /* Map old background/surface names */
+  --bg-light: var(--bg);
+  --card-surface: var(--bg-card);
+  --border-light: var(--border-subtle);
 
   /* Gradients */
-  --gradient-primary: linear-gradient(135deg, var(--pryde-purple) 0%, var(--electric-blue) 100%);
-  --gradient-soft: linear-gradient(135deg, var(--soft-lavender) 0%, var(--pryde-purple) 100%);
+  --gradient-primary: linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%);
+  --gradient-soft: linear-gradient(135deg, var(--color-primary-soft) 0%, var(--color-primary) 100%);
 
   /* Semantic Colors */
-  --success: #28a745;
-  --error: #ff6b6b;
-  --warning: #ffc107;
+  --success: var(--color-success);
+  --error: var(--color-danger);
+  --warning: var(--color-warning);
 
   /* Legacy support (will be removed) */
-  --gold: var(--pryde-purple);
-  --gold-light: var(--electric-blue);
-  --gold-dark: var(--pryde-purple);
+  --gold: var(--color-primary);
+  --gold-light: var(--color-accent);
+  --gold-dark: var(--color-primary);
   --dark-bg: var(--text-main);
-  --dark-secondary: var(--border-light);
-  --dark-card: var(--card-surface);
-  --text-light: var(--text-main);
+  --dark-secondary: var(--border-subtle);
+  --dark-card: var(--bg-card);
 }
 
 /* NOTE: Dark Mode CSS is in darkMode.css, loaded separately in main.jsx */
