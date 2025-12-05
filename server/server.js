@@ -32,6 +32,7 @@ import uploadRoutes from './routes/upload.js';
 import notificationsRoutes from './routes/notifications.js';
 import messagesRoutes from './routes/messages.js';
 import groupChatsRoutes from './routes/groupChats.js';
+import globalChatRoutes from './routes/globalChat.js';
 import pushNotificationsRouter from './routes/pushNotifications.js';
 import reportsRoutes from './routes/reports.js';
 import blocksRoutes from './routes/blocks.js';
@@ -224,6 +225,7 @@ app.use('/api/upload', uploadRoutes);
 app.use('/api/notifications', notificationsRoutes);
 app.use('/api/messages', messagesRoutes);
 app.use('/api/groupchats', groupChatsRoutes);
+app.use('/api/global-chat', globalChatRoutes);
 app.use('/api/push', pushNotificationsRouter);
 app.use('/api/reports', reportsRoutes);
 app.use('/api/blocks', blocksRoutes);
@@ -333,6 +335,13 @@ io.on('connection', (socket) => {
   // Join user to their personal room for targeted notifications
   socket.join(`user_${userId}`);
 
+  // Join user to global chat room
+  socket.join('global_chat');
+
+  // Emit updated online count to global chat
+  const globalChatOnlineCount = io.sockets.adapter.rooms.get('global_chat')?.size || 0;
+  io.to('global_chat').emit('global_chat:online_count', { count: globalChatOnlineCount });
+
   // Handle request for online users list (for mobile/slow connections)
   socket.on('get_online_users', () => {
     console.log(`📡 User ${userId} requested online users list`);
@@ -418,7 +427,99 @@ io.on('connection', (socket) => {
       });
     }
   });
-  
+
+  // ========================================
+  // GLOBAL CHAT (LOUNGE) HANDLERS
+  // ========================================
+
+  // Handle user joining global chat
+  socket.on('global_chat:join', () => {
+    console.log(`📡 User ${userId} joined global chat`);
+    socket.join('global_chat');
+
+    // Send updated online count
+    const globalChatOnlineCount = io.sockets.adapter.rooms.get('global_chat')?.size || 0;
+    io.to('global_chat').emit('global_chat:online_count', { count: globalChatOnlineCount });
+  });
+
+  // Handle global message send
+  socket.on('global_message:send', async (data) => {
+    try {
+      const { text, contentWarning } = data;
+
+      // Validate text
+      if (!text || typeof text !== 'string') {
+        socket.emit('error', { message: 'Message text is required' });
+        return;
+      }
+
+      const trimmedText = text.trim();
+      if (trimmedText.length === 0) {
+        socket.emit('error', { message: 'Message cannot be empty' });
+        return;
+      }
+
+      if (trimmedText.length > 2000) {
+        socket.emit('error', { message: 'Message is too long (max 2000 characters)' });
+        return;
+      }
+
+      // Get user to check if banned/suspended
+      const user = await User.findById(userId).select('username displayName profilePhoto avatar isBanned isSuspended');
+
+      if (!user) {
+        socket.emit('error', { message: 'User not found' });
+        return;
+      }
+
+      if (user.isBanned) {
+        socket.emit('error', { message: 'You are banned and cannot send messages' });
+        return;
+      }
+
+      if (user.isSuspended) {
+        socket.emit('error', { message: 'Your account is suspended and cannot send messages' });
+        return;
+      }
+
+      // Import GlobalMessage model
+      const GlobalMessage = (await import('./models/GlobalMessage.js')).default;
+
+      // Create new global message
+      const newMessage = new GlobalMessage({
+        senderId: userId,
+        text: trimmedText,
+        contentWarning: contentWarning?.trim() || null
+      });
+
+      await newMessage.save();
+
+      // Prepare message payload for broadcast
+      const messagePayload = {
+        _id: newMessage._id,
+        text: newMessage.text,
+        contentWarning: newMessage.contentWarning,
+        createdAt: newMessage.createdAt,
+        sender: {
+          id: user._id,
+          _id: user._id,
+          displayName: user.displayName || user.username,
+          username: user.username,
+          avatar: user.profilePhoto || user.avatar
+        }
+      };
+
+      // Broadcast to all users in global_chat room
+      io.to('global_chat').emit('global_message:new', messagePayload);
+
+      console.log(`✅ Global message sent by ${user.username}`);
+
+    } catch (error) {
+      console.error('❌ Error sending global message:', error);
+      socket.emit('error', { message: 'Error sending message' });
+    }
+  });
+
   // Handle disconnect
   socket.on('disconnect', async () => {
     console.log(`User disconnected: ${userId}`);
@@ -435,6 +536,10 @@ io.on('connection', (socket) => {
 
     // Emit offline status to all users
     io.emit('user_offline', { userId });
+
+    // Emit updated global chat online count
+    const globalChatOnlineCount = io.sockets.adapter.rooms.get('global_chat')?.size || 0;
+    io.to('global_chat').emit('global_chat:online_count', { count: globalChatOnlineCount });
   });
 });
 

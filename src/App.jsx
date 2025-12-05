@@ -22,6 +22,7 @@ import Events from './pages/Events';
 // PHASE 1 REFACTOR: Friends page removed
 // import Friends from './pages/Friends';
 import Messages from './pages/Messages';
+import Lounge from './pages/Lounge';
 import Notifications from './pages/Notifications';
 import Admin from './pages/Admin';
 import Hashtag from './pages/Hashtag';
@@ -134,6 +135,7 @@ function App() {
           {/* <Route path="/connections" element={<PrivateRoute><Friends /></PrivateRoute>} /> */}
           {/* <Route path="/friends" element={<PrivateRoute><Friends /></PrivateRoute>} /> */}
           <Route path="/messages" element={<PrivateRoute><Messages /></PrivateRoute>} />
+          <Route path="/lounge" element={<PrivateRoute><Lounge /></PrivateRoute>} />
           <Route path="/notifications" element={<PrivateRoute><Notifications /></PrivateRoute>} />
           <Route path="/hashtag/:tag" element={<PrivateRoute><Hashtag /></PrivateRoute>} />
 
