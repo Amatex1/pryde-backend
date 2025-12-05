@@ -308,51 +308,44 @@
   margin: var(--space-2) 0;
 }
 
-.dropdown-dark-mode {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  cursor: pointer;
-}
-
-.dropdown-dark-mode:hover {
-  background: var(--soft-lavender);
-}
-
-.dropdown-dark-mode .dark-mode-icon {
-  font-size: 1.1rem;
-}
-
+/* Mode Toggles in Dropdown */
+.dropdown-dark-mode,
 .dropdown-quiet-mode {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: var(--space-3);
   cursor: pointer;
-  position: relative;
 }
 
+.dropdown-dark-mode:hover,
 .dropdown-quiet-mode:hover {
-  background: var(--soft-lavender);
+  background: var(--bg-hover);
 }
 
+.dropdown-dark-mode .dark-mode-icon,
 .dropdown-quiet-mode .quiet-mode-icon {
-  font-size: 1.1rem;
+  font-size: 16px;
 }
 
 .dropdown-quiet-mode .mode-indicator {
   margin-left: auto;
-  color: var(--pryde-purple);
-  font-weight: bold;
+  color: var(--color-primary);
+  font-weight: 600;
+  font-size: 12px;
 }
 
 .logout-item {
-  color: #ff6b6b;
+  color: var(--color-danger);
 }
 
 .logout-item:hover {
-  background: rgba(255, 107, 107, 0.1);
-  color: #ff6b6b;
+  background: var(--color-danger-soft);
+  color: var(--color-danger);
 }
+
+/* ========================================
+   MOBILE MENU
+   ======================================== */
 
 /* Mobile Hamburger Menu */
 .mobile-hamburger-btn {
