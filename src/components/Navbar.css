@@ -347,28 +347,27 @@
    MOBILE MENU
    ======================================== */
 
-/* Mobile Hamburger Menu */
 .mobile-hamburger-btn {
   display: none;
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-md);
   border: none;
-  background: var(--soft-lavender);
-  color: var(--pryde-purple);
-  font-size: 1.5rem;
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+  font-size: 20px;
   cursor: pointer;
   align-items: center;
   justify-content: center;
-  transition: all 0.3s ease;
-  z-index: 2100; /* Same as mobile menu */
-  margin-left: auto; /* Push to the right */
+  transition: all 0.15s ease;
+  z-index: calc(var(--z-modal) + 100);
+  margin-left: auto;
   flex-shrink: 0;
-  position: relative; /* Ensure z-index works */
+  position: relative;
 }
 
 .mobile-hamburger-btn:hover {
-  background: var(--pryde-purple);
+  background: var(--color-primary);
   color: white;
 }
 
@@ -380,7 +379,8 @@
   right: 0;
   bottom: 0;
   background: rgba(0, 0, 0, 0.5);
-  z-index: 2050; /* Below mobile menu but above navbar */
+  z-index: var(--z-modal);
+  backdrop-filter: blur(2px);
 }
 
 .mobile-menu {
@@ -391,11 +391,11 @@
   bottom: 0;
   width: 300px;
   max-width: 85vw;
-  background: var(--card-surface);
-  box-shadow: -4px 0 20px rgba(0, 0, 0, 0.2);
-  z-index: 2100; /* Above overlay and navbar */
+  background: var(--bg-card);
+  box-shadow: var(--shadow-strong);
+  z-index: calc(var(--z-modal) + 100);
   transform: translateX(100%);
-  transition: transform 0.3s ease;
+  transition: transform 0.25s ease;
   overflow-y: auto;
   overflow-x: hidden;
   flex-direction: column;
@@ -406,30 +406,31 @@
 }
 
 .mobile-menu-header {
-  padding: 2rem 1.5rem 1.5rem;
-  border-bottom: 2px solid var(--border-light);
-  background: linear-gradient(135deg, var(--pryde-purple), var(--electric-blue));
+  padding: var(--space-6) var(--space-4);
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--gradient-primary);
 }
 
 .mobile-menu-user {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: var(--space-4);
 }
 
 .mobile-menu-avatar {
-  width: 60px;
-  height: 60px;
+  width: 56px;
+  height: 56px;
   border-radius: 50%;
   overflow: hidden;
-  background: var(--soft-lavender);
+  background: white;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.5rem;
+  font-size: 20px;
   font-weight: 600;
-  color: var(--pryde-purple);
+  color: var(--color-primary);
   border: 3px solid white;
+  box-shadow: var(--shadow-medium);
 }
 
 .mobile-menu-avatar img {
