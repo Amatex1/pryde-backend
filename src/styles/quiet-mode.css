@@ -494,6 +494,342 @@ html[data-quiet-mode="true"] body {
 }
 
 /* ========================================
+   LIGHT MODE + QUIET MODE COMBINED
+   Special overrides when quiet mode is active in light mode
+   ======================================== */
+
+html[data-theme="light"][data-quiet-mode="true"],
+html:not([data-theme])[data-quiet-mode="true"] {
+  /* Light quiet mode - soft pastels with high contrast */
+  --bg-main: #F5F3FF !important;                /* Very soft lavender background */
+  --bg-surface: #FFFFFF !important;             /* Pure white cards */
+  --text-primary: #2D2640 !important;           /* Dark purple text */
+  --text-secondary: #5A5470 !important;         /* Medium purple text */
+  --text-muted: #8B8799 !important;             /* Light purple text */
+  --accent-primary: #6C5CE7 !important;         /* Pryde purple */
+  --accent-hover: #5A4BD8 !important;           /* Darker purple on hover */
+  --accent-soft: rgba(108, 92, 231, 0.08) !important; /* Subtle purple background */
+  --border-soft: #E8E5F5 !important;            /* Very soft purple border */
+  --btn-bg: #FFFFFF !important;
+  --btn-bg-hover: #F5F3FF !important;
+  --btn-text: #6C5CE7 !important;
+  --card-shadow: 0px 2px 8px rgba(108, 92, 231, 0.08) !important; /* Softer shadow */
+}
+
+/* Light mode quiet - backgrounds */
+[data-theme="light"][data-quiet-mode="true"] body,
+html:not([data-theme])[data-quiet-mode="true"] body {
+  background-color: var(--bg-main) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Light mode quiet - cards */
+[data-theme="light"][data-quiet-mode="true"] .post-card,
+[data-theme="light"][data-quiet-mode="true"] .glossy,
+[data-theme="light"][data-quiet-mode="true"] .card,
+[data-theme="light"][data-quiet-mode="true"] .panel,
+[data-theme="light"][data-quiet-mode="true"] .sidebar,
+[data-theme="light"][data-quiet-mode="true"] .message-card,
+[data-theme="light"][data-quiet-mode="true"] .notification-card,
+[data-theme="light"][data-quiet-mode="true"] .modal-content,
+[data-theme="light"][data-quiet-mode="true"] .dropdown-menu,
+[data-theme="light"][data-quiet-mode="true"] .auth-card,
+[data-theme="light"][data-quiet-mode="true"] .settings-section,
+[data-theme="light"][data-quiet-mode="true"] .profile-card,
+[data-theme="light"][data-quiet-mode="true"] .event-card,
+[data-theme="light"][data-quiet-mode="true"] .admin-card,
+html:not([data-theme])[data-quiet-mode="true"] .post-card,
+html:not([data-theme])[data-quiet-mode="true"] .glossy,
+html:not([data-theme])[data-quiet-mode="true"] .card,
+html:not([data-theme])[data-quiet-mode="true"] .panel,
+html:not([data-theme])[data-quiet-mode="true"] .sidebar,
+html:not([data-theme])[data-quiet-mode="true"] .message-card,
+html:not([data-theme])[data-quiet-mode="true"] .notification-card,
+html:not([data-theme])[data-quiet-mode="true"] .modal-content,
+html:not([data-theme])[data-quiet-mode="true"] .dropdown-menu,
+html:not([data-theme])[data-quiet-mode="true"] .auth-card,
+html:not([data-theme])[data-quiet-mode="true"] .settings-section,
+html:not([data-theme])[data-quiet-mode="true"] .profile-card,
+html:not([data-theme])[data-quiet-mode="true"] .event-card,
+html:not([data-theme])[data-quiet-mode="true"] .admin-card {
+  background: var(--bg-surface) !important;
+  border-color: var(--border-soft) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Light mode quiet - buttons */
+[data-theme="light"][data-quiet-mode="true"] .pryde-btn,
+html:not([data-theme])[data-quiet-mode="true"] .pryde-btn {
+  background: var(--accent-primary) !important;
+  color: #FFFFFF !important;
+  border-color: transparent !important;
+}
+
+[data-theme="light"][data-quiet-mode="true"] .pryde-btn:hover,
+html:not([data-theme])[data-quiet-mode="true"] .pryde-btn:hover {
+  background: var(--accent-hover) !important;
+  color: #FFFFFF !important;
+}
+
+[data-theme="light"][data-quiet-mode="true"] .pryde-btn-secondary,
+html:not([data-theme])[data-quiet-mode="true"] .pryde-btn-secondary {
+  background-color: var(--bg-surface) !important;
+  color: var(--accent-primary) !important;
+  border-color: var(--accent-primary) !important;
+}
+
+[data-theme="light"][data-quiet-mode="true"] .pryde-btn-secondary:hover,
+html:not([data-theme])[data-quiet-mode="true"] .pryde-btn-secondary:hover {
+  background-color: var(--accent-soft) !important;
+  color: var(--accent-hover) !important;
+}
+
+[data-theme="light"][data-quiet-mode="true"] .pryde-btn-ghost,
+html:not([data-theme])[data-quiet-mode="true"] .pryde-btn-ghost {
+  background-color: transparent !important;
+  color: var(--text-secondary) !important;
+}
+
+[data-theme="light"][data-quiet-mode="true"] .pryde-btn-ghost:hover,
+html:not([data-theme])[data-quiet-mode="true"] .pryde-btn-ghost:hover {
+  background-color: var(--accent-soft) !important;
+  color: var(--accent-primary) !important;
+}
+
+/* Light mode quiet - inputs */
+[data-theme="light"][data-quiet-mode="true"] input,
+[data-theme="light"][data-quiet-mode="true"] textarea,
+[data-theme="light"][data-quiet-mode="true"] select,
+html:not([data-theme])[data-quiet-mode="true"] input,
+html:not([data-theme])[data-quiet-mode="true"] textarea,
+html:not([data-theme])[data-quiet-mode="true"] select {
+  background: var(--bg-surface) !important;
+  border-color: var(--border-soft) !important;
+  color: var(--text-primary) !important;
+}
+
+[data-theme="light"][data-quiet-mode="true"] input:focus,
+[data-theme="light"][data-quiet-mode="true"] textarea:focus,
+[data-theme="light"][data-quiet-mode="true"] select:focus,
+html:not([data-theme])[data-quiet-mode="true"] input:focus,
+html:not([data-theme])[data-quiet-mode="true"] textarea:focus,
+html:not([data-theme])[data-quiet-mode="true"] select:focus {
+  border-color: var(--accent-primary) !important;
+  box-shadow: 0 0 0 3px var(--accent-soft) !important;
+}
+
+/* Light mode quiet - text */
+[data-theme="light"][data-quiet-mode="true"] body,
+[data-theme="light"][data-quiet-mode="true"] h1,
+[data-theme="light"][data-quiet-mode="true"] h2,
+[data-theme="light"][data-quiet-mode="true"] h3,
+[data-theme="light"][data-quiet-mode="true"] h4,
+[data-theme="light"][data-quiet-mode="true"] h5,
+[data-theme="light"][data-quiet-mode="true"] h6,
+[data-theme="light"][data-quiet-mode="true"] p,
+[data-theme="light"][data-quiet-mode="true"] label,
+html:not([data-theme])[data-quiet-mode="true"] body,
+html:not([data-theme])[data-quiet-mode="true"] h1,
+html:not([data-theme])[data-quiet-mode="true"] h2,
+html:not([data-theme])[data-quiet-mode="true"] h3,
+html:not([data-theme])[data-quiet-mode="true"] h4,
+html:not([data-theme])[data-quiet-mode="true"] h5,
+html:not([data-theme])[data-quiet-mode="true"] h6,
+html:not([data-theme])[data-quiet-mode="true"] p,
+html:not([data-theme])[data-quiet-mode="true"] label {
+  color: var(--text-primary) !important;
+}
+
+[data-theme="light"][data-quiet-mode="true"] .text-muted,
+[data-theme="light"][data-quiet-mode="true"] ::placeholder,
+html:not([data-theme])[data-quiet-mode="true"] .text-muted,
+html:not([data-theme])[data-quiet-mode="true"] ::placeholder {
+  color: var(--text-muted) !important;
+}
+
+/* Light mode quiet - links */
+[data-theme="light"][data-quiet-mode="true"] a,
+html:not([data-theme])[data-quiet-mode="true"] a {
+  color: var(--accent-primary) !important;
+}
+
+[data-theme="light"][data-quiet-mode="true"] a:hover,
+html:not([data-theme])[data-quiet-mode="true"] a:hover {
+  color: var(--accent-hover) !important;
+}
+
+/* Light mode quiet - navbar */
+[data-theme="light"][data-quiet-mode="true"] .navbar,
+html:not([data-theme])[data-quiet-mode="true"] .navbar {
+  background: var(--bg-surface) !important;
+  border-bottom: 1px solid var(--border-soft) !important;
+}
+
+[data-theme="light"][data-quiet-mode="true"] .nav-button,
+html:not([data-theme])[data-quiet-mode="true"] .nav-button {
+  color: var(--text-secondary) !important;
+}
+
+[data-theme="light"][data-quiet-mode="true"] .nav-button:hover,
+html:not([data-theme])[data-quiet-mode="true"] .nav-button:hover {
+  background: var(--accent-soft) !important;
+  color: var(--accent-primary) !important;
+}
+
+/* Light mode quiet - all other components */
+[data-theme="light"][data-quiet-mode="true"] .message-bubble,
+[data-theme="light"][data-quiet-mode="true"] .notification-item,
+[data-theme="light"][data-quiet-mode="true"] .profile-stats,
+[data-theme="light"][data-quiet-mode="true"] .profile-tabs,
+[data-theme="light"][data-quiet-mode="true"] .profile-bio,
+[data-theme="light"][data-quiet-mode="true"] .event-header,
+[data-theme="light"][data-quiet-mode="true"] .event-details,
+[data-theme="light"][data-quiet-mode="true"] .admin-sidebar,
+[data-theme="light"][data-quiet-mode="true"] .admin-stats,
+[data-theme="light"][data-quiet-mode="true"] .admin-table,
+[data-theme="light"][data-quiet-mode="true"] .mini-chat-box,
+[data-theme="light"][data-quiet-mode="true"] .chat-window,
+[data-theme="light"][data-quiet-mode="true"] .journal-card,
+[data-theme="light"][data-quiet-mode="true"] .tag-card,
+[data-theme="light"][data-quiet-mode="true"] .search-result-card,
+[data-theme="light"][data-quiet-mode="true"] .comment-card,
+[data-theme="light"][data-quiet-mode="true"] .user-card,
+[data-theme="light"][data-quiet-mode="true"] .friend-card,
+html:not([data-theme])[data-quiet-mode="true"] .message-bubble,
+html:not([data-theme])[data-quiet-mode="true"] .notification-item,
+html:not([data-theme])[data-quiet-mode="true"] .profile-stats,
+html:not([data-theme])[data-quiet-mode="true"] .profile-tabs,
+html:not([data-theme])[data-quiet-mode="true"] .profile-bio,
+html:not([data-theme])[data-quiet-mode="true"] .event-header,
+html:not([data-theme])[data-quiet-mode="true"] .event-details,
+html:not([data-theme])[data-quiet-mode="true"] .admin-sidebar,
+html:not([data-theme])[data-quiet-mode="true"] .admin-stats,
+html:not([data-theme])[data-quiet-mode="true"] .admin-table,
+html:not([data-theme])[data-quiet-mode="true"] .mini-chat-box,
+html:not([data-theme])[data-quiet-mode="true"] .chat-window,
+html:not([data-theme])[data-quiet-mode="true"] .journal-card,
+html:not([data-theme])[data-quiet-mode="true"] .tag-card,
+html:not([data-theme])[data-quiet-mode="true"] .search-result-card,
+html:not([data-theme])[data-quiet-mode="true"] .comment-card,
+html:not([data-theme])[data-quiet-mode="true"] .user-card,
+html:not([data-theme])[data-quiet-mode="true"] .friend-card {
+  background: var(--bg-surface) !important;
+  border-color: var(--border-soft) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Light mode quiet - message sent state */
+[data-theme="light"][data-quiet-mode="true"] .message-bubble.sent,
+[data-theme="light"][data-quiet-mode="true"] .message-group.sent .message-bubble,
+html:not([data-theme])[data-quiet-mode="true"] .message-bubble.sent,
+html:not([data-theme])[data-quiet-mode="true"] .message-group.sent .message-bubble {
+  background: var(--accent-soft) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Light mode quiet - unread notifications */
+[data-theme="light"][data-quiet-mode="true"] .notification-item.unread,
+html:not([data-theme])[data-quiet-mode="true"] .notification-item.unread {
+  background: var(--accent-soft) !important;
+}
+
+/* Light mode quiet - tables */
+[data-theme="light"][data-quiet-mode="true"] table,
+[data-theme="light"][data-quiet-mode="true"] th,
+[data-theme="light"][data-quiet-mode="true"] td,
+html:not([data-theme])[data-quiet-mode="true"] table,
+html:not([data-theme])[data-quiet-mode="true"] th,
+html:not([data-theme])[data-quiet-mode="true"] td {
+  background: var(--bg-surface) !important;
+  border-color: var(--border-soft) !important;
+  color: var(--text-primary) !important;
+}
+
+[data-theme="light"][data-quiet-mode="true"] thead,
+html:not([data-theme])[data-quiet-mode="true"] thead {
+  background: var(--accent-soft) !important;
+}
+
+/* Light mode quiet - dropdowns */
+[data-theme="light"][data-quiet-mode="true"] .dropdown-item,
+html:not([data-theme])[data-quiet-mode="true"] .dropdown-item {
+  color: var(--text-primary) !important;
+}
+
+[data-theme="light"][data-quiet-mode="true"] .dropdown-item:hover,
+html:not([data-theme])[data-quiet-mode="true"] .dropdown-item:hover {
+  background: var(--accent-soft) !important;
+  color: var(--accent-primary) !important;
+}
+
+/* Light mode quiet - modal buttons */
+[data-theme="light"][data-quiet-mode="true"] .custom-modal-btn-primary,
+[data-theme="light"][data-quiet-mode="true"] .btn-passkey,
+html:not([data-theme])[data-quiet-mode="true"] .custom-modal-btn-primary,
+html:not([data-theme])[data-quiet-mode="true"] .btn-passkey {
+  background: var(--accent-primary) !important;
+  color: #FFFFFF !important;
+}
+
+[data-theme="light"][data-quiet-mode="true"] .custom-modal-btn-secondary,
+html:not([data-theme])[data-quiet-mode="true"] .custom-modal-btn-secondary {
+  background: var(--bg-surface) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-soft) !important;
+}
+
+/* Light mode quiet - danger and success buttons */
+[data-theme="light"][data-quiet-mode="true"] .pryde-btn-danger,
+html:not([data-theme])[data-quiet-mode="true"] .pryde-btn-danger {
+  background-color: #FF7675 !important;
+  color: #FFFFFF !important;
+  border-color: #FF7675 !important;
+}
+
+[data-theme="light"][data-quiet-mode="true"] .pryde-btn-danger:hover,
+html:not([data-theme])[data-quiet-mode="true"] .pryde-btn-danger:hover {
+  background-color: #FF5654 !important;
+  color: #FFFFFF !important;
+}
+
+[data-theme="light"][data-quiet-mode="true"] .pryde-btn-success,
+html:not([data-theme])[data-quiet-mode="true"] .pryde-btn-success {
+  background-color: #00B894 !important;
+  color: #FFFFFF !important;
+  border-color: #00B894 !important;
+}
+
+[data-theme="light"][data-quiet-mode="true"] .pryde-btn-success:hover,
+html:not([data-theme])[data-quiet-mode="true"] .pryde-btn-success:hover {
+  background-color: #00A07D !important;
+  color: #FFFFFF !important;
+}
+
+/* Light mode quiet - ensure main containers have correct background */
+[data-theme="light"][data-quiet-mode="true"] .feed-container,
+[data-theme="light"][data-quiet-mode="true"] .profile-container,
+[data-theme="light"][data-quiet-mode="true"] .messages-container,
+[data-theme="light"][data-quiet-mode="true"] .admin-container,
+[data-theme="light"][data-quiet-mode="true"] .settings-container,
+[data-theme="light"][data-quiet-mode="true"] .notifications-container,
+[data-theme="light"][data-quiet-mode="true"] .discover-container,
+[data-theme="light"][data-quiet-mode="true"] .events-container,
+[data-theme="light"][data-quiet-mode="true"] main,
+[data-theme="light"][data-quiet-mode="true"] .app-container,
+html:not([data-theme])[data-quiet-mode="true"] .feed-container,
+html:not([data-theme])[data-quiet-mode="true"] .profile-container,
+html:not([data-theme])[data-quiet-mode="true"] .messages-container,
+html:not([data-theme])[data-quiet-mode="true"] .admin-container,
+html:not([data-theme])[data-quiet-mode="true"] .settings-container,
+html:not([data-theme])[data-quiet-mode="true"] .notifications-container,
+html:not([data-theme])[data-quiet-mode="true"] .discover-container,
+html:not([data-theme])[data-quiet-mode="true"] .events-container,
+html:not([data-theme])[data-quiet-mode="true"] main,
+html:not([data-theme])[data-quiet-mode="true"] .app-container {
+  background-color: var(--bg-main) !important;
+}
+
+/* ========================================
    DARK MODE + QUIET MODE COMBINED
    Special overrides when both are active
    ======================================== */
