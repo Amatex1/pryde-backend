@@ -76,6 +76,7 @@ function Profile() {
   const [editPostText, setEditPostText] = useState('');
   const [editPostVisibility, setEditPostVisibility] = useState('friends');
   const [reactionDetailsModal, setReactionDetailsModal] = useState({ isOpen: false, reactions: [], likes: [] });
+  const [profileError, setProfileError] = useState(null); // Track profile loading errors
   const editTextareaRef = useRef(null);
 
   useEffect(() => {
@@ -186,8 +187,23 @@ function Profile() {
     try {
       const response = await api.get(`/users/${id}`);
       setUser(response.data);
+      setProfileError(null); // Clear any previous errors
     } catch (error) {
       console.error('Failed to fetch user profile:', error);
+
+      // Set specific error messages based on error type
+      if (error.response?.status === 404) {
+        setProfileError('User not found. This user may not exist or may have been deleted.');
+      } else if (error.response?.status === 403) {
+        const message = error.response?.data?.message || 'This profile is not accessible';
+        setProfileError(message);
+      } else if (error.response?.status === 401) {
+        setProfileError('You need to be logged in to view profiles.');
+      } else {
+        setProfileError('Failed to load profile. Please try again later.');
+      }
+
+      setUser(null); // Clear user data on error
     } finally {
       setLoading(false);
     }
@@ -809,7 +825,30 @@ function Profile() {
     return (
       <div className="page-container">
         <Navbar />
-        <div className="error">User not found</div>
+        <div className="profile-container">
+          <div className="error-container glossy" style={{
+            padding: '40px',
+            textAlign: 'center',
+            maxWidth: '600px',
+            margin: '40px auto',
+            borderRadius: '12px'
+          }}>
+            <div style={{ fontSize: '48px', marginBottom: '20px' }}>😕</div>
+            <h2 style={{ marginBottom: '15px', color: 'var(--text-primary)' }}>
+              {profileError ? 'Profile Not Accessible' : 'User Not Found'}
+            </h2>
+            <p style={{ color: 'var(--text-secondary)', marginBottom: '20px', lineHeight: '1.6' }}>
+              {profileError || 'This user may not exist or may have been deleted.'}
+            </p>
+            <button
+              className="pryde-btn"
+              onClick={() => navigate('/feed')}
+              style={{ marginTop: '10px' }}
+            >
+              Go to Feed
+            </button>
+          </div>
+        </div>
       </div>
     );
   }
