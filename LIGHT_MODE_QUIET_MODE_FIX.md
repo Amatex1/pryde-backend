@@ -1,25 +1,59 @@
-# Light Mode + Quiet Mode Combined - Fix Complete
+# Light Mode + Quiet Mode Combined - Fix Complete ✅
 
 ## 🎯 Issue Fixed
 
 **Problem:**
-When both Light Mode and Quiet Mode were enabled together, the same conflicts occurred as with Dark Mode:
-- Quiet mode was forcing dark colors (midnight violet) even in light mode
-- Buttons had incorrect styling
-- Cards and surfaces used dark backgrounds instead of light
-- Text was white on light backgrounds (unreadable)
-- Overall theme was dark instead of light and calm
+When both Light Mode and Quiet Mode were enabled together:
+- ❌ Quiet mode was forcing **dark colors** (midnight violet) even in light mode
+- ❌ **White text on white backgrounds** (completely unreadable!)
+- ❌ Buttons had incorrect styling
+- ❌ Cards and surfaces used dark backgrounds instead of light
+- ❌ Overall theme was dark instead of light and calm
 
 **Root Cause:**
+- Base `[data-quiet-mode="true"]` selectors were applying to BOTH light and dark modes
 - Quiet mode CSS was designed only for dark theme (midnight violet palette)
 - No specific overrides for when quiet mode is active in light mode
 - CSS variables were forcing dark colors with `!important` regardless of theme
+- All base quiet mode styles needed to be scoped to dark mode only
 
 ---
 
 ## ✅ Solution Applied
 
-### **1. Created Light Quiet Mode Color Palette**
+### **1. Scoped Base Quiet Mode Styles to Dark Mode Only**
+
+**CRITICAL FIX:** Updated ALL base `[data-quiet-mode="true"]` selectors to only apply when NOT in light mode:
+
+```css
+/* BEFORE (WRONG - applied to both light and dark): */
+[data-quiet-mode="true"] body {
+  color: var(--text-primary); /* This was white! */
+}
+
+/* AFTER (CORRECT - only applies to dark quiet mode): */
+[data-theme="dark"][data-quiet-mode="true"] body,
+html:not([data-theme="light"])[data-quiet-mode="true"] body {
+  color: var(--text-primary); /* White text only in dark mode */
+}
+```
+
+**Updated sections:**
+- ✅ Backgrounds (body, containers, main)
+- ✅ Cards & Panels (all card types)
+- ✅ Text (headings, paragraphs, labels)
+- ✅ Links
+- ✅ Icons
+- ✅ Buttons (all variants)
+- ✅ Inputs & Textareas
+- ✅ Navbar
+- ✅ Page-specific styling (profile, messages, notifications, events, admin, auth, search, tags, photo essays, modals, tables)
+
+**Total changes:** 200+ selectors updated to be dark-mode-specific!
+
+---
+
+### **2. Created Light Quiet Mode Color Palette**
 
 Added new CSS variables specifically for Light Mode + Quiet Mode:
 
@@ -45,9 +79,9 @@ html:not([data-theme])[data-quiet-mode="true"] {
 
 ---
 
-### **2. Component-Specific Overrides for Light Quiet Mode**
+### **3. Component-Specific Overrides for Light Quiet Mode**
 
-Added overrides for ALL major UI components when Light Mode + Quiet Mode are active:
+Added 170+ lines of overrides for ALL major UI components when Light Mode + Quiet Mode are active:
 
 **Backgrounds:**
 - Body, main containers, app container
@@ -114,7 +148,10 @@ Added overrides for ALL major UI components when Light Mode + Quiet Mode are act
 
 ## ✅ Files Modified
 
-1. **`src/styles/quiet-mode.css`** - Added 170+ lines of light mode quiet overrides
+1. **`src/styles/quiet-mode.css`** - MAJOR REFACTOR:
+   - Updated 200+ base quiet mode selectors to be dark-mode-specific
+   - Added 170+ lines of light mode quiet overrides
+   - Total changes: 370+ lines modified/added
 
 ---
 
