@@ -209,23 +209,78 @@ html[data-quiet-mode="true"] body {
 [data-quiet-mode="true"] .btn,
 [data-quiet-mode="true"] .btn-post,
 [data-quiet-mode="true"] .btn-submit {
-  background-color: var(--btn-bg);
-  color: var(--btn-text);
-  border-color: var(--border-soft);
+  background-color: var(--btn-bg) !important;
+  color: var(--btn-text) !important;
+  border-color: var(--border-soft) !important;
 }
 
 [data-quiet-mode="true"] button:hover,
 [data-quiet-mode="true"] .btn:hover,
 [data-quiet-mode="true"] .btn-post:hover,
 [data-quiet-mode="true"] .btn-submit:hover {
-  background-color: var(--btn-bg-hover);
+  background-color: var(--btn-bg-hover) !important;
+  color: var(--btn-text) !important;
 }
 
 /* Gradient buttons */
 [data-quiet-mode="true"] .glossy-gradient,
-[data-quiet-mode="true"] .btn-primary {
-  background: linear-gradient(135deg, var(--accent-primary), var(--accent-hover));
-  color: var(--bg-main);
+[data-quiet-mode="true"] .btn-primary,
+[data-quiet-mode="true"] .pryde-btn {
+  background: linear-gradient(135deg, var(--accent-primary), var(--accent-hover)) !important;
+  color: var(--bg-main) !important;
+}
+
+[data-quiet-mode="true"] .pryde-btn:hover {
+  background: linear-gradient(135deg, var(--accent-hover), var(--accent-primary)) !important;
+  color: var(--bg-main) !important;
+}
+
+/* Secondary buttons in quiet mode */
+[data-quiet-mode="true"] .pryde-btn-secondary {
+  background-color: var(--btn-bg) !important;
+  color: var(--accent-primary) !important;
+  border-color: var(--accent-primary) !important;
+}
+
+[data-quiet-mode="true"] .pryde-btn-secondary:hover {
+  background-color: var(--accent-soft) !important;
+  color: var(--accent-hover) !important;
+}
+
+/* Ghost buttons in quiet mode */
+[data-quiet-mode="true"] .pryde-btn-ghost {
+  background-color: transparent !important;
+  color: var(--text-secondary) !important;
+  border-color: transparent !important;
+}
+
+[data-quiet-mode="true"] .pryde-btn-ghost:hover {
+  background-color: var(--accent-soft) !important;
+  color: var(--accent-primary) !important;
+}
+
+/* Danger buttons in quiet mode */
+[data-quiet-mode="true"] .pryde-btn-danger {
+  background-color: #3D2A2A !important;
+  color: #FFB3B3 !important;
+  border-color: #5A3A3A !important;
+}
+
+[data-quiet-mode="true"] .pryde-btn-danger:hover {
+  background-color: #4D3535 !important;
+  color: #FFC9C9 !important;
+}
+
+/* Success buttons in quiet mode */
+[data-quiet-mode="true"] .pryde-btn-success {
+  background-color: #2A3D35 !important;
+  color: #B3FFD9 !important;
+  border-color: #3A5A4A !important;
+}
+
+[data-quiet-mode="true"] .pryde-btn-success:hover {
+  background-color: #354D45 !important;
+  color: #C9FFE6 !important;
 }
 
 /* ========================================
@@ -436,5 +491,321 @@ html[data-quiet-mode="true"] body {
 
 [data-quiet-mode="true"] ::-webkit-scrollbar-thumb:hover {
   background: var(--accent-primary);
+}
+
+/* ========================================
+   DARK MODE + QUIET MODE COMBINED
+   Special overrides when both are active
+   ======================================== */
+
+html[data-theme="dark"][data-quiet-mode="true"] {
+  /* Ensure quiet mode colors take precedence */
+  --bg-main: #0F1021 !important;
+  --bg-surface: #1A1B2D !important;
+  --text-primary: #FFFFFF !important;
+  --text-secondary: #A4A7C2 !important;
+  --text-muted: #65677E !important;
+  --accent-primary: #C6B9F8 !important;
+  --accent-hover: #DAD3FF !important;
+  --border-soft: #4C4E75 !important;
+  --btn-bg: #1F2035 !important;
+  --btn-bg-hover: #2A2B46 !important;
+  --btn-text: #E8E8FF !important;
+}
+
+/* Cards and surfaces when both modes active */
+[data-theme="dark"][data-quiet-mode="true"] .post-card,
+[data-theme="dark"][data-quiet-mode="true"] .glossy,
+[data-theme="dark"][data-quiet-mode="true"] .card,
+[data-theme="dark"][data-quiet-mode="true"] .panel,
+[data-theme="dark"][data-quiet-mode="true"] .sidebar,
+[data-theme="dark"][data-quiet-mode="true"] .message-card,
+[data-theme="dark"][data-quiet-mode="true"] .notification-card,
+[data-theme="dark"][data-quiet-mode="true"] .modal-content,
+[data-theme="dark"][data-quiet-mode="true"] .dropdown-menu,
+[data-theme="dark"][data-quiet-mode="true"] .auth-card,
+[data-theme="dark"][data-quiet-mode="true"] .settings-section,
+[data-theme="dark"][data-quiet-mode="true"] .profile-card,
+[data-theme="dark"][data-quiet-mode="true"] .event-card,
+[data-theme="dark"][data-quiet-mode="true"] .admin-card {
+  background: var(--bg-surface) !important;
+  border-color: var(--border-soft) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Buttons when both modes active */
+[data-theme="dark"][data-quiet-mode="true"] button,
+[data-theme="dark"][data-quiet-mode="true"] .btn,
+[data-theme="dark"][data-quiet-mode="true"] .pryde-btn {
+  background: linear-gradient(135deg, var(--accent-primary), var(--accent-hover)) !important;
+  color: var(--bg-main) !important;
+  border-color: transparent !important;
+}
+
+[data-theme="dark"][data-quiet-mode="true"] .pryde-btn-secondary {
+  background-color: var(--btn-bg) !important;
+  color: var(--accent-primary) !important;
+  border-color: var(--accent-primary) !important;
+}
+
+[data-theme="dark"][data-quiet-mode="true"] .pryde-btn-ghost {
+  background-color: transparent !important;
+  color: var(--text-secondary) !important;
+}
+
+/* Inputs when both modes active */
+[data-theme="dark"][data-quiet-mode="true"] input,
+[data-theme="dark"][data-quiet-mode="true"] textarea,
+[data-theme="dark"][data-quiet-mode="true"] select {
+  background: var(--bg-surface) !important;
+  border-color: var(--border-soft) !important;
+  color: var(--text-primary) !important;
+}
+
+[data-theme="dark"][data-quiet-mode="true"] input:focus,
+[data-theme="dark"][data-quiet-mode="true"] textarea:focus,
+[data-theme="dark"][data-quiet-mode="true"] select:focus {
+  border-color: var(--accent-primary) !important;
+  box-shadow: 0 0 0 3px var(--accent-soft) !important;
+}
+
+/* Text when both modes active */
+[data-theme="dark"][data-quiet-mode="true"] body,
+[data-theme="dark"][data-quiet-mode="true"] h1,
+[data-theme="dark"][data-quiet-mode="true"] h2,
+[data-theme="dark"][data-quiet-mode="true"] h3,
+[data-theme="dark"][data-quiet-mode="true"] h4,
+[data-theme="dark"][data-quiet-mode="true"] h5,
+[data-theme="dark"][data-quiet-mode="true"] h6,
+[data-theme="dark"][data-quiet-mode="true"] p,
+[data-theme="dark"][data-quiet-mode="true"] label {
+  color: var(--text-primary) !important;
+}
+
+[data-theme="dark"][data-quiet-mode="true"] .text-muted,
+[data-theme="dark"][data-quiet-mode="true"] ::placeholder {
+  color: var(--text-muted) !important;
+}
+
+/* Links when both modes active */
+[data-theme="dark"][data-quiet-mode="true"] a {
+  color: var(--accent-primary) !important;
+}
+
+[data-theme="dark"][data-quiet-mode="true"] a:hover {
+  color: var(--accent-hover) !important;
+}
+
+/* Navbar when both modes active */
+[data-theme="dark"][data-quiet-mode="true"] .navbar {
+  background: var(--bg-surface) !important;
+  border-bottom: 1px solid var(--border-soft) !important;
+}
+
+[data-theme="dark"][data-quiet-mode="true"] .nav-button {
+  color: var(--text-secondary) !important;
+}
+
+[data-theme="dark"][data-quiet-mode="true"] .nav-button:hover {
+  background: var(--accent-soft) !important;
+  color: var(--accent-primary) !important;
+}
+
+/* Ensure background consistency */
+[data-theme="dark"][data-quiet-mode="true"] body,
+[data-theme="dark"][data-quiet-mode="true"] html,
+[data-theme="dark"][data-quiet-mode="true"] .app-container,
+[data-theme="dark"][data-quiet-mode="true"] main {
+  background-color: var(--bg-main) !important;
+}
+
+/* Modal buttons when both modes active */
+[data-theme="dark"][data-quiet-mode="true"] .custom-modal-btn-primary,
+[data-theme="dark"][data-quiet-mode="true"] .btn-passkey {
+  background: linear-gradient(135deg, var(--accent-primary), var(--accent-hover)) !important;
+  color: var(--bg-main) !important;
+}
+
+[data-theme="dark"][data-quiet-mode="true"] .custom-modal-btn-secondary {
+  background: var(--bg-surface) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-soft) !important;
+}
+
+/* Specific page elements when both modes active */
+[data-theme="dark"][data-quiet-mode="true"] .message-bubble {
+  background: var(--bg-surface) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-soft) !important;
+}
+
+[data-theme="dark"][data-quiet-mode="true"] .message-bubble.sent,
+[data-theme="dark"][data-quiet-mode="true"] .message-group.sent .message-bubble {
+  background: var(--accent-soft) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Notification items when both modes active */
+[data-theme="dark"][data-quiet-mode="true"] .notification-item {
+  background: var(--bg-surface) !important;
+  border-color: var(--border-soft) !important;
+  color: var(--text-primary) !important;
+}
+
+[data-theme="dark"][data-quiet-mode="true"] .notification-item.unread {
+  background: var(--accent-soft) !important;
+}
+
+/* Tables when both modes active */
+[data-theme="dark"][data-quiet-mode="true"] table,
+[data-theme="dark"][data-quiet-mode="true"] th,
+[data-theme="dark"][data-quiet-mode="true"] td {
+  background: var(--bg-surface) !important;
+  border-color: var(--border-soft) !important;
+  color: var(--text-primary) !important;
+}
+
+[data-theme="dark"][data-quiet-mode="true"] thead {
+  background: var(--btn-bg) !important;
+}
+
+/* Dropdown items when both modes active */
+[data-theme="dark"][data-quiet-mode="true"] .dropdown-item {
+  color: var(--text-primary) !important;
+}
+
+[data-theme="dark"][data-quiet-mode="true"] .dropdown-item:hover {
+  background: var(--accent-soft) !important;
+  color: var(--accent-primary) !important;
+}
+
+/* Profile stats and sections when both modes active */
+[data-theme="dark"][data-quiet-mode="true"] .profile-stats,
+[data-theme="dark"][data-quiet-mode="true"] .profile-tabs,
+[data-theme="dark"][data-quiet-mode="true"] .profile-bio,
+[data-theme="dark"][data-quiet-mode="true"] .profile-section {
+  background: var(--bg-surface) !important;
+  border-color: var(--border-soft) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Event details when both modes active */
+[data-theme="dark"][data-quiet-mode="true"] .event-header,
+[data-theme="dark"][data-quiet-mode="true"] .event-details {
+  background: var(--bg-surface) !important;
+  border-color: var(--border-soft) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Admin elements when both modes active */
+[data-theme="dark"][data-quiet-mode="true"] .admin-sidebar,
+[data-theme="dark"][data-quiet-mode="true"] .admin-stats,
+[data-theme="dark"][data-quiet-mode="true"] .admin-table,
+[data-theme="dark"][data-quiet-mode="true"] .admin-panel {
+  background: var(--bg-surface) !important;
+  border-color: var(--border-soft) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Account management cards when both modes active */
+[data-theme="dark"][data-quiet-mode="true"] .account-management-card {
+  background: var(--bg-surface) !important;
+  border-color: var(--border-soft) !important;
+  color: var(--text-primary) !important;
+}
+
+[data-theme="dark"][data-quiet-mode="true"] .account-management-card h3 {
+  color: var(--text-primary) !important;
+}
+
+[data-theme="dark"][data-quiet-mode="true"] .account-management-card p {
+  color: var(--text-secondary) !important;
+}
+
+/* Backup codes when both modes active */
+[data-theme="dark"][data-quiet-mode="true"] .backup-codes-container {
+  background: var(--bg-surface) !important;
+  border-color: var(--accent-primary) !important;
+}
+
+/* Session info when both modes active */
+[data-theme="dark"][data-quiet-mode="true"] .session-time {
+  color: var(--text-muted) !important;
+}
+
+/* Chat windows when both modes active */
+[data-theme="dark"][data-quiet-mode="true"] .mini-chat-box,
+[data-theme="dark"][data-quiet-mode="true"] .chat-window,
+[data-theme="dark"][data-quiet-mode="true"] .dm-window {
+  background: var(--bg-surface) !important;
+  border-color: var(--border-soft) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Journal and longform when both modes active */
+[data-theme="dark"][data-quiet-mode="true"] .journal-card,
+[data-theme="dark"][data-quiet-mode="true"] .journal-entry,
+[data-theme="dark"][data-quiet-mode="true"] .longform-card,
+[data-theme="dark"][data-quiet-mode="true"] .longform-article {
+  background: var(--bg-surface) !important;
+  border-color: var(--border-soft) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Photo essays when both modes active */
+[data-theme="dark"][data-quiet-mode="true"] .photo-essay-card,
+[data-theme="dark"][data-quiet-mode="true"] .photo-essay-gallery,
+[data-theme="dark"][data-quiet-mode="true"] .photo-essay-image-container {
+  background: var(--bg-surface) !important;
+  border-color: var(--border-soft) !important;
+}
+
+/* Tags and discovery when both modes active */
+[data-theme="dark"][data-quiet-mode="true"] .tag-card,
+[data-theme="dark"][data-quiet-mode="true"] .tag-grid,
+[data-theme="dark"][data-quiet-mode="true"] .tag-item,
+[data-theme="dark"][data-quiet-mode="true"] .featured-tag {
+  background: var(--bg-surface) !important;
+  border-color: var(--border-soft) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Search results when both modes active */
+[data-theme="dark"][data-quiet-mode="true"] .search-results-container,
+[data-theme="dark"][data-quiet-mode="true"] .search-result-card,
+[data-theme="dark"][data-quiet-mode="true"] .search-result-item {
+  background: var(--bg-surface) !important;
+  border-color: var(--border-soft) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Comment and reply cards when both modes active */
+[data-theme="dark"][data-quiet-mode="true"] .comment-card,
+[data-theme="dark"][data-quiet-mode="true"] .reply-card {
+  background: var(--bg-surface) !important;
+  border-color: var(--border-soft) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Stats cards when both modes active */
+[data-theme="dark"][data-quiet-mode="true"] .stats-card {
+  background: var(--bg-surface) !important;
+  border-color: var(--border-soft) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Form containers when both modes active */
+[data-theme="dark"][data-quiet-mode="true"] .form-container {
+  background: var(--bg-surface) !important;
+  border-color: var(--border-soft) !important;
+  color: var(--text-primary) !important;
+}
+
+/* User cards when both modes active */
+[data-theme="dark"][data-quiet-mode="true"] .user-card,
+[data-theme="dark"][data-quiet-mode="true"] .friend-card {
+  background: var(--bg-surface) !important;
+  border-color: var(--border-soft) !important;
+  color: var(--text-primary) !important;
 }
 
