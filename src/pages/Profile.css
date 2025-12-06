@@ -3,9 +3,16 @@
    ======================================== */
 
 .profile-container {
-  max-width: 1400px;
+  max-width: 1200px;
   margin: 0 auto;
   padding: 0 var(--space-4) var(--space-6);
+}
+
+/* Ultrawide monitor optimization */
+@media (min-width: 2560px) {
+  .profile-container {
+    max-width: 1400px;
+  }
 }
 
 .profile-header {

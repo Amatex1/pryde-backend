@@ -57,20 +57,21 @@ html {
 }
 
 /* Automatic responsive font scaling based on device size */
+/* UPDATED: More conservative scaling for ultrawide monitors to prevent stretching */
 
 /* Ultra-Wide Monitors (3440px+) */
 @media screen and (min-width: 3440px) {
-  html { font-size: 19px; } /* Super ultra-wide */
+  html { font-size: 16px; } /* Keep standard size on super ultra-wide */
 }
 
 /* Ultra-Wide Monitors (2560px - 3440px) */
 @media screen and (min-width: 2560px) and (max-width: 3439px) {
-  html { font-size: 18px; } /* Ultra-wide */
+  html { font-size: 16px; } /* Keep standard size on ultra-wide */
 }
 
 /* Large Desktop (1920px - 2560px) */
 @media screen and (min-width: 1920px) and (max-width: 2559px) {
-  html { font-size: 17px; } /* Large desktop */
+  html { font-size: 16px; } /* Keep standard size on large desktop */
 }
 
 /* Standard Desktop (1440px - 1920px) */

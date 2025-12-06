@@ -18,6 +18,15 @@
   transition: all 0.2s ease;
 }
 
+/* Ultrawide monitor optimization - prevent stretching */
+@media (min-width: 2560px) {
+  .feed-container {
+    max-width: 1400px;
+    grid-template-columns: minmax(600px, 800px) 320px;
+    justify-content: center;
+  }
+}
+
 @media (min-width: 769px) and (max-width: 1400px) {
   .feed-container {
     grid-template-columns: 1fr 280px;

@@ -63,6 +63,13 @@
   --z-sticky: 200;
   --z-modal: 1000;
   --z-toast: 2000;
+
+  /* Max Width Constraints (for ultrawide monitors) */
+  --max-width-content: 1400px;    /* Main content area */
+  --max-width-feed: 1200px;       /* Feed/timeline */
+  --max-width-form: 800px;        /* Forms, settings */
+  --max-width-modal: 600px;       /* Modals, dialogs */
+  --max-width-text: 680px;        /* Long-form text */
 }
 
 /* ========================================

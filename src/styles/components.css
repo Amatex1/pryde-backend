@@ -3,6 +3,34 @@
    ======================================== */
 
 /* ========================================
+   0. LAYOUT UTILITIES (for ultrawide monitors)
+   ======================================== */
+
+.pryde-container {
+  max-width: var(--max-width-content);
+  margin: 0 auto;
+  padding: 0 var(--space-4);
+}
+
+.pryde-container-feed {
+  max-width: var(--max-width-feed);
+  margin: 0 auto;
+  padding: 0 var(--space-4);
+}
+
+.pryde-container-form {
+  max-width: var(--max-width-form);
+  margin: 0 auto;
+  padding: 0 var(--space-4);
+}
+
+.pryde-container-narrow {
+  max-width: var(--max-width-modal);
+  margin: 0 auto;
+  padding: 0 var(--space-4);
+}
+
+/* ========================================
    1. CARDS
    ======================================== */
 
