@@ -72,7 +72,7 @@
   font-weight: 500;
   cursor: pointer;
   background: var(--color-primary);
-  color: #fff;
+  color: #fff !important; /* Force white text on primary buttons */
   transition: background 0.15s ease, box-shadow 0.15s ease, transform 0.05s ease;
   white-space: nowrap;
 }
@@ -80,6 +80,7 @@
 .pryde-btn:hover:not(:disabled) {
   background: var(--color-primary-hover);
   box-shadow: 0 4px 12px rgba(108, 92, 231, 0.25);
+  color: #fff !important; /* Keep white text on hover */
 }
 
 .pryde-btn:active:not(:disabled) {
@@ -95,45 +96,47 @@
 /* Button Variants */
 .pryde-btn-secondary {
   background: var(--color-primary-soft);
-  color: var(--color-primary);
+  color: var(--color-primary) !important;
   border-color: rgba(108, 92, 231, 0.2);
 }
 
 .pryde-btn-secondary:hover:not(:disabled) {
   background: var(--color-primary);
-  color: #fff;
+  color: #fff !important;
   box-shadow: 0 4px 12px rgba(108, 92, 231, 0.2);
 }
 
 .pryde-btn-ghost {
   background: transparent;
-  color: var(--text-muted);
+  color: var(--text-muted) !important;
   border-color: transparent;
 }
 
 .pryde-btn-ghost:hover:not(:disabled) {
   background: var(--bg-hover);
-  color: var(--color-primary);
+  color: var(--color-primary) !important;
   box-shadow: none;
 }
 
 .pryde-btn-danger {
   background: var(--color-danger);
-  color: #fff;
+  color: #fff !important;
 }
 
 .pryde-btn-danger:hover:not(:disabled) {
   background: #ff5654;
+  color: #fff !important;
   box-shadow: 0 4px 12px rgba(255, 118, 117, 0.25);
 }
 
 .pryde-btn-success {
   background: var(--color-success);
-  color: #fff;
+  color: #fff !important;
 }
 
 .pryde-btn-success:hover:not(:disabled) {
   background: #00a07d;
+  color: #fff !important;
   box-shadow: 0 4px 12px rgba(0, 184, 148, 0.25);
 }
 

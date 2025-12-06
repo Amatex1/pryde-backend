@@ -320,143 +320,154 @@
 
 /* Large Desktop (1920px - 2560px) */
 @media (min-width: 1920px) and (max-width: 2560px) {
-  /* Increase max-width for containers to use more space */
+  /* Keep containers at reasonable width - DO NOT STRETCH */
   .feed-container,
   .profile-container,
   .messages-container,
-  .admin-container,
+  .admin-container {
+    max-width: 1200px;
+  }
+
   .settings-container {
-    max-width: 1400px;
+    max-width: 800px;
   }
 
-  /* Larger font sizes for better readability */
+  /* Keep font size standard - DO NOT SCALE UP */
   body {
-    font-size: 17px;
+    font-size: 16px;
   }
 
-  /* Increase card padding */
+  /* Keep card padding standard */
   .post-card,
   .user-card,
   .settings-card {
-    padding: 2rem;
+    padding: var(--space-4) 18px;
   }
 
-  /* Larger buttons */
+  /* Keep button sizes standard */
   button,
   .btn-primary,
   .btn-secondary {
-    padding: 0.875rem 2rem;
-    font-size: 1.05rem;
+    padding: var(--space-2) 14px;
+    font-size: 14px;
   }
 
-  /* Increase grid gaps */
+  /* Keep grid gaps standard */
   .grid-2-cols,
   .grid-3-cols {
-    gap: 2rem;
+    gap: var(--space-4);
   }
 
-  /* Larger modals */
+  /* Keep modals standard */
   .modal-content,
   .custom-modal-content {
-    max-width: 700px;
+    max-width: 600px;
   }
 }
 
 /* Ultra-Wide Desktop (2560px - 3440px) */
 @media (min-width: 2560px) and (max-width: 3440px) {
-  /* Even larger containers */
+  /* Moderate container expansion - centered content */
   .feed-container,
   .profile-container,
   .messages-container,
-  .admin-container,
+  .admin-container {
+    max-width: 1400px;
+  }
+
   .settings-container {
-    max-width: 1600px;
+    max-width: 900px;
   }
 
-  /* Larger font sizes */
+  /* Keep font size standard - DO NOT SCALE UP */
   body {
-    font-size: 18px;
+    font-size: 16px;
   }
 
-  /* Increase card padding */
+  /* Keep card padding standard */
   .post-card,
   .user-card,
   .settings-card {
-    padding: 2.5rem;
+    padding: var(--space-4) 18px;
   }
 
-  /* Larger buttons */
+  /* Keep button sizes standard */
   button,
   .btn-primary,
   .btn-secondary {
-    padding: 1rem 2.5rem;
-    font-size: 1.1rem;
+    padding: var(--space-2) 14px;
+    font-size: 14px;
   }
 
-  /* Increase grid gaps */
+  /* Keep grid gaps standard */
   .grid-2-cols,
   .grid-3-cols {
-    gap: 2.5rem;
+    gap: var(--space-4);
   }
 
-  /* Larger modals */
+  /* Keep modals standard */
   .modal-content,
   .custom-modal-content {
-    max-width: 800px;
+    max-width: 600px;
   }
 
-  /* Show more content in sidebars */
+  /* Sidebar stays reasonable */
   .feed-sidebar {
-    min-width: 350px;
+    min-width: 320px;
+    max-width: 350px;
   }
 }
 
 /* Super Ultra-Wide (3440px+) */
 @media (min-width: 3440px) {
-  /* Maximum container width */
+  /* Maximum container width - still centered and reasonable */
   .feed-container,
   .profile-container,
   .messages-container,
-  .admin-container,
+  .admin-container {
+    max-width: 1400px;
+  }
+
   .settings-container {
-    max-width: 1800px;
-  }
-
-  /* Maximum font size */
-  body {
-    font-size: 19px;
-  }
-
-  /* Maximum card padding */
-  .post-card,
-  .user-card,
-  .settings-card {
-    padding: 3rem;
-  }
-
-  /* Maximum button size */
-  button,
-  .btn-primary,
-  .btn-secondary {
-    padding: 1.125rem 3rem;
-    font-size: 1.15rem;
-  }
-
-  /* Maximum grid gaps */
-  .grid-2-cols,
-  .grid-3-cols {
-    gap: 3rem;
-  }
-
-  /* Maximum modal size */
-  .modal-content,
-  .custom-modal-content {
     max-width: 900px;
   }
 
-  /* Maximum sidebar width */
+  /* Keep font size standard - DO NOT SCALE UP */
+  body {
+    font-size: 16px;
+  }
+
+  /* Keep card padding standard */
+  .post-card,
+  .user-card,
+  .settings-card {
+    padding: var(--space-4) 18px;
+  }
+
+  /* Keep button sizes standard */
+  button,
+  .btn-primary,
+  .btn-secondary {
+    padding: var(--space-2) 14px;
+    font-size: 14px;
+  }
+
+  /* Keep grid gaps standard */
+  .grid-2-cols,
+  .grid-3-cols {
+    gap: var(--space-4);
+  }
+
+  /* Keep modals standard */
+  .modal-content,
+  .custom-modal-content {
+    max-width: 600px;
+  }
+
+  /* Sidebar stays reasonable */
   .feed-sidebar {
-    min-width: 400px;
+    min-width: 320px;
+    max-width: 350px;
   }
 }
 

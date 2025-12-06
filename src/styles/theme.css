@@ -96,6 +96,26 @@
   --shadow-soft: 0 2px 8px rgba(0, 0, 0, 0.2);
   --shadow-medium: 0 4px 12px rgba(0, 0, 0, 0.3);
   --shadow-strong: 0 8px 24px rgba(0, 0, 0, 0.4);
+
+  /* Dark Mode - Adjusted soft colors for better contrast */
+  --color-primary-soft: #2A2640;
+  --color-danger-soft: #2A1A1A;
+  --color-success-soft: #1A2A25;
+  --color-warning-soft: #2A2520;
+}
+
+/* Dark Mode - Button text fixes */
+[data-theme="dark"] .pryde-btn-secondary {
+  background: var(--color-primary-soft);
+  color: var(--color-primary) !important;
+}
+
+[data-theme="dark"] .pryde-btn-ghost {
+  color: var(--text-muted) !important;
+}
+
+[data-theme="dark"] .pryde-btn-ghost:hover {
+  color: var(--color-primary) !important;
 }
 
 /* ========================================

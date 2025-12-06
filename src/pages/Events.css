@@ -8,9 +8,16 @@
 }
 
 .events-container {
-  max-width: 1400px;
+  max-width: 1200px;
   margin: 0 auto;
   padding: var(--space-6) var(--space-4);
+}
+
+/* Ultrawide monitor optimization */
+@media (min-width: 2560px) {
+  .events-container {
+    max-width: 1400px;
+  }
 }
 
 .events-header {
