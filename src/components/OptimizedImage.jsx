@@ -77,18 +77,10 @@ function OptimizedImage({
   const generateSrcSet = (url) => {
     if (!url || url.startsWith('data:')) return null;
 
-    // For Render-hosted images, we can add query parameters for different sizes
-    // This assumes your backend supports image resizing via query params
-    // If not, this will just use the original image
-    const widths = [320, 640, 960, 1280, 1920];
-
-    return widths
-      .map(width => {
-        // Check if URL already has query params
-        const separator = url.includes('?') ? '&' : '?';
-        return `${url}${separator}w=${width} ${width}w`;
-      })
-      .join(', ');
+    // Only generate srcset for external CDN images that support resizing
+    // For now, disable srcset to avoid errors since backend doesn't support image resizing
+    // TODO: Implement image resizing on backend or use CDN with automatic resizing
+    return null;
   };
 
   // Default sizes attribute for responsive images
