@@ -1,6 +1,7 @@
+import { memo } from 'react';
 import './PostSkeleton.css';
 
-function PostSkeleton() {
+const PostSkeleton = memo(function PostSkeleton() {
   return (
     <div className="post-skeleton">
       <div className="skeleton-header">
@@ -21,7 +22,7 @@ function PostSkeleton() {
       </div>
     </div>
   );
-}
+});
 
 export default PostSkeleton;
 

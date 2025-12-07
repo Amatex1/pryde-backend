@@ -1,6 +1,7 @@
+import { memo } from 'react';
 import './ProfileSkeleton.css';
 
-function ProfileSkeleton() {
+const ProfileSkeleton = memo(function ProfileSkeleton() {
   return (
     <div className="profile-skeleton">
       <div className="skeleton-cover"></div>
@@ -20,7 +21,7 @@ function ProfileSkeleton() {
       </div>
     </div>
   );
-}
+});
 
 export default ProfileSkeleton;
 

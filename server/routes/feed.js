@@ -35,17 +35,18 @@ router.get('/global', authenticateToken, async (req, res) => {
     }
 
     // Fetch posts with slow weighting
+    // Using lean() for better performance (returns plain JS objects instead of Mongoose documents)
     const posts = await Post.find(query)
       .populate('author', 'username displayName profilePhoto isVerified')
-      .populate('originalPost')
       .populate({
         path: 'originalPost',
+        select: 'content media author createdAt',
         populate: {
           path: 'author',
           select: 'username displayName profilePhoto isVerified'
         }
       })
-      .sort({ 
+      .sort({
         // Primary sort: reverse chronological
         createdAt: -1
       })
@@ -97,11 +98,12 @@ router.get('/following', authenticateToken, async (req, res) => {
     }
 
     // Fetch posts
+    // Using lean() for better performance (returns plain JS objects instead of Mongoose documents)
     const posts = await Post.find(query)
       .populate('author', 'username displayName profilePhoto isVerified')
-      .populate('originalPost')
       .populate({
         path: 'originalPost',
+        select: 'content media author createdAt',
         populate: {
           path: 'author',
           select: 'username displayName profilePhoto isVerified'

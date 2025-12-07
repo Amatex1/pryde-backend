@@ -15,6 +15,7 @@ import mongoose from "mongoose";
 import helmet from "helmet";
 import mongoSanitize from "express-mongo-sanitize";
 import cookieParser from "cookie-parser";
+import compression from "compression";
 
 // Import routes
 import authRoutes from './routes/auth.js';
@@ -196,6 +197,18 @@ app.use(mongoSanitize({
 
 app.use(cors(corsOptions));
 app.use(cookieParser()); // Parse cookies for CSRF tokens
+
+// Compression middleware - compress all responses
+app.use(compression({
+  filter: (req, res) => {
+    if (req.headers['x-no-compression']) {
+      return false;
+    }
+    return compression.filter(req, res);
+  },
+  level: 6 // Compression level (0-9, 6 is default and good balance)
+}));
+
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 

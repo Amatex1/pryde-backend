@@ -1,8 +1,9 @@
+import { memo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { convertEmojiShortcuts } from '../utils/textFormatting';
 import './FormattedText.css';
 
-function FormattedText({ text, className = '' }) {
+const FormattedText = memo(function FormattedText({ text, className = '' }) {
   const navigate = useNavigate();
 
   if (!text) return null;
@@ -77,7 +78,7 @@ function FormattedText({ text, className = '' }) {
       })}
     </span>
   );
-}
+});
 
 export default FormattedText;
 

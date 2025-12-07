@@ -571,6 +571,18 @@ const userSchema = new mongoose.Schema({
   }]
 });
 
+// Indexes for efficient queries
+userSchema.index({ username: 1 }, { unique: true });
+userSchema.index({ email: 1 }, { unique: true });
+userSchema.index({ createdAt: -1 });
+userSchema.index({ isActive: 1, isBanned: 1, isSuspended: 1 });
+userSchema.index({ role: 1 });
+userSchema.index({ 'followers': 1 });
+userSchema.index({ 'following': 1 });
+userSchema.index({ 'passkeys.credentialId': 1 });
+userSchema.index({ resetPasswordToken: 1 });
+userSchema.index({ lastSeen: -1 });
+
 // Hash password before saving
 userSchema.pre('save', async function(next) {
   if (!this.isModified('password')) return next();
