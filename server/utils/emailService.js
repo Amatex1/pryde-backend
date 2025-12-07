@@ -1,44 +1,18 @@
-import pkg from 'nodemailer';
-const { createTransport, getTestMessageUrl } = pkg;
+import { Resend } from 'resend';
 import config from '../config/config.js';
 
-// Create transporter
-const createTransporter = () => {
-  // For development, use ethereal email (fake SMTP)
-  // For production, use a real SMTP service like SendGrid, Gmail, etc.
+// Initialize Resend client
+const resend = new Resend(process.env.RESEND_API_KEY);
 
-  if (config.nodeEnv === 'production' && process.env.EMAIL_HOST) {
-    return createTransport({
-      host: process.env.EMAIL_HOST,
-      port: process.env.EMAIL_PORT || 587,
-      secure: process.env.EMAIL_SECURE === 'true',
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS
-      }
-    });
-  }
-
-  // For development/testing - logs to console
-  return createTransport({
-    host: 'smtp.ethereal.email',
-    port: 587,
-    secure: false,
-    auth: {
-      user: process.env.EMAIL_USER || 'test@example.com',
-      pass: process.env.EMAIL_PASS || 'testpassword'
-    }
-  });
-};
+// Email sender address
+const FROM_EMAIL = process.env.EMAIL_FROM || 'Pryde Social <noreply@prydeapp.com>';
 
 export const sendPasswordResetEmail = async (email, resetToken, username) => {
   try {
-    const transporter = createTransporter();
-    
     const resetUrl = `${config.frontendURL}/reset-password?token=${resetToken}`;
-    
-    const mailOptions = {
-      from: process.env.EMAIL_FROM || '"Pryde Social" <noreply@prydeapp.com>',
+
+    const { data, error } = await resend.emails.send({
+      from: FROM_EMAIL,
       to: email,
       subject: 'Password Reset Request - Pryde Social',
       html: `
@@ -114,18 +88,15 @@ export const sendPasswordResetEmail = async (email, resetToken, username) => {
         </body>
         </html>
       `
-    };
-    
-    const info = await transporter.sendMail(mailOptions);
-    
-    console.log('Password reset email sent:', info.messageId);
-    
-    // For development, log the preview URL
-    if (config.nodeEnv !== 'production') {
-      console.log('Preview URL:', getTestMessageUrl(info));
+    });
+
+    if (error) {
+      console.error('Error sending password reset email:', error);
+      throw new Error('Failed to send password reset email');
     }
-    
-    return { success: true, messageId: info.messageId };
+
+    console.log('Password reset email sent:', data.id);
+    return { success: true, messageId: data.id };
   } catch (error) {
     console.error('Error sending password reset email:', error);
     throw new Error('Failed to send password reset email');
@@ -134,8 +105,6 @@ export const sendPasswordResetEmail = async (email, resetToken, username) => {
 
 export const sendLoginAlertEmail = async (email, username, loginInfo) => {
   try {
-    const transporter = createTransporter();
-
     const { deviceInfo, browser, os, ipAddress, location, timestamp } = loginInfo;
     const formattedDate = new Date(timestamp).toLocaleString('en-US', {
       weekday: 'long',
@@ -147,8 +116,8 @@ export const sendLoginAlertEmail = async (email, username, loginInfo) => {
       timeZoneName: 'short'
     });
 
-    const mailOptions = {
-      from: process.env.EMAIL_FROM || '"Pryde Social Security" <security@prydeapp.com>',
+    const { data, error } = await resend.emails.send({
+      from: FROM_EMAIL,
       to: email,
       subject: '🔐 New Login to Your Pryde Social Account',
       html: `
@@ -290,18 +259,15 @@ export const sendLoginAlertEmail = async (email, username, loginInfo) => {
         </body>
         </html>
       `
-    };
+    });
 
-    const info = await transporter.sendMail(mailOptions);
-
-    console.log('Login alert email sent:', info.messageId);
-
-    // For development, log the preview URL
-    if (config.nodeEnv !== 'production') {
-      console.log('Preview URL:', getTestMessageUrl(info));
+    if (error) {
+      console.error('Error sending login alert email:', error);
+      return { success: false, error: error.message };
     }
 
-    return { success: true, messageId: info.messageId };
+    console.log('Login alert email sent:', data.id);
+    return { success: true, messageId: data.id };
   } catch (error) {
     console.error('Error sending login alert email:', error);
     // Don't throw error - login should succeed even if email fails
@@ -311,8 +277,6 @@ export const sendLoginAlertEmail = async (email, username, loginInfo) => {
 
 export const sendSuspiciousLoginEmail = async (email, username, loginInfo) => {
   try {
-    const transporter = createTransporter();
-
     const { deviceInfo, browser, os, ipAddress, location, timestamp } = loginInfo;
     const formattedDate = new Date(timestamp).toLocaleString('en-US', {
       weekday: 'long',
@@ -324,8 +288,8 @@ export const sendSuspiciousLoginEmail = async (email, username, loginInfo) => {
       timeZoneName: 'short'
     });
 
-    const mailOptions = {
-      from: process.env.EMAIL_FROM || '"Pryde Social Security" <security@prydeapp.com>',
+    const { data, error } = await resend.emails.send({
+      from: FROM_EMAIL,
       to: email,
       subject: '⚠️ SUSPICIOUS LOGIN ATTEMPT - Pryde Social',
       html: `
@@ -471,18 +435,15 @@ export const sendSuspiciousLoginEmail = async (email, username, loginInfo) => {
         </body>
         </html>
       `
-    };
+    });
 
-    const info = await transporter.sendMail(mailOptions);
-
-    console.log('Suspicious login alert email sent:', info.messageId);
-
-    // For development, log the preview URL
-    if (config.nodeEnv !== 'production') {
-      console.log('Preview URL:', getTestMessageUrl(info));
+    if (error) {
+      console.error('Error sending suspicious login email:', error);
+      return { success: false, error: error.message };
     }
 
-    return { success: true, messageId: info.messageId };
+    console.log('Suspicious login alert email sent:', data.id);
+    return { success: true, messageId: data.id };
   } catch (error) {
     console.error('Error sending suspicious login email:', error);
     // Don't throw error - login should succeed even if email fails

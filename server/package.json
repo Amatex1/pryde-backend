@@ -30,6 +30,7 @@
     "nodemailer": "^7.0.10",
     "pusher": "^5.0.0",
     "qrcode": "^1.5.4",
+    "resend": "^6.5.2",
     "socket.io": "^4.7.2",
     "speakeasy": "^2.0.0",
     "web-push": "^3.6.2",
