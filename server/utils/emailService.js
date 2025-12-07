@@ -25,12 +25,6 @@ export const sendPasswordResetEmail = async (email, resetToken, username) => {
 
     const resetUrl = `${config.frontendURL}/reset-password?token=${resetToken}`;
 
-    // Debug logging
-    console.log('EMAIL_FROM value:', FROM_EMAIL);
-    console.log('EMAIL_FROM type:', typeof FROM_EMAIL);
-    console.log('EMAIL_FROM length:', FROM_EMAIL.length);
-    console.log('EMAIL_FROM charCodes:', FROM_EMAIL.split('').map(c => c.charCodeAt(0)));
-
     const { data, error } = await resendClient.emails.send({
       from: FROM_EMAIL,
       to: email,
@@ -39,72 +33,90 @@ export const sendPasswordResetEmail = async (email, resetToken, username) => {
         <!DOCTYPE html>
         <html>
         <head>
-          <style>
-            body {
-              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-              line-height: 1.6;
-              color: #2B2B2B;
-              max-width: 600px;
-              margin: 0 auto;
-              padding: 20px;
-            }
-            .container {
-              background: linear-gradient(135deg, #6C5CE7 0%, #0984E3 100%);
-              border-radius: 16px;
-              padding: 40px;
-              color: white;
-            }
-            .content {
-              background: white;
-              border-radius: 12px;
-              padding: 30px;
-              margin-top: 20px;
-              color: #2B2B2B;
-            }
-            .button {
-              display: inline-block;
-              background: linear-gradient(135deg, #6C5CE7 0%, #0984E3 100%);
-              color: white;
-              padding: 14px 32px;
-              text-decoration: none;
-              border-radius: 8px;
-              font-weight: 600;
-              margin: 20px 0;
-            }
-            .footer {
-              text-align: center;
-              margin-top: 20px;
-              font-size: 12px;
-              color: #616161;
-            }
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <!--[if mso]>
+          <style type="text/css">
+            body, table, td {font-family: Arial, Helvetica, sans-serif !important;}
           </style>
+          <![endif]-->
         </head>
-        <body>
-          <div class="container">
-            <h1 style="margin: 0;">✨ Pryde Social</h1>
-            <p style="margin: 10px 0 0;">Password Reset Request</p>
-          </div>
-          
-          <div class="content">
-            <h2>Hi ${username},</h2>
-            <p>We received a request to reset your password. Click the button below to create a new password:</p>
-            
-            <a href="${resetUrl}" class="button">Reset Password</a>
-            
-            <p>Or copy and paste this link into your browser:</p>
-            <p style="word-break: break-all; color: #6C5CE7;">${resetUrl}</p>
-            
-            <p><strong>This link will expire in 1 hour.</strong></p>
-            
-            <p>If you didn't request a password reset, you can safely ignore this email. Your password will not be changed.</p>
-            
-            <p>Best regards,<br>The Pryde Social Team</p>
-          </div>
-          
-          <div class="footer">
-            <p>© ${new Date().getFullYear()} Pryde Social. All rights reserved.</p>
-            <p>This is an automated email. Please do not reply.</p>
-          </div>
+        <body style="margin: 0; padding: 0; background-color: #F7F7F7; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+          <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #F7F7F7;">
+            <tr>
+              <td style="padding: 40px 20px;">
+                <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="max-width: 600px; margin: 0 auto;">
+
+                  <!-- Header with Purple Gradient -->
+                  <tr>
+                    <td style="background-color: #6C5CE7; padding: 40px 30px; text-align: center;">
+                      <h1 style="margin: 0; color: #FFFFFF; font-size: 28px; font-weight: 700;">✨ Pryde Social</h1>
+                      <p style="margin: 10px 0 0; color: #EDEAFF; font-size: 16px;">Password Reset Request</p>
+                    </td>
+                  </tr>
+
+                  <!-- Main Content -->
+                  <tr>
+                    <td style="background-color: #FFFFFF; padding: 40px 30px;">
+                      <h2 style="margin: 0 0 20px 0; color: #2B2B2B; font-size: 22px; font-weight: 600;">Hi ${username},</h2>
+
+                      <p style="margin: 0 0 20px 0; color: #2B2B2B; font-size: 16px; line-height: 1.6;">
+                        We received a request to reset your password. Click the button below to create a new password:
+                      </p>
+
+                      <!-- Button -->
+                      <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin: 30px 0;">
+                        <tr>
+                          <td style="background-color: #6C5CE7; text-align: center;">
+                            <a href="${resetUrl}" style="display: inline-block; padding: 16px 40px; color: #FFFFFF; text-decoration: none; font-weight: 600; font-size: 16px;">Reset Password</a>
+                          </td>
+                        </tr>
+                      </table>
+
+                      <p style="margin: 30px 0 10px 0; color: #616161; font-size: 14px;">
+                        Or copy and paste this link into your browser:
+                      </p>
+                      <p style="margin: 0 0 30px 0; color: #6C5CE7; font-size: 14px; word-break: break-all;">
+                        ${resetUrl}
+                      </p>
+
+                      <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 30px 0; background-color: #FFF3CD; border-left: 4px solid #FFC107;">
+                        <tr>
+                          <td style="padding: 15px;">
+                            <p style="margin: 0; color: #856404; font-size: 14px; font-weight: 600;">
+                              ⏰ This link will expire in 1 hour.
+                            </p>
+                          </td>
+                        </tr>
+                      </table>
+
+                      <p style="margin: 0 0 20px 0; color: #2B2B2B; font-size: 16px; line-height: 1.6;">
+                        If you didn't request a password reset, you can safely ignore this email. Your password will not be changed.
+                      </p>
+
+                      <p style="margin: 30px 0 0 0; color: #2B2B2B; font-size: 16px; line-height: 1.6;">
+                        Best regards,<br>
+                        <strong>The Pryde Social Team</strong>
+                      </p>
+                    </td>
+                  </tr>
+
+                  <!-- Footer -->
+                  <tr>
+                    <td style="background-color: #F7F7F7; padding: 30px; text-align: center;">
+                      <p style="margin: 0 0 10px 0; color: #616161; font-size: 12px;">
+                        © ${new Date().getFullYear()} Pryde Social. All rights reserved.
+                      </p>
+                      <p style="margin: 0; color: #616161; font-size: 12px;">
+                        This is an automated email. Please do not reply.
+                      </p>
+                    </td>
+                  </tr>
+
+                </table>
+              </td>
+            </tr>
+          </table>
         </body>
         </html>
       `
