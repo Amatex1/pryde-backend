@@ -1278,7 +1278,11 @@ function Profile() {
                         <div className="post-author">
                           <div className="author-avatar">
                             {post.author?.profilePhoto ? (
-                              <img src={getImageUrl(post.author.profilePhoto)} alt={post.author.username} />
+                              <OptimizedImage
+                                src={getImageUrl(post.author.profilePhoto)}
+                                alt={post.author.username}
+                                className="avatar-image"
+                              />
                             ) : (
                               <span>{post.author?.displayName?.charAt(0).toUpperCase() || 'U'}</span>
                             )}
@@ -1445,7 +1449,7 @@ function Profile() {
                                     {post.originalPost.media.map((mediaItem, index) => (
                                       <div key={index} className="media-item">
                                         {mediaItem.type === 'image' ? (
-                                          <img
+                                          <OptimizedImage
                                             src={getImageUrl(mediaItem.url)}
                                             alt="Shared post media"
                                             onClick={() => setPhotoViewerImage(getImageUrl(mediaItem.url))}
@@ -1469,7 +1473,7 @@ function Profile() {
                                     {post.media.map((mediaItem, index) => (
                                       <div key={index} className="media-item">
                                         {mediaItem.type === 'image' ? (
-                                          <img
+                                          <OptimizedImage
                                             src={getImageUrl(mediaItem.url)}
                                             alt="Post media"
                                             onClick={() => setPhotoViewerImage(getImageUrl(mediaItem.url))}
@@ -2098,7 +2102,11 @@ function Profile() {
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '15px', marginBottom: '15px' }}>
                         {essay.photos && essay.photos.slice(0, 4).map((photo, idx) => (
                           <div key={idx} style={{ position: 'relative' }}>
-                            <img src={getImageUrl(photo.url)} alt={photo.caption || `Photo ${idx + 1}`} style={{ width: '100%', borderRadius: '8px', aspectRatio: '1', objectFit: 'cover' }} />
+                            <OptimizedImage
+                              src={getImageUrl(photo.url)}
+                              alt={photo.caption || `Photo ${idx + 1}`}
+                              style={{ width: '100%', borderRadius: '8px', aspectRatio: '1', objectFit: 'cover' }}
+                            />
                             {photo.caption && (
                               <p style={{ marginTop: '8px', fontSize: '0.85rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>{photo.caption}</p>
                             )}
