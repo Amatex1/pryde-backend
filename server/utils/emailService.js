@@ -24,6 +24,12 @@ export const sendPasswordResetEmail = async (email, resetToken, username) => {
 
     const resetUrl = `${config.frontendURL}/reset-password?token=${resetToken}`;
 
+    // Debug logging
+    console.log('EMAIL_FROM value:', FROM_EMAIL);
+    console.log('EMAIL_FROM type:', typeof FROM_EMAIL);
+    console.log('EMAIL_FROM length:', FROM_EMAIL.length);
+    console.log('EMAIL_FROM charCodes:', FROM_EMAIL.split('').map(c => c.charCodeAt(0)));
+
     const { data, error } = await resendClient.emails.send({
       from: FROM_EMAIL,
       to: email,
