@@ -1260,12 +1260,13 @@ function Feed() {
                                           <button
                                             className={`comment-action-btn ${comment.reactions?.some(r => r.user?._id === currentUser?.id || r.user === currentUser?.id) ? 'liked' : ''}`}
                                             onClick={(e) => {
-                                              // On mobile, toggle picker; on desktop, like immediately
+                                              // On mobile, toggle picker; on desktop, react with default
                                               if (window.innerWidth <= 768) {
                                                 e.preventDefault();
                                                 setShowReactionPicker(showReactionPicker === `comment-${comment._id}` ? null : `comment-${comment._id}`);
                                               } else {
-                                                handleCommentReaction(post._id, comment._id, '👍');
+                                                const userReaction = comment.reactions?.find(r => r.user?._id === currentUser?.id || r.user === currentUser?.id);
+                                                handleCommentReaction(post._id, comment._id, userReaction?.emoji || '👍');
                                               }
                                             }}
                                             onMouseEnter={() => {
@@ -1273,8 +1274,29 @@ function Feed() {
                                                 setShowReactionPicker(`comment-${comment._id}`);
                                               }
                                             }}
+                                            onMouseLeave={() => {
+                                              if (window.innerWidth > 768) {
+                                                setTimeout(() => {
+                                                  if (showReactionPicker === `comment-${comment._id}`) {
+                                                    setShowReactionPicker(null);
+                                                  }
+                                                }, 300);
+                                              }
+                                            }}
+                                            onTouchStart={(e) => {
+                                              const touchTimer = setTimeout(() => {
+                                                setShowReactionPicker(`comment-${comment._id}`);
+                                              }, 500);
+                                              e.currentTarget.dataset.touchTimer = touchTimer;
+                                            }}
+                                            onTouchEnd={(e) => {
+                                              if (e.currentTarget.dataset.touchTimer) {
+                                                clearTimeout(parseInt(e.currentTarget.dataset.touchTimer));
+                                                delete e.currentTarget.dataset.touchTimer;
+                                              }
+                                            }}
                                           >
-                                            {comment.reactions?.find(r => r.user?._id === currentUser?.id || r.user === currentUser?.id)?.emoji || '👍'} Like
+                                            {comment.reactions?.find(r => r.user?._id === currentUser?.id || r.user === currentUser?.id)?.emoji || '👍'}
                                           </button>
                                           {comment.reactions?.length > 0 && (
                                             <button
@@ -1285,7 +1307,7 @@ function Feed() {
                                                 likes: []
                                               })}
                                             >
-                                              ({comment.reactions.length})
+                                              {comment.reactions.length}
                                             </button>
                                           )}
                                           {showReactionPicker === `comment-${comment._id}` && (
@@ -1302,20 +1324,19 @@ function Feed() {
                                                 }
                                               }}
                                             >
-                                              <button className="reaction-btn" onClick={() => { handleCommentReaction(post._id, comment._id, '👍'); setShowReactionPicker(null); }} title="Like">👍</button>
-                                              <button className="reaction-btn" onClick={() => { handleCommentReaction(post._id, comment._id, '❤️'); setShowReactionPicker(null); }} title="Love">❤️</button>
-                                              <button className="reaction-btn" onClick={() => { handleCommentReaction(post._id, comment._id, '😂'); setShowReactionPicker(null); }} title="Haha">😂</button>
-                                              <button className="reaction-btn" onClick={() => { handleCommentReaction(post._id, comment._id, '😮'); setShowReactionPicker(null); }} title="Wow">😮</button>
-                                              <button className="reaction-btn" onClick={() => { handleCommentReaction(post._id, comment._id, '😢'); setShowReactionPicker(null); }} title="Sad">😢</button>
-                                              <button className="reaction-btn" onClick={() => { handleCommentReaction(post._id, comment._id, '😡'); setShowReactionPicker(null); }} title="Angry">😡</button>
-                                              <button className="reaction-btn" onClick={() => { handleCommentReaction(post._id, comment._id, '🤗'); setShowReactionPicker(null); }} title="Care">🤗</button>
-                                              <button className="reaction-btn" onClick={() => { handleCommentReaction(post._id, comment._id, '🎉'); setShowReactionPicker(null); }} title="Celebrate">🎉</button>
-                                              <button className="reaction-btn" onClick={() => { handleCommentReaction(post._id, comment._id, '🤔'); setShowReactionPicker(null); }} title="Think">🤔</button>
-                                              <button className="reaction-btn" onClick={() => { handleCommentReaction(post._id, comment._id, '🔥'); setShowReactionPicker(null); }} title="Fire">🔥</button>
-                                              <button className="reaction-btn" onClick={() => { handleCommentReaction(post._id, comment._id, '👏'); setShowReactionPicker(null); }} title="Clap">👏</button>
-                                              <button className="reaction-btn" onClick={() => { handleCommentReaction(post._id, comment._id, '🤯'); setShowReactionPicker(null); }} title="Mind Blown">🤯</button>
-                                              <button className="reaction-btn" onClick={() => { handleCommentReaction(post._id, comment._id, '🤢'); setShowReactionPicker(null); }} title="Disgust">🤢</button>
-                                              <button className="reaction-btn" onClick={() => { handleCommentReaction(post._id, comment._id, '👎'); setShowReactionPicker(null); }} title="Dislike">👎</button>
+                                              {['👍', '❤️', '😂', '😮', '😢', '😡', '🤗', '🎉', '🤔', '🔥', '👏', '🤯', '🤢', '👎'].map(emoji => (
+                                                <button
+                                                  key={emoji}
+                                                  className="reaction-btn"
+                                                  onClick={() => {
+                                                    handleCommentReaction(post._id, comment._id, emoji);
+                                                    setShowReactionPicker(null);
+                                                  }}
+                                                  title={emoji}
+                                                >
+                                                  {emoji}
+                                                </button>
+                                              ))}
                                             </div>
                                           )}
                                         </div>
@@ -1475,12 +1496,13 @@ function Feed() {
                                                   <button
                                                     className={`comment-action-btn ${reply.reactions?.some(r => r.user?._id === currentUser?.id || r.user === currentUser?.id) ? 'liked' : ''}`}
                                                     onClick={(e) => {
-                                                      // On mobile, toggle picker; on desktop, like immediately
+                                                      // On mobile, toggle picker; on desktop, react with default
                                                       if (window.innerWidth <= 768) {
                                                         e.preventDefault();
                                                         setShowReactionPicker(showReactionPicker === `reply-${reply._id}` ? null : `reply-${reply._id}`);
                                                       } else {
-                                                        handleCommentReaction(post._id, reply._id, '👍');
+                                                        const userReaction = reply.reactions?.find(r => r.user?._id === currentUser?.id || r.user === currentUser?.id);
+                                                        handleCommentReaction(post._id, reply._id, userReaction?.emoji || '👍');
                                                       }
                                                     }}
                                                     onMouseEnter={() => {
@@ -1488,8 +1510,29 @@ function Feed() {
                                                         setShowReactionPicker(`reply-${reply._id}`);
                                                       }
                                                     }}
+                                                    onMouseLeave={() => {
+                                                      if (window.innerWidth > 768) {
+                                                        setTimeout(() => {
+                                                          if (showReactionPicker === `reply-${reply._id}`) {
+                                                            setShowReactionPicker(null);
+                                                          }
+                                                        }, 300);
+                                                      }
+                                                    }}
+                                                    onTouchStart={(e) => {
+                                                      const touchTimer = setTimeout(() => {
+                                                        setShowReactionPicker(`reply-${reply._id}`);
+                                                      }, 500);
+                                                      e.currentTarget.dataset.touchTimer = touchTimer;
+                                                    }}
+                                                    onTouchEnd={(e) => {
+                                                      if (e.currentTarget.dataset.touchTimer) {
+                                                        clearTimeout(parseInt(e.currentTarget.dataset.touchTimer));
+                                                        delete e.currentTarget.dataset.touchTimer;
+                                                      }
+                                                    }}
                                                   >
-                                                    {reply.reactions?.find(r => r.user?._id === currentUser?.id || r.user === currentUser?.id)?.emoji || '👍'} Like
+                                                    {reply.reactions?.find(r => r.user?._id === currentUser?.id || r.user === currentUser?.id)?.emoji || '👍'}
                                                   </button>
                                                   {reply.reactions?.length > 0 && (
                                                     <button
@@ -1500,7 +1543,7 @@ function Feed() {
                                                         likes: []
                                                       })}
                                                     >
-                                                      ({reply.reactions.length})
+                                                      {reply.reactions.length}
                                                     </button>
                                                   )}
                                                   {showReactionPicker === `reply-${reply._id}` && (
@@ -1517,20 +1560,19 @@ function Feed() {
                                                         }
                                                       }}
                                                     >
-                                                      <button className="reaction-btn" onClick={() => { handleCommentReaction(post._id, reply._id, '👍'); setShowReactionPicker(null); }} title="Like">👍</button>
-                                                      <button className="reaction-btn" onClick={() => { handleCommentReaction(post._id, reply._id, '❤️'); setShowReactionPicker(null); }} title="Love">❤️</button>
-                                                      <button className="reaction-btn" onClick={() => { handleCommentReaction(post._id, reply._id, '😂'); setShowReactionPicker(null); }} title="Haha">😂</button>
-                                                      <button className="reaction-btn" onClick={() => { handleCommentReaction(post._id, reply._id, '😮'); setShowReactionPicker(null); }} title="Wow">😮</button>
-                                                      <button className="reaction-btn" onClick={() => { handleCommentReaction(post._id, reply._id, '😢'); setShowReactionPicker(null); }} title="Sad">😢</button>
-                                                      <button className="reaction-btn" onClick={() => { handleCommentReaction(post._id, reply._id, '😡'); setShowReactionPicker(null); }} title="Angry">😡</button>
-                                                      <button className="reaction-btn" onClick={() => { handleCommentReaction(post._id, reply._id, '🤗'); setShowReactionPicker(null); }} title="Care">🤗</button>
-                                                      <button className="reaction-btn" onClick={() => { handleCommentReaction(post._id, reply._id, '🎉'); setShowReactionPicker(null); }} title="Celebrate">🎉</button>
-                                                      <button className="reaction-btn" onClick={() => { handleCommentReaction(post._id, reply._id, '🤔'); setShowReactionPicker(null); }} title="Think">🤔</button>
-                                                      <button className="reaction-btn" onClick={() => { handleCommentReaction(post._id, reply._id, '🔥'); setShowReactionPicker(null); }} title="Fire">🔥</button>
-                                                      <button className="reaction-btn" onClick={() => { handleCommentReaction(post._id, reply._id, '👏'); setShowReactionPicker(null); }} title="Clap">👏</button>
-                                                      <button className="reaction-btn" onClick={() => { handleCommentReaction(post._id, reply._id, '🤯'); setShowReactionPicker(null); }} title="Mind Blown">🤯</button>
-                                                      <button className="reaction-btn" onClick={() => { handleCommentReaction(post._id, reply._id, '🤢'); setShowReactionPicker(null); }} title="Disgust">🤢</button>
-                                                      <button className="reaction-btn" onClick={() => { handleCommentReaction(post._id, reply._id, '👎'); setShowReactionPicker(null); }} title="Dislike">👎</button>
+                                                      {['👍', '❤️', '😂', '😮', '😢', '😡', '🤗', '🎉', '🤔', '🔥', '👏', '🤯', '🤢', '👎'].map(emoji => (
+                                                        <button
+                                                          key={emoji}
+                                                          className="reaction-btn"
+                                                          onClick={() => {
+                                                            handleCommentReaction(post._id, reply._id, emoji);
+                                                            setShowReactionPicker(null);
+                                                          }}
+                                                          title={emoji}
+                                                        >
+                                                          {emoji}
+                                                        </button>
+                                                      ))}
                                                     </div>
                                                   )}
                                                 </div>

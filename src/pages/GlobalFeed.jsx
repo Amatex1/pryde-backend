@@ -451,7 +451,8 @@ function GlobalFeed() {
                                         e.preventDefault();
                                         setShowReactionPicker(showReactionPicker === `comment-${comment._id}` ? null : `comment-${comment._id}`);
                                       } else {
-                                        handleCommentReaction(post._id, comment._id, '👍');
+                                        const userReaction = comment.reactions?.find(r => r.user?._id === currentUser?.id || r.user === currentUser?.id);
+                                        handleCommentReaction(post._id, comment._id, userReaction?.emoji || '👍');
                                       }
                                     }}
                                     onMouseEnter={() => {
@@ -459,8 +460,29 @@ function GlobalFeed() {
                                         setShowReactionPicker(`comment-${comment._id}`);
                                       }
                                     }}
+                                    onMouseLeave={() => {
+                                      if (window.innerWidth > 768) {
+                                        setTimeout(() => {
+                                          if (showReactionPicker === `comment-${comment._id}`) {
+                                            setShowReactionPicker(null);
+                                          }
+                                        }, 300);
+                                      }
+                                    }}
+                                    onTouchStart={(e) => {
+                                      const touchTimer = setTimeout(() => {
+                                        setShowReactionPicker(`comment-${comment._id}`);
+                                      }, 500);
+                                      e.currentTarget.dataset.touchTimer = touchTimer;
+                                    }}
+                                    onTouchEnd={(e) => {
+                                      if (e.currentTarget.dataset.touchTimer) {
+                                        clearTimeout(parseInt(e.currentTarget.dataset.touchTimer));
+                                        delete e.currentTarget.dataset.touchTimer;
+                                      }
+                                    }}
                                   >
-                                    {comment.reactions?.find(r => r.user?._id === currentUser?.id || r.user === currentUser?.id)?.emoji || '👍'} Like
+                                    {comment.reactions?.find(r => r.user?._id === currentUser?.id || r.user === currentUser?.id)?.emoji || '👍'}
                                   </button>
                                   {comment.reactions?.length > 0 && (
                                     <button
@@ -471,7 +493,7 @@ function GlobalFeed() {
                                         likes: []
                                       })}
                                     >
-                                      ({comment.reactions.length})
+                                      {comment.reactions.length}
                                     </button>
                                   )}
                                   {showReactionPicker === `comment-${comment._id}` && (
@@ -488,10 +510,13 @@ function GlobalFeed() {
                                         }
                                       }}
                                     >
-                                      {['👍', '❤️', '😂', '😮', '😢', '😡'].map(emoji => (
+                                      {['👍', '❤️', '😂', '😮', '😢', '😡', '🤗', '🎉', '🤔', '🔥', '👏', '🤯', '🤢', '👎'].map(emoji => (
                                         <button
                                           key={emoji}
-                                          onClick={() => handleCommentReaction(post._id, comment._id, emoji)}
+                                          onClick={() => {
+                                            handleCommentReaction(post._id, comment._id, emoji);
+                                            setShowReactionPicker(null);
+                                          }}
                                           className="reaction-emoji-btn"
                                         >
                                           {emoji}
