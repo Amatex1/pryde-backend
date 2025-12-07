@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import FormattedText from '../components/FormattedText';
+import OptimizedImage from '../components/OptimizedImage';
 import api from '../utils/api';
 import { getImageUrl } from '../utils/imageUrl';
 import PhotoViewer from '../components/PhotoViewer';
