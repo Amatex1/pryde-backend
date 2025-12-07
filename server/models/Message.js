@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { encryptMessage, decryptMessage, isEncrypted } from '../utils/encryption.js';
 
 const messageSchema = new mongoose.Schema({
   sender: {
@@ -77,5 +78,66 @@ const messageSchema = new mongoose.Schema({
 
 // Index for efficient queries
 messageSchema.index({ sender: 1, recipient: 1, createdAt: -1 });
+
+// ============================================================================
+// ENCRYPTION MIDDLEWARE
+// ============================================================================
+
+/**
+ * Encrypt message content before saving to database
+ * This ensures all messages are encrypted at rest
+ */
+messageSchema.pre('save', async function(next) {
+  try {
+    // Only encrypt if content is modified and not already encrypted
+    if (this.isModified('content') && this.content && !isEncrypted(this.content)) {
+      console.log('🔒 Encrypting message content...');
+      this.content = encryptMessage(this.content);
+    }
+    next();
+  } catch (error) {
+    console.error('❌ Error encrypting message:', error);
+    next(error);
+  }
+});
+
+/**
+ * Decrypt message content when converting to JSON
+ * This ensures messages are decrypted when sent to clients
+ */
+messageSchema.methods.toJSON = function() {
+  const message = this.toObject();
+
+  try {
+    // Decrypt content if it's encrypted
+    if (message.content && isEncrypted(message.content)) {
+      message.content = decryptMessage(message.content);
+    }
+  } catch (error) {
+    console.error('❌ Error decrypting message:', error);
+    // Return encrypted content if decryption fails (better than crashing)
+    message.content = '[Encrypted message - decryption failed]';
+  }
+
+  return message;
+};
+
+/**
+ * Virtual property to get decrypted content
+ * Use this when you need the decrypted content in queries
+ */
+messageSchema.virtual('decryptedContent').get(function() {
+  try {
+    if (this.content && isEncrypted(this.content)) {
+      return decryptMessage(this.content);
+    }
+    return this.content;
+  } catch (error) {
+    console.error('❌ Error decrypting message:', error);
+    return '[Encrypted message - decryption failed]';
+  }
+});
+
+// ============================================================================
 
 export default mongoose.model('Message', messageSchema);
