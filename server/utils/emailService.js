@@ -11,7 +11,8 @@ const getResendClient = () => {
 };
 
 // Email sender address
-const FROM_EMAIL = process.env.EMAIL_FROM || 'Pryde Social <noreply@prydeapp.com>';
+// Force correct format - ignore env var for now to debug
+const FROM_EMAIL = 'Pryde Social <noreply@prydeapp.com>';
 
 export const sendPasswordResetEmail = async (email, resetToken, username) => {
   try {
