@@ -150,3 +150,151 @@ function GlobalFeed() {
     }
   };
 
+  const toggleCommentBox = (postId) => {
+    setShowCommentBox(prev => ({
+      ...prev,
+      [postId]: !prev[postId]
+    }));
+  };
+
+  const handleCommentSubmit = async (postId, e) => {
+    e.preventDefault();
+    const content = commentText[postId];
+    if (!content || !content.trim()) return;
+
+    try {
+      const contentWithEmojis = convertEmojiShortcuts(content);
+      const response = await api.post(`/posts/${postId}/comment`, { content: contentWithEmojis });
+      setPosts(posts.map(p => p._id === postId ? response.data : p));
+      setCommentText(prev => ({ ...prev, [postId]: '' }));
+    } catch (error) {
+      console.error('Failed to comment:', error);
+    }
+  };
+
+  const handleCommentChange = (postId, value) => {
+    setCommentText(prev => ({ ...prev, [postId]: value }));
+  };
+
+  const handleReplyToComment = (postId, commentId) => {
+    setReplyingToComment({ postId, commentId });
+    setReplyText('');
+  };
+
+  const handleSubmitReply = async (e) => {
+    e.preventDefault();
+    if (!replyText.trim() || !replyingToComment) return;
+
+    try {
+      const { postId, commentId } = replyingToComment;
+      const contentWithEmojis = convertEmojiShortcuts(replyText);
+      const response = await api.post(`/posts/${postId}/comment/${commentId}/reply`, { content: contentWithEmojis });
+      setPosts(posts.map(p => p._id === postId ? response.data : p));
+      setReplyingToComment(null);
+      setReplyText('');
+    } catch (error) {
+      console.error('Failed to reply to comment:', error);
+    }
+  };
+
+  const handleCancelReply = () => {
+    setReplyingToComment(null);
+    setReplyText('');
+  };
+
+  const toggleReplies = (commentId) => {
+    setShowReplies(prev => ({
+      ...prev,
+      [commentId]: !prev[commentId]
+    }));
+  };
+
+  if (loading && posts.length === 0) {
+    return (
+      <>
+        <Navbar />
+        <div className="global-feed-container">
+          <div className="feed-header">
+            <h1>🌍 Everyone</h1>
+            <p className="feed-subtitle">Explore posts from the entire community</p>
+          </div>
+          <div className="loading">Loading...</div>
+        </div>
+      </>
+    );
+  }
+
+  return (
+    <>
+      <Navbar />
+      <div className="global-feed-container">
+        <div className="feed-header">
+          <h1>🌍 Everyone</h1>
+          <p className="feed-subtitle">Explore posts from the entire community</p>
+        </div>
+
+        <div className="posts-list">
+          {posts.map(post => {
+            const isLiked = post.hasLiked || false;
+
+            return (
+              <div key={post._id} className="post-card glossy">
+                {/* Post Header */}
+                <div className="post-header">
+                  <Link to={`/profile/${post.author?.username}`} className="post-author">
+                    <div className="author-avatar">
+                      {post.author?.profilePhoto ? (
+                        <OptimizedImage
+                          src={getImageUrl(post.author.profilePhoto)}
+                          alt={post.author.username}
+                          className="avatar-image"
+                        />
+                      ) : (
+                        <span>{post.author?.displayName?.charAt(0).toUpperCase()}</span>
+                      )}
+                    </div>
+                    <div className="author-info">
+                      <span className="author-name">
+                        {post.author?.displayName}
+                        {post.author?.isVerified && <span className="verified-badge">✓</span>}
+                      </span>
+                      <span className="post-time">
+                        {(() => {
+                          const postDate = new Date(post.createdAt);
+                          const now = new Date();
+                          const diffMs = now - postDate;
+                          const diffMins = Math.floor(diffMs / 60000);
+                          const diffHours = Math.floor(diffMs / 3600000);
+                          const diffDays = Math.floor(diffMs / 86400000);
+
+                          if (diffMins < 1) return 'Just now';
+                          if (diffMins < 60) return `${diffMins}m`;
+                          if (diffHours < 24) return `${diffHours}h`;
+                          if (diffDays < 7) return `${diffDays}d`;
+                          return postDate.toLocaleDateString();
+                        })()}
+                      </span>
+                    </div>
+                  </Link>
+                </div>
+
+                {/* Post Content */}
+                <div className="post-content">
+                  <FormattedText text={post.content} />
+                  {post.media && post.media.length > 0 && (
+                    <div className="post-media">
+                      {post.media.map((item, index) => (
+                        item.type === 'image' ? (
+                          <OptimizedImage
+                            key={index}
+                            src={getImageUrl(item.url)}
+                            alt="Post media"
+                          />
+                        ) : (
+                          <video key={index} src={getImageUrl(item.url)} controls />
+                        )
+                      ))}
+                    </div>
+                  )}
+                </div>
+
