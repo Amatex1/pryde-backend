@@ -146,6 +146,39 @@ function Feed() {
         fetchFriends();
       });
       cleanupFunctions.push(cleanupUserOffline);
+
+      // Listen for real-time post reactions
+      const socket = getSocket();
+      if (socket) {
+        const handlePostReaction = (data) => {
+          console.log('💜 Real-time post reaction received:', data);
+          setPosts((prevPosts) =>
+            prevPosts.map(p => p._id === data.postId ? data.post : p)
+          );
+        };
+        socket.on('post_reaction_added', handlePostReaction);
+        cleanupFunctions.push(() => socket.off('post_reaction_added', handlePostReaction));
+
+        // Listen for real-time comment reactions
+        const handleCommentReaction = (data) => {
+          console.log('💜 Real-time comment reaction received:', data);
+          setPosts((prevPosts) =>
+            prevPosts.map(p => p._id === data.postId ? data.post : p)
+          );
+        };
+        socket.on('comment_reaction_added', handleCommentReaction);
+        cleanupFunctions.push(() => socket.off('comment_reaction_added', handleCommentReaction));
+
+        // Listen for real-time comments
+        const handleCommentAdded = (data) => {
+          console.log('💬 Real-time comment received:', data);
+          setPosts((prevPosts) =>
+            prevPosts.map(p => p._id === data.postId ? data.post : p)
+          );
+        };
+        socket.on('comment_added', handleCommentAdded);
+        cleanupFunctions.push(() => socket.off('comment_added', handleCommentAdded));
+      }
     };
 
     // Mark as set up immediately to prevent duplicate setup
