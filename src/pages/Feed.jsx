@@ -1081,6 +1081,16 @@ function Feed() {
                               setShowReactionPicker(`post-${post._id}`);
                             }
                           }}
+                          onMouseLeave={() => {
+                            // Delay hiding to allow moving to picker
+                            if (window.innerWidth > 768) {
+                              setTimeout(() => {
+                                if (showReactionPicker === `post-${post._id}`) {
+                                  setShowReactionPicker(null);
+                                }
+                              }, 300);
+                            }
+                          }}
                           onTouchStart={(e) => {
                             // Long press shows emoji picker on mobile
                             const touchTimer = setTimeout(() => {
