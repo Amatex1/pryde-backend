@@ -253,7 +253,7 @@ function Admin() {
         const response = await api.get('/admin/activity?days=7');
         setActivity(response.data);
       } else if (activeTab === 'security') {
-        const response = await api.get('/admin/security-logs?limit=100');
+        const response = await api.get('/admin/security-logs?limit=50');
         setSecurityLogs(response.data.logs);
         setSecurityStats(response.data.stats);
       } else if (activeTab === 'verification') {
@@ -556,11 +556,20 @@ function Admin() {
             <ActivityTab activity={activity} onViewPost={handleViewPost} />
           )}
           {activeTab === 'security' && (
-            <SecurityTab
-              logs={securityLogs}
-              stats={securityStats}
-              onResolve={handleResolveSecurityLog}
-            />
+            loading ? (
+              <div className="loading-state">
+                <div className="shimmer" style={{ height: '100px', borderRadius: '12px', marginBottom: '1rem' }}></div>
+                <div className="shimmer" style={{ height: '60px', borderRadius: '12px', marginBottom: '1rem' }}></div>
+                <div className="shimmer" style={{ height: '60px', borderRadius: '12px', marginBottom: '1rem' }}></div>
+                <div className="shimmer" style={{ height: '60px', borderRadius: '12px' }}></div>
+              </div>
+            ) : (
+              <SecurityTab
+                logs={securityLogs}
+                stats={securityStats}
+                onResolve={handleResolveSecurityLog}
+              />
+            )
           )}
           {activeTab === 'verification' && (
             <VerificationTab

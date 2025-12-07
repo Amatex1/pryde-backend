@@ -551,35 +551,70 @@ router.get('/security-logs', checkPermission('canViewAnalytics'), async (req, re
     if (severity) filter.severity = severity;
     if (resolved !== undefined) filter.resolved = resolved === 'true';
 
-    // Get logs
-    const logs = await SecurityLog.find(filter)
-      .populate('userId', 'username email profilePicture')
-      .populate('resolvedBy', 'username')
-      .sort({ createdAt: -1 })
-      .limit(parseInt(limit))
-      .skip(parseInt(skip));
+    // Fetch logs and stats in parallel for faster response
+    const [logs, total, statsAggregation] = await Promise.all([
+      // Get logs
+      SecurityLog.find(filter)
+        .populate('userId', 'username email profilePicture')
+        .populate('resolvedBy', 'username')
+        .sort({ createdAt: -1 })
+        .limit(parseInt(limit))
+        .skip(parseInt(skip)),
 
-    // Get total count
-    const total = await SecurityLog.countDocuments(filter);
+      // Get total count
+      SecurityLog.countDocuments(filter),
 
-    // Get stats
+      // Get all stats in a single aggregation query (much faster!)
+      SecurityLog.aggregate([
+        {
+          $facet: {
+            total: [{ $count: 'count' }],
+            unresolved: [
+              { $match: { resolved: false } },
+              { $count: 'count' }
+            ],
+            byType: [
+              { $group: { _id: '$type', count: { $sum: 1 } } }
+            ],
+            bySeverity: [
+              { $group: { _id: '$severity', count: { $sum: 1 } } }
+            ]
+          }
+        }
+      ])
+    ]);
+
+    // Format aggregation results
     const stats = {
-      total: await SecurityLog.countDocuments(),
-      unresolved: await SecurityLog.countDocuments({ resolved: false }),
+      total: statsAggregation[0].total[0]?.count || 0,
+      unresolved: statsAggregation[0].unresolved[0]?.count || 0,
       byType: {
-        underage_registration: await SecurityLog.countDocuments({ type: 'underage_registration' }),
-        underage_login: await SecurityLog.countDocuments({ type: 'underage_login' }),
-        underage_access: await SecurityLog.countDocuments({ type: 'underage_access' }),
-        failed_login: await SecurityLog.countDocuments({ type: 'failed_login' }),
-        suspicious_activity: await SecurityLog.countDocuments({ type: 'suspicious_activity' })
+        underage_registration: 0,
+        underage_login: 0,
+        underage_access: 0,
+        failed_login: 0,
+        suspicious_activity: 0
       },
       bySeverity: {
-        low: await SecurityLog.countDocuments({ severity: 'low' }),
-        medium: await SecurityLog.countDocuments({ severity: 'medium' }),
-        high: await SecurityLog.countDocuments({ severity: 'high' }),
-        critical: await SecurityLog.countDocuments({ severity: 'critical' })
+        low: 0,
+        medium: 0,
+        high: 0,
+        critical: 0
       }
     };
+
+    // Map aggregation results to stats object
+    statsAggregation[0].byType.forEach(item => {
+      if (stats.byType.hasOwnProperty(item._id)) {
+        stats.byType[item._id] = item.count;
+      }
+    });
+
+    statsAggregation[0].bySeverity.forEach(item => {
+      if (stats.bySeverity.hasOwnProperty(item._id)) {
+        stats.bySeverity[item._id] = item.count;
+      }
+    });
 
     res.json({
       logs,
