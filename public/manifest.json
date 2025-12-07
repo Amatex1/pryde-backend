@@ -11,21 +11,9 @@
   "icons": [
     {
       "src": "/pryde-logo.png",
-      "sizes": "192x192",
+      "sizes": "870x870",
       "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/pryde-logo.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/pryde-logo.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "maskable"
+      "purpose": "any maskable"
     }
   ],
   "categories": ["social", "lifestyle", "entertainment"],
@@ -35,28 +23,28 @@
       "short_name": "Feed",
       "description": "View your personalized feed",
       "url": "/feed",
-      "icons": [{ "src": "/pryde-logo.png", "sizes": "192x192" }]
+      "icons": [{ "src": "/pryde-logo.png", "sizes": "870x870" }]
     },
     {
       "name": "Messages",
       "short_name": "Messages",
       "description": "Check your messages",
       "url": "/messages",
-      "icons": [{ "src": "/pryde-logo.png", "sizes": "192x192" }]
+      "icons": [{ "src": "/pryde-logo.png", "sizes": "870x870" }]
     },
     {
       "name": "Notifications",
       "short_name": "Notifications",
       "description": "View notifications",
       "url": "/notifications",
-      "icons": [{ "src": "/pryde-logo.png", "sizes": "192x192" }]
+      "icons": [{ "src": "/pryde-logo.png", "sizes": "870x870" }]
     },
     {
       "name": "Profile",
       "short_name": "Profile",
       "description": "View your profile",
       "url": "/profile",
-      "icons": [{ "src": "/pryde-logo.png", "sizes": "192x192" }]
+      "icons": [{ "src": "/pryde-logo.png", "sizes": "870x870" }]
     }
   ],
   "prefer_related_applications": false,
