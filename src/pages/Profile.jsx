@@ -1162,7 +1162,11 @@ function Profile() {
                             {media.type === 'video' ? (
                               <video src={getImageUrl(media.url)} controls />
                             ) : (
-                              <img src={getImageUrl(media.url)} alt={`Upload ${index + 1}`} />
+                              <OptimizedImage
+                                src={getImageUrl(media.url)}
+                                alt={`Upload ${index + 1}`}
+                                loading="eager"
+                              />
                             )}
                             <button
                               type="button"
