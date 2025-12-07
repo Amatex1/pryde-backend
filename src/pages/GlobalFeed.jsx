@@ -9,6 +9,7 @@ import Navbar from '../components/Navbar';
 import ReactionDetailsModal from '../components/ReactionDetailsModal';
 import FormattedText from '../components/FormattedText';
 import OptimizedImage from '../components/OptimizedImage';
+import PostSkeleton from '../components/PostSkeleton';
 import api from '../utils/api';
 import { getCurrentUser } from '../utils/auth';
 import { getImageUrl } from '../utils/imageUrl';
@@ -218,7 +219,11 @@ function GlobalFeed() {
             <h1>🌍 Everyone</h1>
             <p className="feed-subtitle">Explore posts from the entire community</p>
           </div>
-          <div className="loading">Loading...</div>
+          <div className="posts-list">
+            <PostSkeleton />
+            <PostSkeleton />
+            <PostSkeleton />
+          </div>
         </div>
       </>
     );

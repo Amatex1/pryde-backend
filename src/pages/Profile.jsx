@@ -81,14 +81,24 @@ function Profile() {
   const editTextareaRef = useRef(null);
 
   useEffect(() => {
-    fetchUserProfile();
-    fetchUserPosts();
+    // Fetch all data in parallel for faster initial load
+    const fetchPromises = [
+      fetchUserProfile(),
+      fetchUserPosts()
+    ];
+
     if (!isOwnProfile) {
-      checkFriendStatus();
-      checkFollowStatus(); // Check follow status for new system
-      checkBlockStatus();
-      checkPrivacyPermissions();
+      fetchPromises.push(
+        checkFriendStatus(),
+        checkFollowStatus(),
+        checkBlockStatus(),
+        checkPrivacyPermissions()
+      );
     }
+
+    Promise.all(fetchPromises).catch(error => {
+      console.error('Error loading profile data:', error);
+    });
   }, [id]);
 
   // Auto-resize edit textarea based on content
@@ -1250,7 +1260,11 @@ function Profile() {
             {activeTab === 'posts' && (
               <>
                 {loadingPosts ? (
-                  <div className="loading-state">Loading posts...</div>
+                  <>
+                    <PostSkeleton />
+                    <PostSkeleton />
+                    <PostSkeleton />
+                  </>
                 ) : posts.length === 0 ? (
                   <div className="empty-state glossy">
                     <p>No posts yet</p>

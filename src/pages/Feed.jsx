@@ -69,13 +69,18 @@ function Feed() {
   const listenersSetUpRef = useRef(false);
 
   useEffect(() => {
-    fetchPosts();
-    fetchBlockedUsers();
-    fetchFriends();
-    fetchTrending();
-    fetchBookmarkedPosts();
-    fetchUnreadMessageCounts();
-    fetchPrivacySettings();
+    // Fetch all data in parallel for faster initial load
+    Promise.all([
+      fetchPosts(),
+      fetchBlockedUsers(),
+      fetchFriends(),
+      fetchTrending(),
+      fetchBookmarkedPosts(),
+      fetchUnreadMessageCounts(),
+      fetchPrivacySettings()
+    ]).catch(error => {
+      console.error('Error loading initial data:', error);
+    });
 
     // Poll for unread message counts every 30 seconds
     const interval = setInterval(fetchUnreadMessageCounts, 30000);
