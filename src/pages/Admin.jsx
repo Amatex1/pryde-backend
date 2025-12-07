@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import CustomModal from '../components/CustomModal';
+import OptimizedImage from '../components/OptimizedImage';
 import { useModal } from '../hooks/useModal';
 import api from '../utils/api';
 import { getCurrentUser } from '../utils/auth';
@@ -1189,7 +1190,11 @@ function PostModal({ post, onClose }) {
           {post.images && post.images.length > 0 && (
             <div className="admin-post-media">
               {post.images.map((img, index) => (
-                <img key={index} src={getImageUrl(img)} alt={`Image ${index + 1}`} />
+                <OptimizedImage
+                  key={index}
+                  src={getImageUrl(img)}
+                  alt={`Image ${index + 1}`}
+                />
               ))}
             </div>
           )}

@@ -5,6 +5,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import OptimizedImage from '../components/OptimizedImage';
 import api from '../utils/api';
 import './TagFeed.css';
 
@@ -146,7 +147,11 @@ function TagFeed() {
                 {post.images && post.images.length > 0 && (
                   <div className="post-images">
                     {post.images.map((img, idx) => (
-                      <img key={idx} src={img} alt="Post" />
+                      <OptimizedImage
+                        key={idx}
+                        src={img}
+                        alt="Post"
+                      />
                     ))}
                   </div>
                 )}
