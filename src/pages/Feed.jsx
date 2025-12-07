@@ -9,6 +9,7 @@ import ShareModal from '../components/ShareModal';
 import ReactionDetailsModal from '../components/ReactionDetailsModal';
 import FormattedText from '../components/FormattedText';
 import PostSkeleton from '../components/PostSkeleton';
+import OptimizedImage from '../components/OptimizedImage';
 import { useModal } from '../hooks/useModal';
 import api from '../utils/api';
 import { getCurrentUser } from '../utils/auth';
@@ -788,7 +789,11 @@ function Feed() {
                       <div className="post-author">
                         <Link to={`/profile/${post.author?.username}`} className="author-avatar" style={{ textDecoration: 'none' }}>
                           {post.author?.profilePhoto ? (
-                            <img src={getImageUrl(post.author.profilePhoto)} alt={post.author.username} />
+                            <OptimizedImage
+                              src={getImageUrl(post.author.profilePhoto)}
+                              alt={post.author.username}
+                              className="avatar-image"
+                            />
                           ) : (
                             <span>{post.author?.displayName?.charAt(0).toUpperCase() || post.author?.username?.charAt(0).toUpperCase() || 'U'}</span>
                           )}
@@ -897,7 +902,11 @@ function Feed() {
                           <div className="shared-post-header" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
                             <div className="author-avatar" style={{ width: '32px', height: '32px' }}>
                               {post.originalPost.author?.profilePhoto ? (
-                                <img src={getImageUrl(post.originalPost.author.profilePhoto)} alt={post.originalPost.author.username} />
+                                <OptimizedImage
+                                  src={getImageUrl(post.originalPost.author.profilePhoto)}
+                                  alt={post.originalPost.author.username}
+                                  className="avatar-image"
+                                />
                               ) : (
                                 <span>{post.originalPost.author?.displayName?.charAt(0).toUpperCase() || 'U'}</span>
                               )}
@@ -919,7 +928,7 @@ function Feed() {
                                   {media.type === 'video' ? (
                                     <video src={getImageUrl(media.url)} controls />
                                   ) : (
-                                    <img
+                                    <OptimizedImage
                                       src={getImageUrl(media.url)}
                                       alt={`Shared post media ${index + 1}`}
                                       onClick={() => setPhotoViewerImage(getImageUrl(media.url))}
@@ -1005,7 +1014,7 @@ function Feed() {
                                   {media.type === 'video' ? (
                                     <video src={getImageUrl(media.url)} controls />
                                   ) : (
-                                    <img
+                                    <OptimizedImage
                                       src={getImageUrl(media.url)}
                                       alt={`Post media ${index + 1}`}
                                       onClick={() => setPhotoViewerImage(getImageUrl(media.url))}
@@ -1136,7 +1145,11 @@ function Feed() {
                               >
                                 <Link to={`/profile/${comment.user?.username}`} className="comment-avatar" style={{ textDecoration: 'none' }}>
                                   {comment.user?.profilePhoto ? (
-                                    <img src={getImageUrl(comment.user.profilePhoto)} alt={comment.user.username} />
+                                    <OptimizedImage
+                                      src={getImageUrl(comment.user.profilePhoto)}
+                                      alt={comment.user.username}
+                                      className="avatar-image"
+                                    />
                                   ) : (
                                     <span>{comment.user?.displayName?.charAt(0).toUpperCase() || 'U'}</span>
                                   )}
@@ -1347,7 +1360,11 @@ function Feed() {
                                       >
                                         <Link to={`/profile/${reply.user?._id}`} className="comment-avatar" style={{ textDecoration: 'none' }}>
                                           {reply.user?.profilePhoto ? (
-                                            <img src={getImageUrl(reply.user.profilePhoto)} alt={reply.user.username} />
+                                            <OptimizedImage
+                                              src={getImageUrl(reply.user.profilePhoto)}
+                                              alt={reply.user.username}
+                                              className="avatar-image"
+                                            />
                                           ) : (
                                             <span>{reply.user?.displayName?.charAt(0).toUpperCase() || 'U'}</span>
                                           )}
@@ -1521,7 +1538,11 @@ function Feed() {
                         <div className="comment-input-wrapper">
                           <div className="comment-user-avatar">
                             {currentUser?.profilePhoto ? (
-                              <img src={getImageUrl(currentUser.profilePhoto)} alt="You" />
+                              <OptimizedImage
+                                src={getImageUrl(currentUser.profilePhoto)}
+                                alt="You"
+                                className="avatar-image"
+                              />
                             ) : (
                               <span>{currentUser?.displayName?.charAt(0).toUpperCase() || 'U'}</span>
                             )}
@@ -1641,7 +1662,11 @@ function Feed() {
                       <div className="friend-sidebar-main">
                         <div className="friend-sidebar-avatar">
                           {friend.profilePhoto ? (
-                            <img src={getImageUrl(friend.profilePhoto)} alt={friend.displayName} />
+                            <OptimizedImage
+                              src={getImageUrl(friend.profilePhoto)}
+                              alt={friend.displayName}
+                              className="avatar-image"
+                            />
                           ) : (
                             <span>{friend.displayName?.charAt(0).toUpperCase() || 'U'}</span>
                           )}
@@ -1742,7 +1767,11 @@ function Feed() {
                       <div className="friend-info">
                         <div className="friend-avatar-small">
                           {friend.profilePhoto ? (
-                            <img src={getImageUrl(friend.profilePhoto)} alt={friend.displayName} />
+                            <OptimizedImage
+                              src={getImageUrl(friend.profilePhoto)}
+                              alt={friend.displayName}
+                              className="avatar-image"
+                            />
                           ) : (
                             <span>{friend.displayName?.charAt(0).toUpperCase()}</span>
                           )}
@@ -1777,7 +1806,11 @@ function Feed() {
                       <div className="friend-info">
                         <div className="friend-avatar-small">
                           {friend.profilePhoto ? (
-                            <img src={getImageUrl(friend.profilePhoto)} alt={friend.displayName} />
+                            <OptimizedImage
+                              src={getImageUrl(friend.profilePhoto)}
+                              alt={friend.displayName}
+                              className="avatar-image"
+                            />
                           ) : (
                             <span>{friend.displayName?.charAt(0).toUpperCase()}</span>
                           )}
