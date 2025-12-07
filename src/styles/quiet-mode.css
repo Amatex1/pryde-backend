@@ -450,7 +450,8 @@ html:not([data-theme="light"])[data-quiet-mode="true"] .nav-button:hover {
 [data-quiet-mode="true"] .following-count,
 [data-quiet-mode="true"] .share-count,
 [data-quiet-mode="true"] .comment-count,
-[data-quiet-mode="true"] .metric-count {
+[data-quiet-mode="true"] .metric-count,
+[data-quiet-mode="true"] .reaction-count-btn {
   display: none !important;
 }
 

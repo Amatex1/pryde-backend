@@ -1106,6 +1106,21 @@ function Feed() {
                       </button>
                     </div>
 
+                    {/* Tags Display */}
+                    {post.tags && post.tags.length > 0 && (
+                      <div className="post-tags">
+                        {post.tags.map(tag => (
+                          <Link
+                            key={tag._id}
+                            to={`/tags/${tag.slug}`}
+                            className="post-tag"
+                          >
+                            {tag.icon} {tag.label}
+                          </Link>
+                        ))}
+                      </div>
+                    )}
+
                     {post.comments && post.comments.length > 0 && (
                       <div className="post-comments">
                         {post.comments.filter(comment => !comment.parentComment).slice(-3).map((comment) => {

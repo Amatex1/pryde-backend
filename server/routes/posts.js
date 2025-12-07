@@ -110,6 +110,7 @@ router.get('/', auth, async (req, res) => {
       // .populate('likes', 'username displayName profilePhoto') // REMOVED - private likes
       .populate('reactions.user', 'username displayName profilePhoto')
       .populate('comments.reactions.user', 'username displayName profilePhoto')
+      .populate('tags', 'slug label icon') // PHASE 4: Populate tags for display
       .populate({
         path: 'originalPost',
         populate: [
