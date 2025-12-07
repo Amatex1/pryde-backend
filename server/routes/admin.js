@@ -219,6 +219,13 @@ router.put('/users/:id/suspend', checkPermission('canManageUsers'), async (req, 
 
     await user.save();
 
+    // Emit real-time event for user suspension (for admin panel)
+    if (req.io) {
+      req.io.emit('user_suspended', {
+        userId: user._id
+      });
+    }
+
     res.json({ message: 'User suspended successfully', user: user.toJSON() });
   } catch (error) {
     console.error('Suspend user error:', error);
@@ -242,6 +249,13 @@ router.put('/users/:id/unsuspend', checkPermission('canManageUsers'), async (req
     user.suspensionReason = '';
 
     await user.save();
+
+    // Emit real-time event for user unsuspension (for admin panel)
+    if (req.io) {
+      req.io.emit('user_unsuspended', {
+        userId: user._id
+      });
+    }
 
     res.json({ message: 'User unsuspended successfully', user: user.toJSON() });
   } catch (error) {
@@ -279,6 +293,13 @@ router.put('/users/:id/ban', checkPermission('canManageUsers'), async (req, res)
 
     await user.save();
 
+    // Emit real-time event for user ban (for admin panel)
+    if (req.io) {
+      req.io.emit('user_banned', {
+        userId: user._id
+      });
+    }
+
     res.json({ message: 'User banned successfully', user: user.toJSON() });
   } catch (error) {
     console.error('Ban user error:', error);
@@ -302,6 +323,13 @@ router.put('/users/:id/unban', checkPermission('canManageUsers'), async (req, re
     user.isActive = true;
 
     await user.save();
+
+    // Emit real-time event for user unban (for admin panel)
+    if (req.io) {
+      req.io.emit('user_unbanned', {
+        userId: user._id
+      });
+    }
 
     res.json({ message: 'User unbanned successfully', user: user.toJSON() });
   } catch (error) {

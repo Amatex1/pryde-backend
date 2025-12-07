@@ -56,6 +56,131 @@ function Admin() {
     }
   }, [location.search]);
 
+  // Set up real-time socket listeners for user updates
+  useEffect(() => {
+    if (listenersSetUpRef.current) return;
+
+    const cleanupFunctions = [];
+
+    const setupListeners = () => {
+      const socket = getSocket();
+      if (socket) {
+        // Listen for new user registrations
+        const handleUserCreated = (data) => {
+          console.log('👤 Real-time user created:', data);
+          if (activeTab === 'users') {
+            setUsers((prevUsers) => [data.user, ...prevUsers]);
+          }
+          // Update stats if on dashboard
+          if (activeTab === 'dashboard' && stats) {
+            setStats((prevStats) => ({
+              ...prevStats,
+              totalUsers: prevStats.totalUsers + 1
+            }));
+          }
+        };
+        socket.on('user_created', handleUserCreated);
+        cleanupFunctions.push(() => socket.off('user_created', handleUserCreated));
+
+        // Listen for user account deactivation
+        const handleUserDeactivated = (data) => {
+          console.log('🔒 Real-time user deactivated:', data);
+          setUsers((prevUsers) =>
+            prevUsers.map(u => u._id === data.userId ? { ...u, isActive: false } : u)
+          );
+        };
+        socket.on('user_deactivated', handleUserDeactivated);
+        cleanupFunctions.push(() => socket.off('user_deactivated', handleUserDeactivated));
+
+        // Listen for user account reactivation
+        const handleUserReactivated = (data) => {
+          console.log('✅ Real-time user reactivated:', data);
+          setUsers((prevUsers) =>
+            prevUsers.map(u => u._id === data.userId ? { ...u, isActive: true } : u)
+          );
+        };
+        socket.on('user_reactivated', handleUserReactivated);
+        cleanupFunctions.push(() => socket.off('user_reactivated', handleUserReactivated));
+
+        // Listen for user account deletion
+        const handleUserDeleted = (data) => {
+          console.log('🗑️ Real-time user deleted:', data);
+          setUsers((prevUsers) => prevUsers.filter(u => u._id !== data.userId));
+          // Update stats if on dashboard
+          if (activeTab === 'dashboard' && stats) {
+            setStats((prevStats) => ({
+              ...prevStats,
+              totalUsers: prevStats.totalUsers - 1
+            }));
+          }
+        };
+        socket.on('user_deleted', handleUserDeleted);
+        cleanupFunctions.push(() => socket.off('user_deleted', handleUserDeleted));
+
+        // Listen for user suspension
+        const handleUserSuspended = (data) => {
+          console.log('⏸️ Real-time user suspended:', data);
+          setUsers((prevUsers) =>
+            prevUsers.map(u => u._id === data.userId ? { ...u, isSuspended: true } : u)
+          );
+        };
+        socket.on('user_suspended', handleUserSuspended);
+        cleanupFunctions.push(() => socket.off('user_suspended', handleUserSuspended));
+
+        // Listen for user unsuspension
+        const handleUserUnsuspended = (data) => {
+          console.log('▶️ Real-time user unsuspended:', data);
+          setUsers((prevUsers) =>
+            prevUsers.map(u => u._id === data.userId ? { ...u, isSuspended: false } : u)
+          );
+        };
+        socket.on('user_unsuspended', handleUserUnsuspended);
+        cleanupFunctions.push(() => socket.off('user_unsuspended', handleUserUnsuspended));
+
+        // Listen for user ban
+        const handleUserBanned = (data) => {
+          console.log('🚫 Real-time user banned:', data);
+          setUsers((prevUsers) =>
+            prevUsers.map(u => u._id === data.userId ? { ...u, isBanned: true } : u)
+          );
+        };
+        socket.on('user_banned', handleUserBanned);
+        cleanupFunctions.push(() => socket.off('user_banned', handleUserBanned));
+
+        // Listen for user unban
+        const handleUserUnbanned = (data) => {
+          console.log('✅ Real-time user unbanned:', data);
+          setUsers((prevUsers) =>
+            prevUsers.map(u => u._id === data.userId ? { ...u, isBanned: false } : u)
+          );
+        };
+        socket.on('user_unbanned', handleUserUnbanned);
+        cleanupFunctions.push(() => socket.off('user_unbanned', handleUserUnbanned));
+      }
+    };
+
+    listenersSetUpRef.current = true;
+
+    const checkSocket = () => {
+      const socket = getSocket();
+      if (!socket) {
+        setTimeout(checkSocket, 100);
+        return;
+      }
+      if (socket.connected) {
+        setupListeners();
+      } else {
+        socket.once('connect', setupListeners);
+      }
+    };
+
+    checkSocket();
+
+    return () => {
+      cleanupFunctions.forEach(cleanup => cleanup?.());
+    };
+  }, [activeTab, stats]);
+
   const handleTabChange = (tab) => {
     setActiveTab(tab);
     navigate(`/admin?tab=${tab}`);

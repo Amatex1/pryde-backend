@@ -680,9 +680,44 @@ router.put('/deactivate', auth, async (req, res) => {
     user.isActive = false;
     await user.save();
 
+    // Emit real-time event for user deactivation (for admin panel)
+    if (req.io) {
+      req.io.emit('user_deactivated', {
+        userId: user._id
+      });
+    }
+
     res.json({ message: 'Account deactivated successfully' });
   } catch (error) {
     console.error('Deactivate account error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   PUT /api/users/reactivate
+// @desc    Reactivate user account
+// @access  Private
+router.put('/reactivate', auth, async (req, res) => {
+  try {
+    const user = await User.findById(req.userId);
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    user.isActive = true;
+    await user.save();
+
+    // Emit real-time event for user reactivation (for admin panel)
+    if (req.io) {
+      req.io.emit('user_reactivated', {
+        userId: user._id
+      });
+    }
+
+    res.json({ message: 'Account reactivated successfully' });
+  } catch (error) {
+    console.error('Reactivate account error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -726,6 +761,13 @@ router.delete('/account', auth, async (req, res) => {
 
     // Finally, delete the user
     await User.findByIdAndDelete(userId);
+
+    // Emit real-time event for user deletion (for admin panel)
+    if (req.io) {
+      req.io.emit('user_deleted', {
+        userId: userId
+      });
+    }
 
     res.json({ message: 'Account deleted successfully' });
   } catch (error) {

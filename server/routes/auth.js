@@ -121,6 +121,23 @@ router.post('/signup', signupLimiter, validateSignup, async (req, res) => {
 
     console.log(`New user registered: ${username} (${email})`);
 
+    // Emit real-time event for new user registration (for admin panel)
+    if (req.io) {
+      req.io.emit('user_created', {
+        user: {
+          _id: user._id,
+          username: user.username,
+          email: user.email,
+          displayName: user.displayName,
+          role: user.role,
+          isActive: user.isActive,
+          isBanned: user.isBanned,
+          isSuspended: user.isSuspended,
+          createdAt: user.createdAt
+        }
+      });
+    }
+
     res.status(201).json({
       success: true,
       message: 'User registered successfully',
