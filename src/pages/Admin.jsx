@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import CustomModal from '../components/CustomModal';
@@ -7,6 +7,7 @@ import { useModal } from '../hooks/useModal';
 import api from '../utils/api';
 import { getCurrentUser } from '../utils/auth';
 import { getImageUrl } from '../utils/imageUrl';
+import { getSocket } from '../utils/socket';
 import './Admin.css';
 
 function Admin() {
@@ -35,6 +36,7 @@ function Admin() {
   const [selectedReport, setSelectedReport] = useState(null);
   const [selectedPost, setSelectedPost] = useState(null);
   const [showPostModal, setShowPostModal] = useState(false);
+  const listenersSetUpRef = useRef(false);
 
   useEffect(() => {
     checkAdminAccess();
