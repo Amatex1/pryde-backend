@@ -4,7 +4,7 @@ services:
     name: pryde-backend
     env: node
     region: oregon
-    plan: free
+    plan: starter
     buildCommand: cd server && npm install
     startCommand: cd server && npm start
     envVars:
@@ -17,14 +17,57 @@ services:
       - key: MONGODB_URI
         sync: false
       - key: JWT_SECRET
-        generateValue: true
+        sync: false
+      - key: MESSAGE_ENCRYPTION_KEY
+        sync: false
       - key: BASE_URL
-        value: https://pryde-backend.onrender.com
+        value: https://pryde-social.onrender.com
       - key: FRONTEND_URL
         value: https://prydeapp.com
       - key: VAPID_PUBLIC_KEY
         sync: false
       - key: VAPID_PRIVATE_KEY
         sync: false
+      - key: RP_ID
+        value: pryde-social.onrender.com
+      - key: ORIGIN
+        value: https://prydeapp.com
+      - key: EMAIL_HOST
+        sync: false
+      - key: EMAIL_PORT
+        sync: false
+      - key: EMAIL_SECURE
+        sync: false
+      - key: EMAIL_USER
+        sync: false
+      - key: EMAIL_PASS
+        sync: false
+      - key: EMAIL_FROM
+        sync: false
     healthCheckPath: /api/health
+
+  # Frontend Static Site
+  - type: web
+    name: pryde-frontend
+    env: static
+    region: oregon
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    headers:
+      - path: /*
+        name: X-Frame-Options
+        value: SAMEORIGIN
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+      - path: /*
+        name: X-XSS-Protection
+        value: 1; mode=block
+      - path: /assets/*
+        name: Cache-Control
+        value: public, max-age=31536000, immutable
 
