@@ -99,10 +99,11 @@ function Hashtag() {
                       {post.media.map((mediaItem, index) => (
                         <div key={index} className="post-media-item">
                           {mediaItem.type === 'image' ? (
-                            <img 
-                              src={getImageUrl(mediaItem.url)} 
-                              alt="Post media" 
+                            <OptimizedImage
+                              src={getImageUrl(mediaItem.url)}
+                              alt="Post media"
                               onClick={() => setPhotoViewerImage(getImageUrl(mediaItem.url))}
+                              style={{ cursor: 'pointer' }}
                             />
                           ) : (
                             <video src={getImageUrl(mediaItem.url)} controls />
