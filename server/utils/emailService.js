@@ -1,17 +1,30 @@
 import { Resend } from 'resend';
 import config from '../config/config.js';
 
-// Initialize Resend client
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Initialize Resend client (lazy initialization)
+let resend = null;
+const getResendClient = () => {
+  if (!resend && process.env.RESEND_API_KEY) {
+    resend = new Resend(process.env.RESEND_API_KEY);
+  }
+  return resend;
+};
 
 // Email sender address
 const FROM_EMAIL = process.env.EMAIL_FROM || 'Pryde Social <noreply@prydeapp.com>';
 
 export const sendPasswordResetEmail = async (email, resetToken, username) => {
   try {
+    const resendClient = getResendClient();
+
+    if (!resendClient) {
+      console.warn('Resend API key not configured. Email not sent.');
+      return { success: false, error: 'Email service not configured' };
+    }
+
     const resetUrl = `${config.frontendURL}/reset-password?token=${resetToken}`;
 
-    const { data, error } = await resend.emails.send({
+    const { data, error } = await resendClient.emails.send({
       from: FROM_EMAIL,
       to: email,
       subject: 'Password Reset Request - Pryde Social',
@@ -105,6 +118,13 @@ export const sendPasswordResetEmail = async (email, resetToken, username) => {
 
 export const sendLoginAlertEmail = async (email, username, loginInfo) => {
   try {
+    const resendClient = getResendClient();
+
+    if (!resendClient) {
+      console.warn('Resend API key not configured. Email not sent.');
+      return { success: false, error: 'Email service not configured' };
+    }
+
     const { deviceInfo, browser, os, ipAddress, location, timestamp } = loginInfo;
     const formattedDate = new Date(timestamp).toLocaleString('en-US', {
       weekday: 'long',
@@ -116,7 +136,7 @@ export const sendLoginAlertEmail = async (email, username, loginInfo) => {
       timeZoneName: 'short'
     });
 
-    const { data, error } = await resend.emails.send({
+    const { data, error } = await resendClient.emails.send({
       from: FROM_EMAIL,
       to: email,
       subject: '🔐 New Login to Your Pryde Social Account',
@@ -277,6 +297,13 @@ export const sendLoginAlertEmail = async (email, username, loginInfo) => {
 
 export const sendSuspiciousLoginEmail = async (email, username, loginInfo) => {
   try {
+    const resendClient = getResendClient();
+
+    if (!resendClient) {
+      console.warn('Resend API key not configured. Email not sent.');
+      return { success: false, error: 'Email service not configured' };
+    }
+
     const { deviceInfo, browser, os, ipAddress, location, timestamp } = loginInfo;
     const formattedDate = new Date(timestamp).toLocaleString('en-US', {
       weekday: 'long',
@@ -288,7 +315,7 @@ export const sendSuspiciousLoginEmail = async (email, username, loginInfo) => {
       timeZoneName: 'short'
     });
 
-    const { data, error } = await resend.emails.send({
+    const { data, error } = await resendClient.emails.send({
       from: FROM_EMAIL,
       to: email,
       subject: '⚠️ SUSPICIOUS LOGIN ATTEMPT - Pryde Social',
