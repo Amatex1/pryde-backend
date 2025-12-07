@@ -165,6 +165,21 @@ router.get('/', authMiddleware, async (req, res) => {
           read: false
         });
 
+        // IMPORTANT: Decrypt the lastMessage content
+        // Aggregation returns plain objects, not Mongoose documents,
+        // so toJSON() is not called automatically
+        if (conv.lastMessage?.content) {
+          const { decryptMessage, isEncrypted } = await import('../utils/encryption.js');
+          if (isEncrypted(conv.lastMessage.content)) {
+            try {
+              conv.lastMessage.content = decryptMessage(conv.lastMessage.content);
+            } catch (error) {
+              console.error('❌ Error decrypting last message:', error);
+              conv.lastMessage.content = '[Encrypted message]';
+            }
+          }
+        }
+
         return {
           ...conv,
           otherUser,
