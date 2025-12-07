@@ -602,6 +602,15 @@ router.post('/:id/comment/:commentId/react', auth, async (req, res) => {
     // PHASE 1 REFACTOR: Sanitize post to hide like counts
     const sanitizedPost = sanitizePostForPrivateLikes(post, userId);
 
+    // Emit real-time event for comment reaction
+    if (req.io) {
+      req.io.emit('comment_reaction_added', {
+        postId: post._id,
+        commentId: req.params.commentId,
+        post: sanitizedPost
+      });
+    }
+
     res.json(sanitizedPost);
   } catch (error) {
     console.error('React to comment error:', error);
