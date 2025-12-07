@@ -11,6 +11,7 @@ import ReactionDetailsModal from '../components/ReactionDetailsModal';
 import FormattedText from '../components/FormattedText';
 import ProfileSkeleton from '../components/ProfileSkeleton';
 import PostSkeleton from '../components/PostSkeleton';
+import OptimizedImage from '../components/OptimizedImage';
 import { useModal } from '../hooks/useModal';
 import api from '../utils/api';
 import { getCurrentUser } from '../utils/auth';
@@ -861,11 +862,12 @@ function Profile() {
         <div className="profile-header glossy fade-in">
           <div className="cover-photo">
             {user.coverPhoto ? (
-              <img
+              <OptimizedImage
                 src={getImageUrl(user.coverPhoto)}
                 alt="Cover"
                 onClick={() => setPhotoViewerImage(getImageUrl(user.coverPhoto))}
                 style={{ cursor: 'pointer' }}
+                loading="eager"
               />
             ) : (
               <div className="cover-placeholder shimmer"></div>
@@ -885,11 +887,12 @@ function Profile() {
           <div className="profile-info">
             <div className="profile-avatar">
               {user.profilePhoto ? (
-                <img
+                <OptimizedImage
                   src={getImageUrl(user.profilePhoto)}
                   alt={user.username}
                   onClick={() => setPhotoViewerImage(getImageUrl(user.profilePhoto))}
                   style={{ cursor: 'pointer' }}
+                  loading="eager"
                 />
               ) : (
                 <span>{user.displayName?.charAt(0).toUpperCase()}</span>
