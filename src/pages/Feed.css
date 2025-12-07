@@ -945,10 +945,10 @@
 @media (max-width: 768px) {
   .reaction-picker {
     position: fixed;
-    top: auto;
-    bottom: 5rem;
+    top: 50%;
+    bottom: auto;
     left: 50%;
-    transform: translateX(-50%);
+    transform: translate(-50%, -50%);
     z-index: 99999;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
     padding: 1rem 1.25rem;

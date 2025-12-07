@@ -32,6 +32,8 @@ function Admin() {
   const [error, setError] = useState('');
   const [currentUser, setCurrentUser] = useState(null);
   const [selectedReport, setSelectedReport] = useState(null);
+  const [selectedPost, setSelectedPost] = useState(null);
+  const [showPostModal, setShowPostModal] = useState(false);
 
   useEffect(() => {
     checkAdminAccess();
@@ -54,6 +56,22 @@ function Admin() {
   const handleTabChange = (tab) => {
     setActiveTab(tab);
     navigate(`/admin?tab=${tab}`);
+  };
+
+  const handleViewPost = async (postId) => {
+    try {
+      const response = await api.get(`/admin/posts?postId=${postId}`);
+      setSelectedPost(response.data);
+      setShowPostModal(true);
+    } catch (error) {
+      console.error('Error fetching post:', error);
+      showAlert('Error', 'Failed to load post details');
+    }
+  };
+
+  const handleClosePostModal = () => {
+    setShowPostModal(false);
+    setSelectedPost(null);
   };
 
   const checkAdminAccess = async () => {
@@ -407,7 +425,7 @@ function Admin() {
             <BlocksTab blocks={blocks} />
           )}
           {activeTab === 'activity' && activity && (
-            <ActivityTab activity={activity} />
+            <ActivityTab activity={activity} onViewPost={handleViewPost} />
           )}
           {activeTab === 'security' && (
             <SecurityTab
@@ -438,6 +456,11 @@ function Admin() {
         inputType={modalState.inputType}
         defaultValue={modalState.defaultValue}
       />
+
+      {/* Post Modal for Admin Content Viewing */}
+      {showPostModal && selectedPost && (
+        <PostModal post={selectedPost} onClose={handleClosePostModal} />
+      )}
     </div>
   );
 }
@@ -756,7 +779,7 @@ function BlocksTab({ blocks }) {
 }
 
 // Activity Tab Component
-function ActivityTab({ activity }) {
+function ActivityTab({ activity, onViewPost }) {
   const navigate = useNavigate();
 
   return (
@@ -783,9 +806,9 @@ function ActivityTab({ activity }) {
                 </span>
                 <span
                   className="activity-post-link"
-                  onClick={() => navigate(`/feed?post=${post._id}`)}
+                  onClick={() => onViewPost(post._id)}
                   style={{ cursor: 'pointer' }}
-                  title="Click to view full post"
+                  title="Click to view full post in modal"
                 >
                   {post.content?.substring(0, 100)}{post.content?.length > 100 ? '...' : ''}
                 </span>
@@ -1090,6 +1113,166 @@ function VerificationTab({ requests, onAction }) {
             </div>
           ))
         )}
+      </div>
+    </div>
+  );
+}
+
+// Post Modal Component for Admin Content Viewing
+function PostModal({ post, onClose }) {
+  if (!post) return null;
+
+  return (
+    <div className="admin-post-modal-overlay" onClick={onClose}>
+      <div className="admin-post-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="admin-post-modal-header">
+          <h2>Post Details</h2>
+          <button className="admin-modal-close" onClick={onClose}>✕</button>
+        </div>
+
+        <div className="admin-post-modal-content">
+          {/* Author Info */}
+          <div className="admin-post-author">
+            {post.author?.profilePhoto && (
+              <img
+                src={getImageUrl(post.author.profilePhoto)}
+                alt={post.author.displayName || post.author.username}
+                className="admin-post-author-avatar"
+              />
+            )}
+            <div className="admin-post-author-info">
+              <div className="admin-post-author-name">
+                {post.author?.displayName || post.author?.username}
+                {post.author?.isVerified && <span className="verified-badge">✓</span>}
+              </div>
+              <div className="admin-post-author-username">@{post.author?.username}</div>
+              {post.author?.pronouns && (
+                <div className="admin-post-author-pronouns">{post.author.pronouns}</div>
+              )}
+            </div>
+          </div>
+
+          {/* Post Content */}
+          {post.content && (
+            <div className="admin-post-content">
+              <p>{post.content}</p>
+            </div>
+          )}
+
+          {/* Content Warning */}
+          {post.contentWarning && (
+            <div className="admin-post-warning">
+              <strong>⚠️ Content Warning:</strong> {post.contentWarning}
+            </div>
+          )}
+
+          {/* Media */}
+          {post.media && post.media.length > 0 && (
+            <div className="admin-post-media">
+              {post.media.map((item, index) => (
+                <div key={index} className="admin-post-media-item">
+                  {item.type === 'image' && (
+                    <img src={getImageUrl(item.url)} alt={`Media ${index + 1}`} />
+                  )}
+                  {item.type === 'video' && (
+                    <video src={getImageUrl(item.url)} controls />
+                  )}
+                  {item.type === 'gif' && (
+                    <img src={getImageUrl(item.url)} alt={`GIF ${index + 1}`} />
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Legacy Images */}
+          {post.images && post.images.length > 0 && (
+            <div className="admin-post-media">
+              {post.images.map((img, index) => (
+                <img key={index} src={getImageUrl(img)} alt={`Image ${index + 1}`} />
+              ))}
+            </div>
+          )}
+
+          {/* Tags */}
+          {post.tags && post.tags.length > 0 && (
+            <div className="admin-post-tags">
+              <strong>Tags:</strong>
+              {post.tags.map(tag => (
+                <span key={tag._id} className="admin-post-tag">
+                  {tag.icon} {tag.label}
+                </span>
+              ))}
+            </div>
+          )}
+
+          {/* Post Metadata */}
+          <div className="admin-post-metadata">
+            <div className="admin-post-meta-item">
+              <strong>Visibility:</strong> {post.visibility}
+            </div>
+            <div className="admin-post-meta-item">
+              <strong>Created:</strong> {new Date(post.createdAt).toLocaleString()}
+            </div>
+            {post.updatedAt && post.updatedAt !== post.createdAt && (
+              <div className="admin-post-meta-item">
+                <strong>Updated:</strong> {new Date(post.updatedAt).toLocaleString()}
+              </div>
+            )}
+            <div className="admin-post-meta-item">
+              <strong>Reactions:</strong> {post.reactions?.length || 0}
+            </div>
+            <div className="admin-post-meta-item">
+              <strong>Comments:</strong> {post.comments?.length || 0}
+            </div>
+          </div>
+
+          {/* Reactions */}
+          {post.reactions && post.reactions.length > 0 && (
+            <div className="admin-post-reactions">
+              <h3>Reactions ({post.reactions.length})</h3>
+              <div className="admin-reactions-list">
+                {post.reactions.map((reaction, index) => (
+                  <div key={index} className="admin-reaction-item">
+                    <span className="admin-reaction-emoji">{reaction.emoji}</span>
+                    <span className="admin-reaction-user">
+                      {reaction.user?.displayName || reaction.user?.username}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Comments */}
+          {post.comments && post.comments.length > 0 && (
+            <div className="admin-post-comments">
+              <h3>Comments ({post.comments.length})</h3>
+              <div className="admin-comments-list">
+                {post.comments.map((comment) => (
+                  <div key={comment._id} className="admin-comment-item">
+                    <div className="admin-comment-header">
+                      <strong>{comment.user?.displayName || comment.user?.username}</strong>
+                      <span className="admin-comment-date">
+                        {new Date(comment.createdAt).toLocaleString()}
+                      </span>
+                    </div>
+                    <div className="admin-comment-content">{comment.content}</div>
+                    {comment.reactions && comment.reactions.length > 0 && (
+                      <div className="admin-comment-reactions">
+                        {comment.reactions.map((reaction, index) => (
+                          <span key={index} className="admin-comment-reaction">
+                            {reaction.emoji}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

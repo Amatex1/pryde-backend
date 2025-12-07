@@ -49,9 +49,16 @@ router.get('/', auth, async (req, res) => {
     const currentUser = await User.findById(userId);
     const followingIds = currentUser.following || [];
 
+    // Check if user is admin/mod/super_admin
+    const isAdmin = ['moderator', 'admin', 'super_admin'].includes(currentUser.role);
+
     let query = {};
 
-    if (filter === 'public') {
+    // ADMIN BYPASS: Admins can see all posts regardless of privacy
+    if (isAdmin && filter === 'public') {
+      // Admins see ALL posts in public feed (no privacy filters)
+      query = {};
+    } else if (filter === 'public') {
       // Public feed: All public posts from everyone (not hidden from user)
       query = {
         visibility: 'public',

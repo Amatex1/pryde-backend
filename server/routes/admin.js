@@ -407,6 +407,71 @@ router.get('/blocks', checkPermission('canViewAnalytics'), async (req, res) => {
   }
 });
 
+// @route   GET /api/admin/posts
+// @desc    Get all posts bypassing privacy filters (for admin content viewing)
+// @access  Admin (canViewAnalytics)
+router.get('/posts', checkPermission('canViewAnalytics'), async (req, res) => {
+  try {
+    const { postId, page = 1, limit = 20 } = req.query;
+
+    // If specific post ID is requested
+    if (postId) {
+      const post = await Post.findById(postId)
+        .populate('author', 'username displayName profilePhoto isVerified pronouns')
+        .populate('comments.user', 'username displayName profilePhoto isVerified pronouns')
+        .populate('reactions.user', 'username displayName profilePhoto')
+        .populate('comments.reactions.user', 'username displayName profilePhoto')
+        .populate('tags', 'slug label icon')
+        .populate({
+          path: 'originalPost',
+          populate: [
+            { path: 'author', select: 'username displayName profilePhoto' },
+            { path: 'reactions.user', select: 'username displayName profilePhoto' }
+          ]
+        });
+
+      if (!post) {
+        return res.status(404).json({ message: 'Post not found' });
+      }
+
+      return res.json(post);
+    }
+
+    // Otherwise return paginated list of all posts (no privacy filters)
+    const posts = await Post.find()
+      .populate('author', 'username displayName profilePhoto isVerified pronouns')
+      .populate('comments.user', 'username displayName profilePhoto isVerified pronouns')
+      .populate('reactions.user', 'username displayName profilePhoto')
+      .populate('comments.reactions.user', 'username displayName profilePhoto')
+      .populate('tags', 'slug label icon')
+      .populate({
+        path: 'originalPost',
+        populate: [
+          { path: 'author', select: 'username displayName profilePhoto' },
+          { path: 'reactions.user', select: 'username displayName profilePhoto' }
+        ]
+      })
+      .sort({ createdAt: -1 })
+      .limit(parseInt(limit))
+      .skip((parseInt(page) - 1) * parseInt(limit));
+
+    const total = await Post.countDocuments();
+
+    res.json({
+      posts,
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total,
+        pages: Math.ceil(total / parseInt(limit))
+      }
+    });
+  } catch (error) {
+    console.error('Get admin posts error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // @route   GET /api/admin/activity
 // @desc    Get recent user activity
 // @access  Admin (canViewAnalytics)

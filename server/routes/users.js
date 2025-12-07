@@ -361,8 +361,9 @@ router.get('/download-data', auth, async (req, res) => {
       if (Message) {
         const messages = await Message.find({
           $or: [{ sender: userId }, { recipient: userId }]
-        }).lean();
-        userData.messages = messages || [];
+        });
+        // Convert to JSON to trigger decryption (don't use .lean())
+        userData.messages = messages.map(msg => msg.toJSON()) || [];
         console.log('✅ Messages fetched:', messages?.length || 0);
       } else {
         console.log('⚠️ Message model not available');

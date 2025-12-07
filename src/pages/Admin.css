@@ -1088,3 +1088,336 @@
 [data-theme="dark"] .verification-details .reason .detail-value {
   background: var(--background-light);
 }
+
+/* ========================================
+   ADMIN POST MODAL - For Content Viewing
+   ======================================== */
+
+.admin-post-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  padding: 2rem;
+  overflow-y: auto;
+}
+
+.admin-post-modal {
+  background: var(--card-surface);
+  border-radius: 16px;
+  max-width: 800px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: modalSlideIn 0.3s ease;
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.admin-post-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem 2rem;
+  border-bottom: 2px solid var(--border-light);
+  position: sticky;
+  top: 0;
+  background: var(--card-surface);
+  z-index: 10;
+}
+
+.admin-post-modal-header h2 {
+  margin: 0;
+  color: var(--pryde-purple);
+  font-size: 1.5rem;
+}
+
+.admin-modal-close {
+  background: none;
+  border: none;
+  font-size: 2rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+}
+
+.admin-modal-close:hover {
+  background: var(--bg-hover);
+  color: var(--pryde-purple);
+}
+
+.admin-post-modal-content {
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* Author Section */
+.admin-post-author {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.admin-post-author-avatar {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.admin-post-author-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.admin-post-author-name {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--text-main);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.admin-post-author-username {
+  color: var(--text-muted);
+  font-size: 0.95rem;
+}
+
+.admin-post-author-pronouns {
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  font-style: italic;
+}
+
+/* Content Section */
+.admin-post-content {
+  font-size: 1.05rem;
+  line-height: 1.6;
+  color: var(--text-main);
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.admin-post-warning {
+  padding: 1rem;
+  background: rgba(255, 165, 0, 0.1);
+  border-left: 4px solid #ff8c00;
+  border-radius: 8px;
+  color: #ff8c00;
+}
+
+/* Media Section */
+.admin-post-media {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.admin-post-media-item img,
+.admin-post-media-item video {
+  width: 100%;
+  border-radius: 12px;
+  object-fit: cover;
+  max-height: 400px;
+}
+
+/* Tags Section */
+.admin-post-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.admin-post-tags strong {
+  color: var(--text-muted);
+  margin-right: 0.5rem;
+}
+
+.admin-post-tag {
+  padding: 0.375rem 0.875rem;
+  background: var(--color-primary-soft);
+  border-radius: 16px;
+  font-size: 0.875rem;
+  color: var(--color-primary);
+  font-weight: 500;
+}
+
+/* Metadata Section */
+.admin-post-metadata {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  padding: 1rem;
+  background: var(--bg-light);
+  border-radius: 8px;
+}
+
+.admin-post-meta-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.admin-post-meta-item strong {
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Reactions Section */
+.admin-post-reactions h3,
+.admin-post-comments h3 {
+  color: var(--pryde-purple);
+  font-size: 1.2rem;
+  margin-bottom: 1rem;
+}
+
+.admin-reactions-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.admin-reaction-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: var(--bg-light);
+  border-radius: 20px;
+}
+
+.admin-reaction-emoji {
+  font-size: 1.2rem;
+}
+
+.admin-reaction-user {
+  color: var(--text-main);
+  font-size: 0.9rem;
+}
+
+/* Comments Section */
+.admin-comments-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.admin-comment-item {
+  padding: 1rem;
+  background: var(--bg-light);
+  border-radius: 12px;
+  border-left: 3px solid var(--pryde-purple);
+}
+
+.admin-comment-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.admin-comment-header strong {
+  color: var(--pryde-purple);
+}
+
+.admin-comment-date {
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+
+.admin-comment-content {
+  color: var(--text-main);
+  line-height: 1.5;
+  margin-bottom: 0.5rem;
+}
+
+.admin-comment-reactions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.admin-comment-reaction {
+  font-size: 1.1rem;
+}
+
+/* Dark Mode */
+[data-theme="dark"] .admin-post-modal {
+  background: var(--card-surface);
+}
+
+[data-theme="dark"] .admin-post-modal-header {
+  background: var(--card-surface);
+  border-bottom-color: var(--border-light);
+}
+
+[data-theme="dark"] .admin-post-metadata {
+  background: rgba(108, 92, 231, 0.05);
+}
+
+[data-theme="dark"] .admin-comment-item {
+  background: rgba(108, 92, 231, 0.05);
+}
+
+[data-theme="dark"] .admin-reaction-item {
+  background: rgba(108, 92, 231, 0.05);
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .admin-post-modal-overlay {
+    padding: 1rem;
+  }
+
+  .admin-post-modal {
+    max-height: 95vh;
+  }
+
+  .admin-post-modal-header {
+    padding: 1rem 1.5rem;
+  }
+
+  .admin-post-modal-content {
+    padding: 1.5rem;
+  }
+
+  .admin-post-metadata {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-post-media {
+    grid-template-columns: 1fr;
+  }
+}
