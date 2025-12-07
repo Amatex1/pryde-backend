@@ -209,6 +209,12 @@ app.use(globalLimiter);
 // Store online users
 const onlineUsers = new Map(); // userId -> socketId
 
+// Middleware to make socket.io available in routes
+app.use((req, res, next) => {
+  req.io = io;
+  next();
+});
+
 // Routes with specific rate limiters
 app.use('/api/auth', authRoutes);
 app.use('/api/users', usersRoutes);
