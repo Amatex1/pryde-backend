@@ -72,7 +72,11 @@ function Hashtag() {
                     <Link to={`/profile/${post.author._id}`} className="post-author-link">
                       <div className="post-author-avatar">
                         {post.author.profilePhoto ? (
-                          <img src={getImageUrl(post.author.profilePhoto)} alt={post.author.username} />
+                          <OptimizedImage
+                            src={getImageUrl(post.author.profilePhoto)}
+                            alt={post.author.username}
+                            className="avatar-image"
+                          />
                         ) : (
                           <span>{post.author.displayName?.charAt(0).toUpperCase() || 'U'}</span>
                         )}
