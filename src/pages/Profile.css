@@ -665,9 +665,19 @@
 
 .profile-content {
   display: grid;
-  grid-template-columns: 1fr 300px;
+  grid-template-columns: 1fr;
   gap: var(--space-6);
+  max-width: 800px;
+  margin: 0 auto;
 }
+
+/* PHASE 1 REFACTOR: Sidebar removed, single column layout for all profiles */
+/* If sidebar is re-added in the future, use this:
+.profile-content.has-sidebar {
+  grid-template-columns: 1fr 300px;
+  max-width: 1200px;
+}
+*/
 
 .profile-posts {
   display: flex;
