@@ -162,6 +162,65 @@ export async function requestNotificationPermission() {
 }
 
 /**
+ * Request persistent storage (modern API)
+ */
+export async function requestPersistentStorage() {
+  if (!('storage' in navigator) || !('persist' in navigator.storage)) {
+    console.log('[PWA] Persistent storage not supported');
+    return false;
+  }
+
+  try {
+    // Check if already granted
+    const isPersisted = await navigator.storage.persisted();
+    if (isPersisted) {
+      console.log('[PWA] Persistent storage already granted');
+      return true;
+    }
+
+    // Request persistent storage
+    const granted = await navigator.storage.persist();
+    if (granted) {
+      console.log('[PWA] Persistent storage granted');
+    } else {
+      console.log('[PWA] Persistent storage denied');
+    }
+    return granted;
+  } catch (error) {
+    console.error('[PWA] Persistent storage request failed:', error);
+    return false;
+  }
+}
+
+/**
+ * Get storage estimate
+ */
+export async function getStorageEstimate() {
+  if (!('storage' in navigator) || !('estimate' in navigator.storage)) {
+    console.log('[PWA] Storage estimate not supported');
+    return null;
+  }
+
+  try {
+    const estimate = await navigator.storage.estimate();
+    const usage = estimate.usage || 0;
+    const quota = estimate.quota || 0;
+    const percentUsed = quota > 0 ? (usage / quota * 100).toFixed(2) : 0;
+
+    console.log('[PWA] Storage:', {
+      usage: `${(usage / 1024 / 1024).toFixed(2)} MB`,
+      quota: `${(quota / 1024 / 1024).toFixed(2)} MB`,
+      percentUsed: `${percentUsed}%`
+    });
+
+    return { usage, quota, percentUsed };
+  } catch (error) {
+    console.error('[PWA] Storage estimate failed:', error);
+    return null;
+  }
+}
+
+/**
  * Subscribe to push notifications
  */
 export async function subscribeToPushNotifications() {
