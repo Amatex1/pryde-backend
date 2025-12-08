@@ -247,7 +247,26 @@ function Navbar() {
               <span className="mobile-menu-icon">⚙️</span>
               <span>Settings</span>
             </Link>
-            <DarkModeToggle />
+            <button className="mobile-menu-item" onClick={toggleDarkMode}>
+              <span className="mobile-menu-icon">{isDark ? '☀️' : '🌙'}</span>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                <span>Dark Mode</span>
+                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                  {isDark ? 'Switch to light theme' : 'Switch to dark theme'}
+                </span>
+              </div>
+              {isDark && <span className="mode-indicator" style={{ marginLeft: 'auto' }}>✓</span>}
+            </button>
+            <button className="mobile-menu-item" onClick={toggleQuietMode}>
+              <span className="mobile-menu-icon">🍃</span>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                <span>Quiet Mode</span>
+                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                  Peaceful browsing with softer colors
+                </span>
+              </div>
+              {quietMode && <span className="mode-indicator" style={{ marginLeft: 'auto' }}>✓</span>}
+            </button>
             <div className="mobile-menu-divider"></div>
             <button onClick={() => { handleLogout(); setShowMobileMenu(false); }} className="mobile-menu-item mobile-menu-logout">
               <span className="mobile-menu-icon">🚪</span>

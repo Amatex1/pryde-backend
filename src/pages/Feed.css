@@ -2182,12 +2182,34 @@
 
 @media (max-width: 768px) {
   .post-actions-bar {
-    flex-direction: column;
+    flex-wrap: wrap;
+    gap: 0.5rem;
   }
 
-  .btn-media-upload,
+  .btn-media-upload {
+    flex: 1 1 100%;
+    padding: 0.65rem 1rem;
+    font-size: 0.85rem;
+    text-align: center;
+  }
+
+  .btn-content-warning {
+    flex: 0 0 auto;
+    padding: 0.65rem 0.75rem;
+    font-size: 0.85rem;
+  }
+
+  .privacy-selector {
+    flex: 1 1 auto;
+    padding: 0.65rem 0.75rem;
+    font-size: 0.85rem;
+  }
+
   .btn-post {
-    width: 100%;
+    flex: 0 0 auto;
+    padding: 0.65rem 1rem;
+    font-size: 0.85rem;
+    white-space: nowrap;
   }
 
   .media-preview {
