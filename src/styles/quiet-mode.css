@@ -52,6 +52,49 @@ html:not([data-theme="light"])[data-quiet-mode="true"] {
 }
 
 /* ========================================
+   QUIET MODE COLOR VARIABLES - LIGHT MODE
+   ======================================== */
+
+html[data-theme="light"][data-quiet-mode="true"] {
+  /* Backgrounds - Soft, muted light colors */
+  --bg-main: #F8F9FA !important;                /* Very soft grey-white */
+  --bg-light: #F8F9FA !important;
+  --bg-surface: #FFFFFF !important;             /* Pure white for cards */
+  --card-surface: #FFFFFF !important;
+  --background-light: #F8F9FA !important;
+
+  /* Borders - Very subtle */
+  --border-soft: #E5E7EB !important;            /* Soft grey border */
+  --border-light: #E5E7EB !important;
+  --border-dark: #E5E7EB !important;
+
+  /* Text - Softer than normal light mode */
+  --text-primary: #374151 !important;           /* Soft dark grey */
+  --text-main: #374151 !important;
+  --text-light: #374151 !important;
+  --text-secondary: #6B7280 !important;         /* Medium grey */
+  --text-muted: #9CA3AF !important;             /* Light grey */
+
+  /* Accents - Muted versions of brand colors */
+  --accent-primary: #9F8FE8 !important;         /* Muted lavender */
+  --accent-hover: #B5A7F0 !important;           /* Lighter muted lavender */
+  --accent-soft: rgba(159,143,232,0.15) !important; /* Very subtle accent background */
+
+  /* Theme colors - Softer versions */
+  --pryde-purple: #9F8FE8 !important;           /* Muted purple */
+  --electric-blue: #7BA5D8 !important;          /* Muted blue */
+  --soft-lavender: rgba(159,143,232,0.10) !important; /* Very subtle lavender */
+
+  /* Buttons */
+  --btn-bg: #F3F4F6 !important;
+  --btn-bg-hover: #E5E7EB !important;
+  --btn-text: #374151 !important;
+
+  /* Cards & shadows - Minimal */
+  --card-shadow: 0px 2px 8px rgba(0,0,0,0.04) !important;
+}
+
+/* ========================================
    QUIET MODE ICON - ALL MODES
    ======================================== */
 
@@ -76,9 +119,41 @@ html[data-quiet-mode="true"] * {
 }
 
 /* ========================================
-   BACKGROUNDS (DARK QUIET MODE ONLY)
+   BACKGROUNDS - ALL QUIET MODES
    ======================================== */
 
+/* Light Mode + Quiet Mode */
+html[data-theme="light"][data-quiet-mode="true"] body {
+  background-color: var(--bg-main) !important;
+  color: var(--text-main) !important;
+}
+
+[data-theme="light"][data-quiet-mode="true"] .feed-container,
+[data-theme="light"][data-quiet-mode="true"] .global-feed-container,
+[data-theme="light"][data-quiet-mode="true"] .journal-container,
+[data-theme="light"][data-quiet-mode="true"] .longform-container,
+[data-theme="light"][data-quiet-mode="true"] .discover-container,
+[data-theme="light"][data-quiet-mode="true"] .messages-container,
+[data-theme="light"][data-quiet-mode="true"] .profile-container,
+[data-theme="light"][data-quiet-mode="true"] .settings-container,
+[data-theme="light"][data-quiet-mode="true"] .bookmarks-container,
+[data-theme="light"][data-quiet-mode="true"] .events-container,
+[data-theme="light"][data-quiet-mode="true"] .notifications-container,
+[data-theme="light"][data-quiet-mode="true"] .admin-container,
+[data-theme="light"][data-quiet-mode="true"] .search-results,
+[data-theme="light"][data-quiet-mode="true"] .tag-feed-container,
+[data-theme="light"][data-quiet-mode="true"] .photo-essay-container,
+[data-theme="light"][data-quiet-mode="true"] .home-container,
+[data-theme="light"][data-quiet-mode="true"] .login-container,
+[data-theme="light"][data-quiet-mode="true"] .register-container,
+[data-theme="light"][data-quiet-mode="true"] .forgot-password-container,
+[data-theme="light"][data-quiet-mode="true"] .reset-password-container,
+[data-theme="light"][data-quiet-mode="true"] main,
+[data-theme="light"][data-quiet-mode="true"] .app-container {
+  background-color: var(--bg-main);
+}
+
+/* Dark Mode + Quiet Mode */
 html[data-theme="dark"][data-quiet-mode="true"] body,
 html:not([data-theme="light"])[data-quiet-mode="true"] body {
   background-color: var(--bg-main) !important;
@@ -133,9 +208,48 @@ html:not([data-theme="light"])[data-quiet-mode="true"] .app-container {
 }
 
 /* ========================================
-   CARDS & PANELS (DARK QUIET MODE ONLY)
+   CARDS & PANELS - ALL QUIET MODES
    ======================================== */
 
+/* Light Mode + Quiet Mode Cards */
+[data-theme="light"][data-quiet-mode="true"] .post-card,
+[data-theme="light"][data-quiet-mode="true"] .glossy,
+[data-theme="light"][data-quiet-mode="true"] .card,
+[data-theme="light"][data-quiet-mode="true"] .panel,
+[data-theme="light"][data-quiet-mode="true"] .sidebar,
+[data-theme="light"][data-quiet-mode="true"] .message-card,
+[data-theme="light"][data-quiet-mode="true"] .notification-card,
+[data-theme="light"][data-quiet-mode="true"] .journal-card,
+[data-theme="light"][data-quiet-mode="true"] .journal-entry,
+[data-theme="light"][data-quiet-mode="true"] .longform-card,
+[data-theme="light"][data-quiet-mode="true"] .longform-article,
+[data-theme="light"][data-quiet-mode="true"] .photo-essay-card,
+[data-theme="light"][data-quiet-mode="true"] .event-card,
+[data-theme="light"][data-quiet-mode="true"] .profile-card,
+[data-theme="light"][data-quiet-mode="true"] .profile-header,
+[data-theme="light"][data-quiet-mode="true"] .profile-section,
+[data-theme="light"][data-quiet-mode="true"] .settings-section,
+[data-theme="light"][data-quiet-mode="true"] .comment-card,
+[data-theme="light"][data-quiet-mode="true"] .reply-card,
+[data-theme="light"][data-quiet-mode="true"] .tag-card,
+[data-theme="light"][data-quiet-mode="true"] .search-result-card,
+[data-theme="light"][data-quiet-mode="true"] .mini-chat-box,
+[data-theme="light"][data-quiet-mode="true"] .chat-window,
+[data-theme="light"][data-quiet-mode="true"] .dm-window,
+[data-theme="light"][data-quiet-mode="true"] .modal-content,
+[data-theme="light"][data-quiet-mode="true"] .dropdown-menu,
+[data-theme="light"][data-quiet-mode="true"] .notification-dropdown,
+[data-theme="light"][data-quiet-mode="true"] .admin-panel,
+[data-theme="light"][data-quiet-mode="true"] .admin-card,
+[data-theme="light"][data-quiet-mode="true"] .stats-card,
+[data-theme="light"][data-quiet-mode="true"] .form-container,
+[data-theme="light"][data-quiet-mode="true"] .auth-card {
+  background: var(--card-surface);
+  border-color: var(--border-soft);
+  box-shadow: var(--card-shadow);
+}
+
+/* Dark Mode + Quiet Mode Cards */
 [data-theme="dark"][data-quiet-mode="true"] .post-card,
 [data-theme="dark"][data-quiet-mode="true"] .glossy,
 [data-theme="dark"][data-quiet-mode="true"] .card,

@@ -174,60 +174,58 @@
   color: #616161;
 }
 
-/* Dark Mode */
-@media (prefers-color-scheme: dark) {
-  .bookmarks-subtitle,
-  .loading {
-    color: #b0b0b0;
-  }
+/* Dark Mode - Using data-theme attribute instead of prefers-color-scheme */
+[data-theme="dark"] .bookmarks-subtitle,
+[data-theme="dark"] .loading {
+  color: var(--text-muted);
+}
 
-  .no-bookmarks {
-    background: linear-gradient(135deg, rgba(108, 92, 231, 0.15) 0%, #2a2a2a 100%);
-  }
+[data-theme="dark"] .no-bookmarks {
+  background: linear-gradient(135deg, rgba(108, 92, 231, 0.15) 0%, var(--card-surface) 100%);
+}
 
-  .no-bookmarks h2 {
-    color: #e0e0e0;
-  }
+[data-theme="dark"] .no-bookmarks h2 {
+  color: var(--text-main);
+}
 
-  .no-bookmarks p {
-    color: #b0b0b0;
-  }
+[data-theme="dark"] .no-bookmarks p {
+  color: var(--text-muted);
+}
 
-  .bookmark-card {
-    background: #2a2a2a;
-    border-color: #3a3a3a;
-  }
+[data-theme="dark"] .bookmark-card {
+  background: var(--card-surface);
+  border-color: var(--border-light);
+}
 
-  .bookmark-card:hover {
-    box-shadow: 0 8px 24px rgba(108, 92, 231, 0.3);
-    border-color: #6C5CE7;
-  }
+[data-theme="dark"] .bookmark-card:hover {
+  box-shadow: 0 8px 24px rgba(108, 92, 231, 0.3);
+  border-color: var(--pryde-purple);
+}
 
-  .author-avatar {
-    border-color: rgba(108, 92, 231, 0.3);
-  }
+[data-theme="dark"] .author-avatar {
+  border-color: rgba(108, 92, 231, 0.3);
+}
 
-  .author-name {
-    color: #e0e0e0;
-  }
+[data-theme="dark"] .author-name {
+  color: var(--text-main);
+}
 
-  .author-username,
-  .post-date,
-  .post-stats {
-    color: #b0b0b0;
-  }
+[data-theme="dark"] .author-username,
+[data-theme="dark"] .post-date,
+[data-theme="dark"] .post-stats {
+  color: var(--text-muted);
+}
 
-  .post-content {
-    color: #e0e0e0;
-  }
+[data-theme="dark"] .post-content {
+  color: var(--text-main);
+}
 
-  .bookmark-footer {
-    border-top-color: #3a3a3a;
-  }
+[data-theme="dark"] .bookmark-footer {
+  border-top-color: var(--border-light);
+}
 
-  .remove-bookmark-btn:hover {
-    background: rgba(255, 107, 107, 0.2);
-  }
+[data-theme="dark"] .remove-bookmark-btn:hover {
+  background: rgba(255, 107, 107, 0.2);
 }
 
 @media (max-width: 768px) {
