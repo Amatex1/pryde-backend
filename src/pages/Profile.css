@@ -967,12 +967,10 @@
   text-decoration: line-through;
 }
 
-@media (prefers-color-scheme: dark) {
-  .deactivated-friend .deactivated-avatar {
-    background: #3a3a3a !important;
-    color: #888 !important;
-    border-color: #3a3a3a !important;
-  }
+[data-theme="dark"] .deactivated-friend .deactivated-avatar {
+  background: #3a3a3a !important;
+  color: #888 !important;
+  border-color: #3a3a3a !important;
 }
 
 .empty-text {

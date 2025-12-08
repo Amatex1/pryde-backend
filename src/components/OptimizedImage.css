@@ -88,24 +88,22 @@
 }
 
 /* Dark mode support */
-@media (prefers-color-scheme: dark) {
-  .optimized-image-container {
-    background: #2b2b2b;
-  }
+[data-theme="dark"] .optimized-image-container {
+  background: var(--card-surface);
+}
 
-  .image-placeholder {
-    background: linear-gradient(
-      90deg,
-      #2b2b2b 0%,
-      #3b3b3b 20%,
-      #2b2b2b 40%,
-      #2b2b2b 100%
-    );
-    background-size: 200% 100%;
-  }
+[data-theme="dark"] .image-placeholder {
+  background: linear-gradient(
+    90deg,
+    var(--card-surface) 0%,
+    var(--border-light) 20%,
+    var(--card-surface) 40%,
+    var(--card-surface) 100%
+  );
+  background-size: 200% 100%;
+}
 
-  .image-error {
-    background: #2b2b2b;
-  }
+[data-theme="dark"] .image-error {
+  background: var(--card-surface);
 }
 

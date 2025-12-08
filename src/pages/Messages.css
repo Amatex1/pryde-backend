@@ -488,12 +488,10 @@
   border: 1px solid var(--border-light);
 }
 
-@media (prefers-color-scheme: dark) {
-  .message-date-header span {
-    background: rgba(255, 255, 255, 0.05);
-    border-color: rgba(255, 255, 255, 0.1);
-    color: var(--text-light);
-  }
+[data-theme="dark"] .message-date-header span {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: var(--text-light);
 }
 
 .message-group {
@@ -1597,9 +1595,7 @@
   transform: none !important;
 }
 
-@media (prefers-color-scheme: dark) {
-  .user-result.deactivated-user .user-avatar {
-    background: #3a3a3a !important;
-    color: #888 !important;
-  }
+[data-theme="dark"] .user-result.deactivated-user .user-avatar {
+  background: #3a3a3a !important;
+  color: #888 !important;
 }

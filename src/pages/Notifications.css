@@ -131,36 +131,34 @@
 }
 
 /* Dark Mode */
-@media (prefers-color-scheme: dark) {
-  .notifications-page {
-    background: #1a1a1a;
-  }
+[data-theme="dark"] .notifications-page {
+  background: var(--background-light);
+}
 
-  .notification-card {
-    background: #2a2a2a;
-    border-color: #3a3a3a;
-  }
+[data-theme="dark"] .notification-card {
+  background: var(--card-surface);
+  border-color: var(--border-light);
+}
 
-  .notification-card:hover {
-    border-color: var(--pryde-purple);
-    box-shadow: 0 4px 12px rgba(108, 92, 231, 0.3);
-  }
+[data-theme="dark"] .notification-card:hover {
+  border-color: var(--pryde-purple);
+  box-shadow: 0 4px 12px rgba(108, 92, 231, 0.3);
+}
 
-  .notification-card.unread {
-    background: rgba(108, 92, 231, 0.15);
-  }
+[data-theme="dark"] .notification-card.unread {
+  background: rgba(108, 92, 231, 0.15);
+}
 
-  .notification-icon {
-    background: #1a1a1a;
-  }
+[data-theme="dark"] .notification-icon {
+  background: var(--background-light);
+}
 
-  .mark-all-read-btn {
-    background: rgba(108, 92, 231, 0.2);
-  }
+[data-theme="dark"] .mark-all-read-btn {
+  background: rgba(108, 92, 231, 0.2);
+}
 
-  .mark-all-read-btn:hover {
-    background: var(--pryde-purple);
-  }
+[data-theme="dark"] .mark-all-read-btn:hover {
+  background: var(--pryde-purple);
 }
 
 /* Mobile Responsive */
