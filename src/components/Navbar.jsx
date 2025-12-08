@@ -205,8 +205,12 @@ function Navbar() {
               <span>Journal</span>
             </Link>
             <Link to="/longform" className="mobile-menu-item" onClick={() => setShowMobileMenu(false)}>
-              <span className="mobile-menu-icon">📝</span>
-              <span>Longform</span>
+              <span className="mobile-menu-icon">📖</span>
+              <span>Stories</span>
+            </Link>
+            <Link to="/photo-essay" className="mobile-menu-item" onClick={() => setShowMobileMenu(false)}>
+              <span className="mobile-menu-icon">📸</span>
+              <span>Photo Essays</span>
             </Link>
             <div className="mobile-menu-divider"></div>
             <Link to="/lounge" className="mobile-menu-item" onClick={() => setShowMobileMenu(false)}>
@@ -266,9 +270,13 @@ function Navbar() {
             <span className="nav-icon">📔</span>
             <span className="nav-label">Journal</span>
           </Link>
-          <Link to="/longform" className="nav-button" title="Longform">
-            <span className="nav-icon">📝</span>
-            <span className="nav-label">Longform</span>
+          <Link to="/longform" className="nav-button" title="Stories">
+            <span className="nav-icon">📖</span>
+            <span className="nav-label">Stories</span>
+          </Link>
+          <Link to="/photo-essay" className="nav-button" title="Photo Essays">
+            <span className="nav-icon">📸</span>
+            <span className="nav-label">Photos</span>
           </Link>
           <Link to="/lounge" className="nav-button" title="Lounge - Global Chat">
             <span className="nav-icon">✨</span>
