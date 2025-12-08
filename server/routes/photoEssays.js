@@ -4,6 +4,7 @@
  */
 
 import express from 'express';
+import mongoose from 'mongoose';
 import PhotoEssay from '../models/PhotoEssay.js';
 import User from '../models/User.js';
 import { authenticateToken } from '../middleware/auth.js';
@@ -101,16 +102,30 @@ router.get('/user/:userId', authenticateToken, async (req, res) => {
     const { userId } = req.params;
     const currentUserId = req.user.id;
 
-    // Build query based on visibility
-    let query = { user: userId };
+    // Find user by ID or username
+    let targetUser;
+    if (mongoose.Types.ObjectId.isValid(userId) && userId.length === 24) {
+      targetUser = await User.findById(userId).select('_id');
+    } else {
+      targetUser = await User.findOne({ username: userId }).select('_id');
+    }
 
-    if (userId === currentUserId) {
+    if (!targetUser) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const targetUserId = targetUser._id.toString();
+
+    // Build query based on visibility
+    let query = { user: targetUserId };
+
+    if (targetUserId === currentUserId) {
       // User viewing their own essays - show all
-      query = { user: userId };
+      query = { user: targetUserId };
     } else {
       // Check if current user follows the essay owner
       const currentUser = await User.findById(currentUserId).select('following');
-      const isFollowing = currentUser.following.some(id => id.toString() === userId);
+      const isFollowing = currentUser.following.some(id => id.toString() === targetUserId);
 
       if (isFollowing) {
         // Show public and followers-only essays
