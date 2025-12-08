@@ -130,6 +130,7 @@ function ResetPassword() {
                 minLength={6}
                 className="form-input glossy"
                 disabled={loading}
+                autoComplete="new-password"
               />
             </div>
 
@@ -145,6 +146,7 @@ function ResetPassword() {
                 minLength={6}
                 className="form-input glossy"
                 disabled={loading}
+                autoComplete="new-password"
               />
             </div>
 

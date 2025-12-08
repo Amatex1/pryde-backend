@@ -74,6 +74,7 @@ function ForgotPassword() {
               required
               className="form-input glossy"
               disabled={loading}
+              autoComplete="email"
             />
           </div>
 

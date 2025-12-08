@@ -180,6 +180,7 @@ function Register({ setIsAuth }) {
               required
               className="form-input glossy"
               placeholder="Choose a username"
+              autoComplete="username"
             />
           </div>
 
@@ -193,6 +194,7 @@ function Register({ setIsAuth }) {
               onChange={handleChange}
               className="form-input glossy"
               placeholder="Your display name (optional)"
+              autoComplete="name"
             />
           </div>
 
@@ -207,6 +209,7 @@ function Register({ setIsAuth }) {
               required
               className="form-input glossy"
               placeholder="Enter your email"
+              autoComplete="email"
             />
           </div>
 
@@ -222,6 +225,7 @@ function Register({ setIsAuth }) {
               minLength="8"
               className="form-input glossy"
               placeholder="Create a password (min 8 characters)"
+              autoComplete="new-password"
             />
             <small style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginTop: '0.25rem', display: 'block' }}>
               Must contain at least one uppercase letter, one lowercase letter, and one number

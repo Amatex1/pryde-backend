@@ -199,6 +199,7 @@ function Login({ setIsAuth }) {
               required
               className="form-input glossy"
               placeholder="Enter your email"
+              autoComplete="email"
             />
           </div>
 
@@ -213,6 +214,7 @@ function Login({ setIsAuth }) {
               required
               className="form-input glossy"
               placeholder="Enter your password"
+              autoComplete="current-password"
             />
           </div>
 
