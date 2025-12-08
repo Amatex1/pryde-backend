@@ -606,10 +606,128 @@ export const sendVerificationEmail = async (email, verificationToken, username) 
   }
 };
 
+/**
+ * Send password changed notification email
+ */
+export const sendPasswordChangedEmail = async (email, username) => {
+  try {
+    const resendClient = getResendClient();
+
+    if (!resendClient) {
+      console.warn('Resend API key not configured. Email not sent.');
+      return { success: false, error: 'Email service not configured' };
+    }
+
+    const { data, error } = await resendClient.emails.send({
+      from: FROM_EMAIL,
+      to: email,
+      subject: '🔐 Your Password Has Been Changed - Pryde Social',
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        </head>
+        <body style="margin: 0; padding: 0; background-color: #F7F7F7; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+          <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #F7F7F7;">
+            <tr>
+              <td style="padding: 40px 20px;">
+                <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="max-width: 600px; margin: 0 auto; background: linear-gradient(135deg, #10B981 0%, #059669 100%); border-radius: 16px; overflow: hidden;">
+                  <tr>
+                    <td style="padding: 40px; text-align: center;">
+                      <h1 style="margin: 0; color: #FFFFFF; font-size: 32px; font-weight: 700;">Password Changed ✅</h1>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="background-color: #FFFFFF; padding: 40px;">
+                      <p style="margin: 0 0 20px; color: #2B2B2B; font-size: 16px; line-height: 1.6;">Hi ${username},</p>
+
+                      <p style="margin: 0 0 20px; color: #2B2B2B; font-size: 16px; line-height: 1.6;">
+                        This is a confirmation that your Pryde Social account password was successfully changed.
+                      </p>
+
+                      <div style="background-color: #D1FAE5; border-left: 4px solid #10B981; padding: 15px; margin: 30px 0; border-radius: 4px;">
+                        <p style="margin: 0; color: #065F46; font-size: 14px; line-height: 1.6;">
+                          <strong>✅ Password Changed Successfully</strong><br>
+                          Your password was changed at ${new Date().toLocaleString('en-US', {
+                            weekday: 'long',
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            timeZoneName: 'short'
+                          })}
+                        </p>
+                      </div>
+
+                      <div style="background-color: #FEE2E2; border-left: 4px solid #DC2626; padding: 15px; margin: 30px 0; border-radius: 4px;">
+                        <p style="margin: 0; color: #991B1B; font-size: 14px; line-height: 1.6;">
+                          <strong>⚠️ Didn't change your password?</strong><br>
+                          If you did not make this change, your account may be compromised. Please:
+                        </p>
+                        <ul style="margin: 10px 0 0 20px; color: #991B1B; font-size: 14px;">
+                          <li>Reset your password immediately</li>
+                          <li>Enable two-factor authentication (2FA)</li>
+                          <li>Review your active sessions</li>
+                          <li>Contact our support team</li>
+                        </ul>
+                      </div>
+
+                      <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                        <tr>
+                          <td style="text-align: center; padding: 20px 0;">
+                            <a href="${config.frontendURL}/settings/security" style="display: inline-block; background: linear-gradient(135deg, #6C5CE7 0%, #0984E3 100%); color: #FFFFFF; text-decoration: none; padding: 16px 40px; border-radius: 8px; font-weight: 600; font-size: 16px;">
+                              Review Security Settings
+                            </a>
+                          </td>
+                        </tr>
+                      </table>
+
+                      <p style="margin: 30px 0 0; color: #2B2B2B; font-size: 16px; line-height: 1.6;">
+                        Best regards,<br>
+                        The Pryde Social Security Team
+                      </p>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="background-color: #F7F7F7; padding: 30px; text-align: center;">
+                      <p style="margin: 0 0 10px; color: #616161; font-size: 12px;">
+                        © ${new Date().getFullYear()} Pryde Social. All rights reserved.
+                      </p>
+                      <p style="margin: 0; color: #616161; font-size: 12px;">
+                        This is an automated security notification. Please do not reply.
+                      </p>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+        </body>
+        </html>
+      `
+    });
+
+    if (error) {
+      console.error('Error sending password changed email:', error);
+      return { success: false, error: error.message };
+    }
+
+    console.log('Password changed email sent:', data.id);
+    return { success: true, messageId: data.id };
+  } catch (error) {
+    console.error('Error sending password changed email:', error);
+    return { success: false, error: error.message };
+  }
+};
+
 export default {
   sendPasswordResetEmail,
   sendLoginAlertEmail,
   sendSuspiciousLoginEmail,
-  sendVerificationEmail
+  sendVerificationEmail,
+  sendPasswordChangedEmail
 };
 

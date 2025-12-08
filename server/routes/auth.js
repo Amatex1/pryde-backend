@@ -6,7 +6,7 @@ import User from '../models/User.js';
 import SecurityLog from '../models/SecurityLog.js';
 import auth from '../middleware/auth.js';
 import config from '../config/config.js';
-import { sendPasswordResetEmail, sendLoginAlertEmail, sendSuspiciousLoginEmail, sendVerificationEmail } from '../utils/emailService.js';
+import { sendPasswordResetEmail, sendLoginAlertEmail, sendSuspiciousLoginEmail, sendVerificationEmail, sendPasswordChangedEmail } from '../utils/emailService.js';
 import {
   generateSessionId,
   parseUserAgent,
@@ -735,6 +735,11 @@ router.post('/reset-password', async (req, res) => {
     const userAgent = req.headers['user-agent'] || 'Unknown';
     logPasswordChange(user, ipAddress, userAgent).catch(err => {
       console.error('Failed to log password change:', err);
+    });
+
+    // Send password changed notification email
+    sendPasswordChangedEmail(user.email, user.username).catch(err => {
+      console.error('Failed to send password changed email:', err);
     });
 
     res.json({
