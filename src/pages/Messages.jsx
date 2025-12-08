@@ -21,6 +21,7 @@ import {
   requestOnlineUsers
 } from '../utils/socket';
 import './Messages.css';
+import '../styles/themes/messages.css';
 
 function Messages() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -65,6 +66,7 @@ function Messages() {
   const [archivedConversations, setArchivedConversations] = useState([]);
   const [mutedConversations, setMutedConversations] = useState([]);
   const [currentTheme, setCurrentTheme] = useState(document.documentElement.getAttribute('data-theme') || 'light');
+  const [quietMode, setQuietMode] = useState(document.documentElement.getAttribute('data-quiet-mode') === 'true');
   const [uploadingFile, setUploadingFile] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
   const messagesEndRef = useRef(null);
@@ -109,16 +111,18 @@ function Messages() {
     return currentDate.toDateString() !== previousDate.toDateString();
   };
 
-  // Listen for theme changes
+  // Listen for theme and quiet mode changes
   useEffect(() => {
     const observer = new MutationObserver(() => {
       const theme = document.documentElement.getAttribute('data-theme') || 'light';
+      const quiet = document.documentElement.getAttribute('data-quiet-mode') === 'true';
       setCurrentTheme(theme);
+      setQuietMode(quiet);
     });
 
     observer.observe(document.documentElement, {
       attributes: true,
-      attributeFilter: ['data-theme']
+      attributeFilter: ['data-theme', 'data-quiet-mode']
     });
 
     return () => observer.disconnect();
@@ -876,7 +880,11 @@ function Messages() {
   };
 
   return (
-    <div className="page-container">
+    <div
+      className="page-container messages-page"
+      data-theme={currentTheme}
+      data-quiet-mode={quietMode ? 'true' : 'false'}
+    >
       <Navbar />
 
       <div className="messages-container">

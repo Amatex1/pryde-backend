@@ -1,0 +1,111 @@
+/**
+ * MESSAGES PAGE THEME VARIABLES
+ * Centralized color palette for all 4 theme modes
+ */
+
+:root {
+  /* BASE ACCENTS */
+  --accent-primary: #6C5CE7;
+  --accent-hover: #7F6FF2;
+
+  /* QUIET MODE ACCENTS */
+  --accent-soft-light: rgba(159, 143, 232, 0.15);
+  --accent-soft-dark: rgba(198, 185, 248, 0.35);
+
+  /* LIGHT MODE COLORS */
+  --lm-bg: #F5F6FA;
+  --lm-surface: #FFFFFF;
+  --lm-border: #E2E4EC;
+  --lm-text-main: #1E1E26;
+  --lm-text-muted: #6B6E80;
+  --lm-text-light: #9CA0B3;
+
+  /* LIGHT QUIET MODE COLORS */
+  --lqm-bg: #F8F9FA;
+  --lqm-surface: #FFFFFF;
+  --lqm-border: #E5E7EB;
+  --lqm-text-main: #374151;
+  --lqm-text-muted: #6B7280;
+  --lqm-text-light: #9CA3AF;
+
+  /* DARK MODE COLORS */
+  --dm-bg: #0F1021;
+  --dm-surface: #15162A;
+  --dm-border: #262842;
+  --dm-text-main: #F8F7FF;
+  --dm-text-muted: #A5A7C7;
+  --dm-text-light: #7B7D9E;
+
+  /* DARK QUIET MODE COLORS */
+  --dqm-bg: #0F1021;
+  --dqm-surface: #1A1B2D;
+  --dqm-border: #4C4E75;
+  --dqm-text-main: #FFFFFF;
+  --dqm-text-muted: #A4A7C2;
+  --dqm-text-light: #65677E;
+}
+
+/* ========================================
+   MESSAGE BUBBLE THEME MAPPINGS
+   ======================================== */
+
+/* Light Mode (Default) */
+.messages-page:not([data-theme="dark"]):not([data-quiet-mode="true"]) {
+  --msg-sent-bg: linear-gradient(135deg, #667EEA, #764BA2);
+  --msg-sent-text: #FFFFFF;
+  --msg-received-bg: var(--lm-surface);
+  --msg-received-text: var(--lm-text-main);
+  --msg-page-bg: var(--lm-bg);
+  --msg-surface: var(--lm-surface);
+  --msg-border: var(--lm-border);
+}
+
+/* Light Mode + Quiet Mode */
+.messages-page[data-theme="light"][data-quiet-mode="true"] {
+  --msg-sent-bg: var(--accent-soft-light);
+  --msg-sent-text: var(--lqm-text-main);
+  --msg-received-bg: var(--lqm-surface);
+  --msg-received-text: var(--lqm-text-main);
+  --msg-page-bg: var(--lqm-bg);
+  --msg-surface: var(--lqm-surface);
+  --msg-border: var(--lqm-border);
+}
+
+/* Dark Mode */
+.messages-page[data-theme="dark"]:not([data-quiet-mode="true"]) {
+  --msg-sent-bg: linear-gradient(135deg, #667EEA, #764BA2);
+  --msg-sent-text: #FFFFFF;
+  --msg-received-bg: #1E1F33;
+  --msg-received-text: var(--dm-text-main);
+  --msg-page-bg: var(--dm-bg);
+  --msg-surface: var(--dm-surface);
+  --msg-border: var(--dm-border);
+}
+
+/* Dark Mode + Quiet Mode */
+.messages-page[data-theme="dark"][data-quiet-mode="true"] {
+  --msg-sent-bg: var(--accent-soft-dark);
+  --msg-sent-text: #FFFFFF;
+  --msg-received-bg: var(--dqm-surface);
+  --msg-received-text: var(--dqm-text-main);
+  --msg-page-bg: var(--dqm-bg);
+  --msg-surface: var(--dqm-surface);
+  --msg-border: var(--dqm-border);
+}
+
+/* ========================================
+   APPLY THEME TO MESSAGE BUBBLES
+   ======================================== */
+
+/* Sent messages use theme variables */
+.messages-page .message-group.sent .message-bubble {
+  background: var(--msg-sent-bg) !important;
+  color: var(--msg-sent-text) !important;
+}
+
+/* Received messages in Quiet Mode use theme variables */
+.messages-page[data-quiet-mode="true"] .message-group.received .message-bubble {
+  background: var(--msg-received-bg) !important;
+  color: var(--msg-received-text) !important;
+}
+
