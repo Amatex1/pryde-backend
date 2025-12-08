@@ -1,39 +1,16 @@
 import express from 'express';
 const router = express.Router();
 import multer from 'multer';
-import { GridFsStorage } from 'multer-gridfs-storage';
 import mongoose from 'mongoose';
 import auth from '../middleware/auth.js';
 import User from '../models/User.js';
 import config from '../config/config.js';
 import { uploadLimiter } from '../middleware/rateLimiter.js';
+import { stripExifData } from '../middleware/imageProcessing.js';
+import { Readable } from 'stream';
 
-// Create storage engine
-const storage = new GridFsStorage({
-  url: config.mongoURI,
-  options: { useNewUrlParser: true, useUnifiedTopology: true },
-  file: (req, file) => {
-    console.log('GridFsStorage processing file:', file.originalname);
-    return new Promise((resolve, reject) => {
-      const filename = `${Date.now()}-${file.originalname}`;
-      const fileInfo = {
-        filename: filename,
-        bucketName: 'uploads'
-      };
-      console.log('File info:', fileInfo);
-      resolve(fileInfo);
-    });
-  }
-});
-
-// Error handling for storage
-storage.on('connection', (db) => {
-  console.log('✅ GridFsStorage connected to database');
-});
-
-storage.on('connectionFailed', (err) => {
-  console.error('❌ GridFsStorage connection failed:', err);
-});
+// Use memory storage to process images before saving to GridFS
+const storage = multer.memoryStorage();
 
 // File filter to only allow images and videos
 const fileFilter = (req, file, cb) => {
@@ -67,6 +44,47 @@ mongoose.connection.once('open', () => {
   console.log('GridFS initialized successfully');
 });
 
+/**
+ * Save processed file to GridFS
+ * Strips EXIF data from images before saving
+ */
+const saveToGridFS = async (file) => {
+  return new Promise(async (resolve, reject) => {
+    try {
+      let buffer = file.buffer;
+
+      // Strip EXIF data from images
+      if (file.mimetype.startsWith('image/')) {
+        console.log('🔒 Stripping EXIF data from image...');
+        buffer = await stripExifData(buffer, file.mimetype);
+        console.log('✅ EXIF data removed');
+      }
+
+      const filename = `${Date.now()}-${file.originalname}`;
+      const readableStream = Readable.from(buffer);
+
+      const uploadStream = gridfsBucket.openUploadStream(filename, {
+        contentType: file.mimetype
+      });
+
+      readableStream.pipe(uploadStream);
+
+      uploadStream.on('finish', () => {
+        resolve({
+          filename: filename,
+          id: uploadStream.id
+        });
+      });
+
+      uploadStream.on('error', (error) => {
+        reject(error);
+      });
+    } catch (error) {
+      reject(error);
+    }
+  });
+};
+
 // @route   POST /api/upload/profile-photo
 // @desc    Upload profile photo
 // @access  Private
@@ -80,14 +98,14 @@ router.post('/profile-photo', auth, uploadLimiter, (req, res) => {
         return res.status(500).json({ message: 'Upload failed', error: err.message });
       }
 
-      console.log('File:', req.file);
-
       if (!req.file) {
         console.log('No file in request');
         return res.status(400).json({ message: 'No file uploaded' });
       }
 
-      const photoUrl = `/upload/image/${req.file.filename}`;
+      // Save to GridFS with EXIF stripping
+      const fileInfo = await saveToGridFS(req.file);
+      const photoUrl = `/upload/image/${fileInfo.filename}`;
       console.log('Photo URL:', photoUrl);
 
       // Update user profile photo
@@ -119,14 +137,14 @@ router.post('/cover-photo', auth, uploadLimiter, (req, res) => {
         return res.status(500).json({ message: 'Upload failed', error: err.message });
       }
 
-      console.log('File:', req.file);
-
       if (!req.file) {
         console.log('No file in request');
         return res.status(400).json({ message: 'No file uploaded' });
       }
 
-      const photoUrl = `/upload/image/${req.file.filename}`;
+      // Save to GridFS with EXIF stripping
+      const fileInfo = await saveToGridFS(req.file);
+      const photoUrl = `/upload/image/${fileInfo.filename}`;
       console.log('Photo URL:', photoUrl);
 
       // Update user cover photo
@@ -148,48 +166,66 @@ router.post('/cover-photo', auth, uploadLimiter, (req, res) => {
 // @route   POST /api/upload/chat-attachment
 // @desc    Upload chat attachment
 // @access  Private
-router.post('/chat-attachment', auth, uploadLimiter, upload.single('file'), async (req, res) => {
-  try {
-    if (!req.file) {
-      return res.status(400).json({ message: 'No file uploaded' });
+router.post('/chat-attachment', auth, uploadLimiter, (req, res) => {
+  upload.single('file')(req, res, async (err) => {
+    try {
+      if (err) {
+        console.error('Multer error:', err);
+        return res.status(500).json({ message: 'Upload failed', error: err.message });
+      }
+
+      if (!req.file) {
+        return res.status(400).json({ message: 'No file uploaded' });
+      }
+
+      // Save to GridFS with EXIF stripping
+      const fileInfo = await saveToGridFS(req.file);
+      const fileUrl = `/upload/image/${fileInfo.filename}`;
+
+      res.json({ url: fileUrl });
+    } catch (error) {
+      console.error('Upload chat attachment error:', error);
+      res.status(500).json({ message: 'Server error' });
     }
-
-    const fileUrl = `/upload/image/${req.file.filename}`;
-
-    res.json({ url: fileUrl });
-  } catch (error) {
-    console.error('Upload chat attachment error:', error);
-    res.status(500).json({ message: 'Server error' });
-  }
+  });
 });
 
 // @route   POST /api/upload/post-media
 // @desc    Upload media for posts (images, videos, gifs) - Max 3 files
 // @access  Private
-router.post('/post-media', auth, uploadLimiter, upload.array('media', 3), async (req, res) => {
-  try {
-    if (!req.files || req.files.length === 0) {
-      return res.status(400).json({ message: 'No files uploaded' });
-    }
-
-    const mediaUrls = req.files.map(file => {
-      const url = `/upload/file/${file.filename}`;
-      let type = 'image';
-
-      if (file.mimetype.startsWith('video/')) {
-        type = 'video';
-      } else if (file.mimetype === 'image/gif') {
-        type = 'gif';
+router.post('/post-media', auth, uploadLimiter, (req, res) => {
+  upload.array('media', 3)(req, res, async (err) => {
+    try {
+      if (err) {
+        console.error('Multer error:', err);
+        return res.status(500).json({ message: 'Upload failed', error: err.message });
       }
 
-      return { url, type };
-    });
+      if (!req.files || req.files.length === 0) {
+        return res.status(400).json({ message: 'No files uploaded' });
+      }
 
-    res.json({ media: mediaUrls });
-  } catch (error) {
-    console.error('Upload post media error:', error);
-    res.status(500).json({ message: 'Server error' });
-  }
+      // Process each file and save to GridFS with EXIF stripping
+      const mediaUrls = await Promise.all(req.files.map(async (file) => {
+        const fileInfo = await saveToGridFS(file);
+        const url = `/upload/file/${fileInfo.filename}`;
+        let type = 'image';
+
+        if (file.mimetype.startsWith('video/')) {
+          type = 'video';
+        } else if (file.mimetype === 'image/gif') {
+          type = 'gif';
+        }
+
+        return { url, type };
+      }));
+
+      res.json({ media: mediaUrls });
+    } catch (error) {
+      console.error('Upload post media error:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
 });
 
 // @route   GET /api/upload/image/:filename
