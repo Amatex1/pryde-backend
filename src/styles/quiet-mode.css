@@ -1100,7 +1100,8 @@ html[data-theme="dark"][data-quiet-mode="true"] {
 /* Buttons when both modes active - vibrant teal/cyan */
 [data-theme="dark"][data-quiet-mode="true"] button,
 [data-theme="dark"][data-quiet-mode="true"] .btn,
-[data-theme="dark"][data-quiet-mode="true"] .pryde-btn {
+[data-theme="dark"][data-quiet-mode="true"] .pryde-btn,
+[data-theme="dark"][data-quiet-mode="true"] a[style*="background"] {
   background: var(--btn-bg) !important; /* Solid vibrant teal */
   color: #FFFFFF !important;
   border-color: transparent !important;
@@ -1108,7 +1109,8 @@ html[data-theme="dark"][data-quiet-mode="true"] {
 
 [data-theme="dark"][data-quiet-mode="true"] button:hover,
 [data-theme="dark"][data-quiet-mode="true"] .btn:hover,
-[data-theme="dark"][data-quiet-mode="true"] .pryde-btn:hover {
+[data-theme="dark"][data-quiet-mode="true"] .pryde-btn:hover,
+[data-theme="dark"][data-quiet-mode="true"] a[style*="background"]:hover {
   background: var(--btn-bg-hover) !important; /* Lighter teal */
   color: #FFFFFF !important;
 }
