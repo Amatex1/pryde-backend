@@ -991,6 +991,10 @@ html[data-theme="dark"][data-quiet-mode="true"] {
   --btn-bg: #1F2035 !important;
   --btn-bg-hover: #2A2B46 !important;
   --btn-text: #E8E8FF !important;
+
+  /* Fix soft-lavender contrast - make it more opaque for better readability */
+  --soft-lavender: rgba(198,185,248,0.25) !important; /* Increased from 0.15 to 0.25 */
+  --color-primary-soft: rgba(198,185,248,0.25) !important; /* Match soft-lavender */
 }
 
 /* Cards and surfaces when both modes active */
@@ -1287,5 +1291,34 @@ html[data-theme="dark"][data-quiet-mode="true"] {
   background: var(--bg-surface) !important;
   border-color: var(--border-soft) !important;
   color: var(--text-primary) !important;
+}
+
+/* Fix elements with soft-lavender backgrounds to ensure good contrast */
+[data-theme="dark"][data-quiet-mode="true"] .btn-action,
+[data-theme="dark"][data-quiet-mode="true"] .btn-media-upload,
+[data-theme="dark"][data-quiet-mode="true"] .lounge-cw-field,
+[data-theme="dark"][data-quiet-mode="true"] .lounge-cw-btn,
+[data-theme="dark"][data-quiet-mode="true"] .contact-info,
+[data-theme="dark"][data-quiet-mode="true"] .legal-footer-note,
+[data-theme="dark"][data-quiet-mode="true"] .report-note,
+[data-theme="dark"][data-quiet-mode="true"] .contact-note,
+[data-theme="dark"][data-quiet-mode="true"] .report-method,
+[data-theme="dark"][data-quiet-mode="true"] .report-category,
+[data-theme="dark"][data-quiet-mode="true"] .pwa-dismiss-btn:hover {
+  background: rgba(198,185,248,0.25) !important; /* More opaque for better contrast */
+  color: var(--text-primary) !important;
+}
+
+/* Ensure buttons with soft-lavender backgrounds have proper text color */
+[data-theme="dark"][data-quiet-mode="true"] .btn-action:not(.liked),
+[data-theme="dark"][data-quiet-mode="true"] .lounge-cw-btn {
+  color: var(--accent-primary) !important;
+}
+
+/* Ensure hover states maintain good contrast */
+[data-theme="dark"][data-quiet-mode="true"] .btn-action:hover,
+[data-theme="dark"][data-quiet-mode="true"] .lounge-cw-btn:hover {
+  background: var(--accent-primary) !important;
+  color: var(--bg-main) !important;
 }
 
