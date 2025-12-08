@@ -7,6 +7,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import ReactionDetailsModal from '../components/ReactionDetailsModal';
+import ShareModal from '../components/ShareModal';
 import FormattedText from '../components/FormattedText';
 import OptimizedImage from '../components/OptimizedImage';
 import PostSkeleton from '../components/PostSkeleton';
@@ -29,11 +30,14 @@ function GlobalFeed() {
   const [showReactionPicker, setShowReactionPicker] = useState(null);
   const [reactionDetailsModal, setReactionDetailsModal] = useState({ isOpen: false, reactions: [], likes: [] });
   const [showReplies, setShowReplies] = useState({});
+  const [bookmarkedPosts, setBookmarkedPosts] = useState([]);
+  const [shareModal, setShareModal] = useState({ isOpen: false, post: null });
   const currentUser = getCurrentUser();
   const listenersSetUpRef = useRef(false);
 
   useEffect(() => {
     fetchGlobalFeed();
+    fetchBookmarkedPosts();
   }, []);
 
   // Set up real-time socket listeners
@@ -148,6 +152,44 @@ function GlobalFeed() {
       setShowReactionPicker(null);
     } catch (error) {
       console.error('Failed to react to comment:', error);
+    }
+  };
+
+  const fetchBookmarkedPosts = async () => {
+    try {
+      const response = await api.get('/bookmarks');
+      setBookmarkedPosts(response.data.bookmarks.map(post => post._id));
+    } catch (error) {
+      console.error('Failed to fetch bookmarks:', error);
+    }
+  };
+
+  const handleBookmark = async (postId) => {
+    const isBookmarked = bookmarkedPosts.includes(postId);
+
+    try {
+      if (isBookmarked) {
+        await api.delete(`/bookmarks/${postId}`);
+        setBookmarkedPosts(bookmarkedPosts.filter(id => id !== postId));
+      } else {
+        await api.post(`/bookmarks/${postId}`);
+        setBookmarkedPosts([...bookmarkedPosts, postId]);
+      }
+    } catch (error) {
+      console.error('Failed to bookmark post:', error);
+    }
+  };
+
+  const handleShare = (post) => {
+    setShareModal({ isOpen: true, post });
+  };
+
+  const handleShareComplete = async () => {
+    try {
+      const response = await api.post(`/posts/${shareModal.post._id}/share`);
+      setPosts(posts.map(p => p._id === shareModal.post._id ? response.data : p));
+    } catch (error) {
+      console.error('Failed to share post:', error);
     }
   };
 
@@ -365,7 +407,7 @@ function GlobalFeed() {
                           }
                         }}
                       >
-                        {['❤️', '😂', '😮', '😢', '😡', '👍', '🏳️‍🌈', '🏳️‍⚧️'].map(emoji => (
+                        {['👍', '❤️', '😂', '😮', '😢', '😡', '🤗', '🎉', '🤔', '🔥', '👏', '🤯', '🏳️‍🌈', '🏳️‍⚧️'].map(emoji => (
                           <button
                             key={emoji}
                             onClick={() => handlePostReaction(post._id, emoji)}
@@ -383,6 +425,19 @@ function GlobalFeed() {
                     onClick={() => toggleCommentBox(post._id)}
                   >
                     💬 Comment {post.comments?.length > 0 && `(${post.comments.length})`}
+                  </button>
+                  <button
+                    className="action-btn"
+                    onClick={() => handleShare(post)}
+                  >
+                    <span>🔗</span> Share ({post.shares?.length || 0})
+                  </button>
+                  <button
+                    className={`action-btn ${bookmarkedPosts.includes(post._id) ? 'bookmarked' : ''}`}
+                    onClick={() => handleBookmark(post._id)}
+                    title={bookmarkedPosts.includes(post._id) ? 'Remove bookmark' : 'Bookmark post'}
+                  >
+                    <span>{bookmarkedPosts.includes(post._id) ? '🔖' : '📑'}</span> Bookmark
                   </button>
                 </div>
 
@@ -663,6 +718,13 @@ function GlobalFeed() {
           </button>
         )}
       </div>
+
+      <ShareModal
+        isOpen={shareModal.isOpen}
+        onClose={() => setShareModal({ isOpen: false, post: null })}
+        post={shareModal.post}
+        onShare={handleShareComplete}
+      />
 
       {reactionDetailsModal.isOpen && (
         <ReactionDetailsModal
