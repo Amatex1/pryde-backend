@@ -591,8 +591,6 @@
 .message-bubble {
   padding: 1rem 1.5rem;
   border-radius: 18px;
-  background: #E8F4F8;
-  color: var(--text-main);
   line-height: 1.5;
   word-wrap: break-word;
   word-break: break-word;
@@ -602,11 +600,7 @@
   width: fit-content;
   max-width: 100%;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-}
-
-.message-group.sent .message-bubble {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  /* Background and color are set dynamically via inline styles */
 }
 
 .message-meta {

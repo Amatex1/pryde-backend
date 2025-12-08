@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { sendMessage, onNewMessage, onMessageSent, onUserOnline, onUserOffline, onOnlineUsers } from '../utils/socket';
+import { getUserChatColor, getSentMessageColor } from '../utils/chatColors';
 import api from '../utils/api';
 import './MiniChat.css';
 
@@ -10,6 +11,7 @@ function MiniChat({ friendId, friendName, friendPhoto, onClose, onMinimize, isMi
   const [isOnline, setIsOnline] = useState(false);
   const [lastSeen, setLastSeen] = useState(null);
   const [currentUserData, setCurrentUserData] = useState(null);
+  const [currentTheme, setCurrentTheme] = useState(document.documentElement.getAttribute('data-theme') || 'light');
   const messagesEndRef = useRef(null);
   const currentUserId = localStorage.getItem('userId');
 
@@ -66,6 +68,21 @@ function MiniChat({ friendId, friendName, friendPhoto, onClose, onMinimize, isMi
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // Listen for theme changes
+  useEffect(() => {
+    const observer = new MutationObserver(() => {
+      const theme = document.documentElement.getAttribute('data-theme') || 'light';
+      setCurrentTheme(theme);
+    });
+
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['data-theme']
+    });
+
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     // Fetch current user data
@@ -303,7 +320,20 @@ function MiniChat({ friendId, friendName, friendPhoto, onClose, onMinimize, isMi
                       )}
                     </div>
                   )}
-                  <div className="message-bubble">
+                  <div
+                    className="message-bubble"
+                    style={
+                      isSent
+                        ? {
+                            background: getSentMessageColor(currentTheme).background,
+                            color: getSentMessageColor(currentTheme).text
+                          }
+                        : {
+                            background: getUserChatColor(friendId, currentTheme).background,
+                            color: getUserChatColor(friendId, currentTheme).text
+                          }
+                    }
+                  >
                     <div className="message-content">{msg.content}</div>
                     <div className="message-time">
                       {new Date(msg.createdAt).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}

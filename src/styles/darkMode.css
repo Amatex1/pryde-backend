@@ -95,15 +95,7 @@
 }
 
 /* Messages */
-[data-theme="dark"] .message-bubble {
-  background: #2C3E50;
-  color: var(--text-main);
-}
-
-[data-theme="dark"] .message-group.sent .message-bubble {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-}
+/* Message bubble colors are now set dynamically via inline styles */
 
 [data-theme="dark"] .message-sender-name {
   color: var(--electric-blue);

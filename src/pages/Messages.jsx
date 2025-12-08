@@ -6,6 +6,7 @@ import CustomModal from '../components/CustomModal';
 import { useModal } from '../hooks/useModal';
 import api from '../utils/api';
 import { getImageUrl } from '../utils/imageUrl';
+import { getUserChatColor, getSentMessageColor } from '../utils/chatColors';
 import {
   onNewMessage,
   onMessageSent,
@@ -63,6 +64,7 @@ function Messages() {
   const [openDropdown, setOpenDropdown] = useState(null); // Track which dropdown is open
   const [archivedConversations, setArchivedConversations] = useState([]);
   const [mutedConversations, setMutedConversations] = useState([]);
+  const [currentTheme, setCurrentTheme] = useState(document.documentElement.getAttribute('data-theme') || 'light');
   const messagesEndRef = useRef(null);
   const typingTimeoutRef = useRef(null);
 
@@ -103,6 +105,21 @@ function Messages() {
     // Compare dates (ignoring time)
     return currentDate.toDateString() !== previousDate.toDateString();
   };
+
+  // Listen for theme changes
+  useEffect(() => {
+    const observer = new MutationObserver(() => {
+      const theme = document.documentElement.getAttribute('data-theme') || 'light';
+      setCurrentTheme(theme);
+    });
+
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['data-theme']
+    });
+
+    return () => observer.disconnect();
+  }, []);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -1165,7 +1182,20 @@ function Messages() {
                             </div>
                           ) : (
                             <>
-                              <div className="message-bubble">
+                              <div
+                                className="message-bubble"
+                                style={
+                                  isSent
+                                    ? {
+                                        background: getSentMessageColor(currentTheme).background,
+                                        color: getSentMessageColor(currentTheme).text
+                                      }
+                                    : {
+                                        background: getUserChatColor(msg.sender._id, currentTheme).background,
+                                        color: getUserChatColor(msg.sender._id, currentTheme).text
+                                      }
+                                }
+                              >
                                 {msg.content}
 
                                 {/* Display reactions */}
