@@ -106,8 +106,8 @@ function App() {
         {isAuth && <SafetyWarning />}
 
         <Routes>
-          {/* Public Home Page */}
-          <Route path="/" element={<Home />} />
+          {/* Public Home Page - Redirect to feed if logged in */}
+          <Route path="/" element={!isAuth ? <Home /> : <Navigate to="/feed" />} />
 
           {/* Auth Pages */}
           <Route path="/login" element={!isAuth ? <Login setIsAuth={setIsAuth} /> : <Navigate to="/feed" />} />
