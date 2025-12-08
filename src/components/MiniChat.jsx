@@ -306,7 +306,7 @@ function MiniChat({ friendId, friendName, friendPhoto, onClose, onMinimize, isMi
                   <div className="message-bubble">
                     <div className="message-content">{msg.content}</div>
                     <div className="message-time">
-                      {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      {new Date(msg.createdAt).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}
                     </div>
                   </div>
                   {isSent && (

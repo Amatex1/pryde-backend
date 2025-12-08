@@ -526,8 +526,8 @@ html:not([data-theme="light"])[data-quiet-mode="true"] .chat-message {
   border-color: var(--border-soft);
 }
 
-[data-theme="dark"][data-quiet-mode="true"] .message-bubble.sent,
-html:not([data-theme="light"])[data-quiet-mode="true"] .message-bubble.sent {
+[data-theme="dark"][data-quiet-mode="true"] .message-group.sent .message-bubble,
+html:not([data-theme="light"])[data-quiet-mode="true"] .message-group.sent .message-bubble {
   background: var(--accent-soft);
 }
 

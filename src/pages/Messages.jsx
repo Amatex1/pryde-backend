@@ -1195,7 +1195,12 @@ function Messages() {
                                 )}
                               </div>
 
-                              {msg.edited && <div className="message-edited-indicator">(edited)</div>}
+                              <div className="message-meta">
+                                <div className="message-time">
+                                  {new Date(msg.createdAt).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}
+                                </div>
+                                {msg.edited && <div className="message-edited-indicator">(edited)</div>}
+                              </div>
 
                               <div className="message-actions">
                                 <button
@@ -1233,10 +1238,6 @@ function Messages() {
                               </div>
                             </>
                           )}
-
-                          <div className="message-time">
-                            {new Date(msg.createdAt).toLocaleTimeString()}
-                          </div>
                         </div>
                       </div>
                       </React.Fragment>

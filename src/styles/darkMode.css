@@ -96,12 +96,12 @@
 
 /* Messages */
 [data-theme="dark"] .message-bubble {
-  background: var(--card-surface);
+  background: #2C3E50;
   color: var(--text-main);
 }
 
 [data-theme="dark"] .message-group.sent .message-bubble {
-  background: var(--pryde-purple);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
 }
 

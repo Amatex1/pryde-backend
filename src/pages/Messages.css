@@ -591,7 +591,7 @@
 .message-bubble {
   padding: 1rem 1.5rem;
   border-radius: 18px;
-  background: var(--soft-lavender);
+  background: #E8F4F8;
   color: var(--text-main);
   line-height: 1.5;
   word-wrap: break-word;
@@ -605,27 +605,28 @@
 }
 
 .message-group.sent .message-bubble {
-  background: var(--gradient-primary);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
+}
+
+.message-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+  padding: 0 0.5rem;
 }
 
 .message-time {
   font-size: 0.75rem;
   color: var(--text-muted);
-  padding: 0 0.5rem;
+  font-weight: 500;
 }
 
 .message-edited-indicator {
   font-size: 0.7rem;
   color: var(--text-muted);
   font-style: italic;
-  margin-top: 0.25rem;
-  padding: 0 0.5rem;
-}
-
-.message-group.sent .message-edited-indicator {
-  text-align: right;
-  color: rgba(108, 92, 231, 0.7);
 }
 
 .edited-indicator {
