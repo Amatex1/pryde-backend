@@ -983,14 +983,16 @@ html[data-theme="dark"][data-quiet-mode="true"] {
   --bg-main: #0F1021 !important;
   --bg-surface: #1A1B2D !important;
   --text-primary: #FFFFFF !important;
-  --text-secondary: #A4A7C2 !important;
-  --text-muted: #65677E !important;
+  --text-secondary: #FFFFFF !important; /* Changed to pure white for better contrast */
+  --text-muted: #FFFFFF !important; /* Changed to pure white for better contrast */
+  --text-main: #FFFFFF !important; /* Ensure all text is pure white */
+  --text-light: #FFFFFF !important; /* Ensure all text is pure white */
   --accent-primary: #C6B9F8 !important;
   --accent-hover: #DAD3FF !important;
   --border-soft: #4C4E75 !important;
   --btn-bg: #1F2035 !important;
   --btn-bg-hover: #2A2B46 !important;
-  --btn-text: #E8E8FF !important;
+  --btn-text: #FFFFFF !important; /* Changed to pure white */
 
   /* Fix soft-lavender contrast - make it much more opaque for better readability */
   --soft-lavender: rgba(198,185,248,0.45) !important; /* Increased to 0.45 for strong contrast */
@@ -1321,5 +1323,47 @@ html[data-theme="dark"][data-quiet-mode="true"] {
 [data-theme="dark"][data-quiet-mode="true"] .lounge-cw-btn:hover {
   background: var(--accent-primary) !important;
   color: var(--bg-main) !important;
+}
+
+/* Force ALL text to pure white for maximum contrast */
+[data-theme="dark"][data-quiet-mode="true"] body,
+[data-theme="dark"][data-quiet-mode="true"] p,
+[data-theme="dark"][data-quiet-mode="true"] span,
+[data-theme="dark"][data-quiet-mode="true"] div,
+[data-theme="dark"][data-quiet-mode="true"] h1,
+[data-theme="dark"][data-quiet-mode="true"] h2,
+[data-theme="dark"][data-quiet-mode="true"] h3,
+[data-theme="dark"][data-quiet-mode="true"] h4,
+[data-theme="dark"][data-quiet-mode="true"] h5,
+[data-theme="dark"][data-quiet-mode="true"] h6,
+[data-theme="dark"][data-quiet-mode="true"] label,
+[data-theme="dark"][data-quiet-mode="true"] li,
+[data-theme="dark"][data-quiet-mode="true"] td,
+[data-theme="dark"][data-quiet-mode="true"] th,
+[data-theme="dark"][data-quiet-mode="true"] .text-muted,
+[data-theme="dark"][data-quiet-mode="true"] .text-secondary,
+[data-theme="dark"][data-quiet-mode="true"] .post-time,
+[data-theme="dark"][data-quiet-mode="true"] .comment-time,
+[data-theme="dark"][data-quiet-mode="true"] .author-info,
+[data-theme="dark"][data-quiet-mode="true"] .user-info,
+[data-theme="dark"][data-quiet-mode="true"] ::placeholder {
+  color: #FFFFFF !important;
+}
+
+/* Keep links and interactive elements with accent color for visibility */
+[data-theme="dark"][data-quiet-mode="true"] a:not(.btn):not(.pryde-btn) {
+  color: var(--accent-primary) !important;
+}
+
+[data-theme="dark"][data-quiet-mode="true"] a:not(.btn):not(.pryde-btn):hover {
+  color: var(--accent-hover) !important;
+}
+
+/* Ensure author names and usernames stay visible with accent color */
+[data-theme="dark"][data-quiet-mode="true"] .author-name,
+[data-theme="dark"][data-quiet-mode="true"] .username,
+[data-theme="dark"][data-quiet-mode="true"] .display-name,
+[data-theme="dark"][data-quiet-mode="true"] .comment-author {
+  color: var(--accent-primary) !important;
 }
 
