@@ -15,6 +15,7 @@ import {
   cleanupOldSessions,
   limitLoginHistory
 } from '../utils/sessionUtils.js';
+import { logEmailVerification, logPasswordChange } from '../utils/securityLogger.js';
 import { loginLimiter, signupLimiter, passwordResetLimiter } from '../middleware/rateLimiter.js';
 import { validateSignup, validateLogin } from '../middleware/validation.js';
 
@@ -729,6 +730,13 @@ router.post('/reset-password', async (req, res) => {
     user.resetPasswordExpires = null;
     await user.save();
 
+    // Log security event
+    const ipAddress = getClientIp(req);
+    const userAgent = req.headers['user-agent'] || 'Unknown';
+    logPasswordChange(user, ipAddress, userAgent).catch(err => {
+      console.error('Failed to log password change:', err);
+    });
+
     res.json({
       success: true,
       message: 'Password has been reset successfully. You can now log in with your new password.'
@@ -767,6 +775,13 @@ router.get('/verify-email/:token', async (req, res) => {
     user.emailVerificationToken = null;
     user.emailVerificationExpires = null;
     await user.save();
+
+    // Log security event
+    const ipAddress = getClientIp(req);
+    const userAgent = req.headers['user-agent'] || 'Unknown';
+    logEmailVerification(user, ipAddress, userAgent).catch(err => {
+      console.error('Failed to log email verification:', err);
+    });
 
     console.log(`Email verified for user: ${user.username}`);
 

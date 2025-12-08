@@ -3,7 +3,23 @@ import mongoose from 'mongoose';
 const securityLogSchema = new mongoose.Schema({
   type: {
     type: String,
-    enum: ['underage_registration', 'underage_login', 'underage_access', 'failed_login', 'suspicious_activity'],
+    enum: [
+      'underage_registration',
+      'underage_login',
+      'underage_access',
+      'failed_login',
+      'suspicious_activity',
+      'password_changed',
+      'email_changed',
+      'email_verified',
+      'two_factor_enabled',
+      'two_factor_disabled',
+      'passkey_added',
+      'passkey_removed',
+      'account_deleted',
+      'profile_updated',
+      'privacy_settings_changed'
+    ],
     required: true
   },
   severity: {
