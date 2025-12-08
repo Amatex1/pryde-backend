@@ -198,6 +198,19 @@ const userSchema = new mongoose.Schema({
     default: '',
     maxlength: 500
   },
+  // Email verification
+  emailVerified: {
+    type: Boolean,
+    default: false
+  },
+  emailVerificationToken: {
+    type: String,
+    default: null
+  },
+  emailVerificationExpires: {
+    type: Date,
+    default: null
+  },
   isSuspended: {
     type: Boolean,
     default: false
