@@ -7,10 +7,11 @@
  */
 
 /* ========================================
-   QUIET MODE COLOR VARIABLES
+   QUIET MODE COLOR VARIABLES - DARK MODE ONLY
    ======================================== */
 
-html[data-quiet-mode="true"] {
+html[data-theme="dark"][data-quiet-mode="true"],
+html:not([data-theme="light"])[data-quiet-mode="true"] {
   /* Backgrounds */
   --bg-main: #0F1021 !important;                /* Soft midnight violet */
   --bg-light: #0F1021 !important;               /* Alias for compatibility */
@@ -41,9 +42,6 @@ html[data-quiet-mode="true"] {
   --electric-blue: #A4A7C2 !important;          /* Soft lavender-blue */
   --soft-lavender: rgba(198,185,248,0.45) !important; /* Increased for better contrast with white text */
 
-  /* Quiet Mode Icon (Leaf) */
-  --quiet-leaf: #9BE7C4 !important;             /* Soft mint green */
-
   /* Buttons */
   --btn-bg: #1F2035 !important;
   --btn-bg-hover: #2A2B46 !important;
@@ -51,6 +49,15 @@ html[data-quiet-mode="true"] {
 
   /* Cards & shadows */
   --card-shadow: 0px 4px 16px rgba(0,0,0,0.35) !important;
+}
+
+/* ========================================
+   QUIET MODE ICON - ALL MODES
+   ======================================== */
+
+html[data-quiet-mode="true"] {
+  /* Quiet Mode Icon (Leaf) - works for both light and dark */
+  --quiet-leaf: #9BE7C4 !important;             /* Soft mint green */
 }
 
 /* ========================================
