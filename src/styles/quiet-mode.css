@@ -826,6 +826,22 @@ html:not([data-theme])[data-quiet-mode="true"] .friend-sidebar-status.offline-st
   color: var(--text-muted) !important; /* Muted for offline */
 }
 
+/* Light mode quiet - friend sidebar items (Recent Conversations) */
+[data-theme="light"][data-quiet-mode="true"] .friend-sidebar-item,
+html:not([data-theme])[data-quiet-mode="true"] .friend-sidebar-item {
+  background: var(--bg-surface) !important; /* White background */
+}
+
+[data-theme="light"][data-quiet-mode="true"] .friend-sidebar-item:hover,
+html:not([data-theme])[data-quiet-mode="true"] .friend-sidebar-item:hover {
+  background: var(--accent-soft) !important; /* Soft purple on hover */
+}
+
+[data-theme="light"][data-quiet-mode="true"] .friend-sidebar-name,
+html:not([data-theme])[data-quiet-mode="true"] .friend-sidebar-name {
+  color: var(--text-primary) !important; /* Dark purple text */
+}
+
 /* Light mode quiet - links */
 [data-theme="light"][data-quiet-mode="true"] a,
 html:not([data-theme])[data-quiet-mode="true"] a {
