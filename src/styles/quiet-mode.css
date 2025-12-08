@@ -988,21 +988,21 @@ html[data-theme="dark"][data-quiet-mode="true"] {
   --text-main: #FFFFFF !important;
   --text-light: #FFFFFF !important;
 
-  /* Make accent colors much more vibrant and saturated */
-  --accent-primary: #A78BFA !important; /* Brighter, more saturated purple */
-  --accent-hover: #C4B5FD !important; /* Lighter vibrant purple on hover */
-  --pryde-purple: #A78BFA !important; /* Match accent-primary */
-  --electric-blue: #60A5FA !important; /* Brighter blue */
+  /* Vibrant teal/cyan theme - calming and fits LGBTQ+ rainbow */
+  --accent-primary: #06B6D4 !important; /* Vibrant cyan */
+  --accent-hover: #22D3EE !important; /* Lighter cyan on hover */
+  --pryde-purple: #06B6D4 !important; /* Match accent-primary */
+  --electric-blue: #0EA5E9 !important; /* Bright sky blue */
 
-  --border-soft: #4C4E75 !important;
-  --btn-bg: #6366F1 !important; /* Vibrant indigo for buttons */
-  --btn-bg-hover: #818CF8 !important; /* Lighter indigo on hover */
+  --border-soft: #164E63 !important; /* Dark cyan border */
+  --btn-bg: #0891B2 !important; /* Vibrant teal for buttons */
+  --btn-bg-hover: #06B6D4 !important; /* Lighter teal on hover */
   --btn-text: #FFFFFF !important;
 
-  /* Make backgrounds more opaque and vibrant */
-  --soft-lavender: rgba(167,139,250,0.25) !important; /* More vibrant purple, less transparent */
-  --color-primary-soft: rgba(167,139,250,0.25) !important;
-  --accent-soft: rgba(167,139,250,0.20) !important;
+  /* Make backgrounds with teal tint */
+  --soft-lavender: rgba(6,182,212,0.20) !important; /* Teal background */
+  --color-primary-soft: rgba(6,182,212,0.20) !important;
+  --accent-soft: rgba(6,182,212,0.15) !important;
 }
 
 /* Cards and surfaces when both modes active */
@@ -1025,11 +1025,11 @@ html[data-theme="dark"][data-quiet-mode="true"] {
   color: var(--text-primary) !important;
 }
 
-/* Buttons when both modes active - make them vibrant and easy to read */
+/* Buttons when both modes active - vibrant teal/cyan */
 [data-theme="dark"][data-quiet-mode="true"] button,
 [data-theme="dark"][data-quiet-mode="true"] .btn,
 [data-theme="dark"][data-quiet-mode="true"] .pryde-btn {
-  background: var(--btn-bg) !important; /* Solid vibrant indigo */
+  background: var(--btn-bg) !important; /* Solid vibrant teal */
   color: #FFFFFF !important;
   border-color: transparent !important;
 }
@@ -1037,7 +1037,7 @@ html[data-theme="dark"][data-quiet-mode="true"] {
 [data-theme="dark"][data-quiet-mode="true"] button:hover,
 [data-theme="dark"][data-quiet-mode="true"] .btn:hover,
 [data-theme="dark"][data-quiet-mode="true"] .pryde-btn:hover {
-  background: var(--btn-bg-hover) !important;
+  background: var(--btn-bg-hover) !important; /* Lighter teal */
   color: #FFFFFF !important;
 }
 
@@ -1308,7 +1308,7 @@ html[data-theme="dark"][data-quiet-mode="true"] {
   color: var(--text-primary) !important;
 }
 
-/* Fix elements with vibrant backgrounds for better visibility */
+/* Fix elements with vibrant teal backgrounds for better visibility */
 [data-theme="dark"][data-quiet-mode="true"] .btn-action,
 [data-theme="dark"][data-quiet-mode="true"] .btn-media-upload,
 [data-theme="dark"][data-quiet-mode="true"] .lounge-cw-field,
@@ -1320,22 +1320,22 @@ html[data-theme="dark"][data-quiet-mode="true"] {
 [data-theme="dark"][data-quiet-mode="true"] .report-method,
 [data-theme="dark"][data-quiet-mode="true"] .report-category,
 [data-theme="dark"][data-quiet-mode="true"] .pwa-dismiss-btn:hover {
-  background: rgba(167,139,250,0.25) !important; /* Vibrant purple background */
+  background: rgba(6,182,212,0.20) !important; /* Vibrant teal background */
   color: #FFFFFF !important;
-  border-color: rgba(167,139,250,0.4) !important; /* Add visible border */
+  border-color: rgba(6,182,212,0.4) !important; /* Add visible teal border */
 }
 
-/* Ensure buttons have vibrant colors */
+/* Ensure buttons have vibrant teal colors */
 [data-theme="dark"][data-quiet-mode="true"] .btn-action:not(.liked),
 [data-theme="dark"][data-quiet-mode="true"] .lounge-cw-btn {
-  background: var(--btn-bg) !important; /* Vibrant indigo */
+  background: var(--btn-bg) !important; /* Vibrant teal */
   color: #FFFFFF !important;
 }
 
-/* Ensure hover states are vibrant */
+/* Ensure hover states are vibrant teal */
 [data-theme="dark"][data-quiet-mode="true"] .btn-action:hover,
 [data-theme="dark"][data-quiet-mode="true"] .lounge-cw-btn:hover {
-  background: var(--btn-bg-hover) !important; /* Lighter vibrant indigo */
+  background: var(--btn-bg-hover) !important; /* Lighter vibrant teal */
   color: #FFFFFF !important;
 }
 
