@@ -779,6 +779,8 @@ html:not([data-theme])[data-quiet-mode="true"] select:focus {
 [data-theme="light"][data-quiet-mode="true"] h6,
 [data-theme="light"][data-quiet-mode="true"] p,
 [data-theme="light"][data-quiet-mode="true"] label,
+[data-theme="light"][data-quiet-mode="true"] span,
+[data-theme="light"][data-quiet-mode="true"] div,
 html:not([data-theme])[data-quiet-mode="true"] body,
 html:not([data-theme])[data-quiet-mode="true"] h1,
 html:not([data-theme])[data-quiet-mode="true"] h2,
@@ -787,7 +789,9 @@ html:not([data-theme])[data-quiet-mode="true"] h4,
 html:not([data-theme])[data-quiet-mode="true"] h5,
 html:not([data-theme])[data-quiet-mode="true"] h6,
 html:not([data-theme])[data-quiet-mode="true"] p,
-html:not([data-theme])[data-quiet-mode="true"] label {
+html:not([data-theme])[data-quiet-mode="true"] label,
+html:not([data-theme])[data-quiet-mode="true"] span,
+html:not([data-theme])[data-quiet-mode="true"] div {
   color: var(--text-primary) !important;
 }
 
@@ -796,6 +800,30 @@ html:not([data-theme])[data-quiet-mode="true"] label {
 html:not([data-theme])[data-quiet-mode="true"] .text-muted,
 html:not([data-theme])[data-quiet-mode="true"] ::placeholder {
   color: var(--text-muted) !important;
+}
+
+/* Light mode quiet - status text (online/offline indicators) */
+[data-theme="light"][data-quiet-mode="true"] .chat-user-status,
+[data-theme="light"][data-quiet-mode="true"] .friend-sidebar-status,
+[data-theme="light"][data-quiet-mode="true"] .header-status,
+html:not([data-theme])[data-quiet-mode="true"] .chat-user-status,
+html:not([data-theme])[data-quiet-mode="true"] .friend-sidebar-status,
+html:not([data-theme])[data-quiet-mode="true"] .header-status {
+  color: var(--text-secondary) !important;
+}
+
+[data-theme="light"][data-quiet-mode="true"] .chat-user-status.online,
+[data-theme="light"][data-quiet-mode="true"] .friend-sidebar-status.online-status,
+html:not([data-theme])[data-quiet-mode="true"] .chat-user-status.online,
+html:not([data-theme])[data-quiet-mode="true"] .friend-sidebar-status.online-status {
+  color: #10b981 !important; /* Green for online */
+}
+
+[data-theme="light"][data-quiet-mode="true"] .chat-user-status.offline,
+[data-theme="light"][data-quiet-mode="true"] .friend-sidebar-status.offline-status,
+html:not([data-theme])[data-quiet-mode="true"] .chat-user-status.offline,
+html:not([data-theme])[data-quiet-mode="true"] .friend-sidebar-status.offline-status {
+  color: var(--text-muted) !important; /* Muted for offline */
 }
 
 /* Light mode quiet - links */
