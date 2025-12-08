@@ -63,6 +63,7 @@ function Feed() {
   const [reactionDetailsModal, setReactionDetailsModal] = useState({ isOpen: false, reactions: [], likes: [] });
   const [feedFilter, setFeedFilter] = useState('followers'); // 'followers', 'public'
   const [autoHideContentWarnings, setAutoHideContentWarnings] = useState(false);
+  const [quietMode, setQuietMode] = useState(document.documentElement.getAttribute('data-quiet-mode') === 'true');
   const currentUser = getCurrentUser();
   const postRefs = useRef({});
   const commentRefs = useRef({});
@@ -85,6 +86,21 @@ function Feed() {
     // Poll for unread message counts every 30 seconds
     const interval = setInterval(fetchUnreadMessageCounts, 30000);
     return () => clearInterval(interval);
+  }, []);
+
+  // Listen for quiet mode changes
+  useEffect(() => {
+    const observer = new MutationObserver(() => {
+      const quiet = document.documentElement.getAttribute('data-quiet-mode') === 'true';
+      setQuietMode(quiet);
+    });
+
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['data-quiet-mode']
+    });
+
+    return () => observer.disconnect();
   }, []);
 
   // Refetch posts when filter changes
@@ -1107,7 +1123,7 @@ function Feed() {
                         >
                           <span>
                             {post.reactions?.find(r => r.user?._id === currentUser?.id || r.user === currentUser?.id)?.emoji || '🤍'}
-                          </span> React {post.reactions?.length > 0 && `(${post.reactions.length})`}
+                          </span> React
                         </button>
                         {showReactionPicker === `post-${post._id}` && (
                           <div
@@ -1142,6 +1158,18 @@ function Feed() {
                           </div>
                         )}
                       </div>
+                      {!quietMode && post.reactions?.length > 0 && (
+                        <button
+                          className="reaction-count-btn"
+                          onClick={() => setReactionDetailsModal({
+                            isOpen: true,
+                            reactions: post.reactions || [],
+                            likes: []
+                          })}
+                        >
+                          {post.reactions.length}
+                        </button>
+                      )}
                       <button
                         className="action-btn"
                         onClick={() => toggleCommentBox(post._id)}
