@@ -82,30 +82,36 @@ export function DesignSystemExamples() {
         <div className="pryde-card">
           {/* Input Field */}
           <div className="pryde-form-group">
-            <label className="pryde-label">Email Address</label>
-            <input 
-              type="email" 
-              className="pryde-input" 
+            <label className="pryde-label" htmlFor="example-email">Email Address</label>
+            <input
+              type="email"
+              id="example-email"
+              name="email"
+              className="pryde-input"
               placeholder="Enter your email"
             />
             <span className="pryde-helper-text">We'll never share your email</span>
           </div>
-          
+
           {/* Textarea */}
           <div className="pryde-form-group">
-            <label className="pryde-label">Message</label>
-            <textarea 
-              className="pryde-textarea" 
+            <label className="pryde-label" htmlFor="example-message">Message</label>
+            <textarea
+              id="example-message"
+              name="message"
+              className="pryde-textarea"
               placeholder="Write your message..."
             />
           </div>
-          
+
           {/* Input with Error */}
           <div className="pryde-form-group">
-            <label className="pryde-label">Username</label>
-            <input 
-              type="text" 
-              className="pryde-input" 
+            <label className="pryde-label" htmlFor="example-username">Username</label>
+            <input
+              type="text"
+              id="example-username"
+              name="username"
+              className="pryde-input"
               placeholder="Choose a username"
             />
             <span className="pryde-error-text">Username is already taken</span>

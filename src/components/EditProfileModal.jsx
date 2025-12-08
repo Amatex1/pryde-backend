@@ -178,7 +178,7 @@ function EditProfileModal({ isOpen, onClose, user, onUpdate }) {
 
               <div className="photo-uploads">
                 <div className="photo-upload-item">
-                  <label>Profile Photo</label>
+                  <label htmlFor="profile-photo-upload">Profile Photo</label>
                   <div className="photo-preview">
                     {formData.profilePhoto || user?.profilePhoto ? (
                       <img src={getImageUrl(formData.profilePhoto || user.profilePhoto)} alt="Profile" />
@@ -188,6 +188,8 @@ function EditProfileModal({ isOpen, onClose, user, onUpdate }) {
                   </div>
                   <input
                     type="file"
+                    id="profile-photo-upload"
+                    name="profilePhoto"
                     accept="image/*"
                     onChange={(e) => handlePhotoUpload(e, 'profile')}
                     disabled={uploadingPhoto}
@@ -195,7 +197,7 @@ function EditProfileModal({ isOpen, onClose, user, onUpdate }) {
                 </div>
 
                 <div className="photo-upload-item">
-                  <label>Cover Photo</label>
+                  <label htmlFor="cover-photo-upload">Cover Photo</label>
                   <div className="photo-preview cover">
                     {formData.coverPhoto || user?.coverPhoto ? (
                       <img src={getImageUrl(formData.coverPhoto || user.coverPhoto)} alt="Cover" />
@@ -205,6 +207,8 @@ function EditProfileModal({ isOpen, onClose, user, onUpdate }) {
                   </div>
                   <input
                     type="file"
+                    id="cover-photo-upload"
+                    name="coverPhoto"
                     accept="image/*"
                     onChange={(e) => handlePhotoUpload(e, 'cover')}
                     disabled={uploadingPhoto}
@@ -590,6 +594,8 @@ function EditProfileModal({ isOpen, onClose, user, onUpdate }) {
                     <label key={option} className="checkbox-label-compact">
                       <input
                         type="checkbox"
+                        id={`looking-for-${option.toLowerCase()}`}
+                        name={`lookingFor-${option.toLowerCase()}`}
                         checked={formData.lookingFor.includes(option.toLowerCase())}
                         onChange={() => toggleLookingFor(option.toLowerCase())}
                       />

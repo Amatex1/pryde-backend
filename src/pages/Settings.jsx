@@ -444,6 +444,8 @@ function Settings() {
                 <label className="toggle-switch">
                   <input
                     type="checkbox"
+                    id="quiet-mode-toggle"
+                    name="quietMode"
                     checked={quietModeEnabled}
                     onChange={handleQuietModeToggle}
                   />
@@ -466,6 +468,8 @@ function Settings() {
                 <label className="toggle-switch">
                   <input
                     type="checkbox"
+                    id="creator-mode-toggle"
+                    name="creatorMode"
                     checked={isCreator}
                     onChange={handleCreatorModeToggle}
                   />
@@ -485,8 +489,10 @@ function Settings() {
                   <p>Receive notifications even when you're not using the app</p>
                 </div>
                 <label className="toggle-switch">
-                  <input 
-                    type="checkbox" 
+                  <input
+                    type="checkbox"
+                    id="push-notifications-toggle"
+                    name="pushNotifications"
                     checked={pushEnabled}
                     onChange={handlePushToggle}
                   />
