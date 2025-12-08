@@ -1,6 +1,6 @@
 // Pryde Social Service Worker
-const CACHE_NAME = 'pryde-social-v1';
-const RUNTIME_CACHE = 'pryde-runtime-v1';
+const CACHE_NAME = 'pryde-social-v2';
+const RUNTIME_CACHE = 'pryde-runtime-v2';
 
 // Assets to cache on install
 const PRECACHE_ASSETS = [
@@ -45,8 +45,9 @@ self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // Skip cross-origin requests
+  // Skip cross-origin requests (let browser handle them normally)
   if (url.origin !== location.origin) {
+    event.respondWith(fetch(request));
     return;
   }
 
