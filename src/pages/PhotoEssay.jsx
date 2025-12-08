@@ -10,7 +10,7 @@ import './PhotoEssay.css';
 function PhotoEssay() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { toast, showToast } = useToast();
+  const { toasts, showToast, removeToast } = useToast();
   const [title, setTitle] = useState('');
   const [photos, setPhotos] = useState([]);
   const [visibility, setVisibility] = useState('public');
@@ -102,8 +102,7 @@ function PhotoEssay() {
   return (
     <div className="photo-essay-page">
       <Navbar />
-      <Toast {...toast} />
-      
+
       <div className="photo-essay-container">
         <div className="photo-essay-header glossy">
           <h1>📸 {editMode ? 'Edit' : 'Create'} Photo Essay</h1>
@@ -195,6 +194,17 @@ function PhotoEssay() {
           </div>
         </form>
       </div>
+
+      {/* Toast Notifications */}
+      {toasts.map(toast => (
+        <Toast
+          key={toast.id}
+          message={toast.message}
+          type={toast.type}
+          duration={toast.duration}
+          onClose={() => removeToast(toast.id)}
+        />
+      ))}
     </div>
   );
 }
