@@ -161,22 +161,32 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'"],
-      styleSrc: ["'self'", "'unsafe-inline'"],
+      // Note: 'unsafe-inline' is a security risk but may be needed for React apps
+      // Consider using nonces or hashes in production for better security
+      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"], // unsafe-eval needed for React DevTools
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
       imgSrc: ["'self'", "data:", "https:", "blob:"],
       connectSrc: ["'self'", ...allowedOrigins.filter(o => typeof o === 'string')],
-      fontSrc: ["'self'", "data:"],
+      fontSrc: ["'self'", "data:", "https://fonts.gstatic.com"],
       objectSrc: ["'none'"],
       mediaSrc: ["'self'", "blob:"],
       frameSrc: ["'none'"],
+      baseUri: ["'self'"],
+      formAction: ["'self'"],
+      frameAncestors: ["'none'"], // Prevent clickjacking
+      upgradeInsecureRequests: config.nodeEnv === 'production' ? [] : null, // Force HTTPS in production
     },
   },
   crossOriginEmbedderPolicy: false, // Allow embedding for uploads
+  crossOriginResourcePolicy: { policy: "cross-origin" }, // Allow cross-origin resources
   hsts: {
-    maxAge: 31536000,
+    maxAge: 31536000, // 1 year
     includeSubDomains: true,
     preload: true
-  }
+  },
+  noSniff: true, // Prevent MIME type sniffing
+  referrerPolicy: { policy: "strict-origin-when-cross-origin" }, // Privacy-friendly referrer policy
+  xssFilter: true, // Enable XSS filter
 }));
 
 // MongoDB injection protection
