@@ -1195,8 +1195,11 @@ function Messages() {
                 </div>
 
                 <div className="chat-messages">
-                  {messages.map((msg, index) => {
-                    const isSent = msg.sender._id === currentUser?._id;
+                  {!currentUser ? (
+                    <div className="loading-messages">Loading messages...</div>
+                  ) : (
+                    messages.map((msg, index) => {
+                      const isSent = msg.sender._id === currentUser._id;
                     const isEditing = editingMessageId === msg._id;
                     const previousMsg = index > 0 ? messages[index - 1] : null;
                     const showDateHeader = shouldShowDateHeader(msg, previousMsg);
@@ -1334,7 +1337,8 @@ function Messages() {
                       </div>
                       </React.Fragment>
                     );
-                  })}
+                  })
+                  )}
                   {isTyping && (
                     <div className="typing-indicator">
                       <span></span>

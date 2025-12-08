@@ -700,6 +700,16 @@
   background: rgba(108, 92, 231, 0.3);
 }
 
+.loading-messages {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+  color: var(--text-muted);
+  font-size: 0.9375rem;
+  font-style: italic;
+}
+
 .message-edit-box {
   display: flex;
   flex-direction: column;
