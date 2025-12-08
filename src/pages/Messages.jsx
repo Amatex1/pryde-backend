@@ -1132,19 +1132,18 @@ function Messages() {
                         )}
 
                         <div className={`message-group ${isSent ? 'sent' : 'received'}`}>
-                        {!isSent && (
-                          <div className="message-avatar">
-                            {msg.sender.profilePhoto ? (
-                              <img src={getImageUrl(msg.sender.profilePhoto)} alt={msg.sender.username} />
-                            ) : (
-                              <span>{msg.sender.username?.charAt(0).toUpperCase() || 'U'}</span>
-                            )}
-                          </div>
-                        )}
                         <div className="message-content">
-                          {selectedChatType === 'group' && !isSent && (
+                          {/* Show sender name and avatar above message bubble */}
+                          <div className="message-header">
+                            <div className="message-avatar-small">
+                              {msg.sender.profilePhoto ? (
+                                <img src={getImageUrl(msg.sender.profilePhoto)} alt={msg.sender.username} />
+                              ) : (
+                                <span>{msg.sender.username?.charAt(0).toUpperCase() || 'U'}</span>
+                              )}
+                            </div>
                             <div className="message-sender-name">{msg.sender.displayName || msg.sender.username}</div>
-                          )}
+                          </div>
 
                           {isEditing ? (
                             <div className="message-edit-box">

@@ -105,6 +105,10 @@
   color: white;
 }
 
+[data-theme="dark"] .message-sender-name {
+  color: var(--electric-blue);
+}
+
 /* Modals */
 [data-theme="dark"] .modal-overlay {
   background: rgba(0, 0, 0, 0.8);

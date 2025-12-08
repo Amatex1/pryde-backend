@@ -507,7 +507,14 @@
 
 .message-group.sent {
   align-self: flex-end;
-  flex-direction: row-reverse;
+}
+
+.message-group.sent .message-content {
+  align-items: flex-end;
+}
+
+.message-group.received .message-content {
+  align-items: flex-start;
 }
 
 .message-avatar {
@@ -533,10 +540,52 @@
 .message-content {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: 0.5rem;
   max-width: 70%;
-  min-width: 80px;
+  min-width: 120px;
   width: fit-content;
+}
+
+.message-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.25rem;
+}
+
+.message-avatar-small {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--gradient-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  color: white;
+  flex-shrink: 0;
+  overflow: hidden;
+  font-size: 0.85rem;
+}
+
+.message-avatar-small img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.message-sender-name {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--pryde-purple);
+}
+
+.message-group.sent .message-header {
+  flex-direction: row-reverse;
+}
+
+.message-group.sent .message-sender-name {
+  text-align: right;
 }
 
 .message-bubble {
@@ -552,6 +601,7 @@
   font-size: 0.95rem;
   width: fit-content;
   max-width: 100%;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 .message-group.sent .message-bubble {
