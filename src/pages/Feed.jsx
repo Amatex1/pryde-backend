@@ -1107,7 +1107,7 @@ function Feed() {
                         >
                           <span>
                             {post.reactions?.find(r => r.user?._id === currentUser?.id || r.user === currentUser?.id)?.emoji || '🤍'}
-                          </span> React
+                          </span> React {post.reactions?.length > 0 && `(${post.reactions.length})`}
                         </button>
                         {showReactionPicker === `post-${post._id}` && (
                           <div

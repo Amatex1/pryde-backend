@@ -10,6 +10,7 @@
   justify-content: center;
   z-index: 10000;
   animation: fadeIn 0.2s ease;
+  pointer-events: none; /* Allow clicking through overlay */
 }
 
 @keyframes fadeIn {
@@ -31,6 +32,7 @@
   width: 95%;
   overflow-y: auto;
   animation: slideUp 0.3s ease;
+  pointer-events: auto; /* Re-enable pointer events on picker itself */
 }
 
 @keyframes slideUp {
