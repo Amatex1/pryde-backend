@@ -1117,9 +1117,15 @@ html[data-theme="dark"][data-quiet-mode="true"] {
   color: #FFFFFF !important;
 }
 
-/* Force white text on Crisis Helplines link specifically */
-[data-theme="dark"][data-quiet-mode="true"] a.btn-primary[href="/helplines"] {
+/* Force white text on Crisis Helplines link specifically - multiple selectors for maximum specificity */
+html[data-theme="dark"][data-quiet-mode="true"] a.btn-primary[href="/helplines"],
+html[data-theme="dark"][data-quiet-mode="true"] .sidebar-card a.btn-primary,
+html[data-theme="dark"][data-quiet-mode="true"] a[href="/helplines"],
+[data-theme="dark"][data-quiet-mode="true"] a.btn-primary[href="/helplines"],
+[data-theme="dark"][data-quiet-mode="true"] .sidebar-card a.btn-primary,
+[data-theme="dark"][data-quiet-mode="true"] a[href="/helplines"] {
   color: #FFFFFF !important;
+  -webkit-text-fill-color: #FFFFFF !important;
 }
 
 [data-theme="dark"][data-quiet-mode="true"] .pryde-btn-secondary {
