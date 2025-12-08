@@ -929,6 +929,27 @@ html:not([data-theme])[data-quiet-mode="true"] .custom-modal-btn-secondary {
   border-color: var(--border-soft) !important;
 }
 
+/* Light mode quiet - action buttons (React, Comment, Share, Bookmark) */
+[data-theme="light"][data-quiet-mode="true"] .btn-action,
+html:not([data-theme])[data-quiet-mode="true"] .btn-action {
+  color: var(--accent-primary) !important; /* Pryde Purple */
+  background: transparent !important;
+}
+
+[data-theme="light"][data-quiet-mode="true"] .btn-action:hover,
+html:not([data-theme])[data-quiet-mode="true"] .btn-action:hover {
+  color: var(--accent-hover) !important; /* Darker purple on hover */
+  background: var(--accent-soft) !important;
+}
+
+[data-theme="light"][data-quiet-mode="true"] .btn-action.liked,
+[data-theme="light"][data-quiet-mode="true"] .btn-action.active,
+html:not([data-theme])[data-quiet-mode="true"] .btn-action.liked,
+html:not([data-theme])[data-quiet-mode="true"] .btn-action.active {
+  color: #FFFFFF !important;
+  background: var(--accent-primary) !important;
+}
+
 /* Light mode quiet - danger and success buttons */
 [data-theme="light"][data-quiet-mode="true"] .pryde-btn-danger,
 html:not([data-theme])[data-quiet-mode="true"] .pryde-btn-danger {
