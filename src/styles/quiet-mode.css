@@ -34,12 +34,12 @@ html[data-quiet-mode="true"] {
   /* Accents */
   --accent-primary: #C6B9F8 !important;         /* Pastel lavender */
   --accent-hover: #DAD3FF !important;           /* Lighter lavender on hover */
-  --accent-soft: rgba(198,185,248,0.15) !important; /* Subtle accent background */
+  --accent-soft: rgba(198,185,248,0.35) !important; /* Accent background - increased for better contrast */
 
   /* Theme colors (adjusted for quiet mode) */
   --pryde-purple: #C6B9F8 !important;           /* Pastel lavender */
   --electric-blue: #A4A7C2 !important;          /* Soft lavender-blue */
-  --soft-lavender: rgba(198,185,248,0.15) !important; /* Very subtle */
+  --soft-lavender: rgba(198,185,248,0.45) !important; /* Increased for better contrast with white text */
 
   /* Quiet Mode Icon (Leaf) */
   --quiet-leaf: #9BE7C4 !important;             /* Soft mint green */
@@ -992,9 +992,10 @@ html[data-theme="dark"][data-quiet-mode="true"] {
   --btn-bg-hover: #2A2B46 !important;
   --btn-text: #E8E8FF !important;
 
-  /* Fix soft-lavender contrast - make it more opaque for better readability */
-  --soft-lavender: rgba(198,185,248,0.25) !important; /* Increased from 0.15 to 0.25 */
-  --color-primary-soft: rgba(198,185,248,0.25) !important; /* Match soft-lavender */
+  /* Fix soft-lavender contrast - make it much more opaque for better readability */
+  --soft-lavender: rgba(198,185,248,0.45) !important; /* Increased to 0.45 for strong contrast */
+  --color-primary-soft: rgba(198,185,248,0.45) !important; /* Match soft-lavender */
+  --accent-soft: rgba(198,185,248,0.35) !important; /* Also increase accent-soft */
 }
 
 /* Cards and surfaces when both modes active */
@@ -1305,7 +1306,7 @@ html[data-theme="dark"][data-quiet-mode="true"] {
 [data-theme="dark"][data-quiet-mode="true"] .report-method,
 [data-theme="dark"][data-quiet-mode="true"] .report-category,
 [data-theme="dark"][data-quiet-mode="true"] .pwa-dismiss-btn:hover {
-  background: rgba(198,185,248,0.25) !important; /* More opaque for better contrast */
+  background: rgba(198,185,248,0.45) !important; /* Much more opaque for strong contrast */
   color: var(--text-primary) !important;
 }
 
