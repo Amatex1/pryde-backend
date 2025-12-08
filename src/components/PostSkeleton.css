@@ -112,3 +112,19 @@
   border-top-color: var(--border-light);
 }
 
+/* Light Mode + Quiet Mode - Keep light skeleton */
+[data-theme="light"][data-quiet-mode="true"] .skeleton-avatar,
+[data-theme="light"][data-quiet-mode="true"] .skeleton-name,
+[data-theme="light"][data-quiet-mode="true"] .skeleton-username,
+[data-theme="light"][data-quiet-mode="true"] .skeleton-text,
+[data-theme="light"][data-quiet-mode="true"] .skeleton-button {
+  background: linear-gradient(90deg, #E8EAF6 25%, #D1D5E8 50%, #E8EAF6 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+[data-theme="light"][data-quiet-mode="true"] .post-skeleton {
+  background: var(--card-surface);
+  border-color: var(--border-light);
+}
+

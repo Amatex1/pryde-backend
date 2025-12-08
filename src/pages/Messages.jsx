@@ -65,8 +65,11 @@ function Messages() {
   const [archivedConversations, setArchivedConversations] = useState([]);
   const [mutedConversations, setMutedConversations] = useState([]);
   const [currentTheme, setCurrentTheme] = useState(document.documentElement.getAttribute('data-theme') || 'light');
+  const [uploadingFile, setUploadingFile] = useState(false);
+  const [selectedFile, setSelectedFile] = useState(null);
   const messagesEndRef = useRef(null);
   const typingTimeoutRef = useRef(null);
+  const fileInputRef = useRef(null);
 
   // Helper function to format date headers
   const formatDateHeader = (date) => {
@@ -438,11 +441,12 @@ function Messages() {
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
-    if (!message.trim() || !selectedChat) return;
+    if ((!message.trim() && !selectedFile) || !selectedChat) return;
 
     console.log('📤 Sending message:', {
       recipientId: selectedChat,
       content: message,
+      attachment: selectedFile?.url,
       chatType: selectedChatType,
       socketConnected: isSocketConnected()
     });
@@ -452,7 +456,8 @@ function Messages() {
         // Send group message via API
         const response = await api.post('/messages', {
           groupChatId: selectedChat,
-          content: message
+          content: message,
+          attachment: selectedFile?.url
         });
         setMessages((prev) => [...prev, response.data]);
       } else {
@@ -467,10 +472,15 @@ function Messages() {
         console.log('🔌 Emitting send_message via socket');
         socketSendMessage({
           recipientId: selectedChat,
-          content: message
+          content: message,
+          attachment: selectedFile?.url
         });
       }
       setMessage('');
+      setSelectedFile(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
 
       // Clear typing indicator
       if (currentUser) {
@@ -479,6 +489,50 @@ function Messages() {
     } catch (error) {
       console.error('❌ Error sending message:', error);
       alert('Failed to send message');
+    }
+  };
+
+  const handleFileSelect = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Validate file type
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'video/mp4', 'video/webm', 'video/ogg'];
+    if (!validTypes.includes(file.type)) {
+      showAlert('Please select only images (JPEG, PNG, GIF) or videos (MP4, WebM, OGG)', 'Invalid File Type');
+      return;
+    }
+
+    // Validate file size (10MB limit)
+    if (file.size > 10 * 1024 * 1024) {
+      showAlert('File size must be less than 10MB', 'File Too Large');
+      return;
+    }
+
+    setUploadingFile(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await api.post('/upload/chat-attachment', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+
+      setSelectedFile({ url: response.data.url, name: file.name, type: file.type });
+    } catch (error) {
+      console.error('File upload failed:', error);
+      showAlert('Failed to upload file. Please try again.', 'Upload Failed');
+    } finally {
+      setUploadingFile(false);
+    }
+  };
+
+  const handleRemoveFile = () => {
+    setSelectedFile(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
     }
   };
 
@@ -1299,9 +1353,41 @@ function Messages() {
                       </button>
                     </div>
                   )}
+                  {selectedFile && (
+                    <div className="file-preview">
+                      <div className="file-preview-content">
+                        {selectedFile.type.startsWith('image/') ? (
+                          <img src={getImageUrl(selectedFile.url)} alt="Preview" className="file-preview-image" />
+                        ) : (
+                          <div className="file-preview-icon">🎥</div>
+                        )}
+                        <span className="file-preview-name">{selectedFile.name}</span>
+                      </div>
+                      <button
+                        type="button"
+                        className="btn-cancel-reply"
+                        onClick={handleRemoveFile}
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  )}
                   <div className="chat-input-wrapper">
-                    <button type="button" className="btn-attachment">
-                      📎
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      onChange={handleFileSelect}
+                      accept="image/*,video/*"
+                      style={{ display: 'none' }}
+                    />
+                    <button
+                      type="button"
+                      className="btn-attachment"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={uploadingFile}
+                      title="Attach file"
+                    >
+                      {uploadingFile ? '⏳' : '📎'}
                     </button>
                     <input
                       type="text"
@@ -1310,7 +1396,7 @@ function Messages() {
                       placeholder={replyingTo ? "Type your reply..." : "Type a message..."}
                       className="chat-input glossy"
                     />
-                    <button type="submit" className="btn-send glossy-gold">
+                    <button type="submit" className="btn-send glossy-gold" disabled={uploadingFile}>
                       Send
                     </button>
                   </div>

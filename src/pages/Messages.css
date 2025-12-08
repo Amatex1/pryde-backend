@@ -494,6 +494,13 @@
   color: var(--text-light);
 }
 
+/* Light Mode + Quiet Mode - Fix dark date headers */
+[data-theme="light"][data-quiet-mode="true"] .message-date-header span {
+  background: #F8F9FA;
+  border-color: #E5E7EB;
+  color: #6B7280;
+}
+
 .message-group {
   display: flex;
   gap: 1rem;
@@ -856,6 +863,52 @@
 .btn-cancel-reply:hover {
   color: var(--error);
   transform: scale(1.2);
+}
+
+/* File Preview */
+.file-preview {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  background: var(--soft-lavender);
+  border-left: 3px solid var(--electric-blue);
+  border-radius: 8px;
+  gap: 1rem;
+}
+
+.file-preview-content {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.file-preview-image {
+  width: 50px;
+  height: 50px;
+  object-fit: cover;
+  border-radius: 6px;
+}
+
+.file-preview-icon {
+  width: 50px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  background: var(--background-light);
+  border-radius: 6px;
+}
+
+.file-preview-name {
+  font-size: 0.875rem;
+  color: var(--text-main);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .btn-attachment {
@@ -1430,6 +1483,12 @@
   background: var(--bg-light);
 }
 
+/* Light Mode + Quiet Mode - Fix dark section labels */
+[data-theme="light"][data-quiet-mode="true"] .section-label {
+  background: #F8F9FA;
+  color: #6B7280;
+}
+
 .group-avatar {
   background: var(--gradient-primary) !important;
   color: white !important;
@@ -1598,4 +1657,38 @@
 [data-theme="dark"] .user-result.deactivated-user .user-avatar {
   background: #3a3a3a !important;
   color: #888 !important;
+}
+
+/* ========================================
+   LIGHT MODE + QUIET MODE FIXES
+   ======================================== */
+
+/* Fix dark chat header in Light + Quiet Mode */
+[data-theme="light"][data-quiet-mode="true"] .chat-header {
+  background: #FFFFFF;
+  border-bottom-color: #E5E7EB;
+}
+
+/* Fix dark input area in Light + Quiet Mode */
+[data-theme="light"][data-quiet-mode="true"] .chat-input-area {
+  background: #FFFFFF;
+  border-top-color: #E5E7EB;
+}
+
+/* Fix dark sidebar header in Light + Quiet Mode */
+[data-theme="light"][data-quiet-mode="true"] .sidebar-header {
+  background: #FFFFFF;
+  border-bottom-color: #E5E7EB;
+}
+
+/* Fix dark conversations sidebar in Light + Quiet Mode */
+[data-theme="light"][data-quiet-mode="true"] .conversations-sidebar {
+  background: #FFFFFF;
+  border-right-color: #E5E7EB;
+}
+
+/* Fix dark messages layout in Light + Quiet Mode */
+[data-theme="light"][data-quiet-mode="true"] .messages-layout {
+  background: #FFFFFF;
+  border-color: #E5E7EB;
 }
