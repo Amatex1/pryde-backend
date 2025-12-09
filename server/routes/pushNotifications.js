@@ -88,16 +88,110 @@ async function sendPushNotification(userId, payload) {
 // Test push notification
 router.post('/test', auth, async (req, res) => {
   try {
-    const result = await sendPushNotification(req.user.id, {
-      title: 'Test Notification',
-      body: 'This is a test push notification from Pryde Social!',
-      data: { url: '/feed' }
-    });
-    
-    res.json(result);
+    const user = await User.findById(req.user.id);
+
+    // Check if user has push subscription
+    if (!user.pushSubscription) {
+      return res.status(400).json({
+        success: false,
+        message: 'No push subscription found. Please enable notifications first.',
+        hasSubscription: false
+      });
+    }
+
+    // Get custom message from request or use default
+    const { title, body, testType } = req.body;
+
+    let notificationConfig = {
+      title: title || '🔔 Test Notification',
+      body: body || 'This is a test push notification from Pryde Social! If you see this, notifications are working! ✅',
+      data: {
+        url: '/notifications',
+        type: 'test',
+        timestamp: new Date().toISOString()
+      },
+      tag: 'test-notification',
+      requireInteraction: false
+    };
+
+    // Different test types
+    if (testType === 'login_approval') {
+      notificationConfig = {
+        title: '🔐 Test Login Approval',
+        body: 'New login from Chrome on Windows. Code: 42',
+        data: {
+          type: 'login_approval',
+          verificationCode: '42',
+          deviceInfo: 'Chrome on Windows',
+          url: '/notifications'
+        },
+        tag: 'login-approval-test',
+        requireInteraction: true
+      };
+    } else if (testType === 'message') {
+      notificationConfig = {
+        title: '💬 Test Message',
+        body: 'You have a new message from Test User',
+        data: {
+          type: 'message',
+          url: '/messages'
+        },
+        tag: 'message-test'
+      };
+    } else if (testType === 'friend_request') {
+      notificationConfig = {
+        title: '👋 Test Friend Request',
+        body: 'Test User sent you a friend request',
+        data: {
+          type: 'friend_request',
+          url: '/friends'
+        },
+        tag: 'friend-request-test'
+      };
+    }
+
+    const result = await sendPushNotification(req.user.id, notificationConfig);
+
+    if (result.success) {
+      res.json({
+        success: true,
+        message: 'Test notification sent successfully! Check your device.',
+        hasSubscription: true,
+        subscriptionEndpoint: user.pushSubscription.endpoint.substring(0, 50) + '...',
+        testType: testType || 'default'
+      });
+    } else {
+      res.status(500).json({
+        success: false,
+        message: result.message || 'Failed to send test notification',
+        hasSubscription: true
+      });
+    }
   } catch (error) {
     console.error('Test push error:', error);
-    res.status(500).json({ message: 'Error sending test push notification' });
+    res.status(500).json({
+      success: false,
+      message: 'Error sending test push notification: ' + error.message
+    });
+  }
+});
+
+// Get push notification status
+router.get('/status', auth, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+
+    res.json({
+      enabled: !!user.pushSubscription,
+      hasSubscription: !!user.pushSubscription,
+      subscriptionEndpoint: user.pushSubscription ?
+        user.pushSubscription.endpoint.substring(0, 50) + '...' : null,
+      pushTwoFactorEnabled: user.pushTwoFactorEnabled || false,
+      preferPushTwoFactor: user.preferPushTwoFactor || false
+    });
+  } catch (error) {
+    console.error('Push status error:', error);
+    res.status(500).json({ message: 'Error getting push notification status' });
   }
 });
 
