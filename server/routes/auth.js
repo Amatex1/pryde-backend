@@ -11,6 +11,7 @@ import {
   generateSessionId,
   parseUserAgent,
   getClientIp,
+  isNewDevice,
   isSuspiciousLogin,
   cleanupOldSessions,
   limitLoginHistory
@@ -327,25 +328,50 @@ router.post('/login', loginLimiter, validateLogin, async (req, res) => {
     const ipAddress = getClientIp(req);
     const { browser, os, deviceInfo } = parseUserAgent(req.headers['user-agent']);
 
-    // Check if 2FA is enabled
-    if (user.twoFactorEnabled) {
-      // Return temporary token that requires 2FA verification
-      const tempToken = jwt.sign(
-        { userId: user._id, requires2FA: true },
-        config.jwtSecret,
-        { expiresIn: '10m' }
-      );
-
+    // Check if 2FA is enabled (push or TOTP)
+    if (user.pushTwoFactorEnabled || user.twoFactorEnabled) {
       // Check if login is suspicious
       const suspicious = isSuspiciousLogin(user, ipAddress, deviceInfo);
 
-      return res.json({
-        success: false,
-        requires2FA: true,
-        tempToken,
-        suspicious,
-        message: '2FA verification required'
-      });
+      // Prefer push 2FA if enabled and user has push subscription
+      if (user.pushTwoFactorEnabled && user.preferPushTwoFactor && user.pushSubscription) {
+        // Use push-based 2FA - client will call /api/login-approval/request
+        return res.json({
+          success: false,
+          requiresPush2FA: true,
+          userId: user._id,
+          deviceInfo,
+          browser,
+          os,
+          ipAddress,
+          suspicious,
+          message: 'Push 2FA verification required. Check your other devices.'
+        });
+      }
+      // Fall back to TOTP if push 2FA not available
+      else if (user.twoFactorEnabled) {
+        // Return temporary token that requires TOTP 2FA verification
+        const tempToken = jwt.sign(
+          { userId: user._id, requires2FA: true },
+          config.jwtSecret,
+          { expiresIn: '10m' }
+        );
+
+        return res.json({
+          success: false,
+          requires2FA: true,
+          tempToken,
+          suspicious,
+          message: '2FA verification required'
+        });
+      }
+      // Push 2FA enabled but no subscription - error
+      else {
+        return res.status(400).json({
+          message: 'Push 2FA is enabled but no push subscription found. Please enable notifications or use backup codes.',
+          fallbackToTOTP: user.twoFactorEnabled
+        });
+      }
     }
 
     // Check if login is suspicious
@@ -387,8 +413,10 @@ router.post('/login', loginLimiter, validateLogin, async (req, res) => {
     limitLoginHistory(user);
     await user.save();
 
-    // Send login alert emails (async, don't wait)
-    if (user.loginAlerts?.enabled && user.loginAlerts?.emailOnNewDevice) {
+    // Send login alert emails ONLY for new devices or suspicious logins (async, don't wait)
+    const isNew = isNewDevice(user, ipAddress, deviceInfo);
+
+    if (user.loginAlerts?.enabled) {
       const loginInfo = {
         deviceInfo,
         browser,
@@ -398,15 +426,19 @@ router.post('/login', loginLimiter, validateLogin, async (req, res) => {
         timestamp: new Date()
       };
 
+      // Send suspicious login email if enabled and login is suspicious
       if (suspicious && user.loginAlerts?.emailOnSuspiciousLogin) {
         sendSuspiciousLoginEmail(user.email, user.username, loginInfo).catch(err =>
           console.error('Failed to send suspicious login email:', err)
         );
-      } else {
+      }
+      // Send new device email ONLY if it's actually a new device
+      else if (isNew && user.loginAlerts?.emailOnNewDevice) {
         sendLoginAlertEmail(user.email, user.username, loginInfo).catch(err =>
           console.error('Failed to send login alert email:', err)
         );
       }
+      // Otherwise, don't send any email (same device, not suspicious)
     }
 
     // Create JWT token with session ID
@@ -557,8 +589,11 @@ router.post('/verify-2fa-login', loginLimiter, async (req, res) => {
     limitLoginHistory(user);
     await user.save();
 
-    // Send login alert emails (async, don't wait)
-    if (user.loginAlerts?.enabled && user.loginAlerts?.emailOnNewDevice) {
+    // Send login alert emails ONLY for new devices or suspicious logins (async, don't wait)
+    const isNew = isNewDevice(user, ipAddress, deviceInfo);
+    const suspicious = isSuspiciousLogin(user, ipAddress, deviceInfo);
+
+    if (user.loginAlerts?.enabled) {
       const loginInfo = {
         deviceInfo,
         browser,
@@ -568,17 +603,19 @@ router.post('/verify-2fa-login', loginLimiter, async (req, res) => {
         timestamp: new Date()
       };
 
-      const suspicious = isSuspiciousLogin(user, ipAddress, deviceInfo);
-
+      // Send suspicious login email if enabled and login is suspicious
       if (suspicious && user.loginAlerts?.emailOnSuspiciousLogin) {
         sendSuspiciousLoginEmail(user.email, user.username, loginInfo).catch(err =>
           console.error('Failed to send suspicious login email:', err)
         );
-      } else {
+      }
+      // Send new device email ONLY if it's actually a new device
+      else if (isNew && user.loginAlerts?.emailOnNewDevice) {
         sendLoginAlertEmail(user.email, user.username, loginInfo).catch(err =>
           console.error('Failed to send login alert email:', err)
         );
       }
+      // Otherwise, don't send any email (same device, not suspicious)
     }
 
     // Create JWT token with session ID

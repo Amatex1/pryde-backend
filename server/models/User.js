@@ -321,6 +321,16 @@ const userSchema = new mongoose.Schema({
       default: false
     }
   }],
+  // Push-based 2FA (approve login via app notification)
+  pushTwoFactorEnabled: {
+    type: Boolean,
+    default: false
+  },
+  // Prefer push 2FA over TOTP if both are enabled
+  preferPushTwoFactor: {
+    type: Boolean,
+    default: true
+  },
   // Session Management
   activeSessions: [{
     sessionId: {

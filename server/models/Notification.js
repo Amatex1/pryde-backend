@@ -14,7 +14,7 @@ const notificationSchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    enum: ['friend_request', 'friend_accept', 'message', 'mention', 'like', 'comment', 'share'],
+    enum: ['friend_request', 'friend_accept', 'message', 'mention', 'like', 'comment', 'share', 'login_approval'],
     required: true
   },
   message: {
@@ -34,6 +34,24 @@ const notificationSchema = new mongoose.Schema({
   },
   commentId: {
     type: mongoose.Schema.Types.ObjectId
+  },
+  // For login approval notifications
+  loginApprovalId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'LoginApproval'
+  },
+  // Additional data for login approvals
+  loginApprovalData: {
+    verificationCode: String,
+    deviceInfo: String,
+    browser: String,
+    os: String,
+    ipAddress: String,
+    location: {
+      city: String,
+      region: String,
+      country: String
+    }
   },
   createdAt: {
     type: Date,

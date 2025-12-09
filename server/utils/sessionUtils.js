@@ -58,6 +58,31 @@ export function getClientIp(req) {
          'Unknown';
 }
 
+// Check if this is a new device (for login alerts)
+export function isNewDevice(user, ipAddress, deviceInfo) {
+  if (!user.loginHistory || user.loginHistory.length === 0) {
+    return true; // First login, definitely new device
+  }
+
+  // Check if IP address has been used before
+  const knownIp = user.loginHistory.some(login =>
+    login.success && login.ipAddress === ipAddress
+  );
+
+  // Check if device has been used before
+  const knownDevice = user.loginHistory.some(login =>
+    login.success && login.deviceInfo === deviceInfo
+  );
+
+  // Check if this is a trusted device
+  const trustedDevice = user.trustedDevices?.some(device =>
+    device.ipAddress === ipAddress || device.deviceInfo === deviceInfo
+  );
+
+  // New device if BOTH IP and device are unknown and not trusted
+  return !knownIp && !knownDevice && !trustedDevice;
+}
+
 // Check if login is suspicious
 export function isSuspiciousLogin(user, ipAddress, deviceInfo) {
   if (!user.loginHistory || user.loginHistory.length === 0) {
@@ -65,17 +90,17 @@ export function isSuspiciousLogin(user, ipAddress, deviceInfo) {
   }
 
   // Check if IP address has been used before
-  const knownIp = user.loginHistory.some(login => 
+  const knownIp = user.loginHistory.some(login =>
     login.success && login.ipAddress === ipAddress
   );
 
   // Check if device has been used before
-  const knownDevice = user.loginHistory.some(login => 
+  const knownDevice = user.loginHistory.some(login =>
     login.success && login.deviceInfo === deviceInfo
   );
 
   // Check if this is a trusted device
-  const trustedDevice = user.trustedDevices?.some(device => 
+  const trustedDevice = user.trustedDevices?.some(device =>
     device.ipAddress === ipAddress || device.deviceInfo === deviceInfo
   );
 
