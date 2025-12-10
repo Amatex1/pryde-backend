@@ -275,16 +275,16 @@ function EditProfileModal({ isOpen, onClose, user, onUpdate }) {
                   onChange={handleChange}
                 >
                   <option value="">Select Pronouns (Optional)</option>
-                  <option value="she/her">she/her</option>
-                  <option value="he/him">he/him</option>
-                  <option value="they/them">they/them</option>
-                  <option value="she/they">she/they</option>
-                  <option value="he/they">he/they</option>
-                  <option value="any pronouns">any pronouns</option>
-                  <option value="ask me">ask me</option>
-                  <option value="ze/zir">ze/zir</option>
-                  <option value="xe/xem">xe/xem</option>
-                  <option value="prefer not to say">prefer not to say</option>
+                  <option value="She/Her">She/Her</option>
+                  <option value="He/Him">He/Him</option>
+                  <option value="They/Them">They/Them</option>
+                  <option value="She/They">She/They</option>
+                  <option value="He/They">He/They</option>
+                  <option value="Any Pronouns">Any Pronouns</option>
+                  <option value="Ask Me">Ask Me</option>
+                  <option value="Ze/Zir">Ze/Zir</option>
+                  <option value="Xe/Xem">Xe/Xem</option>
+                  <option value="Prefer Not to Say">Prefer Not to Say</option>
                   <option value="custom">Custom (type below)</option>
                 </select>
                 {formData.pronouns === 'custom' && (
@@ -307,18 +307,18 @@ function EditProfileModal({ isOpen, onClose, user, onUpdate }) {
                   onChange={handleChange}
                 >
                   <option value="">Select Gender (Optional)</option>
-                  <option value="woman">Woman</option>
-                  <option value="man">Man</option>
-                  <option value="non-binary">Non-binary</option>
-                  <option value="genderqueer">Genderqueer</option>
-                  <option value="genderfluid">Genderfluid</option>
-                  <option value="agender">Agender</option>
-                  <option value="bigender">Bigender</option>
-                  <option value="two-spirit">Two-Spirit</option>
-                  <option value="transgender woman">Transgender Woman</option>
-                  <option value="transgender man">Transgender Man</option>
-                  <option value="questioning">Questioning</option>
-                  <option value="prefer not to say">Prefer Not to Say</option>
+                  <option value="Woman">Woman</option>
+                  <option value="Man">Man</option>
+                  <option value="Non-Binary">Non-Binary</option>
+                  <option value="Genderqueer">Genderqueer</option>
+                  <option value="Genderfluid">Genderfluid</option>
+                  <option value="Agender">Agender</option>
+                  <option value="Bigender">Bigender</option>
+                  <option value="Two-Spirit">Two-Spirit</option>
+                  <option value="Transgender Woman">Transgender Woman</option>
+                  <option value="Transgender Man">Transgender Man</option>
+                  <option value="Questioning">Questioning</option>
+                  <option value="Prefer Not to Say">Prefer Not to Say</option>
                   <option value="custom">Custom (type below)</option>
                 </select>
                 {formData.gender === 'custom' && (
