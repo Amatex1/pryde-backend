@@ -337,43 +337,55 @@ function Settings() {
           {/* Basic Information moved to Edit Profile modal on Profile page */}
 
           {/* Verification Request Section */}
-          {!verificationStatus.isVerified && (
-            <div className="settings-section">
-              <h2 className="section-title">✓ Account Verification</h2>
+          <div className="settings-section">
+            <h2 className="section-title">✓ Account Verification</h2>
 
-              <div className="verification-info">
-                <p>
-                  Verified accounts receive a blue checkmark badge on their profile and posts.
-                  Verification is available for LGBTQ+ activists, content creators, community leaders,
-                  and other notable members of the community.
-                </p>
-
-                {verificationStatus.verificationRequested ? (
-                  <div className="verification-pending">
-                    <div className="pending-icon">⏳</div>
-                    <div className="pending-text">
-                      <h3>Verification Request Pending</h3>
-                      <p>
-                        Your verification request is under review.
-                        Submitted on {new Date(verificationStatus.verificationRequestDate).toLocaleDateString()}
-                      </p>
-                      <p className="muted-text">
-                        An admin will review your request and contact you if additional information is needed.
-                      </p>
-                    </div>
+            <div className="verification-info">
+              {verificationStatus.isVerified ? (
+                <div className="verification-verified">
+                  <div className="verified-icon">✓</div>
+                  <div className="verified-text">
+                    <h3>Account Verified</h3>
+                    <p>
+                      Your account is verified! You have a blue checkmark badge on your profile and posts.
+                    </p>
                   </div>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={handleRequestVerification}
-                    className="btn-verification"
-                  >
-                    ✓ Request Verification
-                  </button>
-                )}
-              </div>
+                </div>
+              ) : (
+                <>
+                  <p>
+                    Verified accounts receive a blue checkmark badge on their profile and posts.
+                    Verification is available for LGBTQ+ activists, content creators, community leaders,
+                    and other notable members of the community.
+                  </p>
+
+                  {verificationStatus.verificationRequested ? (
+                    <div className="verification-pending">
+                      <div className="pending-icon">⏳</div>
+                      <div className="pending-text">
+                        <h3>Verification Request Pending</h3>
+                        <p>
+                          Your verification request is under review.
+                          Submitted on {new Date(verificationStatus.verificationRequestDate).toLocaleDateString()}
+                        </p>
+                        <p className="muted-text">
+                          An admin will review your request and contact you if additional information is needed.
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={handleRequestVerification}
+                      className="btn-verification"
+                    >
+                      ✓ Request Verification
+                    </button>
+                  )}
+                </>
+              )}
             </div>
-          )}
+          </div>
 
           {/* PHASE 2: Quiet Mode */}
           <div className="settings-section">
