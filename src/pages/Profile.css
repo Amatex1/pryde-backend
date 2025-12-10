@@ -597,13 +597,15 @@
   transform: translateY(-2px);
 }
 
-/* Upload Buttons on Profile */
+/* Upload Buttons on Profile - Now positioned under cover photo */
 .profile-upload-section {
   display: flex;
   gap: 1rem;
-  margin-top: 1.5rem;
-  padding-top: 1.5rem;
-  border-top: 1px solid var(--border-light);
+  margin: 1rem 1.5rem;
+  padding: 1rem;
+  background: var(--card-surface);
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .btn-upload {

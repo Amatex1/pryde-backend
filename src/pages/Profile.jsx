@@ -894,6 +894,35 @@ function Profile() {
             )}
           </div>
 
+          {/* Photo Upload Buttons - Right under cover photo */}
+          {isOwnProfile && (
+            <div className="profile-upload-section">
+              {uploadMessage && (
+                <div className="upload-message">{uploadMessage}</div>
+              )}
+              <label htmlFor="profile-photo-upload" className="btn-upload">
+                📷 Update Profile Photo
+                <input
+                  type="file"
+                  id="profile-photo-upload"
+                  accept="image/*"
+                  onChange={(e) => handlePhotoUpload(e, 'profile')}
+                  style={{ display: 'none' }}
+                />
+              </label>
+              <label htmlFor="cover-photo-upload" className="btn-upload">
+                🖼️ Update Cover Photo
+                <input
+                  type="file"
+                  id="cover-photo-upload"
+                  accept="image/*"
+                  onChange={(e) => handlePhotoUpload(e, 'cover')}
+                  style={{ display: 'none' }}
+                />
+              </label>
+            </div>
+          )}
+
           <div className="profile-info">
             <div className="profile-avatar">
               {user.profilePhoto ? (
@@ -1038,36 +1067,6 @@ function Profile() {
                   </a>
                 )}
               </div>
-
-
-
-              {isOwnProfile && (
-                <div className="profile-upload-section">
-                  {uploadMessage && (
-                    <div className="upload-message">{uploadMessage}</div>
-                  )}
-                  <label htmlFor="profile-photo-upload" className="btn-upload">
-                    📷 Update Profile Photo
-                    <input
-                      type="file"
-                      id="profile-photo-upload"
-                      accept="image/*"
-                      onChange={(e) => handlePhotoUpload(e, 'profile')}
-                      style={{ display: 'none' }}
-                    />
-                  </label>
-                  <label htmlFor="cover-photo-upload" className="btn-upload">
-                    🖼️ Update Cover Photo
-                    <input
-                      type="file"
-                      id="cover-photo-upload"
-                      accept="image/*"
-                      onChange={(e) => handlePhotoUpload(e, 'cover')}
-                      style={{ display: 'none' }}
-                    />
-                  </label>
-                </div>
-              )}
 
               {/* PHASE 1 REFACTOR: Follower/following counts removed */}
               <div className="profile-stats">
