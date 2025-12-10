@@ -41,6 +41,7 @@ import Helplines from './pages/legal/Helplines';
 import Footer from './components/Footer';
 import SafetyWarning from './components/SafetyWarning';
 import PWAInstallPrompt from './components/PWAInstallPrompt';
+import CookieBanner from './components/CookieBanner';
 import { isAuthenticated, getCurrentUser } from './utils/auth';
 import { initializeSocket, disconnectSocket, onNewMessage } from './utils/socket';
 import { playNotificationSound, requestNotificationPermission } from './utils/notifications';
@@ -160,6 +161,9 @@ function App() {
 
         {/* PWA Install Prompt */}
         {isAuth && <PWAInstallPrompt />}
+
+        {/* Cookie Banner */}
+        <CookieBanner />
       </div>
     </Router>
   );

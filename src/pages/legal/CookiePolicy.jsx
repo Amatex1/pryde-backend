@@ -20,10 +20,16 @@ function CookiePolicy() {
           🏠 Home
         </Link>
         <h1>🌈 Pryde Social — Cookie Policy</h1>
-        <p className="legal-subtitle">Last Updated: December 28, 2024</p>
+        <p className="legal-subtitle">Last Updated: 10.12.2025</p>
       </div>
 
       <div className="legal-content">
+        <section className="legal-section">
+          <p className="legal-highlight">
+            <strong>🍪 We only use essential cookies for security and functionality. Pryde Social does not use tracking, analytics, or advertising cookies. No consent is required for essential cookies under GDPR.</strong>
+          </p>
+        </section>
+
         <section className="legal-section">
           <h2>1. What Cookies We Use</h2>
           <ul>
@@ -60,13 +66,40 @@ function CookiePolicy() {
         <section className="legal-section">
           <h2>3. Managing Cookies</h2>
           <p>
-            You can disable cookies in your browser, but some features may not work.
+            You can disable cookies in your browser settings, but please note that doing so will prevent you from logging in and using Pryde Social, as all our cookies are essential for the platform to function.
+          </p>
+          <p>
+            <strong>Browser Cookie Settings:</strong>
+          </p>
+          <ul>
+            <li><strong>Chrome:</strong> Settings → Privacy and security → Cookies and other site data</li>
+            <li><strong>Firefox:</strong> Settings → Privacy & Security → Cookies and Site Data</li>
+            <li><strong>Safari:</strong> Preferences → Privacy → Manage Website Data</li>
+            <li><strong>Edge:</strong> Settings → Cookies and site permissions → Manage and delete cookies</li>
+          </ul>
+        </section>
+
+        <section className="legal-section">
+          <h2>4. GDPR Compliance</h2>
+          <p>
+            Under the General Data Protection Regulation (GDPR), websites are required to obtain consent for non-essential cookies. However, <strong>essential cookies that are strictly necessary for the website to function do not require consent</strong>.
+          </p>
+          <p>
+            All cookies used by Pryde Social fall into the "strictly necessary" category:
+          </p>
+          <ul>
+            <li><strong>Authentication:</strong> Required to keep you logged in</li>
+            <li><strong>Security:</strong> Required to protect against attacks (CSRF)</li>
+            <li><strong>Preferences:</strong> Required to remember your settings (dark mode)</li>
+          </ul>
+          <p>
+            Therefore, <strong>no cookie consent banner is legally required</strong> for Pryde Social under GDPR Article 6(1)(f) (legitimate interests) and ePrivacy Directive Article 5(3).
           </p>
         </section>
 
         <div className="legal-footer-note">
           <p className="last-updated">
-            Last Updated: December 28, 2024
+            Last Updated: 10.12.2025
           </p>
         </div>
       </div>
