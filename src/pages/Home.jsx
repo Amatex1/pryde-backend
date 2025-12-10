@@ -143,6 +143,11 @@ function Home() {
             <p>Share text, images, videos, and GIFs with content warnings and visibility controls.</p>
           </div>
           <div className="creator-card">
+            <div className="creator-icon">💬</div>
+            <h3>Comments & Reactions</h3>
+            <p>Engage with posts through nested comments and 14 emoji reactions.</p>
+          </div>
+          <div className="creator-card">
             <div className="creator-icon">📔</div>
             <h3>Journals</h3>
             <p>Private or public long-form reflections with mood tracking.</p>
@@ -156,6 +161,11 @@ function Home() {
             <div className="creator-icon">📸</div>
             <h3>Photo Essays</h3>
             <p>Curated visual storytelling for creators.</p>
+          </div>
+          <div className="creator-card">
+            <div className="creator-icon">🔖</div>
+            <h3>Bookmarks & Sharing</h3>
+            <p>Save posts for later and share content with your followers.</p>
           </div>
         </div>
       </section>
@@ -193,11 +203,19 @@ function Home() {
       {/* Messaging Section */}
       <section className="messaging-section">
         <div className="messaging-content">
-          <h2 className="section-title">Private, Comfortable Messaging</h2>
-          <p className="messaging-description">
-            1-on-1 real-time conversations with read receipts, reactions, attachments, and message editing.
-            All messaging now happens in the dedicated Messages page for clarity and calm.
-          </p>
+          <h2 className="section-title">Connect & Chat</h2>
+          <div className="messaging-grid">
+            <div className="messaging-card">
+              <div className="messaging-icon">💬</div>
+              <h3>Direct Messages</h3>
+              <p>1-on-1 real-time conversations with read receipts, reactions, attachments, and message editing.</p>
+            </div>
+            <div className="messaging-card">
+              <div className="messaging-icon">🛋️</div>
+              <h3>Lounge (Global Chat)</h3>
+              <p>Join the community in our public chat room for casual conversations and making new friends.</p>
+            </div>
+          </div>
           {isAuth ? (
             <Link to="/messages" className="btn-messaging">
               Open Messages
@@ -221,19 +239,19 @@ function Home() {
             </div>
             <div className="notification-item">
               <span className="notif-icon">🔔</span>
-              <span>Push notifications</span>
+              <span>Sound notifications for new messages</span>
             </div>
             <div className="notification-item">
               <span className="notif-icon">💬</span>
-              <span>Comment, like, share, mention alerts</span>
+              <span>Comment, reaction, share, mention alerts</span>
             </div>
             <div className="notification-item">
               <span className="notif-icon">📨</span>
-              <span>Message notifications</span>
+              <span>Message & Lounge notifications</span>
             </div>
             <div className="notification-item">
               <span className="notif-icon">⚙️</span>
-              <span>Notification preferences</span>
+              <span>Customizable notification preferences</span>
             </div>
           </div>
         </div>

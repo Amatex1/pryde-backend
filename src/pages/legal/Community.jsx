@@ -20,7 +20,7 @@ function Community() {
           🏠 Home
         </Link>
         <h1>🌈 Pryde Social — Community Guidelines</h1>
-        <p className="legal-subtitle">Last Updated: December 28, 2024</p>
+        <p className="legal-subtitle">Last Updated: 10.12.2025</p>
       </div>
 
       <div className="legal-content">
@@ -84,7 +84,56 @@ function Community() {
         </section>
 
         <section className="legal-section">
-          <h2>5. Illegal Content</h2>
+          <h2>5. GIF Content & Usage</h2>
+          <p>
+            <strong>When using GIFs (powered by Tenor):</strong>
+          </p>
+          <ul>
+            <li>Ensure GIFs are appropriate and comply with these guidelines</li>
+            <li>Do not use GIFs containing hate speech, violence, or explicit sexual content</li>
+            <li>Do not spam GIFs in posts, comments, or Lounge</li>
+            <li>Respect copyright and intellectual property in GIF content</li>
+          </ul>
+          <p>
+            You are responsible for the GIFs you select and share.
+          </p>
+        </section>
+
+        <section className="legal-section">
+          <h2>6. Lounge (Global Chat) Rules</h2>
+          <p>
+            <strong>The Lounge is a public space for all users. Please:</strong>
+          </p>
+          <ul>
+            <li>Be respectful and welcoming to all participants</li>
+            <li>Do not spam messages or flood the chat</li>
+            <li>Do not share explicit sexual content in Lounge</li>
+            <li>Do not harass, bully, or target other users</li>
+            <li>Do not share personal information (yours or others')</li>
+            <li>Keep conversations appropriate for a public space</li>
+          </ul>
+          <p>
+            Violations may result in temporary or permanent Lounge bans.
+          </p>
+        </section>
+
+        <section className="legal-section">
+          <h2>7. Reaction Etiquette</h2>
+          <p>
+            <strong>When using reactions:</strong>
+          </p>
+          <ul>
+            <li>Do not spam reactions on posts or comments</li>
+            <li>Do not use reactions to harass or mock users</li>
+            <li>Reactions should be used to express genuine engagement</li>
+          </ul>
+          <p>
+            Abuse of the reaction system may result in restrictions or account suspension.
+          </p>
+        </section>
+
+        <section className="legal-section">
+          <h2>8. Illegal Content</h2>
           <p>
             <strong>Absolutely prohibited:</strong>
           </p>
@@ -98,7 +147,7 @@ function Community() {
         </section>
 
         <section className="legal-section">
-          <h2>6. Safety</h2>
+          <h2>9. Safety</h2>
           <p>
             <strong>If you feel unsafe:</strong>
           </p>
@@ -113,7 +162,7 @@ function Community() {
         </section>
 
         <section className="legal-section">
-          <h2>7. Consequences</h2>
+          <h2>10. Consequences</h2>
           <p>
             Violations may result in:
           </p>
@@ -122,6 +171,8 @@ function Community() {
             <li>Warnings</li>
             <li>Temporary suspension</li>
             <li>Permanent ban</li>
+            <li>Lounge access restrictions</li>
+            <li>Reaction privileges removed</li>
           </ul>
           <p>
             Severe violations (CSAM, threats, hate speech) result in immediate bans.
@@ -129,7 +180,7 @@ function Community() {
         </section>
 
         <section className="legal-section">
-          <h2>8. Contact</h2>
+          <h2>11. Contact</h2>
           <div className="contact-info">
             <p><strong>📧</strong> <span className="contact-email">prydeapp-team@outlook.com</span></p>
           </div>
@@ -137,7 +188,7 @@ function Community() {
 
         <div className="legal-footer-note">
           <p className="last-updated">
-            Last Updated: November 26, 2025
+            Last Updated: 10.12.2025
           </p>
         </div>
       </div>

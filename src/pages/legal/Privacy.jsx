@@ -20,7 +20,7 @@ function Privacy() {
           🏠 Home
         </Link>
         <h1>🌈 Pryde Social — Privacy Policy</h1>
-        <p className="legal-subtitle">Last Updated: December 28, 2024</p>
+        <p className="legal-subtitle">Last Updated: 10.12.2025</p>
       </div>
 
       <div className="legal-content">
@@ -43,8 +43,14 @@ function Privacy() {
             <li>Password (encrypted)</li>
             <li>Profile details (name, pronouns, gender, orientation, bio, etc.)</li>
             <li>Location (city/town only)</li>
-            <li>Photos you upload</li>
-            <li>Posts, comments, messages</li>
+            <li>Photos and videos you upload</li>
+            <li>Posts, comments, messages, reactions</li>
+            <li>GIF selections (URLs from Tenor)</li>
+            <li>Bookmarks and saved content</li>
+            <li>Tag/community preferences</li>
+            <li>Privacy settings and Quiet Mode preference</li>
+            <li>Two-factor authentication settings</li>
+            <li>Passkey/WebAuthn credentials</li>
           </ul>
 
           <h3>B. Automatically Collected Information</h3>
@@ -53,6 +59,9 @@ function Privacy() {
             <li>Device information</li>
             <li>Browser type</li>
             <li>Usage data (timestamps, interactions)</li>
+            <li>Login attempts and security logs</li>
+            <li>Session data and device fingerprints</li>
+            <li>Content moderation scores (spam, toxicity)</li>
           </ul>
 
           <h3>C. Sensitive Information (Optional)</h3>
@@ -182,14 +191,65 @@ function Privacy() {
         </section>
 
         <section className="legal-section">
-          <h2>9. International Users</h2>
+          <h2>9. Third-Party Services & Data Sharing</h2>
+
+          <h3>A. hCaptcha (Bot Protection)</h3>
+          <p>
+            We use the hCaptcha security service (hereinafter "hCaptcha") on our website. This service is provided by Intuition Machines, Inc., a Delaware US Corporation ("IMI"). hCaptcha is used to check whether user actions on our online service (such as submitting a registration form) meet our security requirements. To do this, hCaptcha analyzes the behavior of the website visitor based on various characteristics. This analysis starts automatically as soon as the website visitor enters a part of the website with hCaptcha enabled. For the analysis, hCaptcha evaluates various information (e.g. IP address, how long the visitor has been on the website, or mouse movements made by the user). The data collected during the analysis will be forwarded to IMI.
+          </p>
+          <p>
+            Data processing is based on the necessity of protecting our service from abusive automated crawling, spam, and other forms of abuse. IMI acts as a "data processor" acting on behalf of its customers as defined under the GDPR, and a "service provider" for the purposes of the California Consumer Privacy Act (CCPA).
+          </p>
+          <p>
+            For more information about hCaptcha's privacy policy and terms of use, please visit: <a href="https://www.hcaptcha.com/privacy" target="_blank" rel="noopener noreferrer">https://www.hcaptcha.com/privacy</a> and <a href="https://www.hcaptcha.com/terms" target="_blank" rel="noopener noreferrer">https://www.hcaptcha.com/terms</a>
+          </p>
+
+          <h3>B. Tenor GIF API (Google)</h3>
+          <p>
+            When you search for or select GIFs, we use the Tenor API (owned by Google) to provide GIF search and display functionality. When you use this feature:
+          </p>
+          <ul>
+            <li>Your search queries are sent to Tenor/Google</li>
+            <li>GIF URLs are stored in our database</li>
+            <li>Your IP address and device information may be collected by Tenor</li>
+          </ul>
+          <p>
+            For more information, see Tenor's Privacy Policy: <a href="https://tenor.com/legal-privacy" target="_blank" rel="noopener noreferrer">https://tenor.com/legal-privacy</a>
+          </p>
+
+          <h3>C. Hosting & Infrastructure</h3>
+          <p>
+            We use third-party hosting providers (Render.com, MongoDB Atlas) to store and process data. These providers have access to your data only to perform services on our behalf and are obligated to protect it.
+          </p>
+        </section>
+
+        <section className="legal-section">
+          <h2>10. Automated Content Moderation</h2>
+          <p>
+            <strong>We use automated systems to protect the community:</strong>
+          </p>
+          <ul>
+            <li><strong>Spam Detection:</strong> Automated analysis of content for spam patterns</li>
+            <li><strong>Toxicity Scoring:</strong> Automated detection of harmful or abusive content</li>
+            <li><strong>Rate Limiting:</strong> Automated tracking of user actions to prevent abuse</li>
+          </ul>
+          <p>
+            These systems analyze your content, behavior patterns, and metadata to generate safety scores. Content flagged by these systems may be automatically hidden, removed, or reviewed by moderators.
+          </p>
+          <p>
+            <strong>Data collected for moderation:</strong> Post content, comment text, message patterns, reaction frequency, posting frequency, IP addresses, device fingerprints.
+          </p>
+        </section>
+
+        <section className="legal-section">
+          <h2>11. International Users</h2>
           <p>
             Your data may be processed outside your region depending on hosting providers.
           </p>
         </section>
 
         <section className="legal-section">
-          <h2>10. Contact</h2>
+          <h2>12. Contact</h2>
           <div className="contact-info">
             <p><strong>📧</strong> <span className="contact-email">prydeapp-team@outlook.com</span></p>
           </div>
@@ -197,7 +257,7 @@ function Privacy() {
 
         <div className="legal-footer-note">
           <p className="last-updated">
-            Last Updated: December 28, 2024
+            Last Updated: 10.12.2025
           </p>
         </div>
       </div>

@@ -20,7 +20,7 @@ function Safety() {
           🏠 Home
         </Link>
         <h1>🌈 Pryde Social — Safety Center</h1>
-        <p className="legal-subtitle">Last Updated: December 28, 2024</p>
+        <p className="legal-subtitle">Last Updated: 10.12.2025</p>
       </div>
 
       <div className="legal-content">
@@ -65,7 +65,22 @@ function Safety() {
             <li>Block users who make you uncomfortable</li>
             <li>Report hate speech or harassment immediately</li>
             <li>You are not obligated to disclose your identity to anyone</li>
+            <li><strong>Use Quiet Mode</strong> to hide metrics and reduce social pressure</li>
           </ul>
+
+          <h3>🧘 Quiet Mode for Mental Health</h3>
+          <p>
+            <strong>Quiet Mode is a safety feature designed to reduce social anxiety and pressure:</strong>
+          </p>
+          <ul>
+            <li>Hides all reaction counts and metrics</li>
+            <li>Provides a calmer, less competitive browsing experience</li>
+            <li>Reduces comparison and FOMO (fear of missing out)</li>
+            <li>Helps protect mental health and wellbeing</li>
+          </ul>
+          <p>
+            Enable Quiet Mode in Settings → Privacy → Quiet Mode
+          </p>
 
           <div style={{
             background: 'rgba(255, 165, 0, 0.1)',
@@ -180,6 +195,18 @@ function Safety() {
             <li>Select "Report Message"</li>
             <li>Provide details</li>
           </ul>
+          <p>
+            <strong>To report a Lounge message:</strong>
+          </p>
+          <ul>
+            <li>Click the three-dot menu (⋯) on the message in Lounge</li>
+            <li>Select "Report Message"</li>
+            <li>Choose the reason</li>
+            <li>Submit</li>
+          </ul>
+          <p>
+            <strong>To report a GIF:</strong> Report the post or message containing the inappropriate GIF using the methods above.
+          </p>
         </section>
 
         <section className="legal-section">
@@ -217,7 +244,7 @@ function Safety() {
 
         <div className="legal-footer-note">
           <p className="last-updated">
-            Last Updated: November 26, 2025
+            Last Updated: 10.12.2025
           </p>
         </div>
       </div>

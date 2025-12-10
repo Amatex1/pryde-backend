@@ -20,7 +20,7 @@ function Terms() {
           🏠 Home
         </Link>
         <h1>🌈 Pryde Social — Terms of Service</h1>
-        <p className="legal-subtitle">Last Updated: December 28, 2024</p>
+        <p className="legal-subtitle">Last Updated: 10.12.2025</p>
       </div>
 
       <div className="legal-content">
@@ -48,6 +48,21 @@ function Terms() {
           <p>
             Pryde Social is a hobby-operated LGBTQ+ community platform where users can create profiles, post content, send messages, and interact with other adults.
           </p>
+          <p>
+            <strong>Platform features include:</strong>
+          </p>
+          <ul>
+            <li>Posts with text, images, videos, and GIFs</li>
+            <li>Comments and reactions on posts</li>
+            <li>Direct messages (DMs) between users</li>
+            <li>Lounge (global chat room)</li>
+            <li>Journals, longform posts, and photo essays</li>
+            <li>Community tags and discovery</li>
+            <li>Events system</li>
+            <li>Bookmarks and sharing</li>
+            <li>Privacy controls and Quiet Mode</li>
+            <li>Security features (2FA, passkeys, email verification)</li>
+          </ul>
           <p>
             <strong>We do not guarantee:</strong>
           </p>
@@ -93,7 +108,10 @@ function Terms() {
             <li>It does not include exploitation or illegal behavior</li>
           </ul>
           <p>
-            <strong>Users are responsible for ensuring that all photos, videos, and other media uploaded to Pryde Social involve adults and are consensual.</strong>
+            <strong>Users are responsible for ensuring that all photos, videos, GIFs, and other media uploaded to Pryde Social involve adults and are consensual.</strong>
+          </p>
+          <p>
+            <strong>GIF Content:</strong> When using GIFs from Tenor (powered by Google), you are responsible for ensuring the GIF content is appropriate and complies with these Terms. We are not responsible for third-party GIF content.
           </p>
           <p>
             We reserve the right to remove content that is unsafe or harmful.
@@ -136,7 +154,11 @@ function Terms() {
             <li>Is reported and verified</li>
             <li>Involves copyright infringement</li>
             <li>Harasses or targets individuals</li>
+            <li>Is flagged by automated content moderation (spam detection, toxicity scoring)</li>
           </ul>
+          <p>
+            <strong>Automated Content Moderation:</strong> We use automated systems to detect spam, toxic content, and policy violations. Content flagged by these systems may be automatically hidden or removed.
+          </p>
           <p>
             <strong>Private messages are not monitored unless reported.</strong> We respect your privacy and do not proactively monitor private conversations. However, reported messages may be reviewed for safety and policy enforcement.
           </p>
@@ -178,14 +200,46 @@ function Terms() {
         </section>
 
         <section className="legal-section">
-          <h2>11. Changes to Terms</h2>
+          <h2>11. Third-Party Services</h2>
+          <p>
+            <strong>Pryde Social uses the following third-party services:</strong>
+          </p>
+          <ul>
+            <li><strong>hCaptcha (Intuition Machines, Inc.):</strong> Bot protection during registration. See hCaptcha's <a href="https://www.hcaptcha.com/privacy" target="_blank" rel="noopener noreferrer">Privacy Policy</a> and <a href="https://www.hcaptcha.com/terms" target="_blank" rel="noopener noreferrer">Terms of Service</a>.</li>
+            <li><strong>Tenor (Google):</strong> GIF search and display. When you use GIFs, data is shared with Tenor. See Tenor's <a href="https://tenor.com/legal-privacy" target="_blank" rel="noopener noreferrer">Privacy Policy</a>.</li>
+          </ul>
+          <p>
+            By using these features, you agree to the respective third-party terms and privacy policies.
+          </p>
+        </section>
+
+        <section className="legal-section">
+          <h2>12. Security Features</h2>
+          <p>
+            <strong>We provide the following security features:</strong>
+          </p>
+          <ul>
+            <li><strong>Email Verification:</strong> Required for account activation</li>
+            <li><strong>Two-Factor Authentication (2FA):</strong> Optional enhanced security</li>
+            <li><strong>Passkeys/WebAuthn:</strong> Optional passwordless authentication</li>
+            <li><strong>Account Lockout:</strong> Automatic lockout after 5 failed login attempts (15-minute lock)</li>
+            <li><strong>Rate Limiting:</strong> Protection against brute-force attacks and spam</li>
+            <li><strong>Session Management:</strong> Secure session tracking with device monitoring</li>
+          </ul>
+          <p>
+            You are responsible for enabling and maintaining these security features on your account.
+          </p>
+        </section>
+
+        <section className="legal-section">
+          <h2>13. Changes to Terms</h2>
           <p>
             We may update these Terms at any time. We encourage you to review them periodically.
           </p>
         </section>
 
         <section className="legal-section">
-          <h2>12. Contact</h2>
+          <h2>14. Contact</h2>
           <p>
             For questions or concerns:
           </p>
@@ -196,7 +250,7 @@ function Terms() {
 
         <div className="legal-footer-note">
           <p className="last-updated">
-            Last Updated: November 26, 2025
+            Last Updated: 10.12.2025
           </p>
         </div>
       </div>
