@@ -63,8 +63,12 @@ const postSchema = new mongoose.Schema({
     },
     content: {
       type: String,
-      required: true,
+      required: false,
       maxlength: 1000
+    },
+    gifUrl: {
+      type: String,
+      required: false
     },
     edited: {
       type: Boolean,

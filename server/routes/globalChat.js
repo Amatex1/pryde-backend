@@ -81,18 +81,15 @@ router.get('/messages', authMiddleware, async (req, res) => {
 // POST /api/global-chat/messages - Create a new global message
 router.post('/messages', authMiddleware, messageLimiter, async (req, res) => {
   try {
-    const { text, contentWarning } = req.body;
+    const { text, gifUrl, contentWarning } = req.body;
     const currentUserId = req.userId;
 
-    // Validate text
-    if (!text || typeof text !== 'string') {
-      return res.status(400).json({ message: 'Message text is required' });
+    // Validate that either text or gifUrl is provided
+    if ((!text || typeof text !== 'string' || text.trim().length === 0) && !gifUrl) {
+      return res.status(400).json({ message: 'Message text or GIF is required' });
     }
 
-    const trimmedText = text.trim();
-    if (trimmedText.length === 0) {
-      return res.status(400).json({ message: 'Message cannot be empty' });
-    }
+    const trimmedText = text ? text.trim() : '';
 
     if (trimmedText.length > 2000) {
       return res.status(400).json({ message: 'Message is too long (max 2000 characters)' });
@@ -100,7 +97,7 @@ router.post('/messages', authMiddleware, messageLimiter, async (req, res) => {
 
     // Get user to check if banned/suspended
     const user = await User.findById(currentUserId).select('username displayName profilePhoto avatar isBanned isSuspended');
-    
+
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
@@ -113,19 +110,22 @@ router.post('/messages', authMiddleware, messageLimiter, async (req, res) => {
       return res.status(403).json({ message: 'Your account is suspended and cannot send messages' });
     }
 
-    // Moderate content (check for toxicity, spam, etc.)
-    const moderationResult = await moderateContent(trimmedText);
-    if (moderationResult.blocked) {
-      return res.status(400).json({ 
-        message: 'Message contains inappropriate content',
-        reason: moderationResult.reason 
-      });
+    // Moderate content (check for toxicity, spam, etc.) - only if text is provided
+    if (trimmedText) {
+      const moderationResult = await moderateContent(trimmedText);
+      if (moderationResult.blocked) {
+        return res.status(400).json({
+          message: 'Message contains inappropriate content',
+          reason: moderationResult.reason
+        });
+      }
     }
 
     // Create new global message
     const newMessage = new GlobalMessage({
       senderId: currentUserId,
-      text: trimmedText,
+      text: trimmedText || '',
+      gifUrl: gifUrl || null,
       contentWarning: contentWarning?.trim() || null
     });
 
@@ -138,6 +138,7 @@ router.post('/messages', authMiddleware, messageLimiter, async (req, res) => {
     const responseMessage = {
       _id: newMessage._id,
       text: newMessage.text,
+      gifUrl: newMessage.gifUrl,
       contentWarning: newMessage.contentWarning,
       createdAt: newMessage.createdAt,
       sender: {

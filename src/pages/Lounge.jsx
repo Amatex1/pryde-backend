@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
+import GifPicker from '../components/GifPicker';
 import api from '../utils/api';
 import { getImageUrl } from '../utils/imageUrl';
 import { getSocket } from '../utils/socket';
@@ -19,6 +20,8 @@ function Lounge() {
   const [error, setError] = useState('');
   const [hasMore, setHasMore] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [showGifPicker, setShowGifPicker] = useState(false);
+  const [selectedGif, setSelectedGif] = useState(null);
   const messagesEndRef = useRef(null);
   const messagesContainerRef = useRef(null);
   const socketRef = useRef(null);
@@ -148,7 +151,7 @@ function Lounge() {
   const handleSendMessage = async (e) => {
     e.preventDefault();
 
-    if (!newMessage.trim()) return;
+    if (!newMessage.trim() && !selectedGif) return;
 
     if (newMessage.length > 2000) {
       setError('Message is too long (max 2000 characters)');
@@ -163,13 +166,15 @@ function Lounge() {
       // Send via Socket.IO for real-time delivery
       if (socketRef.current) {
         socketRef.current.emit('global_message:send', {
-          text: newMessage.trim(),
+          text: newMessage.trim() || '',
+          gifUrl: selectedGif || null,
           contentWarning: contentWarning.trim() || null
         });
       }
 
       // Clear input
       setNewMessage('');
+      setSelectedGif(null);
       setContentWarning('');
       setShowCWInput(false);
     } catch (error) {
@@ -311,9 +316,17 @@ function Lounge() {
                           </div>
                         )}
 
-                        <div className="lounge-message-text">
-                          {msg.text}
-                        </div>
+                        {msg.text && (
+                          <div className="lounge-message-text">
+                            {msg.text}
+                          </div>
+                        )}
+
+                        {msg.gifUrl && (
+                          <div className="lounge-message-gif">
+                            <img src={msg.gifUrl} alt="GIF" />
+                          </div>
+                        )}
 
                         <div className="lounge-message-actions">
                           {msg.sender?.id !== currentUser?._id && (
@@ -372,6 +385,19 @@ function Lounge() {
             </div>
           )}
 
+          {selectedGif && (
+            <div className="lounge-gif-preview">
+              <img src={selectedGif} alt="Selected GIF" />
+              <button
+                type="button"
+                className="lounge-gif-remove"
+                onClick={() => setSelectedGif(null)}
+              >
+                ✕
+              </button>
+            </div>
+          )}
+
           <div className="lounge-input-row">
             <button
               type="button"
@@ -382,9 +408,18 @@ function Lounge() {
               CW
             </button>
 
+            <button
+              type="button"
+              className="lounge-gif-btn"
+              onClick={() => setShowGifPicker(!showGifPicker)}
+              title="Add GIF"
+            >
+              GIF
+            </button>
+
             <input
               type="text"
-              placeholder="Type a message..."
+              placeholder={selectedGif ? "Add a caption (optional)..." : "Type a message..."}
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
               maxLength={2000}
@@ -395,11 +430,21 @@ function Lounge() {
             <button
               type="submit"
               className="lounge-send-btn"
-              disabled={!newMessage.trim() || sending}
+              disabled={(!newMessage.trim() && !selectedGif) || sending}
             >
               {sending ? 'Sending...' : 'Send'}
             </button>
           </div>
+
+          {showGifPicker && (
+            <GifPicker
+              onGifSelect={(gifUrl) => {
+                setSelectedGif(gifUrl);
+                setShowGifPicker(false);
+              }}
+              onClose={() => setShowGifPicker(false)}
+            />
+          )}
 
           {newMessage.length > 1800 && (
             <div className="lounge-char-count">

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import EmojiPicker from '../components/EmojiPicker';
+import GifPicker from '../components/GifPicker';
 import CustomModal from '../components/CustomModal';
 import { useModal } from '../hooks/useModal';
 import api from '../utils/api';
@@ -69,6 +70,8 @@ function Messages() {
   const [quietMode, setQuietMode] = useState(document.documentElement.getAttribute('data-quiet-mode') === 'true');
   const [uploadingFile, setUploadingFile] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
+  const [showGifPicker, setShowGifPicker] = useState(false);
+  const [selectedGif, setSelectedGif] = useState(null);
   const messagesEndRef = useRef(null);
   const typingTimeoutRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -445,12 +448,15 @@ function Messages() {
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
-    if ((!message.trim() && !selectedFile) || !selectedChat) return;
+    if ((!message.trim() && !selectedFile && !selectedGif) || !selectedChat) return;
+
+    // Use GIF URL if selected, otherwise use file attachment
+    const attachmentUrl = selectedGif || selectedFile?.url;
 
     console.log('📤 Sending message:', {
       recipientId: selectedChat,
       content: message,
-      attachment: selectedFile?.url,
+      attachment: attachmentUrl,
       chatType: selectedChatType,
       socketConnected: isSocketConnected()
     });
@@ -461,7 +467,7 @@ function Messages() {
         const response = await api.post('/messages', {
           groupChatId: selectedChat,
           content: message,
-          attachment: selectedFile?.url
+          attachment: attachmentUrl
         });
         setMessages((prev) => [...prev, response.data]);
       } else {
@@ -477,11 +483,12 @@ function Messages() {
         socketSendMessage({
           recipientId: selectedChat,
           content: message,
-          attachment: selectedFile?.url
+          attachment: attachmentUrl
         });
       }
       setMessage('');
       setSelectedFile(null);
+      setSelectedGif(null);
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
@@ -1384,6 +1391,20 @@ function Messages() {
                       </button>
                     </div>
                   )}
+                  {selectedGif && (
+                    <div className="file-preview">
+                      <div className="file-preview-content">
+                        <img src={selectedGif} alt="Selected GIF" className="file-preview-image" />
+                      </div>
+                      <button
+                        type="button"
+                        className="btn-cancel-reply"
+                        onClick={() => setSelectedGif(null)}
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  )}
                   <div className="chat-input-wrapper">
                     <input
                       type="file"
@@ -1396,22 +1417,41 @@ function Messages() {
                       type="button"
                       className="btn-attachment"
                       onClick={() => fileInputRef.current?.click()}
-                      disabled={uploadingFile}
+                      disabled={uploadingFile || selectedGif}
                       title="Attach file"
                     >
                       {uploadingFile ? '⏳' : '📎'}
+                    </button>
+                    <button
+                      type="button"
+                      className="btn-gif"
+                      onClick={() => setShowGifPicker(!showGifPicker)}
+                      disabled={selectedFile}
+                      title="Add GIF"
+                    >
+                      GIF
                     </button>
                     <input
                       type="text"
                       value={message}
                       onChange={handleTyping}
-                      placeholder={replyingTo ? "Type your reply..." : "Type a message..."}
+                      placeholder={replyingTo ? "Type your reply..." : (selectedGif || selectedFile ? "Add a caption (optional)..." : "Type a message...")}
                       className="chat-input glossy"
                     />
                     <button type="submit" className="btn-send glossy-gold" disabled={uploadingFile}>
                       Send
                     </button>
                   </div>
+                  {showGifPicker && (
+                    <GifPicker
+                      onGifSelect={(gifUrl) => {
+                        setSelectedGif(gifUrl);
+                        setSelectedFile(null);
+                        setShowGifPicker(false);
+                      }}
+                      onClose={() => setShowGifPicker(false)}
+                    />
+                  )}
                 </form>
               </>
             ) : (

@@ -768,10 +768,11 @@ router.delete('/:id/share', auth, async (req, res) => {
 // @access  Private
 router.post('/:id/comment', auth, commentLimiter, sanitizeFields(['content']), checkMuted, moderateContent, async (req, res) => {
   try {
-    const { content } = req.body;
+    const { content, gifUrl } = req.body;
 
-    if (!content || content.trim() === '') {
-      return res.status(400).json({ message: 'Comment content is required' });
+    // Either content or gifUrl must be provided
+    if ((!content || content.trim() === '') && !gifUrl) {
+      return res.status(400).json({ message: 'Comment content or GIF is required' });
     }
 
     const post = await Post.findById(req.params.id);
@@ -784,7 +785,8 @@ router.post('/:id/comment', auth, commentLimiter, sanitizeFields(['content']), c
 
     const comment = {
       user: userId,
-      content,
+      content: content || '',
+      gifUrl: gifUrl || null,
       createdAt: new Date()
     };
 
@@ -861,10 +863,11 @@ router.post('/:id/comment', auth, commentLimiter, sanitizeFields(['content']), c
 // @access  Private
 router.post('/:id/comment/:commentId/reply', auth, commentLimiter, checkMuted, moderateContent, async (req, res) => {
   try {
-    const { content } = req.body;
+    const { content, gifUrl } = req.body;
 
-    if (!content || content.trim() === '') {
-      return res.status(400).json({ message: 'Reply content is required' });
+    // Either content or gifUrl must be provided
+    if ((!content || content.trim() === '') && !gifUrl) {
+      return res.status(400).json({ message: 'Reply content or GIF is required' });
     }
 
     const post = await Post.findById(req.params.id);
@@ -883,7 +886,8 @@ router.post('/:id/comment/:commentId/reply', auth, commentLimiter, checkMuted, m
 
     const reply = {
       user: userId,
-      content,
+      content: content || '',
+      gifUrl: gifUrl || null,
       parentComment: req.params.commentId,
       createdAt: new Date()
     };

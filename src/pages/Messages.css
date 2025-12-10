@@ -941,6 +941,35 @@
   color: white;
 }
 
+.btn-attachment:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-gif {
+  padding: 0.5rem 0.875rem;
+  border-radius: 12px;
+  border: 2px solid var(--border-subtle);
+  background: var(--bg);
+  color: var(--color-primary);
+  font-size: 0.875rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.btn-gif:hover:not(:disabled) {
+  background: var(--bg-hover);
+  border-color: var(--color-primary);
+  transform: translateY(-1px);
+}
+
+.btn-gif:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .chat-input {
   flex: 1;
   padding: 0.875rem 1.25rem;

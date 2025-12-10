@@ -9,9 +9,13 @@ const globalMessageSchema = new mongoose.Schema({
   },
   text: {
     type: String,
-    required: true,
+    required: false,
     maxlength: 2000,
     trim: true
+  },
+  gifUrl: {
+    type: String,
+    required: false
   },
   contentWarning: {
     type: String,

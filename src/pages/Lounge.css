@@ -327,6 +327,74 @@
   transform: translateY(-2px);
 }
 
+.lounge-gif-btn {
+  padding: 0.75rem 1rem;
+  background: var(--bg);
+  border: 2px solid var(--border-subtle);
+  border-radius: 12px;
+  color: var(--color-primary);
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.875rem;
+}
+
+.lounge-gif-btn:hover {
+  background: var(--bg-hover);
+  border-color: var(--color-primary);
+  transform: translateY(-2px);
+}
+
+.lounge-gif-preview {
+  position: relative;
+  max-width: 300px;
+  margin-bottom: 0.75rem;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.lounge-gif-preview img {
+  width: 100%;
+  display: block;
+  border-radius: 12px;
+}
+
+.lounge-gif-remove {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  font-size: 1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.lounge-gif-remove:hover {
+  background: rgba(0, 0, 0, 0.9);
+  transform: scale(1.1);
+}
+
+.lounge-message-gif {
+  margin-top: 0.5rem;
+  max-width: 300px;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.lounge-message-gif img {
+  width: 100%;
+  display: block;
+  border-radius: 12px;
+}
+
 .lounge-input {
   flex: 1;
   padding: 0.875rem 1rem;

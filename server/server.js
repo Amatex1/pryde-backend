@@ -497,19 +497,15 @@ io.on('connection', (socket) => {
   // Handle global message send
   socket.on('global_message:send', async (data) => {
     try {
-      const { text, contentWarning } = data;
+      const { text, gifUrl, contentWarning } = data;
 
-      // Validate text
-      if (!text || typeof text !== 'string') {
-        socket.emit('error', { message: 'Message text is required' });
+      // Validate that either text or gifUrl is provided
+      if ((!text || typeof text !== 'string' || text.trim().length === 0) && !gifUrl) {
+        socket.emit('error', { message: 'Message text or GIF is required' });
         return;
       }
 
-      const trimmedText = text.trim();
-      if (trimmedText.length === 0) {
-        socket.emit('error', { message: 'Message cannot be empty' });
-        return;
-      }
+      const trimmedText = text ? text.trim() : '';
 
       if (trimmedText.length > 2000) {
         socket.emit('error', { message: 'Message is too long (max 2000 characters)' });
@@ -540,7 +536,8 @@ io.on('connection', (socket) => {
       // Create new global message
       const newMessage = new GlobalMessage({
         senderId: userId,
-        text: trimmedText,
+        text: trimmedText || '',
+        gifUrl: gifUrl || null,
         contentWarning: contentWarning?.trim() || null
       });
 
@@ -550,6 +547,7 @@ io.on('connection', (socket) => {
       const messagePayload = {
         _id: newMessage._id,
         text: newMessage.text,
+        gifUrl: newMessage.gifUrl,
         contentWarning: newMessage.contentWarning,
         createdAt: newMessage.createdAt,
         sender: {

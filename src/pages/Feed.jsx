@@ -10,6 +10,7 @@ import ReactionDetailsModal from '../components/ReactionDetailsModal';
 import FormattedText from '../components/FormattedText';
 import PostSkeleton from '../components/PostSkeleton';
 import OptimizedImage from '../components/OptimizedImage';
+import GifPicker from '../components/GifPicker';
 import { useModal } from '../hooks/useModal';
 import api from '../utils/api';
 import { getCurrentUser } from '../utils/auth';
@@ -32,10 +33,13 @@ function Feed() {
   const [photoViewerImage, setPhotoViewerImage] = useState(null);
   const [showCommentBox, setShowCommentBox] = useState({});
   const [commentText, setCommentText] = useState({});
+  const [commentGif, setCommentGif] = useState({});
+  const [showGifPicker, setShowGifPicker] = useState(null);
   const [editingCommentId, setEditingCommentId] = useState(null);
   const [editCommentText, setEditCommentText] = useState('');
   const [replyingToComment, setReplyingToComment] = useState(null);
   const [replyText, setReplyText] = useState('');
+  const [replyGif, setReplyGif] = useState(null);
   const [openDropdownId, setOpenDropdownId] = useState(null);
   const [editingPostId, setEditingPostId] = useState(null);
   const [editPostText, setEditPostText] = useState('');
@@ -491,15 +495,22 @@ function Feed() {
   const handleCommentSubmit = async (postId, e) => {
     e.preventDefault();
     const content = commentText[postId];
-    if (!content || !content.trim()) return;
+    const gifUrl = commentGif[postId];
+
+    // Either content or GIF must be provided
+    if ((!content || !content.trim()) && !gifUrl) return;
 
     try {
       // Convert emoji shortcuts before posting
-      const contentWithEmojis = convertEmojiShortcuts(content);
+      const contentWithEmojis = content ? convertEmojiShortcuts(content) : '';
 
-      const response = await api.post(`/posts/${postId}/comment`, { content: contentWithEmojis });
+      const response = await api.post(`/posts/${postId}/comment`, {
+        content: contentWithEmojis,
+        gifUrl: gifUrl || null
+      });
       setPosts(posts.map(p => p._id === postId ? response.data : p));
       setCommentText(prev => ({ ...prev, [postId]: '' }));
+      setCommentGif(prev => ({ ...prev, [postId]: null }));
     } catch (error) {
       console.error('Failed to comment:', error);
       showAlert('Failed to add comment. Please try again.', 'Comment Failed');
@@ -614,17 +625,24 @@ function Feed() {
 
   const handleSubmitReply = async (e) => {
     e.preventDefault();
-    if (!replyText.trim() || !replyingToComment) return;
+
+    // Either text or GIF must be provided
+    if ((!replyText || !replyText.trim()) && !replyGif) return;
+    if (!replyingToComment) return;
 
     try {
       const { postId, commentId } = replyingToComment;
       // Convert emoji shortcuts before posting
-      const contentWithEmojis = convertEmojiShortcuts(replyText);
+      const contentWithEmojis = replyText ? convertEmojiShortcuts(replyText) : '';
 
-      const response = await api.post(`/posts/${postId}/comment/${commentId}/reply`, { content: contentWithEmojis });
+      const response = await api.post(`/posts/${postId}/comment/${commentId}/reply`, {
+        content: contentWithEmojis,
+        gifUrl: replyGif || null
+      });
       setPosts(posts.map(p => p._id === postId ? response.data : p));
       setReplyingToComment(null);
       setReplyText('');
+      setReplyGif(null);
     } catch (error) {
       console.error('Failed to reply to comment:', error);
       showAlert('Failed to reply. Please try again.', 'Reply Failed');
@@ -634,6 +652,7 @@ function Feed() {
   const handleCancelReply = () => {
     setReplyingToComment(null);
     setReplyText('');
+    setReplyGif(null);
   };
 
   const handleShare = (post) => {
@@ -1265,7 +1284,12 @@ function Feed() {
                                       </div>
 
                                       <div className="comment-text">
-                                        <FormattedText text={comment.content} />
+                                        {comment.content && <FormattedText text={comment.content} />}
+                                        {comment.gifUrl && (
+                                          <div className="comment-gif">
+                                            <img src={comment.gifUrl} alt="GIF" />
+                                          </div>
+                                        )}
                                         {comment.edited && <span className="edited-indicator"> (edited)</span>}
                                       </div>
 
@@ -1672,17 +1696,46 @@ function Feed() {
                             type="text"
                             value={commentText[post._id] || ''}
                             onChange={(e) => handleCommentChange(post._id, e.target.value)}
-                            placeholder="Write a comment..."
+                            placeholder={commentGif[post._id] ? "Add a caption (optional)..." : "Write a comment..."}
                             className="comment-input glossy"
                           />
                           <button
+                            type="button"
+                            className="btn-gif"
+                            onClick={() => setShowGifPicker(showGifPicker === post._id ? null : post._id)}
+                            title="Add GIF"
+                          >
+                            GIF
+                          </button>
+                          <button
                             type="submit"
                             className="comment-submit-btn"
-                            disabled={!commentText[post._id]?.trim()}
+                            disabled={!commentText[post._id]?.trim() && !commentGif[post._id]}
                           >
                             ➤
                           </button>
                         </div>
+                        {commentGif[post._id] && (
+                          <div className="comment-gif-preview">
+                            <img src={commentGif[post._id]} alt="Selected GIF" />
+                            <button
+                              type="button"
+                              className="btn-remove-gif"
+                              onClick={() => setCommentGif(prev => ({ ...prev, [post._id]: null }))}
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        )}
+                        {showGifPicker === post._id && (
+                          <GifPicker
+                            onGifSelect={(gifUrl) => {
+                              setCommentGif(prev => ({ ...prev, [post._id]: gifUrl }));
+                              setShowGifPicker(null);
+                            }}
+                            onClose={() => setShowGifPicker(null)}
+                          />
+                        )}
                       </form>
                     )}
                   </div>
