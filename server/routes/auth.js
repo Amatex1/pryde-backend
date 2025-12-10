@@ -20,6 +20,52 @@ import { logEmailVerification, logPasswordChange } from '../utils/securityLogger
 import { loginLimiter, signupLimiter, passwordResetLimiter } from '../middleware/rateLimiter.js';
 import { validateSignup, validateLogin } from '../middleware/validation.js';
 
+// @route   GET /api/auth/check-username/:username
+// @desc    Check if username is available
+// @access  Public
+router.get('/check-username/:username', async (req, res) => {
+  try {
+    const { username } = req.params;
+
+    // Basic validation
+    if (!username || username.length < 3 || username.length > 30) {
+      return res.json({
+        available: false,
+        message: 'Username must be between 3 and 30 characters'
+      });
+    }
+
+    // Check if username contains only valid characters
+    if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+      return res.json({
+        available: false,
+        message: 'Username can only contain letters, numbers, and underscores'
+      });
+    }
+
+    // Check if username exists
+    const existingUser = await User.findOne({ username: username.toLowerCase() });
+
+    if (existingUser) {
+      return res.json({
+        available: false,
+        message: 'Username is already taken'
+      });
+    }
+
+    res.json({
+      available: true,
+      message: 'Username is available!'
+    });
+  } catch (error) {
+    console.error('Check username error:', error);
+    res.status(500).json({
+      available: false,
+      message: 'Error checking username availability'
+    });
+  }
+});
+
 // @route   POST /api/auth/signup
 // @desc    Register new user
 // @access  Public
@@ -38,8 +84,36 @@ router.post('/signup', signupLimiter, validateSignup, async (req, res) => {
       customGender,
       relationshipStatus,
       birthday,
-      isAlly // PHASE 6: Ally system
+      isAlly, // PHASE 6: Ally system
+      captchaToken // hCaptcha token
     } = req.body;
+
+    // Verify hCaptcha token (only in production or if HCAPTCHA_SECRET is set)
+    if (process.env.HCAPTCHA_SECRET && captchaToken) {
+      try {
+        const verifyUrl = 'https://hcaptcha.com/siteverify';
+        const verifyResponse = await fetch(verifyUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded'
+          },
+          body: `secret=${process.env.HCAPTCHA_SECRET}&response=${captchaToken}`
+        });
+
+        const verifyData = await verifyResponse.json();
+
+        if (!verifyData.success) {
+          return res.status(400).json({
+            message: 'CAPTCHA verification failed. Please try again.',
+            reason: 'captcha_failed'
+          });
+        }
+      } catch (captchaError) {
+        console.error('CAPTCHA verification error:', captchaError);
+        // Don't block signup if CAPTCHA service is down, but log it
+        console.warn('CAPTCHA verification failed, allowing signup to proceed');
+      }
+    }
 
     // Validation
     if (!username || !email || !password || !birthday) {

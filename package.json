@@ -13,6 +13,7 @@
     "optimize-images": "node scripts/optimize-images.js"
   },
   "dependencies": {
+    "@hcaptcha/react-hcaptcha": "^1.17.1",
     "@simplewebauthn/browser": "^13.2.2",
     "compression": "^1.8.1",
     "cors": "^2.8.5",

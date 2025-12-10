@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import HCaptcha from '@hcaptcha/react-hcaptcha';
 import api from '../utils/api';
 import { setAuthToken, setCurrentUser } from '../utils/auth';
 import PasskeySetup from '../components/PasskeySetup';
@@ -21,7 +22,13 @@ function Register({ setIsAuth }) {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPasskeySetup, setShowPasskeySetup] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState('');
+  const [usernameAvailable, setUsernameAvailable] = useState(null);
+  const [checkingUsername, setCheckingUsername] = useState(false);
+  const [passwordStrength, setPasswordStrength] = useState({ score: 0, label: '', color: '' });
   const navigate = useNavigate();
+  const captchaRef = useRef(null);
+  const usernameCheckTimeout = useRef(null);
 
   // Apply user's dark mode preference
   useEffect(() => {
@@ -33,17 +40,96 @@ function Register({ setIsAuth }) {
     }
   }, []);
 
+  // Password strength calculator
+  const calculatePasswordStrength = (password) => {
+    if (!password) {
+      return { score: 0, label: '', color: '' };
+    }
+
+    let score = 0;
+
+    // Length check
+    if (password.length >= 8) score += 1;
+    if (password.length >= 12) score += 1;
+    if (password.length >= 16) score += 1;
+
+    // Character variety
+    if (/[a-z]/.test(password)) score += 1;
+    if (/[A-Z]/.test(password)) score += 1;
+    if (/[0-9]/.test(password)) score += 1;
+    if (/[@$!%*?&#^()_+\-=\[\]{};':"\\|,.<>\/]/.test(password)) score += 1;
+
+    // Determine label and color
+    if (score <= 2) {
+      return { score, label: 'Weak', color: '#ff6b6b' };
+    } else if (score <= 4) {
+      return { score, label: 'Medium', color: '#ffa500' };
+    } else if (score <= 6) {
+      return { score, label: 'Strong', color: '#4caf50' };
+    } else {
+      return { score, label: 'Very Strong', color: '#0984E3' };
+    }
+  };
+
+  // Username availability checker with debouncing
+  const checkUsernameAvailability = async (username) => {
+    if (!username || username.length < 3) {
+      setUsernameAvailable(null);
+      return;
+    }
+
+    setCheckingUsername(true);
+
+    try {
+      const response = await api.get(`/auth/check-username/${username}`);
+      setUsernameAvailable(response.data);
+    } catch (error) {
+      console.error('Username check error:', error);
+      setUsernameAvailable({ available: false, message: 'Error checking username' });
+    } finally {
+      setCheckingUsername(false);
+    }
+  };
+
   const handleChange = (e) => {
     const value = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
     setFormData({
       ...formData,
       [e.target.name]: value
     });
+
+    // Check username availability with debouncing
+    if (e.target.name === 'username') {
+      if (usernameCheckTimeout.current) {
+        clearTimeout(usernameCheckTimeout.current);
+      }
+
+      usernameCheckTimeout.current = setTimeout(() => {
+        checkUsernameAvailability(value);
+      }, 500); // Wait 500ms after user stops typing
+    }
+
+    // Calculate password strength
+    if (e.target.name === 'password') {
+      setPasswordStrength(calculatePasswordStrength(value));
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+
+    // Validate CAPTCHA
+    if (!captchaToken) {
+      setError('Please complete the CAPTCHA verification');
+      return;
+    }
+
+    // Check username availability
+    if (usernameAvailable && !usernameAvailable.available) {
+      setError(usernameAvailable.message || 'Username is not available');
+      return;
+    }
 
     // Validate birthday dropdowns are all filled
     if (!formData.birthMonth || !formData.birthDay || !formData.birthYear) {
@@ -97,17 +183,20 @@ function Register({ setIsAuth }) {
       setError('Please enter a valid email address');
       return;
     }
-    
+
     setLoading(true);
 
     try {
-      console.log('Attempting registration with:', { 
+      console.log('Attempting registration with:', {
         username: formData.username,
         email: formData.email,
         displayName: formData.displayName
       });
 
-      const response = await api.post('/auth/signup', formData);
+      const response = await api.post('/auth/signup', {
+        ...formData,
+        captchaToken
+      });
       
       console.log('Registration successful:', response.data);
       
@@ -125,13 +214,27 @@ function Register({ setIsAuth }) {
         fullError: err
       });
 
-      const errorMessage = err.response?.data?.message 
-        || err.message 
+      const errorMessage = err.response?.data?.message
+        || err.message
         || 'Registration failed. Please try again.';
       setError(errorMessage);
+
+      // Reset CAPTCHA on error
+      if (captchaRef.current) {
+        captchaRef.current.resetCaptcha();
+        setCaptchaToken('');
+      }
     } finally {
       setLoading(false);
     }
+  };
+
+  const onCaptchaVerify = (token) => {
+    setCaptchaToken(token);
+  };
+
+  const onCaptchaExpire = () => {
+    setCaptchaToken('');
   };
 
   return (
@@ -182,6 +285,25 @@ function Register({ setIsAuth }) {
               placeholder="Choose a username"
               autoComplete="username"
             />
+            {formData.username.length >= 3 && (
+              <div className="username-feedback" style={{
+                marginTop: '0.5rem',
+                fontSize: '0.875rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem'
+              }}>
+                {checkingUsername ? (
+                  <span style={{ color: 'var(--text-muted)' }}>⏳ Checking availability...</span>
+                ) : usernameAvailable ? (
+                  usernameAvailable.available ? (
+                    <span style={{ color: '#4caf50', fontWeight: '600' }}>✓ {usernameAvailable.message}</span>
+                  ) : (
+                    <span style={{ color: '#ff6b6b', fontWeight: '600' }}>✗ {usernameAvailable.message}</span>
+                  )
+                ) : null}
+              </div>
+            )}
           </div>
 
           <div className="form-group">
@@ -227,7 +349,43 @@ function Register({ setIsAuth }) {
               placeholder="Create a password (min 8 characters)"
               autoComplete="new-password"
             />
-            <small style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginTop: '0.25rem', display: 'block' }}>
+            {formData.password && (
+              <div className="password-strength" style={{ marginTop: '0.75rem' }}>
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginBottom: '0.5rem'
+                }}>
+                  <span style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>
+                    Password Strength:
+                  </span>
+                  <span style={{
+                    fontSize: '0.875rem',
+                    fontWeight: '600',
+                    color: passwordStrength.color
+                  }}>
+                    {passwordStrength.label}
+                  </span>
+                </div>
+                <div style={{
+                  width: '100%',
+                  height: '6px',
+                  background: 'var(--bg-subtle)',
+                  borderRadius: '3px',
+                  overflow: 'hidden'
+                }}>
+                  <div style={{
+                    width: `${(passwordStrength.score / 7) * 100}%`,
+                    height: '100%',
+                    background: passwordStrength.color,
+                    transition: 'all 0.3s ease',
+                    borderRadius: '3px'
+                  }} />
+                </div>
+              </div>
+            )}
+            <small style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginTop: '0.5rem', display: 'block' }}>
               Must contain at least one uppercase letter, one lowercase letter, and one number
             </small>
           </div>
@@ -366,8 +524,28 @@ function Register({ setIsAuth }) {
             </label>
           </div>
 
-          <button type="submit" disabled={loading || !formData.birthMonth || !formData.birthDay || !formData.birthYear || !formData.termsAccepted} className="btn-primary glossy-gold">
-            {loading ? 'Join Pryde' : 'Create Account'}
+          {/* hCaptcha */}
+          <div className="form-group" style={{
+            display: 'flex',
+            justifyContent: 'center',
+            marginTop: '1.5rem',
+            marginBottom: '1rem'
+          }}>
+            <HCaptcha
+              ref={captchaRef}
+              sitekey={import.meta.env.VITE_HCAPTCHA_SITE_KEY || '10000000-ffff-ffff-ffff-000000000001'}
+              onVerify={onCaptchaVerify}
+              onExpire={onCaptchaExpire}
+              theme={document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light'}
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading || !formData.birthMonth || !formData.birthDay || !formData.birthYear || !formData.termsAccepted || !captchaToken}
+            className="btn-primary glossy-gold"
+          >
+            {loading ? 'Creating Account...' : 'Create Account'}
           </button>
         </form>
         )}
