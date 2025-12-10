@@ -320,6 +320,20 @@
   background: var(--soft-lavender);
 }
 
+/* Fix for light + quiet mode - ensure text is readable */
+[data-theme="light"][data-quiet-mode="true"] .checkbox-label {
+  background: #F3F4F6;
+  color: #374151;
+}
+
+[data-theme="light"][data-quiet-mode="true"] .checkbox-label:hover {
+  background: #E5E7EB;
+}
+
+[data-theme="light"][data-quiet-mode="true"] .checkbox-label span {
+  color: #374151;
+}
+
 .checkbox-label input[type="checkbox"] {
   width: 18px;
   height: 18px;
@@ -346,6 +360,20 @@
 
 .checkbox-label-compact:hover {
   background: var(--soft-lavender);
+}
+
+/* Fix for light + quiet mode - ensure text is readable */
+[data-theme="light"][data-quiet-mode="true"] .checkbox-label-compact {
+  background: #F3F4F6;
+  color: #374151;
+}
+
+[data-theme="light"][data-quiet-mode="true"] .checkbox-label-compact:hover {
+  background: #E5E7EB;
+}
+
+[data-theme="light"][data-quiet-mode="true"] .checkbox-label-compact span {
+  color: #374151;
 }
 
 .checkbox-label-compact input[type="checkbox"] {

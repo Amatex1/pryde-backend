@@ -78,9 +78,17 @@ const userSchema = new mongoose.Schema({
     type: String,
     default: ''
   },
+  profilePhotoPosition: {
+    x: { type: Number, default: 50 },
+    y: { type: Number, default: 50 }
+  },
   coverPhoto: {
     type: String,
     default: ''
+  },
+  coverPhotoPosition: {
+    x: { type: Number, default: 50 },
+    y: { type: Number, default: 50 }
   },
   location: {
     type: String,

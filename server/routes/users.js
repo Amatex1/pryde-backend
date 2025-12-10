@@ -558,6 +558,46 @@ router.put('/profile', auth, async (req, res) => {
   }
 });
 
+// @route   PUT /api/users/photo-position
+// @desc    Update profile or cover photo position
+// @access  Private
+router.put('/photo-position', auth, async (req, res) => {
+  try {
+    const { type, x, y } = req.body;
+
+    if (!type || (type !== 'profile' && type !== 'cover')) {
+      return res.status(400).json({ message: 'Invalid photo type' });
+    }
+
+    if (typeof x !== 'number' || typeof y !== 'number') {
+      return res.status(400).json({ message: 'Invalid position values' });
+    }
+
+    const user = await User.findById(req.userId);
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Update position
+    if (type === 'profile') {
+      user.profilePhotoPosition = { x, y };
+    } else {
+      user.coverPhotoPosition = { x, y };
+    }
+
+    await user.save();
+
+    res.json({
+      message: 'Photo position updated',
+      position: type === 'profile' ? user.profilePhotoPosition : user.coverPhotoPosition
+    });
+  } catch (error) {
+    console.error('Update photo position error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // @route   PATCH /api/users/me/settings
 // @desc    Update user settings (PHASE 2: Quiet Mode)
 // @access  Private

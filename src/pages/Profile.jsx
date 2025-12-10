@@ -907,11 +907,17 @@ function Profile() {
                 ✏️ Edit Profile
               </button>
             )}
+          </div>
 
-            {/* Photo Upload Buttons - Overlaid on cover photo */}
+          {uploadMessage && (
+            <div className="upload-message-banner">{uploadMessage}</div>
+          )}
+
+          <div className="profile-info">
+            {/* Photo Upload Buttons - Top right under cover photo */}
             {isOwnProfile && (
-              <div className="cover-upload-buttons">
-                <label htmlFor="profile-photo-upload" className="btn-cover-upload">
+              <div className="profile-upload-buttons">
+                <label htmlFor="profile-photo-upload" className="btn-profile-upload">
                   📷 Update Profile Photo
                   <input
                     type="file"
@@ -921,7 +927,7 @@ function Profile() {
                     style={{ display: 'none' }}
                   />
                 </label>
-                <label htmlFor="cover-photo-upload" className="btn-cover-upload">
+                <label htmlFor="cover-photo-upload" className="btn-profile-upload">
                   🖼️ Update Cover Photo
                   <input
                     type="file"
@@ -933,13 +939,6 @@ function Profile() {
                 </label>
               </div>
             )}
-          </div>
-
-          {uploadMessage && (
-            <div className="upload-message-banner">{uploadMessage}</div>
-          )}
-
-          <div className="profile-info">
             <div className="profile-avatar">
               {user.profilePhoto ? (
                 <OptimizedImage
