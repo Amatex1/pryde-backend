@@ -68,6 +68,7 @@
 .profile-info {
   padding: 0 var(--space-6) var(--space-6);
   position: relative;
+  padding-top: 80px; /* Space for upload buttons when present */
 }
 
 .profile-avatar {
@@ -86,6 +87,8 @@
   margin-top: -75px;
   margin-bottom: var(--space-4);
   box-shadow: var(--shadow-medium);
+  position: relative;
+  z-index: 2; /* Above upload buttons */
 }
 
 .profile-avatar img {
@@ -597,15 +600,19 @@
   transform: translateY(-2px);
 }
 
-/* Upload Buttons on Profile - Now positioned under cover photo */
+/* Upload Buttons on Profile - Positioned absolutely to not affect avatar */
 .profile-upload-section {
   display: flex;
   gap: 1rem;
-  margin: 1rem 1.5rem;
   padding: 1rem;
   background: var(--card-surface);
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  position: absolute;
+  top: 0;
+  left: 1.5rem;
+  right: 1.5rem;
+  z-index: 1;
 }
 
 .btn-upload {
