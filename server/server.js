@@ -74,6 +74,9 @@ import Notification from './models/Notification.js';
 import User from './models/User.js';
 import Message from './models/Message.js';
 
+// Import push notification utility
+import { sendPushNotification } from './routes/pushNotifications.js';
+
 const app = express();
 const server = http.createServer(app);
 
@@ -429,6 +432,24 @@ io.on('connection', (socket) => {
       if (recipientSocketId) {
         io.to(recipientSocketId).emit('new_notification', notification);
       }
+
+      // Send push notification
+      const sender = await User.findById(userId).select('username displayName');
+      const senderName = sender.displayName || sender.username;
+      const messagePreview = data.content.length > 50
+        ? data.content.substring(0, 50) + '...'
+        : data.content;
+
+      sendPushNotification(data.recipientId, {
+        title: `💬 ${senderName}`,
+        body: messagePreview,
+        data: {
+          type: 'message',
+          senderId: userId,
+          url: `/messages?user=${userId}`
+        },
+        tag: `message-${userId}`
+      }).catch(err => console.error('Push notification error:', err));
     } catch (error) {
       console.error('❌ Error saving message:', error);
       socket.emit('error', { message: 'Error sending message' });

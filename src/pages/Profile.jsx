@@ -913,7 +913,10 @@ function Profile() {
               <h1 className="profile-name text-shadow">
                 {user.displayName || user.fullName || user.username}
                 {user.isVerified && <span className="verified-badge" title="Verified">✓</span>}
-                {user.nickname && <span className="nickname"> "{user.nickname}"</span>}
+                {user.nickname &&
+                 user.nickname !== user.displayName &&
+                 user.nickname !== user.username &&
+                 <span className="nickname"> "{user.nickname}"</span>}
               </h1>
               <p className="profile-username">@{user.username}</p>
 

@@ -5,6 +5,7 @@ import FriendRequest from '../models/FriendRequest.js';
 import auth from '../middleware/auth.js';
 import { friendRequestLimiter } from '../middleware/rateLimiter.js';
 import { checkFriendRequestPermission, checkBlocked } from '../middleware/privacy.js';
+import { sendPushNotification } from './pushNotifications.js';
 
 // @route   POST /api/friends/request/:userId
 // @desc    Send friend request

@@ -8,6 +8,7 @@ import auth from '../middleware/auth.js';
 import { postLimiter, commentLimiter } from '../middleware/rateLimiter.js';
 import { checkMuted, moderateContent } from '../middleware/moderation.js';
 import { sanitizeFields } from '../utils/sanitize.js';
+import { sendPushNotification } from './pushNotifications.js';
 
 // PHASE 1 REFACTOR: Helper function to sanitize post for private likes
 // Removes like count and list of who liked, only shows if current user liked
@@ -398,6 +399,21 @@ router.post('/:id/like', auth, async (req, res) => {
           postId: post._id
         });
         await notification.save();
+
+        // Send push notification
+        const liker = await User.findById(userId).select('username displayName');
+        const likerName = liker.displayName || liker.username;
+
+        sendPushNotification(post.author, {
+          title: `❤️ New Like`,
+          body: `${likerName} liked your post`,
+          data: {
+            type: 'like',
+            postId: post._id.toString(),
+            url: `/feed?post=${post._id}`
+          },
+          tag: `like-${post._id}`
+        }).catch(err => console.error('Push notification error:', err));
       }
     }
 
@@ -478,6 +494,21 @@ router.post('/:id/react', auth, async (req, res) => {
           postId: post._id
         });
         await notification.save();
+
+        // Send push notification
+        const reactor = await User.findById(userId).select('username displayName');
+        const reactorName = reactor.displayName || reactor.username;
+
+        sendPushNotification(post.author, {
+          title: `${emoji} New Reaction`,
+          body: `${reactorName} reacted ${emoji} to your post`,
+          data: {
+            type: 'reaction',
+            postId: post._id.toString(),
+            url: `/feed?post=${post._id}`
+          },
+          tag: `reaction-${post._id}`
+        }).catch(err => console.error('Push notification error:', err));
       }
     }
 
@@ -774,6 +805,23 @@ router.post('/:id/comment', auth, commentLimiter, sanitizeFields(['content']), c
         commentId: newComment._id
       });
       await notification.save();
+      await notification.populate('sender', 'username displayName profilePhoto');
+
+      // Send push notification
+      const commenter = await User.findById(userId).select('username displayName');
+      const commenterName = commenter.displayName || commenter.username;
+
+      sendPushNotification(post.author, {
+        title: `💬 New Comment`,
+        body: `${commenterName} commented on your post`,
+        data: {
+          type: 'comment',
+          postId: post._id.toString(),
+          commentId: newComment._id.toString(),
+          url: `/feed?post=${post._id}&comment=${newComment._id}`
+        },
+        tag: `comment-${post._id}`
+      }).catch(err => console.error('Push notification error:', err));
     }
 
     // PHASE 1 REFACTOR: Don't populate likes (keep private)
