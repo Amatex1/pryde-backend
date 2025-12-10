@@ -1,5 +1,5 @@
 .edit-profile-modal {
-  background: var(--card-surface);
+  background: var(--bg-card);
   border-radius: 16px;
   max-width: 800px;
   width: 95%;
@@ -14,7 +14,7 @@
   justify-content: space-between;
   align-items: center;
   padding: 1.5rem;
-  border-bottom: 1px solid var(--border-light);
+  border-bottom: 1px solid var(--border-subtle);
   flex-shrink: 0;
 }
 
@@ -43,7 +43,7 @@
 .form-section {
   margin-bottom: 2rem;
   padding-bottom: 2rem;
-  border-bottom: 1px solid var(--border-light);
+  border-bottom: 1px solid var(--border-subtle);
 }
 
 .form-section:last-child {
@@ -100,9 +100,9 @@
 .form-group textarea {
   width: 100%;
   padding: 0.75rem;
-  border: 2px solid var(--border-light);
+  border: 2px solid var(--border-subtle);
   border-radius: 8px;
-  background: var(--background-light);
+  background: var(--bg);
   color: var(--text-main);
   font-size: 0.95rem;
   font-family: inherit;
@@ -113,8 +113,8 @@
 .form-group select:focus,
 .form-group textarea:focus {
   outline: none;
-  border-color: var(--pryde-purple);
-  box-shadow: 0 0 0 3px rgba(108, 92, 231, 0.1);
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-focus);
 }
 
 .form-group textarea {
@@ -145,8 +145,8 @@
   height: 150px;
   border-radius: 12px;
   overflow: hidden;
-  background: var(--background-light);
-  border: 2px dashed var(--border-light);
+  background: var(--bg);
+  border: 2px dashed var(--border-subtle);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -187,9 +187,9 @@
   justify-content: space-between;
   align-items: center;
   padding: 0.75rem;
-  background: var(--background-light);
+  background: var(--bg);
   border-radius: 8px;
-  border: 1px solid var(--border-light);
+  border: 1px solid var(--border-subtle);
 }
 
 .social-link-info {
@@ -205,7 +205,7 @@
 }
 
 .social-link-info a {
-  color: var(--pryde-purple);
+  color: var(--color-primary);
   font-size: 0.85rem;
   text-decoration: none;
   word-break: break-all;
@@ -224,16 +224,16 @@
 
 .add-social-link input {
   padding: 0.75rem;
-  border: 2px solid var(--border-light);
+  border: 2px solid var(--border-subtle);
   border-radius: 8px;
-  background: var(--background-light);
+  background: var(--bg);
   color: var(--text-main);
   font-size: 0.9rem;
 }
 
 .add-social-link input:focus {
   outline: none;
-  border-color: var(--pryde-purple);
+  border-color: var(--color-primary);
 }
 
 /* Tags/Interests */
@@ -250,7 +250,7 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.5rem 0.75rem;
-  background: linear-gradient(135deg, #6C5CE7 0%, #0984E3 100%);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%);
   color: white;
   border-radius: 20px;
   font-size: 0.85rem;
@@ -285,16 +285,16 @@
 .add-tag input {
   flex: 1;
   padding: 0.75rem;
-  border: 2px solid var(--border-light);
+  border: 2px solid var(--border-subtle);
   border-radius: 8px;
-  background: var(--background-light);
+  background: var(--bg);
   color: var(--text-main);
   font-size: 0.9rem;
 }
 
 .add-tag input:focus {
   outline: none;
-  border-color: var(--pryde-purple);
+  border-color: var(--color-primary);
 }
 
 /* Checkbox Group */
@@ -309,29 +309,21 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.75rem;
-  background: var(--background-light);
+  background: var(--bg);
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s ease;
-  border: 2px solid transparent;
+  border: 2px solid var(--border-subtle);
+  color: var(--text-main);
 }
 
 .checkbox-label:hover {
-  background: var(--soft-lavender);
+  background: var(--bg-hover);
+  border-color: var(--color-primary);
 }
 
-/* Fix for light + quiet mode - ensure text is readable */
-[data-theme="light"][data-quiet-mode="true"] .checkbox-label {
-  background: #F3F4F6;
-  color: #374151;
-}
-
-[data-theme="light"][data-quiet-mode="true"] .checkbox-label:hover {
-  background: #E5E7EB;
-}
-
-[data-theme="light"][data-quiet-mode="true"] .checkbox-label span {
-  color: #374151;
+.checkbox-label span {
+  color: var(--text-main);
 }
 
 .checkbox-label input[type="checkbox"] {
@@ -341,7 +333,7 @@
 }
 
 .checkbox-label input[type="checkbox"]:checked + span {
-  color: var(--pryde-purple);
+  color: var(--color-primary);
   font-weight: 600;
 }
 
@@ -351,29 +343,21 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.5rem 0.75rem;
-  background: var(--background-light);
+  background: var(--bg);
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s ease;
-  border: 2px solid transparent;
+  border: 2px solid var(--border-subtle);
+  color: var(--text-main);
 }
 
 .checkbox-label-compact:hover {
-  background: var(--soft-lavender);
+  background: var(--bg-hover);
+  border-color: var(--color-primary);
 }
 
-/* Fix for light + quiet mode - ensure text is readable */
-[data-theme="light"][data-quiet-mode="true"] .checkbox-label-compact {
-  background: #F3F4F6;
-  color: #374151;
-}
-
-[data-theme="light"][data-quiet-mode="true"] .checkbox-label-compact:hover {
-  background: #E5E7EB;
-}
-
-[data-theme="light"][data-quiet-mode="true"] .checkbox-label-compact span {
-  color: #374151;
+.checkbox-label-compact span {
+  color: var(--text-main);
 }
 
 .checkbox-label-compact input[type="checkbox"] {
@@ -388,7 +372,7 @@
 }
 
 .checkbox-label-compact input[type="checkbox"]:checked + span {
-  color: var(--pryde-purple);
+  color: var(--color-primary);
   font-weight: 600;
 }
 
@@ -444,9 +428,9 @@
 .interest-dropdown {
   flex: 1;
   padding: 0.75rem;
-  border: 2px solid var(--border-light);
+  border: 2px solid var(--border-subtle);
   border-radius: 8px;
-  background: var(--background-light);
+  background: var(--bg);
   color: var(--text-main);
   font-size: 0.9rem;
   cursor: pointer;
@@ -454,7 +438,7 @@
 
 .interest-dropdown:focus {
   outline: none;
-  border-color: var(--pryde-purple);
+  border-color: var(--color-primary);
 }
 
 .btn-add:hover {
@@ -480,7 +464,7 @@
   justify-content: flex-end;
   gap: 1rem;
   padding: 1.5rem;
-  border-top: 1px solid var(--border-light);
+  border-top: 1px solid var(--border-subtle);
   flex-shrink: 0;
 }
 
@@ -488,32 +472,39 @@
 .btn-save {
   padding: 0.875rem 1.75rem;
   border-radius: 12px;
-  border: none;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
   font-size: 1rem;
   min-width: 120px;
   text-align: center;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid transparent;
 }
 
 .btn-cancel {
-  background: var(--background-light);
+  background: var(--bg);
   color: var(--text-main);
+  border-color: var(--border-subtle);
 }
 
 .btn-cancel:hover {
-  background: var(--border-light);
+  background: var(--bg-hover);
+  border-color: var(--border-medium);
 }
 
 .btn-save {
-  background: var(--gradient-primary);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%);
   color: white;
+  border-color: transparent;
 }
 
 .btn-save:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(108, 92, 231, 0.3);
+  box-shadow: var(--shadow-medium);
 }
 
 .btn-save:disabled {
@@ -533,46 +524,11 @@
 }
 
 /* Dark Mode Support */
-[data-theme="dark"] .form-group input,
-[data-theme="dark"] .form-group select,
-[data-theme="dark"] .form-group textarea,
-[data-theme="dark"] .add-social-link input,
-[data-theme="dark"] .add-tag input {
-  background: var(--background-dark);
-  border-color: var(--border-dark);
-  color: var(--text-light);
-}
-
-/* Dark mode for select dropdown options */
-[data-theme="dark"] .form-group select option {
-  background: #2d2d2d;
-  color: #ffffff;
-}
-
-/* Ensure select dropdowns are visible in dark mode */
-[data-theme="dark"] .form-group select {
-  background: var(--background-dark);
-  border-color: var(--border-dark);
-  color: var(--text-light);
-}
-
-/* Fix for interest dropdown in dark mode */
-[data-theme="dark"] .interest-dropdown {
-  background: var(--background-dark);
-  border-color: var(--border-dark);
-  color: var(--text-light);
-}
-
+/* Dark mode specific adjustments for dropdown options */
+[data-theme="dark"] .form-group select option,
 [data-theme="dark"] .interest-dropdown option {
-  background: #2d2d2d;
-  color: #ffffff;
-}
-
-[data-theme="dark"] .photo-preview,
-[data-theme="dark"] .social-link-item,
-[data-theme="dark"] .checkbox-label {
-  background: var(--background-dark);
-  border-color: var(--border-dark);
+  background: var(--bg-subtle);
+  color: var(--text-main);
 }
 
 /* Responsive */
