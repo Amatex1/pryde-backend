@@ -93,7 +93,7 @@ function PhotoRepositionModal({ isOpen, onClose, photoUrl, photoType, currentPos
         </div>
 
         <div className="reposition-instructions">
-          Click and drag to reposition your photo. The photo will be centered on the point you select.
+          Click and drag to reposition your photo. The highlighted frame shows what will be visible on your profile.
         </div>
 
         <div
@@ -117,6 +117,16 @@ function PhotoRepositionModal({ isOpen, onClose, photoUrl, photoType, currentPos
             }}
             draggable={false}
           />
+
+          {/* Visible area frame - shows what will be displayed */}
+          <div className={`visible-area-frame ${photoType === 'profile' ? 'profile-frame' : 'cover-frame'}`}>
+            <div className="frame-overlay frame-overlay-top"></div>
+            <div className="frame-overlay frame-overlay-bottom"></div>
+            <div className="frame-overlay frame-overlay-left"></div>
+            <div className="frame-overlay frame-overlay-right"></div>
+            <div className="frame-border"></div>
+          </div>
+
           <div
             className="position-marker"
             style={{
