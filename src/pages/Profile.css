@@ -60,6 +60,49 @@
   background: var(--color-accent);
 }
 
+/* Upload buttons overlaid on cover photo */
+.cover-upload-buttons {
+  position: absolute;
+  bottom: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 1rem;
+  z-index: 10;
+}
+
+.btn-cover-upload {
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border: 2px solid var(--pryde-purple);
+  color: var(--pryde-purple);
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.btn-cover-upload:hover {
+  background: var(--pryde-purple);
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(108, 92, 231, 0.4);
+}
+
+/* Upload message banner */
+.upload-message-banner {
+  padding: 0.75rem;
+  background: var(--soft-lavender);
+  color: var(--pryde-purple);
+  text-align: center;
+  font-weight: 600;
+  font-size: 0.9rem;
+  border-bottom: 2px solid var(--pryde-purple);
+}
+
 .cover-placeholder {
   width: 100%;
   height: 100%;
@@ -68,13 +111,6 @@
 .profile-info {
   padding: 0 var(--space-6) var(--space-6);
   position: relative;
-}
-
-.profile-header-row {
-  display: flex;
-  align-items: flex-start;
-  gap: 1.5rem;
-  margin-bottom: var(--space-4);
 }
 
 .profile-avatar {
@@ -91,8 +127,8 @@
   overflow: hidden;
   border: 5px solid var(--bg-card);
   margin-top: -75px;
+  margin-bottom: var(--space-4);
   box-shadow: var(--shadow-medium);
-  flex-shrink: 0;
 }
 
 .profile-avatar img {
@@ -604,67 +640,7 @@
   transform: translateY(-2px);
 }
 
-/* Upload Buttons on Profile - To the right of avatar */
-.profile-upload-section {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  margin-top: -50px; /* Align with avatar vertically */
-  flex-shrink: 0;
-}
 
-.btn-upload {
-  flex: 1;
-  padding: 0.75rem 1rem;
-  border-radius: 12px;
-  border: 2px dashed var(--pryde-purple);
-  background: var(--soft-lavender);
-  color: var(--pryde-purple);
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  text-align: center;
-}
-
-.btn-upload:hover {
-  background: var(--pryde-purple);
-  color: white;
-  border-style: solid;
-}
-
-/* Smaller upload buttons for profile page */
-.btn-upload-small {
-  padding: 0.5rem 0.75rem;
-  border-radius: 8px;
-  border: 2px dashed var(--pryde-purple);
-  background: var(--soft-lavender);
-  color: var(--pryde-purple);
-  font-weight: 600;
-  font-size: 0.85rem;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  text-align: center;
-  white-space: nowrap;
-}
-
-.btn-upload-small:hover {
-  background: var(--pryde-purple);
-  color: white;
-  border-style: solid;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(108, 92, 231, 0.3);
-}
-
-.upload-message {
-  padding: 0.75rem;
-  border-radius: 8px;
-  background: var(--soft-lavender);
-  color: var(--pryde-purple);
-  text-align: center;
-  font-size: 0.875rem;
-  font-weight: 600;
-  margin-bottom: 1rem;
-}
 
 .profile-stats {
   display: flex;
@@ -1508,11 +1484,6 @@
     height: 200px;
   }
 
-  .profile-header-row {
-    flex-direction: column;
-    align-items: center;
-  }
-
   .profile-avatar {
     width: 100px;
     height: 100px;
@@ -1520,14 +1491,16 @@
     margin-top: -50px;
   }
 
-  .profile-upload-section {
-    margin-top: 0;
-    width: 100%;
+  .cover-upload-buttons {
+    flex-direction: column;
+    gap: 0.5rem;
+    width: 90%;
+    max-width: 400px;
   }
 
-  .btn-upload-small {
-    font-size: 0.75rem;
-    padding: 0.4rem 0.6rem;
+  .btn-cover-upload {
+    font-size: 0.85rem;
+    padding: 0.6rem 1rem;
   }
 
   .profile-name {

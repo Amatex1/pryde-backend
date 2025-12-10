@@ -892,51 +892,50 @@ function Profile() {
                 ✏️ Edit Profile
               </button>
             )}
+
+            {/* Photo Upload Buttons - Overlaid on cover photo */}
+            {isOwnProfile && (
+              <div className="cover-upload-buttons">
+                <label htmlFor="profile-photo-upload" className="btn-cover-upload">
+                  📷 Update Profile Photo
+                  <input
+                    type="file"
+                    id="profile-photo-upload"
+                    accept="image/*"
+                    onChange={(e) => handlePhotoUpload(e, 'profile')}
+                    style={{ display: 'none' }}
+                  />
+                </label>
+                <label htmlFor="cover-photo-upload" className="btn-cover-upload">
+                  🖼️ Update Cover Photo
+                  <input
+                    type="file"
+                    id="cover-photo-upload"
+                    accept="image/*"
+                    onChange={(e) => handlePhotoUpload(e, 'cover')}
+                    style={{ display: 'none' }}
+                  />
+                </label>
+              </div>
+            )}
           </div>
 
-          <div className="profile-info">
-            <div className="profile-header-row">
-              <div className="profile-avatar">
-                {user.profilePhoto ? (
-                  <OptimizedImage
-                    src={getImageUrl(user.profilePhoto)}
-                    alt={user.username}
-                    onClick={() => setPhotoViewerImage(getImageUrl(user.profilePhoto))}
-                    style={{ cursor: 'pointer' }}
-                    loading="eager"
-                  />
-                ) : (
-                  <span>{user.displayName?.charAt(0).toUpperCase()}</span>
-                )}
-              </div>
+          {uploadMessage && (
+            <div className="upload-message-banner">{uploadMessage}</div>
+          )}
 
-              {/* Photo Upload Buttons - To the right of avatar */}
-              {isOwnProfile && (
-                <div className="profile-upload-section">
-                  {uploadMessage && (
-                    <div className="upload-message">{uploadMessage}</div>
-                  )}
-                  <label htmlFor="profile-photo-upload" className="btn-upload-small">
-                    📷 Update Profile Photo
-                    <input
-                      type="file"
-                      id="profile-photo-upload"
-                      accept="image/*"
-                      onChange={(e) => handlePhotoUpload(e, 'profile')}
-                      style={{ display: 'none' }}
-                    />
-                  </label>
-                  <label htmlFor="cover-photo-upload" className="btn-upload-small">
-                    🖼️ Update Cover Photo
-                    <input
-                      type="file"
-                      id="cover-photo-upload"
-                      accept="image/*"
-                      onChange={(e) => handlePhotoUpload(e, 'cover')}
-                      style={{ display: 'none' }}
-                    />
-                  </label>
-                </div>
+          <div className="profile-info">
+            <div className="profile-avatar">
+              {user.profilePhoto ? (
+                <OptimizedImage
+                  src={getImageUrl(user.profilePhoto)}
+                  alt={user.username}
+                  onClick={() => setPhotoViewerImage(getImageUrl(user.profilePhoto))}
+                  style={{ cursor: 'pointer' }}
+                  loading="eager"
+                />
+              ) : (
+                <span>{user.displayName?.charAt(0).toUpperCase()}</span>
               )}
             </div>
 
