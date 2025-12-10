@@ -98,7 +98,7 @@ function PhotoRepositionModal({ isOpen, onClose, photoUrl, photoType, currentPos
 
         <div
           ref={containerRef}
-          className="reposition-container"
+          className={`reposition-container ${photoType === 'profile' ? 'profile-container' : 'cover-container'}`}
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
@@ -120,10 +120,6 @@ function PhotoRepositionModal({ isOpen, onClose, photoUrl, photoType, currentPos
 
           {/* Visible area frame - shows what will be displayed */}
           <div className={`visible-area-frame ${photoType === 'profile' ? 'profile-frame' : 'cover-frame'}`}>
-            <div className="frame-overlay frame-overlay-top"></div>
-            <div className="frame-overlay frame-overlay-bottom"></div>
-            <div className="frame-overlay frame-overlay-left"></div>
-            <div className="frame-overlay frame-overlay-right"></div>
             <div className="frame-border"></div>
           </div>
 
