@@ -264,6 +264,12 @@
   color: var(--text-main);
 }
 
+/* Status column - prevent wrapping */
+.users-table td[data-label="Status"] {
+  min-width: 120px;
+  white-space: nowrap;
+}
+
 .users-table tbody tr:hover,
 .blocks-table tbody tr:hover {
   background: var(--bg-light);
