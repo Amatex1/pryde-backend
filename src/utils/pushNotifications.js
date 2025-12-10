@@ -58,6 +58,12 @@ export const sendTestNotification = async () => {
       return false;
     }
 
+    // Check if service worker is supported
+    if (!("serviceWorker" in navigator)) {
+      alert("This browser does not support service workers");
+      return false;
+    }
+
     // Request permission if not granted
     if (Notification.permission === "default") {
       const permission = await Notification.requestPermission();
@@ -69,14 +75,19 @@ export const sendTestNotification = async () => {
 
     // Check if permission is granted
     if (Notification.permission === "granted") {
-      // Create a test notification
-      new Notification("Pryde Social Test Notification", {
+      // Get service worker registration
+      const registration = await navigator.serviceWorker.ready;
+
+      // Use Service Worker to show notification (works on mobile)
+      await registration.showNotification("Pryde Social Test Notification", {
         body: "Push notifications are working! 🎉",
         icon: "/logo192.png",
         badge: "/logo192.png",
         tag: "test-notification",
-        requireInteraction: false
+        requireInteraction: false,
+        vibrate: [200, 100, 200]
       });
+
       return true;
     } else {
       alert("Notification permission is denied. Please enable notifications in your browser settings.");

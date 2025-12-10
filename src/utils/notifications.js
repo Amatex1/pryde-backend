@@ -38,15 +38,26 @@ export const requestNotificationPermission = async () => {
   }
 };
 
-// Show browser notification
-export const showNotification = (title, options = {}) => {
+// Show browser notification using Service Worker (required for mobile)
+export const showNotification = async (title, options = {}) => {
   if ('Notification' in window && Notification.permission === 'granted') {
     try {
-      new Notification(title, {
-        icon: '/logo.png',
-        badge: '/logo.png',
-        ...options
-      });
+      // Check if service worker is available
+      if ('serviceWorker' in navigator) {
+        const registration = await navigator.serviceWorker.ready;
+
+        // Use Service Worker to show notification (works on mobile)
+        await registration.showNotification(title, {
+          icon: '/logo.png',
+          badge: '/logo.png',
+          vibrate: [200, 100, 200],
+          ...options
+        });
+      } else {
+        // Fallback for browsers without service worker support
+        // This will fail on mobile, but that's expected
+        console.log('Service Worker not supported, notification not shown');
+      }
     } catch (error) {
       console.log('Could not show notification:', error);
     }
