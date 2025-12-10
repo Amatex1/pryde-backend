@@ -13,14 +13,14 @@
 }
 
 .modal-content {
-  background: var(--card-surface);
+  background: var(--bg-card);
   border-radius: 20px;
   padding: 2rem;
   max-width: 500px;
   width: 90%;
   max-height: 90vh;
   overflow-y: auto;
-  box-shadow: 0 10px 40px rgba(108, 92, 231, 0.3);
+  box-shadow: var(--shadow-strong);
   animation: modalSlideIn 0.3s ease;
 }
 
@@ -41,7 +41,7 @@
   align-items: center;
   margin-bottom: 1.5rem;
   padding-bottom: 1rem;
-  border-bottom: 2px solid var(--border-light);
+  border-bottom: 2px solid var(--border-subtle);
 }
 
 .modal-header h2 {
@@ -69,8 +69,8 @@
 }
 
 .modal-close:hover {
-  background: var(--soft-lavender);
-  color: var(--pryde-purple);
+  background: var(--bg-hover);
+  color: var(--color-primary);
   transform: rotate(90deg);
 }
 
@@ -95,18 +95,18 @@
 .report-form .form-input {
   padding: 0.75rem;
   border-radius: 10px;
-  border: 2px solid var(--border-light);
+  border: 2px solid var(--border-subtle);
   font-size: 1rem;
   color: var(--text-main);
-  background: var(--card-surface);
+  background: var(--bg);
   transition: all 0.3s ease;
   font-family: inherit;
 }
 
 .report-form .form-input:focus {
   outline: none;
-  border-color: var(--pryde-purple);
-  box-shadow: 0 0 0 3px rgba(108, 92, 231, 0.1);
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-focus);
 }
 
 .report-form textarea.form-input {
@@ -121,10 +121,10 @@
 }
 
 .report-info {
-  background: rgba(108, 92, 231, 0.1);
+  background: var(--bg-subtle);
   padding: 1rem;
   border-radius: 10px;
-  border-left: 4px solid var(--pryde-purple);
+  border-left: 4px solid var(--color-primary);
 }
 
 .report-info p {
@@ -148,56 +148,40 @@
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
-  border: none;
   font-size: 1rem;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .btn-cancel {
-  background: transparent;
+  background: var(--bg);
   color: var(--text-main);
-  border: 2px solid var(--border-light);
+  border: 2px solid var(--border-subtle);
 }
 
 .btn-cancel:hover {
-  background: var(--soft-lavender);
-  border-color: var(--pryde-purple);
-  color: var(--pryde-purple);
+  background: var(--bg-hover);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
 }
 
 .btn-submit {
-  background: var(--gradient-primary);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%);
   color: white;
+  border: 2px solid transparent;
 }
 
 .btn-submit:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(108, 92, 231, 0.3);
+  box-shadow: var(--shadow-medium);
 }
 
-/* Dark Mode */
-[data-theme="dark"] .modal-content {
-  background: var(--card-surface);
-  border: 1px solid rgba(108, 92, 231, 0.2);
-}
-
-[data-theme="dark"] .modal-header {
-  border-bottom-color: rgba(108, 92, 231, 0.2);
-}
-
-[data-theme="dark"] .report-form .form-input {
-  background: rgba(0, 0, 0, 0.2);
-  border-color: rgba(108, 92, 231, 0.3);
-  color: var(--text-main);
-}
-
+/* Dark mode adjustments - minimal since theme variables handle most */
 [data-theme="dark"] .report-form .form-input::placeholder {
   color: var(--text-muted);
   opacity: 0.6;
-}
-
-[data-theme="dark"] .report-info {
-  background: rgba(108, 92, 231, 0.15);
-  border-left-color: var(--electric-blue);
 }
 
 [data-theme="dark"] .btn-cancel {

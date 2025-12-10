@@ -1,5 +1,5 @@
 .photo-reposition-modal {
-  background: var(--card-surface);
+  background: var(--bg-card);
   border-radius: 16px;
   max-width: 800px;
   width: 95%;
@@ -14,7 +14,7 @@
   justify-content: space-between;
   align-items: center;
   padding: 1.5rem;
-  border-bottom: 1px solid var(--border-light);
+  border-bottom: 1px solid var(--border-subtle);
 }
 
 .reposition-header h2 {
@@ -28,11 +28,11 @@
 
 .reposition-instructions {
   padding: 1rem 1.5rem;
-  background: var(--soft-lavender);
+  background: var(--bg-subtle);
   color: var(--text-main);
   font-size: 0.9rem;
   text-align: center;
-  border-bottom: 1px solid var(--border-light);
+  border-bottom: 1px solid var(--border-subtle);
 }
 
 .reposition-container {
@@ -166,7 +166,7 @@
   justify-content: space-between;
   align-items: center;
   padding: 1.5rem;
-  border-top: 1px solid var(--border-light);
+  border-top: 1px solid var(--border-subtle);
   gap: 1rem;
 }
 
@@ -190,38 +190,40 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  border: none;
+  border: 2px solid transparent;
 }
 
 .btn-reset {
-  background: var(--background-light);
+  background: var(--bg);
   color: var(--text-main);
-  border: 2px solid var(--border-light);
+  border-color: var(--border-subtle);
 }
 
 .btn-reset:hover {
-  background: var(--border-light);
+  background: var(--bg-hover);
+  border-color: var(--border-medium);
 }
 
 .btn-cancel {
-  background: var(--background-light);
+  background: var(--bg);
   color: var(--text-main);
-  border: 2px solid var(--border-light);
+  border-color: var(--border-subtle);
 }
 
 .btn-cancel:hover {
-  background: var(--border-light);
+  background: var(--bg-hover);
+  border-color: var(--border-medium);
 }
 
 .btn-save {
-  background: var(--gradient-primary);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%);
   color: white;
-  border: 2px solid transparent;
+  border-color: transparent;
 }
 
 .btn-save:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(108, 92, 231, 0.3);
+  box-shadow: var(--shadow-medium);
 }
 
 .btn-save:disabled {

@@ -1,5 +1,5 @@
 .share-modal {
-  background: var(--card-surface);
+  background: var(--bg-card);
   border-radius: 16px;
   max-width: 600px;
   width: 90%;
@@ -13,7 +13,7 @@
   justify-content: space-between;
   align-items: center;
   padding: 1.5rem;
-  border-bottom: 1px solid var(--border-light);
+  border-bottom: 1px solid var(--border-subtle);
 }
 
 .share-modal-header h2 {
@@ -41,10 +41,10 @@
 }
 
 .preview-card {
-  background: var(--background-light);
+  background: var(--bg);
   padding: 1rem;
   border-radius: 12px;
-  border: 1px solid var(--border-light);
+  border: 1px solid var(--border-subtle);
 }
 
 .preview-author {
@@ -119,14 +119,16 @@
   align-items: center;
   gap: 0.75rem;
   padding: 0.75rem;
-  background: var(--background-light);
+  background: var(--bg);
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s ease;
+  border: 2px solid var(--border-subtle);
 }
 
 .share-option:hover {
-  background: var(--soft-lavender);
+  background: var(--bg-hover);
+  border-color: var(--color-primary);
 }
 
 .share-option input[type="checkbox"] {
@@ -189,13 +191,13 @@
 }
 
 .share-tab:hover {
-  color: var(--pryde-purple);
-  background: var(--soft-lavender);
+  color: var(--color-primary);
+  background: var(--bg-hover);
 }
 
 .share-tab.active {
-  color: var(--pryde-purple);
-  border-bottom-color: var(--pryde-purple);
+  color: var(--color-primary);
+  border-bottom-color: var(--color-primary);
 }
 
 .friends-list {
@@ -211,14 +213,16 @@
   align-items: center;
   gap: 0.75rem;
   padding: 0.75rem;
-  background: var(--background-light);
+  background: var(--bg);
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s ease;
+  border: 2px solid var(--border-subtle);
 }
 
 .friend-item:hover {
-  background: var(--soft-lavender);
+  background: var(--bg-hover);
+  border-color: var(--color-primary);
 }
 
 .friend-item input[type="checkbox"] {
@@ -235,7 +239,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--pryde-purple);
+  background: var(--color-primary);
   color: white;
   font-weight: 600;
 }
@@ -257,36 +261,42 @@
   justify-content: flex-end;
   gap: 1rem;
   padding: 1.5rem;
-  border-top: 1px solid var(--border-light);
+  border-top: 1px solid var(--border-subtle);
 }
 
 .btn-cancel,
 .btn-share {
   padding: 0.75rem 1.5rem;
   border-radius: 12px;
-  border: none;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid transparent;
 }
 
 .btn-cancel {
-  background: var(--background-light);
+  background: var(--bg);
   color: var(--text-main);
+  border-color: var(--border-subtle);
 }
 
 .btn-cancel:hover {
-  background: var(--border-light);
+  background: var(--bg-hover);
+  border-color: var(--border-medium);
 }
 
 .btn-share {
-  background: linear-gradient(135deg, #6C5CE7 0%, #0984E3 100%);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%);
   color: white;
 }
 
 .btn-share:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(108, 92, 231, 0.3);
+  box-shadow: var(--shadow-medium);
 }
 
 .btn-share:disabled {
