@@ -68,7 +68,13 @@
 .profile-info {
   padding: 0 var(--space-6) var(--space-6);
   position: relative;
-  padding-top: 80px; /* Space for upload buttons when present */
+}
+
+.profile-header-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 1.5rem;
+  margin-bottom: var(--space-4);
 }
 
 .profile-avatar {
@@ -85,10 +91,8 @@
   overflow: hidden;
   border: 5px solid var(--bg-card);
   margin-top: -75px;
-  margin-bottom: var(--space-4);
   box-shadow: var(--shadow-medium);
-  position: relative;
-  z-index: 2; /* Above upload buttons */
+  flex-shrink: 0;
 }
 
 .profile-avatar img {
@@ -600,19 +604,13 @@
   transform: translateY(-2px);
 }
 
-/* Upload Buttons on Profile - Positioned absolutely to not affect avatar */
+/* Upload Buttons on Profile - To the right of avatar */
 .profile-upload-section {
   display: flex;
-  gap: 1rem;
-  padding: 1rem;
-  background: var(--card-surface);
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  position: absolute;
-  top: 0;
-  left: 1.5rem;
-  right: 1.5rem;
-  z-index: 1;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: -50px; /* Align with avatar vertically */
+  flex-shrink: 0;
 }
 
 .btn-upload {
@@ -632,6 +630,29 @@
   background: var(--pryde-purple);
   color: white;
   border-style: solid;
+}
+
+/* Smaller upload buttons for profile page */
+.btn-upload-small {
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  border: 2px dashed var(--pryde-purple);
+  background: var(--soft-lavender);
+  color: var(--pryde-purple);
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.btn-upload-small:hover {
+  background: var(--pryde-purple);
+  color: white;
+  border-style: solid;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(108, 92, 231, 0.3);
 }
 
 .upload-message {
@@ -1487,11 +1508,26 @@
     height: 200px;
   }
 
+  .profile-header-row {
+    flex-direction: column;
+    align-items: center;
+  }
+
   .profile-avatar {
     width: 100px;
     height: 100px;
     font-size: 3rem;
     margin-top: -50px;
+  }
+
+  .profile-upload-section {
+    margin-top: 0;
+    width: 100%;
+  }
+
+  .btn-upload-small {
+    font-size: 0.75rem;
+    padding: 0.4rem 0.6rem;
   }
 
   .profile-name {

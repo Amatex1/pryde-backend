@@ -895,46 +895,48 @@ function Profile() {
           </div>
 
           <div className="profile-info">
-            {/* Photo Upload Buttons - Right under cover photo */}
-            {isOwnProfile && (
-              <div className="profile-upload-section">
-                {uploadMessage && (
-                  <div className="upload-message">{uploadMessage}</div>
+            <div className="profile-header-row">
+              <div className="profile-avatar">
+                {user.profilePhoto ? (
+                  <OptimizedImage
+                    src={getImageUrl(user.profilePhoto)}
+                    alt={user.username}
+                    onClick={() => setPhotoViewerImage(getImageUrl(user.profilePhoto))}
+                    style={{ cursor: 'pointer' }}
+                    loading="eager"
+                  />
+                ) : (
+                  <span>{user.displayName?.charAt(0).toUpperCase()}</span>
                 )}
-                <label htmlFor="profile-photo-upload" className="btn-upload">
-                  📷 Update Profile Photo
-                  <input
-                    type="file"
-                    id="profile-photo-upload"
-                    accept="image/*"
-                    onChange={(e) => handlePhotoUpload(e, 'profile')}
-                    style={{ display: 'none' }}
-                  />
-                </label>
-                <label htmlFor="cover-photo-upload" className="btn-upload">
-                  🖼️ Update Cover Photo
-                  <input
-                    type="file"
-                    id="cover-photo-upload"
-                    accept="image/*"
-                    onChange={(e) => handlePhotoUpload(e, 'cover')}
-                    style={{ display: 'none' }}
-                  />
-                </label>
               </div>
-            )}
 
-            <div className="profile-avatar">
-              {user.profilePhoto ? (
-                <OptimizedImage
-                  src={getImageUrl(user.profilePhoto)}
-                  alt={user.username}
-                  onClick={() => setPhotoViewerImage(getImageUrl(user.profilePhoto))}
-                  style={{ cursor: 'pointer' }}
-                  loading="eager"
-                />
-              ) : (
-                <span>{user.displayName?.charAt(0).toUpperCase()}</span>
+              {/* Photo Upload Buttons - To the right of avatar */}
+              {isOwnProfile && (
+                <div className="profile-upload-section">
+                  {uploadMessage && (
+                    <div className="upload-message">{uploadMessage}</div>
+                  )}
+                  <label htmlFor="profile-photo-upload" className="btn-upload-small">
+                    📷 Update Profile Photo
+                    <input
+                      type="file"
+                      id="profile-photo-upload"
+                      accept="image/*"
+                      onChange={(e) => handlePhotoUpload(e, 'profile')}
+                      style={{ display: 'none' }}
+                    />
+                  </label>
+                  <label htmlFor="cover-photo-upload" className="btn-upload-small">
+                    🖼️ Update Cover Photo
+                    <input
+                      type="file"
+                      id="cover-photo-upload"
+                      accept="image/*"
+                      onChange={(e) => handlePhotoUpload(e, 'cover')}
+                      style={{ display: 'none' }}
+                    />
+                  </label>
+                </div>
               )}
             </div>
 
