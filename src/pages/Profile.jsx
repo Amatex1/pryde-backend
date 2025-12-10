@@ -13,6 +13,9 @@ import FormattedText from '../components/FormattedText';
 import ProfileSkeleton from '../components/ProfileSkeleton';
 import PostSkeleton from '../components/PostSkeleton';
 import OptimizedImage from '../components/OptimizedImage';
+import ProfilePostSearch from '../components/ProfilePostSearch';
+import PinnedPostBadge from '../components/PinnedPostBadge';
+import EditHistoryModal from '../components/EditHistoryModal';
 import { useModal } from '../hooks/useModal';
 import api from '../utils/api';
 import { getCurrentUser } from '../utils/auth';
@@ -80,6 +83,9 @@ function Profile() {
   const [reactionDetailsModal, setReactionDetailsModal] = useState({ isOpen: false, reactions: [], likes: [] });
   const [profileError, setProfileError] = useState(null); // Track profile loading errors
   const [repositionModal, setRepositionModal] = useState({ isOpen: false, photoType: null, photoUrl: null, position: null });
+  const [searchResults, setSearchResults] = useState(null); // Search results from ProfilePostSearch
+  const [showEditHistory, setShowEditHistory] = useState(false);
+  const [editHistoryPostId, setEditHistoryPostId] = useState(null);
   const editTextareaRef = useRef(null);
 
   useEffect(() => {
@@ -1151,6 +1157,13 @@ function Profile() {
         </div>
 
         <div className="profile-content">
+          {/* Profile Post Search - Only show on own profile */}
+          {isOwnProfile && (
+            <ProfilePostSearch
+              onResultsChange={(results) => setSearchResults(results)}
+            />
+          )}
+
           {/* OPTIONAL FEATURES: Creator profile tabs */}
           {user?.isCreator && (
             <div className="profile-tabs glossy" style={{ marginBottom: '20px', padding: '10px', borderRadius: '12px', display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
@@ -1338,16 +1351,18 @@ function Profile() {
                     <PostSkeleton />
                     <PostSkeleton />
                   </>
-                ) : posts.length === 0 ? (
+                ) : (searchResults ? searchResults.posts : posts).length === 0 ? (
                   <div className="empty-state glossy">
-                    <p>No posts yet</p>
+                    <p>{searchResults ? 'No posts found' : 'No posts yet'}</p>
                   </div>
                 ) : (
                   <div className="posts-list">
-                    {/* OPTIONAL FEATURES: Sort posts to show pinned first */}
-                    {posts.sort((a, b) => {
-                      if (a.isPinned && !b.isPinned) return -1;
-                      if (!a.isPinned && b.isPinned) return 1;
+                    {/* OPTIONAL FEATURES: Sort posts to show pinned first (only if not searching) */}
+                    {(searchResults ? searchResults.posts : posts).sort((a, b) => {
+                      if (!searchResults) {
+                        if (a.isPinned && !b.isPinned) return -1;
+                        if (!a.isPinned && b.isPinned) return 1;
+                      }
                       return new Date(b.createdAt) - new Date(a.createdAt);
                     }).map((post) => {
                   // PHASE 1 REFACTOR: Use hasLiked boolean instead of checking likes array
@@ -1356,11 +1371,8 @@ function Profile() {
                   return (
                     <div key={post._id} className="post-card glossy fade-in" style={{ borderTop: post.isPinned ? '3px solid var(--pryde-purple)' : 'none' }}>
                       {/* OPTIONAL FEATURES: Pinned post indicator */}
-                      {post.isPinned && (
-                        <div style={{ padding: '8px 15px', background: 'var(--soft-lavender)', color: 'var(--pryde-purple)', fontSize: '0.85rem', fontWeight: 'bold', borderRadius: '8px 8px 0 0', marginBottom: '10px' }}>
-                          📌 Pinned Post
-                        </div>
-                      )}
+                      {post.isPinned && <PinnedPostBadge />}
+
                       <div className="post-header">
                         <div className="post-author">
                           <div className="author-avatar">
@@ -1407,6 +1419,18 @@ function Profile() {
                                     >
                                       {post.isPinned ? '📌 Unpin' : '📍 Pin'}
                                     </button>
+                                    {post.edited && (
+                                      <button
+                                        className="dropdown-item"
+                                        onClick={() => {
+                                          setEditHistoryPostId(post._id);
+                                          setShowEditHistory(true);
+                                          setOpenDropdownId(null);
+                                        }}
+                                      >
+                                        📜 View Edit History
+                                      </button>
+                                    )}
                                     {!post.isShared && (
                                       <button
                                         className="dropdown-item"
@@ -2155,12 +2179,12 @@ function Profile() {
             {/* OPTIONAL FEATURES: Journals tab */}
             {activeTab === 'journals' && (
               <div className="journals-list">
-                {journals.length === 0 ? (
+                {(searchResults ? searchResults.journals : journals).length === 0 ? (
                   <div className="empty-state glossy">
-                    <p>No journal entries yet</p>
+                    <p>{searchResults ? 'No journals found' : 'No journal entries yet'}</p>
                   </div>
                 ) : (
-                  journals.map((journal) => (
+                  (searchResults ? searchResults.journals : journals).map((journal) => (
                     <div key={journal._id} className="journal-card glossy fade-in" style={{ marginBottom: '20px', padding: '20px', borderRadius: '12px' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '15px' }}>
                         <div>
@@ -2191,12 +2215,12 @@ function Profile() {
             {/* OPTIONAL FEATURES: Longform tab */}
             {activeTab === 'longform' && (
               <div className="longform-list">
-                {longformPosts.length === 0 ? (
+                {(searchResults ? searchResults.longforms : longformPosts).length === 0 ? (
                   <div className="empty-state glossy">
-                    <p>No stories yet</p>
+                    <p>{searchResults ? 'No stories found' : 'No stories yet'}</p>
                   </div>
                 ) : (
-                  longformPosts.map((longform) => (
+                  (searchResults ? searchResults.longforms : longformPosts).map((longform) => (
                     <div key={longform._id} className="longform-card glossy fade-in" style={{ marginBottom: '20px', padding: '20px', borderRadius: '12px' }}>
                       {longform.coverImage && (
                         <img src={getImageUrl(longform.coverImage)} alt={longform.title} style={{ width: '100%', borderRadius: '8px', marginBottom: '15px' }} />
@@ -2435,6 +2459,16 @@ function Profile() {
           onUpdate={handleUpdatePhotoPosition}
         />
       )}
+
+      <EditHistoryModal
+        isOpen={showEditHistory}
+        onClose={() => {
+          setShowEditHistory(false);
+          setEditHistoryPostId(null);
+        }}
+        postId={editHistoryPostId}
+        contentType="post"
+      />
     </div>
   );
 }

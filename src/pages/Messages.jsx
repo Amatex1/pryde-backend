@@ -4,6 +4,9 @@ import Navbar from '../components/Navbar';
 import EmojiPicker from '../components/EmojiPicker';
 import GifPicker from '../components/GifPicker';
 import CustomModal from '../components/CustomModal';
+import MessageSearch from '../components/MessageSearch';
+import VoiceRecorder from '../components/VoiceRecorder';
+import AudioPlayer from '../components/AudioPlayer';
 import { useModal } from '../hooks/useModal';
 import api from '../utils/api';
 import { getImageUrl } from '../utils/imageUrl';
@@ -72,6 +75,7 @@ function Messages() {
   const [selectedFile, setSelectedFile] = useState(null);
   const [showGifPicker, setShowGifPicker] = useState(false);
   const [selectedGif, setSelectedGif] = useState(null);
+  const [showVoiceRecorder, setShowVoiceRecorder] = useState(false);
   const messagesEndRef = useRef(null);
   const typingTimeoutRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -446,9 +450,9 @@ function Messages() {
     };
   }, [selectedChat, currentUser]);
 
-  const handleSendMessage = async (e) => {
-    e.preventDefault();
-    if ((!message.trim() && !selectedFile && !selectedGif) || !selectedChat) return;
+  const handleSendMessage = async (e, voiceNote = null) => {
+    if (e) e.preventDefault();
+    if ((!message.trim() && !selectedFile && !selectedGif && !voiceNote) || !selectedChat) return;
 
     // Use GIF URL if selected, otherwise use file attachment
     const attachmentUrl = selectedGif || selectedFile?.url;
@@ -467,7 +471,8 @@ function Messages() {
         const response = await api.post('/messages', {
           groupChatId: selectedChat,
           content: message,
-          attachment: attachmentUrl
+          attachment: attachmentUrl,
+          voiceNote: voiceNote
         });
         setMessages((prev) => [...prev, response.data]);
       } else {
@@ -483,7 +488,8 @@ function Messages() {
         socketSendMessage({
           recipientId: selectedChat,
           content: message,
-          attachment: attachmentUrl
+          attachment: attachmentUrl,
+          voiceNote: voiceNote
         });
       }
       setMessage('');
@@ -907,6 +913,11 @@ function Messages() {
               </div>
             </div>
 
+            {/* Message Search */}
+            <div className="message-search-container">
+              <MessageSearch conversationWith={selectedChat} />
+            </div>
+
             {/* Tabs for All/Unread/Archived */}
             <div className="messages-tabs">
               <button
@@ -1270,6 +1281,14 @@ function Messages() {
                               >
                                 {msg.content}
 
+                                {/* Voice Note Player */}
+                                {msg.voiceNote && (
+                                  <AudioPlayer
+                                    url={getImageUrl(msg.voiceNote.url)}
+                                    duration={msg.voiceNote.duration}
+                                  />
+                                )}
+
                                 {/* Display reactions */}
                                 {msg.reactions && msg.reactions.length > 0 && (
                                   <div className="message-reactions">
@@ -1431,6 +1450,15 @@ function Messages() {
                     >
                       GIF
                     </button>
+                    <button
+                      type="button"
+                      className="btn-voice"
+                      onClick={() => setShowVoiceRecorder(!showVoiceRecorder)}
+                      disabled={selectedFile || selectedGif}
+                      title="Record voice note"
+                    >
+                      🎤
+                    </button>
                     <input
                       type="text"
                       value={message}
@@ -1450,6 +1478,34 @@ function Messages() {
                         setShowGifPicker(false);
                       }}
                       onClose={() => setShowGifPicker(false)}
+                    />
+                  )}
+                  {showVoiceRecorder && (
+                    <VoiceRecorder
+                      onRecordingComplete={async (audioBlob, duration) => {
+                        try {
+                          // Upload voice note
+                          const formData = new FormData();
+                          formData.append('file', audioBlob, 'voice-note.webm');
+
+                          const uploadResponse = await api.post('/upload', formData, {
+                            headers: { 'Content-Type': 'multipart/form-data' }
+                          });
+
+                          // Send message with voice note
+                          const voiceNoteData = {
+                            url: uploadResponse.data.url,
+                            duration: duration
+                          };
+
+                          await handleSendMessage(null, voiceNoteData);
+                          setShowVoiceRecorder(false);
+                        } catch (error) {
+                          console.error('Failed to send voice note:', error);
+                          showAlert('Failed to send voice note. Please try again.', 'Voice Note Failed');
+                        }
+                      }}
+                      onCancel={() => setShowVoiceRecorder(false)}
                     />
                   )}
                 </form>

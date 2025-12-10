@@ -4,6 +4,7 @@ import Navbar from '../components/Navbar';
 import TwoFactorSetup from '../components/security/TwoFactorSetup';
 import SessionManagement from '../components/security/SessionManagement';
 import PasskeyManager from '../components/PasskeyManager';
+import RecoveryContacts from '../components/RecoveryContacts';
 import CustomModal from '../components/CustomModal';
 import { useModal } from '../hooks/useModal';
 import api from '../utils/api';
@@ -259,6 +260,11 @@ function SecuritySettings() {
                 Get alerted if we detect unusual login activity
               </p>
             </div>
+          </div>
+
+          {/* Recovery Contacts Section */}
+          <div className="settings-section">
+            <RecoveryContacts />
           </div>
 
           {/* Active Sessions Section */}

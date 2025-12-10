@@ -1,6 +1,8 @@
 ﻿import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
+import EventRSVP from '../components/EventRSVP';
+import EventAttendees from '../components/EventAttendees';
 import api from '../utils/api';
 import { getCurrentUser } from '../utils/auth';
 import { getImageUrl } from '../utils/imageUrl';
@@ -250,11 +252,6 @@ function Events() {
                       )}
                     </div>
 
-                    <div className="event-stats">
-                      <span>{goingCount} going</span>
-                      <span>{interestedCount} interested</span>
-                    </div>
-
                     <div className="event-creator">
                       <Link to={`/profile/${event.creator?.username}`} className="creator-link">
                         {event.creator?.profilePhoto ? (
@@ -267,26 +264,19 @@ function Events() {
                       </Link>
                     </div>
 
-                    <div className="event-actions">
-                      {userRSVP?.status === 'going' ? (
-                        <button className="btn-rsvp active" onClick={() => handleRSVP(event._id, 'not-going')}>
-                          ✓ Going
-                        </button>
-                      ) : (
-                        <button className="btn-rsvp" onClick={() => handleRSVP(event._id, 'going')}>
-                          RSVP
-                        </button>
-                      )}
-                      {userRSVP?.status === 'interested' ? (
-                        <button className="btn-interested active" onClick={() => handleRSVP(event._id, 'not-going')}>
-                          ⭐ Interested
-                        </button>
-                      ) : (
-                        <button className="btn-interested" onClick={() => handleRSVP(event._id, 'interested')}>
-                          Interested
-                        </button>
-                      )}
-                    </div>
+                    {/* Event RSVP Component */}
+                    <EventRSVP
+                      event={event}
+                      currentUserId={currentUser?._id}
+                      onRSVPChange={(updatedEvent) => {
+                        setEvents(events.map(e => e._id === updatedEvent._id ? updatedEvent : e));
+                      }}
+                    />
+
+                    {/* Event Attendees Component */}
+                    <EventAttendees
+                      event={event}
+                    />
                   </div>
                 </div>
               );

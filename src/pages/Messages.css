@@ -47,6 +47,11 @@
   gap: var(--space-2);
 }
 
+.message-search-container {
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
 .sidebar-title {
   color: var(--color-primary);
   font-size: 18px;

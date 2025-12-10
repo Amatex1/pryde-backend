@@ -11,6 +11,10 @@ import FormattedText from '../components/FormattedText';
 import PostSkeleton from '../components/PostSkeleton';
 import OptimizedImage from '../components/OptimizedImage';
 import GifPicker from '../components/GifPicker';
+import PollCreator from '../components/PollCreator';
+import Poll from '../components/Poll';
+import PinnedPostBadge from '../components/PinnedPostBadge';
+import EditHistoryModal from '../components/EditHistoryModal';
 import { useModal } from '../hooks/useModal';
 import api from '../utils/api';
 import { getCurrentUser } from '../utils/auth';
@@ -66,6 +70,11 @@ function Feed() {
   const [showMobileSidebar, setShowMobileSidebar] = useState(false);
   const [reactionDetailsModal, setReactionDetailsModal] = useState({ isOpen: false, reactions: [], likes: [] });
   const [feedFilter, setFeedFilter] = useState('followers'); // 'followers', 'public'
+  const [poll, setPoll] = useState(null); // Poll data for new post
+  const [showPollCreator, setShowPollCreator] = useState(false); // Show/hide poll creator
+  const [showEditHistory, setShowEditHistory] = useState(false);
+  const [editHistoryPostId, setEditHistoryPostId] = useState(null);
+  const [hideMetrics, setHideMetrics] = useState(false); // Hide metrics for new post
   const [autoHideContentWarnings, setAutoHideContentWarnings] = useState(false);
   const [quietMode, setQuietMode] = useState(document.documentElement.getAttribute('data-quiet-mode') === 'true');
   const currentUser = getCurrentUser();
@@ -426,7 +435,9 @@ function Feed() {
         content: contentWithEmojis,
         media: selectedMedia,
         visibility: postVisibility,
-        contentWarning: contentWarning
+        contentWarning: contentWarning,
+        poll: poll, // Include poll data if present
+        hideMetrics: hideMetrics // Include hideMetrics setting
       };
 
       // PHASE 1 REFACTOR: Custom privacy removed
@@ -448,6 +459,9 @@ function Feed() {
       setSharedWithUsers([]);
       setContentWarning('');
       setShowContentWarning(false);
+      setPoll(null);
+      setShowPollCreator(false);
+      setHideMetrics(false);
     } catch (error) {
       console.error('Post creation failed:', error);
       showAlert('Failed to create post. Please try again.', 'Post Failed');
@@ -774,6 +788,14 @@ function Feed() {
                 </div>
               )}
 
+              {/* Poll Creator */}
+              {showPollCreator && (
+                <PollCreator
+                  onPollChange={setPoll}
+                  initialPoll={poll}
+                />
+              )}
+
               <div className="post-actions-bar">
                 <label className="btn-media-upload">
                   <input
@@ -789,12 +811,30 @@ function Feed() {
 
                 <button
                   type="button"
+                  className={`btn-poll ${showPollCreator ? 'active' : ''}`}
+                  onClick={() => setShowPollCreator(!showPollCreator)}
+                  title="Add poll"
+                >
+                  📊 Poll
+                </button>
+
+                <button
+                  type="button"
                   className={`btn-content-warning ${showContentWarning ? 'active' : ''}`}
                   onClick={() => setShowContentWarning(!showContentWarning)}
                   title="Add content warning"
                 >
                   ⚠️ CW
                 </button>
+
+                <label className="hide-metrics-checkbox" title="Hide likes, comments, and shares count">
+                  <input
+                    type="checkbox"
+                    checked={hideMetrics}
+                    onChange={(e) => setHideMetrics(e.target.checked)}
+                  />
+                  <span>🔇 Hide Metrics</span>
+                </label>
 
                 {/* PHASE 1 REFACTOR: Simplified privacy options */}
                 <select
@@ -862,6 +902,9 @@ function Feed() {
                     ref={(el) => postRefs.current[post._id] = el}
                   >
                     <div className="post-header">
+                      {/* Pinned Post Badge */}
+                      {post.isPinned && <PinnedPostBadge />}
+
                       <div className="post-author">
                         <Link to={`/profile/${post.author?.username}`} className="author-avatar" style={{ textDecoration: 'none' }}>
                           {post.author?.profilePhoto ? (
@@ -908,6 +951,32 @@ function Feed() {
                             <div className="dropdown-menu">
                               {(post.author?._id === currentUser?.id || post.author?._id === currentUser?._id) ? (
                                 <>
+                                  <button
+                                    className="dropdown-item"
+                                    onClick={async () => {
+                                      try {
+                                        const response = await api.post(`/posts/${post._id}/pin`);
+                                        setPosts(posts.map(p => p._id === post._id ? response.data : p));
+                                        setOpenDropdownId(null);
+                                      } catch (error) {
+                                        console.error('Failed to toggle pin:', error);
+                                      }
+                                    }}
+                                  >
+                                    📌 {post.isPinned ? 'Unpin' : 'Pin to Profile'}
+                                  </button>
+                                  {post.edited && (
+                                    <button
+                                      className="dropdown-item"
+                                      onClick={() => {
+                                        setEditHistoryPostId(post._id);
+                                        setShowEditHistory(true);
+                                        setOpenDropdownId(null);
+                                      }}
+                                    >
+                                      📜 View Edit History
+                                    </button>
+                                  )}
                                   {!post.isShared && (
                                     <button
                                       className="dropdown-item"
@@ -1101,6 +1170,18 @@ function Feed() {
                               ))}
                             </div>
                           )}
+
+                          {/* Poll Component */}
+                          {post.poll && (
+                            <Poll
+                              poll={post.poll}
+                              postId={post._id}
+                              currentUserId={currentUser?._id}
+                              onVote={(updatedPost) => {
+                                setPosts(posts.map(p => p._id === updatedPost._id ? updatedPost : p));
+                              }}
+                            />
+                          )}
                         </>
                       )}
                     </div>
@@ -1180,7 +1261,7 @@ function Feed() {
                           </div>
                         )}
                       </div>
-                      {!quietMode && post.reactions?.length > 0 && (
+                      {!quietMode && !post.hideMetrics && post.reactions?.length > 0 && (
                         <button
                           className="reaction-count-btn"
                           onClick={() => setReactionDetailsModal({
@@ -1196,13 +1277,13 @@ function Feed() {
                         className="action-btn"
                         onClick={() => toggleCommentBox(post._id)}
                       >
-                        <span>💬</span> Comment ({post.comments?.length || 0})
+                        <span>💬</span> Comment {!post.hideMetrics && `(${post.comments?.length || 0})`}
                       </button>
                       <button
                         className="action-btn"
                         onClick={() => handleShare(post)}
                       >
-                        <span>🔗</span> Share ({post.shares?.length || 0})
+                        <span>🔗</span> Share {!post.hideMetrics && `(${post.shares?.length || 0})`}
                       </button>
                       <button
                         className={`action-btn ${bookmarkedPosts.includes(post._id) ? 'bookmarked' : ''}`}
@@ -2041,6 +2122,16 @@ function Feed() {
           onClose={() => setReactionDetailsModal({ isOpen: false, reactions: [], likes: [] })}
         />
       )}
+
+      <EditHistoryModal
+        isOpen={showEditHistory}
+        onClose={() => {
+          setShowEditHistory(false);
+          setEditHistoryPostId(null);
+        }}
+        postId={editHistoryPostId}
+        contentType="post"
+      />
     </div>
   );
 }
