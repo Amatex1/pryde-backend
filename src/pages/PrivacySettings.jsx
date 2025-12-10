@@ -17,6 +17,7 @@ const PrivacySettings = () => {
     showOnlineStatus: true,
     showLastSeen: true,
     whoCanSeeMyPosts: 'public',
+    defaultPostVisibility: 'followers',
     whoCanCommentOnMyPosts: 'everyone',
     whoCanSeeFollowersList: 'everyone',
     whoCanTagMe: 'followers',
@@ -210,6 +211,21 @@ const PrivacySettings = () => {
             {/* Posts & Content */}
             <div className="privacy-section">
               <h2 className="section-title">📝 Posts & Content</h2>
+
+              <div className="setting-item">
+                <label>Default Post Visibility</label>
+                <p className="setting-description">
+                  Choose the default privacy level for new posts. You can change this for individual posts.
+                </p>
+                <select
+                  value={privacySettings.defaultPostVisibility}
+                  onChange={(e) => handleSettingChange('defaultPostVisibility', e.target.value)}
+                >
+                  <option value="public">🌍 Public</option>
+                  <option value="followers">👥 Connections</option>
+                  <option value="private">🔒 Private</option>
+                </select>
+              </div>
 
               <div className="setting-item">
                 <label>Who Can See My Posts?</label>

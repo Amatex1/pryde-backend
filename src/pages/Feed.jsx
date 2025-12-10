@@ -341,6 +341,9 @@ function Feed() {
     try {
       const response = await api.get('/privacy');
       setAutoHideContentWarnings(response.data.privacySettings.autoHideContentWarnings || false);
+      // Set default post visibility from user's privacy settings
+      const defaultVisibility = response.data.privacySettings.defaultPostVisibility || 'followers';
+      setPostVisibility(defaultVisibility);
     } catch (error) {
       console.error('Failed to fetch privacy settings:', error);
     }
@@ -1038,7 +1041,7 @@ function Feed() {
                             </div>
                           ) : (
                             <>
-                              {post.contentWarning && !revealedPosts[post._id] ? (
+                              {post.contentWarning && !revealedPosts[post._id] && autoHideContentWarnings ? (
                                 <div className="content-warning-overlay">
                                   <div className="cw-header">
                                     <span className="cw-icon">⚠️</span>
@@ -1061,7 +1064,7 @@ function Feed() {
                             </>
                           )}
 
-                          {post.media && post.media.length > 0 && (!post.contentWarning || revealedPosts[post._id]) && (
+                          {post.media && post.media.length > 0 && (!post.contentWarning || !autoHideContentWarnings || revealedPosts[post._id]) && (
                             <div className={`post-media-grid ${post.media.length === 1 ? 'single' : post.media.length === 2 ? 'double' : 'multiple'}`}>
                               {post.media.map((media, index) => (
                                 <div key={index} className="post-media-item">

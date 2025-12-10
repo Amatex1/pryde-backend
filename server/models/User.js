@@ -475,6 +475,11 @@ const userSchema = new mongoose.Schema({
       enum: ['public', 'followers', 'only-me'], // REMOVED: 'friends'
       default: 'public'
     },
+    defaultPostVisibility: {
+      type: String,
+      enum: ['public', 'followers', 'private'],
+      default: 'followers'
+    },
     whoCanCommentOnMyPosts: {
       type: String,
       enum: ['everyone', 'followers', 'no-one'], // REMOVED: 'friends'

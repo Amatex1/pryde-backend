@@ -87,6 +87,10 @@ function Profile() {
       fetchUserPosts()
     ];
 
+    if (isOwnProfile) {
+      fetchPromises.push(fetchPrivacySettings());
+    }
+
     if (!isOwnProfile) {
       fetchPromises.push(
         checkFriendStatus(),
@@ -191,6 +195,17 @@ function Profile() {
       // Default to allowing if we can't check
       setCanSendFriendRequest(true);
       setCanSendMessage(false);
+    }
+  };
+
+  const fetchPrivacySettings = async () => {
+    try {
+      const response = await api.get('/privacy');
+      // Set default post visibility from user's privacy settings
+      const defaultVisibility = response.data.privacySettings.defaultPostVisibility || 'followers';
+      setPostVisibility(defaultVisibility);
+    } catch (error) {
+      console.error('Failed to fetch privacy settings:', error);
     }
   };
 
@@ -953,12 +968,12 @@ function Profile() {
               <div className="profile-badges">
                 {user.pronouns && (
                   <span className="badge">
-                    {user.pronouns}
+                    {user.pronouns.charAt(0).toUpperCase() + user.pronouns.slice(1)}
                   </span>
                 )}
                 {user.gender && (
                   <span className="badge">
-                    {user.gender}
+                    {user.gender.charAt(0).toUpperCase() + user.gender.slice(1)}
                   </span>
                 )}
                 {user.sexualOrientation && (
