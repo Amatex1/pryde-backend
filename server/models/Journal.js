@@ -37,6 +37,21 @@ const journalSchema = new mongoose.Schema({
     lowercase: true,
     trim: true
   }],
+  hideMetrics: {
+    type: Boolean,
+    default: false
+  },
+  editHistory: [{
+    title: String,
+    body: {
+      type: String,
+      required: true
+    },
+    editedAt: {
+      type: Date,
+      default: Date.now
+    }
+  }],
   createdAt: {
     type: Date,
     default: Date.now

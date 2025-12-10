@@ -241,11 +241,11 @@ router.get('/:id', auth, async (req, res) => {
 // @access  Private
 router.post('/', auth, postLimiter, sanitizeFields(['content', 'contentWarning']), checkMuted, moderateContent, async (req, res) => {
   try {
-    const { content, images, media, visibility, hiddenFrom, sharedWith, contentWarning, tags } = req.body;
+    const { content, images, media, visibility, hiddenFrom, sharedWith, contentWarning, tags, hideMetrics, poll } = req.body;
 
-    // Require either content or media
-    if ((!content || content.trim() === '') && (!media || media.length === 0)) {
-      return res.status(400).json({ message: 'Post must have content or media' });
+    // Require either content, media, or poll
+    if ((!content || content.trim() === '') && (!media || media.length === 0) && !poll) {
+      return res.status(400).json({ message: 'Post must have content, media, or a poll' });
     }
 
     const userId = req.userId || req.user._id;
@@ -276,7 +276,9 @@ router.post('/', auth, postLimiter, sanitizeFields(['content', 'contentWarning']
       hiddenFrom: hiddenFrom || [],
       sharedWith: sharedWith || [],
       contentWarning: contentWarning || '',
-      tags: tagIds // PHASE 4: Add tags
+      tags: tagIds, // PHASE 4: Add tags
+      hideMetrics: hideMetrics || false,
+      poll: poll || null
     });
 
     await post.save();
@@ -309,6 +311,18 @@ router.put('/:id', auth, async (req, res) => {
     }
 
     const { content, images, visibility, hiddenFrom, sharedWith } = req.body;
+
+    // Save to edit history if content changed
+    if (content !== undefined && content !== post.content) {
+      if (!post.editHistory) {
+        post.editHistory = [];
+      }
+      post.editHistory.push({
+        content: post.content,
+        editedAt: new Date(),
+        editedBy: userId
+      });
+    }
 
     if (content !== undefined) post.content = content;
     if (images) post.images = images;
@@ -1063,6 +1077,78 @@ router.post('/:id/pin', auth, async (req, res) => {
     res.json(sanitizedPost);
   } catch (error) {
     console.error('Pin post error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   POST /api/posts/:id/poll/vote
+// @desc    Vote on a poll
+// @access  Private
+router.post('/:id/poll/vote', auth, async (req, res) => {
+  try {
+    const { optionIndex } = req.body;
+    const userId = req.userId;
+
+    const post = await Post.findById(req.params.id);
+
+    if (!post) {
+      return res.status(404).json({ message: 'Post not found' });
+    }
+
+    if (!post.poll || !post.poll.question) {
+      return res.status(400).json({ message: 'This post does not have a poll' });
+    }
+
+    // Check if poll has ended
+    if (post.poll.endsAt && new Date() > post.poll.endsAt) {
+      return res.status(400).json({ message: 'This poll has ended' });
+    }
+
+    if (optionIndex === undefined || optionIndex < 0 || optionIndex >= post.poll.options.length) {
+      return res.status(400).json({ message: 'Invalid option index' });
+    }
+
+    // Check if user already voted
+    const hasVoted = post.poll.options.some(option =>
+      option.votes.some(vote => vote.toString() === userId.toString())
+    );
+
+    if (hasVoted && !post.poll.allowMultipleVotes) {
+      // Remove previous vote if not allowing multiple votes
+      post.poll.options.forEach(option => {
+        option.votes = option.votes.filter(vote => vote.toString() !== userId.toString());
+      });
+    }
+
+    // Add vote
+    post.poll.options[optionIndex].votes.push(userId);
+
+    await post.save();
+    await post.populate('author', 'username displayName profilePhoto isVerified pronouns');
+
+    const sanitizedPost = sanitizePostForPrivateLikes(post, userId);
+    res.json(sanitizedPost);
+  } catch (error) {
+    console.error('Poll vote error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   GET /api/posts/:id/edit-history
+// @desc    Get edit history for a post
+// @access  Private
+router.get('/:id/edit-history', auth, async (req, res) => {
+  try {
+    const post = await Post.findById(req.params.id)
+      .populate('editHistory.editedBy', 'username displayName profilePhoto');
+
+    if (!post) {
+      return res.status(404).json({ message: 'Post not found' });
+    }
+
+    res.json({ editHistory: post.editHistory || [] });
+  } catch (error) {
+    console.error('Get edit history error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });

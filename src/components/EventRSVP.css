@@ -1,0 +1,118 @@
+.event-rsvp {
+  margin: 16px 0;
+}
+
+.rsvp-buttons {
+  display: flex;
+  gap: 12px;
+}
+
+.rsvp-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: 8px;
+  border: 2px solid var(--border-color);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+}
+
+.rsvp-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.rsvp-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.rsvp-btn.going {
+  border-color: #4CAF50;
+}
+
+.rsvp-btn.going:hover:not(:disabled) {
+  background: rgba(76, 175, 80, 0.1);
+  border-color: #4CAF50;
+}
+
+.rsvp-btn.going.active {
+  background: #4CAF50;
+  color: white;
+  border-color: #4CAF50;
+}
+
+.rsvp-btn.interested {
+  border-color: var(--electric-blue);
+}
+
+.rsvp-btn.interested:hover:not(:disabled) {
+  background: rgba(9, 132, 227, 0.1);
+  border-color: var(--electric-blue);
+}
+
+.rsvp-btn.interested.active {
+  background: var(--electric-blue);
+  color: white;
+  border-color: var(--electric-blue);
+}
+
+.rsvp-icon {
+  font-size: 1.1rem;
+}
+
+.rsvp-label {
+  font-weight: 600;
+}
+
+.rsvp-count {
+  background: rgba(255, 255, 255, 0.3);
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  margin-left: 4px;
+}
+
+.rsvp-btn.active .rsvp-count {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+/* Dark mode */
+body.dark-mode .rsvp-btn {
+  background: var(--bg-primary-dark);
+  border-color: var(--border-color-dark);
+}
+
+body.dark-mode .rsvp-btn.going:hover:not(:disabled) {
+  background: rgba(76, 175, 80, 0.15);
+}
+
+body.dark-mode .rsvp-btn.interested:hover:not(:disabled) {
+  background: rgba(9, 132, 227, 0.15);
+}
+
+/* Quiet mode - hide counts */
+body.quiet-mode .rsvp-count {
+  display: none;
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .rsvp-buttons {
+    flex-direction: column;
+  }
+
+  .rsvp-btn {
+    width: 100%;
+  }
+}
+

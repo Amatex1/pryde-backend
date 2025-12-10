@@ -173,6 +173,56 @@ const postSchema = new mongoose.Schema({
   pinnedAt: {
     type: Date,
     default: null
+  },
+  // Per-post hide metrics
+  hideMetrics: {
+    type: Boolean,
+    default: false
+  },
+  // Edit history
+  editHistory: [{
+    content: {
+      type: String,
+      required: true
+    },
+    editedAt: {
+      type: Date,
+      default: Date.now
+    },
+    editedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
+    }
+  }],
+  // Poll feature
+  poll: {
+    question: {
+      type: String,
+      maxlength: 200
+    },
+    options: [{
+      text: {
+        type: String,
+        required: true,
+        maxlength: 100
+      },
+      votes: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
+      }]
+    }],
+    endsAt: {
+      type: Date,
+      default: null
+    },
+    allowMultipleVotes: {
+      type: Boolean,
+      default: false
+    },
+    showResultsBeforeVoting: {
+      type: Boolean,
+      default: false
+    }
   }
 });
 

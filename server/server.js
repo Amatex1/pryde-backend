@@ -46,6 +46,8 @@ import bookmarksRoutes from './routes/bookmarks.js';
 import passkeyRoutes from './routes/passkey.js';
 import eventsRoutes from './routes/events.js';
 import loginApprovalRoutes from './routes/loginApproval.js';
+import draftsRoutes from './routes/drafts.js';
+import recoveryContactsRoutes from './routes/recoveryContacts.js';
 
 // Import middleware
 import auth from './middleware/auth.js';
@@ -270,6 +272,8 @@ app.use('/api/privacy', privacyRoutes);
 app.use('/api/bookmarks', bookmarksRoutes);
 app.use('/api/events', eventsRoutes);
 app.use('/api/login-approval', loginApprovalRoutes);
+app.use('/api/drafts', draftsRoutes);
+app.use('/api/recovery-contacts', recoveryContactsRoutes);
 
 // Debug: Log the passkey router before registering
 console.log('🔍 Passkey router type:', typeof passkeyRoutes);

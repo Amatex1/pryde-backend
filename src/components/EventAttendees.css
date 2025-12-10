@@ -1,0 +1,151 @@
+.view-attendees-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  cursor: pointer;
+  padding: 8px 0;
+  transition: all 0.2s;
+}
+
+.view-attendees-btn:hover {
+  color: var(--pryde-purple);
+}
+
+.attendees-icon {
+  font-size: 1.1rem;
+}
+
+.attendees-text {
+  font-weight: 600;
+}
+
+.event-attendees-modal {
+  max-height: 60vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.attendees-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  border-bottom: 2px solid var(--border-color);
+}
+
+.attendees-tab {
+  flex: 1;
+  padding: 12px 16px;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -2px;
+}
+
+.attendees-tab:hover {
+  color: var(--text-primary);
+}
+
+.attendees-tab.active {
+  color: var(--pryde-purple);
+  border-bottom-color: var(--pryde-purple);
+}
+
+.attendees-list {
+  overflow-y: auto;
+  max-height: 50vh;
+}
+
+.no-attendees {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text-muted);
+}
+
+.attendee-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 8px;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+
+.attendee-item:hover {
+  background: var(--hover-bg);
+}
+
+.attendee-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.attendee-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.attendee-name {
+  color: var(--text-primary);
+  font-weight: 600;
+  font-size: 0.95rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.attendee-username {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.attendee-status {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.attendee-status.going {
+  background: rgba(76, 175, 80, 0.15);
+  color: #4CAF50;
+}
+
+.attendee-status.interested {
+  background: rgba(9, 132, 227, 0.15);
+  color: var(--electric-blue);
+}
+
+/* Dark mode */
+body.dark-mode .attendees-tabs {
+  border-bottom-color: var(--border-color-dark);
+}
+
+body.dark-mode .attendee-item:hover {
+  background: var(--hover-bg-dark);
+}
+
+body.dark-mode .attendee-status.going {
+  background: rgba(76, 175, 80, 0.2);
+}
+
+body.dark-mode .attendee-status.interested {
+  background: rgba(9, 132, 227, 0.2);
+}
+

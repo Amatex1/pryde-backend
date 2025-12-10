@@ -1,0 +1,151 @@
+.poll-creator {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 20px;
+  margin: 15px 0;
+}
+
+.poll-header h4 {
+  margin: 0 0 20px 0;
+  color: var(--text-primary);
+  font-size: 1.1rem;
+}
+
+.poll-field {
+  margin-bottom: 20px;
+}
+
+.poll-field label {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--text-primary);
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.poll-field input[type="text"],
+.poll-field select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  transition: all 0.2s;
+}
+
+.poll-field input[type="text"]:focus,
+.poll-field select:focus {
+  outline: none;
+  border-color: var(--pryde-purple);
+  box-shadow: 0 0 0 3px rgba(108, 92, 231, 0.1);
+}
+
+.char-count {
+  display: block;
+  text-align: right;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+.poll-option-input {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.poll-option-input input {
+  flex: 1;
+}
+
+.remove-option-btn {
+  background: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-muted);
+  width: 36px;
+  height: 36px;
+  border-radius: 6px;
+  font-size: 1.5rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.remove-option-btn:hover {
+  background: #ff4444;
+  color: white;
+  border-color: #ff4444;
+}
+
+.add-option-btn {
+  background: transparent;
+  border: 1px dashed var(--border-color);
+  color: var(--pryde-purple);
+  padding: 10px;
+  border-radius: 8px;
+  width: 100%;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.add-option-btn:hover {
+  background: var(--soft-lavender);
+  border-color: var(--pryde-purple);
+}
+
+.poll-settings {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border-color);
+}
+
+.poll-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+}
+
+.poll-checkbox input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: var(--pryde-purple);
+}
+
+.poll-checkbox span {
+  user-select: none;
+}
+
+/* Dark mode */
+body.dark-mode .poll-creator {
+  background: var(--card-bg-dark);
+  border-color: var(--border-color-dark);
+}
+
+body.dark-mode .poll-field input[type="text"],
+body.dark-mode .poll-field select {
+  background: var(--bg-primary-dark);
+  border-color: var(--border-color-dark);
+}
+
+body.dark-mode .add-option-btn:hover {
+  background: rgba(108, 92, 231, 0.1);
+}
+
+/* Quiet mode */
+body.quiet-mode .poll-creator {
+  border-color: var(--border-light);
+}
+

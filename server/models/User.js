@@ -435,6 +435,64 @@ const userSchema = new mongoose.Schema({
       default: Date.now
     }
   }],
+  // Trusted Recovery Contacts
+  recoveryContacts: [{
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: true
+    },
+    status: {
+      type: String,
+      enum: ['pending', 'accepted', 'declined'],
+      default: 'pending'
+    },
+    addedAt: {
+      type: Date,
+      default: Date.now
+    },
+    acceptedAt: {
+      type: Date,
+      default: null
+    }
+  }],
+  // Recovery requests initiated by this user
+  recoveryRequests: [{
+    requestId: {
+      type: String,
+      required: true,
+      unique: true
+    },
+    contactsNotified: [{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
+    }],
+    contactsApproved: [{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
+    }],
+    requiredApprovals: {
+      type: Number,
+      default: 2 // Require 2 out of 3 contacts to approve
+    },
+    status: {
+      type: String,
+      enum: ['pending', 'approved', 'denied', 'expired'],
+      default: 'pending'
+    },
+    createdAt: {
+      type: Date,
+      default: Date.now
+    },
+    expiresAt: {
+      type: Date,
+      default: () => new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
+    },
+    newPasswordHash: {
+      type: String,
+      default: null
+    }
+  }],
   // Privacy Settings
   // PHASE 1 REFACTOR: Simplified privacy options
   privacySettings: {

@@ -3,7 +3,11 @@ const router = express.Router();
 import auth from '../middleware/auth.js';
 import User from '../models/User.js';
 import Post from '../models/Post.js';
+import Message from '../models/Message.js';
+import Journal from '../models/Journal.js';
+import Longform from '../models/Longform.js';
 import { searchLimiter } from '../middleware/rateLimiter.js';
+import { decryptMessage } from '../utils/encryption.js';
 
 // @route   GET /api/search
 // @desc    Global search for users, posts, and hashtags
@@ -155,6 +159,125 @@ router.get('/trending', auth, async (req, res) => {
     res.json(trending);
   } catch (error) {
     console.error('Trending error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   GET /api/search/messages
+// @desc    Search inside DMs
+// @access  Private
+router.get('/messages', auth, searchLimiter, async (req, res) => {
+  try {
+    const { q, conversationWith, limit = 50 } = req.query;
+
+    if (!q || q.trim() === '') {
+      return res.status(400).json({ message: 'Search query is required' });
+    }
+
+    const searchQuery = {
+      $or: [
+        { sender: req.userId },
+        { recipient: req.userId }
+      ]
+    };
+
+    // Filter by conversation partner if specified
+    if (conversationWith) {
+      searchQuery.$or = [
+        { sender: req.userId, recipient: conversationWith },
+        { sender: conversationWith, recipient: req.userId }
+      ];
+    }
+
+    // Get all messages in the conversation(s)
+    const messages = await Message.find(searchQuery)
+      .populate('sender', 'username displayName profilePhoto')
+      .populate('recipient', 'username displayName profilePhoto')
+      .sort({ createdAt: -1 })
+      .limit(parseInt(limit));
+
+    // Decrypt and filter messages that match the search query
+    const matchingMessages = messages.filter(msg => {
+      const decryptedContent = decryptMessage(msg.content);
+      return decryptedContent.toLowerCase().includes(q.toLowerCase());
+    }).map(msg => ({
+      ...msg.toObject(),
+      content: decryptMessage(msg.content)
+    }));
+
+    res.json({ messages: matchingMessages, count: matchingMessages.length });
+  } catch (error) {
+    console.error('Search messages error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   GET /api/search/my-posts
+// @desc    Search user's own posts
+// @access  Private
+router.get('/my-posts', auth, searchLimiter, async (req, res) => {
+  try {
+    const { q, type = 'all', limit = 50 } = req.query;
+
+    if (!q || q.trim() === '') {
+      return res.status(400).json({ message: 'Search query is required' });
+    }
+
+    const searchRegex = new RegExp(q, 'i');
+    const results = {
+      posts: [],
+      journals: [],
+      longforms: []
+    };
+
+    // Search posts
+    if (type === 'all' || type === 'posts') {
+      results.posts = await Post.find({
+        author: req.userId,
+        content: searchRegex
+      })
+        .populate('author', 'username displayName profilePhoto isVerified pronouns')
+        .sort({ createdAt: -1 })
+        .limit(parseInt(limit));
+    }
+
+    // Search journals
+    if (type === 'all' || type === 'journals') {
+      results.journals = await Journal.find({
+        user: req.userId,
+        $or: [
+          { title: searchRegex },
+          { body: searchRegex }
+        ]
+      })
+        .populate('user', 'username displayName profilePhoto')
+        .sort({ createdAt: -1 })
+        .limit(parseInt(limit));
+    }
+
+    // Search longforms
+    if (type === 'all' || type === 'longforms') {
+      results.longforms = await Longform.find({
+        author: req.userId,
+        $or: [
+          { title: searchRegex },
+          { body: searchRegex }
+        ]
+      })
+        .populate('author', 'username displayName profilePhoto isVerified pronouns')
+        .sort({ createdAt: -1 })
+        .limit(parseInt(limit));
+    }
+
+    const totalCount = results.posts.length + results.journals.length + results.longforms.length;
+
+    res.json({
+      results,
+      count: totalCount,
+      query: q
+    });
+  } catch (error) {
+    console.error('Search my posts error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });

@@ -24,6 +24,16 @@ const messageSchema = new mongoose.Schema({
     type: String,
     default: null
   },
+  voiceNote: {
+    url: {
+      type: String,
+      default: null
+    },
+    duration: {
+      type: Number, // Duration in seconds
+      default: null
+    }
+  },
   read: {
     type: Boolean,
     default: false

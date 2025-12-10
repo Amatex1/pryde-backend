@@ -61,6 +61,21 @@ const longformSchema = new mongoose.Schema({
       default: Date.now
     }
   }],
+  hideMetrics: {
+    type: Boolean,
+    default: false
+  },
+  editHistory: [{
+    title: String,
+    body: {
+      type: String,
+      required: true
+    },
+    editedAt: {
+      type: Date,
+      default: Date.now
+    }
+  }],
   createdAt: {
     type: Date,
     default: Date.now

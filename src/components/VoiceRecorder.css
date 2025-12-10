@@ -1,0 +1,160 @@
+.start-recording-btn {
+  background: var(--pryde-purple);
+  color: white;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.start-recording-btn:hover {
+  background: var(--electric-blue);
+  transform: translateY(-1px);
+}
+
+.voice-recorder {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.voice-recorder.uploading {
+  justify-content: center;
+  gap: 12px;
+  color: var(--text-muted);
+}
+
+.uploading-spinner {
+  width: 20px;
+  height: 20px;
+  border: 3px solid var(--border-color);
+  border-top-color: var(--pryde-purple);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.recording-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.recording-dot {
+  width: 12px;
+  height: 12px;
+  background: #ff4444;
+  border-radius: 50%;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.recording-dot.paused {
+  background: #ffa500;
+  animation: none;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+.recording-text {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.recording-duration {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--pryde-purple);
+  font-family: 'Courier New', monospace;
+}
+
+.recording-controls {
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.recording-controls button {
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: none;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.pause-btn,
+.resume-btn {
+  background: var(--electric-blue);
+  color: white;
+}
+
+.pause-btn:hover,
+.resume-btn:hover {
+  background: var(--pryde-purple);
+  transform: translateY(-1px);
+}
+
+.stop-btn {
+  background: #4CAF50;
+  color: white;
+}
+
+.stop-btn:hover {
+  background: #45a049;
+  transform: translateY(-1px);
+}
+
+.cancel-btn {
+  background: transparent;
+  color: var(--text-muted);
+  border: 1px solid var(--border-color);
+}
+
+.cancel-btn:hover {
+  background: #ff4444;
+  color: white;
+  border-color: #ff4444;
+}
+
+/* Dark mode */
+body.dark-mode .voice-recorder {
+  background: var(--card-bg-dark);
+  border-color: var(--border-color-dark);
+}
+
+body.dark-mode .uploading-spinner {
+  border-color: var(--border-color-dark);
+  border-top-color: var(--pryde-purple);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .voice-recorder.recording {
+    flex-wrap: wrap;
+  }
+
+  .recording-controls {
+    width: 100%;
+    justify-content: space-between;
+    margin-left: 0;
+  }
+}
+

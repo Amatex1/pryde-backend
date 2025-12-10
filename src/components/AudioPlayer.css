@@ -1,0 +1,109 @@
+.audio-player {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  padding: 10px 16px;
+  max-width: 350px;
+}
+
+.play-pause-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--pryde-purple);
+  color: white;
+  border: none;
+  font-size: 1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.play-pause-btn:hover {
+  background: var(--electric-blue);
+  transform: scale(1.05);
+}
+
+.audio-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.audio-progress-bar {
+  position: relative;
+  height: 6px;
+  background: var(--border-color);
+  border-radius: 3px;
+  cursor: pointer;
+  margin-bottom: 6px;
+}
+
+.audio-progress-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  background: linear-gradient(90deg, var(--pryde-purple), var(--electric-blue));
+  border-radius: 3px;
+  transition: width 0.1s linear;
+}
+
+.audio-progress-handle {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 14px;
+  height: 14px;
+  background: white;
+  border: 2px solid var(--pryde-purple);
+  border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  transition: left 0.1s linear;
+  pointer-events: none;
+}
+
+.audio-time {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-family: 'Courier New', monospace;
+}
+
+.current-time {
+  color: var(--pryde-purple);
+  font-weight: 600;
+}
+
+.audio-icon {
+  font-size: 1.2rem;
+  flex-shrink: 0;
+}
+
+/* Dark mode */
+body.dark-mode .audio-player {
+  background: var(--card-bg-dark);
+  border-color: var(--border-color-dark);
+}
+
+body.dark-mode .audio-progress-bar {
+  background: var(--border-color-dark);
+}
+
+body.dark-mode .audio-progress-handle {
+  background: var(--card-bg-dark);
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .audio-player {
+    max-width: 100%;
+  }
+}
+

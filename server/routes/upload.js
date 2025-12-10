@@ -12,17 +12,18 @@ import { Readable } from 'stream';
 // Use memory storage to process images before saving to GridFS
 const storage = multer.memoryStorage();
 
-// File filter to only allow images and videos
+// File filter to allow images, videos, and audio
 const fileFilter = (req, file, cb) => {
   // Allowed file types
   const allowedImageTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
   const allowedVideoTypes = ['video/mp4', 'video/webm', 'video/ogg', 'video/quicktime'];
-  const allowedTypes = [...allowedImageTypes, ...allowedVideoTypes];
+  const allowedAudioTypes = ['audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/ogg', 'audio/webm', 'audio/m4a'];
+  const allowedTypes = [...allowedImageTypes, ...allowedVideoTypes, ...allowedAudioTypes];
 
   if (allowedTypes.includes(file.mimetype)) {
     cb(null, true);
   } else {
-    cb(new Error(`Invalid file type. Only images (JPEG, PNG, GIF, WebP) and videos (MP4, WebM, OGG, MOV) are allowed. Received: ${file.mimetype}`), false);
+    cb(new Error(`Invalid file type. Only images (JPEG, PNG, GIF, WebP), videos (MP4, WebM, OGG, MOV), and audio (MP3, WAV, OGG, WebM, M4A) are allowed. Received: ${file.mimetype}`), false);
   }
 };
 
@@ -301,6 +302,33 @@ router.get('/file/:filename', async (req, res) => {
     console.error('Get file error:', error);
     res.status(500).json({ message: 'Error retrieving file' });
   }
+});
+
+// @route   POST /api/upload/voice-note
+// @desc    Upload voice note (audio file)
+// @access  Private
+router.post('/voice-note', auth, uploadLimiter, (req, res) => {
+  upload.single('audio')(req, res, async (err) => {
+    try {
+      if (err) {
+        console.error('Multer error:', err);
+        return res.status(500).json({ message: 'Upload failed', error: err.message });
+      }
+
+      if (!req.file) {
+        return res.status(400).json({ message: 'No audio file uploaded' });
+      }
+
+      // Save to GridFS (no EXIF stripping for audio)
+      const fileInfo = await saveToGridFS(req.file);
+      const audioUrl = `/upload/file/${fileInfo.filename}`;
+
+      res.json({ url: audioUrl, duration: req.body.duration || null });
+    } catch (error) {
+      console.error('Upload voice note error:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
 });
 
 export default router;

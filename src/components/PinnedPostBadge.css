@@ -1,0 +1,30 @@
+.pinned-post-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: linear-gradient(135deg, var(--pryde-purple), var(--electric-blue));
+  color: white;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.pin-icon {
+  font-size: 0.9rem;
+}
+
+.pin-text {
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Dark mode - no changes needed, gradient looks good in both modes */
+
+/* Quiet mode */
+body.quiet-mode .pinned-post-badge {
+  background: var(--text-muted);
+  opacity: 0.7;
+}
+
