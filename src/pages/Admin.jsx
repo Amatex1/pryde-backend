@@ -795,7 +795,7 @@ function ReportsTab({ reports, onResolve }) {
 function UsersTab({ users, onSuspend, onBan, onUnsuspend, onUnban, onChangeRole }) {
   return (
     <div className="users-list">
-      <h2>User Management</h2>
+      <h2>User Management ({users.length} total users)</h2>
       {users.length === 0 ? (
         <p className="empty-state">No users found</p>
       ) : (
@@ -803,6 +803,7 @@ function UsersTab({ users, onSuspend, onBan, onUnsuspend, onUnban, onChangeRole 
           <thead>
             <tr>
               <th>Username</th>
+              <th>Full Name</th>
               <th>Email</th>
               <th>Role</th>
               <th>Status</th>
@@ -814,6 +815,7 @@ function UsersTab({ users, onSuspend, onBan, onUnsuspend, onUnban, onChangeRole 
             {users.map(user => (
               <tr key={user._id}>
                 <td data-label="Username">{user.username}</td>
+                <td data-label="Full Name">{user.fullName || <span style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>Not provided</span>}</td>
                 <td data-label="Email">{user.email}</td>
                 <td data-label="Role">
                   {user.role?.toLowerCase() === 'super_admin' ? (

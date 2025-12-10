@@ -145,40 +145,40 @@ router.put('/reports/:id', checkPermission('canResolveReports'), async (req, res
 // @access  Admin (canManageUsers)
 router.get('/users', checkPermission('canManageUsers'), async (req, res) => {
   try {
-    const { search, role, status, page = 1, limit = 20 } = req.query;
-    
+    const { search, role, status } = req.query;
+
     const query = {};
-    
+
     if (search) {
       query.$or = [
         { username: { $regex: search, $options: 'i' } },
         { email: { $regex: search, $options: 'i' } },
-        { displayName: { $regex: search, $options: 'i' } }
+        { displayName: { $regex: search, $options: 'i' } },
+        { fullName: { $regex: search, $options: 'i' } }
       ];
     }
-    
+
     if (role) query.role = role;
-    
+
     if (status === 'active') query.isActive = true;
     if (status === 'inactive') query.isActive = false;
     if (status === 'suspended') query.isSuspended = true;
     if (status === 'banned') query.isBanned = true;
 
+    // Get all users without pagination
     const users = await User.find(query)
       .select('-password')
-      .sort({ createdAt: -1 })
-      .limit(parseInt(limit))
-      .skip((parseInt(page) - 1) * parseInt(limit));
+      .sort({ createdAt: -1 });
 
-    const total = await User.countDocuments(query);
+    const total = users.length;
 
     res.json({
       users,
       pagination: {
-        page: parseInt(page),
-        limit: parseInt(limit),
+        page: 1,
+        limit: total,
         total,
-        pages: Math.ceil(total / parseInt(limit))
+        pages: 1
       }
     });
   } catch (error) {
