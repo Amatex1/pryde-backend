@@ -180,13 +180,17 @@
 .btn-save {
   padding: 0.875rem 1.75rem;
   border-radius: 12px;
-  border: none;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
   font-size: 1rem;
   min-width: 120px;
   text-align: center;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
 }
 
 .btn-reset {
@@ -202,6 +206,7 @@
 .btn-cancel {
   background: var(--background-light);
   color: var(--text-main);
+  border: 2px solid var(--border-light);
 }
 
 .btn-cancel:hover {
@@ -211,6 +216,7 @@
 .btn-save {
   background: var(--gradient-primary);
   color: white;
+  border: 2px solid transparent;
 }
 
 .btn-save:hover:not(:disabled) {
