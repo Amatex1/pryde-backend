@@ -5,12 +5,6 @@ import CustomModal from '../components/CustomModal';
 import { useModal } from '../hooks/useModal';
 import api from '../utils/api';
 import { getCurrentUser, setCurrentUser, logout } from '../utils/auth';
-import {
-  subscribeToPushNotifications,
-  unsubscribeFromPushNotifications,
-  isPushNotificationSubscribed,
-  sendTestNotification
-} from '../utils/pushNotifications';
 import { applyQuietMode } from '../utils/quietMode';
 import './Settings.css';
 
@@ -34,7 +28,6 @@ function Settings() {
   });
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
-  const [pushEnabled, setPushEnabled] = useState(false);
   const [quietModeEnabled, setQuietModeEnabled] = useState(false); // PHASE 2: Quiet Mode
   const [isCreator, setIsCreator] = useState(false); // PHASE 5: Creator Mode
   const [verificationStatus, setVerificationStatus] = useState({
@@ -45,14 +38,8 @@ function Settings() {
 
   useEffect(() => {
     fetchUserData();
-    checkPushStatus();
     fetchVerificationStatus();
   }, []);
-
-  const checkPushStatus = async () => {
-    const isSubscribed = await isPushNotificationSubscribed();
-    setPushEnabled(isSubscribed);
-  };
 
   const fetchVerificationStatus = async () => {
     try {
@@ -167,45 +154,6 @@ function Settings() {
     } catch (error) {
       console.error('Failed to toggle creator mode:', error);
       setMessage('Failed to update creator mode');
-    }
-  };
-
-  const handlePushToggle = async () => {
-    try {
-      if (pushEnabled) {
-        const success = await unsubscribeFromPushNotifications();
-        if (success) {
-          setPushEnabled(false);
-          setMessage('Push notifications disabled');
-        } else {
-          setMessage('Failed to disable push notifications');
-        }
-      } else {
-        const success = await subscribeToPushNotifications();
-        if (success) {
-          setPushEnabled(true);
-          setMessage('Push notifications enabled!');
-        } else {
-          setMessage('Failed to enable push notifications. Please allow notifications in your browser.');
-        }
-      }
-    } catch (error) {
-      console.error('Push toggle error:', error);
-      setMessage('Failed to update push notification settings');
-    }
-  };
-
-  const handleTestNotification = async () => {
-    try {
-      const success = await sendTestNotification();
-      if (success) {
-        setMessage('Test notification sent!');
-      } else {
-        setMessage('Failed to send test notification. Make sure notifications are enabled.');
-      }
-    } catch (error) {
-      console.error('Test notification error:', error);
-      setMessage('Failed to send test notification');
     }
   };
 
@@ -476,39 +424,6 @@ function Settings() {
                   <span className="toggle-slider"></span>
                 </label>
               </div>
-            </div>
-          </div>
-
-          <div className="settings-section">
-            <h2 className="section-title">Notifications</h2>
-            
-            <div className="notification-settings">
-              <div className="notification-item">
-                <div className="notification-info">
-                  <h3>Push Notifications</h3>
-                  <p>Receive notifications even when you're not using the app</p>
-                </div>
-                <label className="toggle-switch">
-                  <input
-                    type="checkbox"
-                    id="push-notifications-toggle"
-                    name="pushNotifications"
-                    checked={pushEnabled}
-                    onChange={handlePushToggle}
-                  />
-                  <span className="toggle-slider"></span>
-                </label>
-              </div>
-
-              {pushEnabled && (
-                <button
-                  type="button"
-                  onClick={handleTestNotification}
-                  className="btn-test"
-                >
-                  🔔 Send Test Notification
-                </button>
-              )}
             </div>
           </div>
 
