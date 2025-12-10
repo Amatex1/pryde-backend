@@ -7,6 +7,7 @@ import Toast from '../components/Toast';
 import CustomModal from '../components/CustomModal';
 import ShareModal from '../components/ShareModal';
 import EditProfileModal from '../components/EditProfileModal';
+import PhotoRepositionModal from '../components/PhotoRepositionModal';
 import ReactionDetailsModal from '../components/ReactionDetailsModal';
 import FormattedText from '../components/FormattedText';
 import ProfileSkeleton from '../components/ProfileSkeleton';
@@ -78,6 +79,7 @@ function Profile() {
   const [editPostVisibility, setEditPostVisibility] = useState('friends');
   const [reactionDetailsModal, setReactionDetailsModal] = useState({ isOpen: false, reactions: [], likes: [] });
   const [profileError, setProfileError] = useState(null); // Track profile loading errors
+  const [repositionModal, setRepositionModal] = useState({ isOpen: false, photoType: null, photoUrl: null, position: null });
   const editTextareaRef = useRef(null);
 
   useEffect(() => {
@@ -676,6 +678,32 @@ function Profile() {
     }
   };
 
+  const handleOpenRepositionModal = (type) => {
+    const photoUrl = type === 'profile' ? user.profilePhoto : user.coverPhoto;
+    const position = type === 'profile' ? user.profilePhotoPosition : user.coverPhotoPosition;
+
+    setRepositionModal({
+      isOpen: true,
+      photoType: type,
+      photoUrl,
+      position: position || { x: 50, y: 50 }
+    });
+  };
+
+  const handleCloseRepositionModal = () => {
+    setRepositionModal({ isOpen: false, photoType: null, photoUrl: null, position: null });
+  };
+
+  const handleUpdatePhotoPosition = (newPosition) => {
+    // Update local user state with new position
+    setUser(prev => ({
+      ...prev,
+      [repositionModal.photoType === 'profile' ? 'profilePhotoPosition' : 'coverPhotoPosition']: newPosition
+    }));
+    setUploadMessage(`${repositionModal.photoType === 'profile' ? 'Profile' : 'Cover'} photo repositioned!`);
+    setTimeout(() => setUploadMessage(''), 3000);
+  };
+
   const handleAddFriend = async () => {
     try {
       if (!user?._id) {
@@ -891,7 +919,12 @@ function Profile() {
                 src={getImageUrl(user.coverPhoto)}
                 alt="Cover"
                 onClick={() => setPhotoViewerImage(getImageUrl(user.coverPhoto))}
-                style={{ cursor: 'pointer' }}
+                style={{
+                  cursor: 'pointer',
+                  objectPosition: user.coverPhotoPosition
+                    ? `${user.coverPhotoPosition.x}% ${user.coverPhotoPosition.y}%`
+                    : '50% 50%'
+                }}
                 loading="eager"
               />
             ) : (
@@ -927,6 +960,15 @@ function Profile() {
                     style={{ display: 'none' }}
                   />
                 </label>
+                {user.profilePhoto && (
+                  <button
+                    className="btn-profile-upload"
+                    onClick={() => handleOpenRepositionModal('profile')}
+                    title="Reposition Profile Photo"
+                  >
+                    🔄 Reposition Profile
+                  </button>
+                )}
                 <label htmlFor="cover-photo-upload" className="btn-profile-upload">
                   🖼️ Update Cover Photo
                   <input
@@ -937,6 +979,15 @@ function Profile() {
                     style={{ display: 'none' }}
                   />
                 </label>
+                {user.coverPhoto && (
+                  <button
+                    className="btn-profile-upload"
+                    onClick={() => handleOpenRepositionModal('cover')}
+                    title="Reposition Cover Photo"
+                  >
+                    🔄 Reposition Cover
+                  </button>
+                )}
               </div>
             )}
             <div className="profile-avatar">
@@ -945,6 +996,11 @@ function Profile() {
                   src={getImageUrl(user.profilePhoto)}
                   alt={user.username}
                   onClick={() => setPhotoViewerImage(getImageUrl(user.profilePhoto))}
+                  style={{
+                    objectPosition: user.profilePhotoPosition
+                      ? `${user.profilePhotoPosition.x}% ${user.profilePhotoPosition.y}%`
+                      : '50% 50%'
+                  }}
                   style={{ cursor: 'pointer' }}
                   loading="eager"
                 />
@@ -2366,6 +2422,17 @@ function Profile() {
           reactions={reactionDetailsModal.reactions}
           likes={reactionDetailsModal.likes}
           onClose={() => setReactionDetailsModal({ isOpen: false, reactions: [], likes: [] })}
+        />
+      )}
+
+      {repositionModal.isOpen && (
+        <PhotoRepositionModal
+          isOpen={repositionModal.isOpen}
+          onClose={handleCloseRepositionModal}
+          photoUrl={repositionModal.photoUrl}
+          photoType={repositionModal.photoType}
+          currentPosition={repositionModal.position}
+          onUpdate={handleUpdatePhotoPosition}
         />
       )}
     </div>

@@ -66,8 +66,11 @@
   top: 0.75rem;
   right: 1.5rem;
   display: flex;
+  flex-wrap: wrap;
   gap: 0.75rem;
   z-index: 5;
+  max-width: 50%;
+  justify-content: flex-end;
 }
 
 .btn-profile-upload {
