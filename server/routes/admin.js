@@ -8,6 +8,9 @@ import Message from '../models/Message.js';
 import SecurityLog from '../models/SecurityLog.js';
 import auth from '../middleware/auth.js';
 import adminAuth, { checkPermission } from '../middleware/adminAuth.js';
+import crypto from 'crypto';
+import { sendPasswordResetEmail, sendPasswordChangedEmail } from '../utils/emailService.js';
+import config from '../config/config.js';
 
 // All admin routes require authentication + admin role
 router.use(auth);
@@ -718,6 +721,244 @@ router.put('/verification-requests/:userId', checkPermission('canManageUsers'), 
     }
   } catch (error) {
     console.error('Update verification request error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   POST /api/admin/users/:id/send-reset-link
+// @desc    Admin triggers password reset link for a user
+// @access  Admin (canManageUsers)
+router.post('/users/:id/send-reset-link', checkPermission('canManageUsers'), async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Prevent admins from resetting super_admin passwords (unless they are super_admin themselves)
+    if (user.role === 'super_admin' && req.adminUser.role !== 'super_admin') {
+      return res.status(403).json({ message: 'Cannot reset password for super admin' });
+    }
+
+    // Generate reset token
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const resetTokenHashed = crypto.createHash('sha256').update(resetToken).digest('hex');
+
+    // Save hashed token and expiration to user
+    user.resetPasswordToken = resetTokenHashed;
+    user.resetPasswordExpires = Date.now() + 60 * 60 * 1000; // 1 hour
+    await user.save();
+
+    // Send password reset email
+    const emailResult = await sendPasswordResetEmail(user.email, resetToken, user.username);
+
+    if (!emailResult.success) {
+      return res.status(500).json({
+        message: 'Failed to send password reset email',
+        error: emailResult.error
+      });
+    }
+
+    // Log admin action
+    console.log('ADMIN ACTION:', {
+      adminId: req.adminUser._id,
+      adminUsername: req.adminUser.username,
+      action: 'PASSWORD_RESET_TRIGGERED',
+      targetUserId: user._id,
+      targetUsername: user.username,
+      timestamp: new Date()
+    });
+
+    res.json({
+      message: 'Password reset link sent successfully',
+      email: user.email
+    });
+  } catch (error) {
+    console.error('Send reset link error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   PUT /api/admin/users/:id/email
+// @desc    Admin updates user email
+// @access  Admin (canManageUsers)
+router.put('/users/:id/email', checkPermission('canManageUsers'), async (req, res) => {
+  try {
+    const { newEmail } = req.body;
+
+    if (!newEmail || !newEmail.includes('@')) {
+      return res.status(400).json({ message: 'Invalid email format' });
+    }
+
+    const user = await User.findById(req.params.id);
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Prevent admins from changing super_admin emails (unless they are super_admin themselves)
+    if (user.role === 'super_admin' && req.adminUser.role !== 'super_admin') {
+      return res.status(403).json({ message: 'Cannot change email for super admin' });
+    }
+
+    // Check if new email is already in use
+    const existingUser = await User.findOne({ email: newEmail.toLowerCase() });
+    if (existingUser && existingUser._id.toString() !== user._id.toString()) {
+      return res.status(400).json({ message: 'Email already in use by another account' });
+    }
+
+    const oldEmail = user.email;
+    user.email = newEmail.toLowerCase();
+    await user.save();
+
+    // Send notification to new email
+    const { Resend } = await import('resend');
+    const resend = new Resend(process.env.RESEND_API_KEY);
+
+    if (resend) {
+      try {
+        await resend.emails.send({
+          from: 'Pryde Social <noreply@prydeapp.com>',
+          to: newEmail,
+          subject: '✅ Your Pryde Social Email Was Updated',
+          html: `
+            <!DOCTYPE html>
+            <html>
+            <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            </head>
+            <body style="margin: 0; padding: 0; background-color: #F7F7F7; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+              <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #F7F7F7;">
+                <tr>
+                  <td style="padding: 40px 20px;">
+                    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="max-width: 600px; margin: 0 auto; background: linear-gradient(135deg, #6C5CE7 0%, #0984E3 100%); border-radius: 16px; overflow: hidden;">
+                      <tr>
+                        <td style="padding: 40px; text-align: center;">
+                          <h1 style="margin: 0; color: white; font-size: 28px; font-weight: 700;">Email Updated</h1>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td style="background: white; padding: 40px;">
+                          <p style="margin: 0 0 20px 0; color: #2B2B2B; font-size: 16px; line-height: 1.6;">
+                            Hello <strong>${user.displayName || user.username}</strong>,
+                          </p>
+                          <p style="margin: 0 0 20px 0; color: #2B2B2B; font-size: 16px; line-height: 1.6;">
+                            Your Pryde Social login email has been updated by an administrator.
+                          </p>
+                          <div style="background: #F7F7F7; border-left: 4px solid #6C5CE7; padding: 20px; margin: 20px 0; border-radius: 4px;">
+                            <p style="margin: 0 0 10px 0; color: #616161; font-size: 14px;"><strong>Previous Email:</strong></p>
+                            <p style="margin: 0 0 20px 0; color: #2B2B2B; font-size: 16px;">${oldEmail}</p>
+                            <p style="margin: 0 0 10px 0; color: #616161; font-size: 14px;"><strong>New Email:</strong></p>
+                            <p style="margin: 0; color: #2B2B2B; font-size: 16px;">${newEmail}</p>
+                          </div>
+                          <p style="margin: 0 0 20px 0; color: #2B2B2B; font-size: 16px; line-height: 1.6;">
+                            If this wasn't you or you didn't request this change, please contact Pryde Social support immediately.
+                          </p>
+                          <div style="text-align: center; margin: 30px 0;">
+                            <a href="${config.frontendURL}/settings" style="display: inline-block; padding: 14px 32px; background: linear-gradient(135deg, #6C5CE7, #0984E3); color: white; text-decoration: none; border-radius: 12px; font-weight: 700; font-size: 16px;">View Account Settings</a>
+                          </div>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td style="background: #F7F7F7; padding: 30px; text-align: center;">
+                          <p style="margin: 0; color: #616161; font-size: 14px;">
+                            © ${new Date().getFullYear()} Pryde Social. All rights reserved.
+                          </p>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </body>
+            </html>
+          `
+        });
+
+        // Send notification to old email
+        await resend.emails.send({
+          from: 'Pryde Social <noreply@prydeapp.com>',
+          to: oldEmail,
+          subject: '⚠️ Your Pryde Social Email Was Changed',
+          html: `
+            <!DOCTYPE html>
+            <html>
+            <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            </head>
+            <body style="margin: 0; padding: 0; background-color: #F7F7F7; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+              <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #F7F7F7;">
+                <tr>
+                  <td style="padding: 40px 20px;">
+                    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="max-width: 600px; margin: 0 auto; background: linear-gradient(135deg, #DC3545 0%, #C82333 100%); border-radius: 16px; overflow: hidden;">
+                      <tr>
+                        <td style="padding: 40px; text-align: center;">
+                          <h1 style="margin: 0; color: white; font-size: 28px; font-weight: 700;">⚠️ Email Changed</h1>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td style="background: white; padding: 40px;">
+                          <p style="margin: 0 0 20px 0; color: #2B2B2B; font-size: 16px; line-height: 1.6;">
+                            Hello <strong>${user.displayName || user.username}</strong>,
+                          </p>
+                          <p style="margin: 0 0 20px 0; color: #2B2B2B; font-size: 16px; line-height: 1.6;">
+                            Your Pryde Social account email was changed by an administrator.
+                          </p>
+                          <div style="background: #FFF3CD; border-left: 4px solid #DC3545; padding: 20px; margin: 20px 0; border-radius: 4px;">
+                            <p style="margin: 0 0 10px 0; color: #856404; font-size: 14px;"><strong>Your new login email is:</strong></p>
+                            <p style="margin: 0; color: #2B2B2B; font-size: 16px; font-weight: 700;">${newEmail}</p>
+                          </div>
+                          <p style="margin: 0 0 20px 0; color: #DC3545; font-size: 16px; line-height: 1.6; font-weight: 600;">
+                            ⚠️ If you didn't request this change, your account may be compromised. Contact support immediately!
+                          </p>
+                          <div style="text-align: center; margin: 30px 0;">
+                            <a href="${config.frontendURL}/contact" style="display: inline-block; padding: 14px 32px; background: #DC3545; color: white; text-decoration: none; border-radius: 12px; font-weight: 700; font-size: 16px;">Contact Support</a>
+                          </div>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td style="background: #F7F7F7; padding: 30px; text-align: center;">
+                          <p style="margin: 0; color: #616161; font-size: 14px;">
+                            © ${new Date().getFullYear()} Pryde Social. All rights reserved.
+                          </p>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </body>
+            </html>
+          `
+        });
+      } catch (emailError) {
+        console.error('Error sending email notifications:', emailError);
+        // Don't fail the request if emails fail
+      }
+    }
+
+    // Log admin action
+    console.log('ADMIN ACTION:', {
+      adminId: req.adminUser._id,
+      adminUsername: req.adminUser.username,
+      action: 'EMAIL_UPDATED',
+      targetUserId: user._id,
+      targetUsername: user.username,
+      oldEmail,
+      newEmail,
+      timestamp: new Date()
+    });
+
+    res.json({
+      message: 'Email updated successfully',
+      oldEmail,
+      newEmail
+    });
+  } catch (error) {
+    console.error('Update email error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });

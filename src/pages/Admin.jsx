@@ -388,6 +388,60 @@ function Admin() {
     }
   };
 
+  const handleSendPasswordReset = async (userId, userEmail, username) => {
+    const confirmed = await showConfirm(
+      `Send password reset link to ${userEmail}?`,
+      'Send Password Reset',
+      'Send Link',
+      'Cancel'
+    );
+
+    if (!confirmed) return;
+
+    try {
+      const response = await api.post(`/admin/users/${userId}/send-reset-link`);
+      showAlert(`Password reset link sent to ${response.data.email}`, 'Success');
+    } catch (error) {
+      console.error('Send password reset error:', error);
+      showAlert(error.response?.data?.message || 'Failed to send password reset link', 'Error');
+    }
+  };
+
+  const handleUpdateEmail = async (userId, currentEmail, username) => {
+    const newEmail = await showPrompt(
+      `Update email for @${username}:`,
+      'Update User Email',
+      'New email address',
+      currentEmail
+    );
+
+    if (!newEmail || newEmail === currentEmail) return;
+
+    // Basic email validation
+    if (!newEmail.includes('@') || !newEmail.includes('.')) {
+      showAlert('Please enter a valid email address', 'Error');
+      return;
+    }
+
+    const confirmed = await showConfirm(
+      `Change email from ${currentEmail} to ${newEmail}?`,
+      'Confirm Email Change',
+      'Update Email',
+      'Cancel'
+    );
+
+    if (!confirmed) return;
+
+    try {
+      const response = await api.put(`/admin/users/${userId}/email`, { newEmail });
+      showAlert(`Email updated successfully. Notifications sent to both addresses.`, 'Success');
+      loadTabData();
+    } catch (error) {
+      console.error('Update email error:', error);
+      showAlert(error.response?.data?.message || 'Failed to update email', 'Error');
+    }
+  };
+
   if (loading) {
     return (
       <div className="page-container">
@@ -547,6 +601,8 @@ function Admin() {
               onUnsuspend={handleUnsuspendUser}
               onUnban={handleUnbanUser}
               onChangeRole={handleChangeRole}
+              onSendPasswordReset={handleSendPasswordReset}
+              onUpdateEmail={handleUpdateEmail}
             />
           )}
           {activeTab === 'blocks' && (
@@ -792,7 +848,7 @@ function ReportsTab({ reports, onResolve }) {
 }
 
 // Users Tab Component
-function UsersTab({ users, onSuspend, onBan, onUnsuspend, onUnban, onChangeRole }) {
+function UsersTab({ users, onSuspend, onBan, onUnsuspend, onUnban, onChangeRole, onSendPasswordReset, onUpdateEmail }) {
   return (
     <div className="users-list">
       <h2>User Management ({users.length} total users)</h2>
@@ -816,7 +872,19 @@ function UsersTab({ users, onSuspend, onBan, onUnsuspend, onUnban, onChangeRole 
               <tr key={user._id}>
                 <td data-label="Username">{user.username}</td>
                 <td data-label="Full Name">{user.fullName || <span style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>Not provided</span>}</td>
-                <td data-label="Email">{user.email}</td>
+                <td data-label="Email">
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                    <span>{user.email}</span>
+                    <button
+                      className="btn-action btn-small"
+                      onClick={() => onUpdateEmail(user._id, user.email, user.username)}
+                      title="Update email address"
+                      style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem' }}
+                    >
+                      ✏️ Edit
+                    </button>
+                  </div>
+                </td>
                 <td data-label="Role">
                   {user.role?.toLowerCase() === 'super_admin' ? (
                     <span className={`role-badge role-${user.role}`}>
@@ -854,6 +922,13 @@ function UsersTab({ users, onSuspend, onBan, onUnsuspend, onUnban, onChangeRole 
                     </span>
                   ) : (
                     <>
+                      <button
+                        className="btn-action"
+                        onClick={() => onSendPasswordReset(user._id, user.email, user.username)}
+                        title="Send password reset link"
+                      >
+                        🔑 Reset Password
+                      </button>
                       {user.isSuspended ? (
                         <button className="btn-action" onClick={() => onUnsuspend(user._id)}>
                           🔓 Unsuspend

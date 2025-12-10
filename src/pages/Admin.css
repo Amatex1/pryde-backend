@@ -399,6 +399,17 @@
   box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
 }
 
+.btn-action.btn-small {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  border-radius: 6px;
+}
+
+.btn-action.btn-small:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(108, 92, 231, 0.3);
+}
+
 /* Activity */
 .activity-container {
   display: flex;
