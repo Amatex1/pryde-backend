@@ -101,11 +101,25 @@ router.get('/user/:userId', authenticateToken, async (req, res) => {
     const currentUserId = req.user.id;
 
     // Find user by ID or username
-    let targetUser;
+    let targetUser = null;
+
+    // Check if it's a valid ObjectId (24 hex characters)
     if (mongoose.Types.ObjectId.isValid(userId) && userId.length === 24) {
-      targetUser = await User.findById(userId).select('_id');
-    } else {
-      targetUser = await User.findOne({ username: userId }).select('_id');
+      try {
+        targetUser = await User.findById(userId).select('_id');
+      } catch (err) {
+        // If findById fails, try username
+        console.log('FindById failed, trying username lookup:', err.message);
+      }
+    }
+
+    // If not found by ID or not a valid ID, try username
+    if (!targetUser) {
+      try {
+        targetUser = await User.findOne({ username: userId }).select('_id');
+      } catch (err) {
+        console.error('Username lookup failed:', err.message);
+      }
     }
 
     if (!targetUser) {
