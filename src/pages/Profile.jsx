@@ -1156,7 +1156,8 @@ function Profile() {
           </div>
         </div>
 
-        <div className="profile-content">
+        <div className="profile-layout">
+          <div className="profile-main">
           {/* Profile Post Search - Only show on own profile */}
           {isOwnProfile && (
             <ProfilePostSearch
@@ -2279,6 +2280,7 @@ function Profile() {
               </div>
             )}
           </div>
+          {/* End of profile-main */}
 
           <div className="profile-sidebar">
             {/* Interests */}
@@ -2348,7 +2350,9 @@ function Profile() {
 
             {/* PHASE 1 REFACTOR: Followers sidebar removed (follower counts hidden) */}
           </div>
+          {/* End of profile-sidebar */}
         </div>
+        {/* End of profile-layout */}
       </div>
 
       <ReportModal

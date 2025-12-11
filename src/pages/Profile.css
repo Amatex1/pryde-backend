@@ -684,21 +684,29 @@
    PROFILE CONTENT
    ======================================== */
 
-.profile-content {
+.profile-layout {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: 1fr 320px;
   gap: var(--space-6);
-  max-width: 800px;
+  max-width: 1400px;
   margin: 0 auto;
+  padding: 0 var(--space-4);
+  align-items: start;
 }
 
-/* PHASE 1 REFACTOR: Sidebar removed, single column layout for all profiles */
-/* If sidebar is re-added in the future, use this:
-.profile-content.has-sidebar {
-  grid-template-columns: 1fr 300px;
-  max-width: 1200px;
+.profile-main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  min-width: 0; /* Prevent overflow */
 }
-*/
+
+/* Legacy class name kept for compatibility */
+.profile-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
 
 .profile-posts {
   display: flex;
@@ -921,6 +929,29 @@ html:not([data-theme="dark"]):not([data-quiet-mode="true"]) .section-title {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
+  position: sticky;
+  top: 80px; /* Stick below navbar */
+  max-height: calc(100vh - 100px);
+  overflow-y: auto;
+  padding-right: 0.5rem;
+}
+
+/* Custom scrollbar for sidebar */
+.profile-sidebar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.profile-sidebar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.profile-sidebar::-webkit-scrollbar-thumb {
+  background: var(--pryde-purple);
+  border-radius: 3px;
+}
+
+.profile-sidebar::-webkit-scrollbar-thumb:hover {
+  background: var(--electric-blue);
 }
 
 .friends-grid {
@@ -1014,8 +1045,19 @@ html:not([data-theme="dark"]):not([data-quiet-mode="true"]) .section-title {
 }
 
 @media (max-width: 1024px) {
-  .profile-content {
+  .profile-layout {
     grid-template-columns: 1fr;
+    padding: 0 var(--space-3);
+  }
+
+  .profile-sidebar {
+    position: static;
+    max-height: none;
+    order: 2; /* Sidebar appears after main content */
+  }
+
+  .profile-main {
+    order: 1;
   }
 }
 
@@ -1659,13 +1701,19 @@ html:not([data-theme="dark"]):not([data-quiet-mode="true"]) .section-title {
 
   /* Ensure all content fits on screen */
   .profile-header,
-  .profile-content,
+  .profile-layout,
+  .profile-main,
+  .profile-sidebar,
   .post-card,
   .create-post,
   .comment-item {
     max-width: 100%;
     overflow-x: hidden;
     word-wrap: break-word;
+  }
+
+  .profile-layout {
+    padding: 0 var(--space-2);
   }
 
   .create-post {
