@@ -22,8 +22,8 @@
  *    node cloudflare-setup.js
  */
 
-const CLOUDFLARE_API_TOKEN = 'YOUR_API_TOKEN_HERE'; // Replace with your API token
-const ZONE_ID = 'YOUR_ZONE_ID_HERE'; // Replace with your zone ID
+const CLOUDFLARE_API_TOKEN = 'ovZf8y-1B4L5OLwmFSqp6gPJghIKX_KXKDDywDS0'; // Your Cloudflare API token
+const ZONE_ID = 'cae2b45ba6538b5c0ffc2c152c39bfab'; // Your prydeapp.com Zone ID
 
 const API_BASE = 'https://api.cloudflare.com/client/v4';
 
