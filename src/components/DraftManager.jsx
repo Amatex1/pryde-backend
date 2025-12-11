@@ -1,8 +1,6 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../utils/api';
 import './DraftManager.css';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 const DraftManager = ({ draftType, onRestoreDraft, onClose }) => {
   const [drafts, setDrafts] = useState([]);
@@ -14,14 +12,8 @@ const DraftManager = ({ draftType, onRestoreDraft, onClose }) => {
 
   const fetchDrafts = async () => {
     try {
-      const token = localStorage.getItem('token');
       const params = draftType ? { type: draftType } : {};
-      
-      const response = await axios.get(`${API_URL}/api/drafts`, {
-        headers: { Authorization: `Bearer ${token}` },
-        params
-      });
-
+      const response = await api.get('/drafts', { params });
       setDrafts(response.data.drafts || []);
     } catch (error) {
       console.error('Error fetching drafts:', error);
@@ -32,11 +24,7 @@ const DraftManager = ({ draftType, onRestoreDraft, onClose }) => {
 
   const deleteDraft = async (draftId) => {
     try {
-      const token = localStorage.getItem('token');
-      await axios.delete(`${API_URL}/api/drafts/${draftId}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-
+      await api.delete(`/drafts/${draftId}`);
       setDrafts(drafts.filter(d => d._id !== draftId));
     } catch (error) {
       console.error('Error deleting draft:', error);

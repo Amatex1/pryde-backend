@@ -1,8 +1,6 @@
 import { useState } from 'react';
-import axios from 'axios';
+import api from '../utils/api';
 import './EventRSVP.css';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 const EventRSVP = ({ event, currentUserId, onRSVPChange }) => {
   const [loading, setLoading] = useState(false);
@@ -25,12 +23,7 @@ const EventRSVP = ({ event, currentUserId, onRSVPChange }) => {
 
     setLoading(true);
     try {
-      const token = localStorage.getItem('token');
-      const response = await axios.post(
-        `${API_URL}/api/events/${event._id}/rsvp`,
-        { status: newStatus },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const response = await api.post(`/events/${event._id}/rsvp`, { status: newStatus });
 
       if (onRSVPChange) {
         onRSVPChange(response.data);

@@ -1,8 +1,6 @@
 import { useState } from 'react';
-import axios from 'axios';
+import api from '../utils/api';
 import './Poll.css';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 const Poll = ({ poll, postId, currentUserId, onVote }) => {
   const [voting, setVoting] = useState(false);
@@ -11,9 +9,9 @@ const Poll = ({ poll, postId, currentUserId, onVote }) => {
 
   const hasEnded = poll.endsAt && new Date(poll.endsAt) < new Date();
   const totalVotes = poll.options.reduce((sum, opt) => sum + (opt.votes?.length || 0), 0);
-  
+
   // Check if current user has voted
-  const userVotedIndex = poll.options.findIndex(opt => 
+  const userVotedIndex = poll.options.findIndex(opt =>
     opt.votes?.some(vote => vote === currentUserId || vote._id === currentUserId)
   );
   const hasVoted = userVotedIndex !== -1;
@@ -25,12 +23,7 @@ const Poll = ({ poll, postId, currentUserId, onVote }) => {
 
     setVoting(true);
     try {
-      const token = localStorage.getItem('token');
-      const response = await axios.post(
-        `${API_URL}/api/posts/${postId}/poll/vote`,
-        { optionIndex },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const response = await api.post(`/posts/${postId}/poll/vote`, { optionIndex });
 
       if (onVote) {
         onVote(response.data);

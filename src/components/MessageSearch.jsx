@@ -1,9 +1,7 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../utils/api';
 import { Link } from 'react-router-dom';
 import './MessageSearch.css';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 const MessageSearch = ({ conversationWith = null }) => {
   const [query, setQuery] = useState('');
@@ -28,16 +26,12 @@ const MessageSearch = ({ conversationWith = null }) => {
   const searchMessages = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem('token');
       const params = { q: query };
       if (conversationWith) {
         params.conversationWith = conversationWith;
       }
 
-      const response = await axios.get(`${API_URL}/api/search/messages`, {
-        headers: { Authorization: `Bearer ${token}` },
-        params
-      });
+      const response = await api.get('/search/messages', { params });
 
       setResults(response.data.messages || []);
       setShowResults(true);

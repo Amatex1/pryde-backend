@@ -1,9 +1,7 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../utils/api';
 import CustomModal from './CustomModal';
 import './EditHistoryModal.css';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 const EditHistoryModal = ({ isOpen, onClose, postId, contentType = 'post' }) => {
   const [editHistory, setEditHistory] = useState([]);
@@ -17,17 +15,13 @@ const EditHistoryModal = ({ isOpen, onClose, postId, contentType = 'post' }) => 
 
   const fetchEditHistory = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const endpoint = contentType === 'post' 
-        ? `/api/posts/${postId}/edit-history`
+      const endpoint = contentType === 'post'
+        ? `/posts/${postId}/edit-history`
         : contentType === 'journal'
-        ? `/api/journals/${postId}/edit-history`
-        : `/api/longform/${postId}/edit-history`;
+        ? `/journals/${postId}/edit-history`
+        : `/longform/${postId}/edit-history`;
 
-      const response = await axios.get(`${API_URL}${endpoint}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-
+      const response = await api.get(endpoint);
       setEditHistory(response.data.editHistory || []);
     } catch (error) {
       console.error('Error fetching edit history:', error);

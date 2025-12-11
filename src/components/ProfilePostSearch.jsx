@@ -1,8 +1,6 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../utils/api';
 import './ProfilePostSearch.css';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 const ProfilePostSearch = ({ onResultsChange }) => {
   const [query, setQuery] = useState('');
@@ -29,9 +27,7 @@ const ProfilePostSearch = ({ onResultsChange }) => {
   const searchPosts = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem('token');
-      const response = await axios.get(`${API_URL}/api/search/my-posts`, {
-        headers: { Authorization: `Bearer ${token}` },
+      const response = await api.get('/search/my-posts', {
         params: { q: query, type: activeTab }
       });
 

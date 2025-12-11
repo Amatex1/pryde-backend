@@ -1,8 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
-import axios from 'axios';
+import api from '../utils/api';
 import './VoiceRecorder.css';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 const VoiceRecorder = ({ onRecordingComplete, onCancel }) => {
   const [isRecording, setIsRecording] = useState(false);
@@ -100,10 +98,8 @@ const VoiceRecorder = ({ onRecordingComplete, onCancel }) => {
       formData.append('audio', blob, 'voice-note.webm');
       formData.append('duration', duration);
 
-      const token = localStorage.getItem('token');
-      const response = await axios.post(`${API_URL}/api/upload/voice-note`, formData, {
+      const response = await api.post('/upload/voice-note', formData, {
         headers: {
-          Authorization: `Bearer ${token}`,
           'Content-Type': 'multipart/form-data'
         }
       });
