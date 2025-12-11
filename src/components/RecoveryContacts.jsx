@@ -1,8 +1,6 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../utils/api';
 import './RecoveryContacts.css';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 const RecoveryContacts = () => {
   const [contacts, setContacts] = useState([]);
@@ -18,11 +16,8 @@ const RecoveryContacts = () => {
 
   const fetchContacts = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await axios.get(`${API_URL}/api/recovery-contacts`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setContacts(response.data.contacts || []);
+      const response = await api.get('/recovery-contacts');
+      setContacts(response.data.recoveryContacts || []);
     } catch (error) {
       console.error('Error fetching recovery contacts:', error);
     } finally {
@@ -38,9 +33,7 @@ const RecoveryContacts = () => {
 
     setSearching(true);
     try {
-      const token = localStorage.getItem('token');
-      const response = await axios.get(`${API_URL}/api/users/search`, {
-        headers: { Authorization: `Bearer ${token}` },
+      const response = await api.get('/users/search', {
         params: { q: searchQuery }
       });
       setSearchResults(response.data.users || []);
@@ -60,13 +53,8 @@ const RecoveryContacts = () => {
 
   const addContact = async (userId) => {
     try {
-      const token = localStorage.getItem('token');
-      await axios.post(
-        `${API_URL}/api/recovery-contacts/add`,
-        { userId },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      
+      await api.post('/recovery-contacts', { userId });
+
       setShowAddForm(false);
       setSearchQuery('');
       setSearchResults([]);
@@ -82,11 +70,7 @@ const RecoveryContacts = () => {
     if (!window.confirm('Remove this recovery contact?')) return;
 
     try {
-      const token = localStorage.getItem('token');
-      await axios.delete(`${API_URL}/api/recovery-contacts/${contactId}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      
+      await api.delete(`/recovery-contacts/${contactId}`);
       fetchContacts();
     } catch (error) {
       console.error('Error removing contact:', error);
@@ -96,13 +80,7 @@ const RecoveryContacts = () => {
 
   const acceptContact = async (contactId) => {
     try {
-      const token = localStorage.getItem('token');
-      await axios.post(
-        `${API_URL}/api/recovery-contacts/${contactId}/accept`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      
+      await api.post(`/recovery-contacts/${contactId}/accept`);
       fetchContacts();
       alert('Recovery contact accepted!');
     } catch (error) {
