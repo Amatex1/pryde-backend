@@ -14,7 +14,8 @@ import {
   isNewDevice,
   isSuspiciousLogin,
   cleanupOldSessions,
-  limitLoginHistory
+  limitLoginHistory,
+  findOrCreateSession
 } from '../utils/sessionUtils.js';
 import { logEmailVerification, logPasswordChange } from '../utils/securityLogger.js';
 import { loginLimiter, signupLimiter, passwordResetLimiter } from '../middleware/rateLimiter.js';
@@ -451,27 +452,19 @@ router.post('/login', loginLimiter, validateLogin, async (req, res) => {
     // Check if login is suspicious
     const suspicious = isSuspiciousLogin(user, ipAddress, deviceInfo);
 
-    // Create session
-    const sessionId = generateSessionId();
-
-    // Clean up old sessions
+    // Clean up old sessions first
     cleanupOldSessions(user);
 
-    // Add new session
-    user.activeSessions.push({
-      sessionId,
-      deviceInfo,
-      browser,
-      os,
-      ipAddress,
-      location: {
-        city: '',
-        region: '',
-        country: ''
-      },
-      createdAt: new Date(),
-      lastActive: new Date()
-    });
+    // Find or create session (prevents duplicates from same device/IP)
+    const { session, isNew: isNewSession } = findOrCreateSession(user, ipAddress, deviceInfo, browser, os);
+
+    // Add new session only if it doesn't exist
+    if (isNewSession) {
+      user.activeSessions.push(session);
+    }
+
+    // Get session ID for JWT token
+    const sessionId = session.sessionId;
 
     // Log successful login
     user.loginHistory.push({
@@ -627,27 +620,19 @@ router.post('/verify-2fa-login', loginLimiter, async (req, res) => {
     const ipAddress = getClientIp(req);
     const { browser, os, deviceInfo } = parseUserAgent(req.headers['user-agent']);
 
-    // Create session
-    const sessionId = generateSessionId();
-
-    // Clean up old sessions
+    // Clean up old sessions first
     cleanupOldSessions(user);
 
-    // Add new session
-    user.activeSessions.push({
-      sessionId,
-      deviceInfo,
-      browser,
-      os,
-      ipAddress,
-      location: {
-        city: '',
-        region: '',
-        country: ''
-      },
-      createdAt: new Date(),
-      lastActive: new Date()
-    });
+    // Find or create session (prevents duplicates from same device/IP)
+    const { session, isNew: isNewSession } = findOrCreateSession(user, ipAddress, deviceInfo, browser, os);
+
+    // Add new session only if it doesn't exist
+    if (isNewSession) {
+      user.activeSessions.push(session);
+    }
+
+    // Get session ID for JWT token
+    const sessionId = session.sessionId;
 
     // Log successful login
     user.loginHistory.push({

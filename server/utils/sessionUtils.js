@@ -113,11 +113,45 @@ export function cleanupOldSessions(user) {
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-  user.activeSessions = user.activeSessions.filter(session => 
+  user.activeSessions = user.activeSessions.filter(session =>
     new Date(session.lastActive) > thirtyDaysAgo
   );
 
   return user;
+}
+
+// Find or create session for device/IP combination
+// This prevents duplicate sessions from the same device
+export function findOrCreateSession(user, ipAddress, deviceInfo, browser, os) {
+  // Look for existing session with same IP and device info
+  const existingSession = user.activeSessions.find(session =>
+    session.ipAddress === ipAddress && session.deviceInfo === deviceInfo
+  );
+
+  if (existingSession) {
+    // Update existing session
+    existingSession.lastActive = new Date();
+    return { session: existingSession, isNew: false };
+  }
+
+  // Create new session if none exists
+  const sessionId = generateSessionId();
+  const newSession = {
+    sessionId,
+    deviceInfo,
+    browser,
+    os,
+    ipAddress,
+    location: {
+      city: '',
+      region: '',
+      country: ''
+    },
+    createdAt: new Date(),
+    lastActive: new Date()
+  };
+
+  return { session: newSession, isNew: true };
 }
 
 // Limit login history to last 50 entries

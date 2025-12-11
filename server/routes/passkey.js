@@ -11,6 +11,12 @@ import {
   verifyPasskeyAuthentication,
   getDeviceName
 } from '../utils/passkeyUtils.js';
+import {
+  parseUserAgent,
+  getClientIp,
+  cleanupOldSessions,
+  findOrCreateSession
+} from '../utils/sessionUtils.js';
 
 // Store challenges temporarily (in production, use Redis)
 const challenges = new Map();
@@ -271,14 +277,29 @@ router.post('/login-finish', async (req, res) => {
     user.lastLogin = new Date();
     user.lastSeen = new Date();
 
+    // Get device and IP info
+    const ipAddress = getClientIp(req);
+    const { browser, os, deviceInfo } = parseUserAgent(req.headers['user-agent']);
+
+    // Clean up old sessions first
+    cleanupOldSessions(user);
+
+    // Find or create session (prevents duplicates from same device/IP)
+    const { session, isNew: isNewSession } = findOrCreateSession(user, ipAddress, deviceInfo, browser, os);
+
+    // Add new session only if it doesn't exist
+    if (isNewSession) {
+      user.activeSessions.push(session);
+    }
+
     await user.save();
 
     // Clean up challenge
     challenges.delete(challengeKey);
 
-    // Create JWT token
+    // Create JWT token with session ID
     const token = jwt.sign(
-      { userId: user._id },
+      { userId: user._id, sessionId: session.sessionId },
       config.jwtSecret,
       { expiresIn: '7d' }
     );
