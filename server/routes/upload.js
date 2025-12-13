@@ -53,19 +53,27 @@ const saveToGridFS = async (file) => {
   return new Promise(async (resolve, reject) => {
     try {
       let buffer = file.buffer;
+      let contentType = file.mimetype;
 
-      // Strip EXIF data from images
+      // Process and optimize images (strip EXIF, convert to WebP, compress)
       if (file.mimetype.startsWith('image/')) {
-        console.log('🔒 Stripping EXIF data from image...');
-        buffer = await stripExifData(buffer, file.mimetype);
-        console.log('✅ EXIF data removed');
+        console.log('🔒 Processing and optimizing image...');
+        const result = await stripExifData(buffer, file.mimetype);
+        buffer = result.buffer;
+        contentType = result.mimetype;
+        console.log('✅ Image optimized and saved as', contentType);
       }
 
-      const filename = `${Date.now()}-${file.originalname}`;
+      // Update filename extension if converted to WebP
+      let filename = `${Date.now()}-${file.originalname}`;
+      if (contentType === 'image/webp' && !filename.endsWith('.webp')) {
+        filename = filename.replace(/\.(jpg|jpeg|png)$/i, '.webp');
+      }
+
       const readableStream = Readable.from(buffer);
 
       const uploadStream = gridfsBucket.openUploadStream(filename, {
-        contentType: file.mimetype
+        contentType: contentType
       });
 
       readableStream.pipe(uploadStream);

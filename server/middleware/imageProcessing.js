@@ -2,25 +2,70 @@ import sharp from 'sharp';
 import { Readable } from 'stream';
 
 /**
- * Strip EXIF data from images to protect user privacy
- * Removes GPS location, camera info, and other metadata
- * 
+ * Process and optimize uploaded images
+ * - Strips EXIF data for privacy
+ * - Converts to WebP for better compression
+ * - Resizes large images to reasonable dimensions
+ * - Compresses images to reduce file size
+ *
  * @param {Buffer} imageBuffer - The image buffer to process
  * @param {string} mimetype - The image MIME type
- * @returns {Promise<Buffer>} - Processed image buffer without EXIF data
+ * @param {Object} options - Processing options
+ * @param {number} options.maxWidth - Maximum width (default: 2048)
+ * @param {number} options.maxHeight - Maximum height (default: 2048)
+ * @param {number} options.quality - WebP quality 1-100 (default: 85)
+ * @param {boolean} options.convertToWebP - Convert to WebP (default: true)
+ * @returns {Promise<{buffer: Buffer, mimetype: string}>} - Processed image buffer and new mimetype
  */
-export const stripExifData = async (imageBuffer, mimetype) => {
+export const stripExifData = async (imageBuffer, mimetype, options = {}) => {
   try {
     // Only process images, not videos
     if (!mimetype.startsWith('image/')) {
-      return imageBuffer;
+      return { buffer: imageBuffer, mimetype };
     }
 
-    // Use Sharp to process the image and remove all metadata
-    const processedBuffer = await sharp(imageBuffer)
-      .rotate() // Auto-rotate based on EXIF orientation, then remove EXIF
+    // Default options
+    const {
+      maxWidth = 2048,
+      maxHeight = 2048,
+      quality = 85,
+      convertToWebP = true
+    } = options;
+
+    // Get image metadata
+    const metadata = await sharp(imageBuffer).metadata();
+    console.log(`📸 Processing image: ${metadata.width}x${metadata.height}, format: ${metadata.format}`);
+
+    // Start Sharp pipeline
+    let pipeline = sharp(imageBuffer)
+      .rotate(); // Auto-rotate based on EXIF orientation
+
+    // Resize if image is too large
+    if (metadata.width > maxWidth || metadata.height > maxHeight) {
+      console.log(`📏 Resizing from ${metadata.width}x${metadata.height} to max ${maxWidth}x${maxHeight}`);
+      pipeline = pipeline.resize(maxWidth, maxHeight, {
+        fit: 'inside',
+        withoutEnlargement: true
+      });
+    }
+
+    // Convert to WebP for better compression (unless it's a GIF)
+    let newMimetype = mimetype;
+    if (convertToWebP && mimetype !== 'image/gif') {
+      console.log(`🔄 Converting to WebP (quality: ${quality})`);
+      pipeline = pipeline.webp({ quality });
+      newMimetype = 'image/webp';
+    } else if (mimetype === 'image/jpeg' || mimetype === 'image/jpg') {
+      // If keeping JPEG, compress it
+      pipeline = pipeline.jpeg({ quality });
+    } else if (mimetype === 'image/png') {
+      // If keeping PNG, compress it
+      pipeline = pipeline.png({ quality: Math.round(quality / 10), compressionLevel: 9 });
+    }
+
+    // Remove all metadata (EXIF, ICC, IPTC, XMP)
+    const processedBuffer = await pipeline
       .withMetadata({
-        // Remove all EXIF data
         exif: {},
         icc: undefined,
         iptc: undefined,
@@ -28,18 +73,25 @@ export const stripExifData = async (imageBuffer, mimetype) => {
       })
       .toBuffer();
 
-    console.log('✅ EXIF data stripped from image');
-    return processedBuffer;
+    const originalSize = imageBuffer.length;
+    const newSize = processedBuffer.length;
+    const savings = Math.round((1 - newSize / originalSize) * 100);
+
+    console.log(`✅ Image optimized: ${Math.round(originalSize / 1024)}KB → ${Math.round(newSize / 1024)}KB (${savings}% smaller)`);
+
+    return { buffer: processedBuffer, mimetype: newMimetype };
   } catch (error) {
-    console.error('❌ Error stripping EXIF data:', error);
+    console.error('❌ Error processing image:', error);
     // If processing fails, return original buffer
-    // Better to upload with EXIF than fail the upload
-    return imageBuffer;
+    return { buffer: imageBuffer, mimetype };
   }
 };
 
 /**
- * Middleware to process uploaded images and strip EXIF data
+ * Middleware to process uploaded images
+ * - Strips EXIF data
+ * - Converts to WebP
+ * - Compresses and resizes
  * Works with multer file uploads
  */
 export const processUploadedImage = async (req, res, next) => {
@@ -54,17 +106,21 @@ export const processUploadedImage = async (req, res, next) => {
       return next();
     }
 
-    console.log('🔒 Processing image to strip EXIF data...');
+    console.log('🔒 Processing and optimizing image...');
 
     // Get the file buffer
     const originalBuffer = req.file.buffer;
 
-    // Strip EXIF data
-    const processedBuffer = await stripExifData(originalBuffer, req.file.mimetype);
+    // Process image (strip EXIF, convert to WebP, compress)
+    const { buffer: processedBuffer, mimetype: newMimetype } = await stripExifData(
+      originalBuffer,
+      req.file.mimetype
+    );
 
-    // Replace the buffer with processed version
+    // Replace the buffer and mimetype with processed version
     req.file.buffer = processedBuffer;
     req.file.size = processedBuffer.length;
+    req.file.mimetype = newMimetype;
 
     console.log('✅ Image processed successfully');
     next();
@@ -76,18 +132,21 @@ export const processUploadedImage = async (req, res, next) => {
 };
 
 /**
- * Process image stream from GridFS and strip EXIF data
+ * Process image stream from GridFS
+ * - Strips EXIF data
+ * - Converts to WebP
+ * - Compresses and resizes
  * Used when retrieving images from database
- * 
+ *
  * @param {Stream} imageStream - The image stream from GridFS
  * @param {string} mimetype - The image MIME type
- * @returns {Promise<Buffer>} - Processed image buffer
+ * @returns {Promise<{stream: Stream, mimetype: string}>} - Processed image stream and new mimetype
  */
 export const processImageStream = async (imageStream, mimetype) => {
   try {
     // Only process images
     if (!mimetype.startsWith('image/')) {
-      return imageStream;
+      return { stream: imageStream, mimetype };
     }
 
     // Convert stream to buffer
@@ -97,14 +156,14 @@ export const processImageStream = async (imageStream, mimetype) => {
     }
     const buffer = Buffer.concat(chunks);
 
-    // Strip EXIF data
-    const processedBuffer = await stripExifData(buffer, mimetype);
+    // Process image
+    const { buffer: processedBuffer, mimetype: newMimetype } = await stripExifData(buffer, mimetype);
 
     // Convert back to stream
-    return Readable.from(processedBuffer);
+    return { stream: Readable.from(processedBuffer), mimetype: newMimetype };
   } catch (error) {
     console.error('❌ Error processing image stream:', error);
-    return imageStream;
+    return { stream: imageStream, mimetype };
   }
 };
 
