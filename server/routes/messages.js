@@ -199,15 +199,22 @@ router.get('/', authMiddleware, async (req, res) => {
 // Send a message
 router.post('/', authMiddleware, messageLimiter, sanitizeFields(['content']), checkMessagingPermission, checkMuted, moderateContent, async (req, res) => {
   try {
-    const { recipient, content, attachment, groupChatId } = req.body;
+    const { recipient, content, attachment, groupChatId, voiceNote } = req.body;
 
-    const message = new Message({
+    const messageData = {
       sender: req.userId,
       recipient: groupChatId ? undefined : recipient,
       groupChat: groupChatId || null,
       content,
       attachment: attachment || null
-    });
+    };
+
+    // Only add voiceNote if it exists and has a URL
+    if (voiceNote && voiceNote.url) {
+      messageData.voiceNote = voiceNote;
+    }
+
+    const message = new Message(messageData);
 
     await message.save();
     await message.populate('sender', 'username profilePhoto');

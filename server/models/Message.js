@@ -25,14 +25,17 @@ const messageSchema = new mongoose.Schema({
     default: null
   },
   voiceNote: {
-    url: {
-      type: String,
-      default: null
+    type: {
+      url: {
+        type: String,
+        required: true
+      },
+      duration: {
+        type: Number, // Duration in seconds
+        required: true
+      }
     },
-    duration: {
-      type: Number, // Duration in seconds
-      default: null
-    }
+    default: undefined // Don't create the object if not provided
   },
   read: {
     type: Boolean,

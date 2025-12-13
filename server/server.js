@@ -428,13 +428,19 @@ io.on('connection', (socket) => {
   // Handle real-time message
   socket.on('send_message', async (data) => {
     try {
-      const message = new Message({
+      const messageData = {
         sender: userId,
         recipient: data.recipientId,
         content: data.content,
-        attachment: data.attachment || null,
-        voiceNote: data.voiceNote || null
-      });
+        attachment: data.attachment || null
+      };
+
+      // Only add voiceNote if it exists and has a URL
+      if (data.voiceNote && data.voiceNote.url) {
+        messageData.voiceNote = data.voiceNote;
+      }
+
+      const message = new Message(messageData);
 
       await message.save();
 
