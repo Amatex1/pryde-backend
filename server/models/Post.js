@@ -34,6 +34,11 @@ const postSchema = new mongoose.Schema({
       type: String,
       enum: ['image', 'video', 'gif'],
       required: true
+    },
+    sizes: {
+      thumbnail: String,
+      small: String,
+      medium: String
     }
   }],
   likes: [{

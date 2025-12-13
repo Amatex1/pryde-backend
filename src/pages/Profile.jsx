@@ -1590,6 +1590,7 @@ function Profile() {
                                             alt="Post media"
                                             onClick={() => setPhotoViewerImage(getImageUrl(mediaItem.url))}
                                             style={{ cursor: 'pointer' }}
+                                            responsiveSizes={mediaItem.sizes}
                                           />
                                         ) : (
                                           <video controls>

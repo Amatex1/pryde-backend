@@ -1182,6 +1182,7 @@ function Feed() {
                                       style={{ cursor: 'pointer' }}
                                       fetchPriority={isFirstPost && index === 0 ? 'high' : undefined}
                                       loading={isFirstPost && index === 0 ? 'eager' : 'lazy'}
+                                      responsiveSizes={media.sizes}
                                     />
                                   )}
                                 </div>

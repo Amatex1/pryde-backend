@@ -23,6 +23,7 @@ function OptimizedImage({
   placeholder = true, // Show loading placeholder
   sizes, // Responsive sizes attribute
   fetchPriority, // 'high', 'low', or 'auto'
+  responsiveSizes, // Object with thumbnail, small, medium URLs from backend
   ...props
 }) {
   const [isLoaded, setIsLoaded] = useState(false);
@@ -78,9 +79,22 @@ function OptimizedImage({
   const generateSrcSet = (url) => {
     if (!url || url.startsWith('data:')) return null;
 
-    // Only generate srcset for external CDN images that support resizing
-    // For now, disable srcset to avoid errors since backend doesn't support image resizing
-    // TODO: Implement image resizing on backend or use CDN with automatic resizing
+    // If responsive sizes are provided from backend, use them
+    if (responsiveSizes) {
+      const srcsetParts = [];
+
+      if (responsiveSizes.small) {
+        srcsetParts.push(`${getImageUrl(responsiveSizes.small)} 400w`);
+      }
+      if (responsiveSizes.medium) {
+        srcsetParts.push(`${getImageUrl(responsiveSizes.medium)} 800w`);
+      }
+      // Add the original as the largest size
+      srcsetParts.push(`${url} 2048w`);
+
+      return srcsetParts.length > 0 ? srcsetParts.join(', ') : null;
+    }
+
     return null;
   };
 
