@@ -1089,13 +1089,18 @@ html:not([data-theme])[data-quiet-mode="true"] .custom-modal-btn-secondary {
 
 /* Light mode quiet - action buttons (React, Comment, Share, Bookmark) */
 [data-theme="light"][data-quiet-mode="true"] .btn-action,
-html:not([data-theme])[data-quiet-mode="true"] .btn-action {
+html:not([data-theme])[data-quiet-mode="true"] .btn-action,
+[data-theme="light"][data-quiet-mode="true"] .action-btn,
+html:not([data-theme])[data-quiet-mode="true"] .action-btn {
   color: var(--accent-primary) !important; /* Pryde Purple */
   background: transparent !important;
+  border-radius: var(--radius-pill) !important; /* Ensure rounded buttons */
 }
 
 [data-theme="light"][data-quiet-mode="true"] .btn-action:hover,
-html:not([data-theme])[data-quiet-mode="true"] .btn-action:hover {
+html:not([data-theme])[data-quiet-mode="true"] .btn-action:hover,
+[data-theme="light"][data-quiet-mode="true"] .action-btn:hover,
+html:not([data-theme])[data-quiet-mode="true"] .action-btn:hover {
   color: var(--accent-hover) !important; /* Darker purple on hover */
   background: var(--accent-soft) !important;
 }
@@ -1103,7 +1108,11 @@ html:not([data-theme])[data-quiet-mode="true"] .btn-action:hover {
 [data-theme="light"][data-quiet-mode="true"] .btn-action.liked,
 [data-theme="light"][data-quiet-mode="true"] .btn-action.active,
 html:not([data-theme])[data-quiet-mode="true"] .btn-action.liked,
-html:not([data-theme])[data-quiet-mode="true"] .btn-action.active {
+html:not([data-theme])[data-quiet-mode="true"] .btn-action.active,
+[data-theme="light"][data-quiet-mode="true"] .action-btn.liked,
+[data-theme="light"][data-quiet-mode="true"] .action-btn.active,
+html:not([data-theme])[data-quiet-mode="true"] .action-btn.liked,
+html:not([data-theme])[data-quiet-mode="true"] .action-btn.active {
   color: #FFFFFF !important;
   background: var(--accent-primary) !important;
 }
@@ -1511,6 +1520,7 @@ html[data-theme="dark"][data-quiet-mode="true"] a[href="/helplines"],
 
 /* Fix elements with vibrant teal backgrounds for better visibility */
 [data-theme="dark"][data-quiet-mode="true"] .btn-action,
+[data-theme="dark"][data-quiet-mode="true"] .action-btn,
 [data-theme="dark"][data-quiet-mode="true"] .btn-media-upload,
 [data-theme="dark"][data-quiet-mode="true"] .lounge-cw-field,
 [data-theme="dark"][data-quiet-mode="true"] .lounge-cw-btn,
@@ -1524,10 +1534,12 @@ html[data-theme="dark"][data-quiet-mode="true"] a[href="/helplines"],
   background: rgba(6,182,212,0.20) !important; /* Vibrant teal background */
   color: #FFFFFF !important;
   border-color: rgba(6,182,212,0.4) !important; /* Add visible teal border */
+  border-radius: var(--radius-pill) !important; /* Ensure rounded buttons */
 }
 
 /* Ensure buttons have vibrant teal colors */
 [data-theme="dark"][data-quiet-mode="true"] .btn-action:not(.liked),
+[data-theme="dark"][data-quiet-mode="true"] .action-btn:not(.liked),
 [data-theme="dark"][data-quiet-mode="true"] .lounge-cw-btn {
   background: var(--btn-bg) !important; /* Vibrant teal */
   color: #FFFFFF !important;
@@ -1535,6 +1547,7 @@ html[data-theme="dark"][data-quiet-mode="true"] a[href="/helplines"],
 
 /* Ensure hover states are vibrant teal */
 [data-theme="dark"][data-quiet-mode="true"] .btn-action:hover,
+[data-theme="dark"][data-quiet-mode="true"] .action-btn:hover,
 [data-theme="dark"][data-quiet-mode="true"] .lounge-cw-btn:hover {
   background: var(--btn-bg-hover) !important; /* Lighter vibrant teal */
   color: #FFFFFF !important;

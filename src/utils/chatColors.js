@@ -80,24 +80,37 @@ export const getUserChatColor = (userId, theme = 'light') => {
   const isQuietMode = document.documentElement.getAttribute('data-quiet-mode') === 'true';
 
   if (isQuietMode) {
-    // Use muted colors for Quiet Mode
-    return {
-      background: 'var(--bg-surface)',
-      text: 'var(--text-main)'
-    };
+    // Use better contrast colors for Quiet Mode
+    if (theme === 'dark') {
+      // Dark + Quiet Mode: Use vibrant teal with good contrast
+      return {
+        background: '#1F4A52', // Darker teal background
+        text: '#FFFFFF'
+      };
+    } else {
+      // Light + Quiet Mode: Use soft purple
+      return {
+        background: '#F3F0FF', // Soft lavender background
+        text: '#2D2640'
+      };
+    }
   }
 
   if (!userId) {
+    console.warn('⚠️ getUserChatColor called with no userId');
     return {
       background: theme === 'dark' ? '#2C3E50' : '#E8F4F8',
       text: theme === 'dark' ? '#E0E0E0' : '#2B2B2B'
     };
   }
 
+  // Convert userId to string to ensure consistent hashing
+  const userIdStr = String(userId);
+
   // Create a simple hash from the userId
   let hash = 0;
-  for (let i = 0; i < userId.length; i++) {
-    hash = userId.charCodeAt(i) + ((hash << 5) - hash);
+  for (let i = 0; i < userIdStr.length; i++) {
+    hash = userIdStr.charCodeAt(i) + ((hash << 5) - hash);
     hash = hash & hash; // Convert to 32-bit integer
   }
 
@@ -121,11 +134,20 @@ export const getSentMessageColor = (theme = 'light') => {
   const isQuietMode = document.documentElement.getAttribute('data-quiet-mode') === 'true';
 
   if (isQuietMode) {
-    // Use muted accent color for sent messages in Quiet Mode
-    return {
-      background: 'var(--accent-soft)',
-      text: 'var(--text-main)'
-    };
+    // Use better contrast colors for sent messages in Quiet Mode
+    if (theme === 'dark') {
+      // Dark + Quiet Mode: Use vibrant cyan
+      return {
+        background: '#06B6D4', // Vibrant cyan
+        text: '#FFFFFF'
+      };
+    } else {
+      // Light + Quiet Mode: Use Pryde Purple
+      return {
+        background: '#6C5CE7', // Pryde Purple
+        text: '#FFFFFF'
+      };
+    }
   }
 
   return {

@@ -1,6 +1,6 @@
 // Pryde Social Service Worker
-const CACHE_NAME = 'pryde-social-v3';
-const RUNTIME_CACHE = 'pryde-runtime-v3';
+const CACHE_NAME = 'pryde-social-v5';
+const RUNTIME_CACHE = 'pryde-runtime-v5';
 
 // Assets to cache on install
 const PRECACHE_ASSETS = [
@@ -45,10 +45,15 @@ self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
+  // Skip prefetch requests - let browser handle them
+  if (request.headers.get('Purpose') === 'prefetch' ||
+      request.headers.get('Sec-Purpose') === 'prefetch') {
+    return; // Don't intercept prefetch requests
+  }
+
   // Skip cross-origin requests (let browser handle them normally)
   if (url.origin !== location.origin) {
-    event.respondWith(fetch(request));
-    return;
+    return; // Don't intercept cross-origin requests
   }
 
   // API requests - network only (don't cache)
@@ -62,17 +67,29 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(
       fetch(request)
         .then((response) => {
-          // Cache successful responses
-          const responseClone = response.clone();
-          caches.open(RUNTIME_CACHE).then((cache) => {
-            cache.put(request, responseClone);
-          });
+          // Only cache successful responses (200-299 status codes)
+          if (response.ok) {
+            const responseClone = response.clone();
+            caches.open(RUNTIME_CACHE).then((cache) => {
+              cache.put(request, responseClone);
+            }).catch((err) => {
+              console.warn('[SW] Failed to cache navigation response:', err);
+            });
+          } else {
+            console.warn('[SW] Navigation request failed:', response.status, request.url);
+          }
           return response;
         })
-        .catch(() => {
+        .catch((error) => {
+          console.error('[SW] Navigation fetch failed:', error.message, request.url);
           // Fallback to cache if offline
           return caches.match(request).then((cachedResponse) => {
-            return cachedResponse || caches.match('/index.html');
+            if (cachedResponse) {
+              console.log('[SW] Serving cached navigation:', request.url);
+              return cachedResponse;
+            }
+            console.log('[SW] Serving fallback index.html');
+            return caches.match('/index.html');
           });
         })
     );
@@ -85,23 +102,30 @@ self.addEventListener('fetch', (event) => {
       if (cachedResponse) {
         // Return cached version and update in background
         fetch(request).then((response) => {
-          caches.open(RUNTIME_CACHE).then((cache) => {
-            cache.put(request, response);
-          });
+          // Only cache successful responses
+          if (response.ok) {
+            caches.open(RUNTIME_CACHE).then((cache) => {
+              cache.put(request, response);
+            });
+          }
         }).catch(() => {});
         return cachedResponse;
       }
 
       // Not in cache, fetch from network
       return fetch(request).then((response) => {
-        // Cache successful responses
-        if (response.status === 200) {
+        // Only cache successful responses (200-299 status codes)
+        if (response.ok) {
           const responseClone = response.clone();
           caches.open(RUNTIME_CACHE).then((cache) => {
             cache.put(request, responseClone);
           });
         }
         return response;
+      }).catch((error) => {
+        // Network error - return a basic error response instead of caching it
+        console.error('[Service Worker] Fetch failed:', error);
+        throw error;
       });
     })
   );
