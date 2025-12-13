@@ -76,6 +76,8 @@ function Messages() {
   const [showGifPicker, setShowGifPicker] = useState(false);
   const [selectedGif, setSelectedGif] = useState(null);
   const [showVoiceRecorder, setShowVoiceRecorder] = useState(false);
+  const [contentWarning, setContentWarning] = useState('');
+  const [showContentWarning, setShowContentWarning] = useState(false);
   const messagesEndRef = useRef(null);
   const typingTimeoutRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -461,6 +463,7 @@ function Messages() {
       recipientId: selectedChat,
       content: message,
       attachment: attachmentUrl,
+      contentWarning: contentWarning,
       chatType: selectedChatType,
       socketConnected: isSocketConnected()
     });
@@ -472,7 +475,8 @@ function Messages() {
           groupChatId: selectedChat,
           content: message,
           attachment: attachmentUrl,
-          voiceNote: voiceNote
+          voiceNote: voiceNote,
+          contentWarning: contentWarning
         });
         setMessages((prev) => [...prev, response.data]);
       } else {
@@ -489,12 +493,15 @@ function Messages() {
           recipientId: selectedChat,
           content: message,
           attachment: attachmentUrl,
-          voiceNote: voiceNote
+          voiceNote: voiceNote,
+          contentWarning: contentWarning
         });
       }
       setMessage('');
       setSelectedFile(null);
       setSelectedGif(null);
+      setContentWarning('');
+      setShowContentWarning(false);
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
@@ -1376,6 +1383,29 @@ function Messages() {
                 </div>
 
                 <form onSubmit={handleSendMessage} className="chat-input-area">
+                  {showContentWarning && (
+                    <div className="content-warning-input">
+                      <select
+                        value={contentWarning}
+                        onChange={(e) => setContentWarning(e.target.value)}
+                        className="cw-input glossy"
+                      >
+                        <option value="">Select a content warning...</option>
+                        <option value="Mental Health">Mental Health</option>
+                        <option value="Violence">Violence</option>
+                        <option value="Sexual Content">Sexual Content</option>
+                        <option value="Substance Use">Substance Use</option>
+                        <option value="Self-Harm">Self-Harm</option>
+                        <option value="Death/Grief">Death/Grief</option>
+                        <option value="Eating Disorders">Eating Disorders</option>
+                        <option value="Abuse">Abuse</option>
+                        <option value="Discrimination">Discrimination</option>
+                        <option value="Medical Content">Medical Content</option>
+                        <option value="Spoilers">Spoilers</option>
+                        <option value="Other">Other</option>
+                      </select>
+                    </div>
+                  )}
                   {replyingTo && (
                     <div className="reply-preview">
                       <div className="reply-preview-content">
@@ -1458,6 +1488,14 @@ function Messages() {
                       title="Record voice note"
                     >
                       🎤
+                    </button>
+                    <button
+                      type="button"
+                      className={`btn-content-warning ${showContentWarning ? 'active' : ''}`}
+                      onClick={() => setShowContentWarning(!showContentWarning)}
+                      title="Add content warning"
+                    >
+                      ⚠️
                     </button>
                     <input
                       type="text"

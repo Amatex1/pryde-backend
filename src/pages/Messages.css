@@ -975,6 +975,56 @@
   cursor: not-allowed;
 }
 
+.btn-content-warning {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  border: 2px solid var(--border-subtle);
+  background: var(--bg);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+}
+
+.btn-content-warning:hover:not(:disabled) {
+  background: var(--bg-hover);
+  border-color: var(--electric-blue);
+  color: var(--electric-blue);
+  transform: translateY(-1px);
+}
+
+.btn-content-warning.active {
+  background: var(--electric-blue);
+  color: white;
+  border-color: var(--electric-blue);
+}
+
+.content-warning-input {
+  margin-bottom: 0.75rem;
+}
+
+.cw-input {
+  width: 100%;
+  padding: 0.75rem;
+  border: 2px solid var(--electric-blue);
+  border-radius: 12px;
+  font-size: 0.9rem;
+  background: var(--card-surface);
+  color: var(--text-main);
+  outline: none;
+  transition: all 0.3s ease;
+}
+
+.cw-input:focus {
+  border-color: var(--pryde-purple);
+  box-shadow: 0 0 0 3px rgba(108, 92, 231, 0.1);
+}
+
 .chat-input {
   flex: 1;
   padding: 0.875rem 1.25rem;
