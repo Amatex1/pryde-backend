@@ -7,6 +7,7 @@ import { Readable } from 'stream';
  * - Converts to WebP for better compression
  * - Resizes large images to reasonable dimensions
  * - Compresses images to reduce file size
+ * - Generates multiple sizes for responsive images
  *
  * @param {Buffer} imageBuffer - The image buffer to process
  * @param {string} mimetype - The image MIME type
@@ -15,7 +16,8 @@ import { Readable } from 'stream';
  * @param {number} options.maxHeight - Maximum height (default: 2048)
  * @param {number} options.quality - WebP quality 1-100 (default: 85)
  * @param {boolean} options.convertToWebP - Convert to WebP (default: true)
- * @returns {Promise<{buffer: Buffer, mimetype: string}>} - Processed image buffer and new mimetype
+ * @param {boolean} options.generateSizes - Generate multiple sizes (default: false)
+ * @returns {Promise<{buffer: Buffer, mimetype: string, sizes?: Object}>} - Processed image buffer and new mimetype
  */
 export const stripExifData = async (imageBuffer, mimetype, options = {}) => {
   try {
@@ -29,7 +31,8 @@ export const stripExifData = async (imageBuffer, mimetype, options = {}) => {
       maxWidth = 2048,
       maxHeight = 2048,
       quality = 85,
-      convertToWebP = true
+      convertToWebP = true,
+      generateSizes = false
     } = options;
 
     // Get image metadata
@@ -79,11 +82,56 @@ export const stripExifData = async (imageBuffer, mimetype, options = {}) => {
 
     console.log(`✅ Image optimized: ${Math.round(originalSize / 1024)}KB → ${Math.round(newSize / 1024)}KB (${savings}% smaller)`);
 
-    return { buffer: processedBuffer, mimetype: newMimetype };
+    // Generate multiple sizes if requested (for responsive images)
+    let sizes = null;
+    if (generateSizes && mimetype !== 'image/gif') {
+      console.log('📐 Generating responsive image sizes...');
+      sizes = await generateResponsiveSizes(imageBuffer, newMimetype, quality);
+    }
+
+    return { buffer: processedBuffer, mimetype: newMimetype, sizes };
   } catch (error) {
     console.error('❌ Error processing image:', error);
     // If processing fails, return original buffer
     return { buffer: imageBuffer, mimetype };
+  }
+};
+
+/**
+ * Generate multiple sizes of an image for responsive loading
+ * @param {Buffer} imageBuffer - The image buffer
+ * @param {string} mimetype - The target mimetype (should be image/webp)
+ * @param {number} quality - Image quality
+ * @returns {Promise<Object>} - Object with thumbnail, small, medium buffers
+ */
+export const generateResponsiveSizes = async (imageBuffer, mimetype, quality = 85) => {
+  try {
+    const isWebP = mimetype === 'image/webp';
+
+    // Generate thumbnail (150x150)
+    const thumbnail = await sharp(imageBuffer)
+      .resize(150, 150, { fit: 'cover', position: 'center' })
+      [isWebP ? 'webp' : 'jpeg']({ quality })
+      .toBuffer();
+
+    // Generate small (400px width)
+    const small = await sharp(imageBuffer)
+      .resize(400, null, { fit: 'inside', withoutEnlargement: true })
+      [isWebP ? 'webp' : 'jpeg']({ quality })
+      .toBuffer();
+
+    // Generate medium (800px width)
+    const medium = await sharp(imageBuffer)
+      .resize(800, null, { fit: 'inside', withoutEnlargement: true })
+      [isWebP ? 'webp' : 'jpeg']({ quality })
+      .toBuffer();
+
+    console.log(`✅ Generated sizes: thumbnail (${Math.round(thumbnail.length / 1024)}KB), small (${Math.round(small.length / 1024)}KB), medium (${Math.round(medium.length / 1024)}KB)`);
+
+    return { thumbnail, small, medium };
+  } catch (error) {
+    console.error('❌ Error generating responsive sizes:', error);
+    return null;
   }
 };
 

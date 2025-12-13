@@ -49,40 +49,97 @@ mongoose.connection.once('open', () => {
  * Save processed file to GridFS
  * Strips EXIF data from images before saving
  */
-const saveToGridFS = async (file) => {
+const saveToGridFS = async (file, generateSizes = false) => {
   return new Promise(async (resolve, reject) => {
     try {
       let buffer = file.buffer;
       let contentType = file.mimetype;
+      let sizes = null;
 
       // Process and optimize images (strip EXIF, convert to WebP, compress)
       if (file.mimetype.startsWith('image/')) {
         console.log('🔒 Processing and optimizing image...');
-        const result = await stripExifData(buffer, file.mimetype);
+        const result = await stripExifData(buffer, file.mimetype, { generateSizes });
         buffer = result.buffer;
         contentType = result.mimetype;
+        sizes = result.sizes;
         console.log('✅ Image optimized and saved as', contentType);
       }
 
       // Update filename extension if converted to WebP
-      let filename = `${Date.now()}-${file.originalname}`;
+      const timestamp = Date.now();
+      let filename = `${timestamp}-${file.originalname}`;
       if (contentType === 'image/webp' && !filename.endsWith('.webp')) {
         filename = filename.replace(/\.(jpg|jpeg|png)$/i, '.webp');
       }
 
+      // Save main image
       const readableStream = Readable.from(buffer);
-
       const uploadStream = gridfsBucket.openUploadStream(filename, {
         contentType: contentType
       });
 
       readableStream.pipe(uploadStream);
 
-      uploadStream.on('finish', () => {
-        resolve({
+      uploadStream.on('finish', async () => {
+        const result = {
           filename: filename,
           id: uploadStream.id
-        });
+        };
+
+        // Save responsive sizes if generated
+        if (sizes) {
+          try {
+            const sizeIds = {};
+
+            // Save thumbnail
+            if (sizes.thumbnail) {
+              const thumbFilename = `${timestamp}-thumb-${file.originalname.replace(/\.(jpg|jpeg|png)$/i, '.webp')}`;
+              const thumbStream = Readable.from(sizes.thumbnail);
+              const thumbUpload = gridfsBucket.openUploadStream(thumbFilename, { contentType: 'image/webp' });
+              await new Promise((res, rej) => {
+                thumbStream.pipe(thumbUpload);
+                thumbUpload.on('finish', () => res());
+                thumbUpload.on('error', rej);
+              });
+              sizeIds.thumbnail = thumbFilename;
+            }
+
+            // Save small
+            if (sizes.small) {
+              const smallFilename = `${timestamp}-small-${file.originalname.replace(/\.(jpg|jpeg|png)$/i, '.webp')}`;
+              const smallStream = Readable.from(sizes.small);
+              const smallUpload = gridfsBucket.openUploadStream(smallFilename, { contentType: 'image/webp' });
+              await new Promise((res, rej) => {
+                smallStream.pipe(smallUpload);
+                smallUpload.on('finish', () => res());
+                smallUpload.on('error', rej);
+              });
+              sizeIds.small = smallFilename;
+            }
+
+            // Save medium
+            if (sizes.medium) {
+              const mediumFilename = `${timestamp}-medium-${file.originalname.replace(/\.(jpg|jpeg|png)$/i, '.webp')}`;
+              const mediumStream = Readable.from(sizes.medium);
+              const mediumUpload = gridfsBucket.openUploadStream(mediumFilename, { contentType: 'image/webp' });
+              await new Promise((res, rej) => {
+                mediumStream.pipe(mediumUpload);
+                mediumUpload.on('finish', () => res());
+                mediumUpload.on('error', rej);
+              });
+              sizeIds.medium = mediumFilename;
+            }
+
+            result.sizes = sizeIds;
+            console.log('✅ Saved responsive sizes:', sizeIds);
+          } catch (sizeError) {
+            console.error('❌ Error saving responsive sizes:', sizeError);
+            // Continue without sizes
+          }
+        }
+
+        resolve(result);
       });
 
       uploadStream.on('error', (error) => {
@@ -112,8 +169,8 @@ router.post('/profile-photo', auth, uploadLimiter, (req, res) => {
         return res.status(400).json({ message: 'No file uploaded' });
       }
 
-      // Save to GridFS with EXIF stripping
-      const fileInfo = await saveToGridFS(req.file);
+      // Save to GridFS with EXIF stripping and responsive sizes
+      const fileInfo = await saveToGridFS(req.file, true); // Generate responsive sizes
       const photoUrl = `/upload/image/${fileInfo.filename}`;
       console.log('Photo URL:', photoUrl);
 
@@ -151,8 +208,8 @@ router.post('/cover-photo', auth, uploadLimiter, (req, res) => {
         return res.status(400).json({ message: 'No file uploaded' });
       }
 
-      // Save to GridFS with EXIF stripping
-      const fileInfo = await saveToGridFS(req.file);
+      // Save to GridFS with EXIF stripping and responsive sizes
+      const fileInfo = await saveToGridFS(req.file, true); // Generate responsive sizes
       const photoUrl = `/upload/image/${fileInfo.filename}`;
       console.log('Photo URL:', photoUrl);
 
@@ -214,9 +271,11 @@ router.post('/post-media', auth, uploadLimiter, (req, res) => {
         return res.status(400).json({ message: 'No files uploaded' });
       }
 
-      // Process each file and save to GridFS with EXIF stripping
+      // Process each file and save to GridFS with EXIF stripping and responsive sizes
       const mediaUrls = await Promise.all(req.files.map(async (file) => {
-        const fileInfo = await saveToGridFS(file);
+        // Generate responsive sizes for images (not videos or GIFs)
+        const shouldGenerateSizes = file.mimetype.startsWith('image/') && file.mimetype !== 'image/gif';
+        const fileInfo = await saveToGridFS(file, shouldGenerateSizes);
         const url = `/upload/file/${fileInfo.filename}`;
         let type = 'image';
 
@@ -226,7 +285,18 @@ router.post('/post-media', auth, uploadLimiter, (req, res) => {
           type = 'gif';
         }
 
-        return { url, type };
+        const result = { url, type };
+
+        // Include responsive size URLs if generated
+        if (fileInfo.sizes) {
+          result.sizes = {
+            thumbnail: fileInfo.sizes.thumbnail ? `/upload/file/${fileInfo.sizes.thumbnail}` : null,
+            small: fileInfo.sizes.small ? `/upload/file/${fileInfo.sizes.small}` : null,
+            medium: fileInfo.sizes.medium ? `/upload/file/${fileInfo.sizes.medium}` : null
+          };
+        }
+
+        return result;
       }));
 
       res.json({ media: mediaUrls });
