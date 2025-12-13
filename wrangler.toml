@@ -1,0 +1,21 @@
+# Cloudflare Pages Configuration
+name = "pryde-social"
+compatibility_date = "2024-01-01"
+
+[site]
+bucket = "./dist"
+
+[build]
+command = "npm run build:prod"
+cwd = "."
+watch_dirs = ["src", "public"]
+
+[build.upload]
+format = "service-worker"
+
+# Environment variables for build
+[env.production]
+VITE_API_URL = "https://pryde-social.onrender.com/api"
+VITE_SOCKET_URL = "https://pryde-social.onrender.com"
+VITE_HCAPTCHA_SITE_KEY = "3ef850da-acb8-4c5e-a86e-cbfee0ae3790"
+
