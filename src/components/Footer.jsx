@@ -10,7 +10,17 @@ function Footer() {
       <div className="footer-content">
         {/* Site Name and Copyright */}
         <div className="footer-branding">
-          <img src={prydeLogo} alt="Pryde Social Logo" className="footer-logo-img" />
+          <picture>
+            <source srcSet="/icon-192.webp" type="image/webp" />
+            <img
+              src="/icon-192.png"
+              alt="Pryde Social Logo"
+              className="footer-logo-img"
+              width="50"
+              height="50"
+              loading="lazy"
+            />
+          </picture>
           <h3 className="footer-logo">Pryde Social</h3>
           <p className="footer-copyright">
             © {currentYear} Pryde Social. All rights reserved.

@@ -25,7 +25,17 @@ function Home() {
         <div className="hero-content">
           <div className="hero-text">
             <div className="hero-logo-container">
-              <img src={prydeLogo} alt="Pryde Social Logo" className="hero-logo" />
+              <picture>
+                <source srcSet="/pryde-logo.webp" type="image/webp" />
+                <img
+                  src={prydeLogo}
+                  alt="Pryde Social Logo"
+                  className="hero-logo"
+                  width="120"
+                  height="120"
+                  loading="eager"
+                />
+              </picture>
             </div>
             <h1 className="hero-title">
               A Calm, Queer-Centred Social Platform Built by LGBTQ+ People, for LGBTQ+ People

@@ -400,3 +400,9 @@ img, video, iframe, embed, object {
 [style*="position: absolute"] {
   max-width: 100vw;
 }
+
+/* Loading spinner animation for lazy-loaded routes */
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}

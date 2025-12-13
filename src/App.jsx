@@ -1,52 +1,81 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { useState, useEffect } from 'react';
-import Home from './pages/Home';
-import Login from './pages/Login';
-import Register from './pages/Register';
-import ForgotPassword from './pages/ForgotPassword';
-import ResetPassword from './pages/ResetPassword';
-import Feed from './pages/Feed';
-import GlobalFeed from './pages/GlobalFeed'; // PHASE 2: Global feed
-import FollowingFeed from './pages/FollowingFeed'; // PHASE 2: Following feed
-import Journal from './pages/Journal'; // PHASE 3: Journaling
-import Longform from './pages/Longform'; // PHASE 3: Longform posts
-import Discover from './pages/Discover'; // PHASE 4: Community tags
-import TagFeed from './pages/TagFeed'; // PHASE 4: Tag feed
-import PhotoEssay from './pages/PhotoEssay'; // OPTIONAL: Photo essay creation
-import Profile from './pages/Profile';
-import Settings from './pages/Settings';
-import SecuritySettings from './pages/SecuritySettings';
-import PrivacySettings from './pages/PrivacySettings';
-import Bookmarks from './pages/Bookmarks';
-import Events from './pages/Events';
-// PHASE 1 REFACTOR: Friends page removed
-// import Friends from './pages/Friends';
-import Messages from './pages/Messages';
-import Lounge from './pages/Lounge';
-import Notifications from './pages/Notifications';
-import Admin from './pages/Admin';
-import Hashtag from './pages/Hashtag';
-import Terms from './pages/legal/Terms';
-import Privacy from './pages/legal/Privacy';
-import Community from './pages/legal/Community';
-import Safety from './pages/legal/Safety';
-import Security from './pages/legal/Security';
-import Contact from './pages/legal/Contact';
-import FAQ from './pages/legal/FAQ';
-import LegalRequests from './pages/legal/LegalRequests';
-import DMCA from './pages/legal/DMCA';
-import AcceptableUse from './pages/legal/AcceptableUse';
-import CookiePolicy from './pages/legal/CookiePolicy';
-import Helplines from './pages/legal/Helplines';
-import Footer from './components/Footer';
-import SafetyWarning from './components/SafetyWarning';
-import PWAInstallPrompt from './components/PWAInstallPrompt';
-import CookieBanner from './components/CookieBanner';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { isAuthenticated, getCurrentUser } from './utils/auth';
 import { initializeSocket, disconnectSocket, onNewMessage } from './utils/socket';
 import { playNotificationSound, requestNotificationPermission } from './utils/notifications';
 import { initializeQuietMode } from './utils/quietMode';
 import api from './utils/api';
+
+// Eager load critical components (needed immediately)
+import Home from './pages/Home';
+import Login from './pages/Login';
+import Register from './pages/Register';
+import Footer from './components/Footer';
+import SafetyWarning from './components/SafetyWarning';
+import PWAInstallPrompt from './components/PWAInstallPrompt';
+import CookieBanner from './components/CookieBanner';
+
+// Lazy load non-critical pages (loaded on demand)
+const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
+const ResetPassword = lazy(() => import('./pages/ResetPassword'));
+const Feed = lazy(() => import('./pages/Feed'));
+const GlobalFeed = lazy(() => import('./pages/GlobalFeed'));
+const FollowingFeed = lazy(() => import('./pages/FollowingFeed'));
+const Journal = lazy(() => import('./pages/Journal'));
+const Longform = lazy(() => import('./pages/Longform'));
+const Discover = lazy(() => import('./pages/Discover'));
+const TagFeed = lazy(() => import('./pages/TagFeed'));
+const PhotoEssay = lazy(() => import('./pages/PhotoEssay'));
+const Profile = lazy(() => import('./pages/Profile'));
+const Settings = lazy(() => import('./pages/Settings'));
+const SecuritySettings = lazy(() => import('./pages/SecuritySettings'));
+const PrivacySettings = lazy(() => import('./pages/PrivacySettings'));
+const Bookmarks = lazy(() => import('./pages/Bookmarks'));
+const Events = lazy(() => import('./pages/Events'));
+const Messages = lazy(() => import('./pages/Messages'));
+const Lounge = lazy(() => import('./pages/Lounge'));
+const Notifications = lazy(() => import('./pages/Notifications'));
+const Admin = lazy(() => import('./pages/Admin'));
+const Hashtag = lazy(() => import('./pages/Hashtag'));
+
+// Lazy load legal pages
+const Terms = lazy(() => import('./pages/legal/Terms'));
+const Privacy = lazy(() => import('./pages/legal/Privacy'));
+const Community = lazy(() => import('./pages/legal/Community'));
+const Safety = lazy(() => import('./pages/legal/Safety'));
+const Security = lazy(() => import('./pages/legal/Security'));
+const Contact = lazy(() => import('./pages/legal/Contact'));
+const FAQ = lazy(() => import('./pages/legal/FAQ'));
+const LegalRequests = lazy(() => import('./pages/legal/LegalRequests'));
+const DMCA = lazy(() => import('./pages/legal/DMCA'));
+const AcceptableUse = lazy(() => import('./pages/legal/AcceptableUse'));
+const CookiePolicy = lazy(() => import('./pages/legal/CookiePolicy'));
+const Helplines = lazy(() => import('./pages/legal/Helplines'));
+
+// Loading fallback component
+const PageLoader = () => (
+  <div style={{
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    minHeight: '100vh',
+    background: 'var(--bg-light)',
+    color: 'var(--text-main)'
+  }}>
+    <div style={{ textAlign: 'center' }}>
+      <div style={{
+        width: '50px',
+        height: '50px',
+        border: '4px solid var(--pryde-purple)',
+        borderTop: '4px solid transparent',
+        borderRadius: '50%',
+        animation: 'spin 1s linear infinite',
+        margin: '0 auto 1rem'
+      }}></div>
+      <p>Loading...</p>
+    </div>
+  </div>
+);
 
 function App() {
   const [isAuth, setIsAuth] = useState(isAuthenticated());
@@ -106,15 +135,16 @@ function App() {
         {/* Safety Warning for high-risk regions */}
         {isAuth && <SafetyWarning />}
 
-        <Routes>
-          {/* Public Home Page - Redirect to feed if logged in */}
-          <Route path="/" element={!isAuth ? <Home /> : <Navigate to="/feed" />} />
+        <Suspense fallback={<PageLoader />}>
+          <Routes>
+            {/* Public Home Page - Redirect to feed if logged in */}
+            <Route path="/" element={!isAuth ? <Home /> : <Navigate to="/feed" />} />
 
-          {/* Auth Pages */}
-          <Route path="/login" element={!isAuth ? <Login setIsAuth={setIsAuth} /> : <Navigate to="/feed" />} />
-          <Route path="/register" element={!isAuth ? <Register setIsAuth={setIsAuth} /> : <Navigate to="/feed" />} />
-          <Route path="/forgot-password" element={!isAuth ? <ForgotPassword /> : <Navigate to="/feed" />} />
-          <Route path="/reset-password" element={!isAuth ? <ResetPassword /> : <Navigate to="/feed" />} />
+            {/* Auth Pages */}
+            <Route path="/login" element={!isAuth ? <Login setIsAuth={setIsAuth} /> : <Navigate to="/feed" />} />
+            <Route path="/register" element={!isAuth ? <Register setIsAuth={setIsAuth} /> : <Navigate to="/feed" />} />
+            <Route path="/forgot-password" element={!isAuth ? <ForgotPassword /> : <Navigate to="/feed" />} />
+            <Route path="/reset-password" element={!isAuth ? <ResetPassword /> : <Navigate to="/feed" />} />
 
           {/* Protected Routes */}
           <Route path="/feed" element={<PrivateRoute><Feed /></PrivateRoute>} />
@@ -157,7 +187,8 @@ function App() {
           <Route path="/acceptable-use" element={<><AcceptableUse /><Footer /></>} />
           <Route path="/cookie-policy" element={<><CookiePolicy /><Footer /></>} />
           <Route path="/helplines" element={<><Helplines /><Footer /></>} />
-        </Routes>
+          </Routes>
+        </Suspense>
 
         {/* PWA Install Prompt */}
         {isAuth && <PWAInstallPrompt />}

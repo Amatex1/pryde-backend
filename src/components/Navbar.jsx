@@ -144,7 +144,17 @@ function Navbar() {
     <nav className="navbar glossy">
       <div className="navbar-container">
         <Link to="/feed" className="navbar-brand">
-          <img src={prydeLogo} alt="Pryde Social" className="brand-logo" />
+          <picture>
+            <source srcSet="/icon-192.webp" type="image/webp" />
+            <img
+              src="/icon-192.png"
+              alt="Pryde Social"
+              className="brand-logo"
+              width="36"
+              height="36"
+              loading="eager"
+            />
+          </picture>
           <span className="brand-text">Pryde Social</span>
         </Link>
 
