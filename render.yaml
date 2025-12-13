@@ -54,6 +54,21 @@ services:
     buildCommand: npm install && npm run build
     staticPublishPath: ./dist
     routes:
+      # Serve static files directly (don't rewrite to index.html)
+      - type: rewrite
+        source: /robots.txt
+        destination: /robots.txt
+      - type: rewrite
+        source: /manifest.json
+        destination: /manifest.json
+      - type: rewrite
+        source: /sw.js
+        destination: /sw.js
+      - type: rewrite
+        source: /notificationHelper.js
+        destination: /notificationHelper.js
+
+      # SPA fallback - rewrite all other routes to index.html
       - type: rewrite
         source: /*
         destination: /index.html
@@ -102,11 +117,17 @@ services:
         name: Cache-Control
         value: public, max-age=31536000, immutable
 
-      # No cache for HTML
+      # No cache for HTML and dynamic files
       - path: /index.html
         name: Cache-Control
         value: no-cache, no-store, must-revalidate
       - path: /manifest.json
+        name: Cache-Control
+        value: no-cache, no-store, must-revalidate
+      - path: /robots.txt
+        name: Cache-Control
+        value: no-cache, no-store, must-revalidate
+      - path: /sw.js
         name: Cache-Control
         value: no-cache, no-store, must-revalidate
 
