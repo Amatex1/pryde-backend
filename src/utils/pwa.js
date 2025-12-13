@@ -162,32 +162,46 @@ export async function requestNotificationPermission() {
 }
 
 /**
- * Request persistent storage (modern API)
+ * Request persistent storage using the modern Storage API
+ * This replaces the deprecated StorageType.persistent API
+ * @see https://developer.mozilla.org/en-US/docs/Web/API/StorageManager/persist
  */
 export async function requestPersistentStorage() {
-  if (!('storage' in navigator) || !('persist' in navigator.storage)) {
-    console.log('[PWA] Persistent storage not supported');
+  // Check if the modern Storage API is supported
+  if (!navigator.storage || typeof navigator.storage.persist !== 'function') {
+    console.log('[PWA] Storage API not supported in this browser');
     return false;
   }
 
   try {
-    // Check if already granted
+    // First check if storage is already persistent
     const isPersisted = await navigator.storage.persisted();
     if (isPersisted) {
-      console.log('[PWA] Persistent storage already granted');
+      console.log('[PWA] ✅ Storage is already persistent');
       return true;
     }
 
-    // Request persistent storage
+    // Request persistent storage using the modern API
     const granted = await navigator.storage.persist();
+
     if (granted) {
-      console.log('[PWA] Persistent storage granted');
+      console.log('[PWA] ✅ Persistent storage granted');
+
+      // Optionally log storage estimate
+      if (typeof navigator.storage.estimate === 'function') {
+        const estimate = await navigator.storage.estimate();
+        console.log('[PWA] Storage quota:', {
+          usage: `${(estimate.usage / 1024 / 1024).toFixed(2)} MB`,
+          quota: `${(estimate.quota / 1024 / 1024).toFixed(2)} MB`
+        });
+      }
     } else {
-      console.log('[PWA] Persistent storage denied');
+      console.log('[PWA] ⚠️ Persistent storage request denied by browser');
     }
+
     return granted;
   } catch (error) {
-    console.error('[PWA] Persistent storage request failed:', error);
+    console.error('[PWA] ❌ Persistent storage request failed:', error);
     return false;
   }
 }

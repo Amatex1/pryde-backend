@@ -9,12 +9,21 @@ import './styles/autoResponsive.css' // Auto-detect and adapt to all device size
 import './styles/mobileFixes.css' // Mobile-specific fixes for color contrast and layout
 import { registerServiceWorker, setupInstallPrompt, requestPersistentStorage } from './utils/pwa'
 
-// Register service worker for PWA functionality
+// Register service worker for PWA functionality (production only)
 if (import.meta.env.PROD) {
-  registerServiceWorker();
+  // Register service worker
+  registerServiceWorker().catch(err => {
+    console.error('[PWA] Service worker registration failed:', err);
+  });
+
+  // Setup install prompt
   setupInstallPrompt();
-  // Request persistent storage using modern API
-  requestPersistentStorage();
+
+  // Request persistent storage using modern Storage API
+  // This replaces the deprecated StorageType.persistent API
+  requestPersistentStorage().catch(err => {
+    console.error('[PWA] Persistent storage request failed:', err);
+  });
 }
 
 ReactDOM.createRoot(document.getElementById('root')).render(
