@@ -162,7 +162,7 @@
 }
 
 .btn-post {
-  padding: 0.875rem 2rem;
+  padding: 0.875rem 1.5rem;
   border-radius: 12px;
   border: none;
   font-size: 1rem;
@@ -172,6 +172,7 @@
   cursor: pointer;
   transition: all 0.3s ease;
   white-space: nowrap; /* Prevent text wrapping */
+  flex-shrink: 0; /* Prevent button from shrinking */
 }
 
 .btn-post:hover {
@@ -560,7 +561,7 @@
 }
 
 .btn-poll {
-  padding: 0.75rem 1.25rem;
+  padding: 0.75rem 1rem;
   border-radius: 12px;
   border: 2px solid #9b8ef7; /* Darker border for better contrast */
   background: var(--card-surface);
@@ -568,9 +569,10 @@
   font-weight: 700; /* Bolder for better visibility */
   cursor: pointer;
   transition: all 0.3s ease;
-  min-width: 48px; /* Ensure minimum touch target size */
+  min-width: auto; /* Let content determine width */
   min-height: 48px; /* Ensure minimum touch target size */
   white-space: nowrap; /* Prevent text wrapping */
+  flex-shrink: 0; /* Prevent button from shrinking */
 }
 
 .btn-poll:hover {
@@ -604,7 +606,7 @@
 }
 
 .btn-content-warning {
-  padding: 0.75rem 1.25rem;
+  padding: 0.75rem 1rem;
   border-radius: 12px;
   border: 2px solid #0984E3; /* Electric blue border for better contrast */
   background: var(--card-surface);
@@ -612,9 +614,10 @@
   font-weight: 700; /* Bolder for better visibility */
   cursor: pointer;
   transition: all 0.3s ease;
-  min-width: 48px; /* Ensure minimum touch target size */
+  min-width: auto; /* Let content determine width */
   min-height: 48px; /* Ensure minimum touch target size */
   white-space: nowrap; /* Prevent text wrapping */
+  flex-shrink: 0; /* Prevent button from shrinking */
 }
 
 .btn-content-warning:hover {
@@ -652,7 +655,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 0.75rem 1.25rem;
+  padding: 0.75rem 1rem;
   border-radius: 12px;
   border: 2px solid var(--border-light);
   background: var(--card-surface);
@@ -662,6 +665,7 @@
   transition: all 0.3s ease;
   user-select: none;
   white-space: nowrap;
+  flex-shrink: 0; /* Prevent button from shrinking */
 }
 
 .hide-metrics-checkbox:hover {
@@ -2223,12 +2227,13 @@ html:not([data-theme])[data-quiet-mode="true"] .hide-metrics-checkbox:hover {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 1rem;
+  gap: 0.5rem;
   margin-top: 1rem;
+  flex-wrap: wrap; /* Allow wrapping on very small screens */
 }
 
 .btn-media-upload {
-  padding: 0.75rem 1.5rem;
+  padding: 0.75rem 1rem;
   border-radius: 10px;
   border: 2px solid var(--pryde-purple);
   background: var(--soft-lavender);
@@ -2238,6 +2243,7 @@ html:not([data-theme])[data-quiet-mode="true"] .hide-metrics-checkbox:hover {
   transition: all 0.3s ease;
   display: inline-block;
   white-space: nowrap; /* Prevent text wrapping */
+  flex-shrink: 0; /* Prevent button from shrinking */
 }
 
 .btn-media-upload:hover {
@@ -2561,6 +2567,8 @@ html:not([data-theme])[data-quiet-mode="true"] .hide-metrics-checkbox:hover {
   outline: none;
   transition: all 0.3s ease;
   white-space: nowrap; /* Prevent text wrapping */
+  flex-shrink: 0; /* Prevent dropdown from shrinking */
+  min-width: 120px; /* Ensure enough space for "Public" text */
 }
 
 .privacy-selector:hover {
