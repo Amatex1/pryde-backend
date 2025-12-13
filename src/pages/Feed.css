@@ -86,9 +86,9 @@
   border: none;
   border-radius: var(--radius-md);
   background: transparent;
-  color: var(--text-muted);
+  color: #5a5c6e; /* Darker for better contrast (WCAG AA) */
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 600; /* Increased weight for better visibility */
   cursor: pointer;
   transition: all 0.15s ease;
 }
@@ -109,7 +109,21 @@
 }
 
 .feed-tab .tab-label {
-  font-weight: 600;
+  font-weight: 700; /* Bolder for better contrast */
+  color: inherit;
+}
+
+/* Dark mode feed tabs */
+[data-theme="dark"] .feed-tab {
+  color: #c5c7d7; /* Lighter for dark backgrounds */
+}
+
+[data-theme="dark"] .feed-tab:hover {
+  color: var(--color-primary);
+}
+
+[data-theme="dark"] .feed-tab.active {
+  color: white;
 }
 
 @media (max-width: 768px) {
@@ -547,10 +561,10 @@
 .btn-poll {
   padding: 0.75rem 1.25rem;
   border-radius: 12px;
-  border: 2px solid var(--border-light);
+  border: 2px solid #9b8ef7; /* Darker border for better contrast */
   background: var(--card-surface);
-  color: var(--text-main);
-  font-weight: 600;
+  color: #2d2f3e; /* Darker text for better contrast (WCAG AA) */
+  font-weight: 700; /* Bolder for better visibility */
   cursor: pointer;
   transition: all 0.3s ease;
   min-width: 48px; /* Ensure minimum touch target size */
@@ -570,14 +584,14 @@
 }
 
 [data-theme="dark"] .btn-poll {
-  background: rgba(108, 92, 231, 0.1);
-  color: var(--electric-blue);
-  border-color: rgba(108, 92, 231, 0.3);
+  background: rgba(108, 92, 231, 0.15); /* Slightly more opaque for better contrast */
+  color: #c5c7d7; /* Lighter text for dark backgrounds */
+  border-color: rgba(108, 92, 231, 0.5); /* More visible border */
 }
 
 [data-theme="dark"] .btn-poll:hover {
-  background: rgba(108, 92, 231, 0.2);
-  color: var(--electric-blue);
+  background: rgba(108, 92, 231, 0.25);
+  color: #e8e9f0;
   border-color: var(--electric-blue);
 }
 
@@ -590,10 +604,10 @@
 .btn-content-warning {
   padding: 0.75rem 1.25rem;
   border-radius: 12px;
-  border: 2px solid var(--border-light);
+  border: 2px solid #0984E3; /* Electric blue border for better contrast */
   background: var(--card-surface);
-  color: var(--text-main);
-  font-weight: 600;
+  color: #2d2f3e; /* Darker text for better contrast (WCAG AA) */
+  font-weight: 700; /* Bolder for better visibility */
   cursor: pointer;
   transition: all 0.3s ease;
   min-width: 48px; /* Ensure minimum touch target size */
@@ -613,14 +627,14 @@
 }
 
 [data-theme="dark"] .btn-content-warning {
-  background: rgba(9, 132, 227, 0.1);
-  color: var(--electric-blue);
-  border-color: rgba(9, 132, 227, 0.3);
+  background: rgba(9, 132, 227, 0.15); /* Slightly more opaque for better contrast */
+  color: #c5c7d7; /* Lighter text for dark backgrounds */
+  border-color: rgba(9, 132, 227, 0.5); /* More visible border */
 }
 
 [data-theme="dark"] .btn-content-warning:hover {
-  background: rgba(9, 132, 227, 0.2);
-  color: var(--electric-blue);
+  background: rgba(9, 132, 227, 0.25);
+  color: #e8e9f0;
   border-color: var(--electric-blue);
 }
 
@@ -783,7 +797,7 @@ body.dark-mode .hide-metrics-checkbox:hover {
   border-radius: var(--radius-pill);
   border: none;
   background: var(--bg-subtle);
-  color: var(--text-main);
+  color: #2d2f3e; /* Darker for better contrast (WCAG AA) */
   cursor: pointer;
   transition: all 0.15s ease;
   display: flex;
@@ -791,7 +805,7 @@ body.dark-mode .hide-metrics-checkbox:hover {
   justify-content: center;
   gap: var(--space-2);
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 600; /* Increased for better visibility */
 }
 
 .action-btn:hover {
@@ -802,7 +816,7 @@ body.dark-mode .hide-metrics-checkbox:hover {
 
 .action-btn.liked {
   background: var(--color-danger-soft);
-  color: var(--color-danger);
+  color: #d63031; /* Darker red for better contrast */
 }
 
 .action-btn.liked:hover {
@@ -812,12 +826,25 @@ body.dark-mode .hide-metrics-checkbox:hover {
 
 .action-btn.bookmarked {
   background: var(--color-primary-soft);
-  color: var(--color-primary);
+  color: #5a4bd8; /* Darker purple for better contrast */
 }
 
 .action-btn.bookmarked:hover {
   background: var(--color-primary);
   color: white;
+}
+
+/* Dark mode action buttons */
+[data-theme="dark"] .action-btn {
+  color: #e8e9f0; /* Lighter for dark backgrounds */
+}
+
+[data-theme="dark"] .action-btn.liked {
+  color: #ff9999; /* Lighter red for dark backgrounds */
+}
+
+[data-theme="dark"] .action-btn.bookmarked {
+  color: #9b8ef7; /* Lighter purple for dark backgrounds */
 }
 
 .reaction-count-btn {
@@ -993,8 +1020,8 @@ body.dark-mode .hide-metrics-checkbox:hover {
 .comment-action-btn {
   background: none;
   border: none;
-  color: var(--text-muted);
-  font-weight: 600;
+  color: #5a5c6e; /* Darker for better contrast (WCAG AA) */
+  font-weight: 700; /* Bolder for better visibility */
   font-size: 13px;
   cursor: pointer;
   padding: 0;
@@ -1006,6 +1033,11 @@ body.dark-mode .hide-metrics-checkbox:hover {
 
 .comment-action-btn:hover {
   color: var(--color-primary);
+}
+
+/* Dark mode comment action buttons */
+[data-theme="dark"] .comment-action-btn {
+  color: #c5c7d7; /* Lighter for dark backgrounds */
 }
 
 /* Twitter/X style view replies button */
