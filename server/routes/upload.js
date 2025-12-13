@@ -89,52 +89,54 @@ const saveToGridFS = async (file, generateSizes = false) => {
           id: uploadStream.id
         };
 
-        // Save responsive sizes if generated
+        // Save responsive sizes if generated (WebP + AVIF formats)
         if (sizes) {
           try {
             const sizeIds = {};
+            const baseName = file.originalname.replace(/\.(jpg|jpeg|png)$/i, '');
 
-            // Save thumbnail
-            if (sizes.thumbnail) {
-              const thumbFilename = `${timestamp}-thumb-${file.originalname.replace(/\.(jpg|jpeg|png)$/i, '.webp')}`;
-              const thumbStream = Readable.from(sizes.thumbnail);
-              const thumbUpload = gridfsBucket.openUploadStream(thumbFilename, { contentType: 'image/webp' });
-              await new Promise((res, rej) => {
-                thumbStream.pipe(thumbUpload);
-                thumbUpload.on('finish', () => res());
-                thumbUpload.on('error', rej);
+            // Helper function to save a size variant
+            const saveSizeVariant = async (buffer, sizeName, format) => {
+              const ext = format === 'avif' ? '.avif' : '.webp';
+              const variantFilename = `${timestamp}-${sizeName}-${baseName}${ext}`;
+              const variantStream = Readable.from(buffer);
+              const variantUpload = gridfsBucket.openUploadStream(variantFilename, {
+                contentType: `image/${format}`
               });
-              sizeIds.thumbnail = thumbFilename;
+              await new Promise((res, rej) => {
+                variantStream.pipe(variantUpload);
+                variantUpload.on('finish', () => res());
+                variantUpload.on('error', rej);
+              });
+              return variantFilename;
+            };
+
+            // Save avatar size (only for profile photos)
+            if (sizes.avatar) {
+              sizeIds.avatar = {
+                webp: await saveSizeVariant(sizes.avatar.webp, 'avatar', 'webp'),
+                avif: await saveSizeVariant(sizes.avatar.avif, 'avatar', 'avif')
+              };
             }
 
-            // Save small
-            if (sizes.small) {
-              const smallFilename = `${timestamp}-small-${file.originalname.replace(/\.(jpg|jpeg|png)$/i, '.webp')}`;
-              const smallStream = Readable.from(sizes.small);
-              const smallUpload = gridfsBucket.openUploadStream(smallFilename, { contentType: 'image/webp' });
-              await new Promise((res, rej) => {
-                smallStream.pipe(smallUpload);
-                smallUpload.on('finish', () => res());
-                smallUpload.on('error', rej);
-              });
-              sizeIds.small = smallFilename;
+            // Save feed size
+            if (sizes.feed) {
+              sizeIds.feed = {
+                webp: await saveSizeVariant(sizes.feed.webp, 'feed', 'webp'),
+                avif: await saveSizeVariant(sizes.feed.avif, 'feed', 'avif')
+              };
             }
 
-            // Save medium
-            if (sizes.medium) {
-              const mediumFilename = `${timestamp}-medium-${file.originalname.replace(/\.(jpg|jpeg|png)$/i, '.webp')}`;
-              const mediumStream = Readable.from(sizes.medium);
-              const mediumUpload = gridfsBucket.openUploadStream(mediumFilename, { contentType: 'image/webp' });
-              await new Promise((res, rej) => {
-                mediumStream.pipe(mediumUpload);
-                mediumUpload.on('finish', () => res());
-                mediumUpload.on('error', rej);
-              });
-              sizeIds.medium = mediumFilename;
+            // Save full size
+            if (sizes.full) {
+              sizeIds.full = {
+                webp: await saveSizeVariant(sizes.full.webp, 'full', 'webp'),
+                avif: await saveSizeVariant(sizes.full.avif, 'full', 'avif')
+              };
             }
 
             result.sizes = sizeIds;
-            console.log('✅ Saved responsive sizes:', sizeIds);
+            console.log('✅ Saved responsive sizes with WebP + AVIF:', Object.keys(sizeIds));
           } catch (sizeError) {
             console.error('❌ Error saving responsive sizes:', sizeError);
             // Continue without sizes

@@ -100,60 +100,106 @@ export const stripExifData = async (imageBuffer, mimetype, options = {}) => {
 };
 
 /**
- * Generate multiple sizes of an image for responsive loading
+ * Generate multiple sizes and formats of an image for responsive loading
  * @param {Buffer} imageBuffer - The image buffer
  * @param {string} mimetype - The target mimetype (should be image/webp)
  * @param {number} quality - Image quality
  * @param {Object} options - Size generation options
  * @param {boolean} options.isAvatar - Whether this is an avatar/profile photo (generates smaller sizes)
- * @returns {Promise<Object>} - Object with thumbnail, small, medium buffers
+ * @returns {Promise<Object>} - Object with avatar/feed/full sizes in WebP and AVIF formats
  */
 export const generateResponsiveSizes = async (imageBuffer, mimetype, quality = 85, options = {}) => {
   try {
-    const isWebP = mimetype === 'image/webp';
     const { isAvatar = false } = options;
 
-    // For avatars, use smaller sizes since they're displayed small in feeds
-    // For posts, use larger sizes for better quality when expanded
+    // Define sizes based on use case
+    // Avatar: 32-64px for tiny avatars, 300-600px for feed, full for profile view
+    // Post: 300-600px for feed, full for expanded view
     const sizes = isAvatar ? {
-      thumbnail: 64,   // Tiny avatar for lists/comments
-      small: 150,      // Standard avatar size
-      medium: 300      // Large avatar for profile pages
+      avatar: 48,      // Tiny avatar for lists/comments (32-64px range)
+      feed: 400,       // Feed display (300-600px range)
+      full: 1200       // Full profile view (capped at 1200px)
     } : {
-      thumbnail: 150,  // Small preview
-      small: 400,      // Mobile/small screens
-      medium: 800      // Tablet/desktop
+      avatar: null,    // Posts don't need tiny avatar size
+      feed: 600,       // Feed display (300-600px range)
+      full: 1600       // Full view for posts (capped at 1600px)
     };
 
-    // Generate thumbnail
-    const thumbnail = await sharp(imageBuffer)
-      .resize(sizes.thumbnail, sizes.thumbnail, { fit: 'cover', position: 'center' })
-      [isWebP ? 'webp' : 'jpeg']({ quality: isAvatar ? 80 : quality })
-      .toBuffer();
+    const result = {};
 
-    // Generate small
-    const small = await sharp(imageBuffer)
-      .resize(sizes.small, isAvatar ? sizes.small : null, {
+    // Generate avatar size (only for profile photos)
+    if (isAvatar) {
+      // WebP version
+      const avatarWebP = await sharp(imageBuffer)
+        .resize(sizes.avatar, sizes.avatar, { fit: 'cover', position: 'center' })
+        .webp({ quality: 80 })
+        .toBuffer();
+
+      // AVIF version (50% better compression than WebP)
+      const avatarAVIF = await sharp(imageBuffer)
+        .resize(sizes.avatar, sizes.avatar, { fit: 'cover', position: 'center' })
+        .avif({ quality: 75 })
+        .toBuffer();
+
+      result.avatar = {
+        webp: avatarWebP,
+        avif: avatarAVIF
+      };
+
+      console.log(`✅ Avatar size: WebP (${Math.round(avatarWebP.length / 1024)}KB), AVIF (${Math.round(avatarAVIF.length / 1024)}KB)`);
+    }
+
+    // Generate feed size
+    const feedWebP = await sharp(imageBuffer)
+      .resize(sizes.feed, isAvatar ? sizes.feed : null, {
         fit: isAvatar ? 'cover' : 'inside',
         position: 'center',
         withoutEnlargement: true
       })
-      [isWebP ? 'webp' : 'jpeg']({ quality: isAvatar ? 85 : quality })
+      .webp({ quality: 85 })
       .toBuffer();
 
-    // Generate medium
-    const medium = await sharp(imageBuffer)
-      .resize(sizes.medium, isAvatar ? sizes.medium : null, {
+    const feedAVIF = await sharp(imageBuffer)
+      .resize(sizes.feed, isAvatar ? sizes.feed : null, {
         fit: isAvatar ? 'cover' : 'inside',
         position: 'center',
         withoutEnlargement: true
       })
-      [isWebP ? 'webp' : 'jpeg']({ quality })
+      .avif({ quality: 80 })
       .toBuffer();
 
-    console.log(`✅ Generated ${isAvatar ? 'avatar' : 'post'} sizes: thumbnail (${Math.round(thumbnail.length / 1024)}KB), small (${Math.round(small.length / 1024)}KB), medium (${Math.round(medium.length / 1024)}KB)`);
+    result.feed = {
+      webp: feedWebP,
+      avif: feedAVIF
+    };
 
-    return { thumbnail, small, medium };
+    console.log(`✅ Feed size: WebP (${Math.round(feedWebP.length / 1024)}KB), AVIF (${Math.round(feedAVIF.length / 1024)}KB)`);
+
+    // Generate full size
+    const fullWebP = await sharp(imageBuffer)
+      .resize(sizes.full, sizes.full, {
+        fit: 'inside',
+        withoutEnlargement: true
+      })
+      .webp({ quality })
+      .toBuffer();
+
+    const fullAVIF = await sharp(imageBuffer)
+      .resize(sizes.full, sizes.full, {
+        fit: 'inside',
+        withoutEnlargement: true
+      })
+      .avif({ quality: quality - 5 })
+      .toBuffer();
+
+    result.full = {
+      webp: fullWebP,
+      avif: fullAVIF
+    };
+
+    console.log(`✅ Full size: WebP (${Math.round(fullWebP.length / 1024)}KB), AVIF (${Math.round(fullAVIF.length / 1024)}KB)`);
+
+    return result;
   } catch (error) {
     console.error('❌ Error generating responsive sizes:', error);
     return null;

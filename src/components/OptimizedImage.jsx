@@ -3,12 +3,12 @@ import './OptimizedImage.css';
 
 /**
  * OptimizedImage Component
- * 
+ *
  * Features:
  * - Lazy loading (loads images only when visible)
  * - Progressive loading (blur-up effect)
- * - Automatic WebP support with fallback
- * - Responsive images
+ * - AVIF support with WebP and JPEG fallback
+ * - Responsive images with srcset
  * - Loading placeholder
  * - Error handling
  */
@@ -23,7 +23,8 @@ function OptimizedImage({
   placeholder = true, // Show loading placeholder
   sizes, // Responsive sizes attribute
   fetchPriority, // 'high', 'low', or 'auto'
-  responsiveSizes, // Object with thumbnail, small, medium URLs from backend
+  responsiveSizes, // Object with avatar/feed/full sizes from backend (each with webp/avif)
+  imageSize = 'feed', // Which size to use: 'avatar', 'feed', or 'full'
   ...props
 }) {
   const [isLoaded, setIsLoaded] = useState(false);
@@ -75,31 +76,64 @@ function OptimizedImage({
 
   const imageUrl = getImageUrl(src);
 
-  // Generate srcset for responsive images
-  const generateSrcSet = (url) => {
-    if (!url || url.startsWith('data:')) return null;
+  // Generate srcset for AVIF and WebP sources
+  const generateSourceSets = () => {
+    if (!responsiveSizes) return null;
 
-    // If responsive sizes are provided from backend, use them
-    if (responsiveSizes) {
-      const srcsetParts = [];
+    const sources = {
+      avif: { avatar: null, feed: null, full: null },
+      webp: { avatar: null, feed: null, full: null }
+    };
 
-      if (responsiveSizes.small) {
-        srcsetParts.push(`${getImageUrl(responsiveSizes.small)} 400w`);
-      }
-      if (responsiveSizes.medium) {
-        srcsetParts.push(`${getImageUrl(responsiveSizes.medium)} 800w`);
-      }
-      // Add the original as the largest size
-      srcsetParts.push(`${url} 2048w`);
-
-      return srcsetParts.length > 0 ? srcsetParts.join(', ') : null;
+    // Build AVIF srcset
+    if (responsiveSizes.avatar?.avif) {
+      sources.avif.avatar = getImageUrl(responsiveSizes.avatar.avif);
+    }
+    if (responsiveSizes.feed?.avif) {
+      sources.avif.feed = getImageUrl(responsiveSizes.feed.avif);
+    }
+    if (responsiveSizes.full?.avif) {
+      sources.avif.full = getImageUrl(responsiveSizes.full.avif);
     }
 
-    return null;
+    // Build WebP srcset
+    if (responsiveSizes.avatar?.webp) {
+      sources.webp.avatar = getImageUrl(responsiveSizes.avatar.webp);
+    }
+    if (responsiveSizes.feed?.webp) {
+      sources.webp.feed = getImageUrl(responsiveSizes.feed.webp);
+    }
+    if (responsiveSizes.full?.webp) {
+      sources.webp.full = getImageUrl(responsiveSizes.full.webp);
+    }
+
+    return sources;
+  };
+
+  const sources = generateSourceSets();
+
+  // Determine which image to use based on imageSize prop
+  const getImageForSize = (format) => {
+    if (!sources) return imageUrl;
+
+    const sizeMap = sources[format];
+    if (!sizeMap) return imageUrl;
+
+    // Return the requested size, or fall back to next available size
+    if (imageSize === 'avatar' && sizeMap.avatar) return sizeMap.avatar;
+    if (imageSize === 'feed' && sizeMap.feed) return sizeMap.feed;
+    if (imageSize === 'full' && sizeMap.full) return sizeMap.full;
+
+    // Fallback: try to find any available size
+    return sizeMap.feed || sizeMap.full || sizeMap.avatar || imageUrl;
   };
 
   // Default sizes attribute for responsive images
-  const defaultSizes = sizes || '(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw';
+  const defaultSizes = sizes || (
+    imageSize === 'avatar' ? '48px' :
+    imageSize === 'feed' ? '(max-width: 640px) 100vw, 600px' :
+    '(max-width: 640px) 100vw, (max-width: 1024px) 80vw, 1200px'
+  );
 
   // Container style with aspect ratio
   const containerStyle = {
@@ -127,21 +161,50 @@ function OptimizedImage({
         </div>
       )}
 
-      {/* Actual image */}
+      {/* Actual image with AVIF + WebP support */}
       {isInView && !hasError && (
-        <img
-          src={imageUrl}
-          srcSet={generateSrcSet(imageUrl)}
-          sizes={defaultSizes}
-          alt={alt}
-          className={`optimized-image ${isLoaded ? 'loaded' : 'loading'}`}
-          onLoad={handleLoad}
-          onError={handleError}
-          loading={loading}
-          decoding="async"
-          fetchpriority={fetchPriority}
-          {...props}
-        />
+        sources ? (
+          <picture>
+            {/* AVIF source (best compression, ~50% smaller than WebP) */}
+            <source
+              type="image/avif"
+              srcSet={getImageForSize('avif')}
+              sizes={defaultSizes}
+            />
+
+            {/* WebP source (fallback for browsers without AVIF support) */}
+            <source
+              type="image/webp"
+              srcSet={getImageForSize('webp')}
+              sizes={defaultSizes}
+            />
+
+            {/* JPEG/PNG fallback (for very old browsers) */}
+            <img
+              src={imageUrl}
+              alt={alt}
+              className={`optimized-image ${isLoaded ? 'loaded' : 'loading'}`}
+              onLoad={handleLoad}
+              onError={handleError}
+              loading={loading}
+              decoding="async"
+              fetchpriority={fetchPriority}
+              {...props}
+            />
+          </picture>
+        ) : (
+          <img
+            src={imageUrl}
+            alt={alt}
+            className={`optimized-image ${isLoaded ? 'loaded' : 'loading'}`}
+            onLoad={handleLoad}
+            onError={handleError}
+            loading={loading}
+            decoding="async"
+            fetchpriority={fetchPriority}
+            {...props}
+          />
+        )
       )}
     </div>
   );
