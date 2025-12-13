@@ -91,6 +91,7 @@ const allowedOrigins = [
   'https://www.prydeapp.com',
   // Development
   'http://localhost:3000',
+  'http://localhost:3001',
   'http://localhost:5173',
   // Render URLs
   'https://pryde-frontend.onrender.com',

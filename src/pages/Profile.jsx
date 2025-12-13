@@ -2473,6 +2473,7 @@ function Profile() {
         postId={editHistoryPostId}
         contentType="post"
       />
+      </div>
     </div>
   );
 }
