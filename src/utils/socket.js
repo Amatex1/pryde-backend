@@ -64,6 +64,30 @@ export const connectSocket = (userId) => {
         socket.io.engine.on('upgrade', (transport) => {
             console.log('⬆️ Socket upgraded to:', transport.name);
         });
+
+        // Handle page visibility changes for bfcache compatibility
+        const handlePageHide = (event) => {
+            if (event.persisted) {
+                // Page is being cached, disconnect socket
+                console.log('📦 Page being cached, disconnecting socket');
+                if (socket) {
+                    socket.disconnect();
+                }
+            }
+        };
+
+        const handlePageShow = (event) => {
+            if (event.persisted) {
+                // Page restored from cache, reconnect socket
+                console.log('📦 Page restored from cache, reconnecting socket');
+                if (socket && !socket.connected) {
+                    socket.connect();
+                }
+            }
+        };
+
+        window.addEventListener('pagehide', handlePageHide);
+        window.addEventListener('pageshow', handlePageShow);
     }
     return socket;
 };

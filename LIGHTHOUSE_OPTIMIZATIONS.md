@@ -103,12 +103,45 @@ This document outlines all the optimizations made to improve Pryde Social's Ligh
 2. `scripts/optimize-images.js` - Added small logo generation
 3. `src/components/Navbar.jsx` - Updated to use small logo
 4. `src/components/Navbar.css` - Explicit dimensions
-5. `src/components/OptimizedImage.jsx` - Added fetchPriority support
-6. `src/pages/Feed.jsx` - Accessibility labels, LCP optimization
-7. `src/pages/Profile.jsx` - Accessibility labels
-8. `src/pages/GlobalFeed.jsx` - Accessibility labels
-9. `index.html` - Fixed preconnect crossorigin
-10. `vite.config.js` - Enabled source maps
+5. `src/components/OptimizedImage.jsx` - Added fetchPriority support, removed blur filter
+6. `src/components/OptimizedImage.css` - Removed blur transitions
+7. `src/pages/Feed.jsx` - Accessibility labels, LCP optimization
+8. `src/pages/Feed.css` - Layout shift fixes (min-height, aspect-ratio)
+9. `src/pages/Profile.jsx` - Accessibility labels
+10. `src/pages/GlobalFeed.jsx` - Accessibility labels
+11. `src/utils/socket.js` - Added bfcache support
+12. `index.html` - Fixed preconnect crossorigin
+13. `vite.config.js` - Enabled source maps
+
+---
+
+### 8. ✅ Fixed Filter-Related Property Warnings
+**Problem:** CSS filter property with blur() was causing pixel movement warnings.
+
+**Solution:** Removed blur effect from OptimizedImage component and used simple opacity transition with `will-change: opacity`.
+
+**Impact:** Eliminates filter-related warnings and improves rendering performance.
+
+---
+
+### 9. ✅ Fixed Back/Forward Cache Issue
+**Problem:** WebSocket connections were preventing the browser's back/forward cache (bfcache).
+
+**Solution:** Added `pagehide` and `pageshow` event listeners to properly disconnect/reconnect socket when page is cached.
+
+**Impact:** Enables bfcache, making back/forward navigation instant.
+
+---
+
+### 10. ✅ Fixed Layout Shift Issues
+**Problem:** Post cards and images were causing layout shifts (CLS score: 0.017).
+
+**Solution:**
+- Added `min-height: 150px` and `contain: layout` to `.post-card`
+- Added `aspect-ratio: 16/9` to `.post-media-item` for consistent sizing
+- Ensured all media items have explicit dimensions
+
+**Impact:** Reduces Cumulative Layout Shift (CLS) to near-zero.
 
 ---
 
@@ -118,9 +151,10 @@ This document outlines all the optimizations made to improve Pryde Social's Ligh
 2. **Run Lighthouse audit** again to verify improvements
 3. **Monitor Core Web Vitals** in production
 4. **Consider additional optimizations**:
-   - Implement lazy loading for below-the-fold content
+   - Implement backend image resizing for user-uploaded content (171 KiB savings)
+   - Reduce unused CSS (16 KiB savings)
+   - Minify JavaScript further (11 KiB savings)
    - Add resource hints for critical third-party resources
-   - Optimize CSS delivery (critical CSS inline)
    - Consider using a CDN for static assets
 
 ---

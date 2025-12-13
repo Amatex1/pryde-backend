@@ -136,7 +136,8 @@ function App() {
         {isAuth && <SafetyWarning />}
 
         <Suspense fallback={<PageLoader />}>
-          <Routes>
+          <main id="main-content">
+            <Routes>
             {/* Public Home Page - Redirect to feed if logged in */}
             <Route path="/" element={!isAuth ? <Home /> : <Navigate to="/feed" />} />
 
@@ -188,6 +189,7 @@ function App() {
           <Route path="/cookie-policy" element={<><CookiePolicy /><Footer /></>} />
           <Route path="/helplines" element={<><Helplines /><Footer /></>} />
           </Routes>
+          </main>
         </Suspense>
 
         {/* PWA Install Prompt */}

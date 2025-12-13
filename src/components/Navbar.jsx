@@ -148,7 +148,7 @@ function Navbar() {
             <source srcSet="/pryde-logo-small.webp" type="image/webp" />
             <img
               src="/pryde-logo-small.png"
-              alt="Pryde Social"
+              alt="Pryde Social Logo - Home"
               className="brand-logo"
               width="36"
               height="36"
