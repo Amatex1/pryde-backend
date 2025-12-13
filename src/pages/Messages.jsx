@@ -1282,7 +1282,7 @@ function Messages() {
                                 {msg.content}
 
                                 {/* Voice Note Player */}
-                                {msg.voiceNote && (
+                                {msg.voiceNote?.url && (
                                   <AudioPlayer
                                     url={getImageUrl(msg.voiceNote.url)}
                                     duration={msg.voiceNote.duration}
