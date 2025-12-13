@@ -1085,7 +1085,7 @@ function Messages() {
                                 </div>
                                 <div className="conv-last-message">
                                   {mutedConversations.includes(conv._id) && '🔕 '}
-                                  {conv.lastMessage?.voiceNote ? '🎤 Voice note' : (conv.lastMessage?.content || 'No messages')}
+                                  {conv.lastMessage?.voiceNote?.url ? '🎤 Voice note' : (conv.lastMessage?.content || 'No messages')}
                                 </div>
                               </div>
                               {conv.unread > 0 && (

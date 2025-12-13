@@ -39,6 +39,20 @@ const auth = async (req, res, next) => {
       return res.status(401).json({ message: 'User not found' });
     }
 
+    // Check if session still exists (session logout validation)
+    if (decoded.sessionId) {
+      const sessionExists = user.activeSessions.some(
+        s => s.sessionId === decoded.sessionId
+      );
+
+      if (!sessionExists) {
+        if (config.nodeEnv === 'development') {
+          console.log('❌ Session has been logged out');
+        }
+        return res.status(401).json({ message: 'Session has been logged out. Please log in again.' });
+      }
+    }
+
     if (config.nodeEnv === 'development') {
       console.log('✅ User authenticated:', user.username);
     }

@@ -57,11 +57,25 @@ router.post('/unsubscribe', auth, async (req, res) => {
 async function sendPushNotification(userId, payload) {
   try {
     const user = await User.findById(userId);
-    
+
     if (!user || !user.pushSubscription) {
       return { success: false, message: 'User not subscribed to push notifications' };
     }
-    
+
+    // Check notification type and user preferences
+    const notificationType = payload.data?.type;
+
+    // Check if user has disabled this type of notification
+    if (notificationType === 'login_approval' && user.loginAlerts?.enabled === false) {
+      return { success: false, message: 'User has disabled login alert notifications' };
+    }
+
+    // Check if user is in Quiet Mode and notification is not critical
+    const criticalTypes = ['login_approval', 'security_alert', 'account_warning'];
+    if (user.privacySettings?.quietModeEnabled && !criticalTypes.includes(notificationType)) {
+      return { success: false, message: 'User is in Quiet Mode - non-critical notifications suppressed' };
+    }
+
     const notificationPayload = JSON.stringify({
       title: payload.title || 'Pryde Social',
       body: payload.body || 'You have a new notification',
@@ -69,18 +83,18 @@ async function sendPushNotification(userId, payload) {
       badge: '/favicon.svg',
       data: payload.data || {}
     });
-    
+
     await webpush.sendNotification(user.pushSubscription, notificationPayload);
-    
+
     return { success: true, message: 'Push notification sent' };
   } catch (error) {
     console.error('Send push notification error:', error);
-    
+
     // If subscription is invalid, remove it
     if (error.statusCode === 410) {
       await User.findByIdAndUpdate(userId, { pushSubscription: null });
     }
-    
+
     return { success: false, message: error.message };
   }
 }

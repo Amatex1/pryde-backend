@@ -50,6 +50,16 @@ export const connectSocket = (userId) => {
             console.log('🔌 Socket disconnected:', reason);
         });
 
+        // Listen for force logout (session terminated from another device)
+        socket.on('force_logout', (data) => {
+            console.log('🚪 Force logout received:', data.reason);
+            alert(`You have been logged out: ${data.reason}`);
+            // Clear local storage and redirect to login
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.href = '/login';
+        });
+
         // Log transport upgrades
         socket.io.engine.on('upgrade', (transport) => {
             console.log('⬆️ Socket upgraded to:', transport.name);

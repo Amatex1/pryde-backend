@@ -857,7 +857,7 @@
 
 .reply-preview-text {
   font-size: 0.875rem;
-  color: var(--text-main);
+  color: var(--pryde-purple);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1642,7 +1642,16 @@
 }
 
 [data-theme="dark"] .reply-preview-text {
-  color: var(--text-main);
+  color: #C6B9F8;
+}
+
+/* Quiet Mode overrides for reply preview */
+[data-quiet-mode="true"] .reply-preview-text {
+  color: var(--pryde-purple);
+}
+
+[data-theme="dark"][data-quiet-mode="true"] .reply-preview-text {
+  color: #06B6D4;
 }
 
 .btn-create-group {

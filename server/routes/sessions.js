@@ -5,6 +5,12 @@ import jwt from 'jsonwebtoken';
 
 const router = express.Router();
 
+// Function to set Socket.IO instance (will be called from server.js)
+let io;
+export const setSocketIO = (socketIO) => {
+  io = socketIO;
+};
+
 // Get all active sessions
 router.get('/', authenticateToken, async (req, res) => {
   try {
@@ -41,7 +47,7 @@ router.delete('/:sessionId', authenticateToken, async (req, res) => {
   try {
     const { sessionId } = req.params;
     const user = await User.findById(req.user.id);
-    
+
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
@@ -59,6 +65,17 @@ router.delete('/:sessionId', authenticateToken, async (req, res) => {
     user.activeSessions.splice(sessionIndex, 1);
     await user.save();
 
+    // Force disconnect Socket.IO connections for this session
+    if (io) {
+      const sockets = await io.fetchSockets();
+      for (const socket of sockets) {
+        if (socket.sessionId === sessionId) {
+          socket.emit('force_logout', { reason: 'Session logged out from another device' });
+          socket.disconnect(true);
+        }
+      }
+    }
+
     res.json({
       message: 'Session logged out successfully',
       session: removedSession
@@ -73,20 +90,34 @@ router.delete('/:sessionId', authenticateToken, async (req, res) => {
 router.post('/logout-others', authenticateToken, async (req, res) => {
   try {
     const user = await User.findById(req.user.id);
-    
+
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
 
     const currentSessionId = req.sessionId;
-    const otherSessionsCount = user.activeSessions.length - 1;
+    const otherSessions = user.activeSessions.filter(
+      s => s.sessionId !== currentSessionId
+    );
+    const otherSessionsCount = otherSessions.length;
 
     // Keep only the current session
     user.activeSessions = user.activeSessions.filter(
       s => s.sessionId === currentSessionId
     );
-    
+
     await user.save();
+
+    // Force disconnect Socket.IO connections for other sessions
+    if (io) {
+      const sockets = await io.fetchSockets();
+      for (const socket of sockets) {
+        if (socket.userId === user._id.toString() && socket.sessionId !== currentSessionId) {
+          socket.emit('force_logout', { reason: 'Logged out from another device' });
+          socket.disconnect(true);
+        }
+      }
+    }
 
     res.json({
       message: `Logged out ${otherSessionsCount} other session(s)`,
@@ -102,7 +133,7 @@ router.post('/logout-others', authenticateToken, async (req, res) => {
 router.post('/logout-all', authenticateToken, async (req, res) => {
   try {
     const user = await User.findById(req.user.id);
-    
+
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
@@ -110,6 +141,17 @@ router.post('/logout-all', authenticateToken, async (req, res) => {
     const sessionCount = user.activeSessions.length;
     user.activeSessions = [];
     await user.save();
+
+    // Force disconnect all Socket.IO connections for this user
+    if (io) {
+      const sockets = await io.fetchSockets();
+      for (const socket of sockets) {
+        if (socket.userId === user._id.toString()) {
+          socket.emit('force_logout', { reason: 'All sessions logged out' });
+          socket.disconnect(true);
+        }
+      }
+    }
 
     res.json({
       message: `Logged out all ${sessionCount} session(s)`,

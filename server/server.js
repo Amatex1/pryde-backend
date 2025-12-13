@@ -40,7 +40,7 @@ import blocksRoutes from './routes/blocks.js';
 import adminRoutes from './routes/admin.js';
 import searchRoutes from './routes/search.js';
 import twoFactorRoutes from './routes/twoFactor.js';
-import sessionsRoutes from './routes/sessions.js';
+import sessionsRoutes, { setSocketIO } from './routes/sessions.js';
 import privacyRoutes from './routes/privacy.js';
 import bookmarksRoutes from './routes/bookmarks.js';
 import passkeyRoutes from './routes/passkey.js';
@@ -110,6 +110,9 @@ const io = new Server(server, {
     credentials: true
   }
 });
+
+// Set Socket.IO instance for session routes
+setSocketIO(io);
 
 // Middleware - Enhanced CORS configuration
 const corsOptions = {
@@ -326,7 +329,7 @@ app.get('/api/status', (req, res) => {
 });
 
 // Socket.IO authentication middleware
-io.use((socket, next) => {
+io.use(async (socket, next) => {
   const token = socket.handshake.auth.token;
 
   if (config.nodeEnv === 'development') {
@@ -346,7 +349,32 @@ io.use((socket, next) => {
     if (config.nodeEnv === 'development') {
       console.log('✅ Token verified successfully');
     }
+
+    // Check if session still exists (session logout validation)
+    if (decoded.sessionId) {
+      const user = await User.findById(decoded.userId).select('activeSessions');
+
+      if (!user) {
+        if (config.nodeEnv === 'development') {
+          console.log('❌ User not found');
+        }
+        return next(new Error('User not found'));
+      }
+
+      const sessionExists = user.activeSessions.some(
+        s => s.sessionId === decoded.sessionId
+      );
+
+      if (!sessionExists) {
+        if (config.nodeEnv === 'development') {
+          console.log('❌ Session has been logged out');
+        }
+        return next(new Error('Session has been logged out'));
+      }
+    }
+
     socket.userId = decoded.userId;
+    socket.sessionId = decoded.sessionId;
     next();
   } catch (error) {
     if (config.nodeEnv === 'development') {
