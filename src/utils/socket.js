@@ -66,13 +66,12 @@ export const connectSocket = (userId) => {
         });
 
         // Handle page visibility changes for bfcache compatibility
+        // IMPORTANT: Close WebSocket BEFORE page is cached to allow bfcache
         const handlePageHide = (event) => {
-            if (event.persisted) {
-                // Page is being cached, disconnect socket
-                console.log('📦 Page being cached, disconnecting socket');
-                if (socket) {
-                    socket.disconnect();
-                }
+            // Always disconnect on pagehide to allow bfcache
+            console.log('📦 Page hiding, disconnecting socket for bfcache');
+            if (socket && socket.connected) {
+                socket.disconnect();
             }
         };
 
@@ -86,8 +85,9 @@ export const connectSocket = (userId) => {
             }
         };
 
-        window.addEventListener('pagehide', handlePageHide);
-        window.addEventListener('pageshow', handlePageShow);
+        // Use 'pagehide' instead of 'beforeunload' for better bfcache support
+        window.addEventListener('pagehide', handlePageHide, { capture: true });
+        window.addEventListener('pageshow', handlePageShow, { capture: true });
     }
     return socket;
 };
