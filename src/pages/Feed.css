@@ -171,6 +171,7 @@
   color: white;
   cursor: pointer;
   transition: all 0.3s ease;
+  white-space: nowrap; /* Prevent text wrapping */
 }
 
 .btn-post:hover {
@@ -569,6 +570,7 @@
   transition: all 0.3s ease;
   min-width: 48px; /* Ensure minimum touch target size */
   min-height: 48px; /* Ensure minimum touch target size */
+  white-space: nowrap; /* Prevent text wrapping */
 }
 
 .btn-poll:hover {
@@ -612,6 +614,7 @@
   transition: all 0.3s ease;
   min-width: 48px; /* Ensure minimum touch target size */
   min-height: 48px; /* Ensure minimum touch target size */
+  white-space: nowrap; /* Prevent text wrapping */
 }
 
 .btn-content-warning:hover {
@@ -658,6 +661,7 @@
   cursor: pointer;
   transition: all 0.3s ease;
   user-select: none;
+  white-space: nowrap;
 }
 
 .hide-metrics-checkbox:hover {
@@ -681,10 +685,25 @@
 body.dark-mode .hide-metrics-checkbox {
   background: var(--bg-primary-dark);
   border-color: var(--border-color-dark);
+  color: var(--text-primary);
 }
 
 body.dark-mode .hide-metrics-checkbox:hover {
   background: rgba(108, 92, 231, 0.1);
+}
+
+/* Light mode + Quiet mode - Fix visibility */
+[data-theme="light"][data-quiet-mode="true"] .hide-metrics-checkbox,
+html:not([data-theme])[data-quiet-mode="true"] .hide-metrics-checkbox {
+  background: var(--bg-surface) !important;
+  border-color: var(--border-soft) !important;
+  color: var(--text-primary) !important;
+}
+
+[data-theme="light"][data-quiet-mode="true"] .hide-metrics-checkbox:hover,
+html:not([data-theme])[data-quiet-mode="true"] .hide-metrics-checkbox:hover {
+  background: var(--soft-lavender) !important;
+  border-color: var(--accent-primary) !important;
 }
 
 .content-warning-overlay {
@@ -2218,6 +2237,7 @@ body.dark-mode .hide-metrics-checkbox:hover {
   cursor: pointer;
   transition: all 0.3s ease;
   display: inline-block;
+  white-space: nowrap; /* Prevent text wrapping */
 }
 
 .btn-media-upload:hover {
@@ -2540,6 +2560,7 @@ body.dark-mode .hide-metrics-checkbox:hover {
   cursor: pointer;
   outline: none;
   transition: all 0.3s ease;
+  white-space: nowrap; /* Prevent text wrapping */
 }
 
 .privacy-selector:hover {
