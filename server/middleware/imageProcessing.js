@@ -86,7 +86,9 @@ export const stripExifData = async (imageBuffer, mimetype, options = {}) => {
     let sizes = null;
     if (generateSizes && mimetype !== 'image/gif') {
       console.log('📐 Generating responsive image sizes...');
-      sizes = await generateResponsiveSizes(imageBuffer, newMimetype, quality);
+      // Pass through options to control size generation (e.g., isAvatar)
+      const sizeOptions = typeof generateSizes === 'object' ? generateSizes : {};
+      sizes = await generateResponsiveSizes(imageBuffer, newMimetype, quality, sizeOptions);
     }
 
     return { buffer: processedBuffer, mimetype: newMimetype, sizes };
@@ -102,31 +104,54 @@ export const stripExifData = async (imageBuffer, mimetype, options = {}) => {
  * @param {Buffer} imageBuffer - The image buffer
  * @param {string} mimetype - The target mimetype (should be image/webp)
  * @param {number} quality - Image quality
+ * @param {Object} options - Size generation options
+ * @param {boolean} options.isAvatar - Whether this is an avatar/profile photo (generates smaller sizes)
  * @returns {Promise<Object>} - Object with thumbnail, small, medium buffers
  */
-export const generateResponsiveSizes = async (imageBuffer, mimetype, quality = 85) => {
+export const generateResponsiveSizes = async (imageBuffer, mimetype, quality = 85, options = {}) => {
   try {
     const isWebP = mimetype === 'image/webp';
+    const { isAvatar = false } = options;
 
-    // Generate thumbnail (150x150)
+    // For avatars, use smaller sizes since they're displayed small in feeds
+    // For posts, use larger sizes for better quality when expanded
+    const sizes = isAvatar ? {
+      thumbnail: 64,   // Tiny avatar for lists/comments
+      small: 150,      // Standard avatar size
+      medium: 300      // Large avatar for profile pages
+    } : {
+      thumbnail: 150,  // Small preview
+      small: 400,      // Mobile/small screens
+      medium: 800      // Tablet/desktop
+    };
+
+    // Generate thumbnail
     const thumbnail = await sharp(imageBuffer)
-      .resize(150, 150, { fit: 'cover', position: 'center' })
-      [isWebP ? 'webp' : 'jpeg']({ quality })
+      .resize(sizes.thumbnail, sizes.thumbnail, { fit: 'cover', position: 'center' })
+      [isWebP ? 'webp' : 'jpeg']({ quality: isAvatar ? 80 : quality })
       .toBuffer();
 
-    // Generate small (400px width)
+    // Generate small
     const small = await sharp(imageBuffer)
-      .resize(400, null, { fit: 'inside', withoutEnlargement: true })
-      [isWebP ? 'webp' : 'jpeg']({ quality })
+      .resize(sizes.small, isAvatar ? sizes.small : null, {
+        fit: isAvatar ? 'cover' : 'inside',
+        position: 'center',
+        withoutEnlargement: true
+      })
+      [isWebP ? 'webp' : 'jpeg']({ quality: isAvatar ? 85 : quality })
       .toBuffer();
 
-    // Generate medium (800px width)
+    // Generate medium
     const medium = await sharp(imageBuffer)
-      .resize(800, null, { fit: 'inside', withoutEnlargement: true })
+      .resize(sizes.medium, isAvatar ? sizes.medium : null, {
+        fit: isAvatar ? 'cover' : 'inside',
+        position: 'center',
+        withoutEnlargement: true
+      })
       [isWebP ? 'webp' : 'jpeg']({ quality })
       .toBuffer();
 
-    console.log(`✅ Generated sizes: thumbnail (${Math.round(thumbnail.length / 1024)}KB), small (${Math.round(small.length / 1024)}KB), medium (${Math.round(medium.length / 1024)}KB)`);
+    console.log(`✅ Generated ${isAvatar ? 'avatar' : 'post'} sizes: thumbnail (${Math.round(thumbnail.length / 1024)}KB), small (${Math.round(small.length / 1024)}KB), medium (${Math.round(medium.length / 1024)}KB)`);
 
     return { thumbnail, small, medium };
   } catch (error) {

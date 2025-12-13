@@ -48,6 +48,8 @@ mongoose.connection.once('open', () => {
 /**
  * Save processed file to GridFS
  * Strips EXIF data from images before saving
+ * @param {Object} file - Multer file object
+ * @param {boolean|Object} generateSizes - Whether to generate responsive sizes, or options object
  */
 const saveToGridFS = async (file, generateSizes = false) => {
   return new Promise(async (resolve, reject) => {
@@ -169,8 +171,8 @@ router.post('/profile-photo', auth, uploadLimiter, (req, res) => {
         return res.status(400).json({ message: 'No file uploaded' });
       }
 
-      // Save to GridFS with EXIF stripping and responsive sizes
-      const fileInfo = await saveToGridFS(req.file, true); // Generate responsive sizes
+      // Save to GridFS with EXIF stripping and responsive sizes (avatar-optimized)
+      const fileInfo = await saveToGridFS(req.file, { isAvatar: true }); // Generate avatar-optimized sizes
       const photoUrl = `/upload/image/${fileInfo.filename}`;
       console.log('Photo URL:', photoUrl);
 
@@ -208,8 +210,8 @@ router.post('/cover-photo', auth, uploadLimiter, (req, res) => {
         return res.status(400).json({ message: 'No file uploaded' });
       }
 
-      // Save to GridFS with EXIF stripping and responsive sizes
-      const fileInfo = await saveToGridFS(req.file, true); // Generate responsive sizes
+      // Save to GridFS with EXIF stripping and responsive sizes (cover photo doesn't need avatar optimization)
+      const fileInfo = await saveToGridFS(req.file, true); // Generate standard responsive sizes
       const photoUrl = `/upload/image/${fileInfo.filename}`;
       console.log('Photo URL:', photoUrl);
 
