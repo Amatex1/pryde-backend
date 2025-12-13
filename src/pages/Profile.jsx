@@ -1685,8 +1685,8 @@ function Profile() {
                               <button className="reaction-btn" onClick={() => { handlePostReaction(post._id, '🔥'); setShowReactionPicker(null); }} title="Fire">🔥</button>
                               <button className="reaction-btn" onClick={() => { handlePostReaction(post._id, '👏'); setShowReactionPicker(null); }} title="Clap">👏</button>
                               <button className="reaction-btn" onClick={() => { handlePostReaction(post._id, '🤯'); setShowReactionPicker(null); }} title="Mind Blown">🤯</button>
-                              <button className="reaction-btn" onClick={() => { handlePostReaction(post._id, '🤢'); setShowReactionPicker(null); }} title="Disgust">🤢</button>
-                              <button className="reaction-btn" onClick={() => { handlePostReaction(post._id, '👎'); setShowReactionPicker(null); }} title="Dislike">👎</button>
+                              <button className="reaction-btn" onClick={() => { handlePostReaction(post._id, '🏳️‍🌈'); setShowReactionPicker(null); }} title="Pride">🏳️‍🌈</button>
+                              <button className="reaction-btn" onClick={() => { handlePostReaction(post._id, '🏳️‍⚧️'); setShowReactionPicker(null); }} title="Trans Pride">🏳️‍⚧️</button>
                             </div>
                           )}
                         </div>
