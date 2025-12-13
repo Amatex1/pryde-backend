@@ -28,10 +28,10 @@ function Home() {
               <img src={prydeLogo} alt="Pryde Social Logo" className="hero-logo" />
             </div>
             <h1 className="hero-title">
-              A Calm, Queer-First Social Platform Built for Introverts & Deep Thinkers
+              A Calm, Queer-Centred Social Platform Built by LGBTQ+ People, for LGBTQ+ People
             </h1>
             <p className="hero-subtitle">
-              Where LGBTQ+ people and supportive allies can create, reflect, and connect — peacefully.
+              Where you can create, reflect, and connect without algorithms, virality, or pressure. Respectful allies welcome.
             </p>
             <div className="hero-buttons">
               {isAuth ? (
@@ -72,18 +72,36 @@ function Home() {
         </div>
       </section>
 
+      {/* Mission Section */}
+      <section className="philosophy-section" id="about">
+        <div className="philosophy-content" style={{ maxWidth: '800px', margin: '0 auto', textAlign: 'center' }}>
+          <h2 className="section-title">Built by Queer People, for Queer People</h2>
+          <p style={{ fontSize: '1.1rem', lineHeight: '1.8', color: 'var(--text-main)', marginBottom: '2rem' }}>
+            Pryde Social was created by an LGBTQ+ developer who wanted a social platform that prioritises <strong>safety, privacy, and genuine connection</strong> over engagement metrics and viral growth.
+          </p>
+          <p style={{ fontSize: '1.1rem', lineHeight: '1.8', color: 'var(--text-main)' }}>
+            This is a space where you can be yourself without algorithms pushing you toward outrage, where your mental health matters more than your follower count, and where queer voices are centred — not debated.
+          </p>
+        </div>
+      </section>
+
       {/* Quiet Mode + Slow Feed Section */}
       <section className="philosophy-section" id="features">
         <div className="philosophy-grid">
           <div className="philosophy-card">
             <div className="philosophy-icon">🍃</div>
             <h3>Quiet Mode</h3>
-            <p>A soothing browsing experience with hidden metrics, softer colors, and reduced noise.</p>
+            <p>A soothing browsing experience with hidden metrics, softer colors, and reduced noise. Protect your mental health.</p>
           </div>
           <div className="philosophy-card">
             <div className="philosophy-icon">⏳</div>
             <h3>Slow Feed Philosophy</h3>
             <p>Chronological posts. No algorithms. No viral pressure. A calmer, more intentional social space.</p>
+          </div>
+          <div className="philosophy-card">
+            <div className="philosophy-icon">🏳️‍🌈</div>
+            <h3>Queer-Centred</h3>
+            <p>Built for LGBTQ+ people first. Respectful allies welcome, but queer voices are prioritised.</p>
           </div>
         </div>
       </section>
@@ -91,7 +109,7 @@ function Home() {
       {/* Privacy & Safety Section */}
       <section className="privacy-section">
         <div className="privacy-content">
-          <h2 className="section-title">Your Identity. Your Pace. Your Privacy.</h2>
+          <h2 className="section-title">Your Safety. Your Privacy. Your Control.</h2>
           <div className="privacy-grid">
             <div className="privacy-item">
               <span className="privacy-icon">🔞</span>
@@ -282,7 +300,7 @@ function Home() {
       {/* Final CTA Section */}
       <section className="final-cta-section">
         <div className="final-cta-content">
-          <h2 className="final-cta-title">Join a Social Space Built for You</h2>
+          <h2 className="final-cta-title">Join a Queer-Centred Space Built for Connection, Not Clout</h2>
           <div className="final-cta-buttons">
             {isAuth ? (
               <>

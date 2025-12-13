@@ -39,14 +39,17 @@ function Terms() {
             <strong>Pryde Social is strictly 18+ only.</strong>
           </p>
           <p>
-            By using the platform, you confirm you are 18 years or older.
+            By using the platform, you confirm you are 18 years or older. Age verification is required at signup.
           </p>
         </section>
 
         <section className="legal-section">
           <h2>2. Description of Service</h2>
           <p>
-            Pryde Social is a hobby-operated LGBTQ+ community platform where users can create profiles, post content, send messages, and interact with other adults.
+            Pryde Social is a queer-centred social platform built by an LGBTQ+ creator for LGBTQ+ people. It's a space designed for safety, privacy, and genuine connection — not algorithms, virality, or engagement metrics.
+          </p>
+          <p>
+            Respectful allies are welcome, but queer voices are prioritised. LGBTQ+ identities, rights, and existence are not up for debate.
           </p>
           <p>
             <strong>Platform features include:</strong>
@@ -79,20 +82,32 @@ function Terms() {
         <section className="legal-section">
           <h2>3. User Conduct</h2>
           <p>
+            <strong>Pryde Social is a queer-centred space. You agree to:</strong>
+          </p>
+          <ul>
+            <li>Respect all LGBTQ+ identities, pronouns, and lived experiences</li>
+            <li>Treat others with empathy, care, and emotional intelligence</li>
+            <li>Understand that LGBTQ+ identities, rights, and existence are not up for debate</li>
+            <li>Engage in good faith and avoid bad-faith arguments or "devil's advocate" tactics</li>
+          </ul>
+          <p>
             <strong>You agree not to:</strong>
           </p>
           <ul>
-            <li>Harass, threaten, or abuse other users</li>
-            <li>Post hate speech, discrimination, or slurs</li>
+            <li>Harass, threaten, bully, or abuse other users</li>
+            <li>Post hate speech, discrimination, slurs, or attacks based on identity</li>
+            <li>Invalidate, question, or debate someone's gender, sexuality, or lived experience</li>
+            <li>Fetishise LGBTQ+ people or treat identities as a kink</li>
+            <li>Misgender, deadname, or disrespect pronouns</li>
             <li>Post or share illegal content</li>
-            <li>Share CSAM (child sexual abuse material) — zero tolerance</li>
+            <li>Share CSAM (child sexual abuse material) — zero tolerance, immediate ban</li>
             <li>Impersonate others</li>
             <li>Spam, scam, or mislead users</li>
             <li>Post revenge porn or non-consensual content</li>
             <li>Use Pryde to stalk, monitor, or harm others</li>
           </ul>
           <p>
-            Violations may result in warnings, suspensions, or permanent bans.
+            Violations may result in content removal, warnings, temporary restrictions, or permanent bans. Severe violations result in immediate bans.
           </p>
         </section>
 

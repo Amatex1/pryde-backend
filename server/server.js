@@ -404,7 +404,8 @@ io.on('connection', (socket) => {
         sender: userId,
         recipient: data.recipientId,
         content: data.content,
-        attachment: data.attachment || null
+        attachment: data.attachment || null,
+        voiceNote: data.voiceNote || null
       });
 
       await message.save();

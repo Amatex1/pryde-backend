@@ -30,28 +30,41 @@ function FAQ() {
           <div className="faq-item">
             <h3>What is Pryde Social?</h3>
             <p>
-              Pryde Social is an 18+ LGBTQ+ community platform created as a hobby project to provide a safe, respectful space for connection, support, creativity, and conversation.
+              Pryde Social is an 18+ queer-centred social platform built by an LGBTQ+ creator for LGBTQ+ people. It's a space designed for safety, privacy, and genuine connection — not algorithms, virality, or engagement metrics.
+            </p>
+            <p>
+              Respectful allies are welcome, but queer voices are prioritised.
             </p>
           </div>
 
           <div className="faq-item">
             <h3>Who runs Pryde Social?</h3>
             <p>
-              The platform is operated privately as a hobby by a single Australian individual. Pryde Social is not a registered company.
+              Pryde Social is operated as a passion project by an LGBTQ+ developer based in Australia. It's not a registered company — it's a community-focused platform built with care.
             </p>
           </div>
 
           <div className="faq-item">
             <h3>Is Pryde Social free to use?</h3>
             <p>
-              Yes. Pryde Social is completely free with no paid features.
+              Yes. Pryde Social is completely free with no paid features, no ads, and no premium tiers. It's built for community, not profit.
             </p>
           </div>
 
           <div className="faq-item">
             <h3>Why is the platform 18+ only?</h3>
             <p>
-              To protect younger users and ensure safer community discussions, Pryde Social is strictly limited to adults aged 18 and over.
+              To create a safer space for adult conversations and protect younger users, Pryde Social is strictly limited to adults aged 18 and over. Age verification happens at signup.
+            </p>
+          </div>
+
+          <div className="faq-item">
+            <h3>Is this platform only for LGBTQ+ people?</h3>
+            <p>
+              Pryde Social is built <strong>by and for LGBTQ+ people</strong>, and queer voices are centred here. Respectful allies are welcome to join and participate, but this is a queer-first space.
+            </p>
+            <p>
+              LGBTQ+ identities, rights, and existence are not up for debate. Bad-faith arguments, identity invalidation, and fetishisation are not tolerated.
             </p>
           </div>
         </section>

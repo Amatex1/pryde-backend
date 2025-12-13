@@ -243,8 +243,23 @@ function Register({ setIsAuth }) {
         <div className="auth-header">
           <h1 className="auth-title text-shadow">✨ Pryde Social</h1>
           <p className="auth-subtitle">
-            {showPasskeySetup ? 'Secure Your Account' : 'Create your account and start connecting!'}
+            {showPasskeySetup ? 'Secure Your Account' : 'Join a queer-centred space built for safety, connection, and authenticity'}
           </p>
+          {!showPasskeySetup && (
+            <div style={{
+              background: 'var(--soft-lavender)',
+              border: '2px solid var(--pryde-purple)',
+              borderRadius: '8px',
+              padding: '1rem',
+              marginTop: '1rem',
+              fontSize: '0.95rem',
+              lineHeight: '1.6'
+            }}>
+              <p style={{ margin: 0, color: 'var(--text-main)' }}>
+                <strong>🏳️‍🌈 This is an LGBTQ+-first space.</strong> We welcome respectful allies, but queer voices are prioritised. By joining, you agree to treat all identities with respect, care, and emotional intelligence.
+              </p>
+            </div>
+          )}
         </div>
 
         {error && <div className="error-message">{error}</div>}
