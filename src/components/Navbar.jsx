@@ -145,9 +145,9 @@ function Navbar() {
       <div className="navbar-container">
         <Link to="/feed" className="navbar-brand">
           <picture>
-            <source srcSet="/icon-192.webp" type="image/webp" />
+            <source srcSet="/pryde-logo-small.webp" type="image/webp" />
             <img
-              src="/icon-192.png"
+              src="/pryde-logo-small.png"
               alt="Pryde Social"
               className="brand-logo"
               width="36"

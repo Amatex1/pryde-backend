@@ -837,10 +837,15 @@ function Feed() {
                 </label>
 
                 {/* PHASE 1 REFACTOR: Simplified privacy options */}
+                <label htmlFor="post-privacy-selector" style={{ display: 'none' }}>
+                  Post Privacy
+                </label>
                 <select
+                  id="post-privacy-selector"
                   value={postVisibility}
                   onChange={(e) => setPostVisibility(e.target.value)}
                   className="privacy-selector glossy"
+                  aria-label="Select post privacy"
                 >
                   <option value="public">🌍 Public</option>
                   <option value="followers">👥 Connections</option>
@@ -891,9 +896,10 @@ function Feed() {
             ) : (
               posts
                 .filter(post => !blockedUsers.includes(post.author?._id))
-                .map((post) => {
+                .map((post, postIndex) => {
                 // PHASE 1 REFACTOR: Use hasLiked boolean instead of checking likes array
                 const isLiked = post.hasLiked || false;
+                const isFirstPost = postIndex === 0;
 
                 return (
                   <div
@@ -906,7 +912,12 @@ function Feed() {
                       {post.isPinned && <PinnedPostBadge />}
 
                       <div className="post-author">
-                        <Link to={`/profile/${post.author?.username}`} className="author-avatar" style={{ textDecoration: 'none' }}>
+                        <Link
+                          to={`/profile/${post.author?.username}`}
+                          className="author-avatar"
+                          style={{ textDecoration: 'none' }}
+                          aria-label={`View ${post.author?.displayName || post.author?.username}'s profile`}
+                        >
                           {post.author?.profilePhoto ? (
                             <OptimizedImage
                               src={getImageUrl(post.author.profilePhoto)}
@@ -1097,15 +1108,20 @@ function Feed() {
                                 rows="4"
                               />
                               <div className="post-edit-privacy">
-                                <label style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginRight: '0.5rem' }}>
+                                <label
+                                  htmlFor="edit-post-privacy-selector"
+                                  style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginRight: '0.5rem' }}
+                                >
                                   Privacy:
                                 </label>
                                 {/* PHASE 1 REFACTOR: Simplified privacy options */}
                                 <select
+                                  id="edit-post-privacy-selector"
                                   value={editPostVisibility}
                                   onChange={(e) => setEditPostVisibility(e.target.value)}
                                   className="privacy-selector glossy"
                                   style={{ fontSize: '0.9rem', padding: '0.5rem 1rem' }}
+                                  aria-label="Edit post privacy"
                                 >
                                   <option value="public">🌍 Public</option>
                                   <option value="followers">👥 Connections</option>
@@ -1164,6 +1180,8 @@ function Feed() {
                                       alt={`Post media ${index + 1}`}
                                       onClick={() => setPhotoViewerImage(getImageUrl(media.url))}
                                       style={{ cursor: 'pointer' }}
+                                      fetchPriority={isFirstPost && index === 0 ? 'high' : undefined}
+                                      loading={isFirstPost && index === 0 ? 'eager' : 'lazy'}
                                     />
                                   )}
                                 </div>
@@ -1322,7 +1340,12 @@ function Feed() {
                                 className="comment"
                                 ref={(el) => commentRefs.current[comment._id] = el}
                               >
-                                <Link to={`/profile/${comment.user?.username}`} className="comment-avatar" style={{ textDecoration: 'none' }}>
+                                <Link
+                                  to={`/profile/${comment.user?.username}`}
+                                  className="comment-avatar"
+                                  style={{ textDecoration: 'none' }}
+                                  aria-label={`View ${comment.user?.displayName || comment.user?.username}'s profile`}
+                                >
                                   {comment.user?.profilePhoto ? (
                                     <OptimizedImage
                                       src={getImageUrl(comment.user.profilePhoto)}
@@ -1563,7 +1586,12 @@ function Feed() {
                                         className="comment reply"
                                         ref={(el) => commentRefs.current[reply._id] = el}
                                       >
-                                        <Link to={`/profile/${reply.user?._id}`} className="comment-avatar" style={{ textDecoration: 'none' }}>
+                                        <Link
+                                          to={`/profile/${reply.user?._id}`}
+                                          className="comment-avatar"
+                                          style={{ textDecoration: 'none' }}
+                                          aria-label={`View ${reply.user?.displayName || reply.user?.username}'s profile`}
+                                        >
                                           {reply.user?.profilePhoto ? (
                                             <OptimizedImage
                                               src={getImageUrl(reply.user.profilePhoto)}

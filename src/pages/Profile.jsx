@@ -1718,7 +1718,12 @@ function Profile() {
                                   className="comment"
                                   ref={(el) => commentRefs.current[comment._id] = el}
                                 >
-                                  <Link to={`/profile/${comment.user?.username}`} className="comment-avatar" style={{ textDecoration: 'none' }}>
+                                  <Link
+                                    to={`/profile/${comment.user?.username}`}
+                                    className="comment-avatar"
+                                    style={{ textDecoration: 'none' }}
+                                    aria-label={`View ${comment.user?.displayName || comment.user?.username}'s profile`}
+                                  >
                                     {comment.user?.profilePhoto ? (
                                       <img src={getImageUrl(comment.user.profilePhoto)} alt={comment.user.username} />
                                     ) : (
@@ -1949,7 +1954,12 @@ function Profile() {
                                           className="comment reply"
                                           ref={(el) => commentRefs.current[reply._id] = el}
                                         >
-                                          <Link to={`/profile/${reply.user?.username}`} className="comment-avatar" style={{ textDecoration: 'none' }}>
+                                          <Link
+                                            to={`/profile/${reply.user?.username}`}
+                                            className="comment-avatar"
+                                            style={{ textDecoration: 'none' }}
+                                            aria-label={`View ${reply.user?.displayName || reply.user?.username}'s profile`}
+                                          >
                                             {reply.user?.profilePhoto ? (
                                               <img src={getImageUrl(reply.user.profilePhoto)} alt={reply.user.username} />
                                             ) : (

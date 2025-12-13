@@ -21,8 +21,8 @@ export default defineConfig({
     // Output directory
     outDir: 'dist',
 
-    // Generate sourcemaps for production debugging (optional)
-    sourcemap: false,
+    // Generate sourcemaps for production debugging
+    sourcemap: true,
 
     rollupOptions: {
       output: {

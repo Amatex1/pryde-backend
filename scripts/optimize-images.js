@@ -9,11 +9,12 @@ const __dirname = path.dirname(__filename);
 const publicDir = path.join(__dirname, '../public');
 const inputImage = path.join(publicDir, 'pryde-logo.png');
 
-// Sizes we need for PWA
+// Sizes we need for PWA and navbar
 const sizes = [
   { width: 192, name: 'icon-192.png' },
   { width: 512, name: 'icon-512.png' },
   { width: 180, name: 'apple-touch-icon.png' }, // iOS
+  { width: 48, name: 'pryde-logo-small.png' }, // Navbar logo (36x36 display, 48x48 for retina)
 ];
 
 async function optimizeImages() {

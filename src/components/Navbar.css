@@ -44,8 +44,9 @@
 
 .brand-logo {
   height: 36px;
-  width: auto;
+  width: 36px;
   transition: transform 0.2s ease;
+  object-fit: contain;
 }
 
 .brand-icon {

@@ -1,0 +1,15 @@
+# Pryde Social - Robots.txt
+# Allow all search engines to crawl the site
+
+User-agent: *
+Allow: /
+
+# Disallow admin and private areas
+Disallow: /admin
+Disallow: /api/
+Disallow: /messages
+Disallow: /settings
+
+# Sitemap location (update with your actual domain)
+Sitemap: https://prydeapp.com/sitemap.xml
+

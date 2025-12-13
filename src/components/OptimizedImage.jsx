@@ -22,6 +22,7 @@ function OptimizedImage({
   aspectRatio, // e.g., '16/9', '1/1', '4/3'
   placeholder = true, // Show loading placeholder
   sizes, // Responsive sizes attribute
+  fetchPriority, // 'high', 'low', or 'auto'
   ...props
 }) {
   const [isLoaded, setIsLoaded] = useState(false);
@@ -124,6 +125,7 @@ function OptimizedImage({
           onError={handleError}
           loading={loading}
           decoding="async"
+          fetchpriority={fetchPriority}
           {...props}
         />
       )}

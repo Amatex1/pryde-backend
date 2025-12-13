@@ -288,7 +288,11 @@ function GlobalFeed() {
               <div key={post._id} className="post-card glossy">
                 {/* Post Header */}
                 <div className="post-header">
-                  <Link to={`/profile/${post.author?.username}`} className="post-author">
+                  <Link
+                    to={`/profile/${post.author?.username}`}
+                    className="post-author"
+                    aria-label={`View ${post.author?.displayName || post.author?.username}'s profile`}
+                  >
                     <div className="author-avatar">
                       {post.author?.profilePhoto ? (
                         <OptimizedImage
