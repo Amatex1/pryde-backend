@@ -210,18 +210,25 @@ function Safety() {
         </section>
 
         <section className="legal-section">
-          <h2>6. When We Act</h2>
+          <h2>6. How We Respond</h2>
           <p>
-            <strong>We review all reports and may:</strong>
+            <strong>We approach moderation as care and protection, not punishment.</strong>
+          </p>
+          <p>
+            When we receive reports, we review them carefully and may:
           </p>
           <ul>
-            <li>Remove violating content</li>
-            <li>Issue warnings</li>
-            <li>Suspend accounts</li>
-            <li>Permanently ban users</li>
+            <li>Remove harmful content to protect the community</li>
+            <li>Issue private warnings with guidance</li>
+            <li>Temporarily restrict access to certain features</li>
+            <li>Temporarily suspend accounts</li>
+            <li>Permanently ban accounts for severe violations</li>
           </ul>
           <p>
-            <strong>Severe violations (CSAM, threats, hate speech) result in immediate bans.</strong>
+            <strong>Severe violations</strong> (CSAM, credible threats, hate speech, targeted harassment) result in immediate permanent bans.
+          </p>
+          <p>
+            Our goal is to keep everyone safe while giving people room to learn and grow.
           </p>
         </section>
 
