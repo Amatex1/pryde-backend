@@ -22,7 +22,6 @@ import { getImageUrl } from '../utils/imageUrl';
 import { onUserOnline, onUserOffline, onOnlineUsers, requestOnlineUsers, getSocket } from '../utils/socket';
 import { convertEmojiShortcuts } from '../utils/textFormatting';
 import logger from '../utils/logger';
-import logger from './utils/logger';
 import './Feed.css';
 
 function Feed() {
