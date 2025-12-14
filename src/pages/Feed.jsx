@@ -1418,23 +1418,24 @@ function Feed() {
                                     </div>
                                   ) : (
                                     <>
-                                      {/* Username above bubble - Facebook style */}
-                                      <Link
-                                        to={`/profile/${comment.user?.username}`}
-                                        className="comment-author-name"
-                                        style={{ textDecoration: 'none' }}
-                                      >
-                                        {comment.user?.displayName || comment.user?.username}
-                                      </Link>
-
+                                      {/* Facebook style: Username INSIDE bubble at top */}
                                       <div className="comment-text">
-                                        {comment.content && <FormattedText text={comment.content} />}
-                                        {comment.gifUrl && (
-                                          <div className="comment-gif">
-                                            <img src={comment.gifUrl} alt="GIF" />
-                                          </div>
-                                        )}
-                                        {comment.edited && <span className="edited-indicator"> (edited)</span>}
+                                        <Link
+                                          to={`/profile/${comment.user?.username}`}
+                                          className="comment-author-name"
+                                          style={{ textDecoration: 'none' }}
+                                        >
+                                          {comment.user?.displayName || comment.user?.username}
+                                        </Link>
+                                        <div className="comment-content-text">
+                                          {comment.content && <FormattedText text={comment.content} />}
+                                          {comment.gifUrl && (
+                                            <div className="comment-gif">
+                                              <img src={comment.gifUrl} alt="GIF" />
+                                            </div>
+                                          )}
+                                          {comment.edited && <span className="edited-indicator"> (edited)</span>}
+                                        </div>
                                       </div>
 
                                       {/* YouTube-style actions below comment */}
@@ -1669,18 +1670,19 @@ function Feed() {
                                             </div>
                                           ) : (
                                             <>
-                                              {/* Username above bubble - Facebook style */}
-                                              <Link
-                                                to={`/profile/${reply.user?.username}`}
-                                                className="comment-author-name"
-                                                style={{ textDecoration: 'none' }}
-                                              >
-                                                {reply.user?.displayName || reply.user?.username}
-                                              </Link>
-
+                                              {/* Facebook style: Username INSIDE bubble at top */}
                                               <div className="comment-text">
-                                                <FormattedText text={reply.content} />
-                                                {reply.edited && <span className="edited-indicator"> (edited)</span>}
+                                                <Link
+                                                  to={`/profile/${reply.user?.username}`}
+                                                  className="comment-author-name"
+                                                  style={{ textDecoration: 'none' }}
+                                                >
+                                                  {reply.user?.displayName || reply.user?.username}
+                                                </Link>
+                                                <div className="comment-content-text">
+                                                  <FormattedText text={reply.content} />
+                                                  {reply.edited && <span className="edited-indicator"> (edited)</span>}
+                                                </div>
                                               </div>
 
                                               {/* YouTube-style actions below reply */}

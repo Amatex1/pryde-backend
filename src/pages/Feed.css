@@ -1024,19 +1024,19 @@ html:not([data-theme])[data-quiet-mode="true"] .hide-metrics-checkbox:hover {
   position: relative;
 }
 
-/* Facebook-style: Username above comment bubble */
+/* Facebook-style: Username INSIDE comment bubble at top */
 .comment-author-name {
   font-weight: 600;
   color: var(--text-main);
   font-size: 13px;
+  display: block;
   margin-bottom: 2px;
-  display: inline-block;
   transition: color 0.15s ease;
 }
 
 .comment-author-name:hover {
   color: var(--color-primary);
-  text-decoration: none;
+  text-decoration: underline;
 }
 
 [data-theme="dark"] .comment-author-name {
@@ -1045,6 +1045,15 @@ html:not([data-theme])[data-quiet-mode="true"] .hide-metrics-checkbox:hover {
 
 [data-theme="dark"] .comment-author-name:hover {
   color: var(--color-primary);
+}
+
+/* Comment text content below username (inside same bubble) */
+.comment-content-text {
+  color: var(--text-main);
+  font-size: 14px;
+  line-height: 1.4;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 .comment-timestamp {
@@ -1307,18 +1316,15 @@ html:not([data-theme])[data-quiet-mode="true"] .hide-metrics-checkbox:hover {
   min-width: 140px;
 }
 
+/* Facebook-style: Rounded bubble containing username + content */
 .comment-text {
-  color: var(--text-main);
-  font-size: 14px;
-  line-height: 1.4;
-  word-wrap: break-word;
-  overflow-wrap: break-word;
-  margin: 0;
   background: var(--bg-subtle);
   padding: var(--space-2) var(--space-3);
   border-radius: 18px;
   display: inline-block;
   max-width: fit-content;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 .comment-text .edited-indicator {
