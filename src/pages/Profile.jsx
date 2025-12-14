@@ -1425,20 +1425,7 @@ function Profile() {
           </div>
         </div>
 
-        <div
-          className="profile-layout"
-          style={{
-            display: 'grid',
-            gridTemplateColumns: windowWidth > 375
-              ? '1fr 320px'
-              : '1fr',
-            gap: windowWidth > 375 ? 'var(--space-6)' : 'var(--space-3)',
-            alignItems: 'start',
-            maxWidth: '2000px',
-            margin: '0 auto',
-            padding: windowWidth > 375 ? '0 var(--space-4)' : '0 var(--space-2)'
-          }}
-        >
+        <div className="profile-layout">
           <div className="profile-main">
           {/* OPTIONAL FEATURES: Creator profile tabs */}
           {user?.isCreator && (

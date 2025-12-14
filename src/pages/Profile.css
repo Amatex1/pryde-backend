@@ -124,7 +124,7 @@ div.profile-layout,
   grid-template-areas: "main sidebar" !important;
   gap: var(--space-6) !important;
   align-items: start !important;
-  max-width: 1400px !important;
+  max-width: 2000px !important;
   margin: 0 auto !important;
   padding: 0 var(--space-4) !important;
   width: 100% !important;
@@ -138,9 +138,8 @@ div.profile-layout,
   div.profile-page .profile-layout,
   div.profile-layout,
   .profile-layout {
-    max-width: 1400px !important;
-    grid-template-columns: minmax(600px, 800px) 320px !important;
-    justify-content: center !important;
+    max-width: 3000px !important;
+    grid-template-columns: 1fr 320px !important;
   }
 }
 
