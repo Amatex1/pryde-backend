@@ -117,55 +117,51 @@
 .profile-page .profile-layout,
 div.profile-page .profile-layout,
 div.profile-layout,
+/* FLUID RESPONSIVE LAYOUT - Automatically adapts to any screen size */
 .profile-layout {
   display: grid !important;
-  grid-template-columns: 1fr 320px !important;
+  grid-template-columns: 1fr !important;
   grid-template-rows: auto !important;
-  grid-template-areas: "main sidebar" !important;
-  gap: var(--space-6) !important;
+  grid-template-areas: "main" "sidebar" !important;
+  gap: var(--fluid-gap-md) !important;
   align-items: start !important;
-  max-width: 2000px !important;
+  max-width: var(--fluid-container-max) !important;
   margin: 0 auto !important;
-  padding: 0 var(--space-4) !important;
+  padding: 0 var(--fluid-space-md) !important;
   width: 100% !important;
   box-sizing: border-box !important;
 }
 
-/* Ultrawide monitor optimization */
+/* Tablet and up: Sidebar on right with fluid sizing */
+@media (min-width: 769px) {
+  .profile-layout {
+    grid-template-columns: var(--fluid-main-column) var(--fluid-sidebar-md) !important;
+    grid-template-areas: "main sidebar" !important;
+    gap: var(--fluid-gap-lg) !important;
+  }
+}
+
+/* Desktop: Larger sidebar */
+@media (min-width: 1401px) {
+  .profile-layout {
+    grid-template-columns: var(--fluid-main-column) var(--fluid-sidebar-lg) !important;
+    gap: var(--fluid-gap-xl) !important;
+  }
+}
+
+/* Ultrawide: Maximum sidebar size */
 @media (min-width: 2560px) {
-  .page-container.profile-page .profile-layout,
-  .profile-page .profile-layout,
-  div.profile-page .profile-layout,
-  div.profile-layout,
   .profile-layout {
-    max-width: 3000px !important;
-    grid-template-columns: 1fr 320px !important;
+    grid-template-columns: var(--fluid-main-column) var(--fluid-sidebar-xl) !important;
   }
 }
 
-/* Desktop responsive (769px - 1400px) */
-@media (min-width: 769px) and (max-width: 1400px) {
-  .page-container.profile-page .profile-layout,
-  .profile-page .profile-layout,
-  div.profile-page .profile-layout,
-  div.profile-layout,
-  .profile-layout {
-    grid-template-columns: 1fr 280px !important;
-    gap: var(--space-4) !important;
-  }
-}
-
+/* Profile container uses fluid max-width */
 .profile-page .profile-container,
 .profile-container {
-  max-width: 2000px;
+  max-width: var(--fluid-container-max);
   margin: 0 auto;
-}
-
-/* Ultrawide monitor optimization */
-@media (min-width: 2560px) {
-  .profile-container {
-    max-width: 3000px;
-  }
+  padding: 0 var(--fluid-space-md);
 }
 
 .profile-header {

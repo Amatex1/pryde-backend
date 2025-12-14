@@ -8,22 +8,37 @@
   z-index: 1;
 }
 
+/* FLUID RESPONSIVE LAYOUT - Automatically adapts to any screen size */
 .feed-container {
-  max-width: 1200px;
+  max-width: var(--fluid-container-2xl);
   margin: 0 auto;
-  padding: 0 var(--space-4);
+  padding: 0 var(--fluid-space-md);
   display: grid;
-  grid-template-columns: 1fr 320px;
-  gap: var(--space-6);
+  grid-template-columns: 1fr;
+  gap: var(--fluid-gap-md);
   transition: all 0.2s ease;
 }
 
-/* Ultrawide monitor optimization - allow more space */
+/* Tablet and up: Sidebar on right with fluid sizing */
+@media (min-width: 769px) {
+  .feed-container {
+    grid-template-columns: var(--fluid-main-column) var(--fluid-sidebar-md);
+    gap: var(--fluid-gap-lg);
+  }
+}
+
+/* Desktop: Larger sidebar */
+@media (min-width: 1401px) {
+  .feed-container {
+    grid-template-columns: var(--fluid-main-column) var(--fluid-sidebar-lg);
+    gap: var(--fluid-gap-xl);
+  }
+}
+
+/* Ultrawide: Maximum sidebar size */
 @media (min-width: 2560px) {
   .feed-container {
-    max-width: 2000px;
-    grid-template-columns: 1fr 320px;
-    justify-content: center;
+    grid-template-columns: var(--fluid-main-column) var(--fluid-sidebar-xl);
   }
 }
 
