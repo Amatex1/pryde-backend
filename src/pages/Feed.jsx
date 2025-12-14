@@ -85,6 +85,81 @@ function Feed() {
   const listenersSetUpRef = useRef(false);
   const friendsIntervalRef = useRef(null); // Store interval ID for cleanup
 
+  // Define all fetch functions BEFORE useEffects that use them
+  const fetchPosts = useCallback(async () => {
+    try {
+      setFetchingPosts(true);
+      const response = await api.get(`/posts?filter=${feedFilter}`);
+      setPosts(response.data.posts || []);
+    } catch (error) {
+      logger.error('Failed to fetch posts:', error);
+    } finally {
+      setFetchingPosts(false);
+    }
+  }, [feedFilter]);
+
+  const fetchBlockedUsers = useCallback(async () => {
+    try {
+      const response = await api.get('/blocks');
+      const blockedIds = response.data.map(block => block.blocked._id);
+      setBlockedUsers(blockedIds);
+    } catch (error) {
+      logger.error('Failed to fetch blocked users:', error);
+    }
+  }, []);
+
+  const fetchFriends = useCallback(async () => {
+    try {
+      const response = await api.get('/friends');
+      setFriends(response.data);
+    } catch (error) {
+      logger.error('Failed to fetch friends:', error);
+    }
+  }, []);
+
+  const fetchTrending = useCallback(async () => {
+    try {
+      const response = await api.get('/search/trending');
+      setTrending(response.data);
+    } catch (error) {
+      logger.error('Failed to fetch trending:', error);
+    }
+  }, []);
+
+  const fetchBookmarkedPosts = useCallback(async () => {
+    try {
+      const response = await api.get('/bookmarks');
+      setBookmarkedPosts(response.data.bookmarks.map(post => post._id));
+    } catch (error) {
+      logger.error('Failed to fetch bookmarks:', error);
+    }
+  }, []);
+
+  const fetchUnreadMessageCounts = useCallback(async () => {
+    try {
+      const response = await api.get('/messages/unread/counts');
+      const countsMap = {};
+      response.data.unreadByUser.forEach(item => {
+        countsMap[item.userId] = item.count;
+      });
+      setUnreadMessageCounts(countsMap);
+    } catch (error) {
+      logger.error('Failed to fetch unread message counts:', error);
+    }
+  }, []);
+
+  const fetchPrivacySettings = useCallback(async () => {
+    try {
+      const response = await api.get('/privacy');
+      setAutoHideContentWarnings(response.data.privacySettings.autoHideContentWarnings || false);
+      // Set default post visibility from user's privacy settings
+      const defaultVisibility = response.data.privacySettings.defaultPostVisibility || 'followers';
+      setPostVisibility(defaultVisibility);
+    } catch (error) {
+      logger.error('Failed to fetch privacy settings:', error);
+    }
+  }, []);
+
   useEffect(() => {
     // Fetch all data in parallel for faster initial load
     // Use Promise.allSettled to continue even if some requests fail
@@ -332,28 +407,6 @@ function Feed() {
     }
   }, [posts, searchParams]);
 
-  const fetchUnreadMessageCounts = useCallback(async () => {
-    try {
-      const response = await api.get('/messages/unread/counts');
-      const countsMap = {};
-      response.data.unreadByUser.forEach(item => {
-        countsMap[item.userId] = item.count;
-      });
-      setUnreadMessageCounts(countsMap);
-    } catch (error) {
-      logger.error('Failed to fetch unread message counts:', error);
-    }
-  }, []);
-
-  const fetchFriends = useCallback(async () => {
-    try {
-      const response = await api.get('/friends');
-      setFriends(response.data);
-    } catch (error) {
-      logger.error('Failed to fetch friends:', error);
-    }
-  }, []);
-
   // Helper function to format time since last seen
   const getTimeSince = (date) => {
     if (!date) return 'Unknown';
@@ -363,49 +416,6 @@ function Feed() {
     if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
     return `${Math.floor(seconds / 86400)}d ago`;
   };
-
-  const fetchTrending = useCallback(async () => {
-    try {
-      const response = await api.get('/search/trending');
-      setTrending(response.data);
-    } catch (error) {
-      logger.error('Failed to fetch trending:', error);
-    }
-  }, []);
-
-  const fetchBlockedUsers = useCallback(async () => {
-    try {
-      const response = await api.get('/blocks');
-      const blockedIds = response.data.map(block => block.blocked._id);
-      setBlockedUsers(blockedIds);
-    } catch (error) {
-      logger.error('Failed to fetch blocked users:', error);
-    }
-  }, []);
-
-  const fetchPrivacySettings = useCallback(async () => {
-    try {
-      const response = await api.get('/privacy');
-      setAutoHideContentWarnings(response.data.privacySettings.autoHideContentWarnings || false);
-      // Set default post visibility from user's privacy settings
-      const defaultVisibility = response.data.privacySettings.defaultPostVisibility || 'followers';
-      setPostVisibility(defaultVisibility);
-    } catch (error) {
-      logger.error('Failed to fetch privacy settings:', error);
-    }
-  }, []);
-
-  const fetchPosts = useCallback(async () => {
-    try {
-      setFetchingPosts(true);
-      const response = await api.get(`/posts?filter=${feedFilter}`);
-      setPosts(response.data.posts || []);
-    } catch (error) {
-      logger.error('Failed to fetch posts:', error);
-    } finally {
-      setFetchingPosts(false);
-    }
-  }, [feedFilter]);
 
   const handleMediaSelect = async (e) => {
     const files = Array.from(e.target.files);
@@ -716,15 +726,6 @@ function Feed() {
       showAlert(error.response?.data?.message || 'Failed to share post.', 'Share Failed');
     }
   };
-
-  const fetchBookmarkedPosts = useCallback(async () => {
-    try {
-      const response = await api.get('/bookmarks');
-      setBookmarkedPosts(response.data.bookmarks.map(post => post._id));
-    } catch (error) {
-      logger.error('Failed to fetch bookmarks:', error);
-    }
-  }, []);
 
   const handleBookmark = async (postId) => {
     const isBookmarked = bookmarkedPosts.includes(postId);
