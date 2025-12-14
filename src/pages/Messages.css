@@ -1055,8 +1055,8 @@
   padding: 0.875rem 1.75rem;
   border-radius: 12px;
   border: none;
-  background: var(--gradient-primary);
-  color: white;
+  background: linear-gradient(135deg, #00B894 0%, #00D2A0 100%) !important;
+  color: white !important;
   cursor: pointer;
   transition: all 0.3s ease;
   font-weight: 600;
@@ -1064,7 +1064,14 @@
 
 .btn-send:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(108, 92, 231, 0.3);
+  box-shadow: 0 4px 15px rgba(0, 184, 148, 0.4) !important;
+  background: linear-gradient(135deg, #00A080 0%, #00B894 100%) !important;
+}
+
+.btn-send:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: linear-gradient(135deg, #00B894 0%, #00D2A0 100%) !important;
 }
 
 .no-chat-selected {

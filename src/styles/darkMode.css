@@ -46,29 +46,41 @@
   border: 1px solid rgba(108, 92, 231, 0.2);
 }
 
-/* Light mode glossy-gold - ensure proper contrast */
+/* Light mode glossy-gold - GREEN gradient for send buttons */
 .glossy-gold {
-  background: var(--gradient-primary) !important;
+  background: linear-gradient(135deg, #00B894 0%, #00D2A0 100%) !important;
   color: white !important; /* Force white text for WCAG AA compliance */
   border: none !important;
 }
 
 .glossy-gold:hover {
-  background: linear-gradient(135deg, #5a4bd8 0%, #0770c7 100%) !important;
-  box-shadow: 0 4px 20px rgba(108, 92, 231, 0.4) !important;
+  background: linear-gradient(135deg, #00A080 0%, #00B894 100%) !important;
+  box-shadow: 0 4px 20px rgba(0, 184, 148, 0.4) !important;
   color: white !important;
 }
 
+.glossy-gold:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: linear-gradient(135deg, #00B894 0%, #00D2A0 100%) !important;
+}
+
 [data-theme="dark"] .glossy-gold {
-  background: linear-gradient(135deg, rgba(255, 215, 0, 0.2) 0%, rgba(255, 165, 0, 0.2) 100%) !important;
-  border: 1px solid rgba(255, 215, 0, 0.3) !important;
+  background: linear-gradient(135deg, #00B894 0%, #00D2A0 100%) !important;
+  border: none !important;
   color: #ffffff !important; /* Force white text for dark mode */
 }
 
 [data-theme="dark"] .glossy-gold:hover {
-  background: linear-gradient(135deg, rgba(255, 215, 0, 0.3) 0%, rgba(255, 165, 0, 0.3) 100%) !important;
-  box-shadow: 0 4px 20px rgba(255, 215, 0, 0.3) !important;
+  background: linear-gradient(135deg, #00A080 0%, #00B894 100%) !important;
+  box-shadow: 0 4px 20px rgba(0, 184, 148, 0.4) !important;
   color: #ffffff !important;
+}
+
+[data-theme="dark"] .glossy-gold:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: linear-gradient(135deg, #00B894 0%, #00D2A0 100%) !important;
 }
 
 /* Input fields in dark mode */
