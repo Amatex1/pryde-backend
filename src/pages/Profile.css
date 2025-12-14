@@ -1,5 +1,6 @@
 /* ========================================
    PROFILE PAGE - POLISHED WITH DESIGN SYSTEM
+   Version: 2024-12-14-v2 (Force cache refresh)
    ======================================== */
 
 .profile-container {
@@ -1082,6 +1083,38 @@ html:not([data-theme="dark"]):not([data-quiet-mode="true"]) .section-title {
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
+  margin-top: var(--space-4);
+}
+
+/* Post Card - Facebook Style Separated Boxes */
+.post-card {
+  padding: var(--space-4) 18px;
+  border-radius: var(--radius-card);
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  box-shadow: var(--shadow-soft);
+  transition: all 0.2s ease;
+  min-width: 0;
+  min-height: 150px;
+  overflow: visible;
+  word-wrap: break-word;
+  contain: layout;
+  margin-bottom: var(--space-4);
+}
+
+.post-card:hover {
+  box-shadow: var(--shadow-medium);
+  border-color: var(--border-medium);
+}
+
+[data-theme="dark"] .post-card {
+  background: #1e1f2e;
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .post-card:hover {
+  border-color: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 /* Post Stats */
