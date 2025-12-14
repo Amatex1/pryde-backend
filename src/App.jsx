@@ -197,11 +197,11 @@ function App() {
   return (
     <ErrorBoundary>
       <Router>
-        <div className="app-container">
-          {/* Safety Warning for high-risk regions */}
-          {isAuth && <SafetyWarning />}
+        <Suspense fallback={<PageLoader />}>
+          <div className="app-container">
+            {/* Safety Warning for high-risk regions */}
+            {isAuth && <SafetyWarning />}
 
-          <Suspense fallback={<PageLoader />}>
             <main id="main-content">
               <Routes>
             {/* Public Home Page - Redirect to feed if logged in */}
@@ -256,14 +256,14 @@ function App() {
           <Route path="/helplines" element={<><Helplines /><Footer /></>} />
           </Routes>
           </main>
-        </Suspense>
 
-        {/* PWA Install Prompt */}
-        {isAuth && <PWAInstallPrompt />}
+          {/* PWA Install Prompt */}
+          {isAuth && <PWAInstallPrompt />}
 
-        {/* Cookie Banner */}
-        <CookieBanner />
-      </div>
+          {/* Cookie Banner */}
+          <CookieBanner />
+        </div>
+      </Suspense>
     </Router>
     </ErrorBoundary>
   );
