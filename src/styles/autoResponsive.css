@@ -212,10 +212,18 @@ p, span, div, a, li, td, th {
   .message,
   .message-bubble,
   .message-content,
+  .profile-page,
+  .profile-page *,
+  .profile-container,
+  .profile-container *,
   .profile-layout,
   .profile-layout *,
   .profile-main,
-  .profile-sidebar {
+  .profile-main *,
+  .profile-sidebar,
+  .profile-sidebar *,
+  .page-container,
+  .page-container * {
     max-width: none !important;
   }
 

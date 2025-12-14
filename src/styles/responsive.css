@@ -322,10 +322,14 @@
 @media (min-width: 1920px) and (max-width: 2560px) {
   /* Keep containers at reasonable width - DO NOT STRETCH */
   .feed-container,
-  .profile-container,
   .messages-container,
   .admin-container {
     max-width: 1200px;
+  }
+
+  /* Profile container gets more space */
+  .profile-container {
+    max-width: 2000px;
   }
 
   .settings-container {
@@ -369,10 +373,14 @@
 @media (min-width: 2560px) and (max-width: 3440px) {
   /* Moderate container expansion - centered content */
   .feed-container,
-  .profile-container,
   .messages-container,
   .admin-container {
     max-width: 1400px;
+  }
+
+  /* Profile container gets more space on ultrawide */
+  .profile-container {
+    max-width: 3000px;
   }
 
   .settings-container {
@@ -422,10 +430,14 @@
 @media (min-width: 3440px) {
   /* Maximum container width - still centered and reasonable */
   .feed-container,
-  .profile-container,
   .messages-container,
   .admin-container {
     max-width: 1400px;
+  }
+
+  /* Profile container gets more space on super ultrawide */
+  .profile-container {
+    max-width: 3000px;
   }
 
   .settings-container {
