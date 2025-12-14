@@ -1,10 +1,6 @@
 /* ========================================
    PRYDE SOCIAL - MAIN STYLES
-   Import global design system first
    ======================================== */
-
-@import './styles/theme.css';
-@import './styles/components.css';
 
 /* Responsive HTML base - automatically scales for all devices */
 html {
