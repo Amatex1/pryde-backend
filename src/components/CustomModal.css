@@ -146,3 +146,52 @@
   }
 }
 
+/* ========================================
+   DARK MODE SUPPORT
+   ======================================== */
+
+[data-theme="dark"] .custom-modal-overlay {
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(6px);
+}
+
+[data-theme="dark"] .custom-modal-content {
+  background: #1a1b2d;
+  border-color: rgba(108, 92, 231, 0.5);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.8);
+}
+
+[data-theme="dark"] .custom-modal-title {
+  color: var(--color-primary);
+}
+
+[data-theme="dark"] .custom-modal-message {
+  color: #e8e9f0;
+}
+
+[data-theme="dark"] .custom-modal-input {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+[data-theme="dark"] .custom-modal-input:focus {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--color-primary);
+}
+
+[data-theme="dark"] .custom-modal-input::placeholder {
+  color: #6b6e80;
+}
+
+[data-theme="dark"] .custom-modal-btn-secondary {
+  background: rgba(255, 255, 255, 0.05);
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .custom-modal-btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: var(--color-primary);
+}
+

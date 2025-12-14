@@ -144,7 +144,67 @@
   border-color: #ff4444;
 }
 
-/* Dark mode */
+/* ========================================
+   DARK MODE SUPPORT
+   ======================================== */
+
+[data-theme="dark"] .draft-manager {
+  background: #1a1b2d;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+}
+
+[data-theme="dark"] .draft-manager-header {
+  border-bottom-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .draft-manager-header h3 {
+  color: #ffffff;
+}
+
+[data-theme="dark"] .close-btn {
+  color: #a1a1aa;
+}
+
+[data-theme="dark"] .close-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+[data-theme="dark"] .draft-loading,
+[data-theme="dark"] .no-drafts {
+  color: #a1a1aa;
+}
+
+[data-theme="dark"] .draft-item {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .draft-item:hover {
+  border-color: var(--color-primary);
+  box-shadow: 0 2px 8px rgba(108, 92, 231, 0.3);
+}
+
+[data-theme="dark"] .draft-preview {
+  color: #ffffff;
+}
+
+[data-theme="dark"] .draft-time {
+  color: #a1a1aa;
+}
+
+[data-theme="dark"] .delete-btn {
+  color: #a1a1aa;
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .delete-btn:hover {
+  background: #ff4444;
+  color: white;
+  border-color: #ff4444;
+}
+
+/* Legacy dark mode support (for backwards compatibility) */
 body.dark-mode .draft-manager {
   background: var(--card-bg-dark);
 }

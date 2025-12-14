@@ -130,3 +130,44 @@
   }
 }
 
+/* ========================================
+   DARK MODE SUPPORT
+   ======================================== */
+
+[data-theme="dark"] .emoji-picker-overlay {
+  background: rgba(0, 0, 0, 0.7);
+}
+
+[data-theme="dark"] .emoji-picker {
+  background: #1a1b2d;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+}
+
+[data-theme="dark"] .emoji-picker-header {
+  border-bottom-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .emoji-picker-header h4 {
+  color: #ffffff;
+}
+
+[data-theme="dark"] .emoji-picker-close {
+  color: #a1a1aa;
+}
+
+[data-theme="dark"] .emoji-picker-close:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+[data-theme="dark"] .emoji-button {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: transparent;
+}
+
+[data-theme="dark"] .emoji-button:hover {
+  background: rgba(108, 92, 231, 0.2);
+  border-color: var(--color-primary);
+  transform: scale(1.1);
+}
+

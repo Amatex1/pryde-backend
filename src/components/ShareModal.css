@@ -315,4 +315,108 @@
   }
 }
 
+/* ========================================
+   DARK MODE SUPPORT
+   ======================================== */
+
+[data-theme="dark"] .share-modal {
+  background: #1a1b2d;
+}
+
+[data-theme="dark"] .share-modal-header {
+  border-bottom-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .post-preview h3,
+[data-theme="dark"] .share-options h3,
+[data-theme="dark"] .friend-selection h3 {
+  color: #ffffff;
+}
+
+[data-theme="dark"] .preview-card {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .author-name,
+[data-theme="dark"] .preview-content {
+  color: #ffffff;
+}
+
+[data-theme="dark"] .post-date,
+[data-theme="dark"] .more-media {
+  color: #a1a1aa;
+}
+
+[data-theme="dark"] .share-option {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .share-option:hover {
+  background: rgba(108, 92, 231, 0.1);
+  border-color: var(--color-primary);
+}
+
+[data-theme="dark"] .share-to-friend-profile h4 {
+  color: #ffffff;
+}
+
+[data-theme="dark"] .friend-profile-select {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+[data-theme="dark"] .friend-profile-select:focus {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--color-primary);
+}
+
+[data-theme="dark"] .share-tabs {
+  border-bottom-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .share-tab {
+  color: #a1a1aa;
+}
+
+[data-theme="dark"] .share-tab:hover {
+  color: var(--color-primary);
+  background: rgba(108, 92, 231, 0.1);
+}
+
+[data-theme="dark"] .share-tab.active {
+  color: var(--color-primary);
+}
+
+[data-theme="dark"] .friend-item {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .friend-item:hover {
+  background: rgba(108, 92, 231, 0.1);
+  border-color: var(--color-primary);
+}
+
+[data-theme="dark"] .no-friends {
+  color: #a1a1aa;
+}
+
+[data-theme="dark"] .share-modal-footer {
+  border-top-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .btn-cancel {
+  background: rgba(255, 255, 255, 0.05);
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .btn-cancel:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
 

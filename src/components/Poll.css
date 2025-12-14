@@ -175,7 +175,58 @@
   font-style: italic;
 }
 
-/* Dark mode */
+/* ========================================
+   DARK MODE SUPPORT
+   ======================================== */
+
+[data-theme="dark"] .poll-container {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .poll-question h4 {
+  color: #ffffff;
+}
+
+[data-theme="dark"] .poll-option-button,
+[data-theme="dark"] .poll-option-result {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+[data-theme="dark"] .poll-option-button:hover:not(:disabled) {
+  background: rgba(108, 92, 231, 0.15);
+  border-color: var(--color-primary);
+}
+
+[data-theme="dark"] .poll-option-result.selected {
+  border-color: var(--color-primary);
+  background: rgba(108, 92, 231, 0.1);
+}
+
+[data-theme="dark"] .poll-option-text {
+  color: #ffffff;
+}
+
+[data-theme="dark"] .poll-option-percentage {
+  color: var(--color-primary);
+}
+
+[data-theme="dark"] .poll-footer {
+  border-top-color: rgba(255, 255, 255, 0.1);
+  color: #a1a1aa;
+}
+
+[data-theme="dark"] .poll-votes {
+  color: #e8e9f0;
+}
+
+[data-theme="dark"] .poll-separator {
+  color: #6b6e80;
+}
+
+/* Legacy dark mode support (for backwards compatibility) */
 body.dark-mode .poll-container {
   background: var(--card-bg-dark);
   border-color: var(--border-color-dark);
