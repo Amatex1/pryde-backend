@@ -42,13 +42,6 @@
   }
 }
 
-@media (min-width: 769px) and (max-width: 1400px) {
-  .feed-container {
-    grid-template-columns: 1fr 280px;
-    gap: var(--space-4);
-  }
-}
-
 .feed-content {
   display: flex;
   flex-direction: column;

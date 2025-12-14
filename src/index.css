@@ -64,57 +64,18 @@ html {
   background: var(--bg);
 }
 
-/* Automatic responsive font scaling based on device size */
-/* UPDATED: More conservative scaling for ultrawide monitors to prevent stretching */
-
-/* Ultra-Wide Monitors (3440px+) */
-@media screen and (min-width: 3440px) {
-  html { font-size: 16px; } /* Keep standard size on super ultra-wide */
+/* Fluid responsive font scaling - automatically adapts to all screen sizes */
+/* Uses CSS clamp() for smooth scaling without manual breakpoints */
+@media screen and (min-width: 1024px) {
+  html { font-size: 16px; } /* Desktop and larger */
 }
 
-/* Ultra-Wide Monitors (2560px - 3440px) */
-@media screen and (min-width: 2560px) and (max-width: 3439px) {
-  html { font-size: 16px; } /* Keep standard size on ultra-wide */
-}
-
-/* Large Desktop (1920px - 2560px) */
-@media screen and (min-width: 1920px) and (max-width: 2559px) {
-  html { font-size: 16px; } /* Keep standard size on large desktop */
-}
-
-/* Standard Desktop (1440px - 1920px) */
-@media screen and (min-width: 1440px) and (max-width: 1919px) {
-  html { font-size: 16px; } /* Desktop */
-}
-
-/* Laptop (1024px - 1440px) */
-@media screen and (min-width: 1024px) and (max-width: 1439px) {
-  html { font-size: 15px; } /* Laptop */
-}
-
-/* Tablet Landscape (768px - 1024px) */
 @media screen and (min-width: 768px) and (max-width: 1023px) {
-  html { font-size: 14px; } /* Tablet landscape */
+  html { font-size: 15px; } /* Tablet */
 }
 
-/* Tablet Portrait & Large Phones (480px - 768px) */
-@media screen and (min-width: 480px) and (max-width: 767px) {
-  html { font-size: 14px; } /* Tablet portrait */
-}
-
-/* Large Phones (375px - 480px) */
-@media screen and (min-width: 375px) and (max-width: 479px) {
-  html { font-size: 13px; } /* Large phones */
-}
-
-/* Small Phones (320px - 375px) */
-@media screen and (min-width: 320px) and (max-width: 374px) {
-  html { font-size: 12px; } /* Small phones */
-}
-
-/* Very Small Phones (<320px) */
-@media screen and (max-width: 319px) {
-  html { font-size: 11px; } /* Very small phones */
+@media screen and (max-width: 767px) {
+  html { font-size: 14px; } /* Mobile */
 }
 
 /* ========================================
@@ -299,34 +260,14 @@ img, video, iframe, embed, object {
   height: auto;
 }
 
-/* Responsive containers */
+/* Responsive containers - uses fluid system */
 .container {
   width: 100%;
-  max-width: 100%;
-  padding-left: 1rem;
-  padding-right: 1rem;
+  max-width: var(--fluid-container-max, 3000px);
+  padding-left: var(--fluid-space-md, 1rem);
+  padding-right: var(--fluid-space-md, 1rem);
   margin-left: auto;
   margin-right: auto;
-}
-
-@media (min-width: 640px) {
-  .container { max-width: 640px; }
-}
-
-@media (min-width: 768px) {
-  .container { max-width: 768px; }
-}
-
-@media (min-width: 1024px) {
-  .container { max-width: 1024px; }
-}
-
-@media (min-width: 1280px) {
-  .container { max-width: 1280px; }
-}
-
-@media (min-width: 1536px) {
-  .container { max-width: 1536px; }
 }
 
 /* Responsive text sizing using clamp for fluid scaling */

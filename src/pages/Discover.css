@@ -3,16 +3,9 @@
    ======================================== */
 
 .discover-container {
-  max-width: 1200px;
+  max-width: var(--fluid-container-2xl, 2000px);
   margin: 0 auto;
   padding: var(--space-6) var(--space-4);
-}
-
-/* Ultrawide monitor optimization */
-@media (min-width: 2560px) {
-  .discover-container {
-    max-width: 1400px;
-  }
 }
 
 .discover-header {

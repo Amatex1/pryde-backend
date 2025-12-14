@@ -1,7 +1,7 @@
 .bookmarks-container {
-  max-width: 1200px;
+  max-width: var(--fluid-container-2xl, 2000px);
   margin: 0 auto;
-  padding: 20px;
+  padding: var(--fluid-space-md, 20px);
 }
 
 .bookmarks-header {
