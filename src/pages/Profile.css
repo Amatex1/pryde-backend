@@ -120,9 +120,10 @@ div.profile-layout,
 .profile-layout {
   display: grid !important;
   grid-template-columns: 1fr 320px !important;
+  grid-template-rows: auto !important;
   gap: var(--space-6) !important;
   align-items: start !important;
-  max-width: 1200px !important;
+  max-width: 1400px !important;
   margin: 0 auto !important;
   padding: 0 var(--space-4) !important;
 }
@@ -840,6 +841,10 @@ div.profile-layout,
   flex-direction: column;
   gap: var(--space-4); /* Consistent spacing between posts */
   min-width: 0; /* Prevent overflow */
+
+  /* Position in left column of grid */
+  grid-column: 1;
+  grid-row: 1;
 }
 
 /* Legacy class name kept for compatibility */
@@ -1068,7 +1073,7 @@ html:not([data-theme="dark"]):not([data-quiet-mode="true"]) .section-title {
 
 .profile-sidebar {
   display: flex;
-  flex-direction: column;      /* normal top → bottom */
+  flex-direction: column;
   gap: 1.5rem;
 
   width: 320px;
@@ -1076,6 +1081,10 @@ html:not([data-theme="dark"]):not([data-quiet-mode="true"]) .section-title {
 
   position: sticky;
   top: 80px;
+
+  /* Position in top-right of grid */
+  grid-column: 2;
+  grid-row: 1;
 
   overflow-y: auto;
   padding-right: 0.5rem;
