@@ -40,7 +40,16 @@ function useDarkMode() {
 
 function Navbar() {
   const navigate = useNavigate();
-  const [user, setUser] = useState(getCurrentUser());
+  const [user, setUser] = useState(() => {
+    try {
+      return getCurrentUser();
+    } catch (error) {
+      console.error('Error loading user from localStorage:', error);
+      // Clear corrupted data
+      localStorage.removeItem('user');
+      return null;
+    }
+  });
   const [showDropdown, setShowDropdown] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [totalUnreadMessages, setTotalUnreadMessages] = useState(0);
@@ -183,9 +192,9 @@ function Navbar() {
             <div className="mobile-menu-user">
               <div className="mobile-menu-avatar">
                 {user?.profilePhoto ? (
-                  <img src={getImageUrl(user.profilePhoto)} alt={user.username} />
+                  <img src={getImageUrl(user.profilePhoto)} alt={user?.username || 'User'} />
                 ) : (
-                  <span>{user?.username?.charAt(0).toUpperCase()}</span>
+                  <span>{user?.username?.charAt(0).toUpperCase() || '?'}</span>
                 )}
               </div>
               <div className="mobile-menu-user-info">
@@ -318,9 +327,9 @@ function Navbar() {
           >
             <div className="user-avatar">
               {user?.profilePhoto ? (
-                <img src={getImageUrl(user.profilePhoto)} alt={user.username} />
+                <img src={getImageUrl(user.profilePhoto)} alt={user?.username || 'User'} />
               ) : (
-                <span>{user?.username?.charAt(0).toUpperCase()}</span>
+                <span>{user?.username?.charAt(0).toUpperCase() || '?'}</span>
               )}
             </div>
             <span className="user-name">{user?.displayName || user?.username}</span>
