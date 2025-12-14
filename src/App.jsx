@@ -8,16 +8,17 @@ import api from './utils/api';
 import logger from './utils/logger';
 
 // Eager load critical components (needed immediately)
-import Home from './pages/Home';
-import Login from './pages/Login';
-import Register from './pages/Register';
-import Footer from './components/Footer';
+// IMPORTANT: Only load components that DON'T use React Router hooks
 import SafetyWarning from './components/SafetyWarning';
 import PWAInstallPrompt from './components/PWAInstallPrompt';
 import CookieBanner from './components/CookieBanner';
 import ErrorBoundary from './components/ErrorBoundary';
 
-// Lazy load non-critical pages (loaded on demand)
+// Lazy load ALL pages (including Home, Login, Register) to avoid Router context errors
+const Home = lazy(() => import('./pages/Home'));
+const Login = lazy(() => import('./pages/Login'));
+const Register = lazy(() => import('./pages/Register'));
+const Footer = lazy(() => import('./components/Footer'));
 const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
 const ResetPassword = lazy(() => import('./pages/ResetPassword'));
 const Feed = lazy(() => import('./pages/Feed'));
