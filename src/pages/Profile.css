@@ -7,14 +7,44 @@
 
 /* CRITICAL FIX: Force grid layout with absolute maximum specificity */
 /* This MUST be at the top to prevent any override issues */
+/* Added to exception list in autoResponsive.css to prevent max-width: 100vw override */
 .page-container.profile-page .profile-layout,
 .profile-page .profile-layout,
+div.profile-page .profile-layout,
 div.profile-layout,
 .profile-layout {
   display: grid !important;
   grid-template-columns: 1fr 320px !important;
   gap: var(--space-6) !important;
   align-items: start !important;
+  max-width: 1200px !important;
+  margin: 0 auto !important;
+  padding: 0 var(--space-4) !important;
+}
+
+/* Ultrawide monitor optimization */
+@media (min-width: 2560px) {
+  .page-container.profile-page .profile-layout,
+  .profile-page .profile-layout,
+  div.profile-page .profile-layout,
+  div.profile-layout,
+  .profile-layout {
+    max-width: 1400px !important;
+    grid-template-columns: minmax(600px, 800px) 320px !important;
+    justify-content: center !important;
+  }
+}
+
+/* Desktop responsive (769px - 1400px) */
+@media (min-width: 769px) and (max-width: 1400px) {
+  .page-container.profile-page .profile-layout,
+  .profile-page .profile-layout,
+  div.profile-page .profile-layout,
+  div.profile-layout,
+  .profile-layout {
+    grid-template-columns: 1fr 280px !important;
+    gap: var(--space-4) !important;
+  }
 }
 
 .profile-page .profile-container,
@@ -699,39 +729,6 @@ div.profile-layout,
 /* ========================================
    PROFILE CONTENT
    ======================================== */
-
-/* CRITICAL: Force grid layout with maximum specificity */
-.profile-page .profile-layout,
-div.profile-layout,
-.profile-layout {
-  display: grid !important;
-  grid-template-columns: 1fr 320px !important;
-  gap: var(--space-6) !important;
-  max-width: 1200px !important;
-  margin: 0 auto !important;
-  padding: 0 var(--space-4) !important;
-  align-items: start !important;
-}
-
-/* Ultrawide monitor optimization */
-@media (min-width: 2560px) {
-  .profile-page .profile-layout,
-  div.profile-layout,
-  .profile-layout {
-    max-width: 1400px !important;
-    grid-template-columns: minmax(600px, 800px) 320px !important;
-    justify-content: center !important;
-  }
-}
-
-@media (min-width: 769px) and (max-width: 1400px) {
-  .profile-page .profile-layout,
-  div.profile-layout,
-  .profile-layout {
-    grid-template-columns: 1fr 280px !important;
-    gap: var(--space-4) !important;
-  }
-}
 
 .profile-main {
   display: flex;

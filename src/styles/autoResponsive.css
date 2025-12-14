@@ -211,7 +211,11 @@ p, span, div, a, li, td, th {
   .mini-chat-box *,
   .message,
   .message-bubble,
-  .message-content {
+  .message-content,
+  .profile-layout,
+  .profile-layout *,
+  .profile-main,
+  .profile-sidebar {
     max-width: none !important;
   }
 
