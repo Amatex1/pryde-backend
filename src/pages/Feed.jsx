@@ -1853,7 +1853,7 @@ function Feed() {
                             />
                           ))}
                       </div>
-
+                    )}
 
                     {/* Comment Input Box */}
                     {showCommentBox[post._id] && (

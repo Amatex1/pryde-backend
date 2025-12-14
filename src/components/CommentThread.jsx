@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import OptimizedImage from './OptimizedImage';
-import { getImageUrl } from '../utils/imageUtils';
+import { getImageUrl } from '../utils/imageUrl';
 import '../pages/Feed.css';
 
 /**
