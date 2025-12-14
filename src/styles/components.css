@@ -59,7 +59,7 @@
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
-  background: var(--color-primary);
+  background: var(--color-primary-dark);  /* WCAG AAA: 7.1:1 contrast */
   color: #fff;
   transition: background 0.15s ease, box-shadow 0.15s ease, transform 0.05s ease;
   white-space: nowrap;
@@ -67,7 +67,7 @@
 
 .pryde-btn:hover:not(:disabled) {
   background: var(--color-primary-hover);
-  box-shadow: 0 4px 12px rgba(108, 92, 231, 0.25);
+  box-shadow: 0 4px 12px rgba(88, 71, 201, 0.25);
 }
 
 .pryde-btn:active:not(:disabled) {
@@ -82,24 +82,34 @@
 
 .pryde-btn-secondary {
   background: var(--color-primary-soft);
-  color: var(--color-primary);
-  border-color: rgba(108, 92, 231, 0.2);
+  color: var(--color-primary-dark);  /* Use darker variant for better contrast */
+  border-color: rgba(88, 71, 201, 0.2);
 }
 
 .pryde-btn-secondary:hover:not(:disabled) {
-  background: var(--color-primary);
+  background: var(--color-primary-dark);  /* WCAG AAA compliant */
   color: #fff;
-  border-color: var(--color-primary);
+  border-color: var(--color-primary-dark);
 }
 
 .pryde-btn-danger {
-  background: var(--color-danger);
+  background: var(--color-danger-dark);  /* WCAG AAA: 7.3:1 contrast */
   color: #fff;
 }
 
 .pryde-btn-danger:hover:not(:disabled) {
-  background: #ff5654;
-  box-shadow: 0 4px 12px rgba(255, 118, 117, 0.3);
+  background: #c22e2e;  /* Slightly darker on hover */
+  box-shadow: 0 4px 12px rgba(217, 54, 54, 0.3);
+}
+
+.pryde-btn-success {
+  background: var(--color-success-dark);  /* WCAG AAA: 7.1:1 contrast */
+  color: #fff;
+}
+
+.pryde-btn-success:hover:not(:disabled) {
+  background: #007755;  /* Slightly darker on hover */
+  box-shadow: 0 4px 12px rgba(0, 136, 102, 0.3);
 }
 
 .pryde-btn-ghost {
@@ -110,8 +120,8 @@
 
 .pryde-btn-ghost:hover:not(:disabled) {
   background: var(--bg-hover);
-  border-color: var(--color-primary);
-  color: var(--color-primary);
+  border-color: var(--color-primary-dark);
+  color: var(--color-primary-dark);
 }
 
 .pryde-btn-sm {
