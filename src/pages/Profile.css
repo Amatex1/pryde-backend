@@ -1286,91 +1286,79 @@ html:not([data-theme="dark"]):not([data-quiet-mode="true"]) .section-title {
   position: relative;
 }
 
-/* Action Buttons - Match Feed page styling */
-.post-actions .action-btn,
-button.action-btn {
-  padding: var(--space-2) var(--space-3) !important;
-  border-radius: var(--radius-pill) !important;
-  border: none !important;
-  background: var(--bg-subtle) !important;
-  color: #2d2f3e !important;
-  cursor: pointer !important;
-  transition: all 0.15s ease !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  gap: var(--space-2) !important;
-  font-size: 14px !important;
-  font-weight: 600 !important;
-  white-space: nowrap !important;
+/* Action Buttons - Scoped to Profile page only */
+.profile-page .action-btn {
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-pill);
+  border: none;
+  background: var(--bg-subtle);
+  color: #2d2f3e;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
 }
 
-.post-actions .action-btn:hover,
-button.action-btn:hover {
-  background: var(--color-primary) !important;
-  color: white !important;
-  transform: translateY(-1px) !important;
+.profile-page .action-btn:hover {
+  background: var(--color-primary);
+  color: white;
+  transform: translateY(-1px);
 }
 
-.post-actions .action-btn.liked,
-button.action-btn.liked {
-  background: var(--color-danger-soft) !important;
-  color: #d63031 !important;
+.profile-page .action-btn.liked {
+  background: var(--color-danger-soft);
+  color: #d63031;
 }
 
-.post-actions .action-btn.liked:hover,
-button.action-btn.liked:hover {
-  background: var(--color-danger) !important;
-  color: white !important;
+.profile-page .action-btn.liked:hover {
+  background: var(--color-danger);
+  color: white;
 }
 
-.post-actions .action-btn.bookmarked,
-button.action-btn.bookmarked {
-  background: rgba(108, 92, 231, 0.15) !important;
-  color: var(--pryde-purple) !important;
+.profile-page .action-btn.bookmarked {
+  background: rgba(108, 92, 231, 0.15);
+  color: var(--pryde-purple);
 }
 
-.post-actions .action-btn.bookmarked:hover,
-button.action-btn.bookmarked:hover {
-  background: var(--pryde-purple) !important;
-  color: white !important;
+.profile-page .action-btn.bookmarked:hover {
+  background: var(--pryde-purple);
+  color: white;
 }
 
 /* Dark mode action buttons */
-[data-theme="dark"] .post-actions .action-btn,
-[data-theme="dark"] button.action-btn {
-  color: #e8e9f0 !important;
-  background: rgba(255, 255, 255, 0.1) !important;
+[data-theme="dark"] .profile-page .action-btn {
+  color: #e8e9f0;
+  background: rgba(255, 255, 255, 0.1);
 }
 
-[data-theme="dark"] .post-actions .action-btn:hover,
-[data-theme="dark"] button.action-btn:hover {
-  background: var(--color-primary) !important;
-  color: white !important;
+[data-theme="dark"] .profile-page .action-btn:hover {
+  background: var(--color-primary);
+  color: white;
 }
 
-[data-theme="dark"] .post-actions .action-btn.liked,
-[data-theme="dark"] button.action-btn.liked {
-  color: #ff9999 !important;
-  background: rgba(255, 99, 99, 0.2) !important;
+[data-theme="dark"] .profile-page .action-btn.liked {
+  color: #ff9999;
+  background: rgba(255, 99, 99, 0.2);
 }
 
-[data-theme="dark"] .post-actions .action-btn.liked:hover,
-[data-theme="dark"] button.action-btn.liked:hover {
-  background: var(--color-danger) !important;
-  color: white !important;
+[data-theme="dark"] .profile-page .action-btn.liked:hover {
+  background: var(--color-danger);
+  color: white;
 }
 
-[data-theme="dark"] .post-actions .action-btn.bookmarked,
-[data-theme="dark"] button.action-btn.bookmarked {
-  color: #9b8ef7 !important;
-  background: rgba(155, 142, 247, 0.2) !important;
+[data-theme="dark"] .profile-page .action-btn.bookmarked {
+  color: #9b8ef7;
+  background: rgba(155, 142, 247, 0.2);
 }
 
-[data-theme="dark"] .post-actions .action-btn.bookmarked:hover,
-[data-theme="dark"] button.action-btn.bookmarked:hover {
-  background: var(--pryde-purple) !important;
-  color: white !important;
+[data-theme="dark"] .profile-page .action-btn.bookmarked:hover {
+  background: var(--pryde-purple);
+  color: white;
 }
 
 .reaction-container {
