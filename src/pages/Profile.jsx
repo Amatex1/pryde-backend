@@ -1903,8 +1903,8 @@ function Profile() {
                             }}
                           >
                             <span>
-                              {post.reactions?.find(r => r.user?._id === currentUser?.id || r.user === currentUser?.id)?.emoji || '🤍'}
-                            </span> React
+                              {getUserReactionEmoji(post.reactions) || '🤍'}
+                            </span> {getUserReactionEmoji(post.reactions) ? 'Reacted' : 'React'}
                           </button>
                           {post.reactions?.length > 0 && (
                             <button

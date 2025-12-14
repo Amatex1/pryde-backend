@@ -1716,8 +1716,8 @@ function Feed() {
                           }}
                         >
                           <span>
-                            {post.reactions?.find(r => r.user?._id === currentUser?.id || r.user === currentUser?.id)?.emoji || '🤍'}
-                          </span> React
+                            {getUserReactionEmoji(post.reactions) || '🤍'}
+                          </span> {getUserReactionEmoji(post.reactions) ? 'Reacted' : 'React'}
                         </button>
                         {showReactionPicker === `post-${post._id}` && (
                           <div
