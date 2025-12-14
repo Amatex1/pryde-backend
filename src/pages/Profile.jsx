@@ -1332,59 +1332,6 @@ function Profile() {
 
               {user.bio && <p className="profile-bio">{user.bio}</p>}
 
-              {/* Interests, Looking For, and Social Links - moved from sidebar */}
-              <div className="profile-header-extras">
-                {/* Interests */}
-                {user.interests && user.interests.length > 0 && (
-                  <div className="header-section">
-                    <h3 className="section-title">🏷️ Interests</h3>
-                    <div className="interests-tags">
-                      {user.interests.map((interest, index) => (
-                        <span key={index} className="interest-tag">{interest}</span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Looking For */}
-                {user.lookingFor && user.lookingFor.length > 0 && (
-                  <div className="header-section">
-                    <h3 className="section-title">🔍 Looking For</h3>
-                    <div className="looking-for-list">
-                      {user.lookingFor.map((item, index) => (
-                        <span key={index} className="looking-for-item">
-                          {item === 'friends' && '👥 Friends'}
-                          {item === 'support' && '🤝 Support'}
-                          {item === 'community' && '🌈 Community'}
-                          {item === 'networking' && '💼 Networking'}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Social Links */}
-                {user.socialLinks && user.socialLinks.length > 0 && (
-                  <div className="header-section">
-                    <h3 className="section-title">🔗 Social Links</h3>
-                    <div className="social-links-list">
-                      {user.socialLinks.map((link, index) => (
-                        <a
-                          key={index}
-                          href={link.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="social-link"
-                        >
-                          <strong>{link.platform}</strong>
-                          <span className="link-arrow">→</span>
-                        </a>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-
               {!isOwnProfile && (
                 <div className="profile-action-buttons">
                   <div className="friend-actions">
@@ -1481,8 +1428,13 @@ function Profile() {
         <div
           className="profile-layout"
           style={{
-            display: 'block',
-            maxWidth: '800px',
+            display: 'grid',
+            gridTemplateColumns: windowWidth > 768
+              ? '1fr 320px'
+              : '1fr',
+            gap: windowWidth > 768 ? 'var(--space-6)' : 'var(--space-3)',
+            alignItems: 'start',
+            maxWidth: '1200px',
             margin: '0 auto',
             padding: windowWidth > 768 ? '0 var(--space-4)' : '0 var(--space-2)'
           }}
@@ -2230,7 +2182,76 @@ function Profile() {
             )}
           </div>
           {/* End of profile-main */}
-          {/* Sidebar removed - content moved to profile header */}
+
+          <div className="profile-sidebar">
+            {/* Interests */}
+            {user.interests && user.interests.length > 0 && (
+              <div className="sidebar-card glossy">
+                <h3 className="sidebar-title">🏷️ Interests</h3>
+                <div className="interests-tags">
+                  {user.interests.map((interest, index) => (
+                    <span key={index} className="interest-tag">{interest}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Looking For */}
+            {user.lookingFor && user.lookingFor.length > 0 && (
+              <div className="sidebar-card glossy">
+                <h3 className="sidebar-title">🔍 Looking For</h3>
+                <div className="looking-for-list">
+                  {user.lookingFor.map((item, index) => (
+                    <span key={index} className="looking-for-item">
+                      {item === 'friends' && '👥 Friends'}
+                      {item === 'support' && '🤝 Support'}
+                      {item === 'community' && '🌈 Community'}
+                      {item === 'networking' && '💼 Networking'}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Social Links */}
+            {user.socialLinks && user.socialLinks.length > 0 && (
+              <div className="sidebar-card glossy">
+                <h3 className="sidebar-title">🔗 Social Links</h3>
+                <div className="social-links-list">
+                  {user.socialLinks.map((link, index) => (
+                    <a
+                      key={index}
+                      href={link.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="social-link"
+                    >
+                      <strong>{link.platform}</strong>
+                      <span className="link-arrow">→</span>
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Website */}
+            {user.website && (
+              <div className="sidebar-card glossy">
+                <h3 className="sidebar-title">🌐 Website</h3>
+                <a
+                  href={user.website}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="website-link"
+                >
+                  {user.website}
+                </a>
+              </div>
+            )}
+
+            {/* PHASE 1 REFACTOR: Followers sidebar removed (follower counts hidden) */}
+          </div>
+          {/* End of profile-sidebar */}
         </div>
         {/* End of profile-layout */}
       </div>
