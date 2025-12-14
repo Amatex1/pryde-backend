@@ -16,7 +16,7 @@
 }
 
 .hero-content {
-  max-width: 1200px;
+  max-width: var(--fluid-container-2xl, 2000px);
   width: 100%;
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -197,7 +197,7 @@
 }
 
 .philosophy-grid {
-  max-width: 1000px;
+  max-width: var(--fluid-container-2xl, 2000px);
   margin: 0 auto;
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -244,7 +244,7 @@
 }
 
 .privacy-content {
-  max-width: 1000px;
+  max-width: var(--fluid-container-2xl, 2000px);
   margin: 0 auto;
 }
 
@@ -296,7 +296,7 @@
 }
 
 .creator-grid {
-  max-width: 1200px;
+  max-width: var(--fluid-container-2xl, 2000px);
   margin: 0 auto;
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -343,7 +343,7 @@
 }
 
 .tags-content {
-  max-width: 1000px;
+  max-width: var(--fluid-container-2xl, 2000px);
   margin: 0 auto;
   text-align: center;
 }
@@ -402,7 +402,7 @@
 }
 
 .messaging-content {
-  max-width: 1000px;
+  max-width: var(--fluid-container-2xl, 2000px);
   margin: 0 auto;
   text-align: center;
 }
@@ -523,7 +523,7 @@
 }
 
 .themes-grid {
-  max-width: 1000px;
+  max-width: var(--fluid-container-2xl, 2000px);
   margin: 0 auto;
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));

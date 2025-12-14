@@ -1,4 +1,5 @@
 // PWA Registration and Management
+import logger from './logger';
 
 /**
  * Register the service worker
@@ -10,17 +11,17 @@ export async function registerServiceWorker() {
         scope: '/'
       });
 
-      console.log('[PWA] Service Worker registered successfully:', registration.scope);
+      logger.info('[PWA] Service Worker registered successfully:', registration.scope);
 
       // Check for updates
       registration.addEventListener('updatefound', () => {
         const newWorker = registration.installing;
-        console.log('[PWA] New Service Worker found, installing...');
+        logger.info('[PWA] New Service Worker found, installing...');
 
         newWorker.addEventListener('statechange', () => {
           if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
             // New service worker available, prompt user to refresh
-            console.log('[PWA] New version available! Please refresh.');
+            logger.info('[PWA] New version available! Please refresh.');
             showUpdateNotification();
           }
         });
@@ -33,10 +34,10 @@ export async function registerServiceWorker() {
 
       return registration;
     } catch (error) {
-      console.error('[PWA] Service Worker registration failed:', error);
+      logger.error('[PWA] Service Worker registration failed:', error);
     }
   } else {
-    console.log('[PWA] Service Workers not supported in this browser');
+    logger.debug('[PWA] Service Workers not supported in this browser');
   }
 }
 
@@ -49,7 +50,7 @@ export async function unregisterServiceWorker() {
     for (const registration of registrations) {
       await registration.unregister();
     }
-    console.log('[PWA] Service Worker unregistered');
+    logger.info('[PWA] Service Worker unregistered');
   }
 }
 
@@ -90,14 +91,14 @@ export function setupInstallPrompt() {
     e.preventDefault();
     // Stash the event so it can be triggered later
     deferredPrompt = e;
-    console.log('[PWA] Install prompt available');
-    
+    logger.debug('[PWA] Install prompt available');
+
     // Show install button/banner
     showInstallButton();
   });
 
   window.addEventListener('appinstalled', () => {
-    console.log('[PWA] App installed successfully');
+    logger.info('[PWA] App installed successfully');
     deferredPrompt = null;
     hideInstallButton();
   });
@@ -108,7 +109,7 @@ export function setupInstallPrompt() {
  */
 export async function promptInstall() {
   if (!deferredPrompt) {
-    console.log('[PWA] Install prompt not available');
+    logger.debug('[PWA] Install prompt not available');
     return false;
   }
 
@@ -117,7 +118,7 @@ export async function promptInstall() {
 
   // Wait for the user to respond to the prompt
   const { outcome } = await deferredPrompt.userChoice;
-  console.log(`[PWA] User response to install prompt: ${outcome}`);
+  logger.info(`[PWA] User response to install prompt: ${outcome}`);
 
   // Clear the deferredPrompt
   deferredPrompt = null;
@@ -145,7 +146,7 @@ function hideInstallButton() {
  */
 export async function requestNotificationPermission() {
   if (!('Notification' in window)) {
-    console.log('[PWA] Notifications not supported');
+    logger.debug('[PWA] Notifications not supported');
     return false;
   }
 
@@ -169,7 +170,7 @@ export async function requestNotificationPermission() {
 export async function requestPersistentStorage() {
   // Check if the modern Storage API is supported
   if (!navigator.storage || typeof navigator.storage.persist !== 'function') {
-    console.log('[PWA] Storage API not supported in this browser');
+    logger.debug('[PWA] Storage API not supported in this browser');
     return false;
   }
 
@@ -177,7 +178,7 @@ export async function requestPersistentStorage() {
     // First check if storage is already persistent
     const isPersisted = await navigator.storage.persisted();
     if (isPersisted) {
-      console.log('[PWA] ✅ Storage is already persistent');
+      logger.info('[PWA] ✅ Storage is already persistent');
       return true;
     }
 
@@ -185,23 +186,23 @@ export async function requestPersistentStorage() {
     const granted = await navigator.storage.persist();
 
     if (granted) {
-      console.log('[PWA] ✅ Persistent storage granted');
+      logger.info('[PWA] ✅ Persistent storage granted');
 
       // Optionally log storage estimate
       if (typeof navigator.storage.estimate === 'function') {
         const estimate = await navigator.storage.estimate();
-        console.log('[PWA] Storage quota:', {
+        logger.debug('[PWA] Storage quota:', {
           usage: `${(estimate.usage / 1024 / 1024).toFixed(2)} MB`,
           quota: `${(estimate.quota / 1024 / 1024).toFixed(2)} MB`
         });
       }
     } else {
-      console.log('[PWA] ⚠️ Persistent storage request denied by browser');
+      logger.warn('[PWA] ⚠️ Persistent storage request denied by browser');
     }
 
     return granted;
   } catch (error) {
-    console.error('[PWA] ❌ Persistent storage request failed:', error);
+    logger.error('[PWA] ❌ Persistent storage request failed:', error);
     return false;
   }
 }
@@ -211,7 +212,7 @@ export async function requestPersistentStorage() {
  */
 export async function getStorageEstimate() {
   if (!('storage' in navigator) || !('estimate' in navigator.storage)) {
-    console.log('[PWA] Storage estimate not supported');
+    logger.debug('[PWA] Storage estimate not supported');
     return null;
   }
 
@@ -221,7 +222,7 @@ export async function getStorageEstimate() {
     const quota = estimate.quota || 0;
     const percentUsed = quota > 0 ? (usage / quota * 100).toFixed(2) : 0;
 
-    console.log('[PWA] Storage:', {
+    logger.debug('[PWA] Storage:', {
       usage: `${(usage / 1024 / 1024).toFixed(2)} MB`,
       quota: `${(quota / 1024 / 1024).toFixed(2)} MB`,
       percentUsed: `${percentUsed}%`
@@ -229,7 +230,7 @@ export async function getStorageEstimate() {
 
     return { usage, quota, percentUsed };
   } catch (error) {
-    console.error('[PWA] Storage estimate failed:', error);
+    logger.error('[PWA] Storage estimate failed:', error);
     return null;
   }
 }
@@ -239,7 +240,7 @@ export async function getStorageEstimate() {
  */
 export async function subscribeToPushNotifications() {
   if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-    console.log('[PWA] Push notifications not supported');
+    logger.debug('[PWA] Push notifications not supported');
     return null;
   }
 
@@ -253,10 +254,10 @@ export async function subscribeToPushNotifications() {
       )
     });
 
-    console.log('[PWA] Push subscription successful');
+    logger.info('[PWA] Push subscription successful');
     return subscription;
   } catch (error) {
-    console.error('[PWA] Push subscription failed:', error);
+    logger.error('[PWA] Push subscription failed:', error);
     return null;
   }
 }
