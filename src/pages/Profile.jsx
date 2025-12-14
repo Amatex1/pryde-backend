@@ -1832,20 +1832,18 @@ function Profile() {
                                 </div>
                                 {post.originalPost.content && <p><FormattedText text={post.originalPost.content} /></p>}
                                 {post.originalPost.media && post.originalPost.media.length > 0 && (
-                                  <div className="post-media">
-                                    {post.originalPost.media.map((mediaItem, index) => (
-                                      <div key={index} className="media-item">
-                                        {mediaItem.type === 'image' ? (
+                                  <div className={`post-media-grid ${post.originalPost.media.length === 1 ? 'single' : post.originalPost.media.length === 2 ? 'double' : 'multiple'}`}>
+                                    {post.originalPost.media.map((media, index) => (
+                                      <div key={index} className="post-media-item">
+                                        {media.type === 'video' ? (
+                                          <video src={getImageUrl(media.url)} controls />
+                                        ) : (
                                           <OptimizedImage
-                                            src={getImageUrl(mediaItem.url)}
-                                            alt="Shared post media"
-                                            onClick={() => setPhotoViewerImage(getImageUrl(mediaItem.url))}
+                                            src={getImageUrl(media.url)}
+                                            alt={`Shared post media ${index + 1}`}
+                                            onClick={() => setPhotoViewerImage(getImageUrl(media.url))}
                                             style={{ cursor: 'pointer' }}
                                           />
-                                        ) : (
-                                          <video controls>
-                                            <source src={getImageUrl(mediaItem.url)} type="video/mp4" />
-                                          </video>
                                         )}
                                       </div>
                                     ))}
@@ -1856,21 +1854,19 @@ function Profile() {
                               <>
                                 {post.content && <p><FormattedText text={post.content} /></p>}
                                 {post.media && post.media.length > 0 && (
-                                  <div className="post-media">
+                                  <div className={`post-media-grid ${post.media.length === 1 ? 'single' : post.media.length === 2 ? 'double' : 'multiple'}`}>
                                     {post.media.map((mediaItem, index) => (
-                                      <div key={index} className="media-item">
-                                        {mediaItem.type === 'image' ? (
+                                      <div key={index} className="post-media-item">
+                                        {mediaItem.type === 'video' ? (
+                                          <video src={getImageUrl(mediaItem.url)} controls />
+                                        ) : (
                                           <OptimizedImage
                                             src={getImageUrl(mediaItem.url)}
-                                            alt="Post media"
+                                            alt={`Post media ${index + 1}`}
                                             onClick={() => setPhotoViewerImage(getImageUrl(mediaItem.url))}
                                             style={{ cursor: 'pointer' }}
                                             responsiveSizes={mediaItem.sizes}
                                           />
-                                        ) : (
-                                          <video controls>
-                                            <source src={getImageUrl(mediaItem.url)} type="video/mp4" />
-                                          </video>
                                         )}
                                       </div>
                                     ))}
