@@ -1,5 +1,4 @@
 import { Component } from 'react';
-import { Link } from 'react-router-dom';
 import logger from '../utils/logger';
 
 class ErrorBoundary extends Component {
@@ -42,6 +41,10 @@ class ErrorBoundary extends Component {
 
   handleReload = () => {
     window.location.reload();
+  };
+
+  handleGoToFeed = () => {
+    window.location.href = '/feed';
   };
 
   render() {
@@ -151,8 +154,8 @@ class ErrorBoundary extends Component {
                 Reload Page
               </button>
 
-              <Link
-                to="/feed"
+              <button
+                onClick={this.handleGoToFeed}
                 style={{
                   padding: '0.75rem 1.5rem',
                   borderRadius: '12px',
@@ -161,13 +164,20 @@ class ErrorBoundary extends Component {
                   color: '#616161',
                   fontSize: '1rem',
                   fontWeight: '600',
-                  textDecoration: 'none',
-                  display: 'inline-block',
+                  cursor: 'pointer',
                   transition: 'all 0.3s ease'
+                }}
+                onMouseOver={(e) => {
+                  e.target.style.background = '#616161';
+                  e.target.style.color = 'white';
+                }}
+                onMouseOut={(e) => {
+                  e.target.style.background = 'transparent';
+                  e.target.style.color = '#616161';
                 }}
               >
                 Go to Feed
-              </Link>
+              </button>
             </div>
           </div>
         </div>
