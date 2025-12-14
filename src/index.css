@@ -56,6 +56,13 @@ html {
   min-height: 100vh;
 }
 
+/* App container - wraps all routes */
+.app-container {
+  width: 100%;
+  min-height: 100vh;
+  background: var(--bg);
+}
+
 /* Automatic responsive font scaling based on device size */
 /* UPDATED: More conservative scaling for ultrawide monitors to prevent stretching */
 
