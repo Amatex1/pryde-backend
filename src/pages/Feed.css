@@ -1023,8 +1023,8 @@ html:not([data-theme])[data-quiet-mode="true"] .hide-metrics-checkbox:hover {
 .comment-replies::before {
   content: '';
   position: absolute;
-  left: 0;
-  top: 0;
+  left: 16px; /* Center of the 32px avatar */
+  top: -12px; /* Start from parent comment's avatar */
   bottom: 0;
   width: 2px;
   background: var(--border-light);
@@ -1032,7 +1032,7 @@ html:not([data-theme])[data-quiet-mode="true"] .hide-metrics-checkbox:hover {
 }
 
 [data-theme="dark"] .comment-replies::before {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.15);
 }
 
 /* Individual reply with horizontal connector line */
@@ -1046,16 +1046,16 @@ html:not([data-theme])[data-quiet-mode="true"] .hide-metrics-checkbox:hover {
 .comment.reply::before {
   content: '';
   position: absolute;
-  left: calc(-1 * var(--space-4));
-  top: 20px;
-  width: var(--space-4);
+  left: -24px; /* Distance from reply avatar to vertical line */
+  top: 16px; /* Center of the 32px avatar */
+  width: 24px;
   height: 2px;
   background: var(--border-light);
   border-radius: 2px;
 }
 
 [data-theme="dark"] .comment.reply::before {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.15);
 }
 
 /* Facebook-style: Username INSIDE comment bubble at top */
