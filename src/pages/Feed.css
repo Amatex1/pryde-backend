@@ -1054,15 +1054,15 @@ html:not([data-theme])[data-quiet-mode="true"] .hide-metrics-checkbox:hover {
   position: relative;
 }
 
-/* Vertical threading line - positioned to align with parent comment avatar */
+/* Vertical threading line connecting parent to all replies */
 .comment-replies::before {
   content: '';
   position: absolute;
-  left: 16px; /* Aligns with center of 32px avatar */
-  top: -20px; /* Extends up to connect with parent */
-  bottom: 16px; /* Stops at last reply's avatar center */
+  left: -24px; /* Position relative to the indented replies container */
+  top: -20px; /* Start above the first reply */
+  bottom: 20px; /* End before the last reply */
   width: 2px;
-  background: rgba(0, 0, 0, 0.15);
+  background: rgba(0, 0, 0, 0.1);
 }
 
 [data-theme="dark"] .comment-replies::before {
@@ -1076,15 +1076,15 @@ html:not([data-theme])[data-quiet-mode="true"] .hide-metrics-checkbox:hover {
   padding-left: 0;
 }
 
-/* Horizontal connector from vertical line to reply avatar */
+/* Horizontal connector from vertical line to each reply */
 .comment.reply::before {
   content: '';
   position: absolute;
-  left: 16px; /* Start from vertical line */
-  top: 16px; /* Center of 32px avatar */
-  width: 24px; /* Distance to reply avatar */
+  left: -24px; /* Align with vertical line */
+  top: 20px; /* Center vertically with avatar (32px avatar / 2 + padding) */
+  width: 20px; /* Length of horizontal connector */
   height: 2px;
-  background: rgba(0, 0, 0, 0.15);
+  background: rgba(0, 0, 0, 0.1);
 }
 
 [data-theme="dark"] .comment.reply::before {
