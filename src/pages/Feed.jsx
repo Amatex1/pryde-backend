@@ -1176,7 +1176,7 @@ function Feed() {
   };
 
   return (
-    <div className="page-container">
+    <div className="page-container feed-page">
       <Navbar />
       <PasskeyBanner />
 
