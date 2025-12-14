@@ -1434,7 +1434,7 @@ function Profile() {
               : '1fr',
             gap: windowWidth > 768 ? 'var(--space-6)' : 'var(--space-3)',
             alignItems: 'start',
-            maxWidth: '1200px',
+            maxWidth: '2000px',
             margin: '0 auto',
             padding: windowWidth > 768 ? '0 var(--space-4)' : '0 var(--space-2)'
           }}
