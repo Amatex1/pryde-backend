@@ -118,9 +118,11 @@
 div.profile-page .profile-layout,
 div.profile-layout,
 /* FLUID RESPONSIVE LAYOUT - Automatically adapts to any screen size */
-/* DEFAULT: Two-column layout for desktop/tablet */
-.profile-page .profile-layout,
+/* DEFAULT: Two-column layout for desktop/tablet - MAXIMUM SPECIFICITY */
+body .page-container.profile-page .profile-layout,
+body div.page-container.profile-page .profile-layout,
 .page-container.profile-page .profile-layout,
+.profile-page .profile-layout,
 div.profile-page .profile-layout,
 div.profile-layout,
 .profile-layout {
@@ -128,48 +130,55 @@ div.profile-layout,
   grid-template-columns: 1fr 320px !important;
   grid-template-rows: auto !important;
   grid-template-areas: "main sidebar" !important;
-  gap: var(--fluid-gap-lg) !important;
+  gap: 24px !important;
   align-items: start !important;
-  max-width: var(--fluid-container-max) !important;
+  max-width: 3000px !important;
   margin: 0 auto !important;
-  padding: 0 var(--fluid-space-md) !important;
+  padding: 0 20px !important;
   width: 100% !important;
   box-sizing: border-box !important;
 }
 
 /* Desktop: Larger sidebar */
 @media (min-width: 1401px) {
-  .profile-page .profile-layout,
+  body .page-container.profile-page .profile-layout,
+  body div.page-container.profile-page .profile-layout,
   .page-container.profile-page .profile-layout,
+  .profile-page .profile-layout,
   div.profile-page .profile-layout,
   div.profile-layout,
   .profile-layout {
     grid-template-columns: 1fr 360px !important;
-    gap: var(--fluid-gap-xl) !important;
+    gap: 32px !important;
   }
 }
 
 /* Ultrawide: Maximum sidebar size */
 @media (min-width: 2560px) {
-  .profile-page .profile-layout,
+  body .page-container.profile-page .profile-layout,
+  body div.page-container.profile-page .profile-layout,
   .page-container.profile-page .profile-layout,
+  .profile-page .profile-layout,
   div.profile-page .profile-layout,
   div.profile-layout,
   .profile-layout {
     grid-template-columns: 1fr 400px !important;
+    gap: 40px !important;
   }
 }
 
 /* Mobile ONLY: Stack sidebar below */
 @media (max-width: 768px) {
-  .profile-page .profile-layout,
+  body .page-container.profile-page .profile-layout,
+  body div.page-container.profile-page .profile-layout,
   .page-container.profile-page .profile-layout,
+  .profile-page .profile-layout,
   div.profile-page .profile-layout,
   div.profile-layout,
   .profile-layout {
     grid-template-columns: 1fr !important;
     grid-template-areas: "main" "sidebar" !important;
-    gap: var(--fluid-gap-md) !important;
+    gap: 16px !important;
   }
 }
 
