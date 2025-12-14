@@ -688,16 +688,32 @@
   display: grid;
   grid-template-columns: 1fr 320px;
   gap: var(--space-6);
-  max-width: 1400px;
+  max-width: 1200px;
   margin: 0 auto;
   padding: 0 var(--space-4);
   align-items: start;
 }
 
+/* Ultrawide monitor optimization */
+@media (min-width: 2560px) {
+  .profile-layout {
+    max-width: 1400px;
+    grid-template-columns: minmax(600px, 800px) 320px;
+    justify-content: center;
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1400px) {
+  .profile-layout {
+    grid-template-columns: 1fr 280px;
+    gap: var(--space-4);
+  }
+}
+
 .profile-main {
   display: flex;
   flex-direction: column;
-  gap: var(--space-6);
+  gap: var(--space-4); /* Consistent spacing between posts */
   min-width: 0; /* Prevent overflow */
 }
 
