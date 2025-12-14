@@ -1009,7 +1009,7 @@ html:not([data-theme])[data-quiet-mode="true"] .hide-metrics-checkbox:hover {
 
 .comment-replies {
   margin-left: 40px;
-  padding-left: var(--space-4);
+  padding-left: 0;
   padding-top: var(--space-3);
   display: flex;
   flex-direction: column;
@@ -1018,40 +1018,41 @@ html:not([data-theme])[data-quiet-mode="true"] .hide-metrics-checkbox:hover {
   position: relative;
 }
 
-/* Vertical threading line */
+/* Vertical threading line - positioned to align with parent comment avatar */
 .comment-replies::before {
   content: '';
   position: absolute;
-  left: -24px;
-  top: 0;
-  bottom: 20px;
+  left: 16px; /* Aligns with center of 32px avatar */
+  top: -20px; /* Extends up to connect with parent */
+  bottom: 16px; /* Stops at last reply's avatar center */
   width: 2px;
-  background: rgba(0, 0, 0, 0.1);
+  background: rgba(0, 0, 0, 0.15);
 }
 
 [data-theme="dark"] .comment-replies::before {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.15);
 }
 
 .comment.reply {
   background: transparent;
   padding: var(--space-2) 0;
   position: relative;
+  padding-left: 0;
 }
 
-/* Horizontal connector from vertical line to reply */
+/* Horizontal connector from vertical line to reply avatar */
 .comment.reply::before {
   content: '';
   position: absolute;
-  left: -24px;
-  top: 16px;
-  width: 20px;
+  left: 16px; /* Start from vertical line */
+  top: 16px; /* Center of 32px avatar */
+  width: 24px; /* Distance to reply avatar */
   height: 2px;
-  background: rgba(0, 0, 0, 0.1);
+  background: rgba(0, 0, 0, 0.15);
 }
 
 [data-theme="dark"] .comment.reply::before {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.15);
 }
 
 /* Facebook-style: Username INSIDE comment bubble at top */
