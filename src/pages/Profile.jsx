@@ -1429,14 +1429,14 @@ function Profile() {
           className="profile-layout"
           style={{
             display: 'grid',
-            gridTemplateColumns: windowWidth > 768
+            gridTemplateColumns: windowWidth > 375
               ? '1fr 320px'
               : '1fr',
-            gap: windowWidth > 768 ? 'var(--space-6)' : 'var(--space-3)',
+            gap: windowWidth > 375 ? 'var(--space-6)' : 'var(--space-3)',
             alignItems: 'start',
             maxWidth: '2000px',
             margin: '0 auto',
-            padding: windowWidth > 768 ? '0 var(--space-4)' : '0 var(--space-2)'
+            padding: windowWidth > 375 ? '0 var(--space-4)' : '0 var(--space-2)'
           }}
         >
           <div className="profile-main">
