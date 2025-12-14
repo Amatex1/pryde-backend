@@ -1224,35 +1224,41 @@ html:not([data-theme="dark"]):not([data-quiet-mode="true"]) .section-title {
   margin-top: var(--space-4);
 }
 
+/* Posts List - Add spacing between posts like Feed page */
+.posts-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
 /* Post Card - Facebook Style Separated Boxes */
 .post-card {
-  padding: var(--space-4) 18px !important;
-  border-radius: var(--radius-card) !important;
-  background: var(--bg-card) !important;
-  border: 1px solid var(--border-subtle) !important;
-  box-shadow: var(--shadow-soft) !important;
-  transition: all 0.2s ease !important;
-  min-width: 0 !important;
-  min-height: 150px !important;
-  overflow: visible !important;
-  word-wrap: break-word !important;
-  contain: layout !important;
-  margin-bottom: var(--space-4) !important;
+  padding: var(--space-4) 18px;
+  border-radius: var(--radius-card);
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  box-shadow: var(--shadow-soft);
+  transition: all 0.2s ease;
+  min-width: 0;
+  min-height: 150px;
+  overflow: visible;
+  word-wrap: break-word;
+  contain: layout;
 }
 
 .post-card:hover {
-  box-shadow: var(--shadow-medium) !important;
-  border-color: var(--border-medium) !important;
+  box-shadow: var(--shadow-medium);
+  border-color: var(--border-medium);
 }
 
 [data-theme="dark"] .post-card {
-  background: #1e1f2e !important;
-  border-color: rgba(255, 255, 255, 0.1) !important;
+  background: #1e1f2e;
+  border-color: rgba(255, 255, 255, 0.1);
 }
 
 [data-theme="dark"] .post-card:hover {
-  border-color: rgba(255, 255, 255, 0.2) !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+  border-color: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 /* Post Stats */
@@ -1280,58 +1286,91 @@ html:not([data-theme="dark"]):not([data-quiet-mode="true"]) .section-title {
   position: relative;
 }
 
-.action-btn {
-  padding: var(--space-2) var(--space-3);
-  border-radius: var(--radius-pill);
-  border: none;
-  background: var(--bg-subtle);
-  color: #2d2f3e;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-2);
-  font-size: 14px;
-  font-weight: 600;
-  white-space: nowrap;
+/* Action Buttons - Match Feed page styling */
+.post-actions .action-btn,
+button.action-btn {
+  padding: var(--space-2) var(--space-3) !important;
+  border-radius: var(--radius-pill) !important;
+  border: none !important;
+  background: var(--bg-subtle) !important;
+  color: #2d2f3e !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: var(--space-2) !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  white-space: nowrap !important;
 }
 
-.action-btn:hover {
-  background: var(--color-primary);
-  color: white;
-  transform: translateY(-1px);
+.post-actions .action-btn:hover,
+button.action-btn:hover {
+  background: var(--color-primary) !important;
+  color: white !important;
+  transform: translateY(-1px) !important;
 }
 
-.action-btn.liked {
-  background: var(--color-danger-soft);
-  color: #d63031;
+.post-actions .action-btn.liked,
+button.action-btn.liked {
+  background: var(--color-danger-soft) !important;
+  color: #d63031 !important;
 }
 
-.action-btn.liked:hover {
-  background: var(--color-danger);
-  color: white;
+.post-actions .action-btn.liked:hover,
+button.action-btn.liked:hover {
+  background: var(--color-danger) !important;
+  color: white !important;
+}
+
+.post-actions .action-btn.bookmarked,
+button.action-btn.bookmarked {
+  background: rgba(108, 92, 231, 0.15) !important;
+  color: var(--pryde-purple) !important;
+}
+
+.post-actions .action-btn.bookmarked:hover,
+button.action-btn.bookmarked:hover {
+  background: var(--pryde-purple) !important;
+  color: white !important;
 }
 
 /* Dark mode action buttons */
-[data-theme="dark"] .action-btn {
-  color: #e8e9f0;
-  background: rgba(255, 255, 255, 0.1);
+[data-theme="dark"] .post-actions .action-btn,
+[data-theme="dark"] button.action-btn {
+  color: #e8e9f0 !important;
+  background: rgba(255, 255, 255, 0.1) !important;
 }
 
-[data-theme="dark"] .action-btn:hover {
-  background: var(--color-primary);
-  color: white;
+[data-theme="dark"] .post-actions .action-btn:hover,
+[data-theme="dark"] button.action-btn:hover {
+  background: var(--color-primary) !important;
+  color: white !important;
 }
 
-[data-theme="dark"] .action-btn.liked {
-  color: #ff9999;
-  background: rgba(255, 99, 99, 0.2);
+[data-theme="dark"] .post-actions .action-btn.liked,
+[data-theme="dark"] button.action-btn.liked {
+  color: #ff9999 !important;
+  background: rgba(255, 99, 99, 0.2) !important;
 }
 
-[data-theme="dark"] .action-btn.liked:hover {
-  background: var(--color-danger);
-  color: white;
+[data-theme="dark"] .post-actions .action-btn.liked:hover,
+[data-theme="dark"] button.action-btn.liked:hover {
+  background: var(--color-danger) !important;
+  color: white !important;
+}
+
+[data-theme="dark"] .post-actions .action-btn.bookmarked,
+[data-theme="dark"] button.action-btn.bookmarked {
+  color: #9b8ef7 !important;
+  background: rgba(155, 142, 247, 0.2) !important;
+}
+
+[data-theme="dark"] .post-actions .action-btn.bookmarked:hover,
+[data-theme="dark"] button.action-btn.bookmarked:hover {
+  background: var(--pryde-purple) !important;
+  color: white !important;
 }
 
 .reaction-container {
@@ -1339,14 +1378,15 @@ html:not([data-theme="dark"]):not([data-quiet-mode="true"]) .section-title {
   display: inline-flex;
 }
 
+/* Make sure React button matches other action buttons */
 .reaction-container .action-btn {
-  padding: 0.75rem 1rem;
-  min-width: 48px;
-  min-height: 48px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
+  padding: 0.75rem 1rem !important;
+  min-width: 48px !important;
+  min-height: 48px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 0.5rem !important;
 }
 
 .reaction-count-btn {
