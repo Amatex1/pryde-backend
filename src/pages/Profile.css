@@ -946,11 +946,15 @@ html:not([data-theme="dark"]):not([data-quiet-mode="true"]) .section-title {
 
 .profile-sidebar {
   display: flex;
-  flex-direction: column;
+  flex-direction: column;      /* normal top → bottom */
   gap: 1.5rem;
-  position: sticky;
-  top: 80px; /* Stick below navbar */
+
+  width: 320px;
   max-height: calc(100vh - 100px);
+
+  position: sticky;
+  top: 80px;
+
   overflow-y: auto;
   padding-right: 0.5rem;
 }
