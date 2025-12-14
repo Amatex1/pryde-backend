@@ -1,10 +1,9 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import logger from '../utils/logger';
 import './SafetyWarning.css';
-import { 
-  detectUserCountry, 
-  getRiskLevel, 
+import {
+  detectUserCountry,
+  getRiskLevel,
   getSafetyRecommendations,
   storeCountryPreference,
   getStoredCountry
@@ -15,7 +14,6 @@ function SafetyWarning() {
   const [riskLevel, setRiskLevel] = useState('safe');
   const [recommendations, setRecommendations] = useState(null);
   const [dismissed, setDismissed] = useState(false);
-  const navigate = useNavigate();
 
   useEffect(() => {
     checkLocation();
@@ -63,13 +61,11 @@ function SafetyWarning() {
   };
 
   const handleGoToSafety = () => {
-    navigate('/safety');
-    setShow(false);
+    window.location.href = '/safety';
   };
 
   const handleGoToSettings = () => {
-    navigate('/settings');
-    setShow(false);
+    window.location.href = '/settings';
   };
 
   if (!show || !recommendations || dismissed) {

@@ -1,6 +1,6 @@
 // Pryde Social Service Worker
-const CACHE_NAME = 'pryde-social-v5';
-const RUNTIME_CACHE = 'pryde-runtime-v5';
+const CACHE_NAME = 'pryde-social-v6';
+const RUNTIME_CACHE = 'pryde-runtime-v6';
 
 // Assets to cache on install
 const PRECACHE_ASSETS = [
