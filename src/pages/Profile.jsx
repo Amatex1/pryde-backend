@@ -443,7 +443,7 @@ function Profile() {
   const handleLike = async (postId) => {
     try {
       const response = await api.post(`/posts/${postId}/like`);
-      setPosts(posts.map(p => p._id === postId ? response.data : p));
+      setPosts((prevPosts) => prevPosts.map(p => p._id === postId ? response.data : p));
     } catch (error) {
       logger.error('Failed to like post:', error);
     }
@@ -453,7 +453,7 @@ function Profile() {
   const handlePinPost = async (postId) => {
     try {
       const response = await api.post(`/posts/${postId}/pin`);
-      setPosts(posts.map(p => p._id === postId ? response.data : p));
+      setPosts((prevPosts) => prevPosts.map(p => p._id === postId ? response.data : p));
       showToast(response.data.isPinned ? 'Post pinned' : 'Post unpinned', 'success');
     } catch (error) {
       logger.error('Failed to pin post:', error);
@@ -464,7 +464,7 @@ function Profile() {
   const handlePostReaction = async (postId, emoji) => {
     try {
       const response = await api.post(`/posts/${postId}/react`, { emoji });
-      setPosts(posts.map(p => p._id === postId ? response.data : p));
+      setPosts((prevPosts) => prevPosts.map(p => p._id === postId ? response.data : p));
       setShowReactionPicker(null); // Hide picker after reaction
     } catch (error) {
       logger.error('Failed to react to post:', error);
@@ -536,7 +536,7 @@ function Profile() {
       };
 
       const response = await api.post('/posts', postData);
-      setPosts([response.data, ...posts]);
+      setPosts((prevPosts) => [response.data, ...prevPosts]);
       setNewPost('');
       setSelectedMedia([]);
       setContentWarning('');
@@ -853,7 +853,7 @@ function Profile() {
   const handleShareComplete = async () => {
     try {
       const response = await api.post(`/posts/${shareModal.post._id}/share`);
-      setPosts(posts.map(p => p._id === shareModal.post._id ? response.data : p));
+      setPosts((prevPosts) => prevPosts.map(p => p._id === shareModal.post._id ? response.data : p));
       showAlert('Post shared successfully!', 'Shared');
     } catch (error) {
       logger.error('Failed to share post:', error);
@@ -885,7 +885,7 @@ function Profile() {
         content: editPostText,
         visibility: editPostVisibility
       });
-      setPosts(posts.map(p => p._id === postId ? response.data : p));
+      setPosts((prevPosts) => prevPosts.map(p => p._id === postId ? response.data : p));
       setEditingPostId(null);
       setEditPostText('');
       setEditPostVisibility('friends');
@@ -911,7 +911,7 @@ function Profile() {
 
     try {
       await api.delete(`/posts/${postId}`);
-      setPosts(posts.filter(p => p._id !== postId));
+      setPosts((prevPosts) => prevPosts.filter(p => p._id !== postId));
       showToast('Post deleted successfully', 'success');
     } catch (error) {
       logger.error('Failed to delete post:', error);
