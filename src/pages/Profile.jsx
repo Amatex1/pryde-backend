@@ -22,7 +22,7 @@ import { getCurrentUser } from '../utils/auth';
 import { getImageUrl } from '../utils/imageUrl';
 import { useToast } from '../hooks/useToast';
 import { convertEmojiShortcuts } from '../utils/textFormatting';
-import logger from './utils/logger';
+import logger from '../utils/logger';
 import './Profile.css';
 
 function Profile() {
@@ -1018,9 +1018,9 @@ function Profile() {
                   style={{
                     objectPosition: user.profilePhotoPosition
                       ? `${user.profilePhotoPosition.x}% ${user.profilePhotoPosition.y}%`
-                      : '50% 50%'
+                      : '50% 50%',
+                    cursor: 'pointer'
                   }}
-                  style={{ cursor: 'pointer' }}
                   loading="eager"
                 />
               ) : (

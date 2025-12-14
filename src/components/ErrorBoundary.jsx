@@ -1,6 +1,6 @@
 import { Component } from 'react';
 import { Link } from 'react-router-dom';
-import logger from './utils/logger';
+import logger from '../utils/logger';
 
 class ErrorBoundary extends Component {
   constructor(props) {

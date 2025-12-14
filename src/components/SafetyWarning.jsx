@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import logger from './utils/logger';
+import logger from '../utils/logger';
 import './SafetyWarning.css';
 import { 
   detectUserCountry, 

@@ -11,7 +11,7 @@ import { useModal } from '../hooks/useModal';
 import api from '../utils/api';
 import { getImageUrl } from '../utils/imageUrl';
 import { getUserChatColor, getSentMessageColor } from '../utils/chatColors';
-import logger from './utils/logger';
+import logger from '../utils/logger';
 import {
   onNewMessage,
   onMessageSent,

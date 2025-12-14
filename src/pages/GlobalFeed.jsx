@@ -16,7 +16,7 @@ import { getCurrentUser } from '../utils/auth';
 import { getImageUrl } from '../utils/imageUrl';
 import { getSocket } from '../utils/socket';
 import { convertEmojiShortcuts } from '../utils/textFormatting';
-import logger from './utils/logger';
+import logger from '../utils/logger';
 import './GlobalFeed.css';
 import './Feed.css';
 

@@ -1,7 +1,7 @@
 import { API_BASE_URL } from "../config/api.js"; // include .js extension
 import axios from "axios";
 import { getAuthToken, logout, isManualLogout } from "./auth";
-import logger from './utils/logger';
+import logger from './logger';
 
 const api = axios.create({
   baseURL: API_BASE_URL

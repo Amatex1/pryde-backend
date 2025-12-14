@@ -1,7 +1,7 @@
 // src/utils/socket.js
 import { io } from "socket.io-client";
 import API_CONFIG from "../config/api";
-import logger from './utils/logger';
+import logger from './logger';
 
 const SOCKET_URL = API_CONFIG.SOCKET_URL;
 

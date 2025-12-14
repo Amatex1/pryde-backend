@@ -6,7 +6,7 @@ import { useModal } from '../hooks/useModal';
 import api from '../utils/api';
 import { getCurrentUser, setCurrentUser, logout } from '../utils/auth';
 import { applyQuietMode } from '../utils/quietMode';
-import logger from './utils/logger';
+import logger from '../utils/logger';
 import './Settings.css';
 
 function Settings() {

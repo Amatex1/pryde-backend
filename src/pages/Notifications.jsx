@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import api from '../utils/api';
 import { getImageUrl } from '../utils/imageUrl';
-import logger from './utils/logger';
+import logger from '../utils/logger';
 import './Notifications.css';
 
 function Notifications() {
