@@ -121,11 +121,14 @@ div.profile-layout,
   display: grid !important;
   grid-template-columns: 1fr 320px !important;
   grid-template-rows: auto !important;
+  grid-template-areas: "main sidebar" !important;
   gap: var(--space-6) !important;
   align-items: start !important;
   max-width: 1400px !important;
   margin: 0 auto !important;
   padding: 0 var(--space-4) !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
 }
 
 /* Ultrawide monitor optimization */
@@ -843,6 +846,7 @@ div.profile-layout,
   min-width: 0; /* Prevent overflow */
 
   /* Position in left column of grid */
+  grid-area: main;
   grid-column: 1;
   grid-row: 1;
 }
@@ -1076,13 +1080,17 @@ html:not([data-theme="dark"]):not([data-quiet-mode="true"]) .section-title {
   flex-direction: column;
   gap: 1.5rem;
 
-  width: 320px;
+  /* Let grid control the width */
+  min-width: 0;
+  max-width: 320px;
+  width: 100%;
   max-height: calc(100vh - 100px);
 
   position: sticky;
   top: 80px;
 
   /* Position in top-right of grid */
+  grid-area: sidebar;
   grid-column: 2;
   grid-row: 1;
 
