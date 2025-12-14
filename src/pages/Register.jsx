@@ -165,16 +165,16 @@ function Register({ setIsAuth }) {
       return;
     }
 
-    // Frontend validation
-    if (formData.password.length < 8) {
-      setError('Password must be at least 8 characters');
+    // Frontend validation - must match backend requirements (12 characters minimum)
+    if (formData.password.length < 12) {
+      setError('Password must be at least 12 characters');
       return;
     }
 
-    // Validate password complexity
-    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/;
+    // Validate password complexity - must match backend requirements
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#^()_+\-=\[\]{};':"\\|,.<>\/])/;
     if (!passwordRegex.test(formData.password)) {
-      setError('Password must contain at least one uppercase letter, one lowercase letter, and one number');
+      setError('Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character');
       return;
     }
 

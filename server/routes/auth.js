@@ -111,8 +111,17 @@ router.post('/signup', signupLimiter, validateSignup, async (req, res) => {
         }
       } catch (captchaError) {
         console.error('CAPTCHA verification error:', captchaError);
-        // Don't block signup if CAPTCHA service is down, but log it
-        console.warn('CAPTCHA verification failed, allowing signup to proceed');
+
+        // Only allow bypass in development mode
+        if (process.env.NODE_ENV === 'production') {
+          return res.status(400).json({
+            message: 'CAPTCHA verification failed. Please try again.',
+            error: 'captcha_error'
+          });
+        }
+
+        // Allow bypass in development mode
+        console.warn('⚠️ CAPTCHA verification failed, allowing signup in development mode');
       }
     }
 

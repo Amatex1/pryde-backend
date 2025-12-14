@@ -9,6 +9,15 @@ import Longform from '../models/Longform.js';
 import { searchLimiter } from '../middleware/rateLimiter.js';
 import { decryptMessage } from '../utils/encryption.js';
 
+/**
+ * Escape special regex characters to prevent ReDoS attacks
+ * @param {string} str - String to escape
+ * @returns {string} - Escaped string safe for regex
+ */
+const escapeRegex = (str) => {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+};
+
 // @route   GET /api/search
 // @desc    Global search for users, posts, and hashtags
 // @access  Private
@@ -24,7 +33,7 @@ router.get('/', auth, searchLimiter, async (req, res) => {
       });
     }
 
-    const searchQuery = q.trim();
+    const searchQuery = escapeRegex(q.trim()); // Escape regex special characters
     const results = {
       users: [],
       posts: [],
@@ -66,6 +75,7 @@ router.get('/', auth, searchLimiter, async (req, res) => {
 
     // Search hashtags (if type is 'all' or 'hashtags')
     if (!type || type === 'all' || type === 'hashtags') {
+      // Note: searchQuery is already escaped, but hashtags are exact matches so no additional escaping needed
       const hashtagQuery = searchQuery.startsWith('#') ? searchQuery.toLowerCase() : `#${searchQuery.toLowerCase()}`;
 
       // Build match query - super_admin can see all hashtags
@@ -102,7 +112,7 @@ router.get('/', auth, searchLimiter, async (req, res) => {
 // @access  Private
 router.get('/hashtag/:tag', auth, async (req, res) => {
   try {
-    const hashtag = req.params.tag.toLowerCase();
+    const hashtag = escapeRegex(req.params.tag.toLowerCase()); // Escape special characters
     const hashtagQuery = hashtag.startsWith('#') ? hashtag : `#${hashtag}`;
 
     // Build query - super_admin can see all posts
@@ -223,7 +233,7 @@ router.get('/my-posts', auth, searchLimiter, async (req, res) => {
       return res.status(400).json({ message: 'Search query is required' });
     }
 
-    const searchRegex = new RegExp(q, 'i');
+    const searchRegex = new RegExp(escapeRegex(q), 'i'); // Escape special characters
     const results = {
       posts: [],
       journals: [],

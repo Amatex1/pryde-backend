@@ -89,8 +89,11 @@ const messageSchema = new mongoose.Schema({
   }
 });
 
-// Index for efficient queries
+// Indexes for efficient queries
 messageSchema.index({ sender: 1, recipient: 1, createdAt: -1 });
+messageSchema.index({ groupChat: 1, createdAt: -1 }); // For group chat messages
+messageSchema.index({ sender: 1, createdAt: -1 }); // For user's sent messages
+messageSchema.index({ recipient: 1, createdAt: -1 }); // For user's received messages
 
 // ============================================================================
 // ENCRYPTION MIDDLEWARE

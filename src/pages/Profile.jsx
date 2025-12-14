@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import ReportModal from '../components/ReportModal';
@@ -87,8 +87,12 @@ function Profile() {
   const [showEditHistory, setShowEditHistory] = useState(false);
   const [editHistoryPostId, setEditHistoryPostId] = useState(null);
   const editTextareaRef = useRef(null);
+  const isMountedRef = useRef(true); // Track if component is mounted to prevent race conditions
 
   useEffect(() => {
+    // Reset mounted flag when component mounts
+    isMountedRef.current = true;
+
     // Fetch all data in parallel for faster initial load
     const fetchPromises = [
       fetchUserProfile(),
@@ -109,9 +113,17 @@ function Profile() {
     }
 
     Promise.all(fetchPromises).catch(error => {
-      console.error('Error loading profile data:', error);
+      // Only log error if component is still mounted
+      if (isMountedRef.current) {
+        console.error('Error loading profile data:', error);
+      }
     });
-  }, [id]);
+
+    // Cleanup function to prevent state updates on unmounted component
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, [id, isOwnProfile, checkPrivacyPermissions]);
 
   // Auto-resize edit textarea based on content
   useEffect(() => {
@@ -138,7 +150,7 @@ function Profile() {
     if (!isOwnProfile && user) {
       checkPrivacyPermissions();
     }
-  }, [friendStatus, followStatus, user]);
+  }, [isOwnProfile, user, checkPrivacyPermissions]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -170,7 +182,7 @@ function Profile() {
     }
   };
 
-  const checkPrivacyPermissions = async () => {
+  const checkPrivacyPermissions = useCallback(async () => {
     try {
       // Get the user's privacy settings
       const response = await api.get(`/users/${id}`);
@@ -204,7 +216,7 @@ function Profile() {
       setCanSendFriendRequest(true);
       setCanSendMessage(false);
     }
-  };
+  }, [id, followStatus, friendStatus]);
 
   const fetchPrivacySettings = async () => {
     try {

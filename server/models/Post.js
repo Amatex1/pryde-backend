@@ -231,9 +231,12 @@ const postSchema = new mongoose.Schema({
   }
 });
 
-// Index for efficient queries
+// Indexes for efficient queries
 postSchema.index({ author: 1, createdAt: -1 });
 postSchema.index({ createdAt: -1 });
+postSchema.index({ visibility: 1, createdAt: -1 }); // For filtering by visibility
+postSchema.index({ hashtags: 1 }); // For hashtag searches
+postSchema.index({ tags: 1 }); // For tag-based filtering
 
 // Update the updatedAt timestamp and extract hashtags before saving
 postSchema.pre('save', function(next) {

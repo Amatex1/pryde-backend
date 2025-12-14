@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import PasskeyBanner from '../components/PasskeyBanner';
@@ -82,6 +82,7 @@ function Feed() {
   const postRefs = useRef({});
   const commentRefs = useRef({});
   const listenersSetUpRef = useRef(false);
+  const friendsIntervalRef = useRef(null); // Store interval ID for cleanup
 
   useEffect(() => {
     // Fetch all data in parallel for faster initial load
@@ -139,7 +140,7 @@ function Feed() {
   // Refetch posts when filter changes
   useEffect(() => {
     fetchPosts();
-  }, [feedFilter]);
+  }, [fetchPosts]);
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -238,13 +239,21 @@ function Feed() {
     // Mark as set up immediately to prevent duplicate setup
     listenersSetUpRef.current = true;
 
-    // Try to get socket, retry if not available yet
+    // Try to get socket, retry if not available yet (max 50 retries = 5 seconds)
+    let retryCount = 0;
+    const maxRetries = 50;
+
     const checkSocket = () => {
       const socket = getSocket();
 
       if (!socket) {
-        console.log('⏳ Socket not initialized yet, retrying in 100ms...');
-        setTimeout(checkSocket, 100);
+        retryCount++;
+        if (retryCount < maxRetries) {
+          console.log(`⏳ Socket not initialized yet, retrying in 100ms... (${retryCount}/${maxRetries})`);
+          setTimeout(checkSocket, 100);
+        } else {
+          console.warn('⚠️ Socket initialization timed out after 5 seconds');
+        }
         return;
       }
 
@@ -271,15 +280,18 @@ function Feed() {
     checkSocket();
 
     // Refresh friends list every 30 seconds
-    const interval = setInterval(fetchFriends, 30000);
+    friendsIntervalRef.current = setInterval(fetchFriends, 30000);
 
     return () => {
-      clearInterval(interval);
+      if (friendsIntervalRef.current) {
+        clearInterval(friendsIntervalRef.current);
+        friendsIntervalRef.current = null;
+      }
       // Clean up all socket listeners
       cleanupFunctions.forEach(cleanup => cleanup?.());
       // DON'T reset the flag - keep it true to prevent duplicate setup in React Strict Mode
     };
-  }, []);
+  }, [fetchFriends]);
 
   // Handle scrolling to specific post/comment from notifications
   useEffect(() => {
@@ -319,7 +331,7 @@ function Feed() {
     }
   }, [posts, searchParams]);
 
-  const fetchUnreadMessageCounts = async () => {
+  const fetchUnreadMessageCounts = useCallback(async () => {
     try {
       const response = await api.get('/messages/unread/counts');
       const countsMap = {};
@@ -330,16 +342,16 @@ function Feed() {
     } catch (error) {
       console.error('Failed to fetch unread message counts:', error);
     }
-  };
+  }, []);
 
-  const fetchFriends = async () => {
+  const fetchFriends = useCallback(async () => {
     try {
       const response = await api.get('/friends');
       setFriends(response.data);
     } catch (error) {
       console.error('Failed to fetch friends:', error);
     }
-  };
+  }, []);
 
   // Helper function to format time since last seen
   const getTimeSince = (date) => {
@@ -351,16 +363,16 @@ function Feed() {
     return `${Math.floor(seconds / 86400)}d ago`;
   };
 
-  const fetchTrending = async () => {
+  const fetchTrending = useCallback(async () => {
     try {
       const response = await api.get('/search/trending');
       setTrending(response.data);
     } catch (error) {
       console.error('Failed to fetch trending:', error);
     }
-  };
+  }, []);
 
-  const fetchBlockedUsers = async () => {
+  const fetchBlockedUsers = useCallback(async () => {
     try {
       const response = await api.get('/blocks');
       const blockedIds = response.data.map(block => block.blocked._id);
@@ -368,9 +380,9 @@ function Feed() {
     } catch (error) {
       console.error('Failed to fetch blocked users:', error);
     }
-  };
+  }, []);
 
-  const fetchPrivacySettings = async () => {
+  const fetchPrivacySettings = useCallback(async () => {
     try {
       const response = await api.get('/privacy');
       setAutoHideContentWarnings(response.data.privacySettings.autoHideContentWarnings || false);
@@ -380,9 +392,9 @@ function Feed() {
     } catch (error) {
       console.error('Failed to fetch privacy settings:', error);
     }
-  };
+  }, []);
 
-  const fetchPosts = async () => {
+  const fetchPosts = useCallback(async () => {
     try {
       setFetchingPosts(true);
       const response = await api.get(`/posts?filter=${feedFilter}`);
@@ -392,7 +404,7 @@ function Feed() {
     } finally {
       setFetchingPosts(false);
     }
-  };
+  }, [feedFilter]);
 
   const handleMediaSelect = async (e) => {
     const files = Array.from(e.target.files);
@@ -704,14 +716,14 @@ function Feed() {
     }
   };
 
-  const fetchBookmarkedPosts = async () => {
+  const fetchBookmarkedPosts = useCallback(async () => {
     try {
       const response = await api.get('/bookmarks');
       setBookmarkedPosts(response.data.bookmarks.map(post => post._id));
     } catch (error) {
       console.error('Failed to fetch bookmarks:', error);
     }
-  };
+  }, []);
 
   const handleBookmark = async (postId) => {
     const isBookmarked = bookmarkedPosts.includes(postId);
