@@ -1,6 +1,7 @@
 // src/utils/socket.js
 import { io } from "socket.io-client";
 import API_CONFIG from "../config/api";
+import logger from './utils/logger';
 
 const SOCKET_URL = API_CONFIG.SOCKET_URL;
 
@@ -16,9 +17,9 @@ export const connectSocket = (userId) => {
         // Get JWT token from localStorage
         const token = localStorage.getItem('token');
 
-        console.log('🔌 Connecting socket with userId:', userId);
-        console.log('🔑 Token exists:', !!token);
-        console.log('🔑 Token preview:', token ? token.substring(0, 20) + '...' : 'null');
+        logger.debug('🔌 Connecting socket with userId:', userId);
+        logger.debug('🔑 Token exists:', !!token);
+        logger.debug('🔑 Token preview:', token ? token.substring(0, 20) + '...' : 'null');
 
         socket = io(SOCKET_URL, {
             // Use polling first for faster connection on Render
@@ -38,21 +39,21 @@ export const connectSocket = (userId) => {
 
         // Add connection event listeners
         socket.on('connect', () => {
-            console.log('✅ Socket connected successfully!');
-            console.log('🔌 Transport:', socket.io.engine.transport.name);
+            logger.debug('✅ Socket connected successfully!');
+            logger.debug('🔌 Transport:', socket.io.engine.transport.name);
         });
 
         socket.on('connect_error', (error) => {
-            console.error('❌ Socket connection error:', error.message);
+            logger.error('❌ Socket connection error:', error.message);
         });
 
         socket.on('disconnect', (reason) => {
-            console.log('🔌 Socket disconnected:', reason);
+            logger.debug('🔌 Socket disconnected:', reason);
         });
 
         // Listen for force logout (session terminated from another device)
         socket.on('force_logout', (data) => {
-            console.log('🚪 Force logout received:', data.reason);
+            logger.debug('🚪 Force logout received:', data.reason);
             alert(`You have been logged out: ${data.reason}`);
             // Clear local storage and redirect to login
             localStorage.removeItem('token');
@@ -62,14 +63,14 @@ export const connectSocket = (userId) => {
 
         // Log transport upgrades
         socket.io.engine.on('upgrade', (transport) => {
-            console.log('⬆️ Socket upgraded to:', transport.name);
+            logger.debug('⬆️ Socket upgraded to:', transport.name);
         });
 
         // Handle page visibility changes for bfcache compatibility
         // IMPORTANT: Close WebSocket BEFORE page is cached to allow bfcache
         const handlePageHide = (event) => {
             // Always disconnect on pagehide to allow bfcache
-            console.log('📦 Page hiding, disconnecting socket for bfcache');
+            logger.debug('📦 Page hiding, disconnecting socket for bfcache');
             if (socket && socket.connected) {
                 socket.disconnect();
             }
@@ -78,7 +79,7 @@ export const connectSocket = (userId) => {
         const handlePageShow = (event) => {
             if (event.persisted) {
                 // Page restored from cache, reconnect socket
-                console.log('📦 Page restored from cache, reconnecting socket');
+                logger.debug('📦 Page restored from cache, reconnecting socket');
                 if (socket && !socket.connected) {
                     socket.connect();
                 }
@@ -111,11 +112,11 @@ export const isSocketConnected = () => socket && socket.connected;
 // -----------------------------
 export const sendMessage = (data) => {
     if (socket) {
-        console.log('🔌 Socket connected:', socket.connected);
-        console.log('📤 Emitting send_message:', data);
+        logger.debug('🔌 Socket connected:', socket.connected);
+        logger.debug('📤 Emitting send_message:', data);
         socket.emit("send_message", data);
     } else {
-        console.error('❌ Socket not initialized!');
+        logger.error('❌ Socket not initialized!');
     }
 };
 
@@ -206,10 +207,10 @@ export const onFriendRequestAccepted = (callback) => {
 // Request online users list from server
 export const requestOnlineUsers = () => {
     if (socket && socket.connected) {
-        console.log('📡 Requesting online users list from server');
+        logger.debug('📡 Requesting online users list from server');
         socket.emit('get_online_users');
     } else {
-        console.warn('⚠️ Cannot request online users - socket not connected');
+        logger.warn('⚠️ Cannot request online users - socket not connected');
     }
 };
 
@@ -217,7 +218,7 @@ export const onUserOnline = (callback) => {
     if (socket) {
         // Create a named handler function so we can remove it later
         const handler = (data) => {
-            console.log('🔌 Socket received user_online event:', data);
+            logger.debug('🔌 Socket received user_online event:', data);
             callback(data);
         };
         socket.on("user_online", handler);
@@ -236,7 +237,7 @@ export const onUserOffline = (callback) => {
     if (socket) {
         // Create a named handler function so we can remove it later
         const handler = (data) => {
-            console.log('🔌 Socket received user_offline event:', data);
+            logger.debug('🔌 Socket received user_offline event:', data);
             callback(data);
         };
         socket.on("user_offline", handler);
@@ -255,7 +256,7 @@ export const onOnlineUsers = (callback) => {
     if (socket) {
         // Create a named handler function so we can remove it later
         const handler = (users) => {
-            console.log('🔌 Socket received online_users event:', users);
+            logger.debug('🔌 Socket received online_users event:', users);
             callback(users);
         };
         socket.on("online_users", handler);

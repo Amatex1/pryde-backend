@@ -21,6 +21,8 @@ import { getCurrentUser } from '../utils/auth';
 import { getImageUrl } from '../utils/imageUrl';
 import { onUserOnline, onUserOffline, onOnlineUsers, requestOnlineUsers, getSocket } from '../utils/socket';
 import { convertEmojiShortcuts } from '../utils/textFormatting';
+import logger from '../utils/logger';
+import logger from './utils/logger';
 import './Feed.css';
 
 function Feed() {
@@ -100,14 +102,14 @@ function Feed() {
       results.forEach((result, index) => {
         if (result.status === 'rejected') {
           const names = ['posts', 'blocked users', 'friends', 'trending', 'bookmarks', 'unread counts', 'privacy settings'];
-          console.warn(`Failed to load ${names[index]}:`, result.reason);
+          logger.warn(`Failed to load ${names[index]}:`, result.reason);
         }
       });
 
       // Mark initialization as complete
       setInitializing(false);
     }).catch(error => {
-      console.error('Error loading initial data:', error);
+      logger.error('Error loading initial data:', error);
       // Don't throw - let the app continue with partial data
       setInitializing(false);
     });
@@ -115,7 +117,7 @@ function Feed() {
     // Poll for unread message counts every 30 seconds
     const interval = setInterval(() => {
       fetchUnreadMessageCounts().catch(err => {
-        console.warn('Failed to fetch unread counts:', err);
+        logger.warn('Failed to fetch unread counts:', err);
       });
     }, 30000);
 
@@ -163,25 +165,25 @@ function Feed() {
   useEffect(() => {
     // Check if listeners are already set up (prevents duplicate setup in Strict Mode)
     if (listenersSetUpRef.current) {
-      console.log('⚠️ Feed listeners already initialized, skipping setup');
+      logger.debug('⚠️ Feed listeners already initialized, skipping setup');
       return;
     }
 
     let cleanupFunctions = [];
 
     const setupListeners = () => {
-      console.log('🔌 Setting up online status listeners in Feed');
+      logger.debug('🔌 Setting up online status listeners in Feed');
 
       // Get initial online users list
       const cleanupOnlineUsers = onOnlineUsers((users) => {
-        console.log('📋 Received online users list:', users);
+        logger.debug('📋 Received online users list:', users);
         setOnlineUsers(users);
       });
       cleanupFunctions.push(cleanupOnlineUsers);
 
       // Listen for users coming online
       const cleanupUserOnline = onUserOnline((data) => {
-        console.log('✅ User came online:', data.userId);
+        logger.debug('✅ User came online:', data.userId);
         setOnlineUsers((prev) => {
           if (!prev.includes(data.userId)) {
             return [...prev, data.userId];
@@ -195,7 +197,7 @@ function Feed() {
 
       // Listen for users going offline
       const cleanupUserOffline = onUserOffline((data) => {
-        console.log('❌ User went offline:', data.userId);
+        logger.debug('❌ User went offline:', data.userId);
         setOnlineUsers((prev) => prev.filter(id => id !== data.userId));
         // Refresh friends list
         fetchFriends();
@@ -206,7 +208,7 @@ function Feed() {
       const socket = getSocket();
       if (socket) {
         const handlePostReaction = (data) => {
-          console.log('💜 Real-time post reaction received:', data);
+          logger.debug('💜 Real-time post reaction received:', data);
           setPosts((prevPosts) =>
             prevPosts.map(p => p._id === data.postId ? data.post : p)
           );
@@ -216,7 +218,7 @@ function Feed() {
 
         // Listen for real-time comment reactions
         const handleCommentReaction = (data) => {
-          console.log('💜 Real-time comment reaction received:', data);
+          logger.debug('💜 Real-time comment reaction received:', data);
           setPosts((prevPosts) =>
             prevPosts.map(p => p._id === data.postId ? data.post : p)
           );
@@ -226,7 +228,7 @@ function Feed() {
 
         // Listen for real-time comments
         const handleCommentAdded = (data) => {
-          console.log('💬 Real-time comment received:', data);
+          logger.debug('💬 Real-time comment received:', data);
           setPosts((prevPosts) =>
             prevPosts.map(p => p._id === data.postId ? data.post : p)
           );
@@ -249,26 +251,26 @@ function Feed() {
       if (!socket) {
         retryCount++;
         if (retryCount < maxRetries) {
-          console.log(`⏳ Socket not initialized yet, retrying in 100ms... (${retryCount}/${maxRetries})`);
+          logger.debug(`⏳ Socket not initialized yet, retrying in 100ms... (${retryCount}/${maxRetries})`);
           setTimeout(checkSocket, 100);
         } else {
-          console.warn('⚠️ Socket initialization timed out after 5 seconds');
+          logger.warn('⚠️ Socket initialization timed out after 5 seconds');
         }
         return;
       }
 
-      console.log('✅ Socket found, checking connection status');
+      logger.debug('✅ Socket found, checking connection status');
 
       // Set up listeners if already connected, or wait for connection
       if (socket.connected) {
-        console.log('✅ Socket already connected, setting up listeners');
+        logger.debug('✅ Socket already connected, setting up listeners');
         setupListeners();
         // Request online users list (important for mobile/slow connections)
         setTimeout(() => requestOnlineUsers(), 500);
       } else {
-        console.log('⏳ Socket not connected yet, waiting for connection...');
+        logger.debug('⏳ Socket not connected yet, waiting for connection...');
         const onConnect = () => {
-          console.log('✅ Socket connected, setting up listeners');
+          logger.debug('✅ Socket connected, setting up listeners');
           setupListeners();
           // Request online users list (important for mobile/slow connections)
           setTimeout(() => requestOnlineUsers(), 500);
@@ -340,7 +342,7 @@ function Feed() {
       });
       setUnreadMessageCounts(countsMap);
     } catch (error) {
-      console.error('Failed to fetch unread message counts:', error);
+      logger.error('Failed to fetch unread message counts:', error);
     }
   }, []);
 
@@ -349,7 +351,7 @@ function Feed() {
       const response = await api.get('/friends');
       setFriends(response.data);
     } catch (error) {
-      console.error('Failed to fetch friends:', error);
+      logger.error('Failed to fetch friends:', error);
     }
   }, []);
 
@@ -368,7 +370,7 @@ function Feed() {
       const response = await api.get('/search/trending');
       setTrending(response.data);
     } catch (error) {
-      console.error('Failed to fetch trending:', error);
+      logger.error('Failed to fetch trending:', error);
     }
   }, []);
 
@@ -378,7 +380,7 @@ function Feed() {
       const blockedIds = response.data.map(block => block.blocked._id);
       setBlockedUsers(blockedIds);
     } catch (error) {
-      console.error('Failed to fetch blocked users:', error);
+      logger.error('Failed to fetch blocked users:', error);
     }
   }, []);
 
@@ -390,7 +392,7 @@ function Feed() {
       const defaultVisibility = response.data.privacySettings.defaultPostVisibility || 'followers';
       setPostVisibility(defaultVisibility);
     } catch (error) {
-      console.error('Failed to fetch privacy settings:', error);
+      logger.error('Failed to fetch privacy settings:', error);
     }
   }, []);
 
@@ -400,7 +402,7 @@ function Feed() {
       const response = await api.get(`/posts?filter=${feedFilter}`);
       setPosts(response.data.posts || []);
     } catch (error) {
-      console.error('Failed to fetch posts:', error);
+      logger.error('Failed to fetch posts:', error);
     } finally {
       setFetchingPosts(false);
     }
@@ -440,7 +442,7 @@ function Feed() {
 
       setSelectedMedia([...selectedMedia, ...response.data.media]);
     } catch (error) {
-      console.error('Media upload failed:', error);
+      logger.error('Media upload failed:', error);
       showAlert('Failed to upload media. Please try again.', 'Upload Failed');
     } finally {
       setUploadingMedia(false);
@@ -495,7 +497,7 @@ function Feed() {
       setShowPollCreator(false);
       setHideMetrics(false);
     } catch (error) {
-      console.error('Post creation failed:', error);
+      logger.error('Post creation failed:', error);
       showAlert('Failed to create post. Please try again.', 'Post Failed');
     } finally {
       setLoading(false);
@@ -507,7 +509,7 @@ function Feed() {
       const response = await api.post(`/posts/${postId}/like`);
       setPosts(posts.map(p => p._id === postId ? response.data : p));
     } catch (error) {
-      console.error('Failed to like post:', error);
+      logger.error('Failed to like post:', error);
     }
   };
 
@@ -517,7 +519,7 @@ function Feed() {
       setPosts(posts.map(p => p._id === postId ? response.data : p));
       setShowReactionPicker(null); // Hide picker after reaction
     } catch (error) {
-      console.error('Failed to react to post:', error);
+      logger.error('Failed to react to post:', error);
     }
   };
 
@@ -527,7 +529,7 @@ function Feed() {
       setPosts(posts.map(p => p._id === postId ? response.data : p));
       setShowReactionPicker(null); // Hide picker after reaction
     } catch (error) {
-      console.error('Failed to react to comment:', error);
+      logger.error('Failed to react to comment:', error);
     }
   };
 
@@ -558,7 +560,7 @@ function Feed() {
       setCommentText(prev => ({ ...prev, [postId]: '' }));
       setCommentGif(prev => ({ ...prev, [postId]: null }));
     } catch (error) {
-      console.error('Failed to comment:', error);
+      logger.error('Failed to comment:', error);
       showAlert('Failed to add comment. Please try again.', 'Comment Failed');
     }
   };
@@ -583,7 +585,7 @@ function Feed() {
       setEditingCommentId(null);
       setEditCommentText('');
     } catch (error) {
-      console.error('Failed to edit comment:', error);
+      logger.error('Failed to edit comment:', error);
       showAlert('Failed to edit comment. Please try again.', 'Edit Failed');
     }
   };
@@ -638,7 +640,7 @@ function Feed() {
       setEditSharedWithUsers([]);
       showAlert('Post updated successfully!', 'Success');
     } catch (error) {
-      console.error('Failed to edit post:', error);
+      logger.error('Failed to edit post:', error);
       showAlert('Failed to edit post. Please try again.', 'Edit Failed');
     }
   };
@@ -659,7 +661,7 @@ function Feed() {
       const response = await api.delete(`/posts/${postId}/comment/${commentId}`);
       setPosts(posts.map(p => p._id === postId ? response.data : p));
     } catch (error) {
-      console.error('Failed to delete comment:', error);
+      logger.error('Failed to delete comment:', error);
       showAlert('Failed to delete comment. Please try again.', 'Delete Failed');
     }
   };
@@ -690,7 +692,7 @@ function Feed() {
       setReplyText('');
       setReplyGif(null);
     } catch (error) {
-      console.error('Failed to reply to comment:', error);
+      logger.error('Failed to reply to comment:', error);
       showAlert('Failed to reply. Please try again.', 'Reply Failed');
     }
   };
@@ -711,7 +713,7 @@ function Feed() {
       setPosts(posts.map(p => p._id === shareModal.post._id ? response.data : p));
       showAlert('Post shared successfully!', 'Shared');
     } catch (error) {
-      console.error('Failed to share post:', error);
+      logger.error('Failed to share post:', error);
       showAlert(error.response?.data?.message || 'Failed to share post.', 'Share Failed');
     }
   };
@@ -721,7 +723,7 @@ function Feed() {
       const response = await api.get('/bookmarks');
       setBookmarkedPosts(response.data.bookmarks.map(post => post._id));
     } catch (error) {
-      console.error('Failed to fetch bookmarks:', error);
+      logger.error('Failed to fetch bookmarks:', error);
     }
   }, []);
 
@@ -737,7 +739,7 @@ function Feed() {
         setBookmarkedPosts([...bookmarkedPosts, postId]);
       }
     } catch (error) {
-      console.error('Failed to bookmark post:', error);
+      logger.error('Failed to bookmark post:', error);
       showAlert(error.response?.data?.message || 'Failed to bookmark post.', 'Bookmark Failed');
     }
   };
@@ -752,7 +754,7 @@ function Feed() {
       await api.delete(`/posts/${postId}`);
       setPosts(posts.filter(p => p._id !== postId));
     } catch (error) {
-      console.error('Failed to delete post:', error);
+      logger.error('Failed to delete post:', error);
       showAlert('Failed to delete post. Please try again.', 'Delete Failed');
     }
   };
@@ -1002,7 +1004,7 @@ function Feed() {
                                         setPosts(posts.map(p => p._id === post._id ? response.data : p));
                                         setOpenDropdownId(null);
                                       } catch (error) {
-                                        console.error('Failed to toggle pin:', error);
+                                        logger.error('Failed to toggle pin:', error);
                                       }
                                     }}
                                   >
@@ -1967,7 +1969,7 @@ function Feed() {
                 )
                 .map((friend) => {
                   const isOnline = onlineUsers.includes(friend._id);
-                  console.log(`Friend ${friend.displayName} (${friend._id}):`, {
+                  logger.debug(`Friend ${friend.displayName} (${friend._id}):`, {
                     isOnline,
                     onlineUsers,
                     friendId: friend._id

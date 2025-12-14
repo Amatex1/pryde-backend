@@ -5,6 +5,7 @@ import { initializeSocket, disconnectSocket, onNewMessage } from './utils/socket
 import { playNotificationSound, requestNotificationPermission } from './utils/notifications';
 import { initializeQuietMode } from './utils/quietMode';
 import api from './utils/api';
+import logger from './utils/logger';
 
 // Eager load critical components (needed immediately)
 import Home from './pages/Home';
@@ -138,14 +139,14 @@ function App() {
           initializeQuietMode(user);
           setInitError(false);
         } catch (error) {
-          console.error('Failed to initialize quiet mode:', error);
+          logger.error('Failed to initialize quiet mode:', error);
 
           // Retry if we have retries left
           if (retries > 0) {
-            console.log(`Retrying quiet mode initialization... (${retries} retries left)`);
+            logger.debug(`Retrying quiet mode initialization... (${retries} retries left)`);
             setTimeout(() => initQuietMode(retries - 1), 2000);
           } else {
-            console.warn('Quiet mode initialization failed after all retries');
+            logger.warn('Quiet mode initialization failed after all retries');
             // Don't block the app - just use default settings
             setInitError(true);
           }
@@ -164,13 +165,13 @@ function App() {
 
           // Request notification permission (non-blocking)
           requestNotificationPermission().catch(err => {
-            console.warn('Notification permission request failed:', err);
+            logger.warn('Notification permission request failed:', err);
           });
 
           // Listen for new messages and play sound
           const cleanupNewMessage = onNewMessage((msg) => {
             playNotificationSound().catch(err => {
-              console.warn('Failed to play notification sound:', err);
+              logger.warn('Failed to play notification sound:', err);
             });
           });
 
@@ -182,7 +183,7 @@ function App() {
             }
           };
         } catch (error) {
-          console.error('Socket initialization failed:', error);
+          logger.error('Socket initialization failed:', error);
           // Don't block the app - socket features just won't work
         }
       }

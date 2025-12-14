@@ -10,7 +10,9 @@
     "preview": "vite preview",
     "server:dev": "cd server && npm run dev",
     "server:start": "cd server && npm start",
-    "optimize-images": "node scripts/optimize-images.js"
+    "optimize-images": "node scripts/optimize-images.js",
+    "test": "mocha server/test/**/*.test.js --timeout 10000",
+    "test:watch": "mocha server/test/**/*.test.js --timeout 10000 --watch"
   },
   "dependencies": {
     "@hcaptcha/react-hcaptcha": "^1.17.1",

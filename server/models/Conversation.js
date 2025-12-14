@@ -41,10 +41,11 @@ const conversationSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Index for faster queries
-conversationSchema.index({ participants: 1 });
-conversationSchema.index({ groupChat: 1 });
-conversationSchema.index({ archivedBy: 1 });
+// Indexes for efficient queries
+conversationSchema.index({ participants: 1 }); // For finding conversations by participant
+conversationSchema.index({ groupChat: 1 }); // For finding group chat conversations
+conversationSchema.index({ archivedBy: 1 }); // For filtering archived conversations
+conversationSchema.index({ updatedAt: -1 }); // For sorting conversations by last activity
 
 const Conversation = mongoose.model('Conversation', conversationSchema);
 

@@ -650,3 +650,6 @@ server.listen(PORT, () => {
   console.log(`Base URL: ${config.baseURL}`);
   console.log('Socket.IO server ready for real-time connections');
 });
+
+// Export app for testing
+export default app;

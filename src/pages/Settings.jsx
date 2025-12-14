@@ -6,6 +6,7 @@ import { useModal } from '../hooks/useModal';
 import api from '../utils/api';
 import { getCurrentUser, setCurrentUser, logout } from '../utils/auth';
 import { applyQuietMode } from '../utils/quietMode';
+import logger from './utils/logger';
 import './Settings.css';
 
 function Settings() {
@@ -46,7 +47,7 @@ function Settings() {
       const response = await api.get('/users/verification-status');
       setVerificationStatus(response.data);
     } catch (error) {
-      console.error('Failed to fetch verification status:', error);
+      logger.error('Failed to fetch verification status:', error);
     }
   };
 
@@ -77,7 +78,7 @@ function Settings() {
       // PHASE 5: Load creator mode setting
       setIsCreator(user.isCreator || false);
     } catch (error) {
-      console.error('Failed to fetch user data:', error);
+      logger.error('Failed to fetch user data:', error);
     }
   };
 
@@ -123,7 +124,7 @@ function Settings() {
       setMessage('Profile updated successfully!');
     } catch (error) {
       setMessage('Failed to update profile');
-      console.error('Update profile error:', error);
+      logger.error('Update profile error:', error);
     } finally {
       setLoading(false);
     }
@@ -139,7 +140,7 @@ function Settings() {
       applyQuietMode(newValue);
       localStorage.setItem('quietMode', newValue);
     } catch (error) {
-      console.error('Failed to toggle quiet mode:', error);
+      logger.error('Failed to toggle quiet mode:', error);
       setMessage('Failed to update quiet mode');
     }
   };
@@ -152,7 +153,7 @@ function Settings() {
       setIsCreator(newValue);
       setMessage(newValue ? 'Creator Mode enabled' : 'Creator Mode disabled');
     } catch (error) {
-      console.error('Failed to toggle creator mode:', error);
+      logger.error('Failed to toggle creator mode:', error);
       setMessage('Failed to update creator mode');
     }
   };
@@ -160,15 +161,15 @@ function Settings() {
   const handleDownloadData = async () => {
     try {
       setMessage('Preparing your data...');
-      console.log('📥 Requesting data download...');
+      logger.debug('📥 Requesting data download...');
 
       // Debug: Check if token exists
       const token = localStorage.getItem('token');
-      console.log('🔑 Token exists:', !!token);
-      console.log('🔑 Token preview:', token ? token.substring(0, 20) + '...' : 'NO TOKEN');
+      logger.debug('🔑 Token exists:', !!token);
+      logger.debug('🔑 Token preview:', token ? token.substring(0, 20) + '...' : 'NO TOKEN');
 
       const response = await api.get('/users/download-data');
-      console.log('✅ Data received:', response.data);
+      logger.debug('✅ Data received:', response.data);
 
       // Create a blob and download
       const dataStr = JSON.stringify(response.data, null, 2);
@@ -185,9 +186,9 @@ function Settings() {
       setMessage('Your data has been downloaded!');
       setTimeout(() => setMessage(''), 3000);
     } catch (error) {
-      console.error('Download data error:', error);
-      console.error('Error response:', error.response?.data);
-      console.error('Error status:', error.response?.status);
+      logger.error('Download data error:', error);
+      logger.error('Error response:', error.response?.data);
+      logger.error('Error status:', error.response?.status);
 
       if (error.response?.status === 401) {
         setMessage('Authentication failed. Please log in again.');
@@ -214,7 +215,7 @@ function Settings() {
       navigate('/login');
       showAlert('Your account has been deactivated. You can reactivate by logging in again.', 'Account Deactivated');
     } catch (error) {
-      console.error('Deactivate account error:', error);
+      logger.error('Deactivate account error:', error);
       setMessage('Failed to deactivate account');
     }
   };
@@ -249,7 +250,7 @@ function Settings() {
       navigate('/');
       showAlert('Your account has been permanently deleted.', 'Account Deleted');
     } catch (error) {
-      console.error('Delete account error:', error);
+      logger.error('Delete account error:', error);
       setMessage('Failed to delete account');
     }
   };
@@ -275,7 +276,7 @@ function Settings() {
       showAlert(response.data.message, 'Request Submitted');
       fetchVerificationStatus();
     } catch (error) {
-      console.error('Verification request error:', error);
+      logger.error('Verification request error:', error);
       showAlert(error.response?.data?.message || 'Failed to submit verification request', 'Error');
     }
   };

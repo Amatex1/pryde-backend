@@ -110,10 +110,12 @@ const eventSchema = new mongoose.Schema({
 });
 
 // Indexes for efficient queries
-eventSchema.index({ startDate: 1 });
-eventSchema.index({ 'location.city': 1 });
-eventSchema.index({ category: 1 });
-eventSchema.index({ creator: 1, createdAt: -1 });
+eventSchema.index({ startDate: 1 }); // For chronological event listing
+eventSchema.index({ 'location.city': 1 }); // For location-based discovery
+eventSchema.index({ category: 1 }); // For category filtering
+eventSchema.index({ creator: 1, createdAt: -1 }); // For user's created events
+eventSchema.index({ startDate: 1, category: 1 }); // For filtered event browsing
+eventSchema.index({ isPrivate: 1, startDate: 1 }); // For public event discovery
 
 // Update the updatedAt timestamp before saving
 eventSchema.pre('save', function(next) {

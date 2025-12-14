@@ -41,8 +41,9 @@ const groupChatSchema = new mongoose.Schema({
   }
 });
 
-// Index for efficient queries
-groupChatSchema.index({ members: 1 });
-groupChatSchema.index({ creator: 1 });
+// Indexes for efficient queries
+groupChatSchema.index({ members: 1 }); // For finding chats by member
+groupChatSchema.index({ creator: 1 }); // For finding chats by creator
+groupChatSchema.index({ updatedAt: -1 }); // For sorting chats by last activity
 
 export default mongoose.model('GroupChat', groupChatSchema);

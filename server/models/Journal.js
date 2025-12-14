@@ -63,8 +63,9 @@ const journalSchema = new mongoose.Schema({
 });
 
 // Indexes for efficient queries
-journalSchema.index({ user: 1, createdAt: -1 });
-journalSchema.index({ visibility: 1, createdAt: -1 });
+journalSchema.index({ user: 1, createdAt: -1 }); // For user's journal timeline
+journalSchema.index({ visibility: 1, createdAt: -1 }); // For public/followers journal discovery
+journalSchema.index({ tags: 1 }); // For tag-based discovery
 
 // Update the updatedAt timestamp before saving
 journalSchema.pre('save', function(next) {

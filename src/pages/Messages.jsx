@@ -11,6 +11,7 @@ import { useModal } from '../hooks/useModal';
 import api from '../utils/api';
 import { getImageUrl } from '../utils/imageUrl';
 import { getUserChatColor, getSentMessageColor } from '../utils/chatColors';
+import logger from './utils/logger';
 import {
   onNewMessage,
   onMessageSent,
@@ -164,18 +165,18 @@ function Messages() {
         const response = await api.get('/auth/me');
         setCurrentUser(response.data);
       } catch (error) {
-        console.error('Error fetching user:', error);
+        logger.error('Error fetching user:', error);
       }
     };
     fetchCurrentUser();
 
     // Log socket connection status (but don't add listeners here - they're added in the other useEffect)
-    console.log('🔌 Socket connection status:', isSocketConnected());
+    logger.debug('🔌 Socket connection status:', isSocketConnected());
     const socket = getSocket();
     if (socket) {
-      console.log('✅ Socket instance exists');
+      logger.debug('✅ Socket instance exists');
     } else {
-      console.error('❌ Socket instance not found!');
+      logger.error('❌ Socket instance not found!');
     }
   }, []);
 
@@ -202,7 +203,7 @@ function Messages() {
         setGroupChats(groupsRes.data);
         setLoading(false);
       } catch (error) {
-        console.error('Error fetching conversations:', error);
+        logger.error('Error fetching conversations:', error);
         setLoading(false);
       }
     };
@@ -217,9 +218,9 @@ function Messages() {
           const endpoint = selectedChatType === 'group'
             ? `/messages/group/${selectedChat}`
             : `/messages/${selectedChat}`;
-          console.log('📥 Fetching messages from:', endpoint);
+          logger.debug('📥 Fetching messages from:', endpoint);
           const response = await api.get(endpoint);
-          console.log('✅ Loaded messages:', response.data.length);
+          logger.debug('✅ Loaded messages:', response.data.length);
           setMessages(response.data);
 
           // Mark all unread messages as read and remove manual unread status
@@ -232,7 +233,7 @@ function Messages() {
               try {
                 await api.put(`/messages/${msg._id}/read`);
               } catch (error) {
-                console.error('Error marking message as read:', error);
+                logger.error('Error marking message as read:', error);
               }
             }
 
@@ -240,7 +241,7 @@ function Messages() {
             try {
               await api.delete(`/messages/conversations/${selectedChat}/mark-unread`);
             } catch (error) {
-              console.error('Error removing manual unread status:', error);
+              logger.error('Error removing manual unread status:', error);
             }
 
             // Refresh conversations to update unread counts
@@ -249,7 +250,7 @@ function Messages() {
             }
           }
         } catch (error) {
-          console.error('Error fetching messages:', error);
+          logger.error('Error fetching messages:', error);
         }
       };
 
@@ -265,7 +266,7 @@ function Messages() {
             setSelectedGroup(null);
           }
         } catch (error) {
-          console.error('Error fetching chat info:', error);
+          logger.error('Error fetching chat info:', error);
         }
       };
 
@@ -286,18 +287,18 @@ function Messages() {
     const cleanupFunctions = [];
 
     const setupListeners = () => {
-      console.log('🔌 Setting up online/offline status listeners in Messages');
+      logger.debug('🔌 Setting up online/offline status listeners in Messages');
 
       // Listen for online users list
       const cleanupOnlineUsers = onOnlineUsers((users) => {
-        console.log('👥 Online users:', users);
+        logger.debug('👥 Online users:', users);
         setOnlineUsers(users);
       });
       cleanupFunctions.push(cleanupOnlineUsers);
 
       // Listen for users coming online
       const cleanupUserOnline = onUserOnline((data) => {
-        console.log('✅ User came online:', data.userId);
+        logger.debug('✅ User came online:', data.userId);
         setOnlineUsers((prev) => {
           if (!prev.includes(data.userId)) {
             return [...prev, data.userId];
@@ -309,7 +310,7 @@ function Messages() {
 
       // Listen for users going offline
       const cleanupUserOffline = onUserOffline((data) => {
-        console.log('❌ User went offline:', data.userId);
+        logger.debug('❌ User went offline:', data.userId);
         setOnlineUsers((prev) => prev.filter(id => id !== data.userId));
       });
       cleanupFunctions.push(cleanupUserOffline);
@@ -320,23 +321,23 @@ function Messages() {
       const socket = getSocket();
 
       if (!socket) {
-        console.log('⏳ Socket not initialized yet, retrying in 100ms...');
+        logger.debug('⏳ Socket not initialized yet, retrying in 100ms...');
         setTimeout(checkSocket, 100);
         return;
       }
 
-      console.log('✅ Socket found, checking connection status');
+      logger.debug('✅ Socket found, checking connection status');
 
       // Set up listeners if already connected, or wait for connection
       if (socket.connected) {
-        console.log('✅ Socket already connected, setting up listeners');
+        logger.debug('✅ Socket already connected, setting up listeners');
         setupListeners();
         // Request online users list (important for mobile/slow connections)
         setTimeout(() => requestOnlineUsers(), 500);
       } else {
-        console.log('⏳ Socket not connected yet, waiting for connection...');
+        logger.debug('⏳ Socket not connected yet, waiting for connection...');
         const onConnect = () => {
-          console.log('✅ Socket connected, setting up listeners');
+          logger.debug('✅ Socket connected, setting up listeners');
           setupListeners();
           // Request online users list (important for mobile/slow connections)
           setTimeout(() => requestOnlineUsers(), 500);
@@ -360,15 +361,15 @@ function Messages() {
       const socket = getSocket();
 
       if (!socket) {
-        console.warn('⚠️ Socket not initialized yet for message listeners, retrying...');
+        logger.warn('⚠️ Socket not initialized yet for message listeners, retrying...');
         setTimeout(setupListeners, 100);
         return null;
       }
-      console.log('🎧 Setting up message socket listeners for chat:', selectedChat);
+      logger.debug('🎧 Setting up message socket listeners for chat:', selectedChat);
 
       // Listen for new messages
       const cleanupNewMessage = onNewMessage((newMessage) => {
-        console.log('📨 Received new_message event:', newMessage);
+        logger.debug('📨 Received new_message event:', newMessage);
 
         // Check if this message is for the currently selected chat
         // Message is relevant if the sender is the selected chat OR the recipient is the selected chat
@@ -377,11 +378,11 @@ function Messages() {
           selectedChat === newMessage.recipient._id;
 
         if (isRelevantMessage) {
-          console.log('✅ Message is for selected chat, adding to messages');
+          logger.debug('✅ Message is for selected chat, adding to messages');
           setMessages((prev) => {
             // Prevent duplicates - check if message already exists
             if (prev.some(msg => msg._id === newMessage._id)) {
-              console.log('⚠️ Message already exists, skipping');
+              logger.debug('⚠️ Message already exists, skipping');
               return prev;
             }
             return [...prev, newMessage];
@@ -405,15 +406,15 @@ function Messages() {
 
       // Listen for sent message confirmation
       const cleanupMessageSent = onMessageSent((sentMessage) => {
-        console.log('✅ Received message_sent event:', sentMessage);
+        logger.debug('✅ Received message_sent event:', sentMessage);
 
         // Only add to messages if this is the selected chat
         if (selectedChat === sentMessage.recipient._id) {
-          console.log('✅ Sent message is for selected chat, adding to messages');
+          logger.debug('✅ Sent message is for selected chat, adding to messages');
           setMessages((prev) => {
             // Prevent duplicates - check if message already exists
             if (prev.some(msg => msg._id === sentMessage._id)) {
-              console.log('⚠️ Message already exists, skipping');
+              logger.debug('⚠️ Message already exists, skipping');
               return prev;
             }
             return [...prev, sentMessage];
@@ -459,7 +460,7 @@ function Messages() {
     // Use GIF URL if selected, otherwise use file attachment
     const attachmentUrl = selectedGif || selectedFile?.url;
 
-    console.log('📤 Sending message:', {
+    logger.debug('📤 Sending message:', {
       recipientId: selectedChat,
       content: message,
       attachment: attachmentUrl,
@@ -482,13 +483,13 @@ function Messages() {
       } else {
         // Check if socket is connected
         if (!isSocketConnected()) {
-          console.error('❌ Socket not connected!');
+          logger.error('❌ Socket not connected!');
           alert('Connection lost. Please refresh the page.');
           return;
         }
 
         // Send via Socket.IO for real-time delivery
-        console.log('🔌 Emitting send_message via socket');
+        logger.debug('🔌 Emitting send_message via socket');
         socketSendMessage({
           recipientId: selectedChat,
           content: message,
@@ -511,7 +512,7 @@ function Messages() {
         emitTyping(selectedChat, currentUser._id);
       }
     } catch (error) {
-      console.error('❌ Error sending message:', error);
+      logger.error('❌ Error sending message:', error);
       alert('Failed to send message');
     }
   };
@@ -546,7 +547,7 @@ function Messages() {
 
       setSelectedFile({ url: response.data.url, name: file.name, type: file.type });
     } catch (error) {
-      console.error('File upload failed:', error);
+      logger.error('File upload failed:', error);
       showAlert('Failed to upload file. Please try again.', 'Upload Failed');
     } finally {
       setUploadingFile(false);
@@ -600,7 +601,7 @@ function Messages() {
       setEditingMessageId(null);
       setEditMessageText('');
     } catch (error) {
-      console.error('❌ Error editing message:', error);
+      logger.error('❌ Error editing message:', error);
       showAlert('Failed to edit message. Please try again.', 'Edit Failed');
     }
   };
@@ -625,7 +626,7 @@ function Messages() {
       // Remove the message from the list
       setMessages((prev) => prev.filter((msg) => msg._id !== messageId));
     } catch (error) {
-      console.error('❌ Error deleting message:', error);
+      logger.error('❌ Error deleting message:', error);
       showAlert('Failed to delete message. Please try again.', 'Delete Failed');
     }
   };
@@ -646,7 +647,7 @@ function Messages() {
         prev.map((msg) => (msg._id === reactingToMessage ? response.data : msg))
       );
     } catch (error) {
-      console.error('❌ Error adding reaction:', error);
+      logger.error('❌ Error adding reaction:', error);
       if (error.response?.data?.message) {
         alert(error.response.data.message);
       }
@@ -664,7 +665,7 @@ function Messages() {
         prev.map((msg) => (msg._id === messageId ? response.data : msg))
       );
     } catch (error) {
-      console.error('❌ Error removing reaction:', error);
+      logger.error('❌ Error removing reaction:', error);
     }
   };
 
@@ -673,7 +674,7 @@ function Messages() {
       const response = await api.get('/friends');
       setFriends(response.data);
     } catch (error) {
-      console.error('Failed to fetch friends:', error);
+      logger.error('Failed to fetch friends:', error);
     }
   };
 
@@ -686,7 +687,7 @@ function Messages() {
       const response = await api.get(`/users/search?q=${searchQuery}`);
       setSearchResults(response.data);
     } catch (error) {
-      console.error('Search failed:', error);
+      logger.error('Search failed:', error);
     } finally {
       setSearchLoading(false);
     }
@@ -723,7 +724,7 @@ function Messages() {
       // Refresh conversations
       fetchConversations();
     } catch (error) {
-      console.error('Failed to archive conversation:', error);
+      logger.error('Failed to archive conversation:', error);
     }
   };
 
@@ -741,7 +742,7 @@ function Messages() {
       // Refresh conversations
       fetchConversations();
     } catch (error) {
-      console.error('Failed to unarchive conversation:', error);
+      logger.error('Failed to unarchive conversation:', error);
     }
   };
 
@@ -759,7 +760,7 @@ function Messages() {
       // Close dropdown
       setOpenDropdown(null);
     } catch (error) {
-      console.error('Failed to mute conversation:', error);
+      logger.error('Failed to mute conversation:', error);
     }
   };
 
@@ -774,7 +775,7 @@ function Messages() {
       // Remove from muted list
       setMutedConversations(prev => prev.filter(id => id !== userId));
     } catch (error) {
-      console.error('Failed to unmute conversation:', error);
+      logger.error('Failed to unmute conversation:', error);
     }
   };
 
@@ -788,7 +789,7 @@ function Messages() {
       // Refresh conversations
       fetchConversations();
     } catch (error) {
-      console.error('Failed to mark as unread:', error);
+      logger.error('Failed to mark as unread:', error);
     }
   };
 
@@ -799,7 +800,7 @@ function Messages() {
       // Refresh conversations
       fetchConversations();
     } catch (error) {
-      console.error('Failed to mark as read:', error);
+      logger.error('Failed to mark as read:', error);
     }
   };
 
@@ -827,7 +828,7 @@ function Messages() {
       // Refresh conversations
       fetchConversations();
     } catch (error) {
-      console.error('Failed to delete conversation:', error);
+      logger.error('Failed to delete conversation:', error);
       showAlert('Failed to delete conversation. Please try again.', 'Delete Failed');
     }
   };
@@ -858,7 +859,7 @@ function Messages() {
 
       showAlert('User blocked successfully', 'User Blocked');
     } catch (error) {
-      console.error('Failed to block user:', error);
+      logger.error('Failed to block user:', error);
       showAlert('Failed to block user. Please try again.', 'Block Failed');
     }
   };
@@ -886,7 +887,7 @@ function Messages() {
       setSelectedMembers([]);
       setSearchResults([]);
     } catch (error) {
-      console.error('Failed to create group:', error);
+      logger.error('Failed to create group:', error);
       alert('Failed to create group chat');
     }
   };
@@ -1539,7 +1540,7 @@ function Messages() {
                           await handleSendMessage(null, voiceNoteData);
                           setShowVoiceRecorder(false);
                         } catch (error) {
-                          console.error('Failed to send voice note:', error);
+                          logger.error('Failed to send voice note:', error);
                           showAlert('Failed to send voice note. Please try again.', 'Voice Note Failed');
                         }
                       }}

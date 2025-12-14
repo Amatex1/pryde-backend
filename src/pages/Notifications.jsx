@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import api from '../utils/api';
 import { getImageUrl } from '../utils/imageUrl';
+import logger from './utils/logger';
 import './Notifications.css';
 
 function Notifications() {
@@ -22,7 +23,7 @@ function Notifications() {
       const filteredNotifications = response.data.filter(n => n.type !== 'message');
       setNotifications(filteredNotifications);
     } catch (error) {
-      console.error('Failed to fetch notifications:', error);
+      logger.error('Failed to fetch notifications:', error);
     } finally {
       setLoading(false);
     }
@@ -35,7 +36,7 @@ function Notifications() {
         prev.map(n => n._id === id ? { ...n, read: true } : n)
       );
     } catch (error) {
-      console.error('Failed to mark notification as read:', error);
+      logger.error('Failed to mark notification as read:', error);
     }
   };
 
@@ -44,7 +45,7 @@ function Notifications() {
       await api.put('/notifications/read-all');
       setNotifications(prev => prev.map(n => ({ ...n, read: true })));
     } catch (error) {
-      console.error('Failed to mark all as read:', error);
+      logger.error('Failed to mark all as read:', error);
     }
   };
 

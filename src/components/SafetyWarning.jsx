@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import logger from './utils/logger';
 import './SafetyWarning.css';
 import { 
   detectUserCountry, 
@@ -51,7 +52,7 @@ function SafetyWarning() {
         }
       }
     } catch (error) {
-      console.error('Failed to check location:', error);
+      logger.error('Failed to check location:', error);
     }
   };
 

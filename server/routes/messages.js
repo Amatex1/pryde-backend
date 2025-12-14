@@ -9,6 +9,7 @@ import { messageLimiter } from '../middleware/rateLimiter.js';
 import { checkMessagingPermission, checkBlocked } from '../middleware/privacy.js';
 import { checkMuted, moderateContent } from '../middleware/moderation.js';
 import { sanitizeFields } from '../utils/sanitize.js';
+import logger from '../utils/logger.js';
 
 // Get conversation with a user
 router.get('/:userId', authMiddleware, checkBlocked, async (req, res) => {
@@ -26,11 +27,11 @@ router.get('/:userId', authMiddleware, checkBlocked, async (req, res) => {
       .populate('recipient', 'username profilePhoto')
       .sort({ createdAt: 1 });
 
-    console.log('✅ Found messages:', messages.length);
+    logger.debug('✅ Found messages:', messages.length);
 
     res.json(messages);
   } catch (error) {
-    console.error('❌ Error fetching messages:', error);
+    logger.error('❌ Error fetching messages:', error);
     res.status(500).json({ message: 'Error fetching messages', error: error.message });
   }
 });
@@ -40,7 +41,7 @@ router.get('/unread/counts', authMiddleware, async (req, res) => {
   try {
     const currentUserId = req.userId;
 
-    console.log('📊 Fetching unread counts for user:', currentUserId);
+    logger.debug('📊 Fetching unread counts for user:', currentUserId);
 
     // Get unread messages grouped by sender
     const unreadCounts = await Message.aggregate([
@@ -58,7 +59,7 @@ router.get('/unread/counts', authMiddleware, async (req, res) => {
       }
     ]);
 
-    console.log('📊 Unread counts aggregation result:', unreadCounts);
+    logger.debug('📊 Unread counts aggregation result:', unreadCounts);
 
     // Store original sender IDs before population
     const senderIdsBeforePopulation = unreadCounts.map(item => ({
@@ -72,7 +73,7 @@ router.get('/unread/counts', authMiddleware, async (req, res) => {
       select: 'username profilePhoto displayName'
     });
 
-    console.log('📊 After population:', unreadCounts);
+    logger.debug('📊 After population:', unreadCounts);
 
     // Filter out messages from deleted users (where _id is null after population)
     const validUnreadCounts = unreadCounts.filter(item => item._id !== null);
@@ -81,7 +82,7 @@ router.get('/unread/counts', authMiddleware, async (req, res) => {
     // The cleanup was too aggressive and was deleting valid messages
     // If we need cleanup, it should be done as a separate maintenance task, not on every request
 
-    console.log('📊 Valid unread counts (after filtering deleted users):', validUnreadCounts);
+    logger.debug('📊 Valid unread counts (after filtering deleted users):', validUnreadCounts);
 
     // Calculate total unread count
     const totalUnread = validUnreadCounts.reduce((sum, item) => sum + item.count, 0);
@@ -97,10 +98,10 @@ router.get('/unread/counts', authMiddleware, async (req, res) => {
       }))
     };
 
-    console.log('✅ Sending unread counts response:', response);
+    logger.debug('✅ Sending unread counts response:', response);
     res.json(response);
   } catch (error) {
-    console.error('❌ Error fetching unread counts:', error);
+    logger.error('❌ Error fetching unread counts:', error);
     res.status(500).json({ message: 'Error fetching unread counts', error: error.message });
   }
 });
@@ -174,7 +175,7 @@ router.get('/', authMiddleware, async (req, res) => {
             try {
               conv.lastMessage.content = decryptMessage(conv.lastMessage.content);
             } catch (error) {
-              console.error('❌ Error decrypting last message:', error);
+              logger.error('❌ Error decrypting last message:', error);
               conv.lastMessage.content = '[Encrypted message]';
             }
           }
@@ -191,7 +192,7 @@ router.get('/', authMiddleware, async (req, res) => {
 
     res.json(populatedConversations);
   } catch (error) {
-    console.error('❌ Error fetching conversations:', error);
+    logger.error('❌ Error fetching conversations:', error);
     res.status(500).json({ message: 'Error fetching conversations', error: error.message });
   }
 });
@@ -233,7 +234,7 @@ router.post('/', authMiddleware, messageLimiter, sanitizeFields(['content']), ch
 
     res.status(201).json(message);
   } catch (error) {
-    console.error('❌ Error sending message:', error);
+    logger.error('❌ Error sending message:', error);
     res.status(500).json({ message: 'Error sending message', error: error.message });
   }
 });
@@ -270,7 +271,7 @@ router.put('/:id', authMiddleware, async (req, res) => {
 
     res.json(message);
   } catch (error) {
-    console.error('❌ Error editing message:', error);
+    logger.error('❌ Error editing message:', error);
     res.status(500).json({ message: 'Error editing message', error: error.message });
   }
 });
@@ -293,7 +294,7 @@ router.delete('/:id', authMiddleware, async (req, res) => {
 
     res.json({ message: 'Message deleted successfully' });
   } catch (error) {
-    console.error('❌ Error deleting message:', error);
+    logger.error('❌ Error deleting message:', error);
     res.status(500).json({ message: 'Error deleting message', error: error.message });
   }
 });
@@ -327,7 +328,7 @@ router.put('/:id/read', authMiddleware, async (req, res) => {
 
     res.json(message);
   } catch (error) {
-    console.error('❌ Error updating message:', error);
+    logger.error('❌ Error updating message:', error);
     res.status(500).json({ message: 'Error updating message', error: error.message });
   }
 });
@@ -355,7 +356,7 @@ router.put('/:id/delivered', authMiddleware, async (req, res) => {
 
     res.json(message);
   } catch (error) {
-    console.error('❌ Error updating message:', error);
+    logger.error('❌ Error updating message:', error);
     res.status(500).json({ message: 'Error updating message', error: error.message });
   }
 });
@@ -415,7 +416,7 @@ router.post('/:id/react', authMiddleware, async (req, res) => {
 
     res.json(message);
   } catch (error) {
-    console.error('Add reaction error:', error);
+    logger.error('Add reaction error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -447,7 +448,7 @@ router.delete('/:id/react', authMiddleware, async (req, res) => {
 
     res.json(message);
   } catch (error) {
-    console.error('Remove reaction error:', error);
+    logger.error('Remove reaction error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -484,7 +485,7 @@ router.post('/conversations/:userId/archive', authMiddleware, async (req, res) =
 
     res.json({ message: 'Conversation archived', conversation });
   } catch (error) {
-    console.error('Archive conversation error:', error);
+    logger.error('Archive conversation error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -511,7 +512,7 @@ router.post('/conversations/:userId/unarchive', authMiddleware, async (req, res)
 
     res.json({ message: 'Conversation unarchived', conversation });
   } catch (error) {
-    console.error('Unarchive conversation error:', error);
+    logger.error('Unarchive conversation error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -553,7 +554,7 @@ router.post('/conversations/:userId/mute', authMiddleware, async (req, res) => {
 
     res.json({ message: 'Conversation muted', conversation, mutedUntil });
   } catch (error) {
-    console.error('Mute conversation error:', error);
+    logger.error('Mute conversation error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -580,7 +581,7 @@ router.post('/conversations/:userId/unmute', authMiddleware, async (req, res) =>
 
     res.json({ message: 'Conversation unmuted', conversation });
   } catch (error) {
-    console.error('Unmute conversation error:', error);
+    logger.error('Unmute conversation error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -620,7 +621,7 @@ router.post('/conversations/:userId/mark-unread', authMiddleware, async (req, re
 
     res.json({ message: 'Conversation marked as unread', conversation });
   } catch (error) {
-    console.error('Mark unread error:', error);
+    logger.error('Mark unread error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -652,7 +653,7 @@ router.delete('/conversations/:userId/mark-unread', authMiddleware, async (req, 
 
     res.json({ message: 'Conversation marked as read', conversation });
   } catch (error) {
-    console.error('Mark read error:', error);
+    logger.error('Mark read error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -681,7 +682,7 @@ router.delete('/conversations/:userId', authMiddleware, async (req, res) => {
 
     res.json({ message: 'Conversation deleted successfully' });
   } catch (error) {
-    console.error('Delete conversation error:', error);
+    logger.error('Delete conversation error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });

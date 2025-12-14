@@ -78,8 +78,9 @@ const photoEssaySchema = new mongoose.Schema({
 });
 
 // Indexes for efficient queries
-photoEssaySchema.index({ user: 1, createdAt: -1 });
-photoEssaySchema.index({ visibility: 1, createdAt: -1 });
+photoEssaySchema.index({ user: 1, createdAt: -1 }); // For user's photo essay timeline
+photoEssaySchema.index({ visibility: 1, createdAt: -1 }); // For public/followers discovery
+photoEssaySchema.index({ tags: 1 }); // For tag-based discovery
 
 // Update the updatedAt timestamp before saving
 photoEssaySchema.pre('save', function(next) {

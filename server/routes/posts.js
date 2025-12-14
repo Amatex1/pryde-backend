@@ -9,6 +9,7 @@ import { postLimiter, commentLimiter } from '../middleware/rateLimiter.js';
 import { checkMuted, moderateContent } from '../middleware/moderation.js';
 import { sanitizeFields } from '../utils/sanitize.js';
 import { sendPushNotification } from './pushNotifications.js';
+import logger from '../utils/logger.js';
 
 // PHASE 1 REFACTOR: Helper function to sanitize post for private likes
 // Removes like count and list of who liked, only shows if current user liked
@@ -135,7 +136,7 @@ router.get('/', auth, async (req, res) => {
       currentPage: page
     });
   } catch (error) {
-    console.error('Get posts error:', error);
+    logger.error('Get posts error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -203,7 +204,7 @@ router.get('/user/:identifier', auth, async (req, res) => {
 
     res.json(sanitizedPosts);
   } catch (error) {
-    console.error('Get user posts error:', error);
+    logger.error('Get user posts error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -231,7 +232,7 @@ router.get('/:id', auth, async (req, res) => {
 
     res.json(sanitizedPost);
   } catch (error) {
-    console.error('Get post error:', error);
+    logger.error('Get post error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -287,7 +288,7 @@ router.post('/', auth, postLimiter, sanitizeFields(['content', 'contentWarning']
 
     res.status(201).json(post);
   } catch (error) {
-    console.error('Create post error:', error);
+    logger.error('Create post error:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
@@ -350,7 +351,7 @@ router.put('/:id', auth, async (req, res) => {
 
     res.json(sanitizedPost);
   } catch (error) {
-    console.error('Update post error:', error);
+    logger.error('Update post error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -377,7 +378,7 @@ router.delete('/:id', auth, async (req, res) => {
 
     res.json({ message: 'Post deleted successfully' });
   } catch (error) {
-    console.error('Delete post error:', error);
+    logger.error('Delete post error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -427,7 +428,7 @@ router.post('/:id/like', auth, async (req, res) => {
             url: `/feed?post=${post._id}`
           },
           tag: `like-${post._id}`
-        }).catch(err => console.error('Push notification error:', err));
+        }).catch(err => logger.error('Push notification error:', err));
       }
     }
 
@@ -451,7 +452,7 @@ router.post('/:id/like', auth, async (req, res) => {
 
     res.json(sanitizedPost);
   } catch (error) {
-    console.error('Like post error:', error);
+    logger.error('Like post error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -522,7 +523,7 @@ router.post('/:id/react', auth, async (req, res) => {
             url: `/feed?post=${post._id}`
           },
           tag: `reaction-${post._id}`
-        }).catch(err => console.error('Push notification error:', err));
+        }).catch(err => logger.error('Push notification error:', err));
       }
     }
 
@@ -555,7 +556,7 @@ router.post('/:id/react', auth, async (req, res) => {
 
     res.json(sanitizedPost);
   } catch (error) {
-    console.error('React to post error:', error);
+    logger.error('React to post error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -658,7 +659,7 @@ router.post('/:id/comment/:commentId/react', auth, async (req, res) => {
 
     res.json(sanitizedPost);
   } catch (error) {
-    console.error('React to comment error:', error);
+    logger.error('React to comment error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -735,7 +736,7 @@ router.post('/:id/share', auth, postLimiter, checkMuted, async (req, res) => {
 
     res.status(201).json(sharedPost);
   } catch (error) {
-    console.error('Share post error:', error);
+    logger.error('Share post error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -772,7 +773,7 @@ router.delete('/:id/share', auth, async (req, res) => {
 
     res.json({ message: 'Post unshared successfully' });
   } catch (error) {
-    console.error('Unshare post error:', error);
+    logger.error('Unshare post error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -837,7 +838,7 @@ router.post('/:id/comment', auth, commentLimiter, sanitizeFields(['content']), c
           url: `/feed?post=${post._id}&comment=${newComment._id}`
         },
         tag: `comment-${post._id}`
-      }).catch(err => console.error('Push notification error:', err));
+      }).catch(err => logger.error('Push notification error:', err));
     }
 
     // PHASE 1 REFACTOR: Don't populate likes (keep private)
@@ -867,7 +868,7 @@ router.post('/:id/comment', auth, commentLimiter, sanitizeFields(['content']), c
 
     res.json(sanitizedPost);
   } catch (error) {
-    console.error('Comment post error:', error);
+    logger.error('Comment post error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -933,7 +934,7 @@ router.post('/:id/comment/:commentId/reply', auth, commentLimiter, checkMuted, m
 
     res.json(sanitizedPost);
   } catch (error) {
-    console.error('Reply to comment error:', error);
+    logger.error('Reply to comment error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -991,7 +992,7 @@ router.put('/:id/comment/:commentId', auth, async (req, res) => {
 
     res.json(sanitizedPost);
   } catch (error) {
-    console.error('Edit comment error:', error);
+    logger.error('Edit comment error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -1041,7 +1042,7 @@ router.delete('/:id/comment/:commentId', auth, async (req, res) => {
 
     res.json(sanitizedPost);
   } catch (error) {
-    console.error('Delete comment error:', error);
+    logger.error('Delete comment error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -1076,7 +1077,7 @@ router.post('/:id/pin', auth, async (req, res) => {
 
     res.json(sanitizedPost);
   } catch (error) {
-    console.error('Pin post error:', error);
+    logger.error('Pin post error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -1129,7 +1130,7 @@ router.post('/:id/poll/vote', auth, async (req, res) => {
     const sanitizedPost = sanitizePostForPrivateLikes(post, userId);
     res.json(sanitizedPost);
   } catch (error) {
-    console.error('Poll vote error:', error);
+    logger.error('Poll vote error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -1148,7 +1149,7 @@ router.get('/:id/edit-history', auth, async (req, res) => {
 
     res.json({ editHistory: post.editHistory || [] });
   } catch (error) {
-    console.error('Get edit history error:', error);
+    logger.error('Get edit history error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });

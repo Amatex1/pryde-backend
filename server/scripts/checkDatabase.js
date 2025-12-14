@@ -12,6 +12,7 @@ import Conversation from '../models/Conversation.js';
 import Block from '../models/Block.js';
 import Report from '../models/Report.js';
 import SecurityLog from '../models/SecurityLog.js';
+import logger from '../utils/logger.js';
 
 // Get __dirname equivalent in ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -22,43 +23,43 @@ dotenv.config({ path: path.join(__dirname, '../.env') });
 
 const checkDatabase = async () => {
   try {
-    console.log('🔍 Connecting to MongoDB...');
+    logger.debug('🔍 Connecting to MongoDB...');
     await mongoose.connect(process.env.MONGODB_URI);
-    console.log('✅ Connected to MongoDB\n');
+    logger.debug('✅ Connected to MongoDB\n');
 
-    console.log('📊 DATABASE HEALTH CHECK\n');
-    console.log('=' .repeat(60));
+    logger.debug('📊 DATABASE HEALTH CHECK\n');
+    logger.debug('=' .repeat(60));
 
     // Check Users
     const totalUsers = await User.countDocuments();
     const activeUsers = await User.countDocuments({ isActive: true });
     const bannedUsers = await User.countDocuments({ isBanned: true });
     const verifiedUsers = await User.countDocuments({ ageVerified: true });
-    console.log('\n👥 USERS:');
-    console.log(`   Total Users: ${totalUsers}`);
-    console.log(`   Active Users: ${activeUsers}`);
-    console.log(`   Banned Users: ${bannedUsers}`);
-    console.log(`   Age Verified: ${verifiedUsers}`);
+    logger.debug('\n👥 USERS:');
+    logger.debug(`   Total Users: ${totalUsers}`);
+    logger.debug(`   Active Users: ${activeUsers}`);
+    logger.debug(`   Banned Users: ${bannedUsers}`);
+    logger.debug(`   Age Verified: ${verifiedUsers}`);
 
     // Check Posts
     const totalPosts = await Post.countDocuments();
     const postsWithComments = await Post.countDocuments({ 'comments.0': { $exists: true } });
     const postsWithMedia = await Post.countDocuments({ 'media.0': { $exists: true } });
-    console.log('\n📝 POSTS:');
-    console.log(`   Total Posts: ${totalPosts}`);
-    console.log(`   Posts with Comments: ${postsWithComments}`);
-    console.log(`   Posts with Media: ${postsWithMedia}`);
+    logger.debug('\n📝 POSTS:');
+    logger.debug(`   Total Posts: ${totalPosts}`);
+    logger.debug(`   Posts with Comments: ${postsWithComments}`);
+    logger.debug(`   Posts with Media: ${postsWithMedia}`);
 
     // Check Messages
     const totalMessages = await Message.countDocuments();
     const directMessages = await Message.countDocuments({ groupChat: null });
     const groupMessages = await Message.countDocuments({ groupChat: { $ne: null } });
     const unreadMessages = await Message.countDocuments({ read: false });
-    console.log('\n💬 MESSAGES:');
-    console.log(`   Total Messages: ${totalMessages}`);
-    console.log(`   Direct Messages: ${directMessages}`);
-    console.log(`   Group Messages: ${groupMessages}`);
-    console.log(`   Unread Messages: ${unreadMessages}`);
+    logger.debug('\n💬 MESSAGES:');
+    logger.debug(`   Total Messages: ${totalMessages}`);
+    logger.debug(`   Direct Messages: ${directMessages}`);
+    logger.debug(`   Group Messages: ${groupMessages}`);
+    logger.debug(`   Unread Messages: ${unreadMessages}`);
 
     // Check for orphaned messages (sender or recipient deleted)
     const orphanedMessages = await Message.aggregate([
@@ -87,65 +88,65 @@ const checkDatabase = async () => {
         }
       }
     ]);
-    console.log(`   ⚠️  Orphaned Messages: ${orphanedMessages.length}`);
+    logger.debug(`   ⚠️  Orphaned Messages: ${orphanedMessages.length}`);
 
     // Check Notifications
     const totalNotifications = await Notification.countDocuments();
     const unreadNotifications = await Notification.countDocuments({ read: false });
-    console.log('\n🔔 NOTIFICATIONS:');
-    console.log(`   Total Notifications: ${totalNotifications}`);
-    console.log(`   Unread Notifications: ${unreadNotifications}`);
+    logger.debug('\n🔔 NOTIFICATIONS:');
+    logger.debug(`   Total Notifications: ${totalNotifications}`);
+    logger.debug(`   Unread Notifications: ${unreadNotifications}`);
 
     // Check Friend Requests
     const totalFriendRequests = await FriendRequest.countDocuments();
     const pendingRequests = await FriendRequest.countDocuments({ status: 'pending' });
     const acceptedRequests = await FriendRequest.countDocuments({ status: 'accepted' });
-    console.log('\n👋 FRIEND REQUESTS:');
-    console.log(`   Total Requests: ${totalFriendRequests}`);
-    console.log(`   Pending: ${pendingRequests}`);
-    console.log(`   Accepted: ${acceptedRequests}`);
+    logger.debug('\n👋 FRIEND REQUESTS:');
+    logger.debug(`   Total Requests: ${totalFriendRequests}`);
+    logger.debug(`   Pending: ${pendingRequests}`);
+    logger.debug(`   Accepted: ${acceptedRequests}`);
 
     // Check Group Chats
     const totalGroupChats = await GroupChat.countDocuments();
-    console.log('\n👥 GROUP CHATS:');
-    console.log(`   Total Group Chats: ${totalGroupChats}`);
+    logger.debug('\n👥 GROUP CHATS:');
+    logger.debug(`   Total Group Chats: ${totalGroupChats}`);
 
     // Check Conversations
     const totalConversations = await Conversation.countDocuments();
-    console.log('\n💬 CONVERSATIONS:');
-    console.log(`   Total Conversations: ${totalConversations}`);
+    logger.debug('\n💬 CONVERSATIONS:');
+    logger.debug(`   Total Conversations: ${totalConversations}`);
 
     // Check Blocks
     const totalBlocks = await Block.countDocuments();
-    console.log('\n🚫 BLOCKS:');
-    console.log(`   Total Blocks: ${totalBlocks}`);
+    logger.debug('\n🚫 BLOCKS:');
+    logger.debug(`   Total Blocks: ${totalBlocks}`);
 
     // Check Reports
     const totalReports = await Report.countDocuments();
     const pendingReports = await Report.countDocuments({ status: 'pending' });
-    console.log('\n🚨 REPORTS:');
-    console.log(`   Total Reports: ${totalReports}`);
-    console.log(`   Pending Reports: ${pendingReports}`);
+    logger.debug('\n🚨 REPORTS:');
+    logger.debug(`   Total Reports: ${totalReports}`);
+    logger.debug(`   Pending Reports: ${pendingReports}`);
 
     // Check Security Logs
     const totalSecurityLogs = await SecurityLog.countDocuments();
     const unresolvedLogs = await SecurityLog.countDocuments({ resolved: false });
-    console.log('\n🔒 SECURITY LOGS:');
-    console.log(`   Total Logs: ${totalSecurityLogs}`);
-    console.log(`   Unresolved: ${unresolvedLogs}`);
+    logger.debug('\n🔒 SECURITY LOGS:');
+    logger.debug(`   Total Logs: ${totalSecurityLogs}`);
+    logger.debug(`   Unresolved: ${unresolvedLogs}`);
 
-    console.log('\n' + '='.repeat(60));
-    console.log('\n✅ Database check complete!');
+    logger.debug('\n' + '='.repeat(60));
+    logger.debug('\n✅ Database check complete!');
 
     if (orphanedMessages.length > 0) {
-      console.log('\n⚠️  WARNING: Found orphaned messages!');
-      console.log('   Run cleanup script to remove them.');
+      logger.debug('\n⚠️  WARNING: Found orphaned messages!');
+      logger.debug('   Run cleanup script to remove them.');
     }
 
     await mongoose.connection.close();
-    console.log('\n🔌 Disconnected from MongoDB');
+    logger.debug('\n🔌 Disconnected from MongoDB');
   } catch (error) {
-    console.error('❌ Error checking database:', error);
+    logger.error('❌ Error checking database:', error);
     process.exit(1);
   }
 };

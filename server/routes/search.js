@@ -8,6 +8,7 @@ import Journal from '../models/Journal.js';
 import Longform from '../models/Longform.js';
 import { searchLimiter } from '../middleware/rateLimiter.js';
 import { decryptMessage } from '../utils/encryption.js';
+import logger from '../utils/logger.js';
 
 /**
  * Escape special regex characters to prevent ReDoS attacks
@@ -102,7 +103,7 @@ router.get('/', auth, searchLimiter, async (req, res) => {
 
     res.json(results);
   } catch (error) {
-    console.error('Search error:', error);
+    logger.error('Search error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -134,7 +135,7 @@ router.get('/hashtag/:tag', auth, async (req, res) => {
 
     res.json({ posts, hashtag: hashtagQuery });
   } catch (error) {
-    console.error('Hashtag search error:', error);
+    logger.error('Hashtag search error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -168,7 +169,7 @@ router.get('/trending', auth, async (req, res) => {
 
     res.json(trending);
   } catch (error) {
-    console.error('Trending error:', error);
+    logger.error('Trending error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -217,7 +218,7 @@ router.get('/messages', auth, searchLimiter, async (req, res) => {
 
     res.json({ messages: matchingMessages, count: matchingMessages.length });
   } catch (error) {
-    console.error('Search messages error:', error);
+    logger.error('Search messages error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -287,7 +288,7 @@ router.get('/my-posts', auth, searchLimiter, async (req, res) => {
       query: q
     });
   } catch (error) {
-    console.error('Search my posts error:', error);
+    logger.error('Search my posts error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });

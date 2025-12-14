@@ -22,6 +22,7 @@ import { getCurrentUser } from '../utils/auth';
 import { getImageUrl } from '../utils/imageUrl';
 import { useToast } from '../hooks/useToast';
 import { convertEmojiShortcuts } from '../utils/textFormatting';
+import logger from './utils/logger';
 import './Profile.css';
 
 function Profile() {
@@ -115,7 +116,7 @@ function Profile() {
     Promise.all(fetchPromises).catch(error => {
       // Only log error if component is still mounted
       if (isMountedRef.current) {
-        console.error('Error loading profile data:', error);
+        logger.error('Error loading profile data:', error);
       }
     });
 
@@ -178,7 +179,7 @@ function Profile() {
       const response = await api.get(`/blocks/check/${id}`);
       setIsBlocked(response.data.isBlocked);
     } catch (error) {
-      console.error('Failed to check block status:', error);
+      logger.error('Failed to check block status:', error);
     }
   };
 
@@ -211,7 +212,7 @@ function Profile() {
         setCanSendMessage(true);
       }
     } catch (error) {
-      console.error('Failed to check privacy permissions:', error);
+      logger.error('Failed to check privacy permissions:', error);
       // Default to allowing if we can't check
       setCanSendFriendRequest(true);
       setCanSendMessage(false);
@@ -225,7 +226,7 @@ function Profile() {
       const defaultVisibility = response.data.privacySettings.defaultPostVisibility || 'followers';
       setPostVisibility(defaultVisibility);
     } catch (error) {
-      console.error('Failed to fetch privacy settings:', error);
+      logger.error('Failed to fetch privacy settings:', error);
     }
   };
 
@@ -235,7 +236,7 @@ function Profile() {
       setUser(response.data);
       setProfileError(null); // Clear any previous errors
     } catch (error) {
-      console.error('Failed to fetch user profile:', error);
+      logger.error('Failed to fetch user profile:', error);
 
       // Set specific error messages based on error type
       if (error.response?.status === 404) {
@@ -261,7 +262,7 @@ function Profile() {
       const response = await api.get(`/posts/user/${id}`);
       setPosts(response.data || []);
     } catch (error) {
-      console.error('Failed to fetch user posts:', error);
+      logger.error('Failed to fetch user posts:', error);
       setPosts([]);
     } finally {
       setLoadingPosts(false);
@@ -274,7 +275,7 @@ function Profile() {
       const response = await api.get(`/journals/user/${id}`);
       setJournals(response.data || []);
     } catch (error) {
-      console.error('Failed to fetch journals:', error);
+      logger.error('Failed to fetch journals:', error);
       setJournals([]);
     }
   };
@@ -284,7 +285,7 @@ function Profile() {
       const response = await api.get(`/longform/user/${id}`);
       setLongformPosts(response.data || []);
     } catch (error) {
-      console.error('Failed to fetch longform posts:', error);
+      logger.error('Failed to fetch longform posts:', error);
       setLongformPosts([]);
     }
   };
@@ -294,7 +295,7 @@ function Profile() {
       const response = await api.get(`/photo-essays/user/${id}`);
       setPhotoEssays(response.data || []);
     } catch (error) {
-      console.error('Failed to fetch photo essays:', error);
+      logger.error('Failed to fetch photo essays:', error);
       setPhotoEssays([]);
     }
   };
@@ -304,7 +305,7 @@ function Profile() {
       const response = await api.post(`/posts/${postId}/like`);
       setPosts(posts.map(p => p._id === postId ? response.data : p));
     } catch (error) {
-      console.error('Failed to like post:', error);
+      logger.error('Failed to like post:', error);
     }
   };
 
@@ -315,7 +316,7 @@ function Profile() {
       setPosts(posts.map(p => p._id === postId ? response.data : p));
       showToast(response.data.isPinned ? 'Post pinned' : 'Post unpinned', 'success');
     } catch (error) {
-      console.error('Failed to pin post:', error);
+      logger.error('Failed to pin post:', error);
       showToast('Failed to pin post', 'error');
     }
   };
@@ -326,7 +327,7 @@ function Profile() {
       setPosts(posts.map(p => p._id === postId ? response.data : p));
       setShowReactionPicker(null); // Hide picker after reaction
     } catch (error) {
-      console.error('Failed to react to post:', error);
+      logger.error('Failed to react to post:', error);
     }
   };
 
@@ -364,7 +365,7 @@ function Profile() {
 
       setSelectedMedia([...selectedMedia, ...response.data.media]);
     } catch (error) {
-      console.error('Failed to upload media:', error);
+      logger.error('Failed to upload media:', error);
       showAlert('Failed to upload media. Please try again.', 'Upload Failed');
     } finally {
       setUploadingMedia(false);
@@ -402,7 +403,7 @@ function Profile() {
       setShowContentWarning(false);
       showToast('Post created successfully!', 'success');
     } catch (error) {
-      console.error('Failed to create post:', error);
+      logger.error('Failed to create post:', error);
       showAlert('Failed to create post. Please try again.', 'Post Failed');
     } finally {
       setPostLoading(false);
@@ -415,7 +416,7 @@ function Profile() {
       setPosts(posts.map(p => p._id === postId ? response.data : p));
       setShowReactionPicker(null); // Hide picker after reaction
     } catch (error) {
-      console.error('Failed to react to comment:', error);
+      logger.error('Failed to react to comment:', error);
     }
   };
 
@@ -432,7 +433,7 @@ function Profile() {
       setPosts(posts.map(p => p._id === postId ? response.data : p));
       setCommentText(prev => ({ ...prev, [postId]: '' }));
     } catch (error) {
-      console.error('Failed to comment:', error);
+      logger.error('Failed to comment:', error);
       showAlert('Failed to add comment. Please try again.', 'Comment Failed');
     }
   };
@@ -458,7 +459,7 @@ function Profile() {
       setEditCommentText('');
       showToast('Comment updated successfully', 'success');
     } catch (error) {
-      console.error('Failed to update comment:', error);
+      logger.error('Failed to update comment:', error);
       showToast('Failed to update comment', 'error');
     }
   };
@@ -481,7 +482,7 @@ function Profile() {
       setPosts(posts.map(p => p._id === postId ? response.data : p));
       showToast('Comment deleted successfully', 'success');
     } catch (error) {
-      console.error('Failed to delete comment:', error);
+      logger.error('Failed to delete comment:', error);
       showToast('Failed to delete comment', 'error');
     }
   };
@@ -509,7 +510,7 @@ function Profile() {
       setReplyingToComment(null);
       showToast('Reply added successfully', 'success');
     } catch (error) {
-      console.error('Failed to add reply:', error);
+      logger.error('Failed to add reply:', error);
       showToast('Failed to add reply', 'error');
     }
   };
@@ -529,7 +530,7 @@ function Profile() {
       setPosts(posts.map(p => p._id === shareModal.post._id ? response.data : p));
       showAlert('Post shared successfully!', 'Shared');
     } catch (error) {
-      console.error('Failed to share post:', error);
+      logger.error('Failed to share post:', error);
       showAlert(error.response?.data?.message || 'Failed to share post.', 'Share Failed');
     }
   };
@@ -564,7 +565,7 @@ function Profile() {
       setEditPostVisibility('friends');
       showToast('Post updated successfully!', 'success');
     } catch (error) {
-      console.error('Failed to edit post:', error);
+      logger.error('Failed to edit post:', error);
       showToast('Failed to edit post. Please try again.', 'error');
     }
   };
@@ -587,7 +588,7 @@ function Profile() {
       setPosts(posts.filter(p => p._id !== postId));
       showToast('Post deleted successfully', 'success');
     } catch (error) {
-      console.error('Failed to delete post:', error);
+      logger.error('Failed to delete post:', error);
       showToast('Failed to delete post. Please try again.', 'error');
     }
   };
@@ -625,7 +626,7 @@ function Profile() {
 
       setFriendStatus('none');
     } catch (error) {
-      console.error('Failed to check friend status:', error);
+      logger.error('Failed to check friend status:', error);
       setFriendStatus('none');
     }
   };
@@ -640,7 +641,7 @@ function Profile() {
       // Check if already following - get MY following list
       const myUserId = currentUser?.id || currentUser?._id;
       if (!myUserId) {
-        console.error('Current user ID not available');
+        logger.error('Current user ID not available');
         setFollowStatus('none');
         return;
       }
@@ -669,7 +670,7 @@ function Profile() {
 
       setFollowStatus('none');
     } catch (error) {
-      console.error('Failed to check follow status:', error);
+      logger.error('Failed to check follow status:', error);
       setFollowStatus('none');
     }
   };
@@ -692,7 +693,7 @@ function Profile() {
     } catch (error) {
       setUploadMessage('Failed to upload photo');
       setTimeout(() => setUploadMessage(''), 3000);
-      console.error('Upload error:', error);
+      logger.error('Upload error:', error);
     }
   };
 

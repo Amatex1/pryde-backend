@@ -1,5 +1,6 @@
 import User from '../models/User.js';
 import { checkBlockedWords, checkSpam, calculateToxicityScore } from '../utils/moderation.js';
+import logger from '../utils/logger.js';
 
 /**
  * Check if user is currently muted
@@ -38,7 +39,7 @@ export const checkMuted = async (req, res, next) => {
 
     next();
   } catch (error) {
-    console.error('Check muted error:', error);
+    logger.error('Check muted error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 };
@@ -149,7 +150,7 @@ export const moderateContent = async (req, res, next) => {
 
     next();
   } catch (error) {
-    console.error('Moderate content error:', error);
+    logger.error('Moderate content error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 };

@@ -16,6 +16,7 @@ import { getCurrentUser } from '../utils/auth';
 import { getImageUrl } from '../utils/imageUrl';
 import { getSocket } from '../utils/socket';
 import { convertEmojiShortcuts } from '../utils/textFormatting';
+import logger from './utils/logger';
 import './GlobalFeed.css';
 import './Feed.css';
 
@@ -51,7 +52,7 @@ function GlobalFeed() {
       if (socket) {
         // Listen for real-time post reactions
         const handlePostReaction = (data) => {
-          console.log('💜 Real-time post reaction received:', data);
+          logger.debug('💜 Real-time post reaction received:', data);
           setPosts((prevPosts) =>
             prevPosts.map(p => p._id === data.postId ? data.post : p)
           );
@@ -61,7 +62,7 @@ function GlobalFeed() {
 
         // Listen for real-time comment reactions
         const handleCommentReaction = (data) => {
-          console.log('💜 Real-time comment reaction received:', data);
+          logger.debug('💜 Real-time comment reaction received:', data);
           setPosts((prevPosts) =>
             prevPosts.map(p => p._id === data.postId ? data.post : p)
           );
@@ -71,7 +72,7 @@ function GlobalFeed() {
 
         // Listen for real-time comments
         const handleCommentAdded = (data) => {
-          console.log('💬 Real-time comment received:', data);
+          logger.debug('💬 Real-time comment received:', data);
           setPosts((prevPosts) =>
             prevPosts.map(p => p._id === data.postId ? data.post : p)
           );
@@ -122,7 +123,7 @@ function GlobalFeed() {
 
       setHasMore(newPosts.length === 20);
     } catch (error) {
-      console.error('Failed to fetch global feed:', error);
+      logger.error('Failed to fetch global feed:', error);
     } finally {
       setLoading(false);
     }
@@ -141,7 +142,7 @@ function GlobalFeed() {
       setPosts(posts.map(p => p._id === postId ? response.data : p));
       setShowReactionPicker(null);
     } catch (error) {
-      console.error('Failed to react to post:', error);
+      logger.error('Failed to react to post:', error);
     }
   };
 
@@ -151,7 +152,7 @@ function GlobalFeed() {
       setPosts(posts.map(p => p._id === postId ? response.data : p));
       setShowReactionPicker(null);
     } catch (error) {
-      console.error('Failed to react to comment:', error);
+      logger.error('Failed to react to comment:', error);
     }
   };
 
@@ -160,7 +161,7 @@ function GlobalFeed() {
       const response = await api.get('/bookmarks');
       setBookmarkedPosts(response.data.bookmarks.map(post => post._id));
     } catch (error) {
-      console.error('Failed to fetch bookmarks:', error);
+      logger.error('Failed to fetch bookmarks:', error);
     }
   };
 
@@ -176,7 +177,7 @@ function GlobalFeed() {
         setBookmarkedPosts([...bookmarkedPosts, postId]);
       }
     } catch (error) {
-      console.error('Failed to bookmark post:', error);
+      logger.error('Failed to bookmark post:', error);
     }
   };
 
@@ -189,7 +190,7 @@ function GlobalFeed() {
       const response = await api.post(`/posts/${shareModal.post._id}/share`);
       setPosts(posts.map(p => p._id === shareModal.post._id ? response.data : p));
     } catch (error) {
-      console.error('Failed to share post:', error);
+      logger.error('Failed to share post:', error);
     }
   };
 
@@ -211,7 +212,7 @@ function GlobalFeed() {
       setPosts(posts.map(p => p._id === postId ? response.data : p));
       setCommentText(prev => ({ ...prev, [postId]: '' }));
     } catch (error) {
-      console.error('Failed to comment:', error);
+      logger.error('Failed to comment:', error);
     }
   };
 
@@ -236,7 +237,7 @@ function GlobalFeed() {
       setReplyingToComment(null);
       setReplyText('');
     } catch (error) {
-      console.error('Failed to reply to comment:', error);
+      logger.error('Failed to reply to comment:', error);
     }
   };
 

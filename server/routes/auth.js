@@ -20,6 +20,7 @@ import {
 import { logEmailVerification, logPasswordChange } from '../utils/securityLogger.js';
 import { loginLimiter, signupLimiter, passwordResetLimiter } from '../middleware/rateLimiter.js';
 import { validateSignup, validateLogin } from '../middleware/validation.js';
+import logger from '../utils/logger.js';
 
 // @route   GET /api/auth/check-username/:username
 // @desc    Check if username is available
@@ -59,7 +60,7 @@ router.get('/check-username/:username', async (req, res) => {
       message: 'Username is available!'
     });
   } catch (error) {
-    console.error('Check username error:', error);
+    logger.error('Check username error:', error);
     res.status(500).json({
       available: false,
       message: 'Error checking username availability'
@@ -110,7 +111,7 @@ router.post('/signup', signupLimiter, validateSignup, async (req, res) => {
           });
         }
       } catch (captchaError) {
-        console.error('CAPTCHA verification error:', captchaError);
+        logger.error('CAPTCHA verification error:', captchaError);
 
         // Only allow bypass in development mode
         if (process.env.NODE_ENV === 'production') {
@@ -121,7 +122,7 @@ router.post('/signup', signupLimiter, validateSignup, async (req, res) => {
         }
 
         // Allow bypass in development mode
-        console.warn('⚠️ CAPTCHA verification failed, allowing signup in development mode');
+        logger.warn('⚠️ CAPTCHA verification failed, allowing signup in development mode');
       }
     }
 
@@ -160,7 +161,7 @@ router.post('/signup', signupLimiter, validateSignup, async (req, res) => {
           action: 'blocked'
         });
       } catch (logError) {
-        console.error('Failed to log underage registration attempt:', logError);
+        logger.error('Failed to log underage registration attempt:', logError);
       }
 
       return res.status(403).json({
@@ -205,7 +206,7 @@ router.post('/signup', signupLimiter, validateSignup, async (req, res) => {
 
     // Send verification email (don't block registration if email fails)
     sendVerificationEmail(email, verificationToken, username).catch(err => {
-      console.error('Failed to send verification email:', err);
+      logger.error('Failed to send verification email:', err);
     });
 
     // Create JWT token
@@ -215,7 +216,7 @@ router.post('/signup', signupLimiter, validateSignup, async (req, res) => {
       { expiresIn: '7d' }
     );
 
-    console.log(`New user registered: ${username} (${email})`);
+    logger.debug(`New user registered: ${username} (${email})`);
 
     // Emit real-time event for new user registration (for admin panel)
     if (req.io) {
@@ -257,7 +258,7 @@ router.post('/signup', signupLimiter, validateSignup, async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Signup error:', error.message);
+    logger.error('Signup error:', error.message);
     res.status(500).json({ 
       success: false,
       message: 'Server error during registration',
@@ -327,7 +328,7 @@ router.post('/login', loginLimiter, validateLogin, async (req, res) => {
             action: 'banned'
           });
         } catch (logError) {
-          console.error('Failed to log underage login attempt:', logError);
+          logger.error('Failed to log underage login attempt:', logError);
         }
 
         return res.status(403).json({
@@ -505,13 +506,13 @@ router.post('/login', loginLimiter, validateLogin, async (req, res) => {
       // Send suspicious login email if enabled and login is suspicious
       if (suspicious && user.loginAlerts?.emailOnSuspiciousLogin) {
         sendSuspiciousLoginEmail(user.email, user.username, loginInfo).catch(err =>
-          console.error('Failed to send suspicious login email:', err)
+          logger.error('Failed to send suspicious login email:', err)
         );
       }
       // Send new device email ONLY if it's actually a new device
       else if (isNew && user.loginAlerts?.emailOnNewDevice) {
         sendLoginAlertEmail(user.email, user.username, loginInfo).catch(err =>
-          console.error('Failed to send login alert email:', err)
+          logger.error('Failed to send login alert email:', err)
         );
       }
       // Otherwise, don't send any email (same device, not suspicious)
@@ -524,7 +525,7 @@ router.post('/login', loginLimiter, validateLogin, async (req, res) => {
       { expiresIn: '7d' }
     );
 
-    console.log(`User logged in: ${email} from ${ipAddress}`);
+    logger.debug(`User logged in: ${email} from ${ipAddress}`);
 
     res.json({
       success: true,
@@ -554,7 +555,7 @@ router.post('/login', loginLimiter, validateLogin, async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Login error:', error.message);
+    logger.error('Login error:', error.message);
     res.status(500).json({ 
       success: false,
       message: 'Server error during login',
@@ -674,13 +675,13 @@ router.post('/verify-2fa-login', loginLimiter, async (req, res) => {
       // Send suspicious login email if enabled and login is suspicious
       if (suspicious && user.loginAlerts?.emailOnSuspiciousLogin) {
         sendSuspiciousLoginEmail(user.email, user.username, loginInfo).catch(err =>
-          console.error('Failed to send suspicious login email:', err)
+          logger.error('Failed to send suspicious login email:', err)
         );
       }
       // Send new device email ONLY if it's actually a new device
       else if (isNew && user.loginAlerts?.emailOnNewDevice) {
         sendLoginAlertEmail(user.email, user.username, loginInfo).catch(err =>
-          console.error('Failed to send login alert email:', err)
+          logger.error('Failed to send login alert email:', err)
         );
       }
       // Otherwise, don't send any email (same device, not suspicious)
@@ -693,7 +694,7 @@ router.post('/verify-2fa-login', loginLimiter, async (req, res) => {
       { expiresIn: '7d' }
     );
 
-    console.log(`User logged in with 2FA: ${user.email} from ${ipAddress}`);
+    logger.debug(`User logged in with 2FA: ${user.email} from ${ipAddress}`);
 
     res.json({
       success: true,
@@ -722,7 +723,7 @@ router.post('/verify-2fa-login', loginLimiter, async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('2FA login verification error:', error);
+    logger.error('2FA login verification error:', error);
     res.status(500).json({ message: 'Server error during 2FA verification' });
   }
 });
@@ -738,7 +739,7 @@ router.get('/me', auth, async (req, res) => {
 
     res.json(user);
   } catch (error) {
-    console.error('Get me error:', error);
+    logger.error('Get me error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -780,7 +781,7 @@ router.post('/forgot-password', passwordResetLimiter, async (req, res) => {
     try {
       await sendPasswordResetEmail(user.email, resetToken, user.username);
     } catch (emailError) {
-      console.error('Failed to send password reset email:', emailError);
+      logger.error('Failed to send password reset email:', emailError);
       // Continue anyway - token is saved in database
     }
 
@@ -789,7 +790,7 @@ router.post('/forgot-password', passwordResetLimiter, async (req, res) => {
       message: 'If an account with that email exists, a password reset link has been sent.'
     });
   } catch (error) {
-    console.error('Forgot password error:', error);
+    logger.error('Forgot password error:', error);
     res.status(500).json({
       success: false,
       message: 'Error processing password reset request'
@@ -839,12 +840,12 @@ router.post('/reset-password', async (req, res) => {
     const ipAddress = getClientIp(req);
     const userAgent = req.headers['user-agent'] || 'Unknown';
     logPasswordChange(user, ipAddress, userAgent).catch(err => {
-      console.error('Failed to log password change:', err);
+      logger.error('Failed to log password change:', err);
     });
 
     // Send password changed notification email
     sendPasswordChangedEmail(user.email, user.username).catch(err => {
-      console.error('Failed to send password changed email:', err);
+      logger.error('Failed to send password changed email:', err);
     });
 
     res.json({
@@ -852,7 +853,7 @@ router.post('/reset-password', async (req, res) => {
       message: 'Password has been reset successfully. You can now log in with your new password.'
     });
   } catch (error) {
-    console.error('Reset password error:', error);
+    logger.error('Reset password error:', error);
     res.status(500).json({
       success: false,
       message: 'Error resetting password'
@@ -890,17 +891,17 @@ router.get('/verify-email/:token', async (req, res) => {
     const ipAddress = getClientIp(req);
     const userAgent = req.headers['user-agent'] || 'Unknown';
     logEmailVerification(user, ipAddress, userAgent).catch(err => {
-      console.error('Failed to log email verification:', err);
+      logger.error('Failed to log email verification:', err);
     });
 
-    console.log(`Email verified for user: ${user.username}`);
+    logger.debug(`Email verified for user: ${user.username}`);
 
     res.json({
       success: true,
       message: 'Email verified successfully! You can now access all features.'
     });
   } catch (error) {
-    console.error('Email verification error:', error);
+    logger.error('Email verification error:', error);
     res.status(500).json({
       success: false,
       message: 'Error verifying email'
@@ -950,7 +951,7 @@ router.post('/resend-verification', auth, async (req, res) => {
       message: 'Verification email sent! Please check your inbox.'
     });
   } catch (error) {
-    console.error('Resend verification error:', error);
+    logger.error('Resend verification error:', error);
     res.status(500).json({
       success: false,
       message: 'Error sending verification email'
