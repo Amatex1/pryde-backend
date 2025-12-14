@@ -65,3 +65,18 @@
   transform: none;
 }
 
+/* ========================================
+   REDUCED MOTION SUPPORT (ACCESSIBILITY)
+   ======================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  .dark-mode-toggle {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .dark-mode-toggle:hover {
+    transform: none !important;
+  }
+}
+

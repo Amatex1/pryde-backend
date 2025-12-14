@@ -157,4 +157,20 @@ body.quiet-mode .edit-history-text {
   transform: none;
 }
 
+/* ========================================
+   REDUCED MOTION SUPPORT (ACCESSIBILITY)
+   ======================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  .edit-history-modal {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .edit-history-item:hover {
+    transform: none !important;
+  }
+}
+
+
 

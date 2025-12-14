@@ -427,6 +427,26 @@ body.dark-mode .recovery-note {
   transform: none;
 }
 
+/* ========================================
+   REDUCED MOTION SUPPORT (ACCESSIBILITY)
+   ======================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  .add-contact-form,
+  .contact-item,
+  .user-result {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .add-contact-btn:hover,
+  .remove-contact-btn:hover,
+  .user-result:hover {
+    transform: none !important;
+  }
+}
+
+
 
 .user-name {
   color: var(--text-primary);

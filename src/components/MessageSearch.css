@@ -252,4 +252,21 @@ body.dark-mode .result-message .highlight {
   transform: none;
 }
 
+/* ========================================
+   REDUCED MOTION SUPPORT (ACCESSIBILITY)
+   ======================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  .message-search,
+  .search-result-item {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .search-result-item:hover {
+    transform: none !important;
+  }
+}
+
+
 

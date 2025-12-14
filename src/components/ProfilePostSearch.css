@@ -230,4 +230,23 @@ body.dark-mode .filter-tab:hover {
   transform: none;
 }
 
+/* ========================================
+   REDUCED MOTION SUPPORT (ACCESSIBILITY)
+   ======================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  .search-filters,
+  .filter-tab,
+  .clear-search-btn {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .filter-tab:hover,
+  .clear-search-btn:hover {
+    transform: none !important;
+  }
+}
+
+
 

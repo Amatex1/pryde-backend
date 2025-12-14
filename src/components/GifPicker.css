@@ -340,3 +340,20 @@
   transform: none;
 }
 
+/* ========================================
+   REDUCED MOTION SUPPORT (ACCESSIBILITY)
+   ======================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  .gif-picker-overlay,
+  .gif-picker {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .gif-item:hover,
+  .category-btn:hover {
+    transform: none !important;
+  }
+}
+

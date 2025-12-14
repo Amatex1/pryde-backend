@@ -332,4 +332,22 @@
   transform: none;
 }
 
+/* ========================================
+   REDUCED MOTION SUPPORT (ACCESSIBILITY)
+   ======================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  .photo-reposition-modal {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .btn-save:hover,
+  .btn-reset:hover,
+  .btn-cancel:hover {
+    transform: none !important;
+  }
+}
+
+
 

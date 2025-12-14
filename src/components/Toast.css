@@ -138,3 +138,18 @@
   transform: none;
 }
 
+/* ========================================
+   REDUCED MOTION SUPPORT (ACCESSIBILITY)
+   ======================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  .toast {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .toast-close:hover {
+    transform: none !important;
+  }
+}
+

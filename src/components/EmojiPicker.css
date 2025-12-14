@@ -188,3 +188,19 @@
   transform: scale(1.05);
 }
 
+/* ========================================
+   REDUCED MOTION SUPPORT (ACCESSIBILITY)
+   ======================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  .emoji-picker-overlay,
+  .emoji-picker {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .emoji-button:hover {
+    transform: none !important;
+  }
+}
+

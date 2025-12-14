@@ -213,3 +213,20 @@
   transform: none;
 }
 
+/* ========================================
+   REDUCED MOTION SUPPORT (ACCESSIBILITY)
+   ======================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  .custom-modal-overlay,
+  .custom-modal {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .custom-modal-btn-primary:hover,
+  .custom-modal-btn-secondary:hover {
+    transform: none !important;
+  }
+}
+

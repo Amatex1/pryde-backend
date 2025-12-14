@@ -319,4 +319,21 @@
   transform: none;
 }
 
+/* ========================================
+   REDUCED MOTION SUPPORT (ACCESSIBILITY)
+   ======================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  .reaction-modal-overlay,
+  .reaction-modal {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .reaction-item:hover {
+    transform: none !important;
+  }
+}
+
+
 

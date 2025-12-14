@@ -96,4 +96,20 @@
   transform: none;
 }
 
+/* ========================================
+   REDUCED MOTION SUPPORT (ACCESSIBILITY)
+   ======================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  .formatted-text a {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .formatted-text a:hover {
+    transform: none !important;
+  }
+}
+
+
 

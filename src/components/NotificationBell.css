@@ -348,3 +348,20 @@
   transform: none;
 }
 
+/* ========================================
+   REDUCED MOTION SUPPORT (ACCESSIBILITY)
+   ======================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  .notification-bell,
+  .notification-badge,
+  .notification-dropdown {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .notif-item:hover {
+    transform: none !important;
+  }
+}
+

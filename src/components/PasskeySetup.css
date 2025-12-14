@@ -217,4 +217,21 @@
   transform: none;
 }
 
+/* ========================================
+   REDUCED MOTION SUPPORT (ACCESSIBILITY)
+   ======================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  .passkey-setup,
+  .passkey-actions button {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .passkey-actions button:hover {
+    transform: none !important;
+  }
+}
+
+
 

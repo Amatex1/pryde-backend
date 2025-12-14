@@ -40,4 +40,16 @@ body.quiet-mode .pinned-post-badge {
   opacity: 0.8;
 }
 
+/* ========================================
+   REDUCED MOTION SUPPORT (ACCESSIBILITY)
+   ======================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  .pinned-post-badge {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+
 

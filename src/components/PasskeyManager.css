@@ -323,4 +323,23 @@
   transform: none;
 }
 
+/* ========================================
+   REDUCED MOTION SUPPORT (ACCESSIBILITY)
+   ======================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  .passkey-manager,
+  .passkey-item,
+  .btn-remove-passkey {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .passkey-item:hover,
+  .btn-remove-passkey:hover {
+    transform: none !important;
+  }
+}
+
+
 

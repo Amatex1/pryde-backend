@@ -283,3 +283,20 @@
   transform: none;
 }
 
+/* ========================================
+   REDUCED MOTION SUPPORT (ACCESSIBILITY)
+   ======================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  .global-search-overlay,
+  .global-search-modal {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .search-result-item:hover,
+  .search-tab:hover {
+    transform: none !important;
+  }
+}
+

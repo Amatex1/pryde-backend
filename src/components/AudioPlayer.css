@@ -121,6 +121,24 @@
   transform: none;
 }
 
+/* ========================================
+   REDUCED MOTION SUPPORT (ACCESSIBILITY)
+   ======================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  .audio-player,
+  .audio-play-btn,
+  .audio-volume-btn {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .audio-play-btn:hover,
+  .audio-volume-btn:hover {
+    transform: none !important;
+  }
+}
+
 [data-theme="dark"] .current-time {
   color: var(--color-primary);
 }

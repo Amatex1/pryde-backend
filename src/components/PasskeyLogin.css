@@ -97,4 +97,21 @@
   transform: none;
 }
 
+/* ========================================
+   REDUCED MOTION SUPPORT (ACCESSIBILITY)
+   ======================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  .passkey-login,
+  .btn-passkey {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .btn-passkey:hover {
+    transform: none !important;
+  }
+}
+
+
 

@@ -170,4 +170,21 @@ body.quiet-mode .rsvp-count {
   transform: none;
 }
 
+/* ========================================
+   REDUCED MOTION SUPPORT (ACCESSIBILITY)
+   ======================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  .event-rsvp,
+  .rsvp-btn {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .rsvp-btn:hover {
+    transform: none !important;
+  }
+}
+
+
 

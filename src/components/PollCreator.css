@@ -258,4 +258,23 @@ body.quiet-mode .poll-creator {
   transform: none;
 }
 
+/* ========================================
+   REDUCED MOTION SUPPORT (ACCESSIBILITY)
+   ======================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  .poll-creator,
+  .add-option-btn,
+  .remove-option-btn {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .add-option-btn:hover,
+  .remove-option-btn:hover {
+    transform: none !important;
+  }
+}
+
+
 

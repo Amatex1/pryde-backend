@@ -880,3 +880,24 @@
 [data-quiet-mode="true"] .mobile-menu {
   animation: none;
 }
+
+/* ========================================
+   REDUCED MOTION SUPPORT (ACCESSIBILITY)
+   ======================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  .navbar,
+  .nav-button,
+  .notification-badge,
+  .dropdown-menu,
+  .mobile-menu,
+  .nav-link {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .nav-button:hover,
+  .nav-link:hover {
+    transform: none !important;
+  }
+}

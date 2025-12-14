@@ -218,4 +218,25 @@ body.dark-mode .uploading-spinner {
   transform: none;
 }
 
+/* ========================================
+   REDUCED MOTION SUPPORT (ACCESSIBILITY)
+   ======================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  .voice-recorder,
+  .recording-dot,
+  .uploading-spinner {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .start-recording-btn:hover,
+  .pause-btn:hover,
+  .resume-btn:hover,
+  .stop-btn:hover {
+    transform: none !important;
+  }
+}
+
+
 

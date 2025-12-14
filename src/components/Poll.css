@@ -263,3 +263,18 @@ body.quiet-mode .poll-container {
   border-color: var(--border-light);
 }
 
+/* ========================================
+   REDUCED MOTION SUPPORT (ACCESSIBILITY)
+   ======================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  .poll-results-bar {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .poll-option-button:hover:not(:disabled) {
+    transform: none !important;
+  }
+}
+

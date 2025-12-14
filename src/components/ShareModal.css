@@ -441,4 +441,22 @@
   transform: none;
 }
 
+/* ========================================
+   REDUCED MOTION SUPPORT (ACCESSIBILITY)
+   ======================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  .share-modal-overlay,
+  .share-modal {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .share-option:hover,
+  .btn-share:hover,
+  .btn-cancel:hover {
+    transform: none !important;
+  }
+}
+
 
