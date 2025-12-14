@@ -90,90 +90,7 @@ function Profile() {
   const editTextareaRef = useRef(null);
   const isMountedRef = useRef(true); // Track if component is mounted to prevent race conditions
 
-  useEffect(() => {
-    // Reset mounted flag when component mounts
-    isMountedRef.current = true;
-
-    // Fetch all data in parallel for faster initial load
-    const fetchPromises = [
-      fetchUserProfile(),
-      fetchUserPosts()
-    ];
-
-    if (isOwnProfile) {
-      fetchPromises.push(fetchPrivacySettings());
-    }
-
-    if (!isOwnProfile) {
-      fetchPromises.push(
-        checkFriendStatus(),
-        checkFollowStatus(),
-        checkBlockStatus(),
-        checkPrivacyPermissions()
-      );
-    }
-
-    Promise.all(fetchPromises).catch(error => {
-      // Only log error if component is still mounted
-      if (isMountedRef.current) {
-        logger.error('Error loading profile data:', error);
-      }
-    });
-
-    // Cleanup function to prevent state updates on unmounted component
-    return () => {
-      isMountedRef.current = false;
-    };
-  }, [id, isOwnProfile, checkPrivacyPermissions]);
-
-  // Auto-resize edit textarea based on content
-  useEffect(() => {
-    if (editTextareaRef.current && editingPostId) {
-      const textarea = editTextareaRef.current;
-      textarea.style.height = 'auto';
-      textarea.style.height = Math.max(textarea.scrollHeight, 100) + 'px';
-    }
-  }, [editPostText, editingPostId]);
-
-  // OPTIONAL FEATURES: Fetch content when tab changes
-  useEffect(() => {
-    if (activeTab === 'journals') {
-      fetchJournals();
-    } else if (activeTab === 'longform') {
-      fetchLongformPosts();
-    } else if (activeTab === 'photoEssays') {
-      fetchPhotoEssays();
-    }
-  }, [activeTab, id]);
-
-  // Update message permission when friend/follow status changes
-  useEffect(() => {
-    if (!isOwnProfile && user) {
-      checkPrivacyPermissions();
-    }
-  }, [isOwnProfile, user, checkPrivacyPermissions]);
-
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (actionsMenuRef.current && !actionsMenuRef.current.contains(event.target)) {
-        setShowActionsMenu(false);
-      }
-      // Close reaction picker when clicking outside
-      if (!event.target.closest('.reaction-container')) {
-        setShowReactionPicker(null);
-      }
-    };
-
-    if (showActionsMenu) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [showActionsMenu]);
-
+  // Define all fetch and check functions BEFORE useEffects that use them
   const checkBlockStatus = async () => {
     try {
       const response = await api.get(`/blocks/check/${id}`);
@@ -268,6 +185,172 @@ function Profile() {
       setLoadingPosts(false);
     }
   };
+
+  const checkFriendStatus = async () => {
+    try {
+      // Check if already friends
+      const friendsResponse = await api.get('/friends');
+      const isFriend = friendsResponse.data.some(friend => friend._id === id);
+
+      if (isFriend) {
+        setFriendStatus('friends');
+        return;
+      }
+
+      // Check for pending requests (received)
+      const pendingResponse = await api.get('/friends/requests/pending');
+      const receivedRequest = pendingResponse.data.find(req => req.sender._id === id);
+
+      if (receivedRequest) {
+        setFriendStatus('pending_received');
+        setFriendRequestId(receivedRequest._id);
+        return;
+      }
+
+      // Check for sent requests
+      const sentResponse = await api.get('/friends/requests/sent');
+      const sentRequest = sentResponse.data.find(req => req.receiver._id === id);
+
+      if (sentRequest) {
+        setFriendStatus('pending_sent');
+        setFriendRequestId(sentRequest._id); // Store request ID for cancellation
+        return;
+      }
+
+      setFriendStatus('none');
+    } catch (error) {
+      logger.error('Failed to check friend status:', error);
+      setFriendStatus('none');
+    }
+  };
+
+  const checkFollowStatus = async () => {
+    try {
+      // Get user info to check if private account
+      const userResponse = await api.get(`/users/${id}`);
+      const profileUserId = userResponse.data._id;
+      setIsPrivateAccount(userResponse.data.privacySettings?.isPrivateAccount || false);
+
+      // Check if already following - get MY following list
+      const myUserId = currentUser?.id || currentUser?._id;
+      if (!myUserId) {
+        logger.error('Current user ID not available');
+        setFollowStatus('none');
+        return;
+      }
+
+      const followingResponse = await api.get(`/follow/following/${myUserId}`);
+      const followingList = followingResponse.data.following || followingResponse.data;
+      const isFollowing = followingList.some(user => user._id === profileUserId);
+
+      if (isFollowing) {
+        setFollowStatus('following');
+        return;
+      }
+
+      // Check for pending follow requests (if private account)
+      if (userResponse.data.privacySettings?.isPrivateAccount) {
+        const requestsResponse = await api.get('/follow/requests/sent');
+        const sentRequests = requestsResponse.data.sentRequests || requestsResponse.data;
+        const pendingRequest = sentRequests.find(req => req.receiver._id === profileUserId);
+
+        if (pendingRequest) {
+          setFollowStatus('pending');
+          setFollowRequestId(pendingRequest._id);
+          return;
+        }
+      }
+
+      setFollowStatus('none');
+    } catch (error) {
+      logger.error('Failed to check follow status:', error);
+      setFollowStatus('none');
+    }
+  };
+
+  useEffect(() => {
+    // Reset mounted flag when component mounts
+    isMountedRef.current = true;
+
+    // Fetch all data in parallel for faster initial load
+    const fetchPromises = [
+      fetchUserProfile(),
+      fetchUserPosts()
+    ];
+
+    if (isOwnProfile) {
+      fetchPromises.push(fetchPrivacySettings());
+    }
+
+    if (!isOwnProfile) {
+      fetchPromises.push(
+        checkFriendStatus(),
+        checkFollowStatus(),
+        checkBlockStatus(),
+        checkPrivacyPermissions()
+      );
+    }
+
+    Promise.all(fetchPromises).catch(error => {
+      // Only log error if component is still mounted
+      if (isMountedRef.current) {
+        logger.error('Error loading profile data:', error);
+      }
+    });
+
+    // Cleanup function to prevent state updates on unmounted component
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, [id, isOwnProfile, checkPrivacyPermissions]);
+
+  // Auto-resize edit textarea based on content
+  useEffect(() => {
+    if (editTextareaRef.current && editingPostId) {
+      const textarea = editTextareaRef.current;
+      textarea.style.height = 'auto';
+      textarea.style.height = Math.max(textarea.scrollHeight, 100) + 'px';
+    }
+  }, [editPostText, editingPostId]);
+
+  // OPTIONAL FEATURES: Fetch content when tab changes
+  useEffect(() => {
+    if (activeTab === 'journals') {
+      fetchJournals();
+    } else if (activeTab === 'longform') {
+      fetchLongformPosts();
+    } else if (activeTab === 'photoEssays') {
+      fetchPhotoEssays();
+    }
+  }, [activeTab, id]);
+
+  // Update message permission when friend/follow status changes
+  useEffect(() => {
+    if (!isOwnProfile && user) {
+      checkPrivacyPermissions();
+    }
+  }, [isOwnProfile, user, checkPrivacyPermissions]);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (actionsMenuRef.current && !actionsMenuRef.current.contains(event.target)) {
+        setShowActionsMenu(false);
+      }
+      // Close reaction picker when clicking outside
+      if (!event.target.closest('.reaction-container')) {
+        setShowReactionPicker(null);
+      }
+    };
+
+    if (showActionsMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showActionsMenu]);
 
   // OPTIONAL FEATURES: Fetch creator content
   const fetchJournals = async () => {
@@ -590,88 +673,6 @@ function Profile() {
     } catch (error) {
       logger.error('Failed to delete post:', error);
       showToast('Failed to delete post. Please try again.', 'error');
-    }
-  };
-
-  const checkFriendStatus = async () => {
-    try {
-      // Check if already friends
-      const friendsResponse = await api.get('/friends');
-      const isFriend = friendsResponse.data.some(friend => friend._id === id);
-
-      if (isFriend) {
-        setFriendStatus('friends');
-        return;
-      }
-
-      // Check for pending requests (received)
-      const pendingResponse = await api.get('/friends/requests/pending');
-      const receivedRequest = pendingResponse.data.find(req => req.sender._id === id);
-
-      if (receivedRequest) {
-        setFriendStatus('pending_received');
-        setFriendRequestId(receivedRequest._id);
-        return;
-      }
-
-      // Check for sent requests
-      const sentResponse = await api.get('/friends/requests/sent');
-      const sentRequest = sentResponse.data.find(req => req.receiver._id === id);
-
-      if (sentRequest) {
-        setFriendStatus('pending_sent');
-        setFriendRequestId(sentRequest._id); // Store request ID for cancellation
-        return;
-      }
-
-      setFriendStatus('none');
-    } catch (error) {
-      logger.error('Failed to check friend status:', error);
-      setFriendStatus('none');
-    }
-  };
-
-  const checkFollowStatus = async () => {
-    try {
-      // Get user info to check if private account
-      const userResponse = await api.get(`/users/${id}`);
-      const profileUserId = userResponse.data._id;
-      setIsPrivateAccount(userResponse.data.privacySettings?.isPrivateAccount || false);
-
-      // Check if already following - get MY following list
-      const myUserId = currentUser?.id || currentUser?._id;
-      if (!myUserId) {
-        logger.error('Current user ID not available');
-        setFollowStatus('none');
-        return;
-      }
-
-      const followingResponse = await api.get(`/follow/following/${myUserId}`);
-      const followingList = followingResponse.data.following || followingResponse.data;
-      const isFollowing = followingList.some(user => user._id === profileUserId);
-
-      if (isFollowing) {
-        setFollowStatus('following');
-        return;
-      }
-
-      // Check for pending follow requests (if private account)
-      if (userResponse.data.privacySettings?.isPrivateAccount) {
-        const requestsResponse = await api.get('/follow/requests/sent');
-        const sentRequests = requestsResponse.data.sentRequests || requestsResponse.data;
-        const pendingRequest = sentRequests.find(req => req.receiver._id === profileUserId);
-
-        if (pendingRequest) {
-          setFollowStatus('pending');
-          setFollowRequestId(pendingRequest._id);
-          return;
-        }
-      }
-
-      setFollowStatus('none');
-    } catch (error) {
-      logger.error('Failed to check follow status:', error);
-      setFollowStatus('none');
     }
   };
 
