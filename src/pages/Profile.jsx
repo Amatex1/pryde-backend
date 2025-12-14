@@ -1149,7 +1149,8 @@ function Profile() {
     );
   }
 
-  if (!user) {
+  // Only show error page if loading is complete and user is still null
+  if (!user && !loading) {
     return (
       <div className="page-container profile-page">
         <Navbar />
