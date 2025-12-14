@@ -9,7 +9,7 @@
   # CSP - Content Security Policy (Lighthouse Best Practices requirement)
   # Note: 'unsafe-inline' and 'unsafe-eval' are needed for React but reduce security
   # Consider using nonces or hashes for production for better security
-  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://pryde-social.onrender.com https://hcaptcha.com https://*.hcaptcha.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https: blob:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https://pryde-social.onrender.com wss://pryde-social.onrender.com https://hcaptcha.com https://*.hcaptcha.com https://tenor.googleapis.com; frame-src https://hcaptcha.com https://*.hcaptcha.com; media-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://pryde-social.onrender.com https://hcaptcha.com https://*.hcaptcha.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https: blob:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https://pryde-social.onrender.com wss://pryde-social.onrender.com https://hcaptcha.com https://*.hcaptcha.com https://tenor.googleapis.com https://ipapi.co https://ip-api.com https://ipwhois.app; frame-src https://hcaptcha.com https://*.hcaptcha.com; media-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';
 
   # COOP - Cross-Origin-Opener-Policy (Lighthouse Best Practices requirement)
   # 'same-origin-allow-popups' allows OAuth popups while maintaining isolation
