@@ -569,10 +569,15 @@
   font-weight: 700; /* Bolder for better visibility */
   cursor: pointer;
   transition: all 0.3s ease;
-  min-width: auto; /* Let content determine width */
+  min-width: 80px; /* Ensure button doesn't get cut off */
   min-height: 48px; /* Ensure minimum touch target size */
   white-space: nowrap; /* Prevent text wrapping */
   flex-shrink: 0; /* Prevent button from shrinking */
+  overflow: visible; /* Ensure content is not clipped */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
 }
 
 .btn-poll:hover {
@@ -614,10 +619,15 @@
   font-weight: 700; /* Bolder for better visibility */
   cursor: pointer;
   transition: all 0.3s ease;
-  min-width: auto; /* Let content determine width */
+  min-width: 80px; /* Ensure button doesn't get cut off */
   min-height: 48px; /* Ensure minimum touch target size */
   white-space: nowrap; /* Prevent text wrapping */
   flex-shrink: 0; /* Prevent button from shrinking */
+  overflow: visible; /* Ensure content is not clipped */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
 }
 
 .btn-content-warning:hover {
