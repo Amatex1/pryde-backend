@@ -815,7 +815,6 @@ html:not([data-theme])[data-quiet-mode="true"] .hide-metrics-checkbox:hover {
 }
 
 .action-btn {
-  flex: 1;
   padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-pill);
   border: none;
@@ -829,6 +828,7 @@ html:not([data-theme])[data-quiet-mode="true"] .hide-metrics-checkbox:hover {
   gap: var(--space-2);
   font-size: 14px;
   font-weight: 600; /* Increased for better visibility */
+  white-space: nowrap;
 }
 
 .action-btn:hover {
