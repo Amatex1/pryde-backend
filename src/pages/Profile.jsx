@@ -93,6 +93,7 @@ function Profile() {
   const [editHistoryPostId, setEditHistoryPostId] = useState(null);
   const editTextareaRef = useRef(null);
   const isMountedRef = useRef(true); // Track if component is mounted to prevent race conditions
+  const [windowWidth, setWindowWidth] = useState(window.innerWidth); // Track window width for responsive layout
 
   // Define all fetch and check functions BEFORE useEffects that use them
   const checkBlockStatus = async () => {
@@ -387,6 +388,16 @@ function Profile() {
       checkPrivacyPermissions();
     }
   }, [isOwnProfile, user, checkPrivacyPermissions]);
+
+  // Handle window resize for responsive layout
+  useEffect(() => {
+    const handleResize = () => {
+      setWindowWidth(window.innerWidth);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -1413,7 +1424,20 @@ function Profile() {
           </div>
         </div>
 
-        <div className="profile-layout">
+        <div
+          className="profile-layout"
+          style={{
+            display: 'grid',
+            gridTemplateColumns: windowWidth > 768
+              ? (windowWidth > 1400 ? '1fr 280px' : '1fr 320px')
+              : (windowWidth > 480 ? '1fr 240px' : '1fr'),
+            gap: windowWidth > 768 ? 'var(--space-6)' : 'var(--space-3)',
+            alignItems: 'start',
+            maxWidth: '1200px',
+            margin: '0 auto',
+            padding: windowWidth > 768 ? '0 var(--space-4)' : '0 var(--space-2)'
+          }}
+        >
           <div className="profile-main">
           {/* OPTIONAL FEATURES: Creator profile tabs */}
           {user?.isCreator && (

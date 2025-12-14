@@ -1,10 +1,23 @@
 /* ========================================
    PROFILE PAGE - POLISHED WITH DESIGN SYSTEM
-   Version: 2024-12-14-v3-IMPORTANT-FLAGS
-   CRITICAL: Added !important flags to force styles
+   Version: 2024-12-14-v4-FORCE-GRID-LAYOUT
+   CRITICAL: Maximum specificity to override all conflicts
    LAYOUT: Grid with sidebar on RIGHT (desktop)
    ======================================== */
 
+/* CRITICAL FIX: Force grid layout with absolute maximum specificity */
+/* This MUST be at the top to prevent any override issues */
+.page-container.profile-page .profile-layout,
+.profile-page .profile-layout,
+div.profile-layout,
+.profile-layout {
+  display: grid !important;
+  grid-template-columns: 1fr 320px !important;
+  gap: var(--space-6) !important;
+  align-items: start !important;
+}
+
+.profile-page .profile-container,
 .profile-container {
   max-width: 1200px;
   margin: 0 auto;
