@@ -48,10 +48,14 @@
 }
 
 .cookie-learn-more {
+  background: transparent;
+  border: none;
   color: white;
   text-decoration: underline;
   font-weight: 600;
   font-size: 0.95rem;
+  cursor: pointer;
+  padding: 0;
   transition: opacity 0.2s ease;
 }
 
