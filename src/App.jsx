@@ -22,7 +22,6 @@ const Footer = lazy(() => import('./components/Footer'));
 const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
 const ResetPassword = lazy(() => import('./pages/ResetPassword'));
 const Feed = lazy(() => import('./pages/Feed'));
-const GlobalFeed = lazy(() => import('./pages/GlobalFeed'));
 const FollowingFeed = lazy(() => import('./pages/FollowingFeed'));
 const Journal = lazy(() => import('./pages/Journal'));
 const Longform = lazy(() => import('./pages/Longform'));
@@ -216,7 +215,6 @@ function App() {
 
           {/* Protected Routes */}
           <Route path="/feed" element={<PrivateRoute><Feed /></PrivateRoute>} />
-          <Route path="/feed/global" element={<PrivateRoute><GlobalFeed /></PrivateRoute>} /> {/* PHASE 2 */}
           <Route path="/feed/following" element={<PrivateRoute><FollowingFeed /></PrivateRoute>} /> {/* PHASE 2 */}
           <Route path="/journal" element={<PrivateRoute><Journal /></PrivateRoute>} /> {/* PHASE 3 */}
           <Route path="/longform" element={<PrivateRoute><Longform /></PrivateRoute>} /> {/* PHASE 3 */}

@@ -202,10 +202,6 @@ function Navbar() {
               <span className="mobile-menu-icon">🏠</span>
               <span>Feed</span>
             </Link>
-            <Link to="/feed/global" className="mobile-menu-item" onClick={() => setShowMobileMenu(false)}>
-              <span className="mobile-menu-icon">🌟</span>
-              <span>Discover</span>
-            </Link>
             <Link to="/discover" className="mobile-menu-item" onClick={() => setShowMobileMenu(false)}>
               <span className="mobile-menu-icon">🏷️</span>
               <span>Tags</span>
@@ -290,10 +286,6 @@ function Navbar() {
           <Link to="/discover" className="nav-button" title="Tags">
             <span className="nav-icon">🏷️</span>
             <span className="nav-label">Tags</span>
-          </Link>
-          <Link to="/feed/global" className="nav-button" title="Discover">
-            <span className="nav-icon">🌟</span>
-            <span className="nav-label">Discover</span>
           </Link>
           <Link to="/journal" className="nav-button" title="Journal">
             <span className="nav-icon">📔</span>

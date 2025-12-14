@@ -1099,6 +1099,11 @@ html:not([data-theme])[data-quiet-mode="true"] .hide-metrics-checkbox:hover {
   display: inline-block;
 }
 
+/* Make sure React button matches other action buttons */
+.reaction-container .action-btn {
+  min-width: auto;
+}
+
 /* Reaction picker popup */
 .reaction-picker {
   position: absolute;
