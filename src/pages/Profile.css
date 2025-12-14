@@ -118,12 +118,17 @@
 div.profile-page .profile-layout,
 div.profile-layout,
 /* FLUID RESPONSIVE LAYOUT - Automatically adapts to any screen size */
+/* DEFAULT: Two-column layout for desktop/tablet */
+.profile-page .profile-layout,
+.page-container.profile-page .profile-layout,
+div.profile-page .profile-layout,
+div.profile-layout,
 .profile-layout {
   display: grid !important;
-  grid-template-columns: 1fr !important;
+  grid-template-columns: 1fr 320px !important;
   grid-template-rows: auto !important;
-  grid-template-areas: "main" "sidebar" !important;
-  gap: var(--fluid-gap-md) !important;
+  grid-template-areas: "main sidebar" !important;
+  gap: var(--fluid-gap-lg) !important;
   align-items: start !important;
   max-width: var(--fluid-container-max) !important;
   margin: 0 auto !important;
@@ -132,27 +137,39 @@ div.profile-layout,
   box-sizing: border-box !important;
 }
 
-/* Tablet and up: Sidebar on right with fluid sizing */
-@media (min-width: 769px) {
-  .profile-layout {
-    grid-template-columns: var(--fluid-main-column) var(--fluid-sidebar-md) !important;
-    grid-template-areas: "main sidebar" !important;
-    gap: var(--fluid-gap-lg) !important;
-  }
-}
-
 /* Desktop: Larger sidebar */
 @media (min-width: 1401px) {
+  .profile-page .profile-layout,
+  .page-container.profile-page .profile-layout,
+  div.profile-page .profile-layout,
+  div.profile-layout,
   .profile-layout {
-    grid-template-columns: var(--fluid-main-column) var(--fluid-sidebar-lg) !important;
+    grid-template-columns: 1fr 360px !important;
     gap: var(--fluid-gap-xl) !important;
   }
 }
 
 /* Ultrawide: Maximum sidebar size */
 @media (min-width: 2560px) {
+  .profile-page .profile-layout,
+  .page-container.profile-page .profile-layout,
+  div.profile-page .profile-layout,
+  div.profile-layout,
   .profile-layout {
-    grid-template-columns: var(--fluid-main-column) var(--fluid-sidebar-xl) !important;
+    grid-template-columns: 1fr 400px !important;
+  }
+}
+
+/* Mobile ONLY: Stack sidebar below */
+@media (max-width: 768px) {
+  .profile-page .profile-layout,
+  .page-container.profile-page .profile-layout,
+  div.profile-page .profile-layout,
+  div.profile-layout,
+  .profile-layout {
+    grid-template-columns: 1fr !important;
+    grid-template-areas: "main" "sidebar" !important;
+    gap: var(--fluid-gap-md) !important;
   }
 }
 
