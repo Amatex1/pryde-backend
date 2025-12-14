@@ -1799,12 +1799,14 @@ function Feed() {
                       </div>
                     )}
 
-                    {post.comments && post.comments.length > 0 && (
+                    {/* Comments Section - Facebook Style */}
+                    {postComments[post._id] && postComments[post._id].length > 0 && (
                       <div className="post-comments">
-                        {post.comments.filter(comment => !comment.parentComment).slice(-3).map((comment) => {
+                        {postComments[post._id].slice(-3).map((comment) => {
                           const isEditing = editingCommentId === comment._id;
-                          const isOwnComment = comment.user?._id === currentUser?._id;
-                          const replies = post.comments.filter(c => c.parentComment === comment._id);
+                          const isOwnComment = comment.authorId?._id === currentUser?._id || comment.authorId === currentUser?._id;
+                          const replies = commentReplies[comment._id] || [];
+                          const userReactionEmoji = getUserReactionEmoji(comment.reactions);
 
                           return (
                             <div key={comment._id} className="comment-thread">
@@ -1812,251 +1814,264 @@ function Feed() {
                                 className="comment"
                                 ref={(el) => commentRefs.current[comment._id] = el}
                               >
-                                <Link
-                                  to={`/profile/${comment.user?.username}`}
-                                  className="comment-avatar"
-                                  style={{ textDecoration: 'none' }}
-                                  aria-label={`View ${comment.user?.displayName || comment.user?.username}'s profile`}
-                                >
-                                  {comment.user?.profilePhoto ? (
-                                    <OptimizedImage
-                                      src={getImageUrl(comment.user.profilePhoto)}
-                                      alt={comment.user.username}
-                                      className="avatar-image"
-                                    />
-                                  ) : (
-                                    <span>{comment.user?.displayName?.charAt(0).toUpperCase() || 'U'}</span>
-                                  )}
-                                </Link>
-                                <div className="comment-content">
-                                  {isEditing ? (
-                                    <div className="comment-edit-box">
-                                      <input
-                                        type="text"
-                                        value={editCommentText}
-                                        onChange={(e) => setEditCommentText(e.target.value)}
-                                        className="comment-edit-input"
-                                        autoFocus
-                                      />
-                                      <div className="comment-edit-actions">
-                                        <button
-                                          onClick={() => handleSaveEditComment(post._id, comment._id)}
-                                          className="btn-save-comment"
-                                        >
-                                          Save
-                                        </button>
-                                        <button
-                                          onClick={handleCancelEditComment}
-                                          className="btn-cancel-comment"
-                                        >
-                                          Cancel
-                                        </button>
-                                      </div>
-                                    </div>
-                                  ) : (
-                                    <>
-                                      {/* Facebook style: Username INSIDE bubble at top */}
-                                      <div className="comment-text">
-                                        <Link
-                                          to={`/profile/${comment.user?.username}`}
-                                          className="comment-author-name"
-                                          style={{ textDecoration: 'none' }}
-                                        >
-                                          {comment.user?.displayName || comment.user?.username}
-                                        </Link>
-                                        <div className="comment-content-text">
-                                          {comment.content && <FormattedText text={comment.content} />}
-                                          {comment.gifUrl && (
-                                            <div className="comment-gif">
-                                              <img src={comment.gifUrl} alt="GIF" />
-                                            </div>
-                                          )}
-                                          {comment.edited && <span className="edited-indicator"> (edited)</span>}
+                                {comment.isDeleted ? (
+                                  <div className="comment-deleted">
+                                    <span className="deleted-icon">🗑️</span>
+                                    <span className="deleted-text">This comment was removed</span>
+                                  </div>
+                                ) : (
+                                  <>
+                                    <Link
+                                      to={`/profile/${comment.authorId?.username}`}
+                                      className="comment-avatar"
+                                      style={{ textDecoration: 'none' }}
+                                      aria-label={`View ${comment.authorId?.displayName || comment.authorId?.username}'s profile`}
+                                    >
+                                      {comment.authorId?.profilePhoto ? (
+                                        <OptimizedImage
+                                          src={getImageUrl(comment.authorId.profilePhoto)}
+                                          alt={comment.authorId.username}
+                                          className="avatar-image"
+                                        />
+                                      ) : (
+                                        <span>{comment.authorId?.displayName?.charAt(0).toUpperCase() || 'U'}</span>
+                                      )}
+                                    </Link>
+                                    <div className="comment-content">
+                                      {isEditing ? (
+                                        <div className="comment-edit-box">
+                                          <input
+                                            type="text"
+                                            value={editCommentText}
+                                            onChange={(e) => setEditCommentText(e.target.value)}
+                                            className="comment-edit-input"
+                                            autoFocus
+                                          />
+                                          <div className="comment-edit-actions">
+                                            <button
+                                              onClick={() => handleSaveEditComment(comment._id)}
+                                              className="btn-save-comment"
+                                            >
+                                              Save
+                                            </button>
+                                            <button
+                                              onClick={handleCancelEditComment}
+                                              className="btn-cancel-comment"
+                                            >
+                                              Cancel
+                                            </button>
+                                          </div>
                                         </div>
-                                      </div>
-
-                                      {/* YouTube-style actions below comment */}
-                                      <div className="comment-actions">
-                                        <span className="comment-timestamp">
-                                          {(() => {
-                                            const now = new Date();
-                                            const commentDate = new Date(comment.createdAt);
-                                            const diffMs = now - commentDate;
-                                            const diffMins = Math.floor(diffMs / 60000);
-                                            const diffHours = Math.floor(diffMs / 3600000);
-                                            const diffDays = Math.floor(diffMs / 86400000);
-
-                                            if (diffMins < 1) return 'Just now';
-                                            if (diffMins < 60) return `${diffMins}m`;
-                                            if (diffHours < 24) return `${diffHours}h`;
-                                            if (diffDays < 7) return `${diffDays}d`;
-                                            return commentDate.toLocaleDateString();
-                                          })()}
-                                        </span>
-                                        <div className="reaction-container">
-                                          <button
-                                            className={`comment-action-btn ${comment.reactions?.some(r => r.user?._id === currentUser?.id || r.user === currentUser?.id) ? 'liked' : ''}`}
-                                            onClick={(e) => {
-                                              // On mobile, toggle picker; on desktop, react with default
-                                              if (window.innerWidth <= 768) {
-                                                e.preventDefault();
-                                                setShowReactionPicker(showReactionPicker === `comment-${comment._id}` ? null : `comment-${comment._id}`);
-                                              } else {
-                                                const userReaction = comment.reactions?.find(r => r.user?._id === currentUser?.id || r.user === currentUser?.id);
-                                                handleCommentReaction(post._id, comment._id, userReaction?.emoji || '👍');
-                                              }
-                                            }}
-                                            onMouseEnter={() => {
-                                              if (window.innerWidth > 768) {
-                                                setShowReactionPicker(`comment-${comment._id}`);
-                                              }
-                                            }}
-                                            onMouseLeave={() => {
-                                              if (window.innerWidth > 768) {
-                                                setTimeout(() => {
-                                                  if (showReactionPicker === `comment-${comment._id}`) {
-                                                    setShowReactionPicker(null);
-                                                  }
-                                                }, 300);
-                                              }
-                                            }}
-                                            onTouchStart={(e) => {
-                                              const touchTimer = setTimeout(() => {
-                                                setShowReactionPicker(`comment-${comment._id}`);
-                                              }, 500);
-                                              e.currentTarget.dataset.touchTimer = touchTimer;
-                                            }}
-                                            onTouchEnd={(e) => {
-                                              if (e.currentTarget.dataset.touchTimer) {
-                                                clearTimeout(parseInt(e.currentTarget.dataset.touchTimer));
-                                                delete e.currentTarget.dataset.touchTimer;
-                                              }
-                                            }}
-                                          >
-                                            {comment.reactions?.find(r => r.user?._id === currentUser?.id || r.user === currentUser?.id)?.emoji || '👍'}
-                                          </button>
-                                          {comment.reactions?.length > 0 && (
-                                            <button
-                                              className="reaction-count-btn"
-                                              onClick={() => setReactionDetailsModal({
-                                                isOpen: true,
-                                                reactions: comment.reactions || [],
-                                                likes: []
-                                              })}
+                                      ) : (
+                                        <>
+                                          <div className="comment-text">
+                                            <Link
+                                              to={`/profile/${comment.authorId?.username}`}
+                                              className="comment-author-name"
+                                              style={{ textDecoration: 'none' }}
                                             >
-                                              {comment.reactions.length}
-                                            </button>
-                                          )}
-                                          {showReactionPicker === `comment-${comment._id}` && (
-                                            <div
-                                              className="reaction-picker"
-                                              onMouseEnter={() => {
-                                                if (window.innerWidth > 768) {
-                                                  setShowReactionPicker(`comment-${comment._id}`);
-                                                }
-                                              }}
-                                              onMouseLeave={() => {
-                                                if (window.innerWidth > 768) {
-                                                  setShowReactionPicker(null);
-                                                }
-                                              }}
-                                            >
-                                              {['👍', '❤️', '😂', '😮', '😢', '😡', '🤗', '🎉', '🤔', '🔥', '👏', '🤯', '🤢', '👎'].map(emoji => (
-                                                <button
-                                                  key={emoji}
-                                                  className="reaction-btn"
-                                                  onClick={() => {
-                                                    handleCommentReaction(post._id, comment._id, emoji);
-                                                    setShowReactionPicker(null);
-                                                  }}
-                                                  title={emoji}
-                                                >
-                                                  {emoji}
-                                                </button>
-                                              ))}
-                                            </div>
-                                          )}
-                                        </div>
-                                        <button
-                                          className="comment-action-btn"
-                                          onClick={() => {
-                                            handleReplyToComment(post._id, comment._id);
-                                          }}
-                                        >
-                                          💬 Reply
-                                        </button>
-                                        {replies.length > 0 && (
-                                          <button
-                                            className="comment-action-btn view-replies-btn"
-                                            onClick={() => setShowReplies(prev => ({
-                                              ...prev,
-                                              [comment._id]: !prev[comment._id]
-                                            }))}
-                                          >
-                                            {showReplies[comment._id] ? '▲' : '▼'} {replies.length} {replies.length === 1 ? 'reply' : 'replies'}
-                                          </button>
-                                        )}
-                                        {isOwnComment ? (
-                                          <>
-                                            <button
-                                              className="comment-action-btn"
-                                              onClick={() => handleEditComment(comment._id, comment.content)}
-                                            >
-                                              ✏️ Edit
-                                            </button>
-                                            <button
-                                              className="comment-action-btn delete-btn"
-                                              onClick={() => handleDeleteComment(post._id, comment._id)}
-                                            >
-                                              🗑️ Delete
-                                            </button>
-                                          </>
-                                        ) : (
-                                          <button
-                                            className="comment-action-btn"
-                                            onClick={() => {
-                                              setReportModal({ isOpen: true, type: 'comment', contentId: comment._id, userId: comment.user?._id });
-                                            }}
-                                          >
-                                            🚩 Report
-                                          </button>
-                                        )}
-                                      </div>
-
-                                      {/* Reply Input Box */}
-                                      {replyingToComment?.postId === post._id && replyingToComment?.commentId === comment._id && (
-                                        <form onSubmit={handleSubmitReply} className="reply-input-box">
-                                          <div className="reply-input-wrapper">
-                                            <input
-                                              type="text"
-                                              value={replyText}
-                                              onChange={(e) => setReplyText(e.target.value)}
-                                              placeholder="Write a reply..."
-                                              className="reply-input"
-                                              autoFocus
-                                            />
-                                            <div className="reply-actions">
-                                              <button type="submit" className="btn-submit-reply" disabled={!replyText.trim()}>
-                                                Send
-                                              </button>
-                                              <button type="button" onClick={handleCancelReply} className="btn-cancel-reply">
-                                                Cancel
-                                              </button>
+                                              {comment.authorId?.displayName || comment.authorId?.username}
+                                            </Link>
+                                            <div className="comment-content-text">
+                                              {comment.content && <FormattedText text={comment.content} />}
+                                              {comment.gifUrl && (
+                                                <div className="comment-gif">
+                                                  <img src={comment.gifUrl} alt="GIF" />
+                                                </div>
+                                              )}
+                                              {comment.isEdited && <span className="edited-indicator"> (edited)</span>}
                                             </div>
                                           </div>
-                                        </form>
+
+                                          {/* Comment actions */}
+                                          <div className="comment-actions">
+                                            <span className="comment-timestamp">
+                                              {(() => {
+                                                const now = new Date();
+                                                const commentDate = new Date(comment.createdAt);
+                                                const diffMs = now - commentDate;
+                                                const diffMins = Math.floor(diffMs / 60000);
+                                                const diffHours = Math.floor(diffMs / 3600000);
+                                                const diffDays = Math.floor(diffMs / 86400000);
+
+                                                if (diffMins < 1) return 'Just now';
+                                                if (diffMins < 60) return `${diffMins}m`;
+                                                if (diffHours < 24) return `${diffHours}h`;
+                                                if (diffDays < 7) return `${diffDays}d`;
+                                                return commentDate.toLocaleDateString();
+                                              })()}
+                                            </span>
+                                            <div className="reaction-container">
+                                              <button
+                                                className={`comment-action-btn ${userReactionEmoji ? 'liked' : ''}`}
+                                                onClick={(e) => {
+                                                  if (window.innerWidth <= 768) {
+                                                    e.preventDefault();
+                                                    setShowReactionPicker(showReactionPicker === `comment-${comment._id}` ? null : `comment-${comment._id}`);
+                                                  } else {
+                                                    handleCommentReaction(comment._id, userReactionEmoji || '👍');
+                                                  }
+                                                }}
+                                                onMouseEnter={() => {
+                                                  if (window.innerWidth > 768) {
+                                                    setShowReactionPicker(`comment-${comment._id}`);
+                                                  }
+                                                }}
+                                                onMouseLeave={() => {
+                                                  if (window.innerWidth > 768) {
+                                                    setTimeout(() => {
+                                                      if (showReactionPicker === `comment-${comment._id}`) {
+                                                        setShowReactionPicker(null);
+                                                      }
+                                                    }, 300);
+                                                  }
+                                                }}
+                                                onTouchStart={(e) => {
+                                                  const touchTimer = setTimeout(() => {
+                                                    setShowReactionPicker(`comment-${comment._id}`);
+                                                  }, 500);
+                                                  e.currentTarget.dataset.touchTimer = touchTimer;
+                                                }}
+                                                onTouchEnd={(e) => {
+                                                  if (e.currentTarget.dataset.touchTimer) {
+                                                    clearTimeout(parseInt(e.currentTarget.dataset.touchTimer));
+                                                    delete e.currentTarget.dataset.touchTimer;
+                                                  }
+                                                }}
+                                              >
+                                                <span>{userReactionEmoji || '👍'}</span>
+                                              </button>
+                                              {Object.values(comment.reactions || {}).flat().length > 0 && (
+                                                <button
+                                                  className="reaction-count-btn"
+                                                  onClick={() => {
+                                                    // Convert reactions Map to array format for modal
+                                                    const reactionsArray = [];
+                                                    Object.entries(comment.reactions || {}).forEach(([emoji, userIds]) => {
+                                                      userIds.forEach(userId => {
+                                                        reactionsArray.push({ user: userId, emoji });
+                                                      });
+                                                    });
+                                                    setReactionDetailsModal({
+                                                      isOpen: true,
+                                                      reactions: reactionsArray,
+                                                      likes: []
+                                                    });
+                                                  }}
+                                                >
+                                                  {Object.values(comment.reactions || {}).flat().length}
+                                                </button>
+                                              )}
+                                              {showReactionPicker === `comment-${comment._id}` && (
+                                                <div
+                                                  className="reaction-picker"
+                                                  onMouseEnter={() => {
+                                                    if (window.innerWidth > 768) {
+                                                      setShowReactionPicker(`comment-${comment._id}`);
+                                                    }
+                                                  }}
+                                                  onMouseLeave={() => {
+                                                    if (window.innerWidth > 768) {
+                                                      setShowReactionPicker(null);
+                                                    }
+                                                  }}
+                                                >
+                                                  {['👍', '❤️', '😂', '😮', '😢', '😡', '🤗', '🎉', '🤔', '🔥', '👏', '🤯', '🤢', '👎', '🏳️‍🌈', '🏳️‍⚧️'].map(emoji => (
+                                                    <button
+                                                      key={emoji}
+                                                      className="reaction-btn"
+                                                      onClick={() => {
+                                                        handleCommentReaction(comment._id, emoji);
+                                                        setShowReactionPicker(null);
+                                                      }}
+                                                      title={emoji}
+                                                    >
+                                                      {emoji}
+                                                    </button>
+                                                  ))}
+                                                </div>
+                                              )}
+                                            </div>
+                                            <button
+                                              className="comment-action-btn"
+                                              onClick={() => {
+                                                handleReplyToComment(post._id, comment._id);
+                                              }}
+                                            >
+                                              💬 Reply
+                                            </button>
+                                            {comment.replyCount > 0 && (
+                                              <button
+                                                className="comment-action-btn view-replies-btn"
+                                                onClick={() => toggleReplies(comment._id)}
+                                              >
+                                                {showReplies[comment._id] ? '▲' : '▼'} View {comment.replyCount} {comment.replyCount === 1 ? 'reply' : 'replies'}
+                                              </button>
+                                            )}
+                                            {isOwnComment ? (
+                                              <>
+                                                <button
+                                                  className="comment-action-btn"
+                                                  onClick={() => handleEditComment(comment._id, comment.content)}
+                                                >
+                                                  ✏️ Edit
+                                                </button>
+                                                <button
+                                                  className="comment-action-btn delete-btn"
+                                                  onClick={() => handleDeleteComment(post._id, comment._id, false)}
+                                                >
+                                                  🗑️ Delete
+                                                </button>
+                                              </>
+                                            ) : (
+                                              <button
+                                                className="comment-action-btn"
+                                                onClick={() => {
+                                                  setReportModal({ isOpen: true, type: 'comment', contentId: comment._id, userId: comment.authorId?._id });
+                                                }}
+                                              >
+                                                🚩 Report
+                                              </button>
+                                            )}
+                                          </div>
+
+                                          {/* Reply Input Box */}
+                                          {replyingToComment?.postId === post._id && replyingToComment?.commentId === comment._id && (
+                                            <form onSubmit={handleSubmitReply} className="reply-input-box">
+                                              <div className="reply-input-wrapper">
+                                                <input
+                                                  type="text"
+                                                  value={replyText}
+                                                  onChange={(e) => setReplyText(e.target.value)}
+                                                  placeholder="Write a reply..."
+                                                  className="reply-input"
+                                                  autoFocus
+                                                />
+                                                <div className="reply-actions">
+                                                  <button type="submit" className="btn-submit-reply" disabled={!replyText.trim()}>
+                                                    Send
+                                                  </button>
+                                                  <button type="button" onClick={handleCancelReply} className="btn-cancel-reply">
+                                                    Cancel
+                                                  </button>
+                                                </div>
+                                              </div>
+                                            </form>
+                                          )}
+                                        </>
                                       )}
-                                    </>
-                                  )}
-                                </div>
+                                    </div>
+                                  </>
+                                )}
                               </div>
 
-                              {/* Nested Replies */}
-                              {replies.length > 0 && showReplies[comment._id] && (
+                              {/* Replies Section - Lazy Loaded */}
+                              {showReplies[comment._id] && replies.length > 0 && (
                                 <div className="comment-replies">
                                   {replies.map((reply) => {
-                                    const isOwnReply = reply.user?._id === currentUser?._id;
+                                    const isOwnReply = reply.authorId?._id === currentUser?._id || reply.authorId === currentUser?._id;
                                     const isEditingReply = editingCommentId === reply._id;
+                                    const replyReactionEmoji = getUserReactionEmoji(reply.reactions);
 
                                     return (
                                       <div
@@ -2064,201 +2079,212 @@ function Feed() {
                                         className="comment reply"
                                         ref={(el) => commentRefs.current[reply._id] = el}
                                       >
-                                        <Link
-                                          to={`/profile/${reply.user?._id}`}
-                                          className="comment-avatar"
-                                          style={{ textDecoration: 'none' }}
-                                          aria-label={`View ${reply.user?.displayName || reply.user?.username}'s profile`}
-                                        >
-                                          {reply.user?.profilePhoto ? (
-                                            <OptimizedImage
-                                              src={getImageUrl(reply.user.profilePhoto)}
-                                              alt={reply.user.username}
-                                              className="avatar-image"
-                                            />
-                                          ) : (
-                                            <span>{reply.user?.displayName?.charAt(0).toUpperCase() || 'U'}</span>
-                                          )}
-                                        </Link>
-                                        <div className="comment-content">
-                                          {isEditingReply ? (
-                                            <div className="comment-edit-box">
-                                              <input
-                                                type="text"
-                                                value={editCommentText}
-                                                onChange={(e) => setEditCommentText(e.target.value)}
-                                                className="comment-edit-input"
-                                                autoFocus
-                                              />
-                                              <div className="comment-edit-actions">
-                                                <button
-                                                  onClick={() => handleSaveEditComment(post._id, reply._id)}
-                                                  className="btn-save-comment"
-                                                >
-                                                  Save
-                                                </button>
-                                                <button
-                                                  onClick={handleCancelEditComment}
-                                                  className="btn-cancel-comment"
-                                                >
-                                                  Cancel
-                                                </button>
-                                              </div>
-                                            </div>
-                                          ) : (
-                                            <>
-                                              {/* Facebook style: Username INSIDE bubble at top */}
-                                              <div className="comment-text">
-                                                <Link
-                                                  to={`/profile/${reply.user?.username}`}
-                                                  className="comment-author-name"
-                                                  style={{ textDecoration: 'none' }}
-                                                >
-                                                  {reply.user?.displayName || reply.user?.username}
-                                                </Link>
-                                                <div className="comment-content-text">
-                                                  <FormattedText text={reply.content} />
-                                                  {reply.edited && <span className="edited-indicator"> (edited)</span>}
-                                                </div>
-                                              </div>
-
-                                              {/* YouTube-style actions below reply */}
-                                              <div className="comment-actions">
-                                                <span className="comment-timestamp">
-                                                  {(() => {
-                                                    const now = new Date();
-                                                    const replyDate = new Date(reply.createdAt);
-                                                    const diffMs = now - replyDate;
-                                                    const diffMins = Math.floor(diffMs / 60000);
-                                                    const diffHours = Math.floor(diffMs / 3600000);
-                                                    const diffDays = Math.floor(diffMs / 86400000);
-
-                                                    if (diffMins < 1) return 'Just now';
-                                                    if (diffMins < 60) return `${diffMins}m`;
-                                                    if (diffHours < 24) return `${diffHours}h`;
-                                                    if (diffDays < 7) return `${diffDays}d`;
-                                                    return replyDate.toLocaleDateString();
-                                                  })()}
-                                                </span>
-                                                <div className="reaction-container">
-                                                  <button
-                                                    className={`comment-action-btn ${reply.reactions?.some(r => r.user?._id === currentUser?.id || r.user === currentUser?.id) ? 'liked' : ''}`}
-                                                    onClick={(e) => {
-                                                      // On mobile, toggle picker; on desktop, react with default
-                                                      if (window.innerWidth <= 768) {
-                                                        e.preventDefault();
-                                                        setShowReactionPicker(showReactionPicker === `reply-${reply._id}` ? null : `reply-${reply._id}`);
-                                                      } else {
-                                                        const userReaction = reply.reactions?.find(r => r.user?._id === currentUser?.id || r.user === currentUser?.id);
-                                                        handleCommentReaction(post._id, reply._id, userReaction?.emoji || '👍');
-                                                      }
-                                                    }}
-                                                    onMouseEnter={() => {
-                                                      if (window.innerWidth > 768) {
-                                                        setShowReactionPicker(`reply-${reply._id}`);
-                                                      }
-                                                    }}
-                                                    onMouseLeave={() => {
-                                                      if (window.innerWidth > 768) {
-                                                        setTimeout(() => {
-                                                          if (showReactionPicker === `reply-${reply._id}`) {
-                                                            setShowReactionPicker(null);
-                                                          }
-                                                        }, 300);
-                                                      }
-                                                    }}
-                                                    onTouchStart={(e) => {
-                                                      const touchTimer = setTimeout(() => {
-                                                        setShowReactionPicker(`reply-${reply._id}`);
-                                                      }, 500);
-                                                      e.currentTarget.dataset.touchTimer = touchTimer;
-                                                    }}
-                                                    onTouchEnd={(e) => {
-                                                      if (e.currentTarget.dataset.touchTimer) {
-                                                        clearTimeout(parseInt(e.currentTarget.dataset.touchTimer));
-                                                        delete e.currentTarget.dataset.touchTimer;
-                                                      }
-                                                    }}
-                                                  >
-                                                    {reply.reactions?.find(r => r.user?._id === currentUser?.id || r.user === currentUser?.id)?.emoji || '👍'}
-                                                  </button>
-                                                  {reply.reactions?.length > 0 && (
+                                        {reply.isDeleted ? (
+                                          <div className="comment-deleted">
+                                            <span className="deleted-icon">🗑️</span>
+                                            <span className="deleted-text">This reply was removed</span>
+                                          </div>
+                                        ) : (
+                                          <>
+                                            <Link
+                                              to={`/profile/${reply.authorId?.username}`}
+                                              className="comment-avatar"
+                                              style={{ textDecoration: 'none' }}
+                                              aria-label={`View ${reply.authorId?.displayName || reply.authorId?.username}'s profile`}
+                                            >
+                                              {reply.authorId?.profilePhoto ? (
+                                                <OptimizedImage
+                                                  src={getImageUrl(reply.authorId.profilePhoto)}
+                                                  alt={reply.authorId.username}
+                                                  className="avatar-image"
+                                                />
+                                              ) : (
+                                                <span>{reply.authorId?.displayName?.charAt(0).toUpperCase() || 'U'}</span>
+                                              )}
+                                            </Link>
+                                            <div className="comment-content">
+                                              {isEditingReply ? (
+                                                <div className="comment-edit-box">
+                                                  <input
+                                                    type="text"
+                                                    value={editCommentText}
+                                                    onChange={(e) => setEditCommentText(e.target.value)}
+                                                    className="comment-edit-input"
+                                                    autoFocus
+                                                  />
+                                                  <div className="comment-edit-actions">
                                                     <button
-                                                      className="reaction-count-btn"
-                                                      onClick={() => setReactionDetailsModal({
-                                                        isOpen: true,
-                                                        reactions: reply.reactions || [],
-                                                        likes: []
-                                                      })}
+                                                      onClick={() => handleSaveEditComment(reply._id)}
+                                                      className="btn-save-comment"
                                                     >
-                                                      {reply.reactions.length}
+                                                      Save
                                                     </button>
-                                                  )}
-                                                  {showReactionPicker === `reply-${reply._id}` && (
-                                                    <div
-                                                      className="reaction-picker"
-                                                      onMouseEnter={() => {
-                                                        if (window.innerWidth > 768) {
-                                                          setShowReactionPicker(`reply-${reply._id}`);
-                                                        }
-                                                      }}
-                                                      onMouseLeave={() => {
-                                                        if (window.innerWidth > 768) {
-                                                          setShowReactionPicker(null);
-                                                        }
-                                                      }}
+                                                    <button
+                                                      onClick={handleCancelEditComment}
+                                                      className="btn-cancel-comment"
                                                     >
-                                                      {['👍', '❤️', '😂', '😮', '😢', '😡', '🤗', '🎉', '🤔', '🔥', '👏', '🤯', '🤢', '👎'].map(emoji => (
-                                                        <button
-                                                          key={emoji}
-                                                          className="reaction-btn"
-                                                          onClick={() => {
-                                                            handleCommentReaction(post._id, reply._id, emoji);
-                                                            setShowReactionPicker(null);
-                                                          }}
-                                                          title={emoji}
-                                                        >
-                                                          {emoji}
-                                                        </button>
-                                                      ))}
+                                                      Cancel
+                                                    </button>
+                                                  </div>
+                                                </div>
+                                              ) : (
+                                                <>
+                                                  <div className="comment-text">
+                                                    <Link
+                                                      to={`/profile/${reply.authorId?.username}`}
+                                                      className="comment-author-name"
+                                                      style={{ textDecoration: 'none' }}
+                                                    >
+                                                      {reply.authorId?.displayName || reply.authorId?.username}
+                                                    </Link>
+                                                    <div className="comment-content-text">
+                                                      {reply.content && <FormattedText text={reply.content} />}
+                                                      {reply.gifUrl && (
+                                                        <div className="comment-gif">
+                                                          <img src={reply.gifUrl} alt="GIF" />
+                                                        </div>
+                                                      )}
+                                                      {reply.isEdited && <span className="edited-indicator"> (edited)</span>}
                                                     </div>
-                                                  )}
-                                                </div>
-                                                <button
-                                                  className="comment-action-btn"
-                                                  onClick={() => handleReplyToComment(post._id, comment._id)}
-                                                >
-                                                  💬 Reply
-                                                </button>
-                                                {isOwnReply ? (
-                                                  <>
-                                                    <button
-                                                      className="comment-action-btn"
-                                                      onClick={() => handleEditComment(reply._id, reply.content)}
-                                                    >
-                                                      ✏️ Edit
-                                                    </button>
-                                                    <button
-                                                      className="comment-action-btn delete-btn"
-                                                      onClick={() => handleDeleteComment(post._id, reply._id)}
-                                                    >
-                                                      🗑️ Delete
-                                                    </button>
-                                                  </>
-                                                ) : (
-                                                  <button
-                                                    className="comment-action-btn"
-                                                    onClick={() => {
-                                                      setReportModal({ isOpen: true, type: 'comment', contentId: reply._id, userId: reply.user?._id });
-                                                    }}
-                                                  >
-                                                    🚩 Report
-                                                  </button>
-                                                )}
-                                              </div>
-                                            </>
-                                          )}
-                                        </div>
+                                                  </div>
+
+                                                  <div className="comment-actions">
+                                                    <span className="comment-timestamp">
+                                                      {(() => {
+                                                        const now = new Date();
+                                                        const replyDate = new Date(reply.createdAt);
+                                                        const diffMs = now - replyDate;
+                                                        const diffMins = Math.floor(diffMs / 60000);
+                                                        const diffHours = Math.floor(diffMs / 3600000);
+                                                        const diffDays = Math.floor(diffMs / 86400000);
+
+                                                        if (diffMins < 1) return 'Just now';
+                                                        if (diffMins < 60) return `${diffMins}m`;
+                                                        if (diffHours < 24) return `${diffHours}h`;
+                                                        if (diffDays < 7) return `${diffDays}d`;
+                                                        return replyDate.toLocaleDateString();
+                                                      })()}
+                                                    </span>
+                                                    <div className="reaction-container">
+                                                      <button
+                                                        className={`comment-action-btn ${replyReactionEmoji ? 'liked' : ''}`}
+                                                        onClick={(e) => {
+                                                          if (window.innerWidth <= 768) {
+                                                            e.preventDefault();
+                                                            setShowReactionPicker(showReactionPicker === `reply-${reply._id}` ? null : `reply-${reply._id}`);
+                                                          } else {
+                                                            handleCommentReaction(reply._id, replyReactionEmoji || '👍');
+                                                          }
+                                                        }}
+                                                        onMouseEnter={() => {
+                                                          if (window.innerWidth > 768) {
+                                                            setShowReactionPicker(`reply-${reply._id}`);
+                                                          }
+                                                        }}
+                                                        onMouseLeave={() => {
+                                                          if (window.innerWidth > 768) {
+                                                            setTimeout(() => {
+                                                              if (showReactionPicker === `reply-${reply._id}`) {
+                                                                setShowReactionPicker(null);
+                                                              }
+                                                            }, 300);
+                                                          }
+                                                        }}
+                                                        onTouchStart={(e) => {
+                                                          const touchTimer = setTimeout(() => {
+                                                            setShowReactionPicker(`reply-${reply._id}`);
+                                                          }, 500);
+                                                          e.currentTarget.dataset.touchTimer = touchTimer;
+                                                        }}
+                                                        onTouchEnd={(e) => {
+                                                          if (e.currentTarget.dataset.touchTimer) {
+                                                            clearTimeout(parseInt(e.currentTarget.dataset.touchTimer));
+                                                            delete e.currentTarget.dataset.touchTimer;
+                                                          }
+                                                        }}
+                                                      >
+                                                        <span>{replyReactionEmoji || '👍'}</span>
+                                                      </button>
+                                                      {Object.values(reply.reactions || {}).flat().length > 0 && (
+                                                        <button
+                                                          className="reaction-count-btn"
+                                                          onClick={() => {
+                                                            const reactionsArray = [];
+                                                            Object.entries(reply.reactions || {}).forEach(([emoji, userIds]) => {
+                                                              userIds.forEach(userId => {
+                                                                reactionsArray.push({ user: userId, emoji });
+                                                              });
+                                                            });
+                                                            setReactionDetailsModal({
+                                                              isOpen: true,
+                                                              reactions: reactionsArray,
+                                                              likes: []
+                                                            });
+                                                          }}
+                                                        >
+                                                          {Object.values(reply.reactions || {}).flat().length}
+                                                        </button>
+                                                      )}
+                                                      {showReactionPicker === `reply-${reply._id}` && (
+                                                        <div
+                                                          className="reaction-picker"
+                                                          onMouseEnter={() => {
+                                                            if (window.innerWidth > 768) {
+                                                              setShowReactionPicker(`reply-${reply._id}`);
+                                                            }
+                                                          }}
+                                                          onMouseLeave={() => {
+                                                            if (window.innerWidth > 768) {
+                                                              setShowReactionPicker(null);
+                                                            }
+                                                          }}
+                                                        >
+                                                          {['👍', '❤️', '😂', '😮', '😢', '😡', '🤗', '🎉', '🤔', '🔥', '👏', '🤯', '🤢', '👎', '🏳️‍🌈', '🏳️‍⚧️'].map(emoji => (
+                                                            <button
+                                                              key={emoji}
+                                                              className="reaction-btn"
+                                                              onClick={() => {
+                                                                handleCommentReaction(reply._id, emoji);
+                                                                setShowReactionPicker(null);
+                                                              }}
+                                                              title={emoji}
+                                                            >
+                                                              {emoji}
+                                                            </button>
+                                                          ))}
+                                                        </div>
+                                                      )}
+                                                    </div>
+                                                    {isOwnReply ? (
+                                                      <>
+                                                        <button
+                                                          className="comment-action-btn"
+                                                          onClick={() => handleEditComment(reply._id, reply.content)}
+                                                        >
+                                                          ✏️ Edit
+                                                        </button>
+                                                        <button
+                                                          className="comment-action-btn delete-btn"
+                                                          onClick={() => handleDeleteComment(post._id, reply._id, true)}
+                                                        >
+                                                          🗑️ Delete
+                                                        </button>
+                                                      </>
+                                                    ) : (
+                                                      <button
+                                                        className="comment-action-btn"
+                                                        onClick={() => {
+                                                          setReportModal({ isOpen: true, type: 'comment', contentId: reply._id, userId: reply.authorId?._id });
+                                                        }}
+                                                      >
+                                                        🚩 Report
+                                                      </button>
+                                                    )}
+                                                  </div>
+                                                </>
+                                              )}
+                                            </div>
+                                          </>
                                       </div>
                                     );
                                   })}

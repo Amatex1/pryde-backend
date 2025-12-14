@@ -28,21 +28,11 @@ const commentSchema = new mongoose.Schema({
     default: null,
     index: true
   },
-  reactions: [{
-    user: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
-      required: true
-    },
-    emoji: {
-      type: String,
-      required: true
-    },
-    createdAt: {
-      type: Date,
-      default: Date.now
-    }
-  }],
+  reactions: {
+    type: Map,
+    of: [String], // Map of emoji -> array of userIds
+    default: {}
+  },
   likeCount: {
     type: Number,
     default: 0
@@ -53,6 +43,14 @@ const commentSchema = new mongoose.Schema({
   },
   editedAt: {
     type: Date
+  },
+  isDeleted: {
+    type: Boolean,
+    default: false
+  },
+  isPinned: {
+    type: Boolean,
+    default: false
   }
 }, {
   timestamps: true // Automatically adds createdAt and updatedAt

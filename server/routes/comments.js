@@ -22,11 +22,11 @@ router.get('/posts/:postId/comments', auth, async (req, res) => {
     // Get top-level comments (parentCommentId === null)
     const comments = await Comment.find({
       postId,
-      parentCommentId: null
+      parentCommentId: null,
+      isDeleted: false // Don't show deleted comments
     })
       .populate('authorId', 'username displayName profilePhoto isVerified pronouns')
-      .populate('reactions.user', 'username displayName profilePhoto')
-      .sort({ createdAt: 1 }) // Oldest first (Facebook style)
+      .sort({ isPinned: -1, createdAt: 1 }) // Pinned first, then oldest first
       .lean();
 
     // For each top-level comment, get reply count
@@ -64,10 +64,10 @@ router.get('/comments/:commentId/replies', auth, async (req, res) => {
 
     // Get replies (sorted oldest first)
     const replies = await Comment.find({
-      parentCommentId: commentId
+      parentCommentId: commentId,
+      isDeleted: false // Don't show deleted replies
     })
       .populate('authorId', 'username displayName profilePhoto isVerified pronouns')
-      .populate('reactions.user', 'username displayName profilePhoto')
       .sort({ createdAt: 1 })
       .lean();
 
@@ -121,9 +121,8 @@ router.post('/posts/:postId/comments', auth, async (req, res) => {
 
     await comment.save();
 
-    // Populate author and reactions
+    // Populate author
     await comment.populate('authorId', 'username displayName profilePhoto isVerified pronouns');
-    await comment.populate('reactions.user', 'username displayName profilePhoto');
 
     // Emit real-time event
     if (req.io) {
@@ -170,7 +169,6 @@ router.put('/comments/:commentId', auth, async (req, res) => {
 
     await comment.save();
     await comment.populate('authorId', 'username displayName profilePhoto isVerified pronouns');
-    await comment.populate('reactions.user', 'username displayName profilePhoto');
 
     // Emit real-time event
     if (req.io) {
@@ -207,12 +205,19 @@ router.delete('/comments/:commentId', auth, async (req, res) => {
       return res.status(403).json({ message: 'Not authorized to delete this comment' });
     }
 
-    // If this is a top-level comment, also delete all its replies
-    if (comment.parentCommentId === null) {
-      await Comment.deleteMany({ parentCommentId: commentId });
-    }
+    // Soft delete: mark as deleted instead of removing
+    comment.isDeleted = true;
+    comment.content = ''; // Clear content for privacy
+    comment.gifUrl = null; // Clear GIF
+    await comment.save();
 
-    await comment.deleteOne();
+    // If this is a top-level comment, also soft delete all its replies
+    if (comment.parentCommentId === null) {
+      await Comment.updateMany(
+        { parentCommentId: commentId },
+        { isDeleted: true, content: '', gifUrl: null }
+      );
+    }
 
     // Emit real-time event
     if (req.io) {
@@ -248,38 +253,41 @@ router.post('/comments/:commentId/react', auth, async (req, res) => {
       return res.status(404).json({ message: 'Comment not found' });
     }
 
-    // Initialize reactions array if it doesn't exist
+    // Initialize reactions Map if it doesn't exist
     if (!comment.reactions) {
-      comment.reactions = [];
+      comment.reactions = new Map();
     }
 
-    // Check if user already reacted with this emoji
-    const existingReaction = comment.reactions.find(
-      r => r.user.toString() === userId.toString() && r.emoji === emoji
-    );
+    // Convert to plain object for easier manipulation
+    const reactions = comment.reactions.toObject ? comment.reactions.toObject() : comment.reactions;
+    const userIdStr = userId.toString();
 
-    if (existingReaction) {
-      // Remove the reaction (toggle off)
-      comment.reactions = comment.reactions.filter(
-        r => !(r.user.toString() === userId.toString() && r.emoji === emoji)
-      );
-    } else {
-      // Remove any other reaction from this user first (only one reaction per user)
-      comment.reactions = comment.reactions.filter(
-        r => r.user.toString() !== userId.toString()
-      );
+    // Remove user from all emoji arrays (user can only have one reaction)
+    Object.keys(reactions).forEach(key => {
+      reactions[key] = reactions[key].filter(id => id !== userIdStr);
+    });
 
-      // Add new reaction
-      comment.reactions.push({
-        user: userId,
-        emoji,
-        createdAt: new Date()
-      });
+    // Check if user is toggling off the same emoji
+    const hadThisReaction = comment.reactions.get(emoji)?.includes(userIdStr);
+
+    if (!hadThisReaction) {
+      // Add user to the selected emoji array
+      if (!reactions[emoji]) {
+        reactions[emoji] = [];
+      }
+      reactions[emoji].push(userIdStr);
     }
 
+    // Clean up empty arrays
+    Object.keys(reactions).forEach(key => {
+      if (reactions[key].length === 0) {
+        delete reactions[key];
+      }
+    });
+
+    comment.reactions = reactions;
     await comment.save();
     await comment.populate('authorId', 'username displayName profilePhoto isVerified pronouns');
-    await comment.populate('reactions.user', 'username displayName profilePhoto');
 
     // Emit real-time event
     if (req.io) {
