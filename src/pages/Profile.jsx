@@ -1125,7 +1125,7 @@ function Profile() {
 
   if (loading) {
     return (
-      <div className="page-container">
+      <div className="page-container profile-page">
         <Navbar />
         <div className="profile-container">
           <ProfileSkeleton />
@@ -1140,7 +1140,7 @@ function Profile() {
 
   if (!user) {
     return (
-      <div className="page-container">
+      <div className="page-container profile-page">
         <Navbar />
         <div className="profile-container">
           <div className="error-container glossy" style={{
@@ -1171,9 +1171,9 @@ function Profile() {
   }
 
   return (
-    <div className="page-container">
+    <div className="page-container profile-page">
       <Navbar />
-      
+
       <div className="profile-container">
         <div className="profile-header glossy fade-in">
           <div className="cover-photo">

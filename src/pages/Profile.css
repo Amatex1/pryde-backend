@@ -1231,8 +1231,8 @@ html:not([data-theme="dark"]):not([data-quiet-mode="true"]) .section-title {
   gap: var(--space-4);
 }
 
-/* Post Card - Facebook Style Separated Boxes */
-.post-card {
+/* Post Card - Facebook Style Separated Boxes - Scoped to Profile page */
+.profile-page .post-card {
   padding: var(--space-4) 18px;
   border-radius: var(--radius-card);
   background: var(--bg-card);
@@ -1246,17 +1246,17 @@ html:not([data-theme="dark"]):not([data-quiet-mode="true"]) .section-title {
   contain: layout;
 }
 
-.post-card:hover {
+.profile-page .post-card:hover {
   box-shadow: var(--shadow-medium);
   border-color: var(--border-medium);
 }
 
-[data-theme="dark"] .post-card {
+[data-theme="dark"] .profile-page .post-card {
   background: #1e1f2e;
   border-color: rgba(255, 255, 255, 0.1);
 }
 
-[data-theme="dark"] .post-card:hover {
+[data-theme="dark"] .profile-page .post-card:hover {
   border-color: rgba(255, 255, 255, 0.2);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
@@ -1361,23 +1361,23 @@ html:not([data-theme="dark"]):not([data-quiet-mode="true"]) .section-title {
   color: white;
 }
 
-.reaction-container {
+.profile-page .reaction-container {
   position: relative;
   display: inline-flex;
 }
 
-/* Make sure React button matches other action buttons */
-.reaction-container .action-btn {
-  padding: 0.75rem 1rem !important;
-  min-width: 48px !important;
-  min-height: 48px !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  gap: 0.5rem !important;
+/* Make sure React button matches other action buttons - Scoped to Profile page */
+.profile-page .reaction-container .action-btn {
+  padding: 0.75rem 1rem;
+  min-width: 48px;
+  min-height: 48px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
 }
 
-.reaction-count-btn {
+.profile-page .reaction-count-btn {
   background: none;
   border: none;
   color: var(--text-muted);
@@ -1394,13 +1394,13 @@ html:not([data-theme="dark"]):not([data-quiet-mode="true"]) .section-title {
   justify-content: center;
 }
 
-.reaction-count-btn:hover {
+.profile-page .reaction-count-btn:hover {
   color: var(--pryde-purple);
   text-decoration: underline;
 }
 
-/* Reaction picker popup */
-.reaction-picker {
+/* Reaction picker popup - Scoped to Profile page */
+.profile-page .reaction-picker {
   position: absolute;
   top: -3.5rem;
   left: 0;
@@ -1417,13 +1417,13 @@ html:not([data-theme="dark"]):not([data-quiet-mode="true"]) .section-title {
   z-index: 9999;
 }
 
-[data-theme="dark"] .reaction-picker {
+[data-theme="dark"] .profile-page .reaction-picker {
   background: #2a2d3a;
   border-color: rgba(255, 255, 255, 0.1);
   box-shadow: 0 0.25rem 0.75rem rgba(0, 0, 0, 0.5);
 }
 
-.reaction-btn {
+.profile-page .reaction-btn {
   background: none;
   border: none;
   font-size: 1.5rem;
@@ -1433,13 +1433,13 @@ html:not([data-theme="dark"]):not([data-quiet-mode="true"]) .section-title {
   border-radius: 50%;
 }
 
-.reaction-btn:hover {
+.profile-page .reaction-btn:hover {
   transform: scale(1.3);
   background: rgba(108, 92, 231, 0.1);
 }
 
-/* Comments Section */
-.post-comments {
+/* Comments Section - Scoped to Profile page */
+.profile-page .post-comments {
   margin-top: 1rem;
   padding-top: 1rem;
   border-top: 1px solid var(--border-light);
@@ -1448,13 +1448,13 @@ html:not([data-theme="dark"]):not([data-quiet-mode="true"]) .section-title {
   gap: 0.75rem;
 }
 
-.comment-thread {
+.profile-page .comment-thread {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
 }
 
-.comment {
+.profile-page .comment {
   display: flex;
   gap: 0.5rem;
   padding: 0.5rem 0;
@@ -1462,7 +1462,7 @@ html:not([data-theme="dark"]):not([data-quiet-mode="true"]) .section-title {
   position: relative;
 }
 
-.comment-replies {
+.profile-page .comment-replies {
   margin-left: 2.5rem;
   padding-left: 1.5rem;
   padding-top: 0.75rem;
@@ -1473,13 +1473,13 @@ html:not([data-theme="dark"]):not([data-quiet-mode="true"]) .section-title {
   position: relative;
 }
 
-.comment.reply {
+.profile-page .comment.reply {
   background: transparent;
   padding: 0.5rem 0;
   position: relative;
 }
 
-.comment-avatar {
+.profile-page .comment-avatar {
   width: 32px;
   height: 32px;
   border-radius: 50%;
@@ -1495,52 +1495,52 @@ html:not([data-theme="dark"]):not([data-quiet-mode="true"]) .section-title {
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.comment-avatar:hover {
+.profile-page .comment-avatar:hover {
   transform: scale(1.05);
   box-shadow: 0 4px 12px rgba(108, 92, 231, 0.3);
 }
 
-.comment-avatar img {
+.profile-page .comment-avatar img {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
-.comment-content {
+.profile-page .comment-content {
   flex: 1;
   background: transparent;
 }
 
 /* YouTube-style comment header (name only) */
-.comment-header {
+.profile-page .comment-header {
   display: flex;
   align-items: baseline;
   gap: 0.5rem;
   margin-bottom: 0.375rem;
 }
 
-.comment-author-name {
+.profile-page .comment-author-name {
   font-weight: 600;
   color: var(--text-main);
   font-size: 0.9375rem; /* Increased from 0.875rem */
 }
 
-[data-theme="dark"] .comment-author-name {
+[data-theme="dark"] .profile-page .comment-author-name {
   color: var(--text-main);
 }
 
 /* Timestamp in actions row */
-.comment-timestamp {
+.profile-page .comment-timestamp {
   color: var(--text-muted);
   font-size: 0.8125rem; /* Increased from 0.75rem */
   font-weight: 400;
 }
 
-[data-theme="dark"] .comment-timestamp {
+[data-theme="dark"] .profile-page .comment-timestamp {
   color: #a1a1aa;
 }
 
-.comment-text {
+.profile-page .comment-text {
   color: var(--text-main);
   font-size: 0.9375rem; /* Increased from 0.875rem */
   line-height: 1.4;
@@ -1554,20 +1554,20 @@ html:not([data-theme="dark"]):not([data-quiet-mode="true"]) .section-title {
   max-width: fit-content;
 }
 
-.comment-text .edited-indicator {
+.profile-page .comment-text .edited-indicator {
   font-size: 0.75rem; /* Increased from 0.7rem */
   color: var(--text-muted);
   font-style: italic;
   margin-left: 0.25rem;
 }
 
-[data-theme="dark"] .comment-text {
+[data-theme="dark"] .profile-page .comment-text {
   color: var(--text-main);
   background: rgba(108, 92, 231, 0.15);
 }
 
 /* Comment actions (Like, Reply) - YouTube style */
-.comment-actions {
+.profile-page .comment-actions {
   display: flex;
   align-items: center;
   gap: 1rem;
@@ -1575,7 +1575,7 @@ html:not([data-theme="dark"]):not([data-quiet-mode="true"]) .section-title {
   font-size: 0.8125rem; /* Increased from 0.75rem */
 }
 
-.comment-action-btn {
+.profile-page .comment-action-btn {
   background: none;
   border: none;
   color: var(--text-muted);
@@ -1589,58 +1589,58 @@ html:not([data-theme="dark"]):not([data-quiet-mode="true"]) .section-title {
   gap: 0.25rem;
 }
 
-.comment-action-btn:hover {
+.profile-page .comment-action-btn:hover {
   color: var(--pryde-purple);
 }
 
-[data-theme="dark"] .comment-action-btn {
+[data-theme="dark"] .profile-page .comment-action-btn {
   color: #a1a1aa;
 }
 
-[data-theme="dark"] .comment-action-btn:hover {
+[data-theme="dark"] .profile-page .comment-action-btn:hover {
   color: var(--pryde-purple);
 }
 
-/* Twitter/X style view replies button */
-.view-replies-btn {
-  color: var(--electric-blue) !important;
+/* Twitter/X style view replies button - Scoped to Profile page */
+.profile-page .view-replies-btn {
+  color: var(--electric-blue);
   font-weight: 500;
 }
 
-.view-replies-btn:hover {
-  color: var(--pryde-purple) !important;
+.profile-page .view-replies-btn:hover {
+  color: var(--pryde-purple);
   text-decoration: underline;
 }
 
-/* Delete button styling */
-.delete-btn {
-  color: #b91c1c !important; /* Darker red for better contrast (WCAG AA compliant) */
+/* Delete button styling - Scoped to Profile page */
+.profile-page .delete-btn {
+  color: #b91c1c; /* Darker red for better contrast (WCAG AA compliant) */
 }
 
-.delete-btn:hover {
-  color: #991b1b !important; /* Even darker red on hover */
+.profile-page .delete-btn:hover {
+  color: #991b1b; /* Even darker red on hover */
   font-weight: 700;
 }
 
 /* Dark mode delete button */
-[data-theme="dark"] .delete-btn {
-  color: #f87171 !important; /* Lighter red for dark backgrounds */
+[data-theme="dark"] .profile-page .delete-btn {
+  color: #f87171; /* Lighter red for dark backgrounds */
 }
 
-[data-theme="dark"] .delete-btn:hover {
-  color: #fca5a5 !important; /* Even lighter on hover */
+[data-theme="dark"] .profile-page .delete-btn:hover {
+  color: #fca5a5; /* Even lighter on hover */
 }
 
-/* Reaction picker container */
-.reaction-container {
+/* Reaction picker container - DUPLICATE - Already defined above, keeping for backwards compatibility */
+.profile-page .reaction-container {
   position: relative;
   display: inline-flex;
   align-items: center;
   gap: 0.25rem;
 }
 
-/* Reaction count button */
-.reaction-count-btn {
+/* Reaction count button - DUPLICATE - Already defined above, keeping for backwards compatibility */
+.profile-page .reaction-count-btn {
   background: none;
   border: none;
   color: var(--text-muted);
@@ -1657,19 +1657,19 @@ html:not([data-theme="dark"]):not([data-quiet-mode="true"]) .section-title {
   justify-content: center;
 }
 
-.reaction-count-btn:hover {
+.profile-page .reaction-count-btn:hover {
   background: var(--soft-lavender);
   color: var(--pryde-purple);
   transform: scale(1.05);
 }
 
-[data-theme="dark"] .reaction-count-btn:hover {
+[data-theme="dark"] .profile-page .reaction-count-btn:hover {
   background: rgba(108, 92, 231, 0.2);
   color: var(--electric-blue);
 }
 
-/* Reaction picker popup */
-.reaction-picker {
+/* Reaction picker popup - DUPLICATE - Already defined above, keeping for backwards compatibility */
+.profile-page .reaction-picker {
   position: absolute;
   top: -3.5rem;
   left: 0;
@@ -1688,9 +1688,9 @@ html:not([data-theme="dark"]):not([data-quiet-mode="true"]) .section-title {
   touch-action: manipulation;
 }
 
-/* Mobile reaction picker adjustments */
+/* Mobile reaction picker adjustments - Scoped to Profile page */
 @media (max-width: 768px) {
-  .reaction-picker {
+  .profile-page .reaction-picker {
     position: fixed;
     top: 50%;
     bottom: auto;
@@ -1706,7 +1706,7 @@ html:not([data-theme="dark"]):not([data-quiet-mode="true"]) .section-title {
     flex-wrap: wrap; /* Allow wrapping to multiple rows if needed */
   }
 
-  .reaction-btn {
+  .profile-page .reaction-btn {
     font-size: 2.25rem; /* Slightly larger for better visibility */
     padding: 0.625rem;
     min-width: 3rem; /* Larger touch targets */
@@ -1717,13 +1717,13 @@ html:not([data-theme="dark"]):not([data-quiet-mode="true"]) .section-title {
 
 /* Small phones - ensure emojis are still visible */
 @media (max-width: 480px) {
-  .reaction-picker {
+  .profile-page .reaction-picker {
     padding: 0.875rem 1rem;
     gap: 0.75rem;
     max-width: 98vw;
   }
 
-  .reaction-btn {
+  .profile-page .reaction-btn {
     font-size: 2rem;
     padding: 0.5rem;
     min-width: 2.75rem;
@@ -1733,12 +1733,12 @@ html:not([data-theme="dark"]):not([data-quiet-mode="true"]) .section-title {
 
 /* Very small phones - compact but visible */
 @media (max-width: 375px) {
-  .reaction-picker {
+  .profile-page .reaction-picker {
     padding: 0.75rem 0.875rem;
     gap: 0.625rem;
   }
 
-  .reaction-btn {
+  .profile-page .reaction-btn {
     font-size: 1.875rem;
     padding: 0.5rem;
     min-width: 2.5rem;
@@ -1746,7 +1746,7 @@ html:not([data-theme="dark"]):not([data-quiet-mode="true"]) .section-title {
   }
 }
 
-[data-theme="dark"] .reaction-picker {
+[data-theme="dark"] .profile-page .reaction-picker {
   background: #1e293b;
   border-color: rgba(255, 255, 255, 0.1);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
@@ -1763,8 +1763,8 @@ html:not([data-theme="dark"]):not([data-quiet-mode="true"]) .section-title {
   }
 }
 
-/* Individual reaction buttons */
-.reaction-btn {
+/* Individual reaction buttons - DUPLICATE - Already defined above, keeping for backwards compatibility */
+.profile-page .reaction-btn {
   background: none;
   border: none;
   font-size: 1.5rem;
@@ -1777,15 +1777,15 @@ html:not([data-theme="dark"]):not([data-quiet-mode="true"]) .section-title {
   justify-content: center;
 }
 
-.reaction-btn:hover {
+.profile-page .reaction-btn:hover {
   transform: scale(1.3);
 }
 
-.reaction-btn:active {
+.profile-page .reaction-btn:active {
   transform: scale(1.1);
 }
 
-.btn-comment-action {
+.profile-page .btn-comment-action {
   background: none;
   border: none;
   color: var(--text-muted);
@@ -1796,18 +1796,18 @@ html:not([data-theme="dark"]):not([data-quiet-mode="true"]) .section-title {
   transition: all 0.2s ease;
 }
 
-.btn-comment-action:hover {
+.profile-page .btn-comment-action:hover {
   background: rgba(108, 92, 231, 0.1);
   color: var(--pryde-purple);
 }
 
-.comment-edit-box {
+.profile-page .comment-edit-box {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
 }
 
-.comment-edit-input {
+.profile-page .comment-edit-input {
   padding: 0.5rem;
   border: 2px solid var(--pryde-purple);
   border-radius: 8px;
@@ -1816,13 +1816,13 @@ html:not([data-theme="dark"]):not([data-quiet-mode="true"]) .section-title {
   font-size: 0.9rem;
 }
 
-.comment-edit-actions {
+.profile-page .comment-edit-actions {
   display: flex;
   gap: 0.5rem;
 }
 
-.btn-save-comment,
-.btn-cancel-comment {
+.profile-page .btn-save-comment,
+.profile-page .btn-cancel-comment {
   padding: 0.4rem 0.8rem;
   border-radius: 6px;
   border: none;
@@ -1832,21 +1832,21 @@ html:not([data-theme="dark"]):not([data-quiet-mode="true"]) .section-title {
   transition: all 0.2s ease;
 }
 
-.btn-save-comment {
+.profile-page .btn-save-comment {
   background: var(--pryde-purple);
   color: white;
 }
 
-.btn-save-comment:hover {
+.profile-page .btn-save-comment:hover {
   background: var(--electric-blue);
 }
 
-.btn-cancel-comment {
+.profile-page .btn-cancel-comment {
   background: var(--border-light);
   color: var(--text-main);
 }
 
-.btn-cancel-comment:hover {
+.profile-page .btn-cancel-comment:hover {
   background: var(--text-muted);
   color: white;
 }
