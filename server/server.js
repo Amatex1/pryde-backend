@@ -48,6 +48,7 @@ import eventsRoutes from './routes/events.js';
 import loginApprovalRoutes from './routes/loginApproval.js';
 import draftsRoutes from './routes/drafts.js';
 import recoveryContactsRoutes from './routes/recoveryContacts.js';
+import commentsRoutes from './routes/comments.js';
 
 // Import middleware
 import auth from './middleware/auth.js';
@@ -278,6 +279,7 @@ app.use('/api/events', eventsRoutes);
 app.use('/api/login-approval', loginApprovalRoutes);
 app.use('/api/drafts', draftsRoutes);
 app.use('/api/recovery-contacts', recoveryContactsRoutes);
+app.use('/api', commentsRoutes); // Comment routes (handles /api/posts/:postId/comments and /api/comments/:commentId)
 
 // Debug: Log the passkey router before registering
 console.log('🔍 Passkey router type:', typeof passkeyRoutes);
