@@ -14,6 +14,7 @@ import Footer from './components/Footer';
 import SafetyWarning from './components/SafetyWarning';
 import PWAInstallPrompt from './components/PWAInstallPrompt';
 import CookieBanner from './components/CookieBanner';
+import ErrorBoundary from './components/ErrorBoundary';
 
 // Lazy load non-critical pages (loaded on demand)
 const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
@@ -52,75 +53,138 @@ const AcceptableUse = lazy(() => import('./pages/legal/AcceptableUse'));
 const CookiePolicy = lazy(() => import('./pages/legal/CookiePolicy'));
 const Helplines = lazy(() => import('./pages/legal/Helplines'));
 
-// Loading fallback component
-const PageLoader = () => (
-  <div style={{
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    minHeight: '100vh',
-    background: 'var(--bg-light)',
-    color: 'var(--text-main)'
-  }}>
-    <div style={{ textAlign: 'center' }}>
-      <div style={{
-        width: '50px',
-        height: '50px',
-        border: '4px solid var(--pryde-purple)',
-        borderTop: '4px solid transparent',
-        borderRadius: '50%',
-        animation: 'spin 1s linear infinite',
-        margin: '0 auto 1rem'
-      }}></div>
-      <p>Loading...</p>
+// Loading fallback component with timeout
+const PageLoader = () => {
+  const [showReload, setShowReload] = useState(false);
+
+  useEffect(() => {
+    // If loading takes more than 10 seconds, show reload button
+    const timeout = setTimeout(() => {
+      setShowReload(true);
+    }, 10000);
+
+    return () => clearTimeout(timeout);
+  }, []);
+
+  return (
+    <div style={{
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      minHeight: '100vh',
+      background: '#f7f7f7', // Hardcoded fallback color
+      color: '#2b2b2b'
+    }}>
+      <div style={{ textAlign: 'center', padding: '2rem' }}>
+        <div style={{
+          width: '50px',
+          height: '50px',
+          border: '4px solid #6C5CE7',
+          borderTop: '4px solid transparent',
+          borderRadius: '50%',
+          animation: 'spin 1s linear infinite',
+          margin: '0 auto 1rem'
+        }}></div>
+        <p style={{ marginBottom: '1rem' }}>Loading...</p>
+
+        {showReload && (
+          <div style={{ marginTop: '2rem' }}>
+            <p style={{
+              marginBottom: '1rem',
+              color: '#616161',
+              fontSize: '0.9rem'
+            }}>
+              Taking longer than expected...
+            </p>
+            <button
+              onClick={() => window.location.reload()}
+              style={{
+                padding: '0.75rem 1.5rem',
+                borderRadius: '12px',
+                border: '2px solid #6C5CE7',
+                background: '#6C5CE7',
+                color: 'white',
+                fontSize: '1rem',
+                fontWeight: '600',
+                cursor: 'pointer'
+              }}
+            >
+              Reload Page
+            </button>
+          </div>
+        )}
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 function App() {
   const [isAuth, setIsAuth] = useState(isAuthenticated());
+  const [initError, setInitError] = useState(false);
 
   useEffect(() => {
     setIsAuth(isAuthenticated());
 
-    // Initialize Quiet Mode globally
-    const initQuietMode = async () => {
+    // Initialize Quiet Mode globally with retry logic
+    const initQuietMode = async (retries = 3) => {
       if (isAuthenticated()) {
         try {
-          const response = await api.get('/auth/me');
+          const response = await api.get('/auth/me', {
+            timeout: 10000 // 10 second timeout
+          });
           const user = response.data;
 
           // Initialize quiet mode with user settings
           initializeQuietMode(user);
+          setInitError(false);
         } catch (error) {
           console.error('Failed to initialize quiet mode:', error);
+
+          // Retry if we have retries left
+          if (retries > 0) {
+            console.log(`Retrying quiet mode initialization... (${retries} retries left)`);
+            setTimeout(() => initQuietMode(retries - 1), 2000);
+          } else {
+            console.warn('Quiet mode initialization failed after all retries');
+            // Don't block the app - just use default settings
+            setInitError(true);
+          }
         }
       }
     };
 
     initQuietMode();
 
-    // Initialize Socket.IO when user is authenticated
+    // Initialize Socket.IO when user is authenticated with timeout
     if (isAuthenticated()) {
       const user = getCurrentUser();
       if (user && (user.id || user._id)) {
-        initializeSocket(user.id || user._id);
+        try {
+          initializeSocket(user.id || user._id);
 
-        // Request notification permission
-        requestNotificationPermission();
+          // Request notification permission (non-blocking)
+          requestNotificationPermission().catch(err => {
+            console.warn('Notification permission request failed:', err);
+          });
 
-        // Listen for new messages and play sound
-        const cleanupNewMessage = onNewMessage((msg) => {
-          playNotificationSound();
-        });
+          // Listen for new messages and play sound
+          const cleanupNewMessage = onNewMessage((msg) => {
+            playNotificationSound().catch(err => {
+              console.warn('Failed to play notification sound:', err);
+            });
+          });
 
-        // Cleanup on unmount or when user logs out
-        return () => {
-          cleanupNewMessage?.();
-          if (!isAuthenticated()) {
-            disconnectSocket();
-          }
-        };
+          // Cleanup on unmount or when user logs out
+          return () => {
+            cleanupNewMessage?.();
+            if (!isAuthenticated()) {
+              disconnectSocket();
+            }
+          };
+        } catch (error) {
+          console.error('Socket initialization failed:', error);
+          // Don't block the app - socket features just won't work
+        }
       }
     }
   }, [isAuth]);
@@ -130,14 +194,15 @@ function App() {
   };
 
   return (
-    <Router>
-      <div className="app-container">
-        {/* Safety Warning for high-risk regions */}
-        {isAuth && <SafetyWarning />}
+    <ErrorBoundary>
+      <Router>
+        <div className="app-container">
+          {/* Safety Warning for high-risk regions */}
+          {isAuth && <SafetyWarning />}
 
-        <Suspense fallback={<PageLoader />}>
-          <main id="main-content">
-            <Routes>
+          <Suspense fallback={<PageLoader />}>
+            <main id="main-content">
+              <Routes>
             {/* Public Home Page - Redirect to feed if logged in */}
             <Route path="/" element={!isAuth ? <Home /> : <Navigate to="/feed" />} />
 
@@ -199,6 +264,7 @@ function App() {
         <CookieBanner />
       </div>
     </Router>
+    </ErrorBoundary>
   );
 }
 

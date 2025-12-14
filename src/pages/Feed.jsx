@@ -77,6 +77,7 @@ function Feed() {
   const [hideMetrics, setHideMetrics] = useState(false); // Hide metrics for new post
   const [autoHideContentWarnings, setAutoHideContentWarnings] = useState(false);
   const [quietMode, setQuietMode] = useState(document.documentElement.getAttribute('data-quiet-mode') === 'true');
+  const [initializing, setInitializing] = useState(true); // Track initial load
   const currentUser = getCurrentUser();
   const postRefs = useRef({});
   const commentRefs = useRef({});
@@ -84,7 +85,8 @@ function Feed() {
 
   useEffect(() => {
     // Fetch all data in parallel for faster initial load
-    Promise.all([
+    // Use Promise.allSettled to continue even if some requests fail
+    Promise.allSettled([
       fetchPosts(),
       fetchBlockedUsers(),
       fetchFriends(),
@@ -92,12 +94,30 @@ function Feed() {
       fetchBookmarkedPosts(),
       fetchUnreadMessageCounts(),
       fetchPrivacySettings()
-    ]).catch(error => {
+    ]).then(results => {
+      // Log any failures but don't block the app
+      results.forEach((result, index) => {
+        if (result.status === 'rejected') {
+          const names = ['posts', 'blocked users', 'friends', 'trending', 'bookmarks', 'unread counts', 'privacy settings'];
+          console.warn(`Failed to load ${names[index]}:`, result.reason);
+        }
+      });
+
+      // Mark initialization as complete
+      setInitializing(false);
+    }).catch(error => {
       console.error('Error loading initial data:', error);
+      // Don't throw - let the app continue with partial data
+      setInitializing(false);
     });
 
     // Poll for unread message counts every 30 seconds
-    const interval = setInterval(fetchUnreadMessageCounts, 30000);
+    const interval = setInterval(() => {
+      fetchUnreadMessageCounts().catch(err => {
+        console.warn('Failed to fetch unread counts:', err);
+      });
+    }, 30000);
+
     return () => clearInterval(interval);
   }, []);
 
