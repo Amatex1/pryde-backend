@@ -327,10 +327,7 @@
     max-width: 1200px;
   }
 
-  /* Profile container gets more space */
-  .profile-container {
-    max-width: 2000px;
-  }
+  /* Profile container uses fluid system - no override needed */
 
   .settings-container {
     max-width: 800px;
@@ -378,10 +375,7 @@
     max-width: 1400px;
   }
 
-  /* Profile container gets more space on ultrawide */
-  .profile-container {
-    max-width: 3000px;
-  }
+  /* Profile container uses fluid system - no override needed */
 
   .settings-container {
     max-width: 900px;
@@ -435,10 +429,7 @@
     max-width: 1400px;
   }
 
-  /* Profile container gets more space on super ultrawide */
-  .profile-container {
-    max-width: 3000px;
-  }
+  /* Profile container uses fluid system - no override needed */
 
   .settings-container {
     max-width: 900px;
@@ -489,11 +480,12 @@
 
 /* iPad Pro 11" and similar (834px x 1194px) */
 @media (min-width: 768px) and (max-width: 834px) {
-  .feed-container,
-  .profile-container {
+  .feed-container {
     max-width: 750px;
     padding: 0 1.5rem;
   }
+
+  /* Profile container uses fluid system - no override needed */
 
   /* Optimize touch targets for tablet */
   button,
@@ -505,10 +497,11 @@
 
 /* iPad Pro 12.9" and similar (1024px x 1366px) */
 @media (min-width: 1024px) and (max-width: 1366px) {
-  .feed-container,
-  .profile-container {
+  .feed-container {
     max-width: 950px;
   }
+
+  /* Profile container uses fluid system - no override needed */
 
   /* Slightly larger touch targets */
   button,

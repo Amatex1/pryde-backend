@@ -1319,62 +1319,32 @@ html:not([data-theme="dark"]):not([data-quiet-mode="true"]) .section-title {
   color: var(--text-muted);
 }
 
-/* Tablet and small desktop: Smaller sidebar but still on right */
-@media (min-width: 376px) and (max-width: 768px) {
-  .profile-page .profile-layout,
-  div.profile-layout,
-  .profile-layout {
-    display: grid !important;
-    grid-template-columns: 1fr 240px !important;
-    gap: var(--space-3) !important;
-  }
-
-  .profile-sidebar {
-    top: 70px;
-  }
-}
-
-/* Mobile: Stack sidebar below posts - ONLY for very small screens */
-@media (max-width: 375px) {
-  .profile-page .profile-layout,
-  div.profile-layout,
-  .profile-layout {
-    display: grid !important;
-    grid-template-columns: 1fr !important;
-    padding: 0 var(--space-3) !important;
-  }
-
+/* Mobile: Stack sidebar below posts and make compact */
+@media (max-width: 768px) {
   .profile-sidebar {
     position: static !important;
     max-height: none !important;
-    order: 2 !important; /* Sidebar appears after main content */
-  }
-
-  .profile-main {
-    order: 1 !important;
-    display: flex !important;
-    flex-direction: column !important;
   }
 
   /* Make sidebar sections more compact on mobile */
   .sidebar-card {
-    padding: var(--space-3) 14px;
-    margin-bottom: var(--space-3);
+    padding: var(--fluid-space-sm);
+    margin-bottom: var(--fluid-space-sm);
   }
 
   .sidebar-title {
-    font-size: 14px;
-    margin-bottom: var(--space-3);
+    font-size: var(--fluid-text-sm);
+    margin-bottom: var(--fluid-space-sm);
   }
 
   .interest-tag {
     padding: 0.4rem 0.6rem;
-    font-size: 0.8rem;
+    font-size: var(--fluid-text-xs);
   }
 
   .looking-for-item {
     padding: 0.6rem 0.8rem;
-    font-size: 13px;
+    font-size: var(--fluid-text-sm);
   }
 }
 
