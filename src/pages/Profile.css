@@ -1,6 +1,8 @@
 /* ========================================
    PROFILE PAGE - POLISHED WITH DESIGN SYSTEM
-   Version: 2024-12-14-v2 (Force cache refresh)
+   Version: 2024-12-14-v3-IMPORTANT-FLAGS
+   CRITICAL: Added !important flags to force styles
+   LAYOUT: Grid with sidebar on RIGHT (desktop)
    ======================================== */
 
 .profile-container {
@@ -686,13 +688,13 @@
    ======================================== */
 
 .profile-layout {
-  display: grid;
-  grid-template-columns: 1fr 320px;
-  gap: var(--space-6);
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 var(--space-4);
-  align-items: start;
+  display: grid !important;
+  grid-template-columns: 1fr 320px !important;
+  gap: var(--space-6) !important;
+  max-width: 1200px !important;
+  margin: 0 auto !important;
+  padding: 0 var(--space-4) !important;
+  align-items: start !important;
 }
 
 /* Ultrawide monitor optimization */
@@ -1163,20 +1165,21 @@ html:not([data-theme="dark"]):not([data-quiet-mode="true"]) .section-title {
   color: var(--text-muted);
 }
 
+/* Mobile: Stack sidebar below posts */
 @media (max-width: 768px) {
   .profile-layout {
-    grid-template-columns: 1fr;
-    padding: 0 var(--space-3);
+    grid-template-columns: 1fr !important;
+    padding: 0 var(--space-3) !important;
   }
 
   .profile-sidebar {
-    position: static;
-    max-height: none;
-    order: 2; /* Sidebar appears after main content */
+    position: static !important;
+    max-height: none !important;
+    order: 2 !important; /* Sidebar appears after main content */
   }
 
   .profile-main {
-    order: 1;
+    order: 1 !important;
   }
 }
 
@@ -1190,33 +1193,33 @@ html:not([data-theme="dark"]):not([data-quiet-mode="true"]) .section-title {
 
 /* Post Card - Facebook Style Separated Boxes */
 .post-card {
-  padding: var(--space-4) 18px;
-  border-radius: var(--radius-card);
-  background: var(--bg-card);
-  border: 1px solid var(--border-subtle);
-  box-shadow: var(--shadow-soft);
-  transition: all 0.2s ease;
-  min-width: 0;
-  min-height: 150px;
-  overflow: visible;
-  word-wrap: break-word;
-  contain: layout;
-  margin-bottom: var(--space-4);
+  padding: var(--space-4) 18px !important;
+  border-radius: var(--radius-card) !important;
+  background: var(--bg-card) !important;
+  border: 1px solid var(--border-subtle) !important;
+  box-shadow: var(--shadow-soft) !important;
+  transition: all 0.2s ease !important;
+  min-width: 0 !important;
+  min-height: 150px !important;
+  overflow: visible !important;
+  word-wrap: break-word !important;
+  contain: layout !important;
+  margin-bottom: var(--space-4) !important;
 }
 
 .post-card:hover {
-  box-shadow: var(--shadow-medium);
-  border-color: var(--border-medium);
+  box-shadow: var(--shadow-medium) !important;
+  border-color: var(--border-medium) !important;
 }
 
 [data-theme="dark"] .post-card {
-  background: #1e1f2e;
-  border-color: rgba(255, 255, 255, 0.1);
+  background: #1e1f2e !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
 }
 
 [data-theme="dark"] .post-card:hover {
-  border-color: rgba(255, 255, 255, 0.2);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  border-color: rgba(255, 255, 255, 0.2) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
 }
 
 /* Post Stats */
