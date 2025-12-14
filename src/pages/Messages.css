@@ -611,6 +611,7 @@
   max-width: 100%;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   /* Background and color are set dynamically via inline styles */
+  /* DO NOT set background here - it will override inline styles */
 }
 
 .message-meta {

@@ -97,15 +97,18 @@
    APPLY THEME TO MESSAGE BUBBLES
    ======================================== */
 
-/* Sent messages use theme variables */
+/* NOTE: Inline styles are used for message bubbles to support per-user colors */
+/* These CSS rules are ONLY fallbacks and should NOT use !important */
+
+/* Sent messages use theme variables as fallback */
 .messages-page .message-group.sent .message-bubble {
-  background: var(--msg-sent-bg) !important;
-  color: var(--msg-sent-text) !important;
+  background: var(--msg-sent-bg);
+  color: var(--msg-sent-text);
 }
 
 /* Received messages in Quiet Mode use theme variables */
 .messages-page[data-quiet-mode="true"] .message-group.received .message-bubble {
-  background: var(--msg-received-bg) !important;
-  color: var(--msg-received-text) !important;
+  background: var(--msg-received-bg);
+  color: var(--msg-received-text);
 }
 
