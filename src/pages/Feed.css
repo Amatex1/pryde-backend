@@ -1024,17 +1024,27 @@ html:not([data-theme])[data-quiet-mode="true"] .hide-metrics-checkbox:hover {
   position: relative;
 }
 
-.comment-header {
-  display: flex;
-  align-items: baseline;
-  gap: var(--space-2);
-  margin-bottom: var(--space-1);
-}
-
+/* Facebook-style: Username above comment bubble */
 .comment-author-name {
   font-weight: 600;
   color: var(--text-main);
-  font-size: 14px;
+  font-size: 13px;
+  margin-bottom: 2px;
+  display: inline-block;
+  transition: color 0.15s ease;
+}
+
+.comment-author-name:hover {
+  color: var(--color-primary);
+  text-decoration: none;
+}
+
+[data-theme="dark"] .comment-author-name {
+  color: var(--text-main);
+}
+
+[data-theme="dark"] .comment-author-name:hover {
+  color: var(--color-primary);
 }
 
 .comment-timestamp {

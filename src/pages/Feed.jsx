@@ -1418,9 +1418,14 @@ function Feed() {
                                     </div>
                                   ) : (
                                     <>
-                                      <div className="comment-header">
-                                        <span className="comment-author-name">{comment.user?.displayName || comment.user?.username}</span>
-                                      </div>
+                                      {/* Username above bubble - Facebook style */}
+                                      <Link
+                                        to={`/profile/${comment.user?.username}`}
+                                        className="comment-author-name"
+                                        style={{ textDecoration: 'none' }}
+                                      >
+                                        {comment.user?.displayName || comment.user?.username}
+                                      </Link>
 
                                       <div className="comment-text">
                                         {comment.content && <FormattedText text={comment.content} />}
@@ -1664,9 +1669,14 @@ function Feed() {
                                             </div>
                                           ) : (
                                             <>
-                                              <div className="comment-header">
-                                                <span className="comment-author-name">{reply.user?.displayName || reply.user?.username}</span>
-                                              </div>
+                                              {/* Username above bubble - Facebook style */}
+                                              <Link
+                                                to={`/profile/${reply.user?.username}`}
+                                                className="comment-author-name"
+                                                style={{ textDecoration: 'none' }}
+                                              >
+                                                {reply.user?.displayName || reply.user?.username}
+                                              </Link>
 
                                               <div className="comment-text">
                                                 <FormattedText text={reply.content} />
