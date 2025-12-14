@@ -1415,13 +1415,6 @@ function Profile() {
 
         <div className="profile-layout">
           <div className="profile-main">
-          {/* Profile Post Search - Only show on own profile */}
-          {isOwnProfile && (
-            <ProfilePostSearch
-              onResultsChange={(results) => setSearchResults(results)}
-            />
-          )}
-
           {/* OPTIONAL FEATURES: Creator profile tabs */}
           {user?.isCreator && (
             <div className="profile-tabs glossy" style={{ marginBottom: '20px', padding: '10px', borderRadius: '12px', display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
