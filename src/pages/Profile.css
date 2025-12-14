@@ -687,6 +687,9 @@
    PROFILE CONTENT
    ======================================== */
 
+/* CRITICAL: Force grid layout with maximum specificity */
+.profile-page .profile-layout,
+div.profile-layout,
 .profile-layout {
   display: grid !important;
   grid-template-columns: 1fr 320px !important;
@@ -699,17 +702,21 @@
 
 /* Ultrawide monitor optimization */
 @media (min-width: 2560px) {
+  .profile-page .profile-layout,
+  div.profile-layout,
   .profile-layout {
-    max-width: 1400px;
-    grid-template-columns: minmax(600px, 800px) 320px;
-    justify-content: center;
+    max-width: 1400px !important;
+    grid-template-columns: minmax(600px, 800px) 320px !important;
+    justify-content: center !important;
   }
 }
 
 @media (min-width: 769px) and (max-width: 1400px) {
+  .profile-page .profile-layout,
+  div.profile-layout,
   .profile-layout {
-    grid-template-columns: 1fr 280px;
-    gap: var(--space-4);
+    grid-template-columns: 1fr 280px !important;
+    gap: var(--space-4) !important;
   }
 }
 
@@ -1171,7 +1178,10 @@ html:not([data-theme="dark"]):not([data-quiet-mode="true"]) .section-title {
 
 /* Tablet: Smaller sidebar but still on right */
 @media (min-width: 481px) and (max-width: 768px) {
+  .profile-page .profile-layout,
+  div.profile-layout,
   .profile-layout {
+    display: grid !important;
     grid-template-columns: 1fr 240px !important;
     gap: var(--space-3) !important;
   }
@@ -1183,7 +1193,10 @@ html:not([data-theme="dark"]):not([data-quiet-mode="true"]) .section-title {
 
 /* Mobile: Stack sidebar below posts */
 @media (max-width: 480px) {
+  .profile-page .profile-layout,
+  div.profile-layout,
   .profile-layout {
+    display: grid !important;
     grid-template-columns: 1fr !important;
     padding: 0 var(--space-3) !important;
   }
@@ -1196,6 +1209,8 @@ html:not([data-theme="dark"]):not([data-quiet-mode="true"]) .section-title {
 
   .profile-main {
     order: 1 !important;
+    display: flex !important;
+    flex-direction: column !important;
   }
 
   /* Make sidebar sections more compact on mobile */
@@ -2107,8 +2122,10 @@ html:not([data-theme="dark"]):not([data-quiet-mode="true"]) .section-title {
     word-wrap: break-word;
   }
 
+  .profile-page .profile-layout,
+  div.profile-layout,
   .profile-layout {
-    padding: 0 var(--space-2);
+    padding: 0 var(--space-2) !important;
   }
 
   .create-post {
