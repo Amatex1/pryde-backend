@@ -1,15 +1,49 @@
 # Pryde Social - Robots.txt
-# Allow all search engines to crawl the site
+# Allow search engines to crawl public pages only
 
 User-agent: *
+
+# Allow public pages
 Allow: /
+Allow: /login
+Allow: /register
+Allow: /terms
+Allow: /privacy
+Allow: /community
+Allow: /community-guidelines
+Allow: /safety
+Allow: /security
+Allow: /contact
+Allow: /faq
+Allow: /legal-requests
+Allow: /dmca
+Allow: /acceptable-use
+Allow: /cookie-policy
+Allow: /helplines
 
-# Disallow admin and private areas
+# Disallow private and protected areas
 Disallow: /admin
+Disallow: /admin/*
 Disallow: /api/
+Disallow: /api/*
 Disallow: /messages
+Disallow: /messages/*
 Disallow: /settings
+Disallow: /settings/*
+Disallow: /feed
+Disallow: /feed/*
+Disallow: /profile/
+Disallow: /bookmarks
+Disallow: /notifications
+Disallow: /lounge
+Disallow: /events
+Disallow: /journal
+Disallow: /longform
+Disallow: /discover
+Disallow: /hashtag/
+Disallow: /tags/
+Disallow: /photo-essay
 
-# Sitemap location (update with your actual domain)
+# Sitemap location
 Sitemap: https://prydeapp.com/sitemap.xml
 
