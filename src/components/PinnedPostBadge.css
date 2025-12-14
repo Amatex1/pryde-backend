@@ -20,7 +20,11 @@
   letter-spacing: 0.5px;
 }
 
-/* Dark mode - no changes needed, gradient looks good in both modes */
+/* ========================================
+   DARK MODE SUPPORT
+   ======================================== */
+
+/* Dark mode - gradient looks good in both modes, no changes needed */
 
 /* Quiet mode */
 body.quiet-mode .pinned-post-badge {

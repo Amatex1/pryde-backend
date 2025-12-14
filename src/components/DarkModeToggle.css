@@ -37,3 +37,19 @@
   animation: rotate 0.5s ease;
 }
 
+/* ========================================
+   DARK MODE SUPPORT
+   ======================================== */
+
+[data-theme="dark"] .dark-mode-toggle {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="dark"] .dark-mode-toggle:hover {
+  background: rgba(108, 92, 231, 0.15);
+  border-color: var(--color-primary);
+  box-shadow: 0 4px 16px rgba(108, 92, 231, 0.4);
+}
+

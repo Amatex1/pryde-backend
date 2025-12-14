@@ -134,7 +134,44 @@
   border-color: #ff4444;
 }
 
-/* Dark mode */
+/* ========================================
+   DARK MODE SUPPORT
+   ======================================== */
+
+[data-theme="dark"] .voice-recorder {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .voice-recorder.uploading {
+  color: #a1a1aa;
+}
+
+[data-theme="dark"] .uploading-spinner {
+  border-color: rgba(255, 255, 255, 0.1);
+  border-top-color: var(--color-primary);
+}
+
+[data-theme="dark"] .recording-text {
+  color: #ffffff;
+}
+
+[data-theme="dark"] .recording-duration {
+  color: var(--color-primary);
+}
+
+[data-theme="dark"] .cancel-btn {
+  color: #a1a1aa;
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .cancel-btn:hover {
+  background: #ff4444;
+  color: white;
+  border-color: #ff4444;
+}
+
+/* Legacy dark mode support (for backwards compatibility) */
 body.dark-mode .voice-recorder {
   background: var(--card-bg-dark);
   border-color: var(--border-color-dark);

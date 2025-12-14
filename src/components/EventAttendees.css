@@ -132,7 +132,62 @@
   color: var(--electric-blue);
 }
 
-/* Dark mode */
+/* ========================================
+   DARK MODE SUPPORT
+   ======================================== */
+
+[data-theme="dark"] .view-attendees-btn {
+  color: #a1a1aa;
+}
+
+[data-theme="dark"] .view-attendees-btn:hover {
+  color: var(--color-primary);
+}
+
+[data-theme="dark"] .attendees-tabs {
+  border-bottom-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .attendees-tab {
+  color: #a1a1aa;
+}
+
+[data-theme="dark"] .attendees-tab:hover {
+  color: #ffffff;
+}
+
+[data-theme="dark"] .attendees-tab.active {
+  color: var(--color-primary);
+  border-bottom-color: var(--color-primary);
+}
+
+[data-theme="dark"] .no-attendees {
+  color: #a1a1aa;
+}
+
+[data-theme="dark"] .attendee-item:hover {
+  background: rgba(108, 92, 231, 0.1);
+}
+
+[data-theme="dark"] .attendee-name {
+  color: #ffffff;
+}
+
+[data-theme="dark"] .attendee-username {
+  color: #a1a1aa;
+}
+
+[data-theme="dark"] .attendee-status.going {
+  background: rgba(76, 175, 80, 0.2);
+  color: #4CAF50;
+}
+
+[data-theme="dark"] .attendee-status.interested {
+  background: rgba(9, 132, 227, 0.2);
+  color: var(--color-accent);
+}
+
+/* Legacy dark mode support (for backwards compatibility) */
 body.dark-mode .attendees-tabs {
   border-bottom-color: var(--border-color-dark);
 }

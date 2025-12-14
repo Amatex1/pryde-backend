@@ -207,6 +207,71 @@
   flex-shrink: 0;
 }
 
+/* ========================================
+   DARK MODE SUPPORT
+   ======================================== */
+
+[data-theme="dark"] .reaction-modal-overlay {
+  background: rgba(0, 0, 0, 0.75);
+}
+
+[data-theme="dark"] .reaction-modal {
+  background: #1a1b2d;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.8);
+}
+
+[data-theme="dark"] .reaction-modal-header {
+  border-bottom-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .modal-close-btn {
+  color: #a1a1aa;
+}
+
+[data-theme="dark"] .modal-close-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+[data-theme="dark"] .reaction-tabs {
+  border-bottom-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .reaction-tabs::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+[data-theme="dark"] .reaction-tab {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+[data-theme="dark"] .reaction-tab:hover {
+  background: rgba(108, 92, 231, 0.15);
+  border-color: var(--color-primary);
+}
+
+[data-theme="dark"] .reaction-list::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+[data-theme="dark"] .no-reactions {
+  color: #a1a1aa;
+}
+
+[data-theme="dark"] .reaction-item:hover {
+  background: rgba(108, 92, 231, 0.1);
+}
+
+[data-theme="dark"] .reaction-user-name {
+  color: #ffffff;
+}
+
+[data-theme="dark"] .reaction-user-username {
+  color: #a1a1aa;
+}
+
 /* Mobile Responsive */
 @media (max-width: 768px) {
   .reaction-modal {
@@ -236,6 +301,4 @@
     height: 2.25rem;
   }
 }
-
-/* Dark mode adjustments - minimal since theme variables handle most */
 

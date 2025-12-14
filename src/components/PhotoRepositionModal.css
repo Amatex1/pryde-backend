@@ -242,6 +242,41 @@
   }
 }
 
+/* ========================================
+   DARK MODE SUPPORT
+   ======================================== */
+
+[data-theme="dark"] .photo-reposition-modal {
+  background: #1a1b2d;
+}
+
+[data-theme="dark"] .reposition-header {
+  border-bottom-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .reposition-instructions {
+  background: rgba(255, 255, 255, 0.03);
+  color: #ffffff;
+  border-bottom-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .reposition-footer {
+  border-top-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .btn-reset,
+[data-theme="dark"] .btn-cancel {
+  background: rgba(255, 255, 255, 0.05);
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .btn-reset:hover,
+[data-theme="dark"] .btn-cancel:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
 @media (max-width: 768px) {
   .photo-reposition-modal {
     width: 100%;

@@ -88,7 +88,44 @@
   word-wrap: break-word;
 }
 
-/* Dark mode */
+/* ========================================
+   DARK MODE SUPPORT
+   ======================================== */
+
+[data-theme="dark"] .edit-history-loading,
+[data-theme="dark"] .no-edit-history {
+  color: #a1a1aa;
+}
+
+[data-theme="dark"] .edit-history-item:not(:last-child) {
+  border-bottom-color: rgba(255, 255, 255, 0.05);
+}
+
+[data-theme="dark"] .edit-history-dot {
+  border-color: #1a1b2d;
+  background: var(--color-primary);
+  box-shadow: 0 0 0 2px var(--color-primary);
+}
+
+[data-theme="dark"] .edit-history-line {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .edit-history-time {
+  color: #a1a1aa;
+}
+
+[data-theme="dark"] .edit-history-editor {
+  color: var(--color-primary);
+}
+
+[data-theme="dark"] .edit-history-text {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+/* Legacy dark mode support (for backwards compatibility) */
 body.dark-mode .edit-history-dot {
   border-color: var(--card-bg-dark);
 }

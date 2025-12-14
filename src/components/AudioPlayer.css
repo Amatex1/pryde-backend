@@ -86,7 +86,33 @@
   flex-shrink: 0;
 }
 
-/* Dark mode */
+/* ========================================
+   DARK MODE SUPPORT
+   ======================================== */
+
+[data-theme="dark"] .audio-player {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .audio-progress-bar {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .audio-progress-handle {
+  background: #1a1b2d;
+  border-color: var(--color-primary);
+}
+
+[data-theme="dark"] .audio-time {
+  color: #a1a1aa;
+}
+
+[data-theme="dark"] .current-time {
+  color: var(--color-primary);
+}
+
+/* Legacy dark mode support (for backwards compatibility) */
 body.dark-mode .audio-player {
   background: var(--card-bg-dark);
   border-color: var(--border-color-dark);

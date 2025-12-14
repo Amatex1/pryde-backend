@@ -122,6 +122,94 @@
   color: var(--text-muted);
 }
 
+/* ========================================
+   DARK MODE SUPPORT
+   ======================================== */
+
+[data-theme="dark"] .online-indicator {
+  background: rgba(255, 215, 0, 0.15);
+  color: #ffffff;
+}
+
+[data-theme="dark"] .online-indicator:hover {
+  background: rgba(255, 215, 0, 0.25);
+}
+
+[data-theme="dark"] .online-dropdown {
+  background: #1a1b2d;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+}
+
+[data-theme="dark"] .dropdown-header {
+  border-bottom-color: rgba(255, 215, 0, 0.2);
+}
+
+[data-theme="dark"] .dropdown-header h4 {
+  color: #FFD700;
+}
+
+[data-theme="dark"] .btn-close {
+  color: #a1a1aa;
+}
+
+[data-theme="dark"] .btn-close:hover {
+  color: #FFD700;
+}
+
+[data-theme="dark"] .online-list {
+  color: #ffffff;
+}
+
+[data-theme="dark"] .search-input {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+[data-theme="dark"] .search-input:focus {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(108, 92, 231, 0.15);
+}
+
+[data-theme="dark"] .search-input::placeholder {
+  color: #6b6e80;
+}
+
+[data-theme="dark"] .friend-item:hover {
+  background: rgba(108, 92, 231, 0.15);
+}
+
+[data-theme="dark"] .status-dot {
+  border-color: #1a1b2d;
+}
+
+[data-theme="dark"] .friend-name {
+  color: #ffffff;
+}
+
+[data-theme="dark"] .friend-status {
+  color: #a1a1aa;
+}
+
+[data-theme="dark"] .no-friends {
+  color: #a1a1aa;
+}
+
+[data-theme="dark"] .deactivated-friend .deactivated-avatar {
+  background: #3a3a3a !important;
+  border-color: #3a3a3a !important;
+}
+
+[data-theme="dark"] .deactivated-friend .deactivated-avatar .avatar-placeholder {
+  color: #888 !important;
+}
+
+[data-theme="dark"] .deactivated-friend .deactivated-text {
+  color: #6b6e80 !important;
+}
+
+/* Legacy dark mode support (for backwards compatibility) */
 @media (prefers-color-scheme: dark) {
   .search-input {
     background: rgba(255, 255, 255, 0.05);
@@ -260,6 +348,7 @@
   display: none;
 }
 
+/* Legacy deactivated friend dark mode (for backwards compatibility) */
 @media (prefers-color-scheme: dark) {
   .deactivated-friend .deactivated-avatar {
     background: #3a3a3a !important;

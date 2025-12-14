@@ -152,7 +152,75 @@
   user-select: none;
 }
 
-/* Dark mode */
+/* ========================================
+   DARK MODE SUPPORT
+   ======================================== */
+
+[data-theme="dark"] .poll-creator {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .poll-header h4 {
+  color: #ffffff;
+}
+
+[data-theme="dark"] .poll-field label {
+  color: #ffffff;
+}
+
+[data-theme="dark"] .poll-field input[type="text"],
+[data-theme="dark"] .poll-field select {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+[data-theme="dark"] .poll-field input[type="text"]:focus,
+[data-theme="dark"] .poll-field select:focus {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 4px rgba(108, 92, 231, 0.15);
+}
+
+[data-theme="dark"] .poll-field input[type="text"]::placeholder {
+  color: #6b6e80;
+}
+
+[data-theme="dark"] .char-count {
+  color: #a1a1aa;
+}
+
+[data-theme="dark"] .remove-option-btn {
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #a1a1aa;
+}
+
+[data-theme="dark"] .remove-option-btn:hover {
+  background: #ff4444;
+  color: white;
+  border-color: #ff4444;
+}
+
+[data-theme="dark"] .add-option-btn {
+  border-color: rgba(255, 255, 255, 0.1);
+  color: var(--color-primary);
+}
+
+[data-theme="dark"] .add-option-btn:hover {
+  background: rgba(108, 92, 231, 0.15);
+  border-color: var(--color-primary);
+}
+
+[data-theme="dark"] .poll-settings {
+  border-top-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .poll-checkbox {
+  color: #ffffff;
+}
+
+/* Legacy dark mode support (for backwards compatibility) */
 body.dark-mode .poll-creator {
   background: var(--card-bg-dark);
   border-color: var(--border-color-dark);

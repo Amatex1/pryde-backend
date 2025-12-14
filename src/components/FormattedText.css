@@ -33,7 +33,35 @@
   color: var(--pryde-purple);
 }
 
-/* Dark Mode */
+/* ========================================
+   DARK MODE SUPPORT
+   ======================================== */
+
+[data-theme="dark"] .hashtag-link {
+  color: var(--color-accent);
+}
+
+[data-theme="dark"] .hashtag-link:hover {
+  color: var(--color-primary);
+}
+
+[data-theme="dark"] .mention-link {
+  color: var(--color-primary);
+}
+
+[data-theme="dark"] .mention-link:hover {
+  color: var(--color-accent);
+}
+
+[data-theme="dark"] .url-link {
+  color: var(--color-accent);
+}
+
+[data-theme="dark"] .url-link:hover {
+  color: var(--color-primary);
+}
+
+/* Legacy dark mode support (for backwards compatibility) */
 @media (prefers-color-scheme: dark) {
   .hashtag-link {
     color: #74b9ff;

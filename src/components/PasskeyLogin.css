@@ -60,6 +60,20 @@
   text-align: center;
 }
 
+/* ========================================
+   DARK MODE SUPPORT
+   ======================================== */
+
+[data-theme="dark"] .passkey-help p {
+  color: #a1a1aa;
+}
+
+[data-theme="dark"] .error-message {
+  background: rgba(255, 107, 107, 0.15);
+  border-color: #ff6b6b;
+  color: #ff6b6b;
+}
+
 @media (max-width: 768px) {
   .btn-passkey {
     padding: 0.875rem;
