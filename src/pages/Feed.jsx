@@ -59,6 +59,8 @@ function Feed() {
   const [revealedPosts, setRevealedPosts] = useState({});
   const [showReplies, setShowReplies] = useState({}); // Track which comments have replies visible
   const [showReactionPicker, setShowReactionPicker] = useState(null); // Track which comment shows reaction picker
+  const [postComments, setPostComments] = useState({}); // Store comments by postId { postId: [comments] }
+  const [commentReplies, setCommentReplies] = useState({}); // Store replies by commentId { commentId: [replies] }
   const [editPostVisibility, setEditPostVisibility] = useState('friends');
   const [editHiddenFromUsers, setEditHiddenFromUsers] = useState([]);
   const [editSharedWithUsers, setEditSharedWithUsers] = useState([]);
@@ -295,24 +297,130 @@ function Feed() {
         cleanupFunctions.push(() => socket.off('post_reaction_added', handlePostReaction));
 
         // Listen for real-time comment reactions
-        const handleCommentReaction = (data) => {
+        const handleCommentReactionRT = (data) => {
           logger.debug('💜 Real-time comment reaction received:', data);
-          setPosts((prevPosts) =>
-            prevPosts.map(p => p._id === data.postId ? data.post : p)
-          );
+          const updatedComment = data.comment;
+
+          // Update in postComments
+          setPostComments(prev => {
+            const updated = { ...prev };
+            Object.keys(updated).forEach(postId => {
+              updated[postId] = updated[postId].map(c =>
+                c._id === updatedComment._id ? updatedComment : c
+              );
+            });
+            return updated;
+          });
+
+          // Update in commentReplies
+          setCommentReplies(prev => {
+            const updated = { ...prev };
+            Object.keys(updated).forEach(parentId => {
+              updated[parentId] = updated[parentId].map(c =>
+                c._id === updatedComment._id ? updatedComment : c
+              );
+            });
+            return updated;
+          });
         };
-        socket.on('comment_reaction_added', handleCommentReaction);
-        cleanupFunctions.push(() => socket.off('comment_reaction_added', handleCommentReaction));
+        socket.on('comment_reaction_added', handleCommentReactionRT);
+        cleanupFunctions.push(() => socket.off('comment_reaction_added', handleCommentReactionRT));
 
         // Listen for real-time comments
-        const handleCommentAdded = (data) => {
+        const handleCommentAddedRT = (data) => {
           logger.debug('💬 Real-time comment received:', data);
-          setPosts((prevPosts) =>
-            prevPosts.map(p => p._id === data.postId ? data.post : p)
+          const newComment = data.comment;
+          const postId = data.postId;
+
+          if (newComment.parentCommentId) {
+            // It's a reply
+            setCommentReplies(prev => ({
+              ...prev,
+              [newComment.parentCommentId]: [...(prev[newComment.parentCommentId] || []), newComment]
+            }));
+          } else {
+            // It's a top-level comment
+            setPostComments(prev => ({
+              ...prev,
+              [postId]: [...(prev[postId] || []), newComment]
+            }));
+          }
+
+          // Update post comment count
+          setPosts(prevPosts =>
+            prevPosts.map(p =>
+              p._id === postId
+                ? { ...p, commentCount: (p.commentCount || 0) + 1 }
+                : p
+            )
           );
         };
-        socket.on('comment_added', handleCommentAdded);
-        cleanupFunctions.push(() => socket.off('comment_added', handleCommentAdded));
+        socket.on('comment_added', handleCommentAddedRT);
+        cleanupFunctions.push(() => socket.off('comment_added', handleCommentAddedRT));
+
+        // Listen for comment updates
+        const handleCommentUpdatedRT = (data) => {
+          logger.debug('✏️ Real-time comment update received:', data);
+          const updatedComment = data.comment;
+
+          // Update in postComments
+          setPostComments(prev => {
+            const updated = { ...prev };
+            Object.keys(updated).forEach(postId => {
+              updated[postId] = updated[postId].map(c =>
+                c._id === updatedComment._id ? updatedComment : c
+              );
+            });
+            return updated;
+          });
+
+          // Update in commentReplies
+          setCommentReplies(prev => {
+            const updated = { ...prev };
+            Object.keys(updated).forEach(parentId => {
+              updated[parentId] = updated[parentId].map(c =>
+                c._id === updatedComment._id ? updatedComment : c
+              );
+            });
+            return updated;
+          });
+        };
+        socket.on('comment_updated', handleCommentUpdatedRT);
+        cleanupFunctions.push(() => socket.off('comment_updated', handleCommentUpdatedRT));
+
+        // Listen for comment deletions
+        const handleCommentDeletedRT = (data) => {
+          logger.debug('🗑️ Real-time comment deletion received:', data);
+          const { commentId, postId } = data;
+
+          // Remove from postComments
+          setPostComments(prev => ({
+            ...prev,
+            [postId]: (prev[postId] || []).filter(c => c._id !== commentId)
+          }));
+
+          // Remove from commentReplies
+          setCommentReplies(prev => {
+            const updated = { ...prev };
+            Object.keys(updated).forEach(parentId => {
+              updated[parentId] = updated[parentId].filter(c => c._id !== commentId);
+            });
+            // Also remove if it was a parent
+            delete updated[commentId];
+            return updated;
+          });
+
+          // Update post comment count
+          setPosts(prevPosts =>
+            prevPosts.map(p =>
+              p._id === postId
+                ? { ...p, commentCount: Math.max(0, (p.commentCount || 0) - 1) }
+                : p
+            )
+          );
+        };
+        socket.on('comment_deleted', handleCommentDeletedRT);
+        cleanupFunctions.push(() => socket.off('comment_deleted', handleCommentDeletedRT));
       }
     };
 
@@ -611,21 +719,146 @@ function Feed() {
     }
   };
 
-  const handleCommentReaction = async (postId, commentId, emoji) => {
+  // Helper function to get user's selected emoji from reactions object
+  const getUserReactionEmoji = (reactions) => {
+    if (!reactions || !currentUser?.id) return null;
+
+    for (const [emoji, userIds] of Object.entries(reactions)) {
+      if (userIds.includes(currentUser.id)) {
+        return emoji;
+      }
+    }
+    return null;
+  };
+
+  // Fetch comments for a post
+  const fetchCommentsForPost = async (postId) => {
     try {
-      const response = await api.post(`/posts/${postId}/comment/${commentId}/react`, { emoji });
-      setPosts(posts.map(p => p._id === postId ? response.data : p));
-      setShowReactionPicker(null); // Hide picker after reaction
+      const response = await api.get(`/posts/${postId}/comments`);
+      setPostComments(prev => ({
+        ...prev,
+        [postId]: response.data
+      }));
     } catch (error) {
-      logger.error('Failed to react to comment:', error);
+      logger.error('Failed to fetch comments:', error);
     }
   };
 
-  const toggleCommentBox = (postId) => {
+  // Fetch replies for a comment
+  const fetchRepliesForComment = async (commentId) => {
+    try {
+      const response = await api.get(`/comments/${commentId}/replies`);
+      setCommentReplies(prev => ({
+        ...prev,
+        [commentId]: response.data
+      }));
+    } catch (error) {
+      logger.error('Failed to fetch replies:', error);
+    }
+  };
+
+  // Toggle replies visibility and fetch if needed
+  const toggleReplies = async (commentId) => {
+    const isCurrentlyShown = showReplies[commentId];
+
+    setShowReplies(prev => ({
+      ...prev,
+      [commentId]: !isCurrentlyShown
+    }));
+
+    // Fetch replies if showing and not already loaded
+    if (!isCurrentlyShown && !commentReplies[commentId]) {
+      await fetchRepliesForComment(commentId);
+    }
+  };
+
+  const handleCommentReaction = async (commentId, emoji) => {
+    try {
+      // Optimistic update
+      const updateCommentReaction = (comment) => {
+        if (comment._id !== commentId) return comment;
+
+        const reactions = { ...comment.reactions };
+        const currentUserId = currentUser?.id;
+
+        // Remove user from all emoji arrays
+        Object.keys(reactions).forEach(key => {
+          reactions[key] = reactions[key].filter(uid => uid !== currentUserId);
+        });
+
+        // Add user to selected emoji array (or remove if clicking same emoji)
+        const hadThisReaction = comment.reactions?.[emoji]?.includes(currentUserId);
+        if (!hadThisReaction) {
+          if (!reactions[emoji]) reactions[emoji] = [];
+          reactions[emoji].push(currentUserId);
+        }
+
+        return { ...comment, reactions };
+      };
+
+      // Update in postComments
+      setPostComments(prev => {
+        const updated = { ...prev };
+        Object.keys(updated).forEach(postId => {
+          updated[postId] = updated[postId].map(updateCommentReaction);
+        });
+        return updated;
+      });
+
+      // Update in commentReplies
+      setCommentReplies(prev => {
+        const updated = { ...prev };
+        Object.keys(updated).forEach(parentId => {
+          updated[parentId] = updated[parentId].map(updateCommentReaction);
+        });
+        return updated;
+      });
+
+      // Make API call
+      const response = await api.post(`/comments/${commentId}/react`, { emoji });
+
+      // Update with server response
+      const serverComment = response.data;
+      setPostComments(prev => {
+        const updated = { ...prev };
+        Object.keys(updated).forEach(postId => {
+          updated[postId] = updated[postId].map(c =>
+            c._id === commentId ? serverComment : c
+          );
+        });
+        return updated;
+      });
+
+      setCommentReplies(prev => {
+        const updated = { ...prev };
+        Object.keys(updated).forEach(parentId => {
+          updated[parentId] = updated[parentId].map(c =>
+            c._id === commentId ? serverComment : c
+          );
+        });
+        return updated;
+      });
+
+      setShowReactionPicker(null);
+    } catch (error) {
+      logger.error('Failed to react to comment:', error);
+      // Revert optimistic update on error
+      // Re-fetch to get correct state
+    }
+  };
+
+  const toggleCommentBox = async (postId) => {
+    const isCurrentlyShown = showCommentBox[postId];
+
     setShowCommentBox(prev => ({
       ...prev,
-      [postId]: !prev[postId]
+      [postId]: !isCurrentlyShown
     }));
+
+    // Fetch comments if opening and not already loaded
+    if (!isCurrentlyShown && !postComments[postId]) {
+      await fetchCommentsForPost(postId);
+    }
   };
 
   const handleCommentSubmit = async (postId, e) => {
@@ -640,11 +873,25 @@ function Feed() {
       // Convert emoji shortcuts before posting
       const contentWithEmojis = content ? convertEmojiShortcuts(content) : '';
 
-      const response = await api.post(`/posts/${postId}/comment`, {
+      const response = await api.post(`/posts/${postId}/comments`, {
         content: contentWithEmojis,
-        gifUrl: gifUrl || null
+        gifUrl: gifUrl || null,
+        parentCommentId: null // Top-level comment
       });
-      setPosts(posts.map(p => p._id === postId ? response.data : p));
+
+      // Add new comment to postComments
+      setPostComments(prev => ({
+        ...prev,
+        [postId]: [...(prev[postId] || []), response.data]
+      }));
+
+      // Update post comment count
+      setPosts(posts.map(p =>
+        p._id === postId
+          ? { ...p, commentCount: (p.commentCount || 0) + 1 }
+          : p
+      ));
+
       setCommentText(prev => ({ ...prev, [postId]: '' }));
       setCommentGif(prev => ({ ...prev, [postId]: null }));
     } catch (error) {
@@ -662,14 +909,38 @@ function Feed() {
     setEditCommentText(content);
   };
 
-  const handleSaveEditComment = async (postId, commentId) => {
+  const handleSaveEditComment = async (commentId) => {
     if (!editCommentText.trim()) return;
 
     try {
-      const response = await api.put(`/posts/${postId}/comment/${commentId}`, {
+      const response = await api.put(`/comments/${commentId}`, {
         content: editCommentText
       });
-      setPosts(posts.map(p => p._id === postId ? response.data : p));
+
+      const updatedComment = response.data;
+
+      // Update in postComments
+      setPostComments(prev => {
+        const updated = { ...prev };
+        Object.keys(updated).forEach(postId => {
+          updated[postId] = updated[postId].map(c =>
+            c._id === commentId ? updatedComment : c
+          );
+        });
+        return updated;
+      });
+
+      // Update in commentReplies
+      setCommentReplies(prev => {
+        const updated = { ...prev };
+        Object.keys(updated).forEach(parentId => {
+          updated[parentId] = updated[parentId].map(c =>
+            c._id === commentId ? updatedComment : c
+          );
+        });
+        return updated;
+      });
+
       setEditingCommentId(null);
       setEditCommentText('');
     } catch (error) {
@@ -741,13 +1012,43 @@ function Feed() {
     setEditSharedWithUsers([]);
   };
 
-  const handleDeleteComment = async (postId, commentId) => {
+  const handleDeleteComment = async (postId, commentId, isReply = false) => {
     const confirmed = await showConfirm('Are you sure you want to delete this comment?', 'Delete Comment', 'Delete', 'Cancel');
     if (!confirmed) return;
 
     try {
-      const response = await api.delete(`/posts/${postId}/comment/${commentId}`);
-      setPosts(posts.map(p => p._id === postId ? response.data : p));
+      await api.delete(`/comments/${commentId}`);
+
+      if (isReply) {
+        // Remove from commentReplies
+        setCommentReplies(prev => {
+          const updated = { ...prev };
+          Object.keys(updated).forEach(parentId => {
+            updated[parentId] = updated[parentId].filter(c => c._id !== commentId);
+          });
+          return updated;
+        });
+      } else {
+        // Remove from postComments (and all its replies will be deleted by backend)
+        setPostComments(prev => ({
+          ...prev,
+          [postId]: (prev[postId] || []).filter(c => c._id !== commentId)
+        }));
+
+        // Remove replies from state
+        setCommentReplies(prev => {
+          const updated = { ...prev };
+          delete updated[commentId];
+          return updated;
+        });
+      }
+
+      // Update post comment count
+      setPosts(posts.map(p =>
+        p._id === postId
+          ? { ...p, commentCount: Math.max(0, (p.commentCount || 0) - 1) }
+          : p
+      ));
     } catch (error) {
       logger.error('Failed to delete comment:', error);
       showAlert('Failed to delete comment. Please try again.', 'Delete Failed');
@@ -771,14 +1072,49 @@ function Feed() {
       // Convert emoji shortcuts before posting
       const contentWithEmojis = replyText ? convertEmojiShortcuts(replyText) : '';
 
-      const response = await api.post(`/posts/${postId}/comment/${commentId}/reply`, {
+      const response = await api.post(`/posts/${postId}/comments`, {
         content: contentWithEmojis,
-        gifUrl: replyGif || null
+        gifUrl: replyGif || null,
+        parentCommentId: commentId // This makes it a reply
       });
-      setPosts(posts.map(p => p._id === postId ? response.data : p));
+
+      const newReply = response.data;
+
+      // Add reply to commentReplies
+      setCommentReplies(prev => ({
+        ...prev,
+        [commentId]: [...(prev[commentId] || []), newReply]
+      }));
+
+      // Update parent comment's reply count
+      setPostComments(prev => {
+        const updated = { ...prev };
+        Object.keys(updated).forEach(pId => {
+          updated[pId] = updated[pId].map(c =>
+            c._id === commentId
+              ? { ...c, replyCount: (c.replyCount || 0) + 1 }
+              : c
+          );
+        });
+        return updated;
+      });
+
+      // Update post comment count
+      setPosts(posts.map(p =>
+        p._id === postId
+          ? { ...p, commentCount: (p.commentCount || 0) + 1 }
+          : p
+      ));
+
       setReplyingToComment(null);
       setReplyText('');
       setReplyGif(null);
+
+      // Auto-show replies after adding one
+      setShowReplies(prev => ({
+        ...prev,
+        [commentId]: true
+      }));
     } catch (error) {
       logger.error('Failed to reply to comment:', error);
       showAlert('Failed to reply. Please try again.', 'Reply Failed');
