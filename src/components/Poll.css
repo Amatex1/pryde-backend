@@ -242,7 +242,23 @@ body.dark-mode .poll-option-button:hover:not(:disabled) {
   background: rgba(108, 92, 231, 0.1);
 }
 
-/* Quiet mode */
+/* ========================================
+   QUIET MODE SUPPORT
+   ======================================== */
+
+[data-quiet-mode="true"] .poll-container {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+[data-quiet-mode="true"] .poll-option-button:hover:not(:disabled) {
+  transform: none;
+}
+
+[data-quiet-mode="true"] .poll-results-bar {
+  animation: none;
+}
+
+/* Legacy quiet mode support */
 body.quiet-mode .poll-container {
   border-color: var(--border-light);
 }

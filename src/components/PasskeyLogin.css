@@ -85,3 +85,16 @@
   }
 }
 
+/* ========================================
+   QUIET MODE SUPPORT
+   ======================================== */
+
+[data-quiet-mode="true"] .passkey-login {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+[data-quiet-mode="true"] .btn-passkey:hover {
+  transform: none;
+}
+
+

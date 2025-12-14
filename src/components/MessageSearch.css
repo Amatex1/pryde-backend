@@ -240,3 +240,16 @@ body.dark-mode .result-message .highlight {
   background: rgba(108, 92, 231, 0.3);
 }
 
+/* ========================================
+   QUIET MODE SUPPORT
+   ======================================== */
+
+[data-quiet-mode="true"] .message-search {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+[data-quiet-mode="true"] .search-result-item:hover {
+  transform: none;
+}
+
+

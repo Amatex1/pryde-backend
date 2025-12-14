@@ -241,3 +241,21 @@ body.quiet-mode .poll-creator {
   border-color: var(--border-light);
 }
 
+/* ========================================
+   QUIET MODE SUPPORT
+   ======================================== */
+
+[data-quiet-mode="true"] .poll-creator {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+[data-quiet-mode="true"] .add-option-btn::before {
+  animation: none;
+}
+
+[data-quiet-mode="true"] .add-option-btn:hover,
+[data-quiet-mode="true"] .remove-option-btn:hover {
+  transform: none;
+}
+
+

@@ -195,3 +195,21 @@
   border-color: var(--color-primary);
 }
 
+/* ========================================
+   QUIET MODE SUPPORT
+   ======================================== */
+
+[data-quiet-mode="true"] .custom-modal-overlay {
+  animation: none;
+}
+
+[data-quiet-mode="true"] .custom-modal {
+  animation: none;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+[data-quiet-mode="true"] .custom-modal-btn-primary:hover,
+[data-quiet-mode="true"] .custom-modal-btn-secondary:hover {
+  transform: none;
+}
+

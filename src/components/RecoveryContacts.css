@@ -409,6 +409,25 @@ body.dark-mode .recovery-note {
   }
 }
 
+/* ========================================
+   QUIET MODE SUPPORT
+   ======================================== */
+
+[data-quiet-mode="true"] .add-contact-form,
+[data-quiet-mode="true"] .contact-item {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+[data-quiet-mode="true"] .add-contact-btn:hover,
+[data-quiet-mode="true"] .remove-contact-btn:hover {
+  transform: none;
+}
+
+[data-quiet-mode="true"] .user-result:hover {
+  transform: none;
+}
+
+
 .user-name {
   color: var(--text-primary);
   font-weight: 600;

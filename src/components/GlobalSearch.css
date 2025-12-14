@@ -262,3 +262,24 @@
   color: #e8e9f0;
 }
 
+/* ========================================
+   QUIET MODE SUPPORT
+   ======================================== */
+
+[data-quiet-mode="true"] .global-search-overlay {
+  animation: none;
+}
+
+[data-quiet-mode="true"] .global-search-modal {
+  animation: none;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+[data-quiet-mode="true"] .search-result-item:hover {
+  transform: none;
+}
+
+[data-quiet-mode="true"] .search-tab:hover {
+  transform: none;
+}
+

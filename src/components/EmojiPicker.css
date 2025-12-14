@@ -171,3 +171,20 @@
   transform: scale(1.1);
 }
 
+/* ========================================
+   QUIET MODE SUPPORT
+   ======================================== */
+
+[data-quiet-mode="true"] .emoji-picker-overlay {
+  animation: none;
+}
+
+[data-quiet-mode="true"] .emoji-picker {
+  animation: none;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+[data-quiet-mode="true"] .emoji-button:hover {
+  transform: scale(1.05);
+}
+

@@ -32,3 +32,12 @@ body.quiet-mode .pinned-post-badge {
   opacity: 0.7;
 }
 
+/* ========================================
+   QUIET MODE SUPPORT
+   ======================================== */
+
+[data-quiet-mode="true"] .pinned-post-badge {
+  opacity: 0.8;
+}
+
+

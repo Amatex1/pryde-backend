@@ -204,3 +204,16 @@ body.dark-mode .attendee-status.interested {
   background: rgba(9, 132, 227, 0.2);
 }
 
+/* ========================================
+   QUIET MODE SUPPORT
+   ======================================== */
+
+[data-quiet-mode="true"] .event-attendees {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+[data-quiet-mode="true"] .attendee-item:hover {
+  transform: none;
+}
+
+

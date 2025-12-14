@@ -88,3 +88,12 @@
   }
 }
 
+/* ========================================
+   QUIET MODE SUPPORT
+   ======================================== */
+
+[data-quiet-mode="true"] .formatted-text a:hover {
+  transform: none;
+}
+
+

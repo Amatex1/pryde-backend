@@ -307,3 +307,20 @@
   }
 }
 
+/* ========================================
+   QUIET MODE SUPPORT
+   ======================================== */
+
+[data-quiet-mode="true"] .passkey-manager {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+[data-quiet-mode="true"] .passkey-item:hover {
+  transform: none;
+}
+
+[data-quiet-mode="true"] .btn-remove-passkey:hover {
+  transform: none;
+}
+
+

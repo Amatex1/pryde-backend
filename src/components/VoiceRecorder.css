@@ -195,3 +195,27 @@ body.dark-mode .uploading-spinner {
   }
 }
 
+/* ========================================
+   QUIET MODE SUPPORT
+   ======================================== */
+
+[data-quiet-mode="true"] .voice-recorder {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+[data-quiet-mode="true"] .recording-dot {
+  animation: none;
+}
+
+[data-quiet-mode="true"] .uploading-spinner {
+  animation: spin 1s linear infinite;
+}
+
+[data-quiet-mode="true"] .start-recording-btn:hover,
+[data-quiet-mode="true"] .pause-btn:hover,
+[data-quiet-mode="true"] .resume-btn:hover,
+[data-quiet-mode="true"] .stop-btn:hover {
+  transform: none;
+}
+
+

@@ -317,3 +317,19 @@
   }
 }
 
+/* ========================================
+   QUIET MODE SUPPORT
+   ======================================== */
+
+[data-quiet-mode="true"] .photo-reposition-modal {
+  animation: none;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+[data-quiet-mode="true"] .btn-save:hover,
+[data-quiet-mode="true"] .btn-reset:hover,
+[data-quiet-mode="true"] .btn-cancel:hover {
+  transform: none;
+}
+
+

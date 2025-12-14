@@ -223,6 +223,20 @@
   }
 }
 
+/* ========================================
+   QUIET MODE SUPPORT
+   ======================================== */
+
+[data-quiet-mode="true"] .online-indicator {
+  animation: none;
+}
+
+[data-quiet-mode="true"] .presence-tooltip {
+  animation: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+
 /* Friends List */
 .friends-list {
   max-height: 400px;

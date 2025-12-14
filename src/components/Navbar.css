@@ -851,3 +851,32 @@
   color: var(--color-primary);
   border-color: var(--color-primary);
 }
+
+/* ========================================
+   QUIET MODE SUPPORT
+   ======================================== */
+
+[data-quiet-mode="true"] .navbar {
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+}
+
+[data-quiet-mode="true"] .nav-button {
+  transition: all 0.2s ease;
+}
+
+[data-quiet-mode="true"] .nav-button:hover {
+  transform: none;
+}
+
+[data-quiet-mode="true"] .notification-badge {
+  animation: none;
+}
+
+[data-quiet-mode="true"] .dropdown-menu {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  animation: none;
+}
+
+[data-quiet-mode="true"] .mobile-menu {
+  animation: none;
+}

@@ -53,3 +53,15 @@
   box-shadow: 0 4px 16px rgba(108, 92, 231, 0.4);
 }
 
+/* ========================================
+   QUIET MODE SUPPORT
+   ======================================== */
+
+[data-quiet-mode="true"] .dark-mode-toggle {
+  transition: all 0.2s ease;
+}
+
+[data-quiet-mode="true"] .dark-mode-toggle:hover {
+  transform: none;
+}
+

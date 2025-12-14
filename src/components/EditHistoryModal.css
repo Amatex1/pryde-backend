@@ -144,3 +144,17 @@ body.quiet-mode .edit-history-text {
   border-color: var(--border-light);
 }
 
+/* ========================================
+   QUIET MODE SUPPORT
+   ======================================== */
+
+[data-quiet-mode="true"] .edit-history-modal {
+  animation: none;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+[data-quiet-mode="true"] .edit-history-item:hover {
+  transform: none;
+}
+
+

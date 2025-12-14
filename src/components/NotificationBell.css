@@ -327,3 +327,24 @@
   color: #a1a1aa;
 }
 
+/* ========================================
+   QUIET MODE SUPPORT
+   ======================================== */
+
+[data-quiet-mode="true"] .notification-bell {
+  animation: none;
+}
+
+[data-quiet-mode="true"] .notification-badge {
+  animation: none;
+}
+
+[data-quiet-mode="true"] .notification-dropdown {
+  animation: none;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+[data-quiet-mode="true"] .notif-item:hover {
+  transform: none;
+}
+

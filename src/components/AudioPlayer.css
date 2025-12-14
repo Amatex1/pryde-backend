@@ -108,6 +108,19 @@
   color: #a1a1aa;
 }
 
+/* ========================================
+   QUIET MODE SUPPORT
+   ======================================== */
+
+[data-quiet-mode="true"] .audio-player {
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+}
+
+[data-quiet-mode="true"] .audio-play-btn:hover,
+[data-quiet-mode="true"] .audio-volume-btn:hover {
+  transform: none;
+}
+
 [data-theme="dark"] .current-time {
   color: var(--color-primary);
 }
