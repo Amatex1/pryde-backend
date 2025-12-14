@@ -1308,8 +1308,8 @@ html:not([data-theme="dark"]):not([data-quiet-mode="true"]) .section-title {
   color: var(--text-muted);
 }
 
-/* Tablet: Smaller sidebar but still on right */
-@media (min-width: 481px) and (max-width: 768px) {
+/* Tablet and small desktop: Smaller sidebar but still on right */
+@media (min-width: 376px) and (max-width: 768px) {
   .profile-page .profile-layout,
   div.profile-layout,
   .profile-layout {
@@ -1323,8 +1323,8 @@ html:not([data-theme="dark"]):not([data-quiet-mode="true"]) .section-title {
   }
 }
 
-/* Mobile: Stack sidebar below posts */
-@media (max-width: 480px) {
+/* Mobile: Stack sidebar below posts - ONLY for very small screens */
+@media (max-width: 375px) {
   .profile-page .profile-layout,
   div.profile-layout,
   .profile-layout {
@@ -2284,8 +2284,8 @@ html:not([data-theme="dark"]):not([data-quiet-mode="true"]) .section-title {
   }
 }
 
-/* Extra small devices */
-@media (max-width: 480px) {
+/* Extra small devices - ONLY for very small screens */
+@media (max-width: 375px) {
   .profile-container {
     padding: 0 0.5rem 1rem;
   }
