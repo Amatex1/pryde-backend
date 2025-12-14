@@ -260,7 +260,8 @@
   border-radius: var(--radius-card);
   box-shadow: var(--shadow-strong);
   min-width: 220px;
-  padding: var(--space-2);
+  padding: var(--space-2) 0;
+  overflow: hidden;
   z-index: calc(var(--z-sticky) + 100);
   animation: dropdownSlide 0.2s ease;
 }
@@ -287,12 +288,12 @@
   transition: all 0.15s ease;
   border: none;
   background: transparent;
-  width: calc(100% - calc(var(--space-4) * 2)); /* Account for padding */
+  width: 100%;
   text-align: left;
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
-  margin: 0 var(--space-2);
+  margin: 0;
 }
 
 .dropdown-item:hover {
