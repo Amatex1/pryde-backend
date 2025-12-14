@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Toast from '../components/Toast';
+import DraftManager from '../components/DraftManager';
 import { useToast } from '../hooks/useToast';
 import api from '../utils/api';
 import { getImageUrl } from '../utils/imageUrl';
@@ -17,6 +18,9 @@ function PhotoEssay() {
   const [loading, setLoading] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [editMode, setEditMode] = useState(false);
+  const [showDraftManager, setShowDraftManager] = useState(false);
+  const [currentDraftId, setCurrentDraftId] = useState(null);
+  const autoSaveTimerRef = useRef(null);
 
   useEffect(() => {
     if (id) {
@@ -71,6 +75,66 @@ function PhotoEssay() {
     setPhotos(prev => prev.filter((_, i) => i !== index));
   };
 
+  // Auto-save draft
+  const autoSaveDraft = useCallback(async () => {
+    // Only auto-save if there's content and not in edit mode
+    if (editMode || (!title.trim() && photos.length === 0)) return;
+
+    try {
+      const draftData = {
+        draftId: currentDraftId,
+        draftType: 'photoEssay',
+        title: title,
+        media: photos,
+        visibility: visibility
+      };
+
+      const response = await api.post('/drafts', draftData);
+
+      // Set draft ID if this is a new draft
+      if (!currentDraftId && response.data._id) {
+        setCurrentDraftId(response.data._id);
+      }
+    } catch (error) {
+      console.error('Failed to auto-save draft:', error);
+    }
+  }, [title, photos, visibility, currentDraftId, editMode]);
+
+  // Auto-save on content change (debounced)
+  useEffect(() => {
+    if (autoSaveTimerRef.current) {
+      clearTimeout(autoSaveTimerRef.current);
+    }
+
+    autoSaveTimerRef.current = setTimeout(() => {
+      autoSaveDraft();
+    }, 3000); // Auto-save after 3 seconds of inactivity
+
+    return () => {
+      if (autoSaveTimerRef.current) {
+        clearTimeout(autoSaveTimerRef.current);
+      }
+    };
+  }, [title, photos, visibility, autoSaveDraft]);
+
+  // Restore draft
+  const handleRestoreDraft = (draft) => {
+    setTitle(draft.title || '');
+    setPhotos(draft.media || []);
+    setVisibility(draft.visibility || 'public');
+    setCurrentDraftId(draft._id);
+  };
+
+  // Delete draft after successful post
+  const deleteDraft = async (draftId) => {
+    if (!draftId) return;
+    try {
+      await api.delete(`/drafts/${draftId}`);
+    } catch (error) {
+      console.error('Failed to delete draft:', error);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!title.trim() || photos.length === 0) {
@@ -81,15 +145,21 @@ function PhotoEssay() {
     setLoading(true);
     try {
       const data = { title, photos, visibility };
-      
+
       if (editMode) {
         await api.put(`/photo-essays/${id}`, data);
         showToast('Photo essay updated successfully', 'success');
       } else {
         await api.post('/photo-essays', data);
         showToast('Photo essay created successfully', 'success');
+
+        // Delete draft after successful post
+        if (currentDraftId) {
+          await deleteDraft(currentDraftId);
+          setCurrentDraftId(null);
+        }
       }
-      
+
       navigate('/profile');
     } catch (error) {
       console.error('Failed to save photo essay:', error);
@@ -184,6 +254,16 @@ function PhotoEssay() {
             >
               Cancel
             </button>
+            {!editMode && (
+              <button
+                type="button"
+                className="btn-drafts"
+                onClick={() => setShowDraftManager(true)}
+                title="View saved drafts"
+              >
+                📝 Drafts
+              </button>
+            )}
             <button
               type="submit"
               disabled={loading || uploadingPhoto}
@@ -194,6 +274,19 @@ function PhotoEssay() {
           </div>
         </form>
       </div>
+
+      {/* Draft Manager Modal */}
+      {showDraftManager && (
+        <div className="modal-overlay" onClick={() => setShowDraftManager(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <DraftManager
+              draftType="photoEssay"
+              onRestoreDraft={handleRestoreDraft}
+              onClose={() => setShowDraftManager(false)}
+            />
+          </div>
+        </div>
+      )}
 
       {/* Toast Notifications */}
       {toasts.map(toast => (

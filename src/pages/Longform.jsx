@@ -3,11 +3,12 @@
  * Longform creative posts for stories, essays, and articles
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../utils/api';
 import { getCurrentUser } from '../utils/auth';
 import Navbar from '../components/Navbar';
+import DraftManager from '../components/DraftManager';
 import './Longform.css';
 
 function Longform() {
@@ -21,6 +22,9 @@ function Longform() {
     visibility: 'followers',
     tags: ''
   });
+  const [showDraftManager, setShowDraftManager] = useState(false);
+  const [currentDraftId, setCurrentDraftId] = useState(null);
+  const autoSaveTimerRef = useRef(null);
   const currentUser = getCurrentUser();
 
   useEffect(() => {
@@ -45,9 +49,80 @@ function Longform() {
     }
   };
 
+  // Auto-save draft
+  const autoSaveDraft = useCallback(async () => {
+    // Only auto-save if there's content
+    if (!formData.body.trim() && !formData.title.trim()) return;
+
+    try {
+      const tagsArray = formData.tags ? formData.tags.split(',').map(t => t.trim()) : [];
+
+      const draftData = {
+        draftId: currentDraftId,
+        draftType: 'longform',
+        title: formData.title,
+        body: formData.body,
+        coverImage: formData.coverImage,
+        visibility: formData.visibility,
+        tags: tagsArray
+      };
+
+      const response = await api.post('/drafts', draftData);
+
+      // Set draft ID if this is a new draft
+      if (!currentDraftId && response.data._id) {
+        setCurrentDraftId(response.data._id);
+      }
+    } catch (error) {
+      console.error('Failed to auto-save draft:', error);
+    }
+  }, [formData, currentDraftId]);
+
+  // Auto-save on content change (debounced)
+  useEffect(() => {
+    if (autoSaveTimerRef.current) {
+      clearTimeout(autoSaveTimerRef.current);
+    }
+
+    autoSaveTimerRef.current = setTimeout(() => {
+      autoSaveDraft();
+    }, 3000); // Auto-save after 3 seconds of inactivity
+
+    return () => {
+      if (autoSaveTimerRef.current) {
+        clearTimeout(autoSaveTimerRef.current);
+      }
+    };
+  }, [formData, autoSaveDraft]);
+
+  // Restore draft
+  const handleRestoreDraft = (draft) => {
+    const tagsString = draft.tags ? draft.tags.join(', ') : '';
+
+    setFormData({
+      title: draft.title || '',
+      body: draft.body || '',
+      coverImage: draft.coverImage || '',
+      visibility: draft.visibility || 'followers',
+      tags: tagsString
+    });
+    setCurrentDraftId(draft._id);
+    setShowCreateForm(true);
+  };
+
+  // Delete draft after successful post
+  const deleteDraft = async (draftId) => {
+    if (!draftId) return;
+    try {
+      await api.delete(`/drafts/${draftId}`);
+    } catch (error) {
+      console.error('Failed to delete draft:', error);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!formData.title.trim() || !formData.body.trim()) {
       alert('Title and body are required');
       return;
@@ -55,7 +130,7 @@ function Longform() {
 
     try {
       const tagsArray = formData.tags ? formData.tags.split(',').map(t => t.trim()) : [];
-      
+
       await api.post('/longform', {
         title: formData.title,
         body: formData.body,
@@ -63,6 +138,12 @@ function Longform() {
         visibility: formData.visibility,
         tags: tagsArray
       });
+
+      // Delete draft after successful post
+      if (currentDraftId) {
+        await deleteDraft(currentDraftId);
+        setCurrentDraftId(null);
+      }
 
       setFormData({ title: '', body: '', coverImage: '', visibility: 'followers', tags: '' });
       setShowCreateForm(false);
@@ -94,12 +175,21 @@ function Longform() {
         <div className="longform-header">
           <h1>📝 My Longform Posts</h1>
           <p className="longform-subtitle">Share your stories, essays, and creative writing</p>
-          <button
-            className="btn-create-longform glossy-gold"
-            onClick={() => setShowCreateForm(!showCreateForm)}
-          >
-            {showCreateForm ? '✕ Cancel' : '✍️ New Post'}
-          </button>
+          <div className="longform-header-actions">
+            <button
+              className="btn-drafts"
+              onClick={() => setShowDraftManager(true)}
+              title="View saved drafts"
+            >
+              📝 Drafts
+            </button>
+            <button
+              className="btn-create-longform glossy-gold"
+              onClick={() => setShowCreateForm(!showCreateForm)}
+            >
+              {showCreateForm ? '✕ Cancel' : '✍️ New Post'}
+            </button>
+          </div>
         </div>
 
       {showCreateForm && (
@@ -168,6 +258,19 @@ function Longform() {
           ))
         )}
       </div>
+
+      {/* Draft Manager Modal */}
+      {showDraftManager && (
+        <div className="modal-overlay" onClick={() => setShowDraftManager(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <DraftManager
+              draftType="longform"
+              onRestoreDraft={handleRestoreDraft}
+              onClose={() => setShowDraftManager(false)}
+            />
+          </div>
+        </div>
+      )}
       </div>
     </>
   );

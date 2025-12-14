@@ -15,6 +15,7 @@ import PollCreator from '../components/PollCreator';
 import Poll from '../components/Poll';
 import PinnedPostBadge from '../components/PinnedPostBadge';
 import EditHistoryModal from '../components/EditHistoryModal';
+import DraftManager from '../components/DraftManager';
 import { useModal } from '../hooks/useModal';
 import api from '../utils/api';
 import { getCurrentUser } from '../utils/auth';
@@ -79,11 +80,14 @@ function Feed() {
   const [autoHideContentWarnings, setAutoHideContentWarnings] = useState(false);
   const [quietMode, setQuietMode] = useState(document.documentElement.getAttribute('data-quiet-mode') === 'true');
   const [initializing, setInitializing] = useState(true); // Track initial load
+  const [showDraftManager, setShowDraftManager] = useState(false); // Show/hide draft manager
+  const [currentDraftId, setCurrentDraftId] = useState(null); // Track current draft being edited
   const currentUser = getCurrentUser();
   const postRefs = useRef({});
   const commentRefs = useRef({});
   const listenersSetUpRef = useRef(false);
   const friendsIntervalRef = useRef(null); // Store interval ID for cleanup
+  const autoSaveTimerRef = useRef(null); // Auto-save timer
 
   // Define all fetch functions BEFORE useEffects that use them
   const fetchPosts = useCallback(async () => {
@@ -462,6 +466,74 @@ function Feed() {
     setSelectedMedia(selectedMedia.filter((_, i) => i !== index));
   };
 
+  // Auto-save draft
+  const autoSaveDraft = useCallback(async () => {
+    // Only auto-save if there's content
+    if (!newPost.trim() && selectedMedia.length === 0) return;
+
+    try {
+      const draftData = {
+        draftId: currentDraftId,
+        draftType: 'post',
+        content: newPost,
+        media: selectedMedia,
+        visibility: postVisibility,
+        contentWarning: contentWarning,
+        hideMetrics: hideMetrics,
+        poll: poll
+      };
+
+      const response = await api.post('/drafts', draftData);
+
+      // Set draft ID if this is a new draft
+      if (!currentDraftId && response.data._id) {
+        setCurrentDraftId(response.data._id);
+      }
+    } catch (error) {
+      logger.error('Failed to auto-save draft:', error);
+    }
+  }, [newPost, selectedMedia, postVisibility, contentWarning, hideMetrics, poll, currentDraftId]);
+
+  // Auto-save on content change (debounced)
+  useEffect(() => {
+    if (autoSaveTimerRef.current) {
+      clearTimeout(autoSaveTimerRef.current);
+    }
+
+    autoSaveTimerRef.current = setTimeout(() => {
+      autoSaveDraft();
+    }, 3000); // Auto-save after 3 seconds of inactivity
+
+    return () => {
+      if (autoSaveTimerRef.current) {
+        clearTimeout(autoSaveTimerRef.current);
+      }
+    };
+  }, [newPost, selectedMedia, postVisibility, contentWarning, hideMetrics, poll, autoSaveDraft]);
+
+  // Restore draft
+  const handleRestoreDraft = (draft) => {
+    setNewPost(draft.content || '');
+    setSelectedMedia(draft.media || []);
+    setPostVisibility(draft.visibility || 'followers');
+    setContentWarning(draft.contentWarning || '');
+    setHideMetrics(draft.hideMetrics || false);
+    setPoll(draft.poll || null);
+    setCurrentDraftId(draft._id);
+    setShowContentWarning(!!draft.contentWarning);
+    setShowPollCreator(!!draft.poll);
+  };
+
+  // Delete draft after successful post
+  const deleteDraft = async (draftId) => {
+    if (!draftId) return;
+    try {
+      await api.delete(`/drafts/${draftId}`);
+    } catch (error) {
+      logger.error('Failed to delete draft:', error);
+    }
+  };
+
   const handlePostSubmit = async (e) => {
     e.preventDefault();
     if (!newPost.trim() && selectedMedia.length === 0) {
@@ -495,6 +567,13 @@ function Feed() {
 
       const response = await api.post('/posts', postData);
       setPosts([response.data, ...posts]);
+
+      // Delete draft after successful post
+      if (currentDraftId) {
+        await deleteDraft(currentDraftId);
+        setCurrentDraftId(null);
+      }
+
       setNewPost('');
       setSelectedMedia([]);
       setPostVisibility('followers');
@@ -886,12 +965,34 @@ function Feed() {
                   <option value="private">🔒 Private</option>
                 </select>
 
+                <button
+                  type="button"
+                  className="btn-drafts"
+                  onClick={() => setShowDraftManager(true)}
+                  title="View saved drafts"
+                >
+                  📝 Drafts
+                </button>
+
                 <button type="submit" disabled={loading || uploadingMedia} className="btn-post glossy-gold">
                   {loading ? 'Publishing...' : 'Publish ✨'}
                 </button>
               </div>
             </form>
           </div>
+
+          {/* Draft Manager Modal */}
+          {showDraftManager && (
+            <div className="modal-overlay" onClick={() => setShowDraftManager(false)}>
+              <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                <DraftManager
+                  draftType="post"
+                  onRestoreDraft={handleRestoreDraft}
+                  onClose={() => setShowDraftManager(false)}
+                />
+              </div>
+            </div>
+          )}
 
           {/* Feed Filter Tabs */}
           <div className="feed-tabs glossy">

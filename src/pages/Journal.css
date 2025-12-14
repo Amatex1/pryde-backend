@@ -26,6 +26,43 @@
   margin-bottom: var(--space-4);
 }
 
+.journal-header-actions {
+  display: flex;
+  gap: var(--space-3);
+  justify-content: center;
+  align-items: center;
+}
+
+.btn-drafts {
+  padding: var(--space-3) var(--space-4);
+  border: 2px solid var(--pryde-purple);
+  border-radius: var(--radius-pill);
+  background: var(--card-surface);
+  color: var(--text-main);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-drafts:hover {
+  background: var(--soft-lavender);
+  color: var(--pryde-purple);
+  border-color: var(--pryde-purple);
+}
+
+[data-theme="dark"] .btn-drafts {
+  background: rgba(108, 92, 231, 0.15);
+  color: #c5c7d7;
+  border-color: rgba(108, 92, 231, 0.5);
+}
+
+[data-theme="dark"] .btn-drafts:hover {
+  background: rgba(108, 92, 231, 0.25);
+  color: #e8e9f0;
+  border-color: var(--pryde-purple);
+}
+
 .btn-create-journal {
   padding: var(--space-3) var(--space-4);
   border: none;
