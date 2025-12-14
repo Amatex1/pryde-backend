@@ -1060,7 +1060,7 @@ html:not([data-theme="dark"]):not([data-quiet-mode="true"]) .section-title {
   color: var(--text-muted);
 }
 
-@media (max-width: 1024px) {
+@media (max-width: 768px) {
   .profile-layout {
     grid-template-columns: 1fr;
     padding: 0 var(--space-3);
@@ -1075,6 +1075,21 @@ html:not([data-theme="dark"]):not([data-quiet-mode="true"]) .section-title {
   .profile-main {
     order: 1;
   }
+}
+
+/* Post Stats */
+.post-stats {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  padding: 0.5rem 0;
+}
+
+.post-stats span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
 }
 
 /* Comments Section */

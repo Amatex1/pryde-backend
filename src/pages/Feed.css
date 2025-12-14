@@ -1016,6 +1016,21 @@ html:not([data-theme])[data-quiet-mode="true"] .hide-metrics-checkbox:hover {
   color: white;
 }
 
+/* Post Stats */
+.post-stats {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  padding: 0.5rem 0;
+}
+
+.post-stats span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
 .post-comments {
   margin-top: 1rem;
   padding-top: 1rem;
