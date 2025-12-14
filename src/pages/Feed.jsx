@@ -335,26 +335,47 @@ function Feed() {
 
           if (newComment.parentCommentId) {
             // It's a reply
-            setCommentReplies(prev => ({
-              ...prev,
-              [newComment.parentCommentId]: [...(prev[newComment.parentCommentId] || []), newComment]
-            }));
+            setCommentReplies(prev => {
+              const existing = prev[newComment.parentCommentId] || [];
+              // ✅ Check if comment already exists to prevent duplicates
+              if (existing.some(c => c._id === newComment._id)) {
+                logger.debug('⚠️ Reply already exists, skipping duplicate:', newComment._id);
+                return prev;
+              }
+              return {
+                ...prev,
+                [newComment.parentCommentId]: [...existing, newComment]
+              };
+            });
           } else {
             // It's a top-level comment
-            setPostComments(prev => ({
-              ...prev,
-              [postId]: [...(prev[postId] || []), newComment]
-            }));
-          }
+            setPostComments(prev => {
+              const existing = prev[postId] || [];
+              // ✅ Check if comment already exists to prevent duplicates
+              if (existing.some(c => c._id === newComment._id)) {
+                logger.debug('⚠️ Comment already exists, skipping duplicate:', newComment._id);
+                return prev;
+              }
+              return {
+                ...prev,
+                [postId]: [...existing, newComment]
+              };
+            });
 
-          // Update post comment count
-          setPosts(prevPosts =>
-            prevPosts.map(p =>
-              p._id === postId
-                ? { ...p, commentCount: (p.commentCount || 0) + 1 }
-                : p
-            )
-          );
+            // ✅ Only update post comment count if comment was actually added (not a duplicate)
+            setPosts(prevPosts =>
+              prevPosts.map(p => {
+                if (p._id === postId) {
+                  // Check if this comment is already in our local state
+                  const currentComments = postComments[postId] || [];
+                  if (!currentComments.some(c => c._id === newComment._id)) {
+                    return { ...p, commentCount: (p.commentCount || 0) + 1 };
+                  }
+                }
+                return p;
+              })
+            );
+          }
         };
         socket.on('comment_added', handleCommentAddedRT);
         cleanupFunctions.push(() => socket.off('comment_added', handleCommentAddedRT));

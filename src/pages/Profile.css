@@ -754,7 +754,7 @@ html:not([data-theme="dark"]):not([data-quiet-mode="true"]) .section-title {
   color: var(--pryde-purple);
 }
 
-.post-input {
+.profile-page .post-input {
   width: 100%;
   padding: 1rem;
   border: 2px solid var(--border-light);
@@ -768,13 +768,13 @@ html:not([data-theme="dark"]):not([data-quiet-mode="true"]) .section-title {
   transition: all 0.3s ease;
 }
 
-.post-input:focus {
+.profile-page .post-input:focus {
   outline: none;
   border-color: var(--pryde-purple);
   box-shadow: 0 0 0 3px rgba(108, 92, 231, 0.1);
 }
 
-.post-input::placeholder {
+.profile-page .post-input::placeholder {
   color: var(--text-muted);
 }
 
@@ -842,7 +842,7 @@ html:not([data-theme="dark"]):not([data-quiet-mode="true"]) .section-title {
   border-color: var(--pryde-purple);
 }
 
-.post-actions-bar {
+.profile-page .post-actions-bar {
   display: flex;
   align-items: center;
   gap: 1rem;
@@ -1224,8 +1224,8 @@ html:not([data-theme="dark"]):not([data-quiet-mode="true"]) .section-title {
   margin-top: var(--space-4);
 }
 
-/* Posts List - Add spacing between posts like Feed page */
-.posts-list {
+/* Posts List - Add spacing between posts like Feed page - Scoped to Profile page */
+.profile-page .posts-list {
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
@@ -1261,8 +1261,8 @@ html:not([data-theme="dark"]):not([data-quiet-mode="true"]) .section-title {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
-/* Post Stats */
-.post-stats {
+/* Post Stats - Scoped to Profile page */
+.profile-page .post-stats {
   display: flex;
   gap: 1rem;
   font-size: 0.9rem;
@@ -1270,14 +1270,14 @@ html:not([data-theme="dark"]):not([data-quiet-mode="true"]) .section-title {
   padding: 0.5rem 0;
 }
 
-.post-stats span {
+.profile-page .post-stats span {
   display: inline-flex;
   align-items: center;
   gap: 0.25rem;
 }
 
-/* Post Actions */
-.post-actions {
+/* Post Actions - Scoped to Profile page */
+.profile-page .post-actions {
   display: flex;
   gap: var(--space-2);
   padding-top: var(--space-4);
