@@ -1007,6 +1007,7 @@ html:not([data-theme])[data-quiet-mode="true"] .hide-metrics-checkbox:hover {
   position: relative;
 }
 
+/* Facebook-style threading lines for replies */
 .comment-replies {
   margin-left: 40px;
   padding-left: var(--space-4);
@@ -1018,10 +1019,43 @@ html:not([data-theme])[data-quiet-mode="true"] .hide-metrics-checkbox:hover {
   position: relative;
 }
 
+/* Vertical line connecting replies to parent comment */
+.comment-replies::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--border-light);
+  border-radius: 2px;
+}
+
+[data-theme="dark"] .comment-replies::before {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* Individual reply with horizontal connector line */
 .comment.reply {
   background: transparent;
   padding: var(--space-2) 0;
   position: relative;
+}
+
+/* Horizontal line connecting each reply to the vertical line */
+.comment.reply::before {
+  content: '';
+  position: absolute;
+  left: calc(-1 * var(--space-4));
+  top: 20px;
+  width: var(--space-4);
+  height: 2px;
+  background: var(--border-light);
+  border-radius: 2px;
+}
+
+[data-theme="dark"] .comment.reply::before {
+  background: rgba(255, 255, 255, 0.1);
 }
 
 /* Facebook-style: Username INSIDE comment bubble at top */
