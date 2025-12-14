@@ -872,6 +872,13 @@ div.profile-layout,
   width: 100%;
   box-sizing: border-box;
   overflow-x: auto;
+  flex-wrap: nowrap !important; /* Prevent wrapping */
+  -webkit-overflow-scrolling: touch; /* Smooth scrolling on mobile */
+}
+
+.profile-tabs .tab-button {
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .create-post {

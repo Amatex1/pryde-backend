@@ -1442,7 +1442,7 @@ function Profile() {
           <div className="profile-main">
           {/* OPTIONAL FEATURES: Creator profile tabs */}
           {user?.isCreator && (
-            <div className="profile-tabs glossy" style={{ marginBottom: '20px', padding: '10px', borderRadius: '12px', display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+            <div className="profile-tabs glossy" style={{ marginBottom: '20px', padding: '10px', borderRadius: '12px', display: 'flex', gap: '10px', overflowX: 'auto' }}>
               <button
                 className={`tab-button ${activeTab === 'posts' ? 'active' : ''}`}
                 onClick={() => setActiveTab('posts')}
@@ -1454,7 +1454,9 @@ function Profile() {
                   color: activeTab === 'posts' ? 'white' : 'var(--text-main)',
                   cursor: 'pointer',
                   fontWeight: activeTab === 'posts' ? 'bold' : 'normal',
-                  transition: 'all 0.3s ease'
+                  transition: 'all 0.3s ease',
+                  flexShrink: 0,
+                  whiteSpace: 'nowrap'
                 }}
               >
                 📝 Posts
@@ -1470,7 +1472,9 @@ function Profile() {
                   color: activeTab === 'journals' ? 'white' : 'var(--text-main)',
                   cursor: 'pointer',
                   fontWeight: activeTab === 'journals' ? 'bold' : 'normal',
-                  transition: 'all 0.3s ease'
+                  transition: 'all 0.3s ease',
+                  flexShrink: 0,
+                  whiteSpace: 'nowrap'
                 }}
               >
                 📔 Journals
@@ -1486,7 +1490,9 @@ function Profile() {
                   color: activeTab === 'longform' ? 'white' : 'var(--text-main)',
                   cursor: 'pointer',
                   fontWeight: activeTab === 'longform' ? 'bold' : 'normal',
-                  transition: 'all 0.3s ease'
+                  transition: 'all 0.3s ease',
+                  flexShrink: 0,
+                  whiteSpace: 'nowrap'
                 }}
               >
                 📖 Stories
@@ -1502,7 +1508,9 @@ function Profile() {
                   color: activeTab === 'photoEssays' ? 'white' : 'var(--text-main)',
                   cursor: 'pointer',
                   fontWeight: activeTab === 'photoEssays' ? 'bold' : 'normal',
-                  transition: 'all 0.3s ease'
+                  transition: 'all 0.3s ease',
+                  flexShrink: 0,
+                  whiteSpace: 'nowrap'
                 }}
               >
                 📸 Photo Essays
