@@ -943,11 +943,13 @@ div.profile-layout,
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
+  grid-area: sidebar;
   position: sticky;
   top: 80px;
   max-height: calc(100vh - 100px);
   overflow-y: auto;
   padding-right: 0.5rem;
+  align-self: start;
 }
 
 /* Custom scrollbar for create-post-sidebar */

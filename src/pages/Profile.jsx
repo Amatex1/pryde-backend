@@ -1426,6 +1426,61 @@ function Profile() {
         </div>
 
         <div className="profile-layout">
+          {/* Sidebar for Create Post Section */}
+          {isOwnProfile && activeTab === 'posts' && (
+            <div className="create-post-sidebar">
+              {/* Interests */}
+              {user.interests && user.interests.length > 0 && (
+                <div className="sidebar-card glossy fade-in">
+                  <h3 className="sidebar-title">🏷️ Interests</h3>
+                  <div className="interests-tags">
+                    {user.interests.map((interest, index) => (
+                      <span key={index} className="interest-tag">{interest}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Looking For */}
+              {user.lookingFor && user.lookingFor.length > 0 && (
+                <div className="sidebar-card glossy fade-in">
+                  <h3 className="sidebar-title">🔍 Looking For</h3>
+                  <div className="looking-for-list">
+                    {user.lookingFor.map((item, index) => (
+                      <span key={index} className="looking-for-item">
+                        {item === 'friends' && '👥 Friends'}
+                        {item === 'support' && '🤝 Support'}
+                        {item === 'community' && '🌈 Community'}
+                        {item === 'networking' && '💼 Networking'}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Social Links */}
+              {user.socialLinks && user.socialLinks.length > 0 && (
+                <div className="sidebar-card glossy fade-in">
+                  <h3 className="sidebar-title">🔗 Social Links</h3>
+                  <div className="social-links-list">
+                    {user.socialLinks.map((link, index) => (
+                      <a
+                        key={index}
+                        href={link.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="social-link"
+                      >
+                        <strong>{link.platform}</strong>
+                        <span className="link-arrow">→</span>
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           <div className="profile-main">
           {/* OPTIONAL FEATURES: Creator profile tabs */}
           {user?.isCreator && (
@@ -1607,62 +1662,8 @@ function Profile() {
                   </div>
                 </form>
               </div>
-            </div>
-          )}
 
-          {/* Sidebar for Create Post Section */}
-          {isOwnProfile && activeTab === 'posts' && (
-            <div className="create-post-sidebar">
-              {/* Interests */}
-              {user.interests && user.interests.length > 0 && (
-                <div className="sidebar-card glossy fade-in">
-                  <h3 className="sidebar-title">🏷️ Interests</h3>
-                  <div className="interests-tags">
-                    {user.interests.map((interest, index) => (
-                      <span key={index} className="interest-tag">{interest}</span>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Looking For */}
-              {user.lookingFor && user.lookingFor.length > 0 && (
-                <div className="sidebar-card glossy fade-in">
-                  <h3 className="sidebar-title">🔍 Looking For</h3>
-                  <div className="looking-for-list">
-                    {user.lookingFor.map((item, index) => (
-                      <span key={index} className="looking-for-item">
-                        {item === 'friends' && '👥 Friends'}
-                        {item === 'support' && '🤝 Support'}
-                        {item === 'community' && '🌈 Community'}
-                        {item === 'networking' && '💼 Networking'}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Social Links */}
-              {user.socialLinks && user.socialLinks.length > 0 && (
-                <div className="sidebar-card glossy fade-in">
-                  <h3 className="sidebar-title">🔗 Social Links</h3>
-                  <div className="social-links-list">
-                    {user.socialLinks.map((link, index) => (
-                      <a
-                        key={index}
-                        href={link.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="social-link"
-                      >
-                        <strong>{link.platform}</strong>
-                        <span className="link-arrow">→</span>
-                      </a>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
+               </div>
           )}
 
           <div className="profile-posts">
@@ -2237,7 +2238,7 @@ function Profile() {
           </div>
           {/* End of profile-main */}
 
-          {/* PHASE 1 REFACTOR: Sidebar moved to create-post-layout */}
+          {/* PHASE 1 REFACTOR: Sidebar moved before profile-main */}
         </div>
         {/* End of profile-layout */}
       </div>
