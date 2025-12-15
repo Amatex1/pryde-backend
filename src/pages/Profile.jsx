@@ -1537,87 +1537,86 @@ function Profile() {
           )}
 
           <div className="profile-main">
-          {/* OPTIONAL FEATURES: Creator profile tabs */}
-          {user?.isCreator && (
-            <div className="profile-tabs glossy" style={{ marginBottom: '20px', padding: '10px', borderRadius: '12px', display: 'flex', gap: '10px', overflowX: 'auto' }}>
-              <button
-                className={`tab-button ${activeTab === 'posts' ? 'active' : ''}`}
-                onClick={() => setActiveTab('posts')}
-                style={{
-                  padding: '10px 20px',
-                  borderRadius: '8px',
-                  border: 'none',
-                  background: activeTab === 'posts' ? 'var(--pryde-purple)' : 'var(--background-light)',
-                  color: activeTab === 'posts' ? 'white' : 'var(--text-main)',
-                  cursor: 'pointer',
-                  fontWeight: activeTab === 'posts' ? 'bold' : 'normal',
-                  transition: 'all 0.3s ease',
-                  flexShrink: 0,
-                  whiteSpace: 'nowrap'
-                }}
-              >
-                📝 Posts
-              </button>
-              <button
-                className={`tab-button ${activeTab === 'journals' ? 'active' : ''}`}
-                onClick={() => setActiveTab('journals')}
-                style={{
-                  padding: '10px 20px',
-                  borderRadius: '8px',
-                  border: 'none',
-                  background: activeTab === 'journals' ? 'var(--pryde-purple)' : 'var(--background-light)',
-                  color: activeTab === 'journals' ? 'white' : 'var(--text-main)',
-                  cursor: 'pointer',
-                  fontWeight: activeTab === 'journals' ? 'bold' : 'normal',
-                  transition: 'all 0.3s ease',
-                  flexShrink: 0,
-                  whiteSpace: 'nowrap'
-                }}
-              >
-                📔 Journals
-              </button>
-              <button
-                className={`tab-button ${activeTab === 'longform' ? 'active' : ''}`}
-                onClick={() => setActiveTab('longform')}
-                style={{
-                  padding: '10px 20px',
-                  borderRadius: '8px',
-                  border: 'none',
-                  background: activeTab === 'longform' ? 'var(--pryde-purple)' : 'var(--background-light)',
-                  color: activeTab === 'longform' ? 'white' : 'var(--text-main)',
-                  cursor: 'pointer',
-                  fontWeight: activeTab === 'longform' ? 'bold' : 'normal',
-                  transition: 'all 0.3s ease',
-                  flexShrink: 0,
-                  whiteSpace: 'nowrap'
-                }}
-              >
-                📖 Stories
-              </button>
-              <button
-                className={`tab-button ${activeTab === 'photoEssays' ? 'active' : ''}`}
-                onClick={() => setActiveTab('photoEssays')}
-                style={{
-                  padding: '10px 20px',
-                  borderRadius: '8px',
-                  border: 'none',
-                  background: activeTab === 'photoEssays' ? 'var(--pryde-purple)' : 'var(--background-light)',
-                  color: activeTab === 'photoEssays' ? 'white' : 'var(--text-main)',
-                  cursor: 'pointer',
-                  fontWeight: activeTab === 'photoEssays' ? 'bold' : 'normal',
-                  transition: 'all 0.3s ease',
-                  flexShrink: 0,
-                  whiteSpace: 'nowrap'
-                }}
-              >
-                📸 Photo Essays
-              </button>
-            </div>
-          )}
+            {/* OPTIONAL FEATURES: Creator profile tabs */}
+            {user?.isCreator && (
+              <div className="profile-tabs glossy" style={{ marginBottom: '20px', padding: '10px', borderRadius: '12px', display: 'flex', gap: '10px', overflowX: 'auto' }}>
+                <button
+                  className={`tab-button ${activeTab === 'posts' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('posts')}
+                  style={{
+                    padding: '10px 20px',
+                    borderRadius: '8px',
+                    border: 'none',
+                    background: activeTab === 'posts' ? 'var(--pryde-purple)' : 'var(--background-light)',
+                    color: activeTab === 'posts' ? 'white' : 'var(--text-main)',
+                    cursor: 'pointer',
+                    fontWeight: activeTab === 'posts' ? 'bold' : 'normal',
+                    transition: 'all 0.3s ease',
+                    flexShrink: 0,
+                    whiteSpace: 'nowrap'
+                  }}
+                >
+                  📝 Posts
+                </button>
+                <button
+                  className={`tab-button ${activeTab === 'journals' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('journals')}
+                  style={{
+                    padding: '10px 20px',
+                    borderRadius: '8px',
+                    border: 'none',
+                    background: activeTab === 'journals' ? 'var(--pryde-purple)' : 'var(--background-light)',
+                    color: activeTab === 'journals' ? 'white' : 'var(--text-main)',
+                    cursor: 'pointer',
+                    fontWeight: activeTab === 'journals' ? 'bold' : 'normal',
+                    transition: 'all 0.3s ease',
+                    flexShrink: 0,
+                    whiteSpace: 'nowrap'
+                  }}
+                >
+                  📔 Journals
+                </button>
+                <button
+                  className={`tab-button ${activeTab === 'longform' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('longform')}
+                  style={{
+                    padding: '10px 20px',
+                    borderRadius: '8px',
+                    border: 'none',
+                    background: activeTab === 'longform' ? 'var(--pryde-purple)' : 'var(--background-light)',
+                    color: activeTab === 'longform' ? 'white' : 'var(--text-main)',
+                    cursor: 'pointer',
+                    fontWeight: activeTab === 'longform' ? 'bold' : 'normal',
+                    transition: 'all 0.3s ease',
+                    flexShrink: 0,
+                    whiteSpace: 'nowrap'
+                  }}
+                >
+                  📖 Stories
+                </button>
+                <button
+                  className={`tab-button ${activeTab === 'photoEssays' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('photoEssays')}
+                  style={{
+                    padding: '10px 20px',
+                    borderRadius: '8px',
+                    border: 'none',
+                    background: activeTab === 'photoEssays' ? 'var(--pryde-purple)' : 'var(--background-light)',
+                    color: activeTab === 'photoEssays' ? 'white' : 'var(--text-main)',
+                    cursor: 'pointer',
+                    fontWeight: activeTab === 'photoEssays' ? 'bold' : 'normal',
+                    transition: 'all 0.3s ease',
+                    flexShrink: 0,
+                    whiteSpace: 'nowrap'
+                  }}
+                >
+                  📸 Photo Essays
+                </button>
+              </div>
+            )}
 
-          {/* Create Post Section with Sidebar Grid Layout */}
-          {isOwnProfile && activeTab === 'posts' && (
-            <div className="create-post-layout">
+            {/* Create Post Section */}
+            {isOwnProfile && activeTab === 'posts' && (
               <div className="create-post glossy fade-in">
                 <h2 className="section-title">✨ Share a thought...</h2>
                 <form onSubmit={handlePostSubmit}>
@@ -1717,11 +1716,16 @@ function Profile() {
                   </div>
                 </form>
               </div>
+            )}
 
-               </div>
-          )}
+            {/* Create Post Layout - Grid wrapper */}
+            {isOwnProfile && activeTab === 'posts' && (
+              <div className="create-post-layout">
+                {/* This will be styled as a grid in CSS */}
+              </div>
+            )}
 
-          <div className="profile-posts">
+            <div className="profile-posts">
             {activeTab !== 'posts' && (
               <h2 className="section-title" style={{ marginBottom: '20px' }}>
                 {activeTab === 'journals' ? 'Journals' : activeTab === 'longform' ? 'Stories' : 'Photo Essays'}
