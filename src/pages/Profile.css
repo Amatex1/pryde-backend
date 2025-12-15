@@ -128,7 +128,7 @@ div.profile-layout,
   grid-template-areas: "main sidebar" !important;
   gap: 24px !important;
   align-items: start !important;
-  max-width: 3000px !important;
+  max-width: 1400px !important; /* Limit width on large monitors for readability */
   margin: 0 auto !important;
   padding: 0 20px !important;
   width: 100% !important;
@@ -181,7 +181,7 @@ div.profile-layout,
 /* Profile container uses fluid max-width */
 .profile-page .profile-container,
 .profile-container {
-  max-width: var(--fluid-container-max);
+  max-width: 1400px; /* Limit width on large monitors for readability */
   margin: 0 auto;
   padding: 0 var(--fluid-space-md);
 }

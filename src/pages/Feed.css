@@ -10,7 +10,7 @@
 
 /* FLUID RESPONSIVE LAYOUT - Automatically adapts to any screen size */
 .feed-container {
-  max-width: var(--fluid-container-2xl);
+  max-width: 1400px; /* Limit width on large monitors for readability */
   margin: 0 auto;
   padding: 0 var(--fluid-space-md);
   display: grid;
