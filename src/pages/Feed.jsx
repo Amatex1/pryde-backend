@@ -85,6 +85,20 @@ function Feed() {
   const [initializing, setInitializing] = useState(true); // Track initial load
   const [showDraftManager, setShowDraftManager] = useState(false); // Show/hide draft manager
   const [currentDraftId, setCurrentDraftId] = useState(null); // Track current draft being edited
+
+  // Pagination state
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadedPostIds, setLoadedPostIds] = useState(new Set());
+
+  // Scroll-to-top state
+  const [showScrollTop, setShowScrollTop] = useState(false);
+
+  // Pull-to-refresh state
+  const [pullStartY, setPullStartY] = useState(null);
+  const [isPulling, setIsPulling] = useState(false);
+  const [pullDistance, setPullDistance] = useState(0);
+
   const currentUser = getCurrentUser();
   const postRefs = useRef({});
   const commentRefs = useRef({});
@@ -93,17 +107,37 @@ function Feed() {
   const autoSaveTimerRef = useRef(null); // Auto-save timer
 
   // Define all fetch functions BEFORE useEffects that use them
-  const fetchPosts = useCallback(async () => {
+  const fetchPosts = useCallback(async (pageNum = 1, append = false) => {
     try {
       setFetchingPosts(true);
-      const response = await api.get(`/posts?filter=${feedFilter}`);
-      setPosts(response.data.posts || []);
+      const response = await api.get(`/posts?filter=${feedFilter}&page=${pageNum}&limit=20`);
+      const newPosts = response.data.posts || [];
+
+      // Prevent duplicates using Set
+      const filteredPosts = newPosts.filter(post => !loadedPostIds.has(post._id));
+
+      if (append) {
+        setPosts(prev => [...prev, ...filteredPosts]);
+      } else {
+        setPosts(filteredPosts);
+        setLoadedPostIds(new Set(filteredPosts.map(p => p._id)));
+      }
+
+      // Update loaded post IDs
+      if (append) {
+        setLoadedPostIds(prev => new Set([...prev, ...filteredPosts.map(p => p._id)]));
+      }
+
+      // Check if there are more posts
+      setHasMore(newPosts.length === 20);
     } catch (error) {
       logger.error('Failed to fetch posts:', error);
     } finally {
       setFetchingPosts(false);
+      setIsPulling(false);
+      setPullDistance(0);
     }
-  }, [feedFilter]);
+  }, [feedFilter, loadedPostIds]);
 
   const fetchBlockedUsers = useCallback(async () => {
     try {
@@ -166,6 +200,72 @@ function Feed() {
       logger.error('Failed to fetch privacy settings:', error);
     }
   }, []);
+
+  // Load more posts (infinite scroll)
+  const loadMorePosts = useCallback(() => {
+    if (hasMore && !fetchingPosts) {
+      const nextPage = page + 1;
+      setPage(nextPage);
+      fetchPosts(nextPage, true);
+    }
+  }, [hasMore, fetchingPosts, page, fetchPosts]);
+
+  // Scroll to top
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Handle scroll detection for scroll-to-top button and infinite scroll
+  useEffect(() => {
+    const handleScroll = () => {
+      // Show/hide scroll-to-top button
+      setShowScrollTop(window.scrollY > 500);
+
+      // Infinite scroll detection
+      const scrollHeight = document.documentElement.scrollHeight;
+      const scrollTop = window.scrollY;
+      const clientHeight = window.innerHeight;
+
+      if (scrollHeight - scrollTop - clientHeight < 300 && hasMore && !fetchingPosts) {
+        loadMorePosts();
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [hasMore, fetchingPosts, loadMorePosts]);
+
+  // Pull-to-refresh handlers
+  const handleTouchStart = (e) => {
+    if (window.scrollY === 0) {
+      setPullStartY(e.touches[0].clientY);
+    }
+  };
+
+  const handleTouchMove = (e) => {
+    if (pullStartY !== null && window.scrollY === 0) {
+      const currentY = e.touches[0].clientY;
+      const distance = currentY - pullStartY;
+
+      if (distance > 0) {
+        setIsPulling(true);
+        setPullDistance(Math.min(distance, 100)); // Cap at 100px
+      }
+    }
+  };
+
+  const handleTouchEnd = () => {
+    if (pullDistance > 60) {
+      // Trigger refresh
+      setPage(1);
+      setLoadedPostIds(new Set());
+      fetchPosts(1, false);
+    } else {
+      setIsPulling(false);
+      setPullDistance(0);
+    }
+    setPullStartY(null);
+  };
 
   useEffect(() => {
     // Fetch all data in parallel for faster initial load
@@ -1197,9 +1297,40 @@ function Feed() {
   };
 
   return (
-    <div className="page-container feed-page">
+    <div
+      className="page-container feed-page"
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+    >
       <Navbar />
       <PasskeyBanner />
+
+      {/* Pull-to-refresh indicator */}
+      {isPulling && (
+        <div
+          className="pull-to-refresh-indicator"
+          style={{
+            transform: `translateY(${pullDistance}px)`,
+            opacity: pullDistance / 100
+          }}
+        >
+          <div className="refresh-spinner">
+            {pullDistance > 60 ? '🔄 Release to refresh' : '⬇️ Pull to refresh'}
+          </div>
+        </div>
+      )}
+
+      {/* Scroll-to-top button */}
+      {showScrollTop && (
+        <button
+          className="scroll-to-top-btn glossy"
+          onClick={scrollToTop}
+          aria-label="Scroll to top"
+        >
+          ⬆️
+        </button>
+      )}
 
       <div className="feed-container">
         <div className="feed-content">
@@ -1356,14 +1487,24 @@ function Feed() {
           <div className="feed-tabs glossy">
             <button
               className={`feed-tab ${feedFilter === 'followers' ? 'active' : ''}`}
-              onClick={() => setFeedFilter('followers')}
+              onClick={() => {
+                setFeedFilter('followers');
+                setPage(1);
+                setLoadedPostIds(new Set());
+                setPosts([]);
+              }}
             >
               <span className="tab-icon">👥</span>
               <span className="tab-label">Following</span>
             </button>
             <button
               className={`feed-tab ${feedFilter === 'public' ? 'active' : ''}`}
-              onClick={() => setFeedFilter('public')}
+              onClick={() => {
+                setFeedFilter('public');
+                setPage(1);
+                setLoadedPostIds(new Set());
+                setPosts([]);
+              }}
             >
               <span className="tab-icon">🌍</span>
               <span className="tab-label">Everyone</span>
@@ -1921,6 +2062,26 @@ function Feed() {
               })
             )}
           </div>
+
+          {/* Load More Button */}
+          {!fetchingPosts && hasMore && posts.length > 0 && (
+            <div className="load-more-container">
+              <button
+                className="btn-load-more glossy"
+                onClick={loadMorePosts}
+                disabled={fetchingPosts}
+              >
+                {fetchingPosts ? '⏳ Loading...' : '📥 Load More Posts'}
+              </button>
+            </div>
+          )}
+
+          {/* End of Feed Message */}
+          {!fetchingPosts && !hasMore && posts.length > 0 && (
+            <div className="end-of-feed">
+              <p>🎉 You're all caught up!</p>
+            </div>
+          )}
         </div>
 
         <div className={`feed-sidebar ${showMobileSidebar ? 'mobile-visible' : ''}`}>
