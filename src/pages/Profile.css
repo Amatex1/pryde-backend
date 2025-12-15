@@ -936,6 +936,7 @@ div.profile-layout,
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
+  margin: 0; /* Ensure same width as post-card */
 }
 
 .create-post-sidebar {
