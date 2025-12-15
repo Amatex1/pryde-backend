@@ -897,37 +897,34 @@ div.profile-layout,
   white-space: nowrap;
 }
 
-/* Create Post Layout - Grid with Sidebar to the Right */
+/* Create Post Layout - Fixed width, centered, no squishing */
 .create-post-layout {
   display: grid;
-  grid-template-columns: 1fr 320px;
+  grid-template-columns: 1fr;
   gap: 24px;
   align-items: start;
   margin-bottom: 24px;
   width: 100%;
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
-/* Desktop: Larger sidebar */
-@media (min-width: 1401px) {
+/* Desktop: Two column layout with sidebar */
+@media (min-width: 1024px) {
+  .create-post-layout {
+    grid-template-columns: 1fr 320px;
+    gap: 24px;
+    max-width: 1400px;
+  }
+}
+
+/* Large Desktop: Wider layout */
+@media (min-width: 1440px) {
   .create-post-layout {
     grid-template-columns: 1fr 360px;
     gap: 32px;
-  }
-}
-
-/* Tablet: Slightly smaller sidebar */
-@media (min-width: 769px) and (max-width: 1400px) {
-  .create-post-layout {
-    grid-template-columns: 1fr 300px;
-    gap: 20px;
-  }
-}
-
-/* Mobile: Stack vertically */
-@media (max-width: 768px) {
-  .create-post-layout {
-    grid-template-columns: 1fr;
-    gap: 16px;
+    max-width: 1600px;
   }
 }
 
@@ -937,6 +934,8 @@ div.profile-layout,
   background: var(--card-surface);
   box-shadow: 0 2px 10px rgba(108, 92, 231, 0.08);
   width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .create-post-sidebar {
@@ -995,6 +994,7 @@ html:not([data-theme="dark"]):not([data-quiet-mode="true"]) .section-title {
 
 .profile-page .post-input {
   width: 100%;
+  max-width: 100%;
   padding: 1rem;
   border: 2px solid var(--border-light);
   border-radius: 12px;
@@ -1005,6 +1005,7 @@ html:not([data-theme="dark"]):not([data-quiet-mode="true"]) .section-title {
   min-height: 100px;
   font-family: inherit;
   transition: all 0.3s ease;
+  box-sizing: border-box;
 }
 
 .profile-page .post-input:focus {
@@ -2161,6 +2162,30 @@ html:not([data-theme="dark"]):not([data-quiet-mode="true"]) .section-title {
 @media (max-width: 768px) {
   .profile-container {
     padding: 0 1rem 1rem;
+    min-width: 320px;
+    max-width: 100vw;
+    overflow-x: hidden;
+  }
+
+  /* Prevent all profile elements from squishing */
+  .profile-page * {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  /* Ensure create-post-layout doesn't squish */
+  .create-post-layout {
+    width: 100%;
+    max-width: 100%;
+    padding: 0;
+  }
+
+  /* Ensure post-input doesn't squish */
+  .post-input,
+  .create-post {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
   }
 
   .cover-photo {

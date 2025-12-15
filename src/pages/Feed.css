@@ -156,6 +156,7 @@
 
 .post-input {
   width: 100%;
+  max-width: 100%;
   padding: 1rem;
   border-radius: 12px;
   border: 2px solid var(--border-light);
@@ -167,6 +168,7 @@
   font-family: inherit;
   margin-bottom: 1rem;
   transition: all 0.3s ease;
+  box-sizing: border-box;
 }
 
 .post-input:focus {
@@ -2088,6 +2090,23 @@ html:not([data-theme])[data-quiet-mode="true"] .hide-metrics-checkbox:hover {
 @media (max-width: 768px) {
   .feed-container {
     padding: 0 1rem 1rem;
+    min-width: 320px;
+    max-width: 100vw;
+    overflow-x: hidden;
+  }
+
+  /* Prevent all feed elements from squishing */
+  .feed-page * {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  /* Ensure post-input and create-post don't squish */
+  .post-input,
+  .create-post {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
   }
 
   .create-post,
