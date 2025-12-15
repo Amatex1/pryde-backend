@@ -405,8 +405,8 @@ function Profile() {
       if (actionsMenuRef.current && !actionsMenuRef.current.contains(event.target)) {
         setShowActionsMenu(false);
       }
-      // Close reaction picker when clicking outside
-      if (!event.target.closest('.reaction-container')) {
+      // Close reaction picker when clicking outside (but not when clicking on the picker itself)
+      if (!event.target.closest('.reaction-container') && !event.target.closest('.reaction-picker')) {
         setShowReactionPicker(null);
       }
     };
@@ -848,9 +848,20 @@ function Profile() {
     setReplyText('');
   };
 
-  // Helper function to get user's reaction emoji for a comment
+  // Helper function to get user's reaction emoji
+  // Handles both array format [{user, emoji}] and object format {emoji: [userIds]}
   const getUserReactionEmoji = (reactions) => {
     if (!reactions || !currentUser?.id) return null;
+
+    // Handle array format (Post reactions)
+    if (Array.isArray(reactions)) {
+      const userReaction = reactions.find(r =>
+        (r.user?._id === currentUser.id || r.user === currentUser.id)
+      );
+      return userReaction?.emoji || null;
+    }
+
+    // Handle object format (Comment reactions)
     for (const [emoji, userIds] of Object.entries(reactions)) {
       if (userIds.includes(currentUser.id)) return emoji;
     }

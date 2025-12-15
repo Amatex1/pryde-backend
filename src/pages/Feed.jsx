@@ -337,8 +337,8 @@ function Feed() {
         setOpenDropdownId(null);
         setOpenCommentDropdownId(null);
       }
-      // Close reaction picker when clicking outside
-      if (!event.target.closest('.reaction-container')) {
+      // Close reaction picker when clicking outside (but not when clicking on the picker itself)
+      if (!event.target.closest('.reaction-container') && !event.target.closest('.reaction-picker')) {
         setShowReactionPicker(null);
       }
     };
@@ -846,10 +846,20 @@ function Feed() {
     }
   };
 
-  // Helper function to get user's selected emoji from reactions object
+  // Helper function to get user's selected emoji from reactions
+  // Handles both array format [{user, emoji}] and object format {emoji: [userIds]}
   const getUserReactionEmoji = (reactions) => {
     if (!reactions || !currentUser?.id) return null;
 
+    // Handle array format (Post reactions)
+    if (Array.isArray(reactions)) {
+      const userReaction = reactions.find(r =>
+        (r.user?._id === currentUser.id || r.user === currentUser.id)
+      );
+      return userReaction?.emoji || null;
+    }
+
+    // Handle object format (Comment reactions)
     for (const [emoji, userIds] of Object.entries(reactions)) {
       if (userIds.includes(currentUser.id)) {
         return emoji;
