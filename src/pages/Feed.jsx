@@ -1339,6 +1339,35 @@ function Feed() {
 
       <div className="feed-container">
         <div className="feed-content">
+          {/* Feed Filter Tabs */}
+          <div className="feed-tabs glossy">
+            <button
+              className={`feed-tab ${feedFilter === 'followers' ? 'active' : ''}`}
+              onClick={() => {
+                setFeedFilter('followers');
+                setPage(1);
+                setLoadedPostIds(new Set());
+                setPosts([]);
+              }}
+            >
+              <span className="tab-icon">👥</span>
+              <span className="tab-label">Following</span>
+            </button>
+            <button
+              className={`feed-tab ${feedFilter === 'public' ? 'active' : ''}`}
+              onClick={() => {
+                setFeedFilter('public');
+                setPage(1);
+                setLoadedPostIds(new Set());
+                setPosts([]);
+              }}
+            >
+              <span className="tab-icon">🌍</span>
+              <span className="tab-label">Everyone</span>
+            </button>
+          </div>
+
+          {/* Create Post Section */}
           <div className="create-post glossy fade-in">
             <h2 className="section-title">✨ Share a thought...</h2>
             <form onSubmit={handlePostSubmit}>
@@ -1487,34 +1516,6 @@ function Feed() {
               </div>
             </div>
           )}
-
-          {/* Feed Filter Tabs */}
-          <div className="feed-tabs glossy">
-            <button
-              className={`feed-tab ${feedFilter === 'followers' ? 'active' : ''}`}
-              onClick={() => {
-                setFeedFilter('followers');
-                setPage(1);
-                setLoadedPostIds(new Set());
-                setPosts([]);
-              }}
-            >
-              <span className="tab-icon">👥</span>
-              <span className="tab-label">Following</span>
-            </button>
-            <button
-              className={`feed-tab ${feedFilter === 'public' ? 'active' : ''}`}
-              onClick={() => {
-                setFeedFilter('public');
-                setPage(1);
-                setLoadedPostIds(new Set());
-                setPosts([]);
-              }}
-            >
-              <span className="tab-icon">🌍</span>
-              <span className="tab-label">Everyone</span>
-            </button>
-          </div>
 
           <div className="posts-list">
             {fetchingPosts ? (
