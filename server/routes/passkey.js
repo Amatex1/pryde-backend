@@ -312,8 +312,8 @@ router.post('/login-finish', async (req, res) => {
     // Set refresh token in httpOnly cookie
     res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production', // HTTPS only in production
-      sameSite: 'strict',
+      secure: true, // Always use secure in production (HTTPS required)
+      sameSite: 'none', // Allow cross-site cookies for frontend/backend on different domains
       maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
     });
 
