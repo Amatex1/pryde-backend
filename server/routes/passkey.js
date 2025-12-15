@@ -17,6 +17,7 @@ import {
   cleanupOldSessions,
   findOrCreateSession
 } from '../utils/sessionUtils.js';
+import { generateTokenPair } from '../utils/tokenUtils.js';
 
 // Store challenges temporarily (in production, use Redis)
 const challenges = new Map();
@@ -284,30 +285,42 @@ router.post('/login-finish', async (req, res) => {
     // Clean up old sessions first
     cleanupOldSessions(user);
 
-    // Find or create session (prevents duplicates from same device/IP)
-    const { session, isNew: isNewSession } = findOrCreateSession(user, ipAddress, deviceInfo, browser, os);
+    // Generate token pair with new session
+    const { accessToken, refreshToken, sessionId } = generateTokenPair(user._id);
 
-    // Add new session only if it doesn't exist
-    if (isNewSession) {
-      user.activeSessions.push(session);
-    }
+    // Create session with refresh token
+    const session = {
+      sessionId,
+      refreshToken,
+      refreshTokenExpiry: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
+      deviceInfo,
+      browser,
+      os,
+      ipAddress,
+      createdAt: new Date(),
+      lastActive: new Date()
+    };
+
+    // Add new session
+    user.activeSessions.push(session);
 
     await user.save();
 
     // Clean up challenge
     challenges.delete(challengeKey);
 
-    // Create JWT token with session ID
-    const token = jwt.sign(
-      { userId: user._id, sessionId: session.sessionId },
-      config.jwtSecret,
-      { expiresIn: '7d' }
-    );
+    // Set refresh token in httpOnly cookie
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production', // HTTPS only in production
+      sameSite: 'strict',
+      maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
+    });
 
     res.json({
       success: true,
       message: 'Login successful',
-      token,
+      accessToken,
       user: {
         id: user._id,
         username: user.username,

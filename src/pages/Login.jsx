@@ -68,7 +68,8 @@ function Login({ setIsAuth }) {
       }
 
       // Normal login (no 2FA)
-      setAuthToken(response.data.token);
+      // Backend now returns accessToken instead of token (refresh token rotation)
+      setAuthToken(response.data.accessToken || response.data.token);
       setCurrentUser(response.data.user);
 
       // Disconnect old socket and reconnect with new token
@@ -108,7 +109,8 @@ function Login({ setIsAuth }) {
 
       console.log('2FA verification successful:', response.data);
 
-      setAuthToken(response.data.token);
+      // Backend now returns accessToken instead of token (refresh token rotation)
+      setAuthToken(response.data.accessToken || response.data.token);
       setCurrentUser(response.data.user);
 
       // Disconnect old socket and reconnect with new token

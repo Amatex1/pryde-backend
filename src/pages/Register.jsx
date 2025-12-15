@@ -199,8 +199,9 @@ function Register({ setIsAuth }) {
       });
       
       console.log('Registration successful:', response.data);
-      
-      setAuthToken(response.data.token);
+
+      // Backend now returns accessToken instead of token (refresh token rotation)
+      setAuthToken(response.data.accessToken || response.data.token);
       setCurrentUser(response.data.user);
       setIsAuth(true);
 

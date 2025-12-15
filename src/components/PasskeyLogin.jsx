@@ -37,7 +37,8 @@ function PasskeyLogin({ onSuccess, email }) {
       });
 
       // Save auth token and user data
-      setAuthToken(data.token);
+      // Backend now returns accessToken instead of token (refresh token rotation)
+      setAuthToken(data.accessToken || data.token);
       setCurrentUser(data.user);
 
       setLoading(false);
