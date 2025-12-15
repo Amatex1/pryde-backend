@@ -3,8 +3,9 @@ import User from '../models/User.js';
 // Middleware to check if user is an admin (any admin role)
 const adminAuth = async (req, res, next) => {
   try {
-    const userId = req.userId || req.user._id;
-    
+    // Standardized: Always use req.userId (set by auth middleware)
+    const userId = req.userId;
+
     if (!userId) {
       return res.status(401).json({ message: 'Not authenticated' });
     }

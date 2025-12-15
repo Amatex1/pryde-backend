@@ -19,6 +19,7 @@ import compression from "compression";
 
 // Import routes
 import authRoutes from './routes/auth.js';
+import refreshRoutes from './routes/refresh.js';
 import usersRoutes from './routes/users.js';
 // PHASE 1 REFACTOR: Friends system kept for backward compatibility
 import friendsRoutes from './routes/friends.js';
@@ -251,6 +252,7 @@ app.use((req, res, next) => {
 
 // Routes with specific rate limiters
 app.use('/api/auth', authRoutes);
+app.use('/api/refresh', refreshRoutes);
 app.use('/api/users', usersRoutes);
 // PHASE 1 REFACTOR: Friends routes kept for backward compatibility
 app.use('/api/friends', friendsRoutes);

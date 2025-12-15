@@ -169,6 +169,22 @@ const userSchema = new mongoose.Schema({
     required: true,
     default: false
   },
+  termsAcceptedAt: {
+    type: Date,
+    default: null
+  },
+  termsVersion: {
+    type: String,
+    default: null
+  },
+  privacyAcceptedAt: {
+    type: Date,
+    default: null
+  },
+  privacyVersion: {
+    type: String,
+    default: null
+  },
   pushSubscription: {
     type: Object,
     default: null
@@ -344,6 +360,14 @@ const userSchema = new mongoose.Schema({
     sessionId: {
       type: String,
       required: true
+    },
+    refreshToken: {
+      type: String,
+      default: null
+    },
+    refreshTokenExpiry: {
+      type: Date,
+      default: null
     },
     deviceInfo: {
       type: String,
@@ -662,7 +686,28 @@ const userSchema = new mongoose.Schema({
       type: Boolean,
       default: false
     }
-  }]
+  }],
+  // Soft Deletion & Account Recovery
+  isDeleted: {
+    type: Boolean,
+    default: false
+  },
+  deletedAt: {
+    type: Date,
+    default: null
+  },
+  deletionScheduledFor: {
+    type: Date,
+    default: null
+  },
+  deletionConfirmationToken: {
+    type: String,
+    default: null
+  },
+  deletionConfirmationExpires: {
+    type: Date,
+    default: null
+  }
 });
 
 // Indexes for efficient queries

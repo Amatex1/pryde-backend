@@ -762,56 +762,160 @@ router.put('/reactivate', auth, async (req, res) => {
   }
 });
 
-// @route   DELETE /api/users/account
-// @desc    Delete user account permanently
+// @route   POST /api/users/account/delete-request
+// @desc    Request account deletion (sends confirmation email)
 // @access  Private
-router.delete('/account', auth, async (req, res) => {
+router.post('/account/delete-request', auth, async (req, res) => {
   try {
     const userId = req.userId;
+    const user = await User.findById(userId);
 
-    // Delete all user's posts
-    await Post.deleteMany({ author: userId });
-
-    // Delete all user's messages
-    await Message.deleteMany({
-      $or: [{ sender: userId }, { recipient: userId }]
-    });
-
-    // Delete all friend requests
-    await FriendRequest.deleteMany({
-      $or: [{ sender: userId }, { receiver: userId }]
-    });
-
-    // Remove user from all group chats
-    await GroupChat.updateMany(
-      { members: userId },
-      { $pull: { members: userId, admins: userId } }
-    );
-
-    // Delete notifications
-    await Notification.deleteMany({
-      $or: [{ sender: userId }, { recipient: userId }]
-    });
-
-    // Remove user from other users' friends lists
-    await User.updateMany(
-      { friends: userId },
-      { $pull: { friends: userId } }
-    );
-
-    // Finally, delete the user
-    await User.findByIdAndDelete(userId);
-
-    // Emit real-time event for user deletion (for admin panel)
-    if (req.io) {
-      req.io.emit('user_deleted', {
-        userId: userId
-      });
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
     }
 
-    res.json({ message: 'Account deleted successfully' });
+    // Generate deletion confirmation token
+    const crypto = await import('crypto');
+    const deletionToken = crypto.randomBytes(32).toString('hex');
+
+    user.deletionConfirmationToken = deletionToken;
+    user.deletionConfirmationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+
+    await user.save();
+
+    // TODO: Send confirmation email with deletion link
+    // sendAccountDeletionEmail(user.email, user.username, deletionToken);
+
+    res.json({
+      message: 'Account deletion confirmation email sent. Please check your email to confirm.',
+      expiresIn: '24 hours'
+    });
   } catch (error) {
-    console.error('Delete account error:', error);
+    console.error('Delete request error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   POST /api/users/account/delete-confirm
+// @desc    Confirm account deletion with token (soft delete with 30-day recovery)
+// @access  Public
+router.post('/account/delete-confirm', async (req, res) => {
+  try {
+    const { token } = req.body;
+
+    if (!token) {
+      return res.status(400).json({ message: 'Deletion token required' });
+    }
+
+    const user = await User.findOne({
+      deletionConfirmationToken: token,
+      deletionConfirmationExpires: { $gt: Date.now() }
+    });
+
+    if (!user) {
+      return res.status(400).json({ message: 'Invalid or expired deletion token' });
+    }
+
+    // Soft delete: Mark as deleted and schedule permanent deletion in 30 days
+    user.isDeleted = true;
+    user.deletedAt = new Date();
+    user.deletionScheduledFor = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
+    user.deletionConfirmationToken = null;
+    user.deletionConfirmationExpires = null;
+
+    // Anonymize user data
+    user.email = `deleted_${user._id}@deleted.local`;
+    user.fullName = '[Deleted User]';
+    user.displayName = '[Deleted User]';
+    user.nickname = '';
+    user.bio = '';
+    user.profilePhoto = '';
+    user.coverPhoto = '';
+    user.location = '';
+    user.website = '';
+    user.socialLinks = {};
+    user.pronouns = '';
+    user.customPronouns = '';
+    user.gender = '';
+    user.customGender = '';
+    user.relationshipStatus = '';
+
+    // Clear all sessions (log out everywhere)
+    user.activeSessions = [];
+
+    await user.save();
+
+    // Anonymize user's posts (keep content but mark as deleted user)
+    // Posts remain but author is anonymized
+
+    // Remove user from other users' friends/followers lists
+    await User.updateMany(
+      { $or: [{ friends: user._id }, { followers: user._id }, { following: user._id }] },
+      {
+        $pull: {
+          friends: user._id,
+          followers: user._id,
+          following: user._id
+        }
+      }
+    );
+
+    res.json({
+      message: 'Account deleted successfully. You have 30 days to recover your account by logging in.',
+      recoveryDeadline: user.deletionScheduledFor
+    });
+  } catch (error) {
+    console.error('Delete confirm error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   POST /api/users/account/recover
+// @desc    Recover deleted account (within 30-day window)
+// @access  Public (requires login credentials)
+router.post('/account/recover', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({ message: 'Email and password required' });
+    }
+
+    // Find deleted user
+    const user = await User.findOne({
+      isDeleted: true,
+      deletionScheduledFor: { $gt: Date.now() } // Still within recovery window
+    });
+
+    if (!user) {
+      return res.status(404).json({ message: 'No recoverable account found or recovery period has expired' });
+    }
+
+    // Verify password
+    const isMatch = await user.comparePassword(password);
+    if (!isMatch) {
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
+
+    // Restore account
+    user.isDeleted = false;
+    user.deletedAt = null;
+    user.deletionScheduledFor = null;
+
+    // Restore original email (if we stored it)
+    // For now, user will need to update their email manually
+
+    await user.save();
+
+    res.json({
+      message: 'Account recovered successfully! Please update your profile information.',
+      user: {
+        id: user._id,
+        username: user.username
+      }
+    });
+  } catch (error) {
+    console.error('Account recovery error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });

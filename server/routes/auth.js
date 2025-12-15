@@ -21,6 +21,7 @@ import { logEmailVerification, logPasswordChange } from '../utils/securityLogger
 import { loginLimiter, signupLimiter, passwordResetLimiter } from '../middleware/rateLimiter.js';
 import { validateSignup, validateLogin } from '../middleware/validation.js';
 import logger from '../utils/logger.js';
+import { generateTokenPair, getRefreshTokenExpiry } from '../utils/tokenUtils.js';
 
 // @route   GET /api/auth/check-username/:username
 // @desc    Check if username is available
@@ -194,7 +195,11 @@ router.post('/signup', signupLimiter, validateSignup, async (req, res) => {
       relationshipStatus: relationshipStatus || '',
       birthday: birthDate,
       isAlly: isAlly || false, // PHASE 6: Ally system
-      onboardingCompleted: true // PHASE 6: Mark onboarding as complete
+      onboardingCompleted: true, // PHASE 6: Mark onboarding as complete
+      termsAcceptedAt: new Date(),
+      termsVersion: config.termsVersion,
+      privacyAcceptedAt: new Date(),
+      privacyVersion: config.privacyVersion
     });
 
     // Generate email verification token
@@ -209,12 +214,24 @@ router.post('/signup', signupLimiter, validateSignup, async (req, res) => {
       logger.error('Failed to send verification email:', err);
     });
 
-    // Create JWT token
-    const token = jwt.sign(
-      { userId: user._id },
-      config.jwtSecret,
-      { expiresIn: '7d' }
-    );
+    // Generate token pair with session
+    const { accessToken, refreshToken, sessionId } = generateTokenPair(user._id);
+
+    // Store session with refresh token
+    const deviceInfo = parseUserAgent(req.headers['user-agent']);
+    user.activeSessions.push({
+      sessionId,
+      refreshToken,
+      refreshTokenExpiry: getRefreshTokenExpiry(),
+      deviceInfo: deviceInfo.device || 'Unknown Device',
+      browser: deviceInfo.browser || 'Unknown Browser',
+      os: deviceInfo.os || 'Unknown OS',
+      ipAddress: getClientIp(req),
+      createdAt: new Date(),
+      lastActive: new Date()
+    });
+
+    await user.save();
 
     logger.debug(`New user registered: ${username} (${email})`);
 
@@ -235,10 +252,20 @@ router.post('/signup', signupLimiter, validateSignup, async (req, res) => {
       });
     }
 
+    // Set refresh token in httpOnly cookie
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production', // HTTPS only in production
+      sameSite: 'strict',
+      maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
+    });
+
     res.status(201).json({
       success: true,
       message: 'User registered successfully',
-      token,
+      accessToken,
+      // Don't send refresh token in response body when using cookies
+      // refreshToken,
       user: {
         id: user._id,
         username: user.username,
@@ -465,16 +492,24 @@ router.post('/login', loginLimiter, validateLogin, async (req, res) => {
     // Clean up old sessions first
     cleanupOldSessions(user);
 
-    // Find or create session (prevents duplicates from same device/IP)
-    const { session, isNew: isNewSession } = findOrCreateSession(user, ipAddress, deviceInfo, browser, os);
+    // Generate token pair with new session
+    const { accessToken, refreshToken, sessionId } = generateTokenPair(user._id);
 
-    // Add new session only if it doesn't exist
-    if (isNewSession) {
-      user.activeSessions.push(session);
-    }
+    // Create session with refresh token
+    const session = {
+      sessionId,
+      refreshToken,
+      refreshTokenExpiry: getRefreshTokenExpiry(),
+      deviceInfo,
+      browser,
+      os,
+      ipAddress,
+      createdAt: new Date(),
+      lastActive: new Date()
+    };
 
-    // Get session ID for JWT token
-    const sessionId = session.sessionId;
+    // Add new session
+    user.activeSessions.push(session);
 
     // Log successful login
     user.loginHistory.push({
@@ -518,19 +553,22 @@ router.post('/login', loginLimiter, validateLogin, async (req, res) => {
       // Otherwise, don't send any email (same device, not suspicious)
     }
 
-    // Create JWT token with session ID
-    const token = jwt.sign(
-      { userId: user._id, sessionId },
-      config.jwtSecret,
-      { expiresIn: '7d' }
-    );
-
     logger.debug(`User logged in: ${email} from ${ipAddress}`);
+
+    // Set refresh token in httpOnly cookie
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production', // HTTPS only in production
+      sameSite: 'strict',
+      maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
+    });
 
     res.json({
       success: true,
       message: 'Login successful',
-      token,
+      accessToken,
+      // Don't send refresh token in response body when using cookies
+      // refreshToken,
       suspicious,
       user: {
         id: user._id,

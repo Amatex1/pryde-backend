@@ -3,6 +3,7 @@ import config from '../config/config.js';
 import User from '../models/User.js';
 import SecurityLog from '../models/SecurityLog.js';
 import { getClientIp } from '../utils/sessionUtils.js';
+import { verifyAccessToken } from '../utils/tokenUtils.js';
 
 const auth = async (req, res, next) => {
   try {
@@ -23,7 +24,7 @@ const auth = async (req, res, next) => {
     }
 
     // Verify token
-    const decoded = jwt.verify(token, config.jwtSecret);
+    const decoded = verifyAccessToken(token);
 
     if (config.nodeEnv === 'development') {
       console.log('✅ Token decoded successfully');
@@ -31,6 +32,11 @@ const auth = async (req, res, next) => {
 
     // Get user from database
     const user = await User.findById(decoded.userId).select('-password');
+
+    // Check if user is soft deleted
+    if (user && user.isDeleted) {
+      return res.status(401).json({ message: 'Account has been deleted' });
+    }
 
     if (!user) {
       if (config.nodeEnv === 'development') {

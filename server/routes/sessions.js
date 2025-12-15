@@ -76,6 +76,15 @@ router.delete('/:sessionId', authenticateToken, async (req, res) => {
       }
     }
 
+    // Clear refresh token cookie if this is the current session
+    if (sessionId === req.sessionId) {
+      res.clearCookie('refreshToken', {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict'
+      });
+    }
+
     res.json({
       message: 'Session logged out successfully',
       session: removedSession
@@ -152,6 +161,13 @@ router.post('/logout-all', authenticateToken, async (req, res) => {
         }
       }
     }
+
+    // Clear refresh token cookie
+    res.clearCookie('refreshToken', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict'
+    });
 
     res.json({
       message: `Logged out all ${sessionCount} session(s)`,
