@@ -253,12 +253,16 @@ router.post('/signup', signupLimiter, validateSignup, async (req, res) => {
     }
 
     // Set refresh token in httpOnly cookie
-    res.cookie('refreshToken', refreshToken, {
+    const cookieOptions = {
       httpOnly: true,
       secure: true, // Always use secure in production (HTTPS required)
       sameSite: 'none', // Allow cross-site cookies for frontend/backend on different domains
-      maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
-    });
+      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+      path: '/' // Explicitly set path
+    };
+
+    logger.debug('Setting refresh token cookie (register) with options:', cookieOptions);
+    res.cookie('refreshToken', refreshToken, cookieOptions);
 
     res.status(201).json({
       success: true,
@@ -556,12 +560,16 @@ router.post('/login', loginLimiter, validateLogin, async (req, res) => {
     logger.debug(`User logged in: ${email} from ${ipAddress}`);
 
     // Set refresh token in httpOnly cookie
-    res.cookie('refreshToken', refreshToken, {
+    const cookieOptions = {
       httpOnly: true,
       secure: true, // Always use secure in production (HTTPS required)
       sameSite: 'none', // Allow cross-site cookies for frontend/backend on different domains
-      maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
-    });
+      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+      path: '/' // Explicitly set path
+    };
+
+    logger.debug('Setting refresh token cookie with options:', cookieOptions);
+    res.cookie('refreshToken', refreshToken, cookieOptions);
 
     res.json({
       success: true,

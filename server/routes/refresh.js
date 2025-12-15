@@ -10,12 +10,19 @@ import logger from '../utils/logger.js';
 // @access  Public (but requires valid refresh token)
 router.post('/', async (req, res) => {
   try {
+    // Debug: Log all cookies received
+    logger.debug('Refresh endpoint - Cookies received:', req.cookies);
+    logger.debug('Refresh endpoint - Headers:', req.headers);
+
     // Try to get refresh token from httpOnly cookie first, then fall back to body
     const refreshToken = req.cookies?.refreshToken || req.body.refreshToken;
 
     if (!refreshToken) {
+      logger.warn('Refresh token not found in cookies or body');
       return res.status(401).json({ message: 'Refresh token required' });
     }
+
+    logger.debug('Refresh token found, attempting to verify...');
 
     // Verify refresh token
     let decoded;
@@ -92,12 +99,16 @@ router.post('/', async (req, res) => {
     logger.debug(`Token refreshed for user: ${user.username} (${user.email})`);
 
     // Set refresh token in httpOnly cookie
-    res.cookie('refreshToken', newRefreshToken, {
+    const cookieOptions = {
       httpOnly: true,
       secure: true, // Always use secure in production (HTTPS required)
       sameSite: 'none', // Allow cross-site cookies for frontend/backend on different domains
-      maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
-    });
+      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+      path: '/' // Explicitly set path
+    };
+
+    logger.debug('Setting refresh token cookie (refresh) with options:', cookieOptions);
+    res.cookie('refreshToken', newRefreshToken, cookieOptions);
 
     res.json({
       success: true,

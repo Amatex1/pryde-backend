@@ -52,11 +52,7 @@ function Login({ setIsAuth }) {
     setLoading(true);
 
     try {
-      console.log('Attempting login with email:', formData.email);
-
       const response = await api.post('/auth/login', formData);
-
-      console.log('Login response:', response.data);
 
       // Check if 2FA is required
       if (response.data.requires2FA) {
