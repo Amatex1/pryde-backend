@@ -897,36 +897,37 @@ div.profile-layout,
   white-space: nowrap;
 }
 
-/* Create Post Layout - Positioned to match profile-layout grid */
+/* Create Post Layout - Grid with Sidebar to the Right */
 .create-post-layout {
-  display: contents;
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 24px;
+  align-items: start;
+  margin-bottom: 24px;
+  width: 100%;
 }
 
-.create-post-layout .create-post {
-  grid-column: 1;
-  margin-bottom: 24px;
+/* Desktop: Larger sidebar */
+@media (min-width: 1401px) {
+  .create-post-layout {
+    grid-template-columns: 1fr 360px;
+    gap: 32px;
+  }
 }
 
-.create-post-layout .create-post-sidebar {
-  grid-column: 2;
-  margin-bottom: 24px;
+/* Tablet: Slightly smaller sidebar */
+@media (min-width: 769px) and (max-width: 1400px) {
+  .create-post-layout {
+    grid-template-columns: 1fr 300px;
+    gap: 20px;
+  }
 }
 
 /* Mobile: Stack vertically */
 @media (max-width: 768px) {
   .create-post-layout {
-    display: flex;
-    flex-direction: column;
+    grid-template-columns: 1fr;
     gap: 16px;
-    margin-bottom: 24px;
-  }
-
-  .create-post-layout .create-post {
-    grid-column: auto;
-  }
-
-  .create-post-layout .create-post-sidebar {
-    grid-column: auto;
   }
 }
 
@@ -947,7 +948,6 @@ div.profile-layout,
   max-height: calc(100vh - 100px);
   overflow-y: auto;
   padding-right: 0.5rem;
-  align-self: start;
 }
 
 /* Custom scrollbar for create-post-sidebar */
