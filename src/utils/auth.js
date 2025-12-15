@@ -1,13 +1,30 @@
 export const setAuthToken = (token) => {
   if (token) {
+    console.log('🔑 Setting access token (first 20 chars):', token.substring(0, 20) + '...');
+    console.log('⏰ Token set at:', new Date().toISOString());
     localStorage.setItem('token', token);
+    localStorage.setItem('tokenSetTime', Date.now().toString());
   } else {
+    console.log('🗑️ Removing access token');
     localStorage.removeItem('token');
+    localStorage.removeItem('tokenSetTime');
   }
 };
 
 export const getAuthToken = () => {
-  return localStorage.getItem('token');
+  const token = localStorage.getItem('token');
+  const tokenSetTime = localStorage.getItem('tokenSetTime');
+
+  if (token && tokenSetTime) {
+    const ageMinutes = (Date.now() - parseInt(tokenSetTime)) / 1000 / 60;
+    console.log(`🔍 Getting access token (age: ${ageMinutes.toFixed(1)} minutes)`);
+
+    if (ageMinutes > 15) {
+      console.warn(`⚠️ Access token is ${ageMinutes.toFixed(1)} minutes old (expired at 15 min)`);
+    }
+  }
+
+  return token;
 };
 
 export const setCurrentUser = (user) => {

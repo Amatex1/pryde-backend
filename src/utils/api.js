@@ -62,6 +62,9 @@ api.interceptors.response.use(
       try {
         // Try to refresh the token
         logger.debug('🔄 Attempting to refresh access token...');
+        logger.debug('📍 Current cookies:', document.cookie);
+        logger.debug('📍 Refresh endpoint:', `${API_BASE_URL}/refresh`);
+
         const response = await axios.post(`${API_BASE_URL}/refresh`, {}, {
           withCredentials: true // Send httpOnly cookie
         });
@@ -70,6 +73,7 @@ api.interceptors.response.use(
 
         if (accessToken) {
           logger.debug('✅ Token refreshed successfully');
+          logger.debug('🔑 New access token received (first 20 chars):', accessToken.substring(0, 20) + '...');
           setAuthToken(accessToken);
 
           // Update the failed request with new token
@@ -84,7 +88,11 @@ api.interceptors.response.use(
           return api(originalRequest);
         }
       } catch (refreshError) {
-        logger.warn('❌ Token refresh failed:', refreshError.message);
+        logger.error('❌ Token refresh failed:', refreshError.message);
+        logger.error('📍 Refresh error response:', refreshError.response?.data);
+        logger.error('📍 Refresh error status:', refreshError.response?.status);
+        logger.error('📍 Current cookies at failure:', document.cookie);
+
         processQueue(refreshError, null);
         isRefreshing = false;
 
