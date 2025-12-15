@@ -2162,15 +2162,6 @@ html:not([data-theme="dark"]):not([data-quiet-mode="true"]) .section-title {
 @media (max-width: 768px) {
   .profile-container {
     padding: 0 1rem 1rem;
-    min-width: 320px;
-    max-width: 100vw;
-    overflow-x: hidden;
-  }
-
-  /* Prevent all profile elements from squishing */
-  .profile-page * {
-    min-width: 0;
-    max-width: 100%;
   }
 
   /* Ensure create-post-layout doesn't squish */
