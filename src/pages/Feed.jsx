@@ -113,19 +113,21 @@ function Feed() {
       const response = await api.get(`/posts?filter=${feedFilter}&page=${pageNum}&limit=20`);
       const newPosts = response.data.posts || [];
 
-      // Prevent duplicates using Set
-      const filteredPosts = newPosts.filter(post => !loadedPostIds.has(post._id));
-
       if (append) {
-        setPosts(prev => [...prev, ...filteredPosts]);
+        // Prevent duplicates using Set
+        setPosts(prev => {
+          const existingIds = new Set(prev.map(p => p._id));
+          const filteredPosts = newPosts.filter(post => !existingIds.has(post._id));
+          return [...prev, ...filteredPosts];
+        });
       } else {
-        setPosts(filteredPosts);
-        setLoadedPostIds(new Set(filteredPosts.map(p => p._id)));
+        setPosts(newPosts);
+        setLoadedPostIds(new Set(newPosts.map(p => p._id)));
       }
 
       // Update loaded post IDs
       if (append) {
-        setLoadedPostIds(prev => new Set([...prev, ...filteredPosts.map(p => p._id)]));
+        setLoadedPostIds(prev => new Set([...prev, ...newPosts.map(p => p._id)]));
       }
 
       // Check if there are more posts
@@ -137,7 +139,7 @@ function Feed() {
       setIsPulling(false);
       setPullDistance(0);
     }
-  }, [feedFilter, loadedPostIds]);
+  }, [feedFilter]); // REMOVED loadedPostIds dependency to prevent infinite loop
 
   const fetchBlockedUsers = useCallback(async () => {
     try {
@@ -322,8 +324,11 @@ function Feed() {
 
   // Refetch posts when filter changes
   useEffect(() => {
-    fetchPosts();
-  }, [fetchPosts]);
+    // Reset pagination and fetch new posts
+    setPage(1);
+    setLoadedPostIds(new Set());
+    fetchPosts(1, false);
+  }, [feedFilter]); // Only depend on feedFilter, not fetchPosts
 
   // Close dropdowns when clicking outside
   useEffect(() => {
