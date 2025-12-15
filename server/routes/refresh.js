@@ -3,6 +3,7 @@ const router = express.Router();
 import User from '../models/User.js';
 import { verifyRefreshToken, generateTokenPair, getRefreshTokenExpiry } from '../utils/tokenUtils.js';
 import { getClientIp, parseUserAgent } from '../utils/sessionUtils.js';
+import { getRefreshTokenCookieOptions } from '../utils/cookieUtils.js';
 import logger from '../utils/logger.js';
 
 // @route   POST /api/refresh
@@ -99,13 +100,7 @@ router.post('/', async (req, res) => {
     logger.debug(`Token refreshed for user: ${user.username} (${user.email})`);
 
     // Set refresh token in httpOnly cookie
-    const cookieOptions = {
-      httpOnly: true,
-      secure: true, // Always use secure in production (HTTPS required)
-      sameSite: 'none', // Allow cross-site cookies for frontend/backend on different domains
-      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
-      path: '/' // Explicitly set path
-    };
+    const cookieOptions = getRefreshTokenCookieOptions();
 
     logger.debug('Setting refresh token cookie (refresh) with options:', cookieOptions);
     res.cookie('refreshToken', newRefreshToken, cookieOptions);

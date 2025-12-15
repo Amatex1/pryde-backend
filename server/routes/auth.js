@@ -22,6 +22,7 @@ import { loginLimiter, signupLimiter, passwordResetLimiter } from '../middleware
 import { validateSignup, validateLogin } from '../middleware/validation.js';
 import logger from '../utils/logger.js';
 import { generateTokenPair, getRefreshTokenExpiry } from '../utils/tokenUtils.js';
+import { getRefreshTokenCookieOptions } from '../utils/cookieUtils.js';
 
 // @route   GET /api/auth/check-username/:username
 // @desc    Check if username is available
@@ -253,13 +254,7 @@ router.post('/signup', signupLimiter, validateSignup, async (req, res) => {
     }
 
     // Set refresh token in httpOnly cookie
-    const cookieOptions = {
-      httpOnly: true,
-      secure: true, // Always use secure in production (HTTPS required)
-      sameSite: 'none', // Allow cross-site cookies for frontend/backend on different domains
-      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
-      path: '/' // Explicitly set path
-    };
+    const cookieOptions = getRefreshTokenCookieOptions();
 
     logger.debug('Setting refresh token cookie (register) with options:', cookieOptions);
     res.cookie('refreshToken', refreshToken, cookieOptions);
@@ -560,13 +555,7 @@ router.post('/login', loginLimiter, validateLogin, async (req, res) => {
     logger.debug(`User logged in: ${email} from ${ipAddress}`);
 
     // Set refresh token in httpOnly cookie
-    const cookieOptions = {
-      httpOnly: true,
-      secure: true, // Always use secure in production (HTTPS required)
-      sameSite: 'none', // Allow cross-site cookies for frontend/backend on different domains
-      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
-      path: '/' // Explicitly set path
-    };
+    const cookieOptions = getRefreshTokenCookieOptions();
 
     logger.debug('Setting refresh token cookie with options:', cookieOptions);
     res.cookie('refreshToken', refreshToken, cookieOptions);
