@@ -238,6 +238,19 @@ postSchema.index({ visibility: 1, createdAt: -1 }); // For filtering by visibili
 postSchema.index({ hashtags: 1 }); // For hashtag searches
 postSchema.index({ tags: 1 }); // For tag-based filtering
 
+// Virtual for comment count from Comment collection
+postSchema.virtual('commentCount', {
+  ref: 'Comment',
+  localField: '_id',
+  foreignField: 'postId',
+  count: true,
+  match: { isDeleted: false, parentCommentId: null } // Only count top-level, non-deleted comments
+});
+
+// Ensure virtuals are included when converting to JSON
+postSchema.set('toJSON', { virtuals: true });
+postSchema.set('toObject', { virtuals: true });
+
 // Update the updatedAt timestamp and extract hashtags before saving
 postSchema.pre('save', function(next) {
   this.updatedAt = Date.now();

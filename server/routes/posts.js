@@ -113,6 +113,7 @@ router.get('/', auth, async (req, res) => {
       .populate('reactions.user', 'username displayName profilePhoto')
       .populate('comments.reactions.user', 'username displayName profilePhoto')
       .populate('tags', 'slug label icon') // PHASE 4: Populate tags for display
+      .populate('commentCount') // Populate virtual comment count from Comment collection
       .populate({
         path: 'originalPost',
         populate: [
@@ -189,6 +190,7 @@ router.get('/user/:identifier', auth, async (req, res) => {
       // .populate('likes', 'username displayName profilePhoto') // REMOVED - private likes
       .populate('reactions.user', 'username displayName profilePhoto')
       .populate('comments.reactions.user', 'username displayName profilePhoto')
+      .populate('commentCount') // Populate virtual comment count from Comment collection
       .populate({
         path: 'originalPost',
         populate: [
