@@ -1423,6 +1423,61 @@ function Profile() {
               </div>
             </div>
           </div>
+
+          {/* Mobile Sidebar - Shown under cover photo on mobile only */}
+          {isOwnProfile && activeTab === 'posts' && (
+            <div className="mobile-profile-sidebar">
+              {/* Interests */}
+              {user.interests && user.interests.length > 0 && (
+                <div className="sidebar-card glossy fade-in">
+                  <h3 className="sidebar-title">🏷️ Interests</h3>
+                  <div className="interests-tags">
+                    {user.interests.map((interest, index) => (
+                      <span key={index} className="interest-tag">{interest}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Looking For */}
+              {user.lookingFor && user.lookingFor.length > 0 && (
+                <div className="sidebar-card glossy fade-in">
+                  <h3 className="sidebar-title">🔍 Looking For</h3>
+                  <div className="looking-for-list">
+                    {user.lookingFor.map((item, index) => (
+                      <span key={index} className="looking-for-item">
+                        {item === 'friends' && '👥 Friends'}
+                        {item === 'support' && '🤝 Support'}
+                        {item === 'community' && '🌈 Community'}
+                        {item === 'networking' && '💼 Networking'}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Social Links */}
+              {user.socialLinks && user.socialLinks.length > 0 && (
+                <div className="sidebar-card glossy fade-in">
+                  <h3 className="sidebar-title">🔗 Social Links</h3>
+                  <div className="social-links-list">
+                    {user.socialLinks.map((link, index) => (
+                      <a
+                        key={index}
+                        href={link.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="social-link"
+                      >
+                        <strong>{link.platform}</strong>
+                        <span className="link-arrow">→</span>
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="profile-layout">
