@@ -1505,106 +1505,161 @@ function Profile() {
             </div>
           )}
 
-          {/* Create Post Section */}
+          {/* Create Post Section with Sidebar Grid Layout */}
           {isOwnProfile && activeTab === 'posts' && (
-            <div className="create-post glossy fade-in">
-              <h2 className="section-title">✨ Share a thought...</h2>
-              <form onSubmit={handlePostSubmit}>
-                <textarea
-                  value={newPost}
-                  onChange={(e) => setNewPost(e.target.value)}
-                  placeholder="What are you reflecting on today?"
-                  className="post-input glossy"
-                  rows="4"
-                />
+            <div className="create-post-layout">
+              <div className="create-post glossy fade-in">
+                <h2 className="section-title">✨ Share a thought...</h2>
+                <form onSubmit={handlePostSubmit}>
+                  <textarea
+                    value={newPost}
+                    onChange={(e) => setNewPost(e.target.value)}
+                    placeholder="What are you reflecting on today?"
+                    className="post-input glossy"
+                    rows="4"
+                  />
 
-                {selectedMedia.length > 0 && (
-                  <div className="media-preview">
-                    {selectedMedia.map((media, index) => (
-                      <div key={index} className="media-preview-item">
-                        {media.type === 'video' ? (
-                          <video src={getImageUrl(media.url)} controls />
-                        ) : (
-                          <OptimizedImage
-                            src={getImageUrl(media.url)}
-                            alt={`Upload ${index + 1}`}
-                            loading="eager"
-                          />
-                        )}
-                        <button
-                          type="button"
-                          className="remove-media"
-                          onClick={() => removeMedia(index)}
-                        >
-                          ✕
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                  {selectedMedia.length > 0 && (
+                    <div className="media-preview">
+                      {selectedMedia.map((media, index) => (
+                        <div key={index} className="media-preview-item">
+                          {media.type === 'video' ? (
+                            <video src={getImageUrl(media.url)} controls />
+                          ) : (
+                            <OptimizedImage
+                              src={getImageUrl(media.url)}
+                              alt={`Upload ${index + 1}`}
+                              loading="eager"
+                            />
+                          )}
+                          <button
+                            type="button"
+                            className="remove-media"
+                            onClick={() => removeMedia(index)}
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
 
-                {showContentWarning && (
-                  <div className="content-warning-input">
-                    <select
-                      value={contentWarning}
-                      onChange={(e) => setContentWarning(e.target.value)}
-                      className="cw-input glossy"
+                  {showContentWarning && (
+                    <div className="content-warning-input">
+                      <select
+                        value={contentWarning}
+                        onChange={(e) => setContentWarning(e.target.value)}
+                        className="cw-input glossy"
+                      >
+                        <option value="">Select a content warning...</option>
+                        <option value="Mental Health">Mental Health</option>
+                        <option value="Violence">Violence</option>
+                        <option value="Sexual Content">Sexual Content</option>
+                        <option value="Substance Use">Substance Use</option>
+                        <option value="Self-Harm">Self-Harm</option>
+                        <option value="Death/Grief">Death/Grief</option>
+                        <option value="Eating Disorders">Eating Disorders</option>
+                        <option value="Abuse">Abuse</option>
+                        <option value="Discrimination">Discrimination</option>
+                        <option value="Medical Content">Medical Content</option>
+                        <option value="Flashing Lights">Flashing Lights</option>
+                        <option value="Other">Other</option>
+                      </select>
+                    </div>
+                  )}
+
+                  <div className="post-actions-bar">
+                    <label className="btn-media-upload">
+                      <input
+                        type="file"
+                        multiple
+                        accept="image/*,video/*"
+                        onChange={handleMediaSelect}
+                        disabled={uploadingMedia || selectedMedia.length >= 3}
+                        style={{ display: 'none' }}
+                      />
+                      {uploadingMedia ? '⏳ Uploading...' : '📷 Add Photos/Videos'}
+                    </label>
+
+                    <button
+                      type="button"
+                      className={`btn-content-warning ${showContentWarning ? 'active' : ''}`}
+                      onClick={() => setShowContentWarning(!showContentWarning)}
+                      title="Add content warning"
                     >
-                      <option value="">Select a content warning...</option>
-                      <option value="Mental Health">Mental Health</option>
-                      <option value="Violence">Violence</option>
-                      <option value="Sexual Content">Sexual Content</option>
-                      <option value="Substance Use">Substance Use</option>
-                      <option value="Self-Harm">Self-Harm</option>
-                      <option value="Death/Grief">Death/Grief</option>
-                      <option value="Eating Disorders">Eating Disorders</option>
-                      <option value="Abuse">Abuse</option>
-                      <option value="Discrimination">Discrimination</option>
-                      <option value="Medical Content">Medical Content</option>
-                      <option value="Flashing Lights">Flashing Lights</option>
-                      <option value="Other">Other</option>
+                      ⚠️ CW
+                    </button>
+
+                    {/* PHASE 1 REFACTOR: Simplified privacy options */}
+                    <select
+                      value={postVisibility}
+                      onChange={(e) => setPostVisibility(e.target.value)}
+                      className="privacy-selector glossy"
+                    >
+                      <option value="public">🌍 Public</option>
+                      <option value="followers">👥 Connections</option>
+                      <option value="private">🔒 Private</option>
                     </select>
+
+                    <button type="submit" disabled={postLoading || uploadingMedia} className="btn-post glossy-gold">
+                      {postLoading ? 'Publishing...' : 'Publish ✨'}
+                    </button>
+                  </div>
+                </form>
+              </div>
+
+              {/* Sidebar for Create Post Section */}
+              <div className="create-post-sidebar">
+                {/* Interests */}
+                {user.interests && user.interests.length > 0 && (
+                  <div className="sidebar-card glossy fade-in">
+                    <h3 className="sidebar-title">🏷️ Interests</h3>
+                    <div className="interests-tags">
+                      {user.interests.map((interest, index) => (
+                        <span key={index} className="interest-tag">{interest}</span>
+                      ))}
+                    </div>
                   </div>
                 )}
 
-                <div className="post-actions-bar">
-                  <label className="btn-media-upload">
-                    <input
-                      type="file"
-                      multiple
-                      accept="image/*,video/*"
-                      onChange={handleMediaSelect}
-                      disabled={uploadingMedia || selectedMedia.length >= 3}
-                      style={{ display: 'none' }}
-                    />
-                    {uploadingMedia ? '⏳ Uploading...' : '📷 Add Photos/Videos'}
-                  </label>
+                {/* Looking For */}
+                {user.lookingFor && user.lookingFor.length > 0 && (
+                  <div className="sidebar-card glossy fade-in">
+                    <h3 className="sidebar-title">🔍 Looking For</h3>
+                    <div className="looking-for-list">
+                      {user.lookingFor.map((item, index) => (
+                        <span key={index} className="looking-for-item">
+                          {item === 'friends' && '👥 Friends'}
+                          {item === 'support' && '🤝 Support'}
+                          {item === 'community' && '🌈 Community'}
+                          {item === 'networking' && '💼 Networking'}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
-                  <button
-                    type="button"
-                    className={`btn-content-warning ${showContentWarning ? 'active' : ''}`}
-                    onClick={() => setShowContentWarning(!showContentWarning)}
-                    title="Add content warning"
-                  >
-                    ⚠️ CW
-                  </button>
-
-                  {/* PHASE 1 REFACTOR: Simplified privacy options */}
-                  <select
-                    value={postVisibility}
-                    onChange={(e) => setPostVisibility(e.target.value)}
-                    className="privacy-selector glossy"
-                  >
-                    <option value="public">🌍 Public</option>
-                    <option value="followers">👥 Connections</option>
-                    <option value="private">🔒 Private</option>
-                  </select>
-
-                  <button type="submit" disabled={postLoading || uploadingMedia} className="btn-post glossy-gold">
-                    {postLoading ? 'Publishing...' : 'Publish ✨'}
-                  </button>
-                </div>
-              </form>
+                {/* Social Links */}
+                {user.socialLinks && user.socialLinks.length > 0 && (
+                  <div className="sidebar-card glossy fade-in">
+                    <h3 className="sidebar-title">🔗 Social Links</h3>
+                    <div className="social-links-list">
+                      {user.socialLinks.map((link, index) => (
+                        <a
+                          key={index}
+                          href={link.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="social-link"
+                        >
+                          <strong>{link.platform}</strong>
+                          <span className="link-arrow">→</span>
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
@@ -2180,60 +2235,7 @@ function Profile() {
           </div>
           {/* End of profile-main */}
 
-          {/* Sidebar for Profile Page */}
-          {isOwnProfile && activeTab === 'posts' && (
-            <div className="create-post-sidebar">
-              {/* Interests */}
-              {user.interests && user.interests.length > 0 && (
-                <div className="sidebar-card glossy fade-in">
-                  <h3 className="sidebar-title">🏷️ Interests</h3>
-                  <div className="interests-tags">
-                    {user.interests.map((interest, index) => (
-                      <span key={index} className="interest-tag">{interest}</span>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Looking For */}
-              {user.lookingFor && user.lookingFor.length > 0 && (
-                <div className="sidebar-card glossy fade-in">
-                  <h3 className="sidebar-title">🔍 Looking For</h3>
-                  <div className="looking-for-list">
-                    {user.lookingFor.map((item, index) => (
-                      <span key={index} className="looking-for-item">
-                        {item === 'friends' && '👥 Friends'}
-                        {item === 'support' && '🤝 Support'}
-                        {item === 'community' && '🌈 Community'}
-                        {item === 'networking' && '💼 Networking'}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Social Links */}
-              {user.socialLinks && user.socialLinks.length > 0 && (
-                <div className="sidebar-card glossy fade-in">
-                  <h3 className="sidebar-title">🔗 Social Links</h3>
-                  <div className="social-links-list">
-                    {user.socialLinks.map((link, index) => (
-                      <a
-                        key={index}
-                        href={link.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="social-link"
-                      >
-                        <strong>{link.platform}</strong>
-                        <span className="link-arrow">→</span>
-                      </a>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
+          {/* PHASE 1 REFACTOR: Sidebar moved to create-post-layout */}
         </div>
         {/* End of profile-layout */}
       </div>
