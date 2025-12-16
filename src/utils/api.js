@@ -62,13 +62,10 @@ api.interceptors.response.use(
 
       try {
         // Try to refresh the token
-        logger.debug('🔄 Attempting to refresh access token...');
-        logger.debug('📍 Current cookies:', document.cookie);
-        logger.debug('📍 Refresh endpoint:', `${API_BASE_URL}/refresh`);
+        logger.debug('🔄 Token expired, refreshing...');
 
         // Get refresh token from localStorage (for cross-domain setups)
         const refreshToken = getRefreshToken();
-        logger.debug('📍 Refresh token from localStorage:', refreshToken ? 'Found' : 'Not found');
 
         const response = await axios.post(`${API_BASE_URL}/refresh`, {
           refreshToken // Send refresh token in body for cross-domain
@@ -80,12 +77,10 @@ api.interceptors.response.use(
 
         if (accessToken) {
           logger.debug('✅ Token refreshed successfully');
-          logger.debug('🔑 New access token received (first 20 chars):', accessToken.substring(0, 20) + '...');
           setAuthToken(accessToken);
 
           // Store new refresh token if provided
           if (newRefreshToken) {
-            logger.debug('🔄 New refresh token received, updating localStorage');
             setRefreshToken(newRefreshToken);
           }
 
@@ -93,7 +88,6 @@ api.interceptors.response.use(
           try {
             const currentUser = getCurrentUser();
             if (currentUser?.id) {
-              logger.debug('🔌 Reconnecting socket with new token');
               disconnectSocket();
               initializeSocket(currentUser.id);
             }
