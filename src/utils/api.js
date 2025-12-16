@@ -1,7 +1,8 @@
 import { API_BASE_URL } from "../config/api.js"; // include .js extension
 import axios from "axios";
-import { getAuthToken, logout, isManualLogout, setAuthToken, getRefreshToken, setRefreshToken } from "./auth";
+import { getAuthToken, logout, isManualLogout, setAuthToken, getRefreshToken, setRefreshToken, getCurrentUser } from "./auth";
 import logger from './logger';
+import { disconnectSocket, initializeSocket } from './socket';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -86,6 +87,18 @@ api.interceptors.response.use(
           if (newRefreshToken) {
             logger.debug('🔄 New refresh token received, updating localStorage');
             setRefreshToken(newRefreshToken);
+          }
+
+          // Reconnect socket with new token
+          try {
+            const currentUser = getCurrentUser();
+            if (currentUser?.id) {
+              logger.debug('🔌 Reconnecting socket with new token');
+              disconnectSocket();
+              initializeSocket(currentUser.id);
+            }
+          } catch (socketError) {
+            logger.error('⚠️ Failed to reconnect socket:', socketError);
           }
 
           // Update the failed request with new token
