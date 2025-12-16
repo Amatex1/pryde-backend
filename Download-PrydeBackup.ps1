@@ -1,4 +1,4 @@
-# ============================================
+﻿# ============================================
 # Pryde Social - Automated Backup Downloader
 # ============================================
 # This script automatically downloads the latest backup from your Render server
@@ -21,7 +21,7 @@ $MAX_BACKUPS = 4  # Keep last 4 backups
 # Create backup folder if it doesn't exist
 if (-not (Test-Path $BACKUP_FOLDER)) {
     New-Item -ItemType Directory -Path $BACKUP_FOLDER -Force | Out-Null
-    Write-Host "✅ Created backup folder: $BACKUP_FOLDER" -ForegroundColor Green
+    Write-Host "[OK] Created backup folder: $BACKUP_FOLDER" -ForegroundColor Green
 }
 
 # Generate filename with timestamp
@@ -30,9 +30,9 @@ $filename = "pryde-backup-$timestamp.json"
 $filepath = Join-Path $BACKUP_FOLDER $filename
 
 Write-Host ""
-Write-Host "🔄 Downloading Pryde Social Backup..." -ForegroundColor Cyan
-Write-Host "📅 Date: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')" -ForegroundColor Gray
-Write-Host "📁 Saving to: $filepath" -ForegroundColor Gray
+Write-Host "[DOWNLOAD] Downloading Pryde Social Backup..." -ForegroundColor Cyan
+Write-Host "[DATE] Date: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')" -ForegroundColor Gray
+Write-Host "[PATH] Saving to: $filepath" -ForegroundColor Gray
 Write-Host ""
 
 try {
@@ -50,51 +50,51 @@ try {
     $fileSizeMB = [math]::Round($fileSize / 1MB, 2)
     
     if ($fileSizeMB -gt 1) {
-        Write-Host "✅ Backup downloaded successfully! ($fileSizeMB MB)" -ForegroundColor Green
+        Write-Host "[OK] Backup downloaded successfully! ($fileSizeMB MB)" -ForegroundColor Green
     } else {
-        Write-Host "✅ Backup downloaded successfully! ($fileSizeKB KB)" -ForegroundColor Green
+        Write-Host "[OK] Backup downloaded successfully! ($fileSizeKB KB)" -ForegroundColor Green
     }
     
-    Write-Host "📁 Saved to: $filepath" -ForegroundColor Green
+    Write-Host "[SAVED] Saved to: $filepath" -ForegroundColor Green
     
     # Cleanup old backups (keep last $MAX_BACKUPS)
     Write-Host ""
-    Write-Host "🗑️  Cleaning up old backups..." -ForegroundColor Yellow
+    Write-Host "[CLEANUP] Cleaning up old backups..." -ForegroundColor Yellow
     
     $backupFiles = Get-ChildItem -Path $BACKUP_FOLDER -Filter "pryde-backup-*.json" | 
                    Sort-Object LastWriteTime -Descending
     
     $totalBackups = $backupFiles.Count
-    Write-Host "📊 Total backups: $totalBackups" -ForegroundColor Gray
+    Write-Host "[INFO] Total backups: $totalBackups" -ForegroundColor Gray
     
     if ($totalBackups -gt $MAX_BACKUPS) {
         $filesToDelete = $backupFiles | Select-Object -Skip $MAX_BACKUPS
         
         foreach ($file in $filesToDelete) {
             Remove-Item $file.FullName -Force
-            Write-Host "   🗑️  Deleted old backup: $($file.Name)" -ForegroundColor DarkGray
+            Write-Host "   [DELETE] Deleted old backup: $($file.Name)" -ForegroundColor DarkGray
         }
         
         $deletedCount = $filesToDelete.Count
-        Write-Host "✅ Cleaned up $deletedCount old backup(s)" -ForegroundColor Green
+        Write-Host "[OK] Cleaned up $deletedCount old backup(s)" -ForegroundColor Green
     } else {
-        Write-Host "✅ No cleanup needed (keeping last $MAX_BACKUPS backups)" -ForegroundColor Green
+        Write-Host "[OK] No cleanup needed (keeping last $MAX_BACKUPS backups)" -ForegroundColor Green
     }
     
     # Show remaining backups
     Write-Host ""
-    Write-Host "📋 Current backups:" -ForegroundColor Cyan
+    Write-Host "[LIST] Current backups:" -ForegroundColor Cyan
     $currentBackups = Get-ChildItem -Path $BACKUP_FOLDER -Filter "pryde-backup-*.json" | 
                       Sort-Object LastWriteTime -Descending
     
     foreach ($backup in $currentBackups) {
         $size = [math]::Round($backup.Length / 1KB, 2)
         $date = $backup.LastWriteTime.ToString("yyyy-MM-dd HH:mm:ss")
-        Write-Host "   📄 $($backup.Name) - $size KB - $date" -ForegroundColor Gray
+        Write-Host "   [FILE] $($backup.Name) - $size KB - $date" -ForegroundColor Gray
     }
     
     Write-Host ""
-    Write-Host "✅ Backup process completed successfully!" -ForegroundColor Green
+    Write-Host "[OK] Backup process completed successfully!" -ForegroundColor Green
     Write-Host ""
     
     # Log success
@@ -104,7 +104,7 @@ try {
     
 } catch {
     Write-Host ""
-    Write-Host "❌ Error downloading backup!" -ForegroundColor Red
+    Write-Host "[ERROR] Error downloading backup!" -ForegroundColor Red
     Write-Host "Error: $($_.Exception.Message)" -ForegroundColor Red
     Write-Host ""
     
@@ -114,7 +114,7 @@ try {
     Add-Content -Path $logFile -Value $logEntry
     
     # Check common issues
-    Write-Host "🔍 Troubleshooting:" -ForegroundColor Yellow
+    Write-Host "[HELP] Troubleshooting:" -ForegroundColor Yellow
     Write-Host "   1. Check if RENDER_API_URL is correct" -ForegroundColor Gray
     Write-Host "   2. Verify BACKUP_API_KEY matches your server" -ForegroundColor Gray
     Write-Host "   3. Ensure your Render app is running" -ForegroundColor Gray
@@ -129,4 +129,3 @@ if ($Host.Name -eq "ConsoleHost") {
     Write-Host "Press any key to exit..." -ForegroundColor Gray
     $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
 }
-
