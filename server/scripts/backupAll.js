@@ -21,6 +21,10 @@ import Notification from '../models/Notification.js';
 
 const BACKUP_DIR = path.join(__dirname, '../backups');
 
+console.log('📁 Script directory:', __dirname);
+console.log('📁 Backup directory:', BACKUP_DIR);
+console.log('📁 Current working directory:', process.cwd());
+
 // Create backups directory if it doesn't exist
 if (!fs.existsSync(BACKUP_DIR)) {
   fs.mkdirSync(BACKUP_DIR, { recursive: true });

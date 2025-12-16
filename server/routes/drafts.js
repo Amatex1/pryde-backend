@@ -10,16 +10,20 @@ router.get('/', auth, async (req, res) => {
   try {
     const { type } = req.query;
     const query = { user: req.userId };
-    
+
     if (type) {
       query.draftType = type;
     }
+
+    console.log('📥 Fetching drafts for user:', req.userId, 'type:', type);
 
     const drafts = await Draft.find(query)
       .sort({ updatedAt: -1 })
       .limit(50);
 
-    res.json(drafts);
+    console.log(`✅ Found ${drafts.length} drafts`);
+
+    res.json({ drafts }); // Return as object with drafts property
   } catch (error) {
     console.error('Get drafts error:', error);
     res.status(500).json({ message: 'Server error' });
@@ -70,6 +74,14 @@ router.post('/', auth, async (req, res) => {
       poll
     } = req.body;
 
+    console.log('💾 Saving draft:', {
+      draftId,
+      draftType,
+      userId: req.userId,
+      contentLength: content?.length || 0,
+      hasMedia: media?.length > 0
+    });
+
     // If draftId provided, update existing draft
     if (draftId) {
       const draft = await Draft.findById(draftId);
@@ -96,6 +108,7 @@ router.post('/', auth, async (req, res) => {
       if (poll !== undefined) draft.poll = poll;
 
       await draft.save();
+      console.log('✅ Draft updated:', draft._id);
       return res.json(draft);
     }
 
@@ -117,6 +130,7 @@ router.post('/', auth, async (req, res) => {
     });
 
     await draft.save();
+    console.log('✅ New draft created:', draft._id);
     res.status(201).json(draft);
   } catch (error) {
     console.error('Save draft error:', error);
