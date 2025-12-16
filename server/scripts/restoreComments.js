@@ -26,14 +26,25 @@ async function restoreComments(backupFile) {
     await mongoose.connect(mongoURI);
     console.log('✅ Connected to MongoDB');
 
+    // Check if backup directory exists
+    if (!fs.existsSync(BACKUP_DIR)) {
+      console.error(`❌ Backup directory not found: ${BACKUP_DIR}`);
+      console.log('\n💡 Run a backup first: node scripts/backupAll.js');
+      process.exit(1);
+    }
+
     // Read backup file
     const filepath = path.join(BACKUP_DIR, backupFile || 'comments-backup-latest.json');
-    
+
     if (!fs.existsSync(filepath)) {
       console.error(`❌ Backup file not found: ${filepath}`);
       console.log('\n📁 Available backups:');
       const files = fs.readdirSync(BACKUP_DIR).filter(f => f.endsWith('.json'));
-      files.forEach(f => console.log(`   - ${f}`));
+      if (files.length === 0) {
+        console.log('   (No backups found - run: node scripts/backupAll.js)');
+      } else {
+        files.forEach(f => console.log(`   - ${f}`));
+      }
       process.exit(1);
     }
 
