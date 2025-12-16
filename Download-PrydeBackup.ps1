@@ -11,7 +11,7 @@
 # Configuration
 $RENDER_API_URL = "https://pryde-social.onrender.com/api/backup/download"
 $BACKUP_API_KEY = "I2bG3RWcqUh7dr1gSBmEO6lxTLFMuakZ"
-$BACKUP_FOLDER = "$env:USERPROFILE\Desktop\PrydeBackups"
+$BACKUP_FOLDER = "F:\Desktop\PrydeBackups"
 $MAX_BACKUPS = 4  # Keep last 4 backups
 
 # ============================================
