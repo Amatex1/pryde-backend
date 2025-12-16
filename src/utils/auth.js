@@ -31,10 +31,14 @@ export const getAuthToken = () => {
 
   if (token && tokenSetTime) {
     const ageMinutes = (Date.now() - parseInt(tokenSetTime)) / 1000 / 60;
-    console.log(`🔍 Getting access token (age: ${ageMinutes.toFixed(1)} minutes)`);
+
+    // Only log if token is getting old (> 10 minutes) to reduce console noise
+    if (ageMinutes > 10) {
+      console.log(`🔍 Access token age: ${ageMinutes.toFixed(1)} minutes`);
+    }
 
     if (ageMinutes > 15) {
-      console.warn(`⚠️ Access token is ${ageMinutes.toFixed(1)} minutes old (expired at 15 min)`);
+      console.warn(`⚠️ Access token expired (${ageMinutes.toFixed(1)} minutes old)`);
     }
   }
 

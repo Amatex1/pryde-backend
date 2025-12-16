@@ -871,13 +871,15 @@ function Feed() {
   // Fetch comments for a post
   const fetchCommentsForPost = async (postId) => {
     try {
+      logger.debug(`📥 Fetching comments for post: ${postId}`);
       const response = await api.get(`/posts/${postId}/comments`);
+      logger.debug(`✅ Fetched ${response.data?.length || 0} comments for post ${postId}`);
       setPostComments(prev => ({
         ...prev,
         [postId]: response.data
       }));
     } catch (error) {
-      logger.error('Failed to fetch comments:', error);
+      logger.error('❌ Failed to fetch comments:', error);
     }
   };
 
@@ -1010,11 +1012,15 @@ function Feed() {
       // Convert emoji shortcuts before posting
       const contentWithEmojis = content ? convertEmojiShortcuts(content) : '';
 
+      logger.debug('💬 Submitting comment:', { postId, content: contentWithEmojis, gifUrl });
+
       const response = await api.post(`/posts/${postId}/comments`, {
         content: contentWithEmojis,
         gifUrl: gifUrl || null,
         parentCommentId: null // Top-level comment
       });
+
+      logger.debug('✅ Comment created:', response.data);
 
       // Add new comment to postComments
       setPostComments(prev => ({
@@ -1032,7 +1038,8 @@ function Feed() {
       setCommentText(prev => ({ ...prev, [postId]: '' }));
       setCommentGif(prev => ({ ...prev, [postId]: null }));
     } catch (error) {
-      logger.error('Failed to comment:', error);
+      logger.error('❌ Failed to create comment:', error);
+      logger.error('Error details:', error.response?.data);
       showAlert('Failed to add comment. Please try again.', 'Comment Failed');
     }
   };
