@@ -13,9 +13,12 @@ router.get('/posts/:postId/comments', auth, async (req, res) => {
   try {
     const { postId } = req.params;
 
+    logger.debug('📥 Fetching comments for post:', postId);
+
     // Verify post exists
     const post = await Post.findById(postId);
     if (!post) {
+      logger.error('❌ Post not found:', postId);
       return res.status(404).json({ message: 'Post not found' });
     }
 
@@ -28,6 +31,8 @@ router.get('/posts/:postId/comments', auth, async (req, res) => {
       .populate('authorId', 'username displayName profilePhoto isVerified pronouns')
       .sort({ isPinned: -1, createdAt: 1 }) // Pinned first, then oldest first
       .lean();
+
+    logger.debug(`✅ Found ${comments.length} comments for post ${postId}`);
 
     // For each top-level comment, get reply count
     const commentsWithReplyCounts = await Promise.all(
@@ -119,7 +124,20 @@ router.post('/posts/:postId/comments', auth, async (req, res) => {
       parentCommentId: parentCommentId || null
     });
 
+    logger.debug('💬 Creating comment:', {
+      postId,
+      authorId: userId,
+      content: content?.substring(0, 50),
+      parentCommentId
+    });
+
     await comment.save();
+
+    logger.debug('✅ Comment saved to database:', {
+      commentId: comment._id,
+      postId: comment.postId,
+      authorId: comment.authorId
+    });
 
     // Populate author
     await comment.populate('authorId', 'username displayName profilePhoto isVerified pronouns');
@@ -131,6 +149,8 @@ router.post('/posts/:postId/comments', auth, async (req, res) => {
         comment: comment.toObject()
       });
     }
+
+    logger.debug('📤 Sending comment response to client');
 
     res.status(201).json(comment);
   } catch (error) {
