@@ -10,16 +10,28 @@
   "scope": "/",
   "icons": [
     {
-      "src": "/pryde-logo.png",
+      "src": "https://prydeapp.com/pryde-logo.png",
       "sizes": "870x870",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/pryde-logo.webp",
+      "src": "https://prydeapp.com/pryde-logo.webp",
       "sizes": "870x870",
       "type": "image/webp",
       "purpose": "any maskable"
+    },
+    {
+      "src": "https://prydeapp.com/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "https://prydeapp.com/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
     }
   ],
   "categories": ["social", "lifestyle", "entertainment"],
@@ -29,28 +41,28 @@
       "short_name": "Feed",
       "description": "View your personalized feed",
       "url": "/feed",
-      "icons": [{ "src": "/pryde-logo.png", "sizes": "870x870" }]
+      "icons": [{ "src": "https://prydeapp.com/icon-192.png", "sizes": "192x192" }]
     },
     {
       "name": "Messages",
       "short_name": "Messages",
       "description": "Check your messages",
       "url": "/messages",
-      "icons": [{ "src": "/pryde-logo.png", "sizes": "870x870" }]
+      "icons": [{ "src": "https://prydeapp.com/icon-192.png", "sizes": "192x192" }]
     },
     {
       "name": "Notifications",
       "short_name": "Notifications",
       "description": "View notifications",
       "url": "/notifications",
-      "icons": [{ "src": "/pryde-logo.png", "sizes": "870x870" }]
+      "icons": [{ "src": "https://prydeapp.com/icon-192.png", "sizes": "192x192" }]
     },
     {
       "name": "Profile",
       "short_name": "Profile",
       "description": "View your profile",
       "url": "/profile",
-      "icons": [{ "src": "/pryde-logo.png", "sizes": "870x870" }]
+      "icons": [{ "src": "https://prydeapp.com/icon-192.png", "sizes": "192x192" }]
     }
   ],
   "prefer_related_applications": false,

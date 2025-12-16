@@ -98,6 +98,9 @@ function Feed() {
   // Pull-to-refresh state
   const [pullStartY, setPullStartY] = useState(null);
   const [isPulling, setIsPulling] = useState(false);
+
+  // Reaction picker timeout ref
+  const reactionPickerTimeoutRef = useRef(null);
   const [pullDistance, setPullDistance] = useState(0);
 
   const currentUser = getCurrentUser();
@@ -876,15 +879,16 @@ function Feed() {
 
     // Handle array format (Post reactions)
     if (Array.isArray(reactions)) {
-      const userReaction = reactions.find(r =>
-        (r.user?._id === currentUser.id || r.user === currentUser.id)
-      );
+      const userReaction = reactions.find(r => {
+        const userId = r.user?._id || r.user;
+        return userId?.toString() === currentUser.id?.toString();
+      });
       return userReaction?.emoji || null;
     }
 
     // Handle object format (Comment reactions)
     for (const [emoji, userIds] of Object.entries(reactions)) {
-      if (userIds.includes(currentUser.id)) {
+      if (userIds.some(id => id?.toString() === currentUser.id?.toString())) {
         return emoji;
       }
     }
@@ -1903,17 +1907,19 @@ function Feed() {
                           onMouseEnter={() => {
                             // Hover shows emoji picker on desktop
                             if (window.innerWidth > 768) {
+                              if (reactionPickerTimeoutRef.current) {
+                                clearTimeout(reactionPickerTimeoutRef.current);
+                                reactionPickerTimeoutRef.current = null;
+                              }
                               setShowReactionPicker(`post-${post._id}`);
                             }
                           }}
                           onMouseLeave={() => {
                             // Delay hiding to allow moving to picker
                             if (window.innerWidth > 768) {
-                              setTimeout(() => {
-                                if (showReactionPicker === `post-${post._id}`) {
-                                  setShowReactionPicker(null);
-                                }
-                              }, 300);
+                              reactionPickerTimeoutRef.current = setTimeout(() => {
+                                setShowReactionPicker(null);
+                              }, 500);
                             }
                           }}
                           onTouchStart={(e) => {
@@ -1939,14 +1945,18 @@ function Feed() {
                             className="reaction-picker"
                             onMouseEnter={() => {
                               if (window.innerWidth > 768) {
+                                if (reactionPickerTimeoutRef.current) {
+                                  clearTimeout(reactionPickerTimeoutRef.current);
+                                  reactionPickerTimeoutRef.current = null;
+                                }
                                 setShowReactionPicker(`post-${post._id}`);
                               }
                             }}
                             onMouseLeave={() => {
                               if (window.innerWidth > 768) {
-                                setTimeout(() => {
+                                reactionPickerTimeoutRef.current = setTimeout(() => {
                                   setShowReactionPicker(null);
-                                }, 300);
+                                }, 500);
                               }
                             }}
                           >
@@ -1983,7 +1993,7 @@ function Feed() {
                         className="action-btn"
                         onClick={() => toggleCommentBox(post._id)}
                       >
-                        <span>💬</span> Comment {!post.hideMetrics && `(${post.comments?.length || 0})`}
+                        <span>💬</span> Comment {!post.hideMetrics && `(${post.comments?.filter(c => !c.isDeleted).length || 0})`}
                       </button>
                       <button
                         className="action-btn"

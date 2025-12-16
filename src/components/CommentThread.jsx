@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import OptimizedImage from './OptimizedImage';
 import { getImageUrl } from '../utils/imageUrl';
@@ -53,6 +53,9 @@ const CommentThread = ({
   setReactionDetailsModal,
   setReportModal
 }) => {
+  // Reaction picker timeout ref
+  const reactionPickerTimeoutRef = useRef(null);
+
   // Only render if comment has no parent (top-level comment)
   if (comment.parentCommentId !== null && comment.parentCommentId !== undefined) {
     return null;
@@ -158,16 +161,18 @@ const CommentThread = ({
                     }}
                     onMouseEnter={() => {
                       if (window.innerWidth > 768) {
+                        if (reactionPickerTimeoutRef.current) {
+                          clearTimeout(reactionPickerTimeoutRef.current);
+                          reactionPickerTimeoutRef.current = null;
+                        }
                         setShowReactionPicker(`comment-${comment._id}`);
                       }
                     }}
                     onMouseLeave={() => {
                       if (window.innerWidth > 768) {
-                        setTimeout(() => {
-                          if (showReactionPicker === `comment-${comment._id}`) {
-                            setShowReactionPicker(null);
-                          }
-                        }, 300);
+                        reactionPickerTimeoutRef.current = setTimeout(() => {
+                          setShowReactionPicker(null);
+                        }, 500);
                       }
                     }}
                     onTouchStart={(e) => {
@@ -210,12 +215,18 @@ const CommentThread = ({
                       className="reaction-picker"
                       onMouseEnter={() => {
                         if (window.innerWidth > 768) {
+                          if (reactionPickerTimeoutRef.current) {
+                            clearTimeout(reactionPickerTimeoutRef.current);
+                            reactionPickerTimeoutRef.current = null;
+                          }
                           setShowReactionPicker(`comment-${comment._id}`);
                         }
                       }}
                       onMouseLeave={() => {
                         if (window.innerWidth > 768) {
-                          setShowReactionPicker(null);
+                          reactionPickerTimeoutRef.current = setTimeout(() => {
+                            setShowReactionPicker(null);
+                          }, 500);
                         }
                       }}
                     >
@@ -384,16 +395,18 @@ const CommentThread = ({
                             }}
                             onMouseEnter={() => {
                               if (window.innerWidth > 768) {
+                                if (reactionPickerTimeoutRef.current) {
+                                  clearTimeout(reactionPickerTimeoutRef.current);
+                                  reactionPickerTimeoutRef.current = null;
+                                }
                                 setShowReactionPicker(`reply-${reply._id}`);
                               }
                             }}
                             onMouseLeave={() => {
                               if (window.innerWidth > 768) {
-                                setTimeout(() => {
-                                  if (showReactionPicker === `reply-${reply._id}`) {
-                                    setShowReactionPicker(null);
-                                  }
-                                }, 300);
+                                reactionPickerTimeoutRef.current = setTimeout(() => {
+                                  setShowReactionPicker(null);
+                                }, 500);
                               }
                             }}
                             onTouchStart={(e) => {
@@ -436,12 +449,18 @@ const CommentThread = ({
                               className="reaction-picker"
                               onMouseEnter={() => {
                                 if (window.innerWidth > 768) {
+                                  if (reactionPickerTimeoutRef.current) {
+                                    clearTimeout(reactionPickerTimeoutRef.current);
+                                    reactionPickerTimeoutRef.current = null;
+                                  }
                                   setShowReactionPicker(`reply-${reply._id}`);
                                 }
                               }}
                               onMouseLeave={() => {
                                 if (window.innerWidth > 768) {
-                                  setShowReactionPicker(null);
+                                  reactionPickerTimeoutRef.current = setTimeout(() => {
+                                    setShowReactionPicker(null);
+                                  }, 500);
                                 }
                               }}
                             >

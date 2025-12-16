@@ -6,12 +6,9 @@ const DraftManager = ({ draftType, onRestoreDraft, onClose }) => {
   const [drafts, setDrafts] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchDrafts();
-  }, [draftType]);
-
   const fetchDrafts = async () => {
     try {
+      setLoading(true);
       const params = draftType ? { type: draftType } : {};
       const response = await api.get('/drafts', { params });
       setDrafts(response.data.drafts || []);
@@ -21,6 +18,11 @@ const DraftManager = ({ draftType, onRestoreDraft, onClose }) => {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchDrafts();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [draftType]);
 
   const deleteDraft = async (draftId) => {
     try {

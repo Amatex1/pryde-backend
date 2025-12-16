@@ -77,8 +77,10 @@ router.delete('/:postId', auth, async (req, res) => {
 
     const user = await User.findById(req.userId);
 
-    // Check if bookmarked
-    if (!user.bookmarkedPosts.includes(postId)) {
+    // Check if bookmarked (convert ObjectIds to strings for comparison)
+    const isBookmarked = user.bookmarkedPosts.some(id => id.toString() === postId);
+
+    if (!isBookmarked) {
       return res.status(400).json({ message: 'Post not bookmarked' });
     }
 
@@ -88,7 +90,7 @@ router.delete('/:postId', auth, async (req, res) => {
     );
     await user.save();
 
-    res.json({ 
+    res.json({
       message: 'Bookmark removed successfully',
       bookmarkedPosts: user.bookmarkedPosts
     });

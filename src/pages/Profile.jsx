@@ -2110,7 +2110,7 @@ function Profile() {
                           className="action-btn"
                           onClick={() => toggleCommentBox(post._id)}
                         >
-                          <span>💬</span> Comment {!post.hideMetrics && `(${postComments[post._id]?.length || 0})`}
+                          <span>💬</span> Comment {!post.hideMetrics && `(${postComments[post._id]?.filter(c => !c.isDeleted).length || 0})`}
                         </button>
                         <button
                           className="action-btn"

@@ -2451,6 +2451,52 @@ html:not([data-theme="dark"]):not([data-quiet-mode="true"]) .section-title {
     grid-template-columns: 1fr;
   }
 
+  /* Ensure all text elements have proper sizing and wrapping */
+  .post-content,
+  .comment-text,
+  .post-text,
+  .bio-text,
+  p,
+  span,
+  div {
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    word-break: break-word;
+    hyphens: auto;
+  }
+
+  /* Prevent text from being too small */
+  .post-content,
+  .comment-text,
+  .bio-text {
+    font-size: 16px !important;
+    line-height: 1.5;
+  }
+
+  /* Fix username and display name sizing */
+  .post-author-name,
+  .comment-author-name,
+  .username,
+  .display-name,
+  .profile-name {
+    font-size: 15px !important;
+    white-space: normal;
+    word-wrap: break-word;
+  }
+
+  /* Fix timestamp sizing */
+  .post-timestamp,
+  .comment-timestamp {
+    font-size: 13px !important;
+  }
+
+  /* Fix action button text */
+  .action-btn,
+  .comment-action-btn {
+    font-size: 14px !important;
+    white-space: nowrap;
+  }
+
   .profile-header {
     border-radius: 16px;
   }
