@@ -752,7 +752,7 @@ function Feed() {
     }
   }, [newPost, selectedMedia, postVisibility, contentWarning, hideMetrics, poll, currentDraftId]);
 
-  // Auto-save on content change (debounced)
+  // Auto-save on content change (instant save on every edit)
   useEffect(() => {
     if (autoSaveTimerRef.current) {
       clearTimeout(autoSaveTimerRef.current);
@@ -760,7 +760,7 @@ function Feed() {
 
     autoSaveTimerRef.current = setTimeout(() => {
       autoSaveDraft();
-    }, 3000); // Auto-save after 3 seconds of inactivity
+    }, 500); // Auto-save after 0.5 seconds of inactivity (instant save)
 
     return () => {
       if (autoSaveTimerRef.current) {
