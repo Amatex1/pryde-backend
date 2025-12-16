@@ -655,6 +655,11 @@ server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
   console.log(`Base URL: ${config.baseURL}`);
   console.log('Socket.IO server ready for real-time connections');
+
+  // Start continuous backup system
+  import('./scripts/continuousBackup.js')
+    .then(() => console.log('✅ Continuous backup system started'))
+    .catch(err => console.error('❌ Failed to start backup system:', err));
 });
 
 // Export app for testing
