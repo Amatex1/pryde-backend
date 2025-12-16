@@ -2,19 +2,22 @@ import mongoose from 'mongoose';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { dirname } from 'path';
 import dotenv from 'dotenv';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+// Load environment variables
+dotenv.config();
+
+// Import models using file:// protocol for absolute paths
 import Comment from '../models/Comment.js';
 import Message from '../models/Message.js';
 import Conversation from '../models/Conversation.js';
 import Post from '../models/Post.js';
 import User from '../models/User.js';
 import Notification from '../models/Notification.js';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// Load environment variables
-dotenv.config({ path: path.join(__dirname, '../.env') });
 
 const BACKUP_DIR = path.join(__dirname, '../backups');
 
