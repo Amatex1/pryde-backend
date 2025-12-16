@@ -85,6 +85,7 @@ function Feed() {
   const [initializing, setInitializing] = useState(true); // Track initial load
   const [showDraftManager, setShowDraftManager] = useState(false); // Show/hide draft manager
   const [currentDraftId, setCurrentDraftId] = useState(null); // Track current draft being edited
+  const [draftSaveStatus, setDraftSaveStatus] = useState(''); // 'saving', 'saved', or ''
 
   // Pagination state
   const [page, setPage] = useState(1);
@@ -715,9 +716,14 @@ function Feed() {
   // Auto-save draft
   const autoSaveDraft = useCallback(async () => {
     // Only auto-save if there's content
-    if (!newPost.trim() && selectedMedia.length === 0) return;
+    if (!newPost.trim() && selectedMedia.length === 0) {
+      setDraftSaveStatus('');
+      return;
+    }
 
     try {
+      setDraftSaveStatus('saving');
+
       const draftData = {
         draftId: currentDraftId,
         draftType: 'post',
@@ -735,8 +741,14 @@ function Feed() {
       if (!currentDraftId && response.data._id) {
         setCurrentDraftId(response.data._id);
       }
+
+      setDraftSaveStatus('saved');
+
+      // Clear "saved" status after 2 seconds
+      setTimeout(() => setDraftSaveStatus(''), 2000);
     } catch (error) {
       logger.error('Failed to auto-save draft:', error);
+      setDraftSaveStatus('');
     }
   }, [newPost, selectedMedia, postVisibility, contentWarning, hideMetrics, poll, currentDraftId]);
 
@@ -1515,6 +1527,13 @@ function Feed() {
                   <option value="followers">👥 Connections</option>
                   <option value="private">🔒 Private</option>
                 </select>
+
+                {/* Draft save status indicator */}
+                {draftSaveStatus && (
+                  <span className="draft-save-status">
+                    {draftSaveStatus === 'saving' ? '💾 Saving draft...' : '✅ Draft saved'}
+                  </span>
+                )}
 
                 <button
                   type="button"

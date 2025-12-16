@@ -710,6 +710,36 @@ button.btn-drafts {
   gap: 0.25rem !important;
 }
 
+/* Draft Save Status Indicator */
+.draft-save-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  background: var(--soft-lavender);
+  color: var(--pryde-purple);
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+[data-theme="dark"] .draft-save-status {
+  background: rgba(108, 92, 231, 0.15);
+  color: #c5c7d7;
+}
+
 .post-actions-bar .btn-drafts:hover,
 button.btn-drafts:hover {
   border-color: var(--pryde-purple) !important;
