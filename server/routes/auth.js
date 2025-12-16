@@ -263,8 +263,8 @@ router.post('/signup', signupLimiter, validateSignup, async (req, res) => {
       success: true,
       message: 'User registered successfully',
       accessToken,
-      // Don't send refresh token in response body when using cookies
-      // refreshToken,
+      // Send refresh token in response for cross-domain setups (Cloudflare Pages → Render)
+      refreshToken,
       user: {
         id: user._id,
         username: user.username,
@@ -557,15 +557,17 @@ router.post('/login', loginLimiter, validateLogin, async (req, res) => {
     // Set refresh token in httpOnly cookie
     const cookieOptions = getRefreshTokenCookieOptions();
 
-    logger.debug('Setting refresh token cookie with options:', cookieOptions);
+    logger.debug('Setting refresh token cookie (login) with options:', cookieOptions);
+    logger.debug('Refresh token (first 20 chars):', refreshToken.substring(0, 20) + '...');
     res.cookie('refreshToken', refreshToken, cookieOptions);
 
     res.json({
       success: true,
       message: 'Login successful',
       accessToken,
-      // Don't send refresh token in response body when using cookies
-      // refreshToken,
+      // Send refresh token in response for cross-domain setups (Cloudflare Pages → Render)
+      // Frontend will store it securely and send it back when needed
+      refreshToken,
       suspicious,
       user: {
         id: user._id,

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import api from '../utils/api';
-import { setAuthToken, setCurrentUser, clearManualLogoutFlag } from '../utils/auth';
+import { setAuthToken, setRefreshToken, setCurrentUser, clearManualLogoutFlag } from '../utils/auth';
 import { disconnectSocket, initializeSocket } from '../utils/socket';
 import PasskeyLogin from '../components/PasskeyLogin';
 import './Auth.css';
@@ -66,6 +66,7 @@ function Login({ setIsAuth }) {
       // Normal login (no 2FA)
       // Backend now returns accessToken instead of token (refresh token rotation)
       setAuthToken(response.data.accessToken || response.data.token);
+      setRefreshToken(response.data.refreshToken); // Store refresh token
       setCurrentUser(response.data.user);
 
       // Disconnect old socket and reconnect with new token
@@ -107,6 +108,7 @@ function Login({ setIsAuth }) {
 
       // Backend now returns accessToken instead of token (refresh token rotation)
       setAuthToken(response.data.accessToken || response.data.token);
+      setRefreshToken(response.data.refreshToken); // Store refresh token
       setCurrentUser(response.data.user);
 
       // Disconnect old socket and reconnect with new token

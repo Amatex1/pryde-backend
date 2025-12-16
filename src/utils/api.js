@@ -1,6 +1,6 @@
 import { API_BASE_URL } from "../config/api.js"; // include .js extension
 import axios from "axios";
-import { getAuthToken, logout, isManualLogout, setAuthToken } from "./auth";
+import { getAuthToken, logout, isManualLogout, setAuthToken, getRefreshToken, setRefreshToken } from "./auth";
 import logger from './logger';
 
 const api = axios.create({
@@ -65,16 +65,28 @@ api.interceptors.response.use(
         logger.debug('📍 Current cookies:', document.cookie);
         logger.debug('📍 Refresh endpoint:', `${API_BASE_URL}/refresh`);
 
-        const response = await axios.post(`${API_BASE_URL}/refresh`, {}, {
-          withCredentials: true // Send httpOnly cookie
+        // Get refresh token from localStorage (for cross-domain setups)
+        const refreshToken = getRefreshToken();
+        logger.debug('📍 Refresh token from localStorage:', refreshToken ? 'Found' : 'Not found');
+
+        const response = await axios.post(`${API_BASE_URL}/refresh`, {
+          refreshToken // Send refresh token in body for cross-domain
+        }, {
+          withCredentials: true // Also try to send httpOnly cookie if available
         });
 
-        const { accessToken } = response.data;
+        const { accessToken, refreshToken: newRefreshToken } = response.data;
 
         if (accessToken) {
           logger.debug('✅ Token refreshed successfully');
           logger.debug('🔑 New access token received (first 20 chars):', accessToken.substring(0, 20) + '...');
           setAuthToken(accessToken);
+
+          // Store new refresh token if provided
+          if (newRefreshToken) {
+            logger.debug('🔄 New refresh token received, updating localStorage');
+            setRefreshToken(newRefreshToken);
+          }
 
           // Update the failed request with new token
           originalRequest.headers.Authorization = `Bearer ${accessToken}`;

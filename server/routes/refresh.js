@@ -13,13 +13,18 @@ router.post('/', async (req, res) => {
   try {
     // Debug: Log all cookies received
     logger.debug('Refresh endpoint - Cookies received:', req.cookies);
-    logger.debug('Refresh endpoint - Headers:', req.headers);
+    logger.debug('Refresh endpoint - All cookies string:', req.headers.cookie);
+    logger.debug('Refresh endpoint - Origin:', req.headers.origin);
+    logger.debug('Refresh endpoint - Referer:', req.headers.referer);
 
     // Try to get refresh token from httpOnly cookie first, then fall back to body
     const refreshToken = req.cookies?.refreshToken || req.body.refreshToken;
 
     if (!refreshToken) {
-      logger.warn('Refresh token not found in cookies or body');
+      logger.error('❌ Refresh token not found!');
+      logger.error('📍 Cookies object:', req.cookies);
+      logger.error('📍 Cookie header:', req.headers.cookie);
+      logger.error('📍 Request body:', req.body);
       return res.status(401).json({ message: 'Refresh token required' });
     }
 
@@ -108,8 +113,8 @@ router.post('/', async (req, res) => {
     res.json({
       success: true,
       accessToken,
-      // Don't send refresh token in response body when using cookies
-      // refreshToken: newRefreshToken,
+      // Send new refresh token for cross-domain setups
+      refreshToken: newRefreshToken,
       user: {
         id: user._id,
         username: user.username,

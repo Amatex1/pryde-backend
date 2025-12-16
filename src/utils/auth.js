@@ -11,6 +11,20 @@ export const setAuthToken = (token) => {
   }
 };
 
+export const setRefreshToken = (token) => {
+  if (token) {
+    console.log('🔄 Setting refresh token (first 20 chars):', token.substring(0, 20) + '...');
+    localStorage.setItem('refreshToken', token);
+  } else {
+    console.log('🗑️ Removing refresh token');
+    localStorage.removeItem('refreshToken');
+  }
+};
+
+export const getRefreshToken = () => {
+  return localStorage.getItem('refreshToken');
+};
+
 export const getAuthToken = () => {
   const token = localStorage.getItem('token');
   const tokenSetTime = localStorage.getItem('tokenSetTime');
@@ -62,6 +76,8 @@ export const logout = () => {
   // Set flag to indicate manual logout (not session expiration)
   sessionStorage.setItem('manualLogout', 'true');
   localStorage.removeItem('token');
+  localStorage.removeItem('tokenSetTime');
+  localStorage.removeItem('refreshToken');
   localStorage.removeItem('user');
 
   // Immediately redirect to login to prevent flash of protected content
