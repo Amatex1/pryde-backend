@@ -309,6 +309,17 @@ function Profile() {
     };
   }, [id, isOwnProfile, checkPrivacyPermissions]);
 
+  // Auto-fetch comments for posts that have comments
+  useEffect(() => {
+    posts.forEach(post => {
+      // Only fetch if post has comments and we haven't fetched them yet
+      if (post.commentCount > 0 && !postComments[post._id]) {
+        logger.debug(`📥 Auto-fetching ${post.commentCount} comments for post ${post._id}`);
+        fetchCommentsForPost(post._id);
+      }
+    });
+  }, [posts]); // Run when posts change
+
   // Socket.io real-time updates
   useEffect(() => {
     const socket = getSocket();
