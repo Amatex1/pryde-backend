@@ -472,6 +472,13 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  flex-wrap: nowrap;
+}
+
+.author-name-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
   flex-wrap: wrap;
 }
 
@@ -2139,24 +2146,28 @@ html:not([data-theme])[data-quiet-mode="true"] .hide-metrics-checkbox:hover {
   }
 
   .post-actions {
-    gap: 0.25rem;
+    gap: 4px;
     flex-wrap: nowrap;
   }
 
   .action-btn {
-    flex: 1;
-    padding: 0.5rem 0.15rem;
-    font-size: 0.7rem;
-    gap: 0.15rem;
-    border-radius: 8px;
+    flex: 1 1 0;
+    padding: 10px 4px;
+    font-size: 0; /* Hide all text */
+    gap: 0;
+    border-radius: 10px;
     min-width: 0;
+    min-height: 44px;
     white-space: nowrap;
     overflow: hidden;
-    text-overflow: ellipsis;
+    text-overflow: clip;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 
   .action-btn span {
-    font-size: 0.95rem;
+    font-size: 24px !important; /* Show only emoji */
     flex-shrink: 0;
   }
 

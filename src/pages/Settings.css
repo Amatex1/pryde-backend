@@ -623,6 +623,12 @@
   background: linear-gradient(135deg, rgba(108, 92, 231, 0.15) 0%, rgba(108, 92, 231, 0.05) 100%);
 }
 
+/* Fix dark mode + quiet mode white background */
+[data-theme="dark"][data-quiet-mode="true"] .security-settings-link,
+[data-theme="dark"][data-quiet-mode="true"] .settings-section {
+  background: linear-gradient(135deg, rgba(108, 92, 231, 0.15) 0%, rgba(108, 92, 231, 0.05) 100%) !important;
+}
+
 [data-theme="dark"] .security-settings-info .section-title {
   color: var(--electric-blue) !important;
 }
