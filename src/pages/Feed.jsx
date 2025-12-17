@@ -1016,12 +1016,7 @@ function Feed() {
 
   const toggleCommentBox = async (postId) => {
     // On mobile (width <= 768px), open modal instead of inline comment box
-    const width = window.innerWidth;
-    console.log('toggleCommentBox called, window width:', width);
-
-    if (width <= 768) {
-      console.log('Opening comment modal for post:', postId);
-      alert(`MOBILE DETECTED! Width: ${width}. Opening modal for post: ${postId}`);
+    if (window.innerWidth <= 768) {
       setCommentModalOpen(postId);
       // Fetch comments if not already loaded
       if (!postComments[postId]) {
@@ -1029,8 +1024,6 @@ function Feed() {
       }
       return;
     }
-
-    console.log('Desktop mode - using inline comment box');
 
     // Desktop: use inline comment box
     const isCurrentlyShown = showCommentBox[postId];
@@ -1957,7 +1950,12 @@ function Feed() {
                         >
                           <span>
                             {getUserReactionEmoji(post.reactions) || '🤍'}
-                          </span> {getUserReactionEmoji(post.reactions) ? 'Reacted' : 'React'}
+                          </span>
+                          {window.innerWidth > 768 && (
+                            <span className="action-text">
+                              {getUserReactionEmoji(post.reactions) ? 'Reacted' : 'React'}
+                            </span>
+                          )}
                         </button>
                         {showReactionPicker === `post-${post._id}` && (
                           <div
@@ -2012,20 +2010,33 @@ function Feed() {
                         className="action-btn"
                         onClick={() => toggleCommentBox(post._id)}
                       >
-                        <span>💬</span> Comment {!post.hideMetrics && `(${post.comments?.filter(c => !c.isDeleted).length || 0})`}
+                        <span>💬</span>
+                        {window.innerWidth > 768 && (
+                          <span className="action-text">
+                            Comment {!post.hideMetrics && `(${post.comments?.filter(c => !c.isDeleted).length || 0})`}
+                          </span>
+                        )}
                       </button>
                       <button
                         className="action-btn"
                         onClick={() => handleShare(post)}
                       >
-                        <span>🔗</span> Share {!post.hideMetrics && `(${post.shares?.length || 0})`}
+                        <span>🔗</span>
+                        {window.innerWidth > 768 && (
+                          <span className="action-text">
+                            Share {!post.hideMetrics && `(${post.shares?.length || 0})`}
+                          </span>
+                        )}
                       </button>
                       <button
                         className={`action-btn ${bookmarkedPosts.includes(post._id) ? 'bookmarked' : ''}`}
                         onClick={() => handleBookmark(post._id)}
                         title={bookmarkedPosts.includes(post._id) ? 'Remove bookmark' : 'Bookmark post'}
                       >
-                        <span>{bookmarkedPosts.includes(post._id) ? '🔖' : '📑'}</span> Bookmark
+                        <span>{bookmarkedPosts.includes(post._id) ? '🔖' : '📑'}</span>
+                        {window.innerWidth > 768 && (
+                          <span className="action-text">Bookmark</span>
+                        )}
                       </button>
                     </div>
 
@@ -2474,9 +2485,7 @@ function Feed() {
       />
 
       {/* Comment Modal for Mobile */}
-      {commentModalOpen && (() => {
-        console.log('Rendering comment modal for post:', commentModalOpen);
-        return (
+      {commentModalOpen && (
         <div className="comment-modal-overlay" onClick={() => setCommentModalOpen(null)}>
           <div className="comment-modal" onClick={(e) => e.stopPropagation()}>
             <div className="comment-modal-header">
@@ -2555,8 +2564,7 @@ function Feed() {
             </div>
           </div>
         </div>
-        );
-      })()}
+      )}
     </div>
   );
 }
