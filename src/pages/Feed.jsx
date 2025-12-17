@@ -222,6 +222,25 @@ function Feed() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  // Handle ?post= query parameter to scroll to specific post
+  useEffect(() => {
+    const postId = searchParams.get('post');
+    if (postId && posts.length > 0 && !fetchingPosts) {
+      // Wait for DOM to update
+      setTimeout(() => {
+        const postElement = document.getElementById(`post-${postId}`);
+        if (postElement) {
+          postElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          // Highlight the post briefly
+          postElement.style.boxShadow = '0 0 20px rgba(138, 43, 226, 0.5)';
+          setTimeout(() => {
+            postElement.style.boxShadow = '';
+          }, 2000);
+        }
+      }, 300);
+    }
+  }, [searchParams, posts, fetchingPosts]);
+
   // Handle scroll detection for scroll-to-top button and infinite scroll
   useEffect(() => {
     const handleScroll = () => {
@@ -869,7 +888,16 @@ function Feed() {
       console.log('🔍 Reaction response:', response.data);
       console.log('🔍 Updated reactions:', response.data.reactions);
       console.log('🔍 Current user ID:', currentUser?.id);
-      setPosts(posts.map(p => p._id === postId ? response.data : p));
+
+      // Force a new array reference to trigger re-render
+      setPosts(prevPosts => {
+        const newPosts = prevPosts.map(p =>
+          p._id === postId ? { ...response.data } : p
+        );
+        console.log('🔍 Updated posts array, post found:', newPosts.some(p => p._id === postId));
+        return newPosts;
+      });
+
       setShowReactionPicker(null); // Hide picker after reaction
     } catch (error) {
       logger.error('Failed to react to post:', error);
@@ -1627,6 +1655,7 @@ function Feed() {
                 return (
                   <div
                     key={post._id}
+                    id={`post-${post._id}`}
                     className="post-card glossy fade-in"
                     ref={(el) => postRefs.current[post._id] = el}
                   >

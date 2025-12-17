@@ -101,7 +101,7 @@ const Bookmarks = () => {
                 </button>
               </div>
 
-              <div className="bookmark-content" onClick={() => navigate(`/post/${post._id}`)}>
+              <div className="bookmark-content" onClick={() => navigate(`/feed?post=${post._id}`)}>
                 <p className="post-content">{post.content}</p>
                 {post.images && post.images.length > 0 && (
                   <div className="post-images">
