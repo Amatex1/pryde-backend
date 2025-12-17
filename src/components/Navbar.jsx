@@ -259,29 +259,43 @@ function Navbar() {
               <span className="mobile-menu-icon">⚙️</span>
               <span>Settings</span>
             </Link>
-            <button className="mobile-menu-item" onClick={toggleDarkMode}>
-              <span className="mobile-menu-icon">{isDark ? '☀️' : '🌙'}</span>
+            <button
+              className="mobile-menu-item"
+              onClick={toggleDarkMode}
+              aria-label={`${isDark ? 'Disable' : 'Enable'} dark mode`}
+              aria-pressed={isDark}
+            >
+              <span className="mobile-menu-icon" aria-hidden="true">{isDark ? '☀️' : '🌙'}</span>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
                 <span>Dark Mode</span>
                 <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                   {isDark ? 'Switch to light theme' : 'Switch to dark theme'}
                 </span>
               </div>
-              {isDark && <span className="mode-indicator" style={{ marginLeft: 'auto' }}>✓</span>}
+              {isDark && <span className="mode-indicator" style={{ marginLeft: 'auto' }} aria-hidden="true">✓</span>}
             </button>
-            <button className="mobile-menu-item" onClick={toggleQuietMode}>
-              <span className="mobile-menu-icon">🍃</span>
+            <button
+              className="mobile-menu-item"
+              onClick={toggleQuietMode}
+              aria-label={`${quietMode ? 'Disable' : 'Enable'} quiet mode - peaceful browsing with softer colors`}
+              aria-pressed={quietMode}
+            >
+              <span className="mobile-menu-icon" aria-hidden="true">🍃</span>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
                 <span>Quiet Mode</span>
                 <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                   Peaceful browsing with softer colors
                 </span>
               </div>
-              {quietMode && <span className="mode-indicator" style={{ marginLeft: 'auto' }}>✓</span>}
+              {quietMode && <span className="mode-indicator" style={{ marginLeft: 'auto' }} aria-hidden="true">✓</span>}
             </button>
-            <div className="mobile-menu-divider"></div>
-            <button onClick={() => { handleLogout(); setShowMobileMenu(false); }} className="mobile-menu-item mobile-menu-logout">
-              <span className="mobile-menu-icon">🚪</span>
+            <div className="mobile-menu-divider" role="separator"></div>
+            <button
+              onClick={() => { handleLogout(); setShowMobileMenu(false); }}
+              className="mobile-menu-item mobile-menu-logout"
+              aria-label="Logout from Pryde Social"
+            >
+              <span className="mobile-menu-icon" aria-hidden="true">🚪</span>
               <span>Logout</span>
             </button>
           </div>
@@ -318,9 +332,12 @@ function Navbar() {
           </Link>
           <NotificationBell />
 
-          <div
+          <button
             className="user-profile-trigger"
             onClick={() => setShowDropdown(!showDropdown)}
+            aria-label={`${showDropdown ? 'Close' : 'Open'} profile menu`}
+            aria-expanded={showDropdown}
+            aria-haspopup="true"
           >
             <div className="user-avatar">
               {user?.profilePhoto ? (
@@ -330,45 +347,97 @@ function Navbar() {
               )}
             </div>
             <span className="user-name">{user?.displayName || user?.username}</span>
-            <span className="dropdown-arrow">{showDropdown ? '▲' : '▼'}</span>
-          </div>
+            <span className="dropdown-arrow" aria-hidden="true">{showDropdown ? '▲' : '▼'}</span>
+          </button>
 
           {showDropdown && (
-            <div className="profile-dropdown">
-              <Link to={`/profile/${user?.username}`} className="dropdown-item" onClick={() => setShowDropdown(false)}>
-                <span className="dropdown-icon">👤</span>
+            <div
+              className="profile-dropdown"
+              role="menu"
+              aria-label="Profile menu"
+            >
+              <Link
+                to={`/profile/${user?.username}`}
+                className="dropdown-item"
+                onClick={() => setShowDropdown(false)}
+                role="menuitem"
+                aria-label="View my profile"
+              >
+                <span className="dropdown-icon" aria-hidden="true">👤</span>
                 <span>My Profile</span>
               </Link>
-              <Link to="/bookmarks" className="dropdown-item" onClick={() => setShowDropdown(false)}>
-                <span className="dropdown-icon">🔖</span>
+              <Link
+                to="/bookmarks"
+                className="dropdown-item"
+                onClick={() => setShowDropdown(false)}
+                role="menuitem"
+                aria-label="View bookmarks"
+              >
+                <span className="dropdown-icon" aria-hidden="true">🔖</span>
                 <span>Bookmarks</span>
               </Link>
-              <Link to="/events" className="dropdown-item" onClick={() => setShowDropdown(false)}>
-                <span className="dropdown-icon">📅</span>
+              <Link
+                to="/events"
+                className="dropdown-item"
+                onClick={() => setShowDropdown(false)}
+                role="menuitem"
+                aria-label="View events"
+              >
+                <span className="dropdown-icon" aria-hidden="true">📅</span>
                 <span>Events</span>
               </Link>
-              <Link to="/settings" className="dropdown-item" onClick={() => setShowDropdown(false)}>
-                <span className="dropdown-icon">⚙️</span>
+              <Link
+                to="/settings"
+                className="dropdown-item"
+                onClick={() => setShowDropdown(false)}
+                role="menuitem"
+                aria-label="Open settings"
+              >
+                <span className="dropdown-icon" aria-hidden="true">⚙️</span>
                 <span>Settings</span>
               </Link>
               {user?.role && ['moderator', 'admin', 'super_admin'].includes(user.role) && (
-                <Link to="/admin" className="dropdown-item" onClick={() => setShowDropdown(false)}>
-                  <span className="dropdown-icon">🛡️</span>
+                <Link
+                  to="/admin"
+                  className="dropdown-item"
+                  onClick={() => setShowDropdown(false)}
+                  role="menuitem"
+                  aria-label="Open admin panel"
+                >
+                  <span className="dropdown-icon" aria-hidden="true">🛡️</span>
                   <span>Admin Panel</span>
                 </Link>
               )}
-              <div className="dropdown-item dropdown-dark-mode" onClick={toggleDarkMode}>
-                <span className="dark-mode-icon">{isDark ? '☀️' : '🌙'}</span>
+              <button
+                className="dropdown-item dropdown-dark-mode"
+                onClick={toggleDarkMode}
+                role="menuitemcheckbox"
+                aria-checked={isDark}
+                aria-label={`${isDark ? 'Disable' : 'Enable'} dark mode`}
+              >
+                <span className="dark-mode-icon" aria-hidden="true">{isDark ? '☀️' : '🌙'}</span>
                 <span>Dark Mode</span>
-              </div>
-              <div className="dropdown-item dropdown-quiet-mode" onClick={toggleQuietMode}>
-                <span className="quiet-mode-icon">🍃</span>
+                {isDark && <span className="mode-indicator" aria-hidden="true">✓</span>}
+              </button>
+              <button
+                className="dropdown-item dropdown-quiet-mode"
+                onClick={toggleQuietMode}
+                role="menuitemcheckbox"
+                aria-checked={quietMode}
+                aria-label={`${quietMode ? 'Disable' : 'Enable'} quiet mode - peaceful browsing with softer colors`}
+              >
+                <span className="quiet-mode-icon" aria-hidden="true">🍃</span>
                 <span>Quiet Mode</span>
-                {quietMode && <span className="mode-indicator">✓</span>}
-              </div>
-              <div className="dropdown-divider"></div>
-              <button onClick={handleLogout} className="dropdown-item logout-item">
-                <span className="dropdown-icon">🚪</span>
+                {quietMode && <span className="mode-indicator" aria-hidden="true">✓</span>}
+              </button>
+              <div className="dropdown-divider" role="separator"></div>
+              <button
+                onClick={handleLogout}
+                className="dropdown-item logout-item"
+                role="menuitem"
+                aria-label="Logout from Pryde Social"
+              >
+                <span className="dropdown-icon" aria-hidden="true">🚪</span>
                 <span>Logout</span>
               </button>
             </div>
