@@ -273,17 +273,64 @@
   }
 
   /* ========================================
+     POST ACTION BUTTONS - MOBILE OPTIMIZED
+     ======================================== */
+
+  /* Fix share, comment, bookmark buttons being squeezed */
+  .post-actions {
+    display: flex !important;
+    gap: 6px !important;
+    flex-wrap: nowrap !important;
+    justify-content: space-between !important;
+    width: 100% !important;
+    padding-top: 12px !important;
+  }
+
+  .action-btn {
+    flex: 1 1 0 !important; /* Equal width distribution */
+    min-width: 0 !important; /* Allow shrinking */
+    min-height: 44px !important; /* Touch-friendly */
+    padding: 8px 6px !important; /* Reduced padding */
+    font-size: 13px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 4px !important;
+    border-radius: 10px !important;
+  }
+
+  .action-btn span {
+    font-size: 18px !important; /* Emoji size */
+    flex-shrink: 0 !important;
+  }
+
+  /* Reaction container */
+  .reaction-container {
+    flex: 1 1 0 !important;
+    min-width: 0 !important;
+  }
+
+  .reaction-container .action-btn {
+    width: 100% !important;
+  }
+
+  /* ========================================
      REACTIONS & INTERACTIONS
      ======================================== */
 
   .reaction-picker {
-    bottom: 50px !important;
+    position: fixed !important;
+    bottom: 0 !important;
     left: 0 !important;
     right: 0 !important;
     width: 100% !important;
     max-width: 100% !important;
     border-radius: 16px 16px 0 0 !important;
     padding: 16px !important;
+    z-index: 10000 !important;
   }
 
   .reaction-btn {
@@ -322,6 +369,204 @@
   th, td {
     padding: 12px 8px !important;
     font-size: 14px !important;
+  }
+}
+
+/* ========================================
+   EXTRA SMALL SCREENS (< 380px)
+   ======================================== */
+
+@media (max-width: 380px) {
+  /* Make action buttons icon-only on very small screens */
+  .action-btn {
+    padding: 10px 4px !important;
+    font-size: 11px !important;
+    gap: 2px !important;
+  }
+
+  .action-btn span {
+    font-size: 20px !important;
+  }
+
+  /* Reduce post card padding */
+  .post-card,
+  .create-post {
+    padding: 12px !important;
+  }
+
+  /* Smaller navbar */
+  .navbar {
+    padding: 6px 8px !important;
+  }
+
+  .brand-text {
+    font-size: 14px !important;
+  }
+
+  .brand-logo {
+    height: 28px !important;
+    width: 28px !important;
+  }
+}
+
+/* ========================================
+   NOTIFICATIONS - MOBILE OPTIMIZED
+   ======================================== */
+
+@media (max-width: 768px) {
+  .notifications-container {
+    padding: 16px 12px !important;
+  }
+
+  .notification-card {
+    padding: 14px !important;
+    border-radius: 12px !important;
+    margin-bottom: 10px !important;
+  }
+
+  .notification-text {
+    font-size: 15px !important;
+    line-height: 1.5 !important;
+  }
+
+  .notification-time {
+    font-size: 13px !important;
+  }
+
+  .mark-all-read-btn {
+    font-size: 14px !important;
+    padding: 8px 16px !important;
+    min-height: 40px !important;
+  }
+}
+
+/* ========================================
+   SETTINGS - MOBILE OPTIMIZED
+   ======================================== */
+
+@media (max-width: 768px) {
+  .settings-container {
+    padding: 16px 12px !important;
+  }
+
+  .settings-card {
+    padding: 20px 16px !important;
+    border-radius: 12px !important;
+  }
+
+  .settings-section {
+    padding: 16px 0 !important;
+  }
+
+  .section-title {
+    font-size: 18px !important;
+  }
+
+  .section-description {
+    font-size: 14px !important;
+    line-height: 1.5 !important;
+  }
+
+  .notification-item {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 12px !important;
+  }
+
+  .toggle-switch {
+    align-self: flex-start !important;
+  }
+}
+
+/* ========================================
+   DISCOVER & EVENTS - MOBILE OPTIMIZED
+   ======================================== */
+
+@media (max-width: 768px) {
+  .discover-container,
+  .events-container {
+    padding: 16px 12px !important;
+  }
+
+  .discover-grid,
+  .events-grid {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+
+  .discover-card,
+  .event-card {
+    padding: 16px !important;
+    border-radius: 12px !important;
+  }
+
+  .event-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 12px !important;
+  }
+
+  .event-details {
+    font-size: 14px !important;
+  }
+}
+
+/* ========================================
+   ADMIN - MOBILE OPTIMIZED
+   ======================================== */
+
+@media (max-width: 768px) {
+  .admin-container {
+    padding: 16px 12px !important;
+  }
+
+  .admin-layout {
+    grid-template-columns: 1fr !important;
+  }
+
+  .admin-sidebar {
+    display: none !important; /* Hide sidebar on mobile */
+  }
+
+  .admin-stats {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+
+  .admin-table {
+    overflow-x: auto !important;
+    font-size: 14px !important;
+  }
+
+  .admin-table th,
+  .admin-table td {
+    padding: 10px 8px !important;
+    font-size: 13px !important;
+  }
+}
+
+/* ========================================
+   LANDSCAPE MODE FIXES
+   ======================================== */
+
+@media (max-height: 500px) and (orientation: landscape) {
+  /* Reduce vertical spacing in landscape */
+  .post-card,
+  .create-post {
+    padding: 12px !important;
+    margin-bottom: 8px !important;
+  }
+
+  .navbar {
+    padding: 6px 12px !important;
+  }
+
+  /* Smaller modals in landscape */
+  .modal-content,
+  .privacy-modal,
+  .settings-modal {
+    max-height: 80vh !important;
+    padding: 16px !important;
   }
 }
 
