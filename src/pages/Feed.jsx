@@ -866,6 +866,9 @@ function Feed() {
   const handlePostReaction = async (postId, emoji) => {
     try {
       const response = await api.post(`/posts/${postId}/react`, { emoji });
+      console.log('🔍 Reaction response:', response.data);
+      console.log('🔍 Updated reactions:', response.data.reactions);
+      console.log('🔍 Current user ID:', currentUser?.id);
       setPosts(posts.map(p => p._id === postId ? response.data : p));
       setShowReactionPicker(null); // Hide picker after reaction
     } catch (error) {
@@ -876,20 +879,29 @@ function Feed() {
   // Helper function to get user's selected emoji from reactions
   // Handles both array format [{user, emoji}] and object format {emoji: [userIds]}
   const getUserReactionEmoji = (reactions) => {
-    if (!reactions || !currentUser?.id) return null;
+    if (!reactions || !currentUser?.id) {
+      console.log('🔍 getUserReactionEmoji: No reactions or no currentUser', { reactions, currentUserId: currentUser?.id });
+      return null;
+    }
 
     // Handle array format (Post reactions)
     if (Array.isArray(reactions)) {
+      console.log('🔍 getUserReactionEmoji: Array format, checking reactions:', reactions);
       const userReaction = reactions.find(r => {
         const userId = r.user?._id || r.user;
-        return userId?.toString() === currentUser.id?.toString();
+        const match = userId?.toString() === currentUser.id?.toString();
+        console.log('🔍 Checking reaction:', { userId, currentUserId: currentUser.id, match, emoji: r.emoji });
+        return match;
       });
+      console.log('🔍 getUserReactionEmoji: Found user reaction:', userReaction);
       return userReaction?.emoji || null;
     }
 
     // Handle object format (Comment reactions)
+    console.log('🔍 getUserReactionEmoji: Object format, checking reactions:', reactions);
     for (const [emoji, userIds] of Object.entries(reactions)) {
       if (userIds.some(id => id?.toString() === currentUser.id?.toString())) {
+        console.log('🔍 getUserReactionEmoji: Found emoji:', emoji);
         return emoji;
       }
     }
