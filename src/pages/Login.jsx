@@ -138,7 +138,16 @@ function Login({ setIsAuth }) {
           </p>
         </div>
 
-        {error && <div className="error-message">{error}</div>}
+        {error && (
+          <div
+            id="login-error"
+            className="error-message"
+            role="alert"
+            aria-live="assertive"
+          >
+            {error}
+          </div>
+        )}
 
         {/* 2FA Verification Form */}
         {requires2FA ? (
@@ -187,7 +196,7 @@ function Login({ setIsAuth }) {
           </form>
         ) : (
           // Normal Login Form
-          <form onSubmit={handleSubmit} className="auth-form">
+          <form onSubmit={handleSubmit} className="auth-form" aria-label="Login form">
           <div className="form-group">
             <label htmlFor="email">Email</label>
             <input
@@ -200,6 +209,9 @@ function Login({ setIsAuth }) {
               className="form-input glossy"
               placeholder="Enter your email"
               autoComplete="email"
+              aria-required="true"
+              aria-invalid={error && error.toLowerCase().includes('email') ? 'true' : 'false'}
+              aria-describedby={error && error.toLowerCase().includes('email') ? 'login-error' : undefined}
             />
           </div>
 
@@ -215,6 +227,9 @@ function Login({ setIsAuth }) {
               className="form-input glossy"
               placeholder="Enter your password"
               autoComplete="current-password"
+              aria-required="true"
+              aria-invalid={error && error.toLowerCase().includes('password') ? 'true' : 'false'}
+              aria-describedby={error && error.toLowerCase().includes('password') ? 'login-error' : undefined}
             />
           </div>
 
