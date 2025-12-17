@@ -2413,53 +2413,49 @@ html:not([data-theme="dark"]):not([data-quiet-mode="true"]) .section-title {
     justify-content: center !important;
   }
 
+  /* Show ONLY the emoji span, hide all text */
   .profile-page .action-btn span:first-child,
   .profile-page .post-actions .action-btn span:first-child {
+    display: inline-block !important;
     font-size: 24px !important;
     flex-shrink: 0 !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    width: auto !important;
+    height: auto !important;
   }
 
+  /* Hide ALL text nodes that are not inside the first span */
+  .profile-page .action-btn,
+  .profile-page .post-actions .action-btn {
+    font-size: 0 !important; /* Hide text nodes */
+  }
+
+  /* Restore font size for the emoji span */
+  .profile-page .action-btn span,
+  .profile-page .post-actions .action-btn span {
+    font-size: 24px !important;
+  }
+
+  /* Hide action text class if it exists */
   .profile-page .action-btn .action-text,
   .profile-page .post-actions .action-btn .action-text,
   .profile-page .action-text {
     display: none !important;
     visibility: hidden !important;
-    width: 0 !important;
-    height: 0 !important;
-    opacity: 0 !important;
-    position: absolute !important;
-    overflow: hidden !important;
-    font-size: 0 !important;
-    line-height: 0 !important;
-    clip: rect(0, 0, 0, 0) !important;
-    white-space: nowrap !important;
   }
 
-  /* Samsung Internet specific - more aggressive */
+  /* Samsung Internet specific - hide text nodes */
   @supports (-webkit-appearance: none) {
-    .profile-page .action-btn span:not(:first-child),
-    .profile-page .action-btn .action-text {
-      display: none !important;
-      visibility: hidden !important;
-      width: 0 !important;
-      height: 0 !important;
-      opacity: 0 !important;
-      position: absolute !important;
-      left: -9999px !important;
+    .profile-page .action-btn,
+    .profile-page .post-actions .action-btn {
+      font-size: 0 !important;
     }
-  }
 
-  /* Force icon-only display - hide all text spans */
-  .profile-page .action-btn > span:nth-child(2),
-  .profile-page .action-btn > span:nth-child(3),
-  .profile-page .action-btn > span:last-child {
-    display: none !important;
-    visibility: hidden !important;
-    width: 0 !important;
-    height: 0 !important;
-    opacity: 0 !important;
-    position: absolute !important;
-    left: -9999px !important;
+    .profile-page .action-btn span,
+    .profile-page .post-actions .action-btn span {
+      font-size: 24px !important;
+    }
   }
 }
 
