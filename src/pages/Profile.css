@@ -1202,7 +1202,7 @@ html:not([data-theme="dark"]):not([data-quiet-mode="true"]) .section-title {
   min-width: 0;
   max-width: 320px;
   width: 100%;
-  max-height: calc(100vh - 100px);
+  /* Removed max-height to fix scrollable box issue */
 
   position: sticky;
   top: 80px;
@@ -1212,7 +1212,7 @@ html:not([data-theme="dark"]):not([data-quiet-mode="true"]) .section-title {
   grid-column: 2;
   grid-row: 1;
 
-  overflow-y: auto;
+  /* Removed overflow-y to fix scrollable box */
   padding-right: 0.5rem;
 }
 
@@ -2393,6 +2393,39 @@ html:not([data-theme="dark"]):not([data-quiet-mode="true"]) .section-title {
   .btn-post {
     font-size: 0.85rem;
     padding: 0.6rem 1rem;
+  }
+
+  /* Mobile action buttons - icon only */
+  .profile-page .action-btn,
+  .profile-page .post-actions .action-btn {
+    flex: 1 1 0 !important;
+    padding: 10px 4px !important;
+    font-size: 0 !important;
+    gap: 0 !important;
+    border-radius: 10px !important;
+    min-width: 0 !important;
+    min-height: 44px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: clip !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  .profile-page .action-btn span:first-child,
+  .profile-page .post-actions .action-btn span:first-child {
+    font-size: 24px !important;
+    flex-shrink: 0 !important;
+  }
+
+  .profile-page .action-btn .action-text,
+  .profile-page .post-actions .action-btn .action-text {
+    display: none !important;
+    visibility: hidden !important;
+    width: 0 !important;
+    height: 0 !important;
+    opacity: 0 !important;
   }
 }
 

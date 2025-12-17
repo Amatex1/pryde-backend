@@ -69,16 +69,15 @@ const MessageSearch = ({ conversationWith = null }) => {
   return (
     <div className="message-search">
       <div className="search-input-wrapper">
-        <span className="search-icon">🔍</span>
         <input
           type="text"
-          placeholder="Search messages..."
+          placeholder="Search messages"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           className="message-search-input"
         />
         {query && (
-          <button 
+          <button
             className="clear-search-btn"
             onClick={() => {
               setQuery('');
