@@ -1951,11 +1951,9 @@ function Feed() {
                           <span>
                             {getUserReactionEmoji(post.reactions) || '🤍'}
                           </span>
-                          {window.innerWidth > 768 && (
-                            <span className="action-text">
-                              {getUserReactionEmoji(post.reactions) ? 'Reacted' : 'React'}
-                            </span>
-                          )}
+                          <span className="action-text">
+                            {getUserReactionEmoji(post.reactions) ? 'Reacted' : 'React'}
+                          </span>
                         </button>
                         {showReactionPicker === `post-${post._id}` && (
                           <div
@@ -2011,22 +2009,18 @@ function Feed() {
                         onClick={() => toggleCommentBox(post._id)}
                       >
                         <span>💬</span>
-                        {window.innerWidth > 768 && (
-                          <span className="action-text">
-                            Comment {!post.hideMetrics && `(${post.comments?.filter(c => !c.isDeleted).length || 0})`}
-                          </span>
-                        )}
+                        <span className="action-text">
+                          Comment {!post.hideMetrics && `(${post.comments?.filter(c => !c.isDeleted).length || 0})`}
+                        </span>
                       </button>
                       <button
                         className="action-btn"
                         onClick={() => handleShare(post)}
                       >
                         <span>🔗</span>
-                        {window.innerWidth > 768 && (
-                          <span className="action-text">
-                            Share {!post.hideMetrics && `(${post.shares?.length || 0})`}
-                          </span>
-                        )}
+                        <span className="action-text">
+                          Share {!post.hideMetrics && `(${post.shares?.length || 0})`}
+                        </span>
                       </button>
                       <button
                         className={`action-btn ${bookmarkedPosts.includes(post._id) ? 'bookmarked' : ''}`}
@@ -2034,9 +2028,7 @@ function Feed() {
                         title={bookmarkedPosts.includes(post._id) ? 'Remove bookmark' : 'Bookmark post'}
                       >
                         <span>{bookmarkedPosts.includes(post._id) ? '🔖' : '📑'}</span>
-                        {window.innerWidth > 768 && (
-                          <span className="action-text">Bookmark</span>
-                        )}
+                        <span className="action-text">Bookmark</span>
                       </button>
                     </div>
 

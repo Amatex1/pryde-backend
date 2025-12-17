@@ -2171,6 +2171,11 @@ html:not([data-theme])[data-quiet-mode="true"] .hide-metrics-checkbox:hover {
     flex-shrink: 0;
   }
 
+  /* Hide action text on mobile */
+  .action-btn .action-text {
+    display: none !important;
+  }
+
   .post-action-btn {
     flex: 1;
     min-width: calc(50% - 0.375rem);
