@@ -1027,8 +1027,16 @@ function Feed() {
   };
 
   const toggleCommentBox = async (postId) => {
-    // On mobile (width <= 768px), open modal instead of inline comment box
-    if (window.innerWidth <= 768) {
+    // Detect mobile: check width AND touch support for better Samsung Galaxy detection
+    const isMobile = window.innerWidth <= 768 ||
+                     ('ontouchstart' in window) ||
+                     (navigator.maxTouchPoints > 0);
+
+    console.log('🔍 toggleCommentBox - isMobile:', isMobile, 'width:', window.innerWidth, 'touch:', 'ontouchstart' in window);
+
+    // On mobile, open modal instead of inline comment box
+    if (isMobile && window.innerWidth <= 768) {
+      console.log('🔍 Opening modal for post:', postId);
       setCommentModalOpen(postId);
       // Fetch comments if not already loaded
       if (!postComments[postId]) {
