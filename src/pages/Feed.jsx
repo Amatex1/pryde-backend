@@ -1016,7 +1016,9 @@ function Feed() {
 
   const toggleCommentBox = async (postId) => {
     // On mobile (width <= 768px), open modal instead of inline comment box
+    console.log('toggleCommentBox called, window width:', window.innerWidth);
     if (window.innerWidth <= 768) {
+      console.log('Opening comment modal for post:', postId);
       setCommentModalOpen(postId);
       // Fetch comments if not already loaded
       if (!postComments[postId]) {
@@ -2467,7 +2469,9 @@ function Feed() {
       />
 
       {/* Comment Modal for Mobile */}
-      {commentModalOpen && (
+      {commentModalOpen && (() => {
+        console.log('Rendering comment modal for post:', commentModalOpen);
+        return (
         <div className="comment-modal-overlay" onClick={() => setCommentModalOpen(null)}>
           <div className="comment-modal" onClick={(e) => e.stopPropagation()}>
             <div className="comment-modal-header">
@@ -2546,7 +2550,8 @@ function Feed() {
             </div>
           </div>
         </div>
-      )}
+        );
+      })()}
     </div>
   );
 }
