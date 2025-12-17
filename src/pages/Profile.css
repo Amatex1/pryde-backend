@@ -1431,6 +1431,9 @@ html:not([data-theme="dark"]):not([data-quiet-mode="true"]) .section-title {
   .profile-sidebar {
     position: static !important;
     max-height: none !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    padding-right: 0 !important;
   }
 
   /* Make sidebar sections more compact on mobile */
@@ -2372,10 +2375,19 @@ html:not([data-theme="dark"]):not([data-quiet-mode="true"]) .section-title {
     word-wrap: break-word;
   }
 
+  /* Ensure profile layout and main content are full height on mobile */
   .profile-page .profile-layout,
   div.profile-layout,
   .profile-layout {
     padding: 0 var(--space-2) !important;
+    min-height: auto !important;
+    height: auto !important;
+  }
+
+  .profile-page .profile-main,
+  .profile-main {
+    min-height: auto !important;
+    height: auto !important;
   }
 
   .create-post {
