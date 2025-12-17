@@ -42,6 +42,7 @@ function Feed() {
   const [commentText, setCommentText] = useState({});
   const [commentGif, setCommentGif] = useState({});
   const [showGifPicker, setShowGifPicker] = useState(null);
+  const [commentModalOpen, setCommentModalOpen] = useState(null); // Track which post's comment modal is open
   const [editingCommentId, setEditingCommentId] = useState(null);
   const [editCommentText, setEditCommentText] = useState('');
   const [replyingToComment, setReplyingToComment] = useState(null);
@@ -1014,6 +1015,17 @@ function Feed() {
   };
 
   const toggleCommentBox = async (postId) => {
+    // On mobile (width <= 768px), open modal instead of inline comment box
+    if (window.innerWidth <= 768) {
+      setCommentModalOpen(postId);
+      // Fetch comments if not already loaded
+      if (!postComments[postId]) {
+        await fetchCommentsForPost(postId);
+      }
+      return;
+    }
+
+    // Desktop: use inline comment box
     const isCurrentlyShown = showCommentBox[postId];
 
     setShowCommentBox(prev => ({
@@ -2453,6 +2465,88 @@ function Feed() {
         postId={editHistoryPostId}
         contentType="post"
       />
+
+      {/* Comment Modal for Mobile */}
+      {commentModalOpen && (
+        <div className="comment-modal-overlay" onClick={() => setCommentModalOpen(null)}>
+          <div className="comment-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="comment-modal-header">
+              <h3>💬 Add Comment</h3>
+              <button className="btn-close-modal" onClick={() => setCommentModalOpen(null)}>✕</button>
+            </div>
+            <div className="comment-modal-body">
+              <form onSubmit={(e) => {
+                handleCommentSubmit(commentModalOpen, e);
+                setCommentModalOpen(null);
+              }}>
+                <div className="comment-modal-input-wrapper">
+                  <div className="comment-user-avatar">
+                    {currentUser?.profilePhoto ? (
+                      <OptimizedImage
+                        src={getImageUrl(currentUser.profilePhoto)}
+                        alt="You"
+                        className="avatar-image"
+                      />
+                    ) : (
+                      <span>{currentUser?.displayName?.charAt(0).toUpperCase() || 'U'}</span>
+                    )}
+                  </div>
+                  <textarea
+                    value={commentText[commentModalOpen] || ''}
+                    onChange={(e) => {
+                      handleCommentChange(commentModalOpen, e.target.value);
+                      // Auto-expand textarea
+                      e.target.style.height = 'auto';
+                      e.target.style.height = e.target.scrollHeight + 'px';
+                    }}
+                    placeholder={commentGif[commentModalOpen] ? "Add a caption (optional)..." : "Write a comment..."}
+                    className="comment-modal-textarea"
+                    autoFocus
+                    rows="3"
+                  />
+                </div>
+                {commentGif[commentModalOpen] && (
+                  <div className="comment-gif-preview">
+                    <img src={commentGif[commentModalOpen]} alt="Selected GIF" />
+                    <button
+                      type="button"
+                      className="btn-remove-gif"
+                      onClick={() => setCommentGif(prev => ({ ...prev, [commentModalOpen]: null }))}
+                    >
+                      ✕
+                    </button>
+                  </div>
+                )}
+                {showGifPicker === commentModalOpen && (
+                  <GifPicker
+                    onGifSelect={(gifUrl) => {
+                      setCommentGif(prev => ({ ...prev, [commentModalOpen]: gifUrl }));
+                      setShowGifPicker(null);
+                    }}
+                    onClose={() => setShowGifPicker(null)}
+                  />
+                )}
+                <div className="comment-modal-actions">
+                  <button
+                    type="button"
+                    className="btn-gif-modal"
+                    onClick={() => setShowGifPicker(showGifPicker === commentModalOpen ? null : commentModalOpen)}
+                  >
+                    GIF
+                  </button>
+                  <button
+                    type="submit"
+                    className="btn-submit-comment"
+                    disabled={!commentText[commentModalOpen]?.trim() && !commentGif[commentModalOpen]}
+                  >
+                    Post Comment
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
