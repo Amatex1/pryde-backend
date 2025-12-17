@@ -295,7 +295,7 @@ div.profile-layout,
 }
 
 .profile-info {
-  padding: 3rem var(--space-6) var(--space-6);
+  padding: 0 var(--space-6) var(--space-6);
   position: relative;
 }
 
