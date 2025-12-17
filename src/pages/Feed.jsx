@@ -1016,9 +1016,12 @@ function Feed() {
 
   const toggleCommentBox = async (postId) => {
     // On mobile (width <= 768px), open modal instead of inline comment box
-    console.log('toggleCommentBox called, window width:', window.innerWidth);
-    if (window.innerWidth <= 768) {
+    const width = window.innerWidth;
+    console.log('toggleCommentBox called, window width:', width);
+
+    if (width <= 768) {
       console.log('Opening comment modal for post:', postId);
+      alert(`MOBILE DETECTED! Width: ${width}. Opening modal for post: ${postId}`);
       setCommentModalOpen(postId);
       // Fetch comments if not already loaded
       if (!postComments[postId]) {
@@ -1026,6 +1029,8 @@ function Feed() {
       }
       return;
     }
+
+    console.log('Desktop mode - using inline comment box');
 
     // Desktop: use inline comment box
     const isCurrentlyShown = showCommentBox[postId];
