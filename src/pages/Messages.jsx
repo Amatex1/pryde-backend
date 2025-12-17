@@ -32,14 +32,21 @@ function Messages() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { modalState, closeModal, showAlert, showConfirm } = useModal();
 
-  // Restore selected chat from localStorage on mount
+  // Don't restore selected chat on mobile - always show conversation list first
   const [selectedChat, setSelectedChat] = useState(() => {
-    const saved = localStorage.getItem('selectedChat');
-    return saved || null;
+    // Only restore on desktop (width > 768px)
+    if (window.innerWidth > 768) {
+      const saved = localStorage.getItem('selectedChat');
+      return saved || null;
+    }
+    return null;
   });
   const [selectedChatType, setSelectedChatType] = useState(() => {
-    const saved = localStorage.getItem('selectedChatType');
-    return saved || 'user';
+    if (window.innerWidth > 768) {
+      const saved = localStorage.getItem('selectedChatType');
+      return saved || 'user';
+    }
+    return 'user';
   });
   const [selectedUser, setSelectedUser] = useState(null); // Store selected user info
   const [selectedGroup, setSelectedGroup] = useState(null); // Store selected group info

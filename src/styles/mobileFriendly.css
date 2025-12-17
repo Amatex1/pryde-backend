@@ -279,7 +279,7 @@
   /* Fix share, comment, bookmark buttons being squeezed */
   .post-actions {
     display: flex !important;
-    gap: 6px !important;
+    gap: 4px !important;
     flex-wrap: nowrap !important;
     justify-content: space-between !important;
     width: 100% !important;
@@ -290,20 +290,20 @@
     flex: 1 1 0 !important; /* Equal width distribution */
     min-width: 0 !important; /* Allow shrinking */
     min-height: 44px !important; /* Touch-friendly */
-    padding: 8px 6px !important; /* Reduced padding */
-    font-size: 13px !important;
+    padding: 10px 4px !important; /* Vertical padding for touch */
+    font-size: 0 !important; /* Hide text on mobile */
     white-space: nowrap !important;
     overflow: hidden !important;
     text-overflow: ellipsis !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
-    gap: 4px !important;
+    gap: 0 !important;
     border-radius: 10px !important;
   }
 
   .action-btn span {
-    font-size: 18px !important; /* Emoji size */
+    font-size: 24px !important; /* Larger emoji for icon-only */
     flex-shrink: 0 !important;
   }
 
@@ -315,6 +315,24 @@
 
   .reaction-container .action-btn {
     width: 100% !important;
+  }
+
+  /* Fix pronouns positioning */
+  .post-author-info {
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    flex-wrap: wrap !important;
+  }
+
+  .author-pronouns {
+    font-size: 13px !important;
+    color: var(--text-muted) !important;
+    order: 2 !important; /* Keep pronouns on same line */
+  }
+
+  .verified-badge {
+    order: 1 !important;
   }
 
   /* ========================================
@@ -476,6 +494,41 @@
   .toggle-switch {
     align-self: flex-start !important;
   }
+
+  /* Fix Privacy Settings button layout to match Security Settings */
+  .settings-section {
+    background: linear-gradient(135deg, #EDEAFF 0%, #F7F7F7 100%) !important;
+    padding: 20px !important;
+    border-radius: 12px !important;
+    margin-bottom: 20px !important;
+  }
+
+  .security-settings-link,
+  .settings-section {
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  .security-settings-content,
+  .settings-section > div {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 16px !important;
+  }
+
+  .security-settings-info,
+  .settings-section > div > div {
+    margin-bottom: 12px !important;
+  }
+
+  .btn-primary {
+    width: 100% !important;
+    min-height: 48px !important;
+    padding: 12px 20px !important;
+    font-size: 15px !important;
+    white-space: normal !important;
+    text-align: center !important;
+  }
 }
 
 /* ========================================
@@ -512,6 +565,30 @@
 }
 
 /* ========================================
+   COMMENT BOX - MOBILE OPTIMIZED
+   ======================================== */
+
+@media (max-width: 768px) {
+  .comment-input-box {
+    padding: 12px !important;
+  }
+
+  .comment-input {
+    min-height: 44px !important;
+    padding: 12px 16px !important;
+    font-size: 16px !important; /* Prevents iOS zoom */
+    line-height: 1.4 !important;
+  }
+
+  .comment-submit-btn {
+    min-width: 60px !important;
+    min-height: 44px !important;
+    padding: 10px 16px !important;
+    font-size: 14px !important;
+  }
+}
+
+/* ========================================
    ADMIN - MOBILE OPTIMIZED
    ======================================== */
 
@@ -533,6 +610,45 @@
     gap: 12px !important;
   }
 
+  /* Fix admin tab buttons being squeezed */
+  .admin-tabs {
+    gap: 4px !important;
+    padding: 0 4px !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important; /* Hide scrollbar */
+  }
+
+  .admin-tabs::-webkit-scrollbar {
+    display: none !important; /* Hide scrollbar */
+  }
+
+  .admin-tab {
+    padding: 10px 12px !important;
+    font-size: 12px !important;
+    white-space: nowrap !important;
+    min-height: 44px !important;
+    flex-shrink: 0 !important;
+  }
+
+  /* Fix admin action buttons being cut off */
+  .user-actions {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+    width: 100% !important;
+  }
+
+  .user-actions .btn-action,
+  .user-actions button {
+    width: 100% !important;
+    min-height: 44px !important;
+    padding: 10px 12px !important;
+    font-size: 13px !important;
+    white-space: normal !important;
+    text-align: center !important;
+  }
+
   .admin-table {
     overflow-x: auto !important;
     font-size: 14px !important;
@@ -542,6 +658,19 @@
   .admin-table td {
     padding: 10px 8px !important;
     font-size: 13px !important;
+  }
+
+  /* Fix user details being cut off */
+  .users-table td {
+    min-width: 120px !important;
+    white-space: normal !important;
+    word-wrap: break-word !important;
+  }
+
+  .users-table td[data-label="Username"],
+  .users-table td[data-label="Full Name"],
+  .users-table td[data-label="Email"] {
+    min-width: 150px !important;
   }
 }
 
