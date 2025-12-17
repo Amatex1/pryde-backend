@@ -637,6 +637,41 @@
   color: var(--text-main) !important;
 }
 
+/* Fix white-on-white text in dark mode (both quiet mode enabled and disabled) */
+[data-theme="dark"] .settings-section .section-title,
+[data-theme="dark"] .settings-section h2,
+[data-theme="dark"] .settings-section h3 {
+  color: var(--electric-blue) !important;
+}
+
+[data-theme="dark"] .settings-section .section-description,
+[data-theme="dark"] .settings-section p {
+  color: var(--text-main) !important;
+}
+
+[data-theme="dark"] .notification-info h3,
+[data-theme="dark"] .action-info h3 {
+  color: var(--electric-blue) !important;
+}
+
+[data-theme="dark"] .notification-info p,
+[data-theme="dark"] .action-info p {
+  color: var(--text-muted) !important;
+}
+
+/* Verification section text colors in dark mode */
+[data-theme="dark"] .verification-info h3,
+[data-theme="dark"] .verification-verified h3,
+[data-theme="dark"] .verification-pending h3 {
+  color: var(--electric-blue) !important;
+}
+
+[data-theme="dark"] .verification-info p,
+[data-theme="dark"] .verification-verified p,
+[data-theme="dark"] .verification-pending p {
+  color: var(--text-main) !important;
+}
+
 @media (max-width: 768px) {
   .action-item {
     flex-direction: column;

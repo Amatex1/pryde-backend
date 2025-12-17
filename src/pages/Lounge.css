@@ -319,6 +319,9 @@
   cursor: pointer;
   transition: all 0.2s;
   font-size: 0.875rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .lounge-cw-btn:hover {
@@ -337,6 +340,9 @@
   cursor: pointer;
   transition: all 0.2s;
   font-size: 0.875rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .lounge-gif-btn:hover {
@@ -465,6 +471,44 @@
 
 [data-theme="dark"] .lounge-message:hover {
   background: rgba(108, 92, 231, 0.1);
+}
+
+/* Dark mode - Delete button */
+[data-theme="dark"] .lounge-action-delete {
+  background: rgba(255, 68, 68, 0.15);
+  color: #ff6b6b;
+  border-color: rgba(255, 68, 68, 0.3);
+}
+
+[data-theme="dark"] .lounge-action-delete:hover {
+  background: #ff4444;
+  color: white;
+  border-color: #ff4444;
+}
+
+/* Dark mode - CW and GIF buttons */
+[data-theme="dark"] .lounge-cw-btn {
+  background: rgba(108, 92, 231, 0.15);
+  border-color: rgba(108, 92, 231, 0.3);
+  color: var(--electric-blue);
+}
+
+[data-theme="dark"] .lounge-cw-btn:hover {
+  background: var(--pryde-purple);
+  color: white;
+  border-color: var(--pryde-purple);
+}
+
+[data-theme="dark"] .lounge-gif-btn {
+  background: rgba(108, 92, 231, 0.1);
+  border-color: rgba(108, 92, 231, 0.2);
+  color: var(--electric-blue);
+}
+
+[data-theme="dark"] .lounge-gif-btn:hover {
+  background: rgba(108, 92, 231, 0.2);
+  border-color: var(--electric-blue);
+  color: var(--electric-blue);
 }
 
 /* Responsive */
