@@ -4,7 +4,9 @@ import App from './App.jsx'
 import './index.css'
 import './styles/darkMode.css'
 import './styles/quiet-mode.css' // MUST be loaded AFTER darkMode.css to override properly
+import './styles/mobileFriendly.css' // Mobile-friendly layout fixes for PWA
 import { registerServiceWorker, setupInstallPrompt, requestPersistentStorage } from './utils/pwa'
+import { initWebVitals } from './utils/webVitals'
 
 // Register service worker for PWA functionality (production only)
 if (import.meta.env.PROD) {
@@ -28,3 +30,6 @@ ReactDOM.createRoot(document.getElementById('root')).render(
     <App />
   </React.StrictMode>,
 )
+
+// Initialize Web Vitals monitoring
+initWebVitals()
