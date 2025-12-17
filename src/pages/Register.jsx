@@ -264,7 +264,16 @@ function Register({ setIsAuth }) {
           )}
         </div>
 
-        {error && <div className="error-message">{error}</div>}
+        {error && (
+          <div
+            id="register-error"
+            className="error-message"
+            role="alert"
+            aria-live="assertive"
+          >
+            {error}
+          </div>
+        )}
 
         {showPasskeySetup ? (
           <div className="passkey-setup-container">
@@ -288,7 +297,7 @@ function Register({ setIsAuth }) {
             </button>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="auth-form">
+          <form onSubmit={handleSubmit} className="auth-form" aria-label="Registration form">
           <div className="form-group">
             <label htmlFor="username">Username</label>
             <input
@@ -301,15 +310,24 @@ function Register({ setIsAuth }) {
               className="form-input glossy"
               placeholder="Choose a username"
               autoComplete="username"
+              aria-required="true"
+              aria-invalid={usernameAvailable && !usernameAvailable.available ? 'true' : 'false'}
+              aria-describedby={formData.username.length >= 3 ? 'username-feedback' : undefined}
             />
             {formData.username.length >= 3 && (
-              <div className="username-feedback" style={{
-                marginTop: '0.5rem',
-                fontSize: '0.875rem',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem'
-              }}>
+              <div
+                id="username-feedback"
+                className="username-feedback"
+                role={usernameAvailable && !usernameAvailable.available ? 'alert' : 'status'}
+                aria-live="polite"
+                style={{
+                  marginTop: '0.5rem',
+                  fontSize: '0.875rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}
+              >
                 {checkingUsername ? (
                   <span style={{ color: 'var(--text-muted)' }}>⏳ Checking availability...</span>
                 ) : usernameAvailable ? (
@@ -349,6 +367,9 @@ function Register({ setIsAuth }) {
               className="form-input glossy"
               placeholder="Enter your email"
               autoComplete="email"
+              aria-required="true"
+              aria-invalid={error && error.toLowerCase().includes('email') ? 'true' : 'false'}
+              aria-describedby={error && error.toLowerCase().includes('email') ? 'register-error' : undefined}
             />
           </div>
 
@@ -360,6 +381,9 @@ function Register({ setIsAuth }) {
               name="password"
               value={formData.password}
               onChange={handleChange}
+              aria-required="true"
+              aria-invalid={error && error.toLowerCase().includes('password') ? 'true' : 'false'}
+              aria-describedby={error && error.toLowerCase().includes('password') ? 'register-error' : 'password-requirements'}
               required
               minLength="8"
               className="form-input glossy"
@@ -402,7 +426,10 @@ function Register({ setIsAuth }) {
                 </div>
               </div>
             )}
-            <small style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginTop: '0.5rem', display: 'block' }}>
+            <small
+              id="password-requirements"
+              style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginTop: '0.5rem', display: 'block' }}
+            >
               Must contain at least one uppercase letter, one lowercase letter, and one number
             </small>
           </div>

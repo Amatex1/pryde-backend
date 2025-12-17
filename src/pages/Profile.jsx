@@ -2080,6 +2080,7 @@ function Profile() {
                                 delete e.currentTarget.dataset.touchTimer;
                               }
                             }}
+                            aria-label={getUserReactionEmoji(post.reactions) ? `Change reaction from ${getUserReactionEmoji(post.reactions)}` : 'React to post'}
                           >
                             <span>
                               {getUserReactionEmoji(post.reactions) || '🤍'}
@@ -2131,12 +2132,14 @@ function Profile() {
                         <button
                           className="action-btn"
                           onClick={() => toggleCommentBox(post._id)}
+                          aria-label={`Comment on post${!post.hideMetrics ? ` (${postComments[post._id]?.filter(c => !c.isDeleted).length || 0} comments)` : ''}`}
                         >
                           <span>💬</span> Comment {!post.hideMetrics && `(${postComments[post._id]?.filter(c => !c.isDeleted).length || 0})`}
                         </button>
                         <button
                           className="action-btn"
                           onClick={() => handleShare(post)}
+                          aria-label={`Share post${!post.hideMetrics ? ` (${post.shares?.length || 0} shares)` : ''}`}
                         >
                           <span>🔗</span> Share {!post.hideMetrics && `(${post.shares?.length || 0})`}
                         </button>
