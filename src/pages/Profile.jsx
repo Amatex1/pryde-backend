@@ -486,8 +486,30 @@ function Profile() {
   const handlePostReaction = async (postId, emoji) => {
     try {
       const response = await api.post(`/posts/${postId}/react`, { emoji });
-      setPosts((prevPosts) => prevPosts.map(p => p._id === postId ? response.data : p));
+      console.log('🔍 Profile - Reaction response:', response.data);
+      console.log('🔍 Profile - Updated reactions:', response.data.reactions);
+
+      // Force a new array reference to trigger re-render
+      // Create completely new objects to ensure React detects the change
+      setPosts((prevPosts) => prevPosts.map(p => {
+        if (p._id === postId) {
+          // Create a deep copy with new references
+          return {
+            ...response.data,
+            reactions: [...(response.data.reactions || [])],
+            // Force timestamp update to trigger re-render
+            _reactUpdateTimestamp: Date.now()
+          };
+        }
+        return p;
+      }));
+
       setShowReactionPicker(null); // Hide picker after reaction
+
+      // Force a small delay to ensure state update completes
+      setTimeout(() => {
+        console.log('🔍 Profile - State update complete');
+      }, 100);
     } catch (error) {
       logger.error('Failed to react to post:', error);
     }

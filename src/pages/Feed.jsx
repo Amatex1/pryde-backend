@@ -890,15 +890,33 @@ function Feed() {
       console.log('🔍 Current user ID:', currentUser?.id);
 
       // Force a new array reference to trigger re-render
+      // Create completely new objects to ensure React detects the change
       setPosts(prevPosts => {
-        const newPosts = prevPosts.map(p =>
-          p._id === postId ? { ...response.data } : p
-        );
+        const newPosts = prevPosts.map(p => {
+          if (p._id === postId) {
+            // Create a deep copy with new references
+            const updatedPost = {
+              ...response.data,
+              reactions: [...(response.data.reactions || [])],
+              // Force timestamp update to trigger re-render
+              _reactUpdateTimestamp: Date.now()
+            };
+            console.log('🔍 Updated post:', updatedPost);
+            console.log('🔍 User reaction emoji:', getUserReactionEmoji(updatedPost.reactions));
+            return updatedPost;
+          }
+          return p;
+        });
         console.log('🔍 Updated posts array, post found:', newPosts.some(p => p._id === postId));
         return newPosts;
       });
 
       setShowReactionPicker(null); // Hide picker after reaction
+
+      // Force a small delay to ensure state update completes
+      setTimeout(() => {
+        console.log('🔍 State update complete');
+      }, 100);
     } catch (error) {
       logger.error('Failed to react to post:', error);
     }
@@ -1996,6 +2014,7 @@ function Feed() {
                               clearTimeout(e.currentTarget.dataset.touchTimer);
                             }
                           }}
+                          aria-label={getUserReactionEmoji(post.reactions) ? `Change reaction from ${getUserReactionEmoji(post.reactions)}` : 'React to post'}
                         >
                           <span>
                             {getUserReactionEmoji(post.reactions) || '🤍'}
@@ -2056,6 +2075,7 @@ function Feed() {
                       <button
                         className="action-btn"
                         onClick={() => toggleCommentBox(post._id)}
+                        aria-label={`Comment on post${!post.hideMetrics ? ` (${post.comments?.filter(c => !c.isDeleted).length || 0} comments)` : ''}`}
                       >
                         <span>💬</span>
                         <span className="action-text">
@@ -2065,6 +2085,7 @@ function Feed() {
                       <button
                         className="action-btn"
                         onClick={() => handleShare(post)}
+                        aria-label={`Share post${!post.hideMetrics ? ` (${post.shares?.length || 0} shares)` : ''}`}
                       >
                         <span>🔗</span>
                         <span className="action-text">
@@ -2075,6 +2096,7 @@ function Feed() {
                         className={`action-btn ${bookmarkedPosts.includes(post._id) ? 'bookmarked' : ''}`}
                         onClick={() => handleBookmark(post._id)}
                         title={bookmarkedPosts.includes(post._id) ? 'Remove bookmark' : 'Bookmark post'}
+                        aria-label={bookmarkedPosts.includes(post._id) ? 'Remove bookmark from post' : 'Bookmark post'}
                       >
                         <span>{bookmarkedPosts.includes(post._id) ? '🔖' : '📑'}</span>
                         <span className="action-text">Bookmark</span>

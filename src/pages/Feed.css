@@ -473,6 +473,17 @@
   align-items: center !important;
   gap: 0.5rem !important;
   flex-wrap: nowrap !important;
+  white-space: nowrap !important;
+  overflow: visible !important;
+}
+
+/* Samsung Internet specific - force inline */
+@supports (-webkit-appearance: none) {
+  .author-name-row {
+    display: inline-flex !important;
+    flex-wrap: nowrap !important;
+    flex-direction: row !important;
+  }
 }
 
 .author-name,
@@ -2164,13 +2175,47 @@ html:not([data-theme])[data-quiet-mode="true"] .hide-metrics-checkbox:hover {
     flex-shrink: 0 !important;
   }
 
-  /* Hide action text on mobile */
-  .action-btn .action-text {
+  /* Hide action text on mobile - AGGRESSIVE */
+  .action-btn .action-text,
+  .action-text {
     display: none !important;
     visibility: hidden !important;
     width: 0 !important;
     height: 0 !important;
     opacity: 0 !important;
+    position: absolute !important;
+    overflow: hidden !important;
+    font-size: 0 !important;
+    line-height: 0 !important;
+    clip: rect(0, 0, 0, 0) !important;
+    white-space: nowrap !important;
+  }
+
+  /* Samsung Internet specific - more aggressive */
+  @supports (-webkit-appearance: none) {
+    .action-btn span:not(:first-child),
+    .action-btn .action-text {
+      display: none !important;
+      visibility: hidden !important;
+      width: 0 !important;
+      height: 0 !important;
+      opacity: 0 !important;
+      position: absolute !important;
+      left: -9999px !important;
+    }
+  }
+
+  /* Force icon-only display - hide all text spans */
+  .action-btn > span:nth-child(2),
+  .action-btn > span:nth-child(3),
+  .action-btn > span:last-child {
+    display: none !important;
+    visibility: hidden !important;
+    width: 0 !important;
+    height: 0 !important;
+    opacity: 0 !important;
+    position: absolute !important;
+    left: -9999px !important;
   }
 
   .post-action-btn {

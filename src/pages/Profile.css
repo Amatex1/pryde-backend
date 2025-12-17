@@ -2420,12 +2420,46 @@ html:not([data-theme="dark"]):not([data-quiet-mode="true"]) .section-title {
   }
 
   .profile-page .action-btn .action-text,
-  .profile-page .post-actions .action-btn .action-text {
+  .profile-page .post-actions .action-btn .action-text,
+  .profile-page .action-text {
     display: none !important;
     visibility: hidden !important;
     width: 0 !important;
     height: 0 !important;
     opacity: 0 !important;
+    position: absolute !important;
+    overflow: hidden !important;
+    font-size: 0 !important;
+    line-height: 0 !important;
+    clip: rect(0, 0, 0, 0) !important;
+    white-space: nowrap !important;
+  }
+
+  /* Samsung Internet specific - more aggressive */
+  @supports (-webkit-appearance: none) {
+    .profile-page .action-btn span:not(:first-child),
+    .profile-page .action-btn .action-text {
+      display: none !important;
+      visibility: hidden !important;
+      width: 0 !important;
+      height: 0 !important;
+      opacity: 0 !important;
+      position: absolute !important;
+      left: -9999px !important;
+    }
+  }
+
+  /* Force icon-only display - hide all text spans */
+  .profile-page .action-btn > span:nth-child(2),
+  .profile-page .action-btn > span:nth-child(3),
+  .profile-page .action-btn > span:last-child {
+    display: none !important;
+    visibility: hidden !important;
+    width: 0 !important;
+    height: 0 !important;
+    opacity: 0 !important;
+    position: absolute !important;
+    left: -9999px !important;
   }
 }
 
