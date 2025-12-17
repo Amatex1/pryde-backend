@@ -2082,9 +2082,12 @@ function Profile() {
                             }}
                             aria-label={getUserReactionEmoji(post.reactions) ? `Change reaction from ${getUserReactionEmoji(post.reactions)}` : 'React to post'}
                           >
-                            <span>
+                            <span className="action-emoji">
                               {getUserReactionEmoji(post.reactions) || '🤍'}
-                            </span> {getUserReactionEmoji(post.reactions) ? 'Reacted' : 'React'}
+                            </span>
+                            <span className="action-text">
+                              {getUserReactionEmoji(post.reactions) ? 'Reacted' : 'React'}
+                            </span>
                           </button>
                           {post.reactions?.length > 0 && (
                             <button
@@ -2134,14 +2137,20 @@ function Profile() {
                           onClick={() => toggleCommentBox(post._id)}
                           aria-label={`Comment on post${!post.hideMetrics ? ` (${postComments[post._id]?.filter(c => !c.isDeleted).length || 0} comments)` : ''}`}
                         >
-                          <span>💬</span> Comment {!post.hideMetrics && `(${postComments[post._id]?.filter(c => !c.isDeleted).length || 0})`}
+                          <span className="action-emoji">💬</span>
+                          <span className="action-text">
+                            Comment {!post.hideMetrics && `(${postComments[post._id]?.filter(c => !c.isDeleted).length || 0})`}
+                          </span>
                         </button>
                         <button
                           className="action-btn"
                           onClick={() => handleShare(post)}
                           aria-label={`Share post${!post.hideMetrics ? ` (${post.shares?.length || 0} shares)` : ''}`}
                         >
-                          <span>🔗</span> Share {!post.hideMetrics && `(${post.shares?.length || 0})`}
+                          <span className="action-emoji">🔗</span>
+                          <span className="action-text">
+                            Share {!post.hideMetrics && `(${post.shares?.length || 0})`}
+                          </span>
                         </button>
                       </div>
 

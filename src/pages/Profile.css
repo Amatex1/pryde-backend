@@ -2172,8 +2172,18 @@ html:not([data-theme="dark"]):not([data-quiet-mode="true"]) .section-title {
 }
 
 @media (max-width: 768px) {
+  /* Ensure page container is full height */
+  .profile-page.page-container,
+  .page-container.profile-page {
+    min-height: 100vh !important;
+    height: auto !important;
+    overflow-y: visible !important;
+  }
+
   .profile-container {
     padding: 0 1rem 1rem;
+    min-height: auto !important;
+    height: auto !important;
   }
 
   /* Ensure create-post-layout doesn't squish */
@@ -2425,49 +2435,28 @@ html:not([data-theme="dark"]):not([data-quiet-mode="true"]) .section-title {
     justify-content: center !important;
   }
 
-  /* Show ONLY the emoji span, hide all text */
-  .profile-page .action-btn span:first-child,
-  .profile-page .post-actions .action-btn span:first-child {
+  /* Mobile: Show ONLY emojis, hide text */
+  .profile-page .action-btn .action-emoji,
+  .profile-page .post-actions .action-btn .action-emoji {
     display: inline-block !important;
     font-size: 24px !important;
-    flex-shrink: 0 !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-    width: auto !important;
-    height: auto !important;
+    line-height: 1 !important;
   }
 
-  /* Hide ALL text nodes that are not inside the first span */
+  .profile-page .action-btn .action-text,
+  .profile-page .post-actions .action-btn .action-text {
+    display: none !important;
+  }
+
+  /* Ensure buttons are properly sized for touch */
   .profile-page .action-btn,
   .profile-page .post-actions .action-btn {
-    font-size: 0 !important; /* Hide text nodes */
-  }
-
-  /* Restore font size for the emoji span */
-  .profile-page .action-btn span,
-  .profile-page .post-actions .action-btn span {
-    font-size: 24px !important;
-  }
-
-  /* Hide action text class if it exists */
-  .profile-page .action-btn .action-text,
-  .profile-page .post-actions .action-btn .action-text,
-  .profile-page .action-text {
-    display: none !important;
-    visibility: hidden !important;
-  }
-
-  /* Samsung Internet specific - hide text nodes */
-  @supports (-webkit-appearance: none) {
-    .profile-page .action-btn,
-    .profile-page .post-actions .action-btn {
-      font-size: 0 !important;
-    }
-
-    .profile-page .action-btn span,
-    .profile-page .post-actions .action-btn span {
-      font-size: 24px !important;
-    }
+    min-width: 44px !important;
+    min-height: 44px !important;
+    padding: 0.5rem !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
   }
 }
 
