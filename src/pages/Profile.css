@@ -2258,18 +2258,23 @@ html:not([data-theme="dark"]):not([data-quiet-mode="true"]) .section-title {
 }
 
 @media (max-width: 768px) {
-  /* Ensure page container is full height */
+  /* Ensure page container is full height - NO scrollable container! */
   .profile-page.page-container,
-  .page-container.profile-page {
+  .page-container.profile-page,
+  .page-container {
     min-height: 100vh !important;
     height: auto !important;
+    max-height: none !important; /* Remove any height constraints */
     overflow-y: visible !important;
+    overflow-x: hidden !important;
   }
 
   .profile-container {
     padding: 0 1rem 1rem;
     min-height: auto !important;
     height: auto !important;
+    max-height: none !important; /* Remove any height constraints */
+    overflow-y: visible !important;
   }
 
   /* Ensure create-post-layout doesn't squish */
@@ -2464,19 +2469,23 @@ html:not([data-theme="dark"]):not([data-quiet-mode="true"]) .section-title {
     word-wrap: break-word;
   }
 
-  /* Ensure profile layout and main content are full height on mobile */
+  /* Ensure profile layout and main content are full height on mobile - NO scrollable container! */
   .profile-page .profile-layout,
   div.profile-layout,
   .profile-layout {
     padding: 0 var(--space-2) !important;
     min-height: auto !important;
     height: auto !important;
+    max-height: none !important; /* Remove any height constraints */
+    overflow-y: visible !important;
   }
 
   .profile-page .profile-main,
   .profile-main {
     min-height: auto !important;
     height: auto !important;
+    max-height: none !important; /* Remove any height constraints */
+    overflow-y: visible !important;
   }
 
   .create-post {
