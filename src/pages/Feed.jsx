@@ -1990,8 +1990,13 @@ function Feed() {
                         <button
                           className={`action-btn ${isLiked || post.reactions?.some(r => r.user?._id === currentUser?.id || r.user === currentUser?.id) ? 'liked' : ''}`}
                           onClick={() => {
-                            // Click to react with default emoji (heart)
-                            handlePostReaction(post._id, '❤️');
+                            // On mobile, click opens emoji picker
+                            if (window.innerWidth <= 768) {
+                              setShowReactionPicker(`post-${post._id}`);
+                            } else {
+                              // On desktop, click reacts with default emoji (heart)
+                              handlePostReaction(post._id, '❤️');
+                            }
                           }}
                           onMouseEnter={() => {
                             // Hover shows emoji picker on desktop
@@ -2011,19 +2016,6 @@ function Feed() {
                               }, 500);
                             }
                           }}
-                          onTouchStart={(e) => {
-                            // Long press shows emoji picker on mobile
-                            const touchTimer = setTimeout(() => {
-                              setShowReactionPicker(`post-${post._id}`);
-                            }, 500);
-                            e.currentTarget.dataset.touchTimer = touchTimer;
-                          }}
-                          onTouchEnd={(e) => {
-                            // Clear long press timer
-                            if (e.currentTarget.dataset.touchTimer) {
-                              clearTimeout(e.currentTarget.dataset.touchTimer);
-                            }
-                          }}
                           aria-label={getUserReactionEmoji(post.reactions) ? `Change reaction from ${getUserReactionEmoji(post.reactions)}` : 'React to post'}
                         >
                           <span>
@@ -2036,6 +2028,12 @@ function Feed() {
                         {showReactionPicker === `post-${post._id}` && (
                           <div
                             className="reaction-picker"
+                            onClick={(e) => {
+                              // Close picker if clicking on the overlay (::before pseudo-element area)
+                              if (e.target === e.currentTarget && window.innerWidth <= 768) {
+                                setShowReactionPicker(null);
+                              }
+                            }}
                             onMouseEnter={() => {
                               if (window.innerWidth > 768) {
                                 if (reactionPickerTimeoutRef.current) {

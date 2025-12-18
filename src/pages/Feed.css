@@ -1883,7 +1883,7 @@ html:not([data-theme])[data-quiet-mode="true"] .hide-metrics-checkbox:hover {
 
 .friend-sidebar-name {
   font-weight: 600;
-  color: var(--text-main);
+  color: var(--pryde-purple); /* Changed from var(--text-main) to purple for better visibility */
   font-size: clamp(0.8rem, 1.2vw, 0.9rem);
   white-space: nowrap;
   overflow: hidden;
