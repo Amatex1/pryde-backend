@@ -257,11 +257,11 @@ function Register({ setIsAuth }) {
             <div style={{
               background: 'var(--soft-lavender)',
               border: '2px solid var(--pryde-purple)',
-              borderRadius: '8px',
-              padding: '1rem',
-              marginTop: '1rem',
-              fontSize: '0.95rem',
-              lineHeight: '1.6'
+              borderRadius: 'var(--border-radius-md)',
+              padding: 'var(--space-md)',
+              marginTop: 'var(--space-md)',
+              fontSize: 'var(--font-size-sm)',
+              lineHeight: 'var(--line-height-relaxed)'
             }}>
               <p style={{ margin: 0, color: 'var(--text-main)' }}>
                 <strong>🏳️‍🌈 This is an LGBTQ+-first space.</strong> We welcome respectful allies, but queer voices are prioritised. By joining, you agree to treat all identities with respect, care, and emotional intelligence.
@@ -297,7 +297,7 @@ function Register({ setIsAuth }) {
             <button
               onClick={() => navigate('/feed')}
               className="btn-secondary"
-              style={{ marginTop: '1rem', width: '100%' }}
+              style={{ marginTop: 'var(--space-md)', width: '100%' }}
             >
               Skip for Now
             </button>
@@ -305,11 +305,11 @@ function Register({ setIsAuth }) {
         ) : (
           <form onSubmit={handleSubmit} className="auth-form" aria-label="Registration form">
             {/* SECTION: Account Basics (Required) */}
-            <div style={{ marginBottom: '2rem' }}>
+            <div style={{ marginBottom: 'var(--space-xl)' }}>
               <h3 style={{
-                fontSize: '1.1rem',
+                fontSize: 'var(--font-size-lg)',
                 fontWeight: '600',
-                marginBottom: '1rem',
+                marginBottom: 'var(--space-md)',
                 color: 'var(--pryde-purple)'
               }}>
                 Account Basics
@@ -331,7 +331,7 @@ function Register({ setIsAuth }) {
                   autoComplete="name"
                   aria-required="true"
                 />
-                <small style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginTop: '0.25rem', display: 'block' }}>
+                <small style={{ color: 'var(--text-muted)', fontSize: 'var(--font-size-sm)', marginTop: 'var(--space-xs)', display: 'block' }}>
                   This helps keep the community safe
                 </small>
               </div>
@@ -354,7 +354,7 @@ function Register({ setIsAuth }) {
                   aria-invalid={usernameAvailable && !usernameAvailable.available ? 'true' : 'false'}
                   aria-describedby={formData.username.length >= 3 ? 'username-feedback' : undefined}
                 />
-                <small style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginTop: '0.25rem', display: 'block' }}>
+                <small style={{ color: 'var(--text-muted)', fontSize: 'var(--font-size-sm)', marginTop: 'var(--space-xs)', display: 'block' }}>
                   This is your public handle
                 </small>
                 {formData.username.length >= 3 && (
@@ -364,11 +364,11 @@ function Register({ setIsAuth }) {
                     role={usernameAvailable && !usernameAvailable.available ? 'alert' : 'status'}
                     aria-live="polite"
                     style={{
-                      marginTop: '0.5rem',
-                      fontSize: '0.875rem',
+                      marginTop: 'var(--space-sm)',
+                      fontSize: 'var(--font-size-sm)',
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '0.5rem'
+                      gap: 'var(--space-sm)'
                     }}
                   >
                     {checkingUsername ? (
@@ -424,18 +424,18 @@ function Register({ setIsAuth }) {
                   autoComplete="new-password"
                 />
                 {formData.password && (
-                  <div className="password-strength" style={{ marginTop: '0.75rem' }}>
+                  <div className="password-strength" style={{ marginTop: 'var(--space-sm)' }}>
                     <div style={{
                       display: 'flex',
                       justifyContent: 'space-between',
                       alignItems: 'center',
-                      marginBottom: '0.5rem'
+                      marginBottom: 'var(--space-sm)'
                     }}>
-                      <span style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>
+                      <span style={{ fontSize: 'var(--font-size-sm)', color: 'var(--text-muted)' }}>
                         Password Strength:
                       </span>
                       <span style={{
-                        fontSize: '0.875rem',
+                        fontSize: 'var(--font-size-sm)',
                         fontWeight: '600',
                         color: passwordStrength.color
                       }}>
@@ -446,7 +446,7 @@ function Register({ setIsAuth }) {
                       width: '100%',
                       height: '6px',
                       background: 'var(--bg-subtle)',
-                      borderRadius: '3px',
+                      borderRadius: 'var(--border-radius-sm)',
                       overflow: 'hidden'
                     }}>
                       <div style={{
@@ -454,14 +454,14 @@ function Register({ setIsAuth }) {
                         height: '100%',
                         background: passwordStrength.color,
                         transition: 'all 0.3s ease',
-                        borderRadius: '3px'
+                        borderRadius: 'var(--border-radius-sm)'
                       }} />
                     </div>
                   </div>
                 )}
                 <small
                   id="password-requirements"
-                  style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginTop: '0.5rem', display: 'block' }}
+                  style={{ color: 'var(--text-muted)', fontSize: 'var(--font-size-sm)', marginTop: 'var(--space-sm)', display: 'block' }}
                 >
                   Must contain at least one uppercase letter, one lowercase letter, and one number
                 </small>
@@ -469,11 +469,11 @@ function Register({ setIsAuth }) {
             </div>
 
             {/* SECTION: Safety & Age (Required) */}
-            <div style={{ marginBottom: '2rem' }}>
+            <div style={{ marginBottom: 'var(--space-xl)' }}>
               <h3 style={{
-                fontSize: '1.1rem',
+                fontSize: 'var(--font-size-lg)',
                 fontWeight: '600',
-                marginBottom: '1rem',
+                marginBottom: 'var(--space-md)',
                 color: 'var(--pryde-purple)'
               }}>
                 Safety & Age Verification
@@ -481,17 +481,17 @@ function Register({ setIsAuth }) {
 
               <div className="form-group">
                 <label>Birthday <span style={{ color: 'var(--pryde-purple)', fontWeight: 'bold' }}>*</span></label>
-                <small style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '0.5rem', display: 'block' }}>
+                <small style={{ color: 'var(--text-muted)', fontSize: 'var(--font-size-sm)', marginBottom: 'var(--space-sm)', display: 'block' }}>
                   You must be 18 or older to join Pryde
                 </small>
-                <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1.5fr', gap: '0.75rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1.5fr', gap: 'var(--space-sm)' }}>
                   <select
                     name="birthMonth"
                     value={formData.birthMonth}
                     onChange={handleChange}
                     required
                     className="form-input glossy"
-                    style={{ padding: '0.75rem' }}
+                    style={{ padding: 'var(--space-sm)' }}
                   >
                     <option value="">Month</option>
                     <option value="1">January</option>
@@ -513,7 +513,7 @@ function Register({ setIsAuth }) {
                     onChange={handleChange}
                     required
                     className="form-input glossy"
-                    style={{ padding: '0.75rem' }}
+                    style={{ padding: 'var(--space-sm)' }}
                   >
                     <option value="">Day</option>
                     {Array.from({ length: 31 }, (_, i) => i + 1).map(day => (
@@ -526,7 +526,7 @@ function Register({ setIsAuth }) {
                     onChange={handleChange}
                     required
                     className="form-input glossy"
-                    style={{ padding: '0.75rem' }}
+                    style={{ padding: 'var(--space-sm)' }}
                   >
                     <option value="">Year</option>
                     {Array.from({ length: 100 }, (_, i) => new Date().getFullYear() - 18 - i).map(year => (
@@ -540,45 +540,45 @@ function Register({ setIsAuth }) {
             {/* SECTION: About You (Optional) */}
             {!skipOptional && (
               <div style={{
-                marginBottom: '2rem',
-                padding: '1.5rem',
+                marginBottom: 'var(--space-xl)',
+                padding: 'var(--space-lg)',
                 background: 'var(--soft-lavender)',
-                borderRadius: '12px',
+                borderRadius: 'var(--border-radius-lg)',
                 border: '2px dashed var(--pryde-purple-light)'
               }}>
-                <div style={{ marginBottom: '1rem' }}>
+                <div style={{ marginBottom: 'var(--space-md)' }}>
                   <h3 style={{
-                    fontSize: '1.1rem',
+                    fontSize: 'var(--font-size-lg)',
                     fontWeight: '600',
-                    marginBottom: '0.5rem',
+                    marginBottom: 'var(--space-sm)',
                     color: 'var(--pryde-purple)'
                   }}>
                     About You (Optional)
                   </h3>
                   <p style={{
-                    fontSize: '0.9rem',
+                    fontSize: 'var(--font-size-sm)',
                     color: 'var(--text-muted)',
-                    lineHeight: '1.5',
-                    marginBottom: '0.5rem'
+                    lineHeight: 'var(--line-height-base)',
+                    marginBottom: 'var(--space-sm)'
                   }}>
                     You can skip this for now and edit it later.
                   </p>
                 </div>
 
                 <div className="form-group">
-                  <label style={{ fontWeight: '600', color: 'var(--pryde-purple)', marginBottom: '0.75rem', display: 'block' }}>
+                  <label style={{ fontWeight: '600', color: 'var(--pryde-purple)', marginBottom: 'var(--space-sm)', display: 'block' }}>
                     🌈 How do you identify on Pryde?
                   </label>
-                  <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '1rem', lineHeight: '1.5' }}>
+                  <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--text-muted)', marginBottom: 'var(--space-md)', lineHeight: 'var(--line-height-base)' }}>
                     Pryde is a calm, queer-first creative platform for LGBTQ+ introverts, deep thinkers, and supportive allies.
                   </p>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)' }}>
                     <label className="checkbox-label" style={{
-                      padding: '0.75rem',
+                      padding: 'var(--space-sm)',
                       background: formData.identity === 'LGBTQ+' ? 'var(--pryde-purple)' : 'var(--card-surface)',
                       color: formData.identity === 'LGBTQ+' ? 'white' : 'var(--text-main)',
                       border: formData.identity === 'LGBTQ+' ? '2px solid var(--pryde-purple)' : '2px solid var(--border-light)',
-                      borderRadius: '6px',
+                      borderRadius: 'var(--border-radius-sm)',
                       cursor: 'pointer',
                       transition: 'all 0.3s ease'
                     }}>
@@ -588,16 +588,16 @@ function Register({ setIsAuth }) {
                         value="LGBTQ+"
                         checked={formData.identity === 'LGBTQ+'}
                         onChange={handleChange}
-                        style={{ marginRight: '0.5rem' }}
+                        style={{ marginRight: 'var(--space-sm)' }}
                       />
                       <span>I am LGBTQ+</span>
                     </label>
                     <label className="checkbox-label" style={{
-                      padding: '0.75rem',
+                      padding: 'var(--space-sm)',
                       background: formData.identity === 'Ally' ? 'var(--pryde-purple)' : 'var(--card-surface)',
                       color: formData.identity === 'Ally' ? 'white' : 'var(--text-main)',
                       border: formData.identity === 'Ally' ? '2px solid var(--pryde-purple)' : '2px solid var(--border-light)',
-                      borderRadius: '6px',
+                      borderRadius: 'var(--border-radius-sm)',
                       cursor: 'pointer',
                       transition: 'all 0.3s ease'
                     }}>
@@ -607,7 +607,7 @@ function Register({ setIsAuth }) {
                         value="Ally"
                         checked={formData.identity === 'Ally'}
                         onChange={handleChange}
-                        style={{ marginRight: '0.5rem' }}
+                        style={{ marginRight: 'var(--space-sm)' }}
                       />
                       <span>I am an ally and agree to respect queer spaces</span>
                     </label>
@@ -656,7 +656,7 @@ function Register({ setIsAuth }) {
                     style={{ resize: 'vertical', minHeight: '80px' }}
                   />
                   {formData.bio && (
-                    <small style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginTop: '0.25rem', display: 'block' }}>
+                    <small style={{ color: 'var(--text-muted)', fontSize: 'var(--font-size-sm)', marginTop: 'var(--space-xs)', display: 'block' }}>
                       {formData.bio.length}/500 characters
                     </small>
                   )}
@@ -668,7 +668,7 @@ function Register({ setIsAuth }) {
                   className="btn-secondary"
                   style={{
                     width: '100%',
-                    marginTop: '1rem',
+                    marginTop: 'var(--space-md)',
                     background: 'transparent',
                     border: '2px solid var(--pryde-purple)',
                     color: 'var(--pryde-purple)'
@@ -681,13 +681,13 @@ function Register({ setIsAuth }) {
 
             {skipOptional && (
               <div style={{
-                marginBottom: '2rem',
-                padding: '1rem',
+                marginBottom: 'var(--space-xl)',
+                padding: 'var(--space-md)',
                 background: 'var(--bg-subtle)',
-                borderRadius: '8px',
+                borderRadius: 'var(--border-radius-md)',
                 textAlign: 'center'
               }}>
-                <p style={{ color: 'var(--text-muted)', marginBottom: '0.5rem' }}>
+                <p style={{ color: 'var(--text-muted)', marginBottom: 'var(--space-sm)' }}>
                   ✓ Optional profile sections skipped
                 </p>
                 <button
@@ -702,7 +702,7 @@ function Register({ setIsAuth }) {
             )}
 
             {/* Terms & CAPTCHA */}
-            <div style={{ marginBottom: '1.5rem' }}>
+            <div style={{ marginBottom: 'var(--space-lg)' }}>
               <div className="form-group checkbox-group">
                 <label className="checkbox-label">
                   <input
@@ -722,8 +722,8 @@ function Register({ setIsAuth }) {
               <div className="form-group" style={{
                 display: 'flex',
                 justifyContent: 'center',
-                marginTop: '1.5rem',
-                marginBottom: '1rem'
+                marginTop: 'var(--space-lg)',
+                marginBottom: 'var(--space-md)'
               }}>
                 <HCaptcha
                   ref={captchaRef}
@@ -738,10 +738,10 @@ function Register({ setIsAuth }) {
             {/* Calming microcopy before submit */}
             <p style={{
               textAlign: 'center',
-              fontSize: '0.9rem',
+              fontSize: 'var(--font-size-sm)',
               color: 'var(--text-muted)',
-              marginBottom: '1rem',
-              lineHeight: '1.5'
+              marginBottom: 'var(--space-md)',
+              lineHeight: 'var(--line-height-base)'
             }}>
               You can update your profile anytime.
             </p>

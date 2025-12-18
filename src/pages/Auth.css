@@ -69,24 +69,25 @@
 .form-group {
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
+  gap: var(--space-sm);
 }
 
 .form-group label {
   color: var(--color-primary);
   font-weight: 600;
-  font-size: 14px;
+  font-size: var(--font-size-sm);
 }
 
 .form-input {
-  padding: var(--space-3) var(--space-4);
-  border-radius: var(--radius-md);
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--border-radius-md);
   border: 1px solid var(--border-subtle);
   outline: none;
-  font-size: 14px;
+  font-size: var(--font-size-base);
   color: var(--text-main);
   background: var(--bg-card);
   transition: all 0.15s ease;
+  min-height: var(--button-height-mobile); /* Ensure touch-friendly */
 }
 
 .form-input::placeholder {
@@ -99,21 +100,23 @@
 }
 
 .btn-primary {
-  padding: var(--space-4);
-  border-radius: var(--radius-pill);
+  padding: var(--button-padding-y) var(--button-padding-x);
+  min-height: var(--button-height-mobile);
+  border-radius: var(--button-radius-pill);
   border: none;
-  font-size: 15px;
+  font-size: var(--font-size-base);
   font-weight: 600;
   background: var(--gradient-primary);
   color: white;
   cursor: pointer;
   transition: all 0.15s ease;
-  margin-top: var(--space-2);
+  margin-top: var(--space-sm);
+  width: 100%; /* Full width on mobile */
 }
 
 .btn-primary:hover {
   transform: translateY(-1px);
-  box-shadow: var(--shadow-strong);
+  box-shadow: var(--shadow-lg);
 }
 
 .btn-primary:disabled {
@@ -123,9 +126,10 @@
 }
 
 .auth-footer {
-  margin-top: 2rem;
+  margin-top: var(--space-xl);
   text-align: center;
   color: var(--text-muted);
+  font-size: var(--font-size-sm);
 }
 
 .auth-link {
@@ -144,17 +148,18 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 0.75rem;
-  margin-top: 1.5rem;
-  padding-top: 1.5rem;
+  gap: var(--space-sm);
+  margin-top: var(--space-lg);
+  padding-top: var(--space-lg);
   border-top: 1px solid var(--border-light);
+  font-size: var(--font-size-sm);
   flex-wrap: wrap;
 }
 
 .auth-legal-links a {
   color: var(--text-muted);
   text-decoration: none;
-  font-size: 0.85rem;
+  font-size: var(--font-size-sm);
   transition: color 0.3s ease;
 }
 
@@ -164,24 +169,26 @@
 
 .auth-legal-links span {
   color: var(--border-light);
-  font-size: 0.85rem;
+  font-size: var(--font-size-sm);
 }
 
 .error-message {
-  padding: 1rem;
+  padding: var(--space-md);
   background: rgba(255, 107, 107, 0.2);
   border: 1px solid #ff6b6b;
-  border-radius: 12px;
+  border-radius: var(--border-radius-lg);
   color: #ff6b6b;
   text-align: center;
-  margin-bottom: 1rem;
+  margin-bottom: var(--space-md);
+  font-size: var(--font-size-sm);
 }
 
 .alert {
-  padding: 1rem;
-  border-radius: 12px;
-  margin-bottom: 1rem;
+  padding: var(--space-md);
+  border-radius: var(--border-radius-lg);
+  margin-bottom: var(--space-md);
   text-align: center;
+  font-size: var(--font-size-sm);
 }
 
 .alert-success {
@@ -197,21 +204,21 @@
 }
 
 .checkbox-group {
-  margin: 0.5rem 0;
+  margin: var(--space-sm) 0;
 }
 
 .checkbox-label {
   display: flex;
   align-items: flex-start;
-  gap: 0.75rem;
+  gap: var(--space-sm);
   cursor: pointer;
   color: var(--text-light);
-  font-size: 0.95rem;
-  line-height: 1.5;
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-base);
 }
 
 .checkbox-label input[type="checkbox"] {
-  margin-top: 0.25rem;
+  margin-top: var(--space-xs);
   width: 20px;
   height: 20px;
   cursor: pointer;
@@ -236,7 +243,7 @@
   display: flex;
   align-items: center;
   text-align: center;
-  margin: 1.5rem 0;
+  margin: var(--space-lg) 0;
 }
 
 .auth-divider::before,
@@ -247,39 +254,45 @@
 }
 
 .auth-divider span {
-  padding: 0 1rem;
+  padding: 0 var(--space-md);
   color: var(--text-muted);
-  font-size: 0.9rem;
+  font-size: var(--font-size-sm);
   font-weight: 500;
 }
 
 .passkey-setup-container {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: var(--space-lg);
 }
 
 .passkey-setup-info {
   text-align: center;
-  padding: 1.5rem;
+  padding: var(--space-lg);
   background: var(--gradient-soft);
-  border-radius: 1rem;
+  border-radius: var(--border-radius-lg);
 }
 
 .passkey-setup-info h3 {
   color: var(--text-main);
-  font-size: 1.5rem;
-  margin-bottom: 0.5rem;
+  font-size: var(--font-size-xl);
+  margin-bottom: var(--space-sm);
 }
 
 .passkey-setup-info p {
   color: var(--text-muted);
-  font-size: 1rem;
+  font-size: var(--font-size-base);
 }
 
+/* Mobile-specific overrides */
 @media (max-width: 768px) {
   .auth-card {
-    padding: 2rem;
+    padding: var(--space-lg); /* Already set above, but ensure consistency */
+  }
+
+  /* Ensure no horizontal scroll */
+  .auth-container {
+    overflow-x: hidden;
   }
 
   .auth-title {
