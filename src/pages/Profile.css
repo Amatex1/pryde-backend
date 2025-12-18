@@ -2278,9 +2278,33 @@ html:not([data-theme="dark"]):not([data-quiet-mode="true"]) .section-title {
   }
 
   /* FIX: Remove blue box gap between cover and avatar */
+  .profile-header {
+    padding: 0 !important;
+    margin-bottom: 1rem !important;
+    background: transparent !important; /* Remove blue background */
+  }
+
+  .cover-photo {
+    margin-bottom: 0 !important;
+    padding-bottom: 0 !important;
+    display: block !important;
+    line-height: 0 !important; /* Remove any line-height spacing */
+  }
+
+  .upload-message-banner {
+    margin: 0 !important;
+    padding: 0.5rem !important;
+  }
+
   .profile-info {
     padding-top: 0 !important;
     margin-top: 0 !important;
+    padding-bottom: 1rem !important;
+    background: transparent !important;
+  }
+
+  .profile-avatar {
+    margin-top: calc(var(--avatar-size-mobile) / -2) !important; /* Ensure overlap */
   }
 
   /* Ensure create-post-layout doesn't squish */
