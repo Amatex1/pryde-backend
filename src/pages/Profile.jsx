@@ -2038,7 +2038,7 @@ function Profile() {
 
                       {/* PHASE 1 REFACTOR: Post stats removed (like counts hidden) */}
                       <div className="post-stats">
-                        <span>{post.comments?.length || 0} comments</span>
+                        <span>{post.commentCount || 0} comments</span>
                         <span>{post.shares?.length || 0} shares</span>
                       </div>
 
@@ -2126,11 +2126,11 @@ function Profile() {
                         <button
                           className="action-btn"
                           onClick={() => toggleCommentBox(post._id)}
-                          aria-label={`Comment on post${!post.hideMetrics ? ` (${postComments[post._id]?.filter(c => !c.isDeleted).length || 0} comments)` : ''}`}
+                          aria-label={`Comment on post${!post.hideMetrics ? ` (${post.commentCount || 0} comments)` : ''}`}
                         >
                           <span className="action-emoji">💬</span>
                           <span className="action-text">
-                            Comment {!post.hideMetrics && `(${postComments[post._id]?.filter(c => !c.isDeleted).length || 0})`}
+                            Comment {!post.hideMetrics && `(${post.commentCount || 0})`}
                           </span>
                         </button>
                         <button

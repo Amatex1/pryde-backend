@@ -326,9 +326,10 @@ function EditProfileModal({ isOpen, onClose, user, onUpdate }) {
                     type="text"
                     name="customGender"
                     value={formData.customGender || ''}
-                    onChange={(e) => setFormData({...formData, customGender: e.target.value, gender: e.target.value})}
+                    onChange={(e) => setFormData({...formData, customGender: e.target.value})}
                     placeholder="Enter your gender"
                     className="mt-2"
+                    style={{ marginTop: '0.5rem' }}
                   />
                 )}
               </div>
@@ -337,7 +338,7 @@ function EditProfileModal({ isOpen, onClose, user, onUpdate }) {
                 <label>Sexual Orientation</label>
                 <select
                   name="sexualOrientation"
-                  value={formData.sexualOrientation}
+                  value={formData.sexualOrientation === 'other' || !['', 'heterosexual', 'gay', 'lesbian', 'bisexual', 'pansexual', 'asexual', 'demisexual', 'queer', 'questioning', 'prefer_not_to_say'].includes(formData.sexualOrientation) ? 'other' : formData.sexualOrientation}
                   onChange={handleChange}
                 >
                   <option value="">Select Orientation (Optional)</option>
@@ -351,8 +352,19 @@ function EditProfileModal({ isOpen, onClose, user, onUpdate }) {
                   <option value="queer">Queer</option>
                   <option value="questioning">Questioning</option>
                   <option value="prefer_not_to_say">Prefer Not to Say</option>
-                  <option value="other">Other</option>
+                  <option value="other">Other (type below)</option>
                 </select>
+                {(formData.sexualOrientation === 'other' || !['', 'heterosexual', 'gay', 'lesbian', 'bisexual', 'pansexual', 'asexual', 'demisexual', 'queer', 'questioning', 'prefer_not_to_say'].includes(formData.sexualOrientation)) && (
+                  <input
+                    type="text"
+                    name="sexualOrientation"
+                    value={formData.sexualOrientation === 'other' ? '' : formData.sexualOrientation}
+                    onChange={(e) => setFormData({...formData, sexualOrientation: e.target.value})}
+                    placeholder="Enter your sexual orientation"
+                    className="mt-2"
+                    style={{ marginTop: '0.5rem' }}
+                  />
+                )}
               </div>
 
               <div className="form-group">

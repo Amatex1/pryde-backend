@@ -207,9 +207,18 @@ div.profile-layout,
   border-radius: var(--radius-card);
   overflow: visible; /* Changed from hidden to allow emoji picker to show */
   margin-bottom: var(--space-6);
-  background: transparent; /* Changed from var(--bg-card) to remove blue background */
+  background: transparent !important; /* Override .glossy class - no blue background */
+  backdrop-filter: none !important; /* Override .glossy class - no blur effect */
   border: 1px solid var(--border-subtle);
   box-shadow: var(--shadow-medium);
+  padding: 0; /* Remove any padding that creates gaps */
+}
+
+/* Ensure .glossy class doesn't override on profile header */
+.profile-header.glossy {
+  background: transparent !important;
+  backdrop-filter: none !important;
+  padding: 0 !important;
 }
 
 /* MOBILE-FIRST: Cover photo */

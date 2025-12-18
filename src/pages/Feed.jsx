@@ -2083,11 +2083,11 @@ function Feed() {
                       <button
                         className="action-btn"
                         onClick={() => toggleCommentBox(post._id)}
-                        aria-label={`Comment on post${!post.hideMetrics ? ` (${post.comments?.filter(c => !c.isDeleted).length || 0} comments)` : ''}`}
+                        aria-label={`Comment on post${!post.hideMetrics ? ` (${post.commentCount || 0} comments)` : ''}`}
                       >
                         <span>💬</span>
                         <span className="action-text">
-                          Comment {!post.hideMetrics && `(${post.comments?.filter(c => !c.isDeleted).length || 0})`}
+                          Comment {!post.hideMetrics && `(${post.commentCount || 0})`}
                         </span>
                       </button>
                       <button

@@ -121,7 +121,7 @@ function Hashtag() {
                       <span>❤️</span> Like ({post.likes?.length || 0})
                     </button>
                     <button className="action-btn">
-                      <span>💬</span> Comment ({post.comments?.length || 0})
+                      <span>💬</span> Comment ({post.commentCount || 0})
                     </button>
                     <button className="action-btn" onClick={() => handleShare(post._id)}>
                       <span>🔗</span> Share ({post.shares?.length || 0})
