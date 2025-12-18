@@ -284,6 +284,168 @@
   font-size: var(--font-size-base);
 }
 
+/* Optional Section Styling - Softer, Calmer, Secondary */
+.about-optional {
+  margin-bottom: var(--space-xl);
+  padding: var(--space-md);
+  background: rgba(108, 92, 231, 0.03); /* Very subtle purple tint */
+  border-radius: var(--border-radius-md);
+  border: 1px solid rgba(108, 92, 231, 0.1); /* Subtle border instead of dashed */
+}
+
+.about-optional-header {
+  margin-bottom: var(--space-md);
+  text-align: left; /* Force left alignment */
+}
+
+.about-optional-header h3 {
+  font-size: var(--font-size-base); /* Smaller than required sections */
+  font-weight: 500; /* Lighter weight */
+  margin-bottom: var(--space-xs);
+  color: var(--text-main); /* Not purple - less dominant */
+}
+
+.about-optional-header p {
+  font-size: var(--font-size-xs); /* Very small subtext */
+  color: var(--text-muted);
+  line-height: var(--line-height-base);
+  margin: 0;
+}
+
+/* Identity Selection - Softer, Less Dominant */
+.identity-selection {
+  margin-bottom: var(--space-md);
+}
+
+.identity-selection-label {
+  font-weight: 500; /* Lighter than required fields */
+  color: var(--text-main); /* Not purple */
+  margin-bottom: var(--space-xs);
+  display: block;
+  font-size: var(--font-size-sm);
+}
+
+.identity-selection-description {
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+  margin-bottom: var(--space-sm);
+  line-height: var(--line-height-relaxed);
+}
+
+.identity-options {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs); /* Tighter spacing */
+}
+
+/* Identity Option Radio Buttons - Scaled Down, Secondary */
+.identity-option {
+  display: flex;
+  align-items: center; /* Center align radio with text */
+  padding: var(--space-xs) var(--space-sm); /* Reduced padding */
+  background: var(--card-surface);
+  color: var(--text-main);
+  border: 1px solid var(--border-light); /* Thinner border */
+  border-radius: var(--border-radius-sm); /* Smaller radius */
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-height: auto; /* NOT 44px - this is optional */
+  text-align: left; /* Force left alignment */
+}
+
+.identity-option:hover {
+  border-color: var(--pryde-purple-light);
+  background: rgba(108, 92, 231, 0.05);
+}
+
+.identity-option.selected {
+  background: rgba(108, 92, 231, 0.1); /* Subtle selection, not full purple */
+  border-color: var(--pryde-purple);
+  color: var(--text-main); /* Keep text dark, not white */
+}
+
+.identity-option input[type="radio"] {
+  margin: 0;
+  margin-right: var(--space-sm);
+  width: 16px; /* Smaller than default 20px */
+  height: 16px;
+  cursor: pointer;
+  accent-color: var(--pryde-purple);
+  flex-shrink: 0;
+}
+
+.identity-option span {
+  font-size: var(--font-size-sm); /* Smaller text */
+  line-height: var(--line-height-base);
+}
+
+/* Optional Form Fields - Reduced Spacing */
+.about-optional .form-group {
+  margin-bottom: var(--space-sm); /* Tighter than required sections */
+}
+
+.about-optional .form-group label {
+  font-weight: 500; /* Lighter than required fields */
+  color: var(--text-muted); /* Muted, not purple */
+  font-size: var(--font-size-xs); /* Smaller labels */
+}
+
+.about-optional .form-input {
+  min-height: 40px; /* Slightly smaller than required 44px */
+  font-size: var(--font-size-sm);
+}
+
+/* Skip Button - Tertiary, Low-Pressure */
+.btn-skip-optional {
+  width: 100%;
+  margin-top: var(--space-md);
+  padding: var(--space-xs) var(--space-sm); /* Reduced padding */
+  background: transparent;
+  border: 1px dashed var(--border-light); /* Dashed border, subtle */
+  color: var(--text-muted);
+  border-radius: var(--border-radius-sm);
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-height: auto; /* NOT 44px */
+}
+
+.btn-skip-optional:hover {
+  border-color: var(--pryde-purple-light);
+  color: var(--pryde-purple);
+  background: rgba(108, 92, 231, 0.03);
+}
+
+/* Skipped Confirmation - Subtle */
+.optional-skipped {
+  margin-bottom: var(--space-xl);
+  padding: var(--space-sm);
+  background: rgba(76, 175, 80, 0.05); /* Very subtle green */
+  border-radius: var(--border-radius-sm);
+  border: 1px solid rgba(76, 175, 80, 0.2);
+  text-align: center;
+}
+
+.optional-skipped p {
+  color: var(--text-muted);
+  margin-bottom: var(--space-xs);
+  font-size: var(--font-size-sm);
+}
+
+.btn-unskip {
+  background: none;
+  border: none;
+  color: var(--pryde-purple);
+  text-decoration: underline;
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+  padding: 0;
+}
+
+.btn-unskip:hover {
+  color: var(--electric-blue);
+}
+
 /* Mobile-specific overrides */
 @media (max-width: 768px) {
   .auth-card {
@@ -297,5 +459,10 @@
 
   .auth-title {
     font-size: 2rem;
+  }
+
+  /* Reduce optional section padding on mobile */
+  .about-optional {
+    padding: var(--space-sm);
   }
 }

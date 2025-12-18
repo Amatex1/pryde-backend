@@ -539,75 +539,37 @@ function Register({ setIsAuth }) {
 
             {/* SECTION: About You (Optional) */}
             {!skipOptional && (
-              <div style={{
-                marginBottom: 'var(--space-xl)',
-                padding: 'var(--space-lg)',
-                background: 'var(--soft-lavender)',
-                borderRadius: 'var(--border-radius-lg)',
-                border: '2px dashed var(--pryde-purple-light)'
-              }}>
-                <div style={{ marginBottom: 'var(--space-md)' }}>
-                  <h3 style={{
-                    fontSize: 'var(--font-size-lg)',
-                    fontWeight: '600',
-                    marginBottom: 'var(--space-sm)',
-                    color: 'var(--pryde-purple)'
-                  }}>
-                    About You (Optional)
-                  </h3>
-                  <p style={{
-                    fontSize: 'var(--font-size-sm)',
-                    color: 'var(--text-muted)',
-                    lineHeight: 'var(--line-height-base)',
-                    marginBottom: 'var(--space-sm)'
-                  }}>
-                    You can skip this for now and edit it later.
-                  </p>
+              <div className="about-optional">
+                <div className="about-optional-header">
+                  <h3>About You</h3>
+                  <p>Optional — you can come back to this anytime.</p>
                 </div>
 
-                <div className="form-group">
-                  <label style={{ fontWeight: '600', color: 'var(--pryde-purple)', marginBottom: 'var(--space-sm)', display: 'block' }}>
+                <div className="identity-selection">
+                  <label className="identity-selection-label">
                     🌈 How do you identify on Pryde?
                   </label>
-                  <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--text-muted)', marginBottom: 'var(--space-md)', lineHeight: 'var(--line-height-base)' }}>
+                  <p className="identity-selection-description">
                     Pryde is a calm, queer-first creative platform for LGBTQ+ introverts, deep thinkers, and supportive allies.
                   </p>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)' }}>
-                    <label className="checkbox-label" style={{
-                      padding: 'var(--space-sm)',
-                      background: formData.identity === 'LGBTQ+' ? 'var(--pryde-purple)' : 'var(--card-surface)',
-                      color: formData.identity === 'LGBTQ+' ? 'white' : 'var(--text-main)',
-                      border: formData.identity === 'LGBTQ+' ? '2px solid var(--pryde-purple)' : '2px solid var(--border-light)',
-                      borderRadius: 'var(--border-radius-sm)',
-                      cursor: 'pointer',
-                      transition: 'all 0.3s ease'
-                    }}>
+                  <div className="identity-options">
+                    <label className={`identity-option ${formData.identity === 'LGBTQ+' ? 'selected' : ''}`}>
                       <input
                         type="radio"
                         name="identity"
                         value="LGBTQ+"
                         checked={formData.identity === 'LGBTQ+'}
                         onChange={handleChange}
-                        style={{ marginRight: 'var(--space-sm)' }}
                       />
                       <span>I am LGBTQ+</span>
                     </label>
-                    <label className="checkbox-label" style={{
-                      padding: 'var(--space-sm)',
-                      background: formData.identity === 'Ally' ? 'var(--pryde-purple)' : 'var(--card-surface)',
-                      color: formData.identity === 'Ally' ? 'white' : 'var(--text-main)',
-                      border: formData.identity === 'Ally' ? '2px solid var(--pryde-purple)' : '2px solid var(--border-light)',
-                      borderRadius: 'var(--border-radius-sm)',
-                      cursor: 'pointer',
-                      transition: 'all 0.3s ease'
-                    }}>
+                    <label className={`identity-option ${formData.identity === 'Ally' ? 'selected' : ''}`}>
                       <input
                         type="radio"
                         name="identity"
                         value="Ally"
                         checked={formData.identity === 'Ally'}
                         onChange={handleChange}
-                        style={{ marginRight: 'var(--space-sm)' }}
                       />
                       <span>I am an ally and agree to respect queer spaces</span>
                     </label>
@@ -665,14 +627,7 @@ function Register({ setIsAuth }) {
                 <button
                   type="button"
                   onClick={() => setSkipOptional(true)}
-                  className="btn-secondary"
-                  style={{
-                    width: '100%',
-                    marginTop: 'var(--space-md)',
-                    background: 'transparent',
-                    border: '2px solid var(--pryde-purple)',
-                    color: 'var(--pryde-purple)'
-                  }}
+                  className="btn-skip-optional"
                 >
                   Skip for Now
                 </button>
@@ -680,21 +635,12 @@ function Register({ setIsAuth }) {
             )}
 
             {skipOptional && (
-              <div style={{
-                marginBottom: 'var(--space-xl)',
-                padding: 'var(--space-md)',
-                background: 'var(--bg-subtle)',
-                borderRadius: 'var(--border-radius-md)',
-                textAlign: 'center'
-              }}>
-                <p style={{ color: 'var(--text-muted)', marginBottom: 'var(--space-sm)' }}>
-                  ✓ Optional profile sections skipped
-                </p>
+              <div className="optional-skipped">
+                <p>✓ Optional profile sections skipped</p>
                 <button
                   type="button"
                   onClick={() => setSkipOptional(false)}
-                  className="btn-link"
-                  style={{ color: 'var(--pryde-purple)', textDecoration: 'underline', cursor: 'pointer' }}
+                  className="btn-unskip"
                 >
                   Go back and fill them out
                 </button>
