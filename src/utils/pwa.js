@@ -20,17 +20,24 @@ export async function registerServiceWorker() {
 
         newWorker.addEventListener('statechange', () => {
           if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-            // New service worker available, prompt user to refresh
-            logger.info('[PWA] New version available! Please refresh.');
+            // New service worker available, automatically reload after a short delay
+            logger.info('[PWA] New version available! Auto-updating...');
             showUpdateNotification();
           }
         });
       });
 
-      // Check for updates every hour
+      // Check for updates every 5 minutes (more frequent for faster updates)
       setInterval(() => {
         registration.update();
-      }, 60 * 60 * 1000);
+      }, 5 * 60 * 1000);
+
+      // Also check for updates when page becomes visible (user switches back to tab)
+      document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) {
+          registration.update();
+        }
+      });
 
       return registration;
     } catch (error) {
@@ -55,13 +62,21 @@ export async function unregisterServiceWorker() {
 }
 
 /**
- * Show update notification to user
+ * Show update notification to user and auto-reload
  */
 function showUpdateNotification() {
-  // You can integrate this with your toast notification system
-  if (window.confirm('A new version of Pryde Social is available! Refresh to update?')) {
+  // Show a brief toast notification (if available)
+  const event = new CustomEvent('pwa-update-available', {
+    detail: { message: 'New version available! Updating...' }
+  });
+  window.dispatchEvent(event);
+
+  // Auto-reload after 2 seconds to apply the update
+  // This gives users a brief moment to see the notification
+  setTimeout(() => {
+    logger.info('[PWA] Auto-reloading to apply update...');
     window.location.reload();
-  }
+  }, 2000);
 }
 
 /**

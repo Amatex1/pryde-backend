@@ -11,8 +11,10 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['pryde-logo.png', 'robots.txt', 'favicon.ico', 'icons/*.png', 'offline.html'],
       manifest: false, // Use existing manifest.json
+      injectRegister: 'auto', // Automatically inject registration code
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,webp,woff2}'],
+        navigateFallback: null, // Disable navigate fallback to prevent caching issues
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/pryde-social\.onrender\.com\/api\/.*/i,
