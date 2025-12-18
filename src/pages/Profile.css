@@ -2277,6 +2277,12 @@ html:not([data-theme="dark"]):not([data-quiet-mode="true"]) .section-title {
     overflow-y: visible !important;
   }
 
+  /* FIX: Remove blue box gap between cover and avatar */
+  .profile-info {
+    padding-top: 0 !important;
+    margin-top: 0 !important;
+  }
+
   /* Ensure create-post-layout doesn't squish */
   .create-post-layout {
     width: 100%;
