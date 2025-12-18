@@ -76,20 +76,26 @@ router.get('/check-username/:username', async (req, res) => {
 router.post('/signup', signupLimiter, validateSignup, async (req, res) => {
   try {
     const {
+      // Required fields
+      fullName,
       username,
       email,
       password,
-      fullName,
+      birthday,
+      termsAccepted,
+      captchaToken,
+      // Optional fields
       displayName,
-      nickname,
+      identity, // 'LGBTQ+' or 'Ally'
       pronouns,
+      bio,
+      // Legacy fields (for backward compatibility)
+      nickname,
       customPronouns,
       gender,
       customGender,
       relationshipStatus,
-      birthday,
-      isAlly, // PHASE 6: Ally system
-      captchaToken // hCaptcha token
+      isAlly
     } = req.body;
 
     // Verify hCaptcha token (only in production or if HCAPTCHA_SECRET is set)
@@ -128,11 +134,18 @@ router.post('/signup', signupLimiter, validateSignup, async (req, res) => {
       }
     }
 
-    // Validation
-    if (!username || !email || !password || !birthday) {
+    // Validation - Required fields only
+    if (!fullName || !username || !email || !password || !birthday) {
       return res.status(400).json({
-        message: 'Please provide all required fields including birthday',
-        fields: { username, email, password, birthday }
+        message: 'Please provide all required fields: full name, username, email, password, and birthday',
+        fields: { fullName, username, email, password, birthday }
+      });
+    }
+
+    // Validate fullName minimum length
+    if (fullName.trim().length < 2) {
+      return res.status(400).json({
+        message: 'Full name must be at least 2 characters'
       });
     }
 
@@ -183,20 +196,33 @@ router.post('/signup', signupLimiter, validateSignup, async (req, res) => {
 
     // Create new user
     user = new User({
-      username,
-      email,
+      // Required fields
+      fullName: fullName.trim(),
+      username: username.toLowerCase().trim(),
+      email: email.toLowerCase().trim(),
       password,
-      fullName: fullName || '',
-      displayName: displayName || fullName || username,
-      nickname: nickname || '',
-      pronouns: pronouns || '',
-      customPronouns: customPronouns || '',
-      gender: gender || '',
-      customGender: customGender || '',
-      relationshipStatus: relationshipStatus || '',
       birthday: birthDate,
-      isAlly: isAlly || false, // PHASE 6: Ally system
-      onboardingCompleted: true, // PHASE 6: Mark onboarding as complete
+
+      // Optional fields (only set if provided)
+      displayName: displayName?.trim() || null,
+      identity: identity || null,
+      pronouns: pronouns?.trim() || null,
+      bio: bio?.trim() || null,
+
+      // Legacy fields (for backward compatibility)
+      nickname: nickname?.trim() || '',
+      customPronouns: customPronouns?.trim() || '',
+      gender: gender?.trim() || '',
+      customGender: customGender?.trim() || '',
+      relationshipStatus: relationshipStatus?.trim() || '',
+      isAlly: isAlly || (identity === 'Ally') || false,
+
+      // Profile state
+      profileComplete: false,
+      onboardingStep: 'registered',
+      onboardingCompleted: false,
+
+      // Terms acceptance
       termsAcceptedAt: new Date(),
       termsVersion: config.termsVersion,
       privacyAcceptedAt: new Date(),

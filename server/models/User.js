@@ -23,12 +23,18 @@ const userSchema = new mongoose.Schema({
   },
   fullName: {
     type: String,
-    default: '',
-    trim: true
+    required: true,
+    trim: true,
+    minlength: 2
   },
   displayName: {
     type: String,
-    default: ''
+    default: null
+  },
+  identity: {
+    type: String,
+    enum: ['LGBTQ+', 'Ally', null],
+    default: null
   },
   nickname: {
     type: String,
@@ -47,7 +53,7 @@ const userSchema = new mongoose.Schema({
   },
   pronouns: {
     type: String,
-    default: '',
+    default: null,
     trim: true
   },
   gender: {
@@ -71,7 +77,7 @@ const userSchema = new mongoose.Schema({
   },
   bio: {
     type: String,
-    default: '',
+    default: null,
     maxlength: 500
   },
   profilePhoto: {
@@ -618,7 +624,7 @@ const userSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Post'
   }],
-  // PHASE 6: Ally System
+  // PHASE 6: Ally System (DEPRECATED - use identity field instead)
   isAlly: {
     type: Boolean,
     default: false
@@ -626,6 +632,14 @@ const userSchema = new mongoose.Schema({
   onboardingCompleted: {
     type: Boolean,
     default: false
+  },
+  profileComplete: {
+    type: Boolean,
+    default: false
+  },
+  onboardingStep: {
+    type: String,
+    default: 'registered'
   },
   // Blocked Users
   blockedUsers: [{

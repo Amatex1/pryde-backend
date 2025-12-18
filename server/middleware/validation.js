@@ -26,29 +26,46 @@ export const handleValidationErrors = (req, res, next) => {
  * Auth validation rules
  */
 export const validateSignup = [
+  body('fullName')
+    .trim()
+    .isLength({ min: 2 })
+    .withMessage('Full name must be at least 2 characters'),
+
   body('username')
     .trim()
     .isLength({ min: 3, max: 30 })
     .withMessage('Username must be between 3 and 30 characters')
     .matches(/^[a-zA-Z0-9_]+$/)
-    .withMessage('Username can only contain letters, numbers, and underscores'),
-  
+    .withMessage('Username can only contain letters, numbers, and underscores')
+    .toLowerCase(),
+
   body('email')
     .trim()
     .isEmail()
     .withMessage('Must be a valid email address')
     .normalizeEmail(),
-  
+
   body('password')
     .isLength({ min: 12 })
     .withMessage('Password must be at least 12 characters long')
     .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#^()_+\-=\[\]{};':"\\|,.<>\/])/)
     .withMessage('Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character (@$!%*?&#^()_+-=[]{};\':"\\|,.<>/)'),
-  
+
   body('birthday')
     .isISO8601()
     .withMessage('Birthday must be a valid date'),
-  
+
+  body('termsAccepted')
+    .isBoolean()
+    .equals('true')
+    .withMessage('You must accept the terms and conditions'),
+
+  // Optional fields - no validation if not provided
+  body('displayName').optional().trim(),
+  body('identity').optional().isIn(['LGBTQ+', 'Ally']),
+  body('pronouns').optional().trim(),
+  body('bio').optional().trim().isLength({ max: 500 }),
+
   handleValidationErrors
 ];
 

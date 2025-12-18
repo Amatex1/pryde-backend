@@ -8,18 +8,23 @@ import './Auth.css';
 
 function Register({ setIsAuth }) {
   const [formData, setFormData] = useState({
+    // Required fields
+    fullName: '',
     username: '',
     email: '',
     password: '',
-    fullName: '',
-    displayName: '',
-    birthday: '',
     birthMonth: '',
     birthDay: '',
     birthYear: '',
+    birthday: '',
     termsAccepted: false,
-    isAlly: false // PHASE 6: Ally system
+    // Optional fields
+    displayName: '',
+    identity: '', // 'LGBTQ+' or 'Ally'
+    pronouns: '',
+    bio: ''
   });
+  const [skipOptional, setSkipOptional] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPasskeySetup, setShowPasskeySetup] = useState(false);
@@ -299,315 +304,455 @@ function Register({ setIsAuth }) {
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="auth-form" aria-label="Registration form">
-          <div className="form-group">
-            <label htmlFor="username">Username</label>
-            <input
-              type="text"
-              id="username"
-              name="username"
-              value={formData.username}
-              onChange={handleChange}
-              required
-              className="form-input glossy"
-              placeholder="Choose a username"
-              autoComplete="username"
-              aria-required="true"
-              aria-invalid={usernameAvailable && !usernameAvailable.available ? 'true' : 'false'}
-              aria-describedby={formData.username.length >= 3 ? 'username-feedback' : undefined}
-            />
-            {formData.username.length >= 3 && (
-              <div
-                id="username-feedback"
-                className="username-feedback"
-                role={usernameAvailable && !usernameAvailable.available ? 'alert' : 'status'}
-                aria-live="polite"
-                style={{
-                  marginTop: '0.5rem',
-                  fontSize: '0.875rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem'
-                }}
-              >
-                {checkingUsername ? (
-                  <span style={{ color: 'var(--text-muted)' }}>⏳ Checking availability...</span>
-                ) : usernameAvailable ? (
-                  usernameAvailable.available ? (
-                    <span style={{ color: '#4caf50', fontWeight: '600' }}>✓ {usernameAvailable.message}</span>
-                  ) : (
-                    <span style={{ color: '#ff6b6b', fontWeight: '600' }}>✗ {usernameAvailable.message}</span>
-                  )
-                ) : null}
+            {/* SECTION: Account Basics (Required) */}
+            <div style={{ marginBottom: '2rem' }}>
+              <h3 style={{
+                fontSize: '1.1rem',
+                fontWeight: '600',
+                marginBottom: '1rem',
+                color: 'var(--pryde-purple)'
+              }}>
+                Account Basics
+              </h3>
+
+              <div className="form-group">
+                <label htmlFor="fullName">
+                  Full Name <span style={{ color: 'var(--pryde-purple)', fontWeight: 'bold' }}>*</span>
+                </label>
+                <input
+                  type="text"
+                  id="fullName"
+                  name="fullName"
+                  value={formData.fullName}
+                  onChange={handleChange}
+                  required
+                  className="form-input glossy"
+                  placeholder="Your full name"
+                  autoComplete="name"
+                  aria-required="true"
+                />
+                <small style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginTop: '0.25rem', display: 'block' }}>
+                  This helps keep the community safe
+                </small>
               </div>
-            )}
-          </div>
 
-          <div className="form-group">
-            <label htmlFor="fullName">Full Name <span style={{ color: 'var(--pryde-purple)', fontWeight: 'bold' }}>*</span></label>
-            <input
-              type="text"
-              id="fullName"
-              name="fullName"
-              value={formData.fullName}
-              onChange={handleChange}
-              required
-              className="form-input glossy"
-              placeholder="Enter your full name"
-              autoComplete="name"
-              aria-required="true"
-            />
-          </div>
+              <div className="form-group">
+                <label htmlFor="username">
+                  Username <span style={{ color: 'var(--pryde-purple)', fontWeight: 'bold' }}>*</span>
+                </label>
+                <input
+                  type="text"
+                  id="username"
+                  name="username"
+                  value={formData.username}
+                  onChange={handleChange}
+                  required
+                  className="form-input glossy"
+                  placeholder="@yourname"
+                  autoComplete="username"
+                  aria-required="true"
+                  aria-invalid={usernameAvailable && !usernameAvailable.available ? 'true' : 'false'}
+                  aria-describedby={formData.username.length >= 3 ? 'username-feedback' : undefined}
+                />
+                <small style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginTop: '0.25rem', display: 'block' }}>
+                  This is your public handle
+                </small>
+                {formData.username.length >= 3 && (
+                  <div
+                    id="username-feedback"
+                    className="username-feedback"
+                    role={usernameAvailable && !usernameAvailable.available ? 'alert' : 'status'}
+                    aria-live="polite"
+                    style={{
+                      marginTop: '0.5rem',
+                      fontSize: '0.875rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem'
+                    }}
+                  >
+                    {checkingUsername ? (
+                      <span style={{ color: 'var(--text-muted)' }}>⏳ Checking availability...</span>
+                    ) : usernameAvailable ? (
+                      usernameAvailable.available ? (
+                        <span style={{ color: '#4caf50', fontWeight: '600' }}>✓ {usernameAvailable.message}</span>
+                      ) : (
+                        <span style={{ color: '#ff6b6b', fontWeight: '600' }}>✗ {usernameAvailable.message}</span>
+                      )
+                    ) : null}
+                  </div>
+                )}
+              </div>
 
-          <div className="form-group">
-            <label htmlFor="displayName">Display Name</label>
-            <input
-              type="text"
-              id="displayName"
-              name="displayName"
-              value={formData.displayName}
-              onChange={handleChange}
-              className="form-input glossy"
-              placeholder="Your display name (optional)"
-              autoComplete="off"
-            />
-          </div>
+              <div className="form-group">
+                <label htmlFor="email">
+                  Email <span style={{ color: 'var(--pryde-purple)', fontWeight: 'bold' }}>*</span>
+                </label>
+                <input
+                  type="email"
+                  id="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  required
+                  className="form-input glossy"
+                  placeholder="your.email@example.com"
+                  autoComplete="email"
+                  aria-required="true"
+                  aria-invalid={error && error.toLowerCase().includes('email') ? 'true' : 'false'}
+                  aria-describedby={error && error.toLowerCase().includes('email') ? 'register-error' : undefined}
+                />
+              </div>
 
-          <div className="form-group">
-            <label htmlFor="email">Email</label>
-            <input
-              type="email"
-              id="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              required
-              className="form-input glossy"
-              placeholder="Enter your email"
-              autoComplete="email"
-              aria-required="true"
-              aria-invalid={error && error.toLowerCase().includes('email') ? 'true' : 'false'}
-              aria-describedby={error && error.toLowerCase().includes('email') ? 'register-error' : undefined}
-            />
-          </div>
+              <div className="form-group">
+                <label htmlFor="password">
+                  Password <span style={{ color: 'var(--pryde-purple)', fontWeight: 'bold' }}>*</span>
+                </label>
+                <input
+                  type="password"
+                  id="password"
+                  name="password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  aria-required="true"
+                  aria-invalid={error && error.toLowerCase().includes('password') ? 'true' : 'false'}
+                  aria-describedby={error && error.toLowerCase().includes('password') ? 'register-error' : 'password-requirements'}
+                  required
+                  minLength="8"
+                  className="form-input glossy"
+                  placeholder="Create a strong password"
+                  autoComplete="new-password"
+                />
+                {formData.password && (
+                  <div className="password-strength" style={{ marginTop: '0.75rem' }}>
+                    <div style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      marginBottom: '0.5rem'
+                    }}>
+                      <span style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>
+                        Password Strength:
+                      </span>
+                      <span style={{
+                        fontSize: '0.875rem',
+                        fontWeight: '600',
+                        color: passwordStrength.color
+                      }}>
+                        {passwordStrength.label}
+                      </span>
+                    </div>
+                    <div style={{
+                      width: '100%',
+                      height: '6px',
+                      background: 'var(--bg-subtle)',
+                      borderRadius: '3px',
+                      overflow: 'hidden'
+                    }}>
+                      <div style={{
+                        width: `${(passwordStrength.score / 7) * 100}%`,
+                        height: '100%',
+                        background: passwordStrength.color,
+                        transition: 'all 0.3s ease',
+                        borderRadius: '3px'
+                      }} />
+                    </div>
+                  </div>
+                )}
+                <small
+                  id="password-requirements"
+                  style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginTop: '0.5rem', display: 'block' }}
+                >
+                  Must contain at least one uppercase letter, one lowercase letter, and one number
+                </small>
+              </div>
+            </div>
 
-          <div className="form-group">
-            <label htmlFor="password">Password</label>
-            <input
-              type="password"
-              id="password"
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              aria-required="true"
-              aria-invalid={error && error.toLowerCase().includes('password') ? 'true' : 'false'}
-              aria-describedby={error && error.toLowerCase().includes('password') ? 'register-error' : 'password-requirements'}
-              required
-              minLength="8"
-              className="form-input glossy"
-              placeholder="Create a password (min 8 characters)"
-              autoComplete="new-password"
-            />
-            {formData.password && (
-              <div className="password-strength" style={{ marginTop: '0.75rem' }}>
-                <div style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  marginBottom: '0.5rem'
-                }}>
-                  <span style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>
-                    Password Strength:
-                  </span>
-                  <span style={{
-                    fontSize: '0.875rem',
+            {/* SECTION: Safety & Age (Required) */}
+            <div style={{ marginBottom: '2rem' }}>
+              <h3 style={{
+                fontSize: '1.1rem',
+                fontWeight: '600',
+                marginBottom: '1rem',
+                color: 'var(--pryde-purple)'
+              }}>
+                Safety & Age Verification
+              </h3>
+
+              <div className="form-group">
+                <label>Birthday <span style={{ color: 'var(--pryde-purple)', fontWeight: 'bold' }}>*</span></label>
+                <small style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '0.5rem', display: 'block' }}>
+                  You must be 18 or older to join Pryde
+                </small>
+                <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1.5fr', gap: '0.75rem' }}>
+                  <select
+                    name="birthMonth"
+                    value={formData.birthMonth}
+                    onChange={handleChange}
+                    required
+                    className="form-input glossy"
+                    style={{ padding: '0.75rem' }}
+                  >
+                    <option value="">Month</option>
+                    <option value="1">January</option>
+                    <option value="2">February</option>
+                    <option value="3">March</option>
+                    <option value="4">April</option>
+                    <option value="5">May</option>
+                    <option value="6">June</option>
+                    <option value="7">July</option>
+                    <option value="8">August</option>
+                    <option value="9">September</option>
+                    <option value="10">October</option>
+                    <option value="11">November</option>
+                    <option value="12">December</option>
+                  </select>
+                  <select
+                    name="birthDay"
+                    value={formData.birthDay}
+                    onChange={handleChange}
+                    required
+                    className="form-input glossy"
+                    style={{ padding: '0.75rem' }}
+                  >
+                    <option value="">Day</option>
+                    {Array.from({ length: 31 }, (_, i) => i + 1).map(day => (
+                      <option key={day} value={day}>{day}</option>
+                    ))}
+                  </select>
+                  <select
+                    name="birthYear"
+                    value={formData.birthYear}
+                    onChange={handleChange}
+                    required
+                    className="form-input glossy"
+                    style={{ padding: '0.75rem' }}
+                  >
+                    <option value="">Year</option>
+                    {Array.from({ length: 100 }, (_, i) => new Date().getFullYear() - 18 - i).map(year => (
+                      <option key={year} value={year}>{year}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            {/* SECTION: About You (Optional) */}
+            {!skipOptional && (
+              <div style={{
+                marginBottom: '2rem',
+                padding: '1.5rem',
+                background: 'var(--soft-lavender)',
+                borderRadius: '12px',
+                border: '2px dashed var(--pryde-purple-light)'
+              }}>
+                <div style={{ marginBottom: '1rem' }}>
+                  <h3 style={{
+                    fontSize: '1.1rem',
                     fontWeight: '600',
-                    color: passwordStrength.color
+                    marginBottom: '0.5rem',
+                    color: 'var(--pryde-purple)'
                   }}>
-                    {passwordStrength.label}
-                  </span>
+                    About You (Optional)
+                  </h3>
+                  <p style={{
+                    fontSize: '0.9rem',
+                    color: 'var(--text-muted)',
+                    lineHeight: '1.5',
+                    marginBottom: '0.5rem'
+                  }}>
+                    You can skip this for now and edit it later.
+                  </p>
                 </div>
-                <div style={{
-                  width: '100%',
-                  height: '6px',
-                  background: 'var(--bg-subtle)',
-                  borderRadius: '3px',
-                  overflow: 'hidden'
-                }}>
-                  <div style={{
-                    width: `${(passwordStrength.score / 7) * 100}%`,
-                    height: '100%',
-                    background: passwordStrength.color,
-                    transition: 'all 0.3s ease',
-                    borderRadius: '3px'
-                  }} />
+
+                <div className="form-group">
+                  <label style={{ fontWeight: '600', color: 'var(--pryde-purple)', marginBottom: '0.75rem', display: 'block' }}>
+                    🌈 How do you identify on Pryde?
+                  </label>
+                  <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '1rem', lineHeight: '1.5' }}>
+                    Pryde is a calm, queer-first creative platform for LGBTQ+ introverts, deep thinkers, and supportive allies.
+                  </p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                    <label className="checkbox-label" style={{
+                      padding: '0.75rem',
+                      background: formData.identity === 'LGBTQ+' ? 'var(--pryde-purple)' : 'var(--card-surface)',
+                      color: formData.identity === 'LGBTQ+' ? 'white' : 'var(--text-main)',
+                      border: formData.identity === 'LGBTQ+' ? '2px solid var(--pryde-purple)' : '2px solid var(--border-light)',
+                      borderRadius: '6px',
+                      cursor: 'pointer',
+                      transition: 'all 0.3s ease'
+                    }}>
+                      <input
+                        type="radio"
+                        name="identity"
+                        value="LGBTQ+"
+                        checked={formData.identity === 'LGBTQ+'}
+                        onChange={handleChange}
+                        style={{ marginRight: '0.5rem' }}
+                      />
+                      <span>I am LGBTQ+</span>
+                    </label>
+                    <label className="checkbox-label" style={{
+                      padding: '0.75rem',
+                      background: formData.identity === 'Ally' ? 'var(--pryde-purple)' : 'var(--card-surface)',
+                      color: formData.identity === 'Ally' ? 'white' : 'var(--text-main)',
+                      border: formData.identity === 'Ally' ? '2px solid var(--pryde-purple)' : '2px solid var(--border-light)',
+                      borderRadius: '6px',
+                      cursor: 'pointer',
+                      transition: 'all 0.3s ease'
+                    }}>
+                      <input
+                        type="radio"
+                        name="identity"
+                        value="Ally"
+                        checked={formData.identity === 'Ally'}
+                        onChange={handleChange}
+                        style={{ marginRight: '0.5rem' }}
+                      />
+                      <span>I am an ally and agree to respect queer spaces</span>
+                    </label>
+                  </div>
                 </div>
+
+                <div className="form-group">
+                  <label htmlFor="displayName">Display Name</label>
+                  <input
+                    type="text"
+                    id="displayName"
+                    name="displayName"
+                    value={formData.displayName}
+                    onChange={handleChange}
+                    className="form-input glossy"
+                    placeholder="How you'd like to be called (optional)"
+                    autoComplete="off"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="pronouns">Pronouns</label>
+                  <input
+                    type="text"
+                    id="pronouns"
+                    name="pronouns"
+                    value={formData.pronouns}
+                    onChange={handleChange}
+                    className="form-input glossy"
+                    placeholder="e.g., they/them, she/her, he/him (optional)"
+                    autoComplete="off"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="bio">Bio</label>
+                  <textarea
+                    id="bio"
+                    name="bio"
+                    value={formData.bio}
+                    onChange={handleChange}
+                    className="form-input glossy"
+                    placeholder="Tell us a bit about yourself (optional)"
+                    rows="3"
+                    maxLength="500"
+                    style={{ resize: 'vertical', minHeight: '80px' }}
+                  />
+                  {formData.bio && (
+                    <small style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginTop: '0.25rem', display: 'block' }}>
+                      {formData.bio.length}/500 characters
+                    </small>
+                  )}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setSkipOptional(true)}
+                  className="btn-secondary"
+                  style={{
+                    width: '100%',
+                    marginTop: '1rem',
+                    background: 'transparent',
+                    border: '2px solid var(--pryde-purple)',
+                    color: 'var(--pryde-purple)'
+                  }}
+                >
+                  Skip for Now
+                </button>
               </div>
             )}
-            <small
-              id="password-requirements"
-              style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginTop: '0.5rem', display: 'block' }}
-            >
-              Must contain at least one uppercase letter, one lowercase letter, and one number
-            </small>
-          </div>
 
-          <div className="form-group">
-            <label>Birthday <span style={{ color: 'var(--pryde-purple)', fontWeight: 'bold' }}>*</span></label>
-            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1.5fr', gap: '0.75rem' }}>
-              <select
-                name="birthMonth"
-                value={formData.birthMonth}
-                onChange={handleChange}
-                required
-                className="form-input glossy"
-                style={{ padding: '0.75rem' }}
-              >
-                <option value="">Month</option>
-                <option value="1">January</option>
-                <option value="2">February</option>
-                <option value="3">March</option>
-                <option value="4">April</option>
-                <option value="5">May</option>
-                <option value="6">June</option>
-                <option value="7">July</option>
-                <option value="8">August</option>
-                <option value="9">September</option>
-                <option value="10">October</option>
-                <option value="11">November</option>
-                <option value="12">December</option>
-              </select>
-              <select
-                name="birthDay"
-                value={formData.birthDay}
-                onChange={handleChange}
-                required
-                className="form-input glossy"
-                style={{ padding: '0.75rem' }}
-              >
-                <option value="">Day</option>
-                {Array.from({ length: 31 }, (_, i) => i + 1).map(day => (
-                  <option key={day} value={day}>{day}</option>
-                ))}
-              </select>
-              <select
-                name="birthYear"
-                value={formData.birthYear}
-                onChange={handleChange}
-                required
-                className="form-input glossy"
-                style={{ padding: '0.75rem' }}
-              >
-                <option value="">Year</option>
-                {Array.from({ length: 100 }, (_, i) => new Date().getFullYear() - 18 - i).map(year => (
-                  <option key={year} value={year}>{year}</option>
-                ))}
-              </select>
+            {skipOptional && (
+              <div style={{
+                marginBottom: '2rem',
+                padding: '1rem',
+                background: 'var(--bg-subtle)',
+                borderRadius: '8px',
+                textAlign: 'center'
+              }}>
+                <p style={{ color: 'var(--text-muted)', marginBottom: '0.5rem' }}>
+                  ✓ Optional profile sections skipped
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setSkipOptional(false)}
+                  className="btn-link"
+                  style={{ color: 'var(--pryde-purple)', textDecoration: 'underline', cursor: 'pointer' }}
+                >
+                  Go back and fill them out
+                </button>
+              </div>
+            )}
+
+            {/* Terms & CAPTCHA */}
+            <div style={{ marginBottom: '1.5rem' }}>
+              <div className="form-group checkbox-group">
+                <label className="checkbox-label">
+                  <input
+                    type="checkbox"
+                    name="termsAccepted"
+                    checked={formData.termsAccepted}
+                    onChange={handleChange}
+                    required
+                  />
+                  <span className="checkbox-text">
+                    I agree to the <a href="/terms" target="_blank" className="auth-link">Terms of Service</a> and <a href="/privacy" target="_blank" className="auth-link">Privacy Policy</a> <span style={{ color: 'var(--pryde-purple)', fontWeight: 'bold' }}>*</span>
+                  </span>
+                </label>
+              </div>
+
+              {/* hCaptcha */}
+              <div className="form-group" style={{
+                display: 'flex',
+                justifyContent: 'center',
+                marginTop: '1.5rem',
+                marginBottom: '1rem'
+              }}>
+                <HCaptcha
+                  ref={captchaRef}
+                  sitekey={import.meta.env.VITE_HCAPTCHA_SITE_KEY || '10000000-ffff-ffff-ffff-000000000001'}
+                  onVerify={onCaptchaVerify}
+                  onExpire={onCaptchaExpire}
+                  theme={document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light'}
+                />
+              </div>
             </div>
-            <small style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginTop: '0.25rem', display: 'block' }}>
-              You must be 18 or older to register. Only your age will be shown on your profile.
-            </small>
-          </div>
 
-          <div className="form-group checkbox-group" style={{ display: 'none' }}>
-            <label className="checkbox-label">
-              <input
-                type="checkbox"
-                name="ageVerified"
-                checked={true}
-                onChange={handleChange}
-              />
-              <span className="checkbox-text">
-                I verify that I am 18 years or older
-              </span>
-            </label>
-          </div>
-
-          {/* PHASE 6: Ally Selection */}
-          <div className="form-group" style={{ marginTop: '1.5rem', padding: '1rem', background: 'var(--soft-lavender)', borderRadius: '8px' }}>
-            <label style={{ fontWeight: 'bold', color: 'var(--pryde-purple)', marginBottom: '0.75rem', display: 'block' }}>
-              🌈 How do you identify on Pryde?
-            </label>
-            <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: '1rem', lineHeight: '1.5' }}>
-              Pryde is a calm, queer-first creative platform for LGBTQ+ introverts, deep thinkers, and supportive allies.
+            {/* Calming microcopy before submit */}
+            <p style={{
+              textAlign: 'center',
+              fontSize: '0.9rem',
+              color: 'var(--text-muted)',
+              marginBottom: '1rem',
+              lineHeight: '1.5'
+            }}>
+              You can update your profile anytime.
             </p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-              <label className="checkbox-label" style={{
-                padding: '0.75rem',
-                background: formData.isAlly === false ? 'var(--pryde-purple)' : 'var(--card-surface)',
-                color: formData.isAlly === false ? 'white' : 'var(--text-main)',
-                border: formData.isAlly === false ? '2px solid var(--pryde-purple)' : '2px solid var(--border-light)',
-                borderRadius: '6px',
-                cursor: 'pointer',
-                transition: 'all 0.3s ease'
-              }}>
-                <input
-                  type="radio"
-                  name="identityType"
-                  checked={formData.isAlly === false}
-                  onChange={() => setFormData({ ...formData, isAlly: false })}
-                  style={{ marginRight: '0.5rem' }}
-                />
-                <span>I am LGBTQ+</span>
-              </label>
-              <label className="checkbox-label" style={{
-                padding: '0.75rem',
-                background: formData.isAlly === true ? 'var(--pryde-purple)' : 'var(--card-surface)',
-                color: formData.isAlly === true ? 'white' : 'var(--text-main)',
-                border: formData.isAlly === true ? '2px solid var(--pryde-purple)' : '2px solid var(--border-light)',
-                borderRadius: '6px',
-                cursor: 'pointer',
-                transition: 'all 0.3s ease'
-              }}>
-                <input
-                  type="radio"
-                  name="identityType"
-                  checked={formData.isAlly === true}
-                  onChange={() => setFormData({ ...formData, isAlly: true })}
-                  style={{ marginRight: '0.5rem' }}
-                />
-                <span>I am an ally and agree to respect queer spaces</span>
-              </label>
-            </div>
-          </div>
 
-          <div className="form-group checkbox-group">
-            <label className="checkbox-label">
-              <input
-                type="checkbox"
-                name="termsAccepted"
-                checked={formData.termsAccepted}
-                onChange={handleChange}
-                required
-              />
-              <span className="checkbox-text">
-                I agree to the <a href="/terms" target="_blank" className="auth-link">Terms of Service</a> and <a href="/privacy" target="_blank" className="auth-link">Privacy Policy</a>
-              </span>
-            </label>
-          </div>
-
-          {/* hCaptcha */}
-          <div className="form-group" style={{
-            display: 'flex',
-            justifyContent: 'center',
-            marginTop: '1.5rem',
-            marginBottom: '1rem'
-          }}>
-            <HCaptcha
-              ref={captchaRef}
-              sitekey={import.meta.env.VITE_HCAPTCHA_SITE_KEY || '10000000-ffff-ffff-ffff-000000000001'}
-              onVerify={onCaptchaVerify}
-              onExpire={onCaptchaExpire}
-              theme={document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light'}
-            />
-          </div>
-
-          <button
-            type="submit"
-            disabled={loading || !formData.birthMonth || !formData.birthDay || !formData.birthYear || !formData.termsAccepted || !captchaToken}
-            className="btn-primary glossy-gold"
-          >
-            {loading ? 'Creating Account...' : 'Create Account'}
-          </button>
+            <button
+              type="submit"
+              disabled={loading || !formData.fullName || !formData.username || !formData.email || !formData.password || !formData.birthMonth || !formData.birthDay || !formData.birthYear || !formData.termsAccepted || !captchaToken}
+              className="btn-primary glossy-gold"
+            >
+              {loading ? 'Creating Account...' : 'Create Account'}
+            </button>
         </form>
         )}
 

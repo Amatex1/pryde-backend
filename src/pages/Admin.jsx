@@ -860,6 +860,7 @@ function UsersTab({ users, onSuspend, onBan, onUnsuspend, onUnban, onChangeRole,
             <tr>
               <th>Username</th>
               <th>Full Name</th>
+              <th>Identity</th>
               <th>Email</th>
               <th>Role</th>
               <th>Status</th>
@@ -872,6 +873,24 @@ function UsersTab({ users, onSuspend, onBan, onUnsuspend, onUnban, onChangeRole,
               <tr key={user._id}>
                 <td data-label="Username">{user.username}</td>
                 <td data-label="Full Name">{user.fullName || <span style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>Not provided</span>}</td>
+                <td data-label="Identity">
+                  {user.identity ? (
+                    <span style={{
+                      padding: '0.25rem 0.5rem',
+                      borderRadius: '4px',
+                      fontSize: '0.85rem',
+                      background: user.identity === 'LGBTQ+' ? 'var(--pryde-purple)' : 'var(--soft-lavender)',
+                      color: user.identity === 'LGBTQ+' ? 'white' : 'var(--pryde-purple)',
+                      fontWeight: '600'
+                    }}>
+                      {user.identity === 'LGBTQ+' ? '🌈 LGBTQ+' : '🤝 Ally'}
+                    </span>
+                  ) : user.isAlly ? (
+                    <span style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>Ally (legacy)</span>
+                  ) : (
+                    <span style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>Not set</span>
+                  )}
+                </td>
                 <td data-label="Email">
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
                     <span>{user.email}</span>
