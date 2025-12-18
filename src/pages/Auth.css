@@ -239,6 +239,61 @@
   color: var(--electric-blue);
 }
 
+/* Terms & Privacy Checkbox - Clean Alignment */
+.terms-checkbox-wrapper {
+  margin-bottom: var(--space-md);
+}
+
+.terms-checkbox-label {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-sm);
+  cursor: pointer;
+  color: var(--text-main);
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-relaxed);
+}
+
+.terms-checkbox-label input[type="checkbox"] {
+  margin-top: 2px; /* Align with first line of text */
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: var(--pryde-purple);
+  flex-shrink: 0;
+}
+
+.terms-checkbox-text {
+  flex: 1;
+}
+
+.terms-checkbox-text a {
+  color: var(--pryde-purple);
+  text-decoration: underline;
+}
+
+.terms-checkbox-text a:hover {
+  color: var(--electric-blue);
+}
+
+/* hCaptcha Container - Centered & Balanced */
+.captcha-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: var(--space-lg);
+  margin-bottom: var(--space-lg);
+  padding: var(--space-sm) 0;
+}
+
+/* Mobile adjustments for captcha */
+@media (max-width: 768px) {
+  .captcha-container {
+    margin-top: var(--space-md);
+    margin-bottom: var(--space-md);
+  }
+}
+
 .auth-divider {
   display: flex;
   align-items: center;

@@ -648,9 +648,10 @@ function Register({ setIsAuth }) {
             )}
 
             {/* Terms & CAPTCHA */}
-            <div style={{ marginBottom: 'var(--space-lg)' }}>
-              <div className="form-group checkbox-group">
-                <label className="checkbox-label">
+            <div>
+              {/* Terms Checkbox */}
+              <div className="terms-checkbox-wrapper">
+                <label className="terms-checkbox-label">
                   <input
                     type="checkbox"
                     name="termsAccepted"
@@ -658,19 +659,14 @@ function Register({ setIsAuth }) {
                     onChange={handleChange}
                     required
                   />
-                  <span className="checkbox-text">
-                    I agree to the <a href="/terms" target="_blank" className="auth-link">Terms of Service</a> and <a href="/privacy" target="_blank" className="auth-link">Privacy Policy</a> <span style={{ color: 'var(--pryde-purple)', fontWeight: 'bold' }}>*</span>
+                  <span className="terms-checkbox-text">
+                    I agree to the <a href="/terms" target="_blank">Terms of Service</a> and <a href="/privacy" target="_blank">Privacy Policy</a> <span style={{ color: 'var(--pryde-purple)', fontWeight: 'bold' }}>*</span>
                   </span>
                 </label>
               </div>
 
               {/* hCaptcha */}
-              <div className="form-group" style={{
-                display: 'flex',
-                justifyContent: 'center',
-                marginTop: 'var(--space-lg)',
-                marginBottom: 'var(--space-md)'
-              }}>
+              <div className="captcha-container">
                 <HCaptcha
                   ref={captchaRef}
                   sitekey={import.meta.env.VITE_HCAPTCHA_SITE_KEY || '10000000-ffff-ffff-ffff-000000000001'}
