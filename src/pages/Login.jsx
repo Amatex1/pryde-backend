@@ -154,7 +154,7 @@ function Login({ setIsAuth }) {
           <form onSubmit={handleVerify2FA} className="auth-form">
             <div className="form-group">
               <label htmlFor="twoFactorCode">Two-Factor Authentication Code</label>
-              <p style={{ fontSize: '14px', color: 'var(--text-muted)', marginBottom: '10px' }}>
+              <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--text-muted)', marginBottom: 'var(--space-sm)' }}>
                 Enter the 6-digit code from your authenticator app or use a backup code.
               </p>
               <input
@@ -168,7 +168,7 @@ function Login({ setIsAuth }) {
                 maxLength={6}
                 autoFocus
                 style={{
-                  fontSize: '24px',
+                  fontSize: 'var(--font-size-2xl)',
                   textAlign: 'center',
                   letterSpacing: '10px',
                   fontWeight: 'bold'
@@ -189,7 +189,7 @@ function Login({ setIsAuth }) {
                 setError('');
               }}
               className="btn-secondary"
-              style={{ marginTop: '10px', width: '100%' }}
+              style={{ marginTop: 'var(--space-sm)', width: '100%' }}
             >
               ← Back to Login
             </button>
@@ -231,12 +231,11 @@ function Login({ setIsAuth }) {
               aria-invalid={error && error.toLowerCase().includes('password') ? 'true' : 'false'}
               aria-describedby={error && error.toLowerCase().includes('password') ? 'login-error' : undefined}
             />
-          </div>
-
-          <div style={{ textAlign: 'right', marginBottom: '1rem' }}>
-            <Link to="/forgot-password" className="auth-link" style={{ fontSize: '0.9rem' }}>
-              Forgot password?
-            </Link>
+            <div className="forgot-password-link">
+              <Link to="/forgot-password" className="auth-link-muted">
+                Forgot password?
+              </Link>
+            </div>
           </div>
 
           <button type="submit" disabled={loading} className="btn-primary glossy-gold">
@@ -268,6 +267,8 @@ function Login({ setIsAuth }) {
             <Link to="/privacy">Privacy</Link>
             <span>•</span>
             <Link to="/community">Guidelines</Link>
+            <span>•</span>
+            <Link to="/safety">Safety</Link>
             <span>•</span>
             <Link to="/contact">Contact</Link>
           </div>

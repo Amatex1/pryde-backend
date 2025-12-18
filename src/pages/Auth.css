@@ -85,7 +85,7 @@
   outline: none;
   font-size: var(--font-size-base);
   color: var(--text-main);
-  background: var(--bg-card);
+  background: var(--bg-subtle); /* Slightly reduced brightness for better hierarchy */
   transition: all 0.15s ease;
   min-height: var(--button-height-mobile); /* Ensure touch-friendly */
 }
@@ -97,6 +97,7 @@
 .form-input:focus {
   border-color: var(--color-primary);
   box-shadow: var(--shadow-focus);
+  background: var(--bg-card); /* Brighten on focus for feedback */
 }
 
 .btn-primary {
@@ -144,6 +145,26 @@
   text-decoration: underline;
 }
 
+/* Forgot password link - muted and right-aligned */
+.forgot-password-link {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: var(--space-sm);
+}
+
+.auth-link-muted {
+  color: var(--text-muted);
+  text-decoration: none;
+  font-size: var(--font-size-xs); /* Reduced to xs for secondary hierarchy */
+  font-weight: 400; /* Lighter weight for subtle appearance */
+  transition: color 0.2s ease;
+}
+
+.auth-link-muted:hover {
+  color: var(--pryde-purple);
+  text-decoration: underline; /* Subtle underline only on hover */
+}
+
 .auth-legal-links {
   display: flex;
   justify-content: center;
@@ -152,15 +173,15 @@
   margin-top: var(--space-lg);
   padding-top: var(--space-lg);
   border-top: 1px solid var(--border-light);
-  font-size: var(--font-size-sm);
+  font-size: var(--font-size-xs); /* Reduced to xs for subtle footer */
   flex-wrap: wrap;
 }
 
 .auth-legal-links a {
   color: var(--text-muted);
   text-decoration: none;
-  font-size: var(--font-size-sm);
-  transition: color 0.3s ease;
+  font-size: var(--font-size-xs); /* Reduced to xs for subtle footer */
+  transition: color 0.2s ease;
 }
 
 .auth-legal-links a:hover {
@@ -168,8 +189,8 @@
 }
 
 .auth-legal-links span {
-  color: var(--border-light);
-  font-size: var(--font-size-sm);
+  color: var(--border-subtle); /* More subtle separator */
+  font-size: var(--font-size-xs); /* Reduced to xs for subtle footer */
 }
 
 .error-message {
@@ -298,21 +319,21 @@
   display: flex;
   align-items: center;
   text-align: center;
-  margin: var(--space-lg) 0;
+  margin: var(--space-md) 0; /* Reduced from lg to md for tighter rhythm */
 }
 
 .auth-divider::before,
 .auth-divider::after {
   content: '';
   flex: 1;
-  border-bottom: 2px solid var(--border-light);
+  border-bottom: 1px solid var(--border-subtle); /* Thinner, more subtle line */
 }
 
 .auth-divider span {
   padding: 0 var(--space-md);
   color: var(--text-muted);
-  font-size: var(--font-size-sm);
-  font-weight: 500;
+  font-size: var(--font-size-xs); /* Reduced for subtle appearance */
+  font-weight: 400; /* Lighter weight */
 }
 
 .passkey-setup-container {
