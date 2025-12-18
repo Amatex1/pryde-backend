@@ -2258,11 +2258,11 @@ html:not([data-theme="dark"]):not([data-quiet-mode="true"]) .section-title {
 }
 
 @media (max-width: 768px) {
-  /* Ensure page container is full height - NO scrollable container! */
+  /* Ensure page container fits content - NO extra black space! */
   .profile-page.page-container,
   .page-container.profile-page,
   .page-container {
-    min-height: 100vh !important;
+    min-height: auto !important; /* Let content determine height */
     height: auto !important;
     max-height: none !important; /* Remove any height constraints */
     overflow-y: visible !important;
