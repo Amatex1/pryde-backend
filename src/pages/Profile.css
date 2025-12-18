@@ -1,9 +1,26 @@
 /* ========================================
-   PROFILE PAGE - POLISHED WITH DESIGN SYSTEM
-   Version: 2024-12-14-v4-FORCE-GRID-LAYOUT
-   CRITICAL: Maximum specificity to override all conflicts
-   LAYOUT: Grid with sidebar on RIGHT (desktop)
+   PROFILE PAGE - MOBILE-FIRST RESPONSIVE DESIGN
+   Version: 2024-12-18-MOBILE-FIRST
+   APPROACH: Mobile styles first, desktop overrides
+   LAYOUT: Single column (mobile), Grid with sidebar (desktop)
    ======================================== */
+
+/* CSS Custom Properties for Mobile/Desktop Values */
+:root {
+  /* Avatar sizes */
+  --avatar-size-mobile: 100px;
+  --avatar-size-desktop: 150px;
+
+  /* Cover photo heights */
+  --cover-height-mobile: 200px;
+  --cover-height-desktop: 300px;
+
+  /* Action button sizes */
+  --action-btn-padding-mobile: 0.5rem;
+  --action-btn-padding-desktop: 0.75rem 1.5rem;
+  --action-btn-emoji-size: 24px;
+  --action-btn-min-touch: 44px;
+}
 
 /* ========================================
    POST CARD STYLES - DUPLICATED FROM FEED.CSS
@@ -195,11 +212,19 @@ div.profile-layout,
   box-shadow: var(--shadow-medium);
 }
 
+/* MOBILE-FIRST: Cover photo */
 .cover-photo {
-  height: 300px;
+  height: var(--cover-height-mobile);
   overflow: hidden;
   background: var(--gradient-primary);
   position: relative;
+}
+
+/* DESKTOP: Taller cover photo */
+@media (min-width: 769px) {
+  .cover-photo {
+    height: var(--cover-height-desktop);
+  }
 }
 
 .cover-photo img {
@@ -294,27 +319,45 @@ div.profile-layout,
   height: 100%;
 }
 
+/* MOBILE-FIRST: Profile info section */
 .profile-info {
-  padding: 0 var(--space-6) var(--space-6);
+  padding: 0 1rem 1rem; /* Mobile: No top padding to allow avatar overlap */
   position: relative;
 }
 
+/* MOBILE-FIRST: Profile avatar */
 .profile-avatar {
-  width: 150px;
-  height: 150px;
+  width: var(--avatar-size-mobile);
+  height: var(--avatar-size-mobile);
   border-radius: 50%;
   background: var(--gradient-primary);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 56px;
+  font-size: 3rem;
   font-weight: 700;
   color: white;
   overflow: hidden;
-  border: 5px solid var(--bg-card);
-  margin-top: -75px;
-  margin-bottom: var(--space-4);
+  border: 4px solid var(--bg-card);
+  margin-top: calc(var(--avatar-size-mobile) / -2); /* Overlap cover by half */
+  margin-bottom: 1rem;
   box-shadow: var(--shadow-medium);
+}
+
+/* DESKTOP: Larger avatar and spacing */
+@media (min-width: 769px) {
+  .profile-info {
+    padding: 0 var(--space-6) var(--space-6);
+  }
+
+  .profile-avatar {
+    width: var(--avatar-size-desktop);
+    height: var(--avatar-size-desktop);
+    font-size: 56px;
+    border: 5px solid var(--bg-card);
+    margin-top: calc(var(--avatar-size-desktop) / -2);
+    margin-bottom: var(--space-4);
+  }
 }
 
 .profile-avatar img {
@@ -1528,25 +1571,68 @@ html:not([data-theme="dark"]):not([data-quiet-mode="true"]) .section-title {
   position: relative;
 }
 
-/* Action Buttons - Scoped to Profile page only */
-.profile-page .action-btn {
-  padding: var(--space-2) var(--space-3);
-  border-radius: var(--radius-pill);
+/* ========================================
+   ACTION BUTTONS - MOBILE-FIRST
+   Mobile: Icon-only with emoji
+   Desktop: Icon + text
+   ======================================== */
+
+/* MOBILE-FIRST: Action buttons (icon-only) */
+.profile-page .action-btn,
+.profile-page .post-actions .action-btn {
+  padding: var(--action-btn-padding-mobile);
+  border-radius: 10px;
   border: none;
   background: var(--bg-subtle);
   color: #2d2f3e;
   cursor: pointer;
   transition: all 0.15s ease;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: var(--space-2);
-  font-size: 14px;
+  gap: 0;
+  font-size: 0; /* Hide text on mobile */
   font-weight: 600;
-  white-space: nowrap;
+  min-width: var(--action-btn-min-touch);
+  min-height: var(--action-btn-min-touch);
+  flex: 1 1 0; /* Equal width buttons on mobile */
 }
 
-.profile-page .action-btn:hover {
+/* Show emoji on mobile */
+.profile-page .action-btn .action-emoji,
+.profile-page .post-actions .action-btn .action-emoji {
+  display: inline-block;
+  font-size: var(--action-btn-emoji-size);
+  line-height: 1;
+}
+
+/* Hide text on mobile */
+.profile-page .action-btn .action-text,
+.profile-page .post-actions .action-btn .action-text {
+  display: none;
+}
+
+/* DESKTOP: Show text alongside emoji */
+@media (min-width: 769px) {
+  .profile-page .action-btn,
+  .profile-page .post-actions .action-btn {
+    padding: var(--action-btn-padding-desktop);
+    border-radius: var(--radius-pill);
+    gap: var(--space-2);
+    font-size: 14px;
+    min-width: auto;
+    flex: 0 0 auto; /* Auto width on desktop */
+  }
+
+  .profile-page .action-btn .action-text,
+  .profile-page .post-actions .action-btn .action-text {
+    display: inline;
+  }
+}
+
+/* Hover state (all devices) */
+.profile-page .action-btn:hover,
+.profile-page .post-actions .action-btn:hover {
   background: var(--color-primary);
   color: white;
   transform: translateY(-1px);
@@ -2201,14 +2287,7 @@ html:not([data-theme="dark"]):not([data-quiet-mode="true"]) .section-title {
     min-width: 0;
   }
 
-  .cover-photo {
-    height: 200px;
-  }
-
-  .profile-avatar {
-    width: 100px;
-    height: 100px; /* Fix oval shape - must match width for perfect circle */
-  }
+  /* Cover photo and avatar already styled with mobile-first approach above */
 
   /* Improve media grid on mobile */
   .post-media-grid.multiple {
@@ -2417,47 +2496,7 @@ html:not([data-theme="dark"]):not([data-quiet-mode="true"]) .section-title {
     padding: 0.6rem 1rem;
   }
 
-  /* Mobile action buttons - icon only */
-  .profile-page .action-btn,
-  .profile-page .post-actions .action-btn {
-    flex: 1 1 0 !important;
-    padding: 10px 4px !important;
-    font-size: 0 !important;
-    gap: 0 !important;
-    border-radius: 10px !important;
-    min-width: 0 !important;
-    min-height: 44px !important;
-    white-space: nowrap !important;
-    overflow: hidden !important;
-    text-overflow: clip !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-  }
-
-  /* Mobile: Show ONLY emojis, hide text */
-  .profile-page .action-btn .action-emoji,
-  .profile-page .post-actions .action-btn .action-emoji {
-    display: inline-block !important;
-    font-size: 24px !important;
-    line-height: 1 !important;
-  }
-
-  .profile-page .action-btn .action-text,
-  .profile-page .post-actions .action-btn .action-text {
-    display: none !important;
-  }
-
-  /* Ensure buttons are properly sized for touch */
-  .profile-page .action-btn,
-  .profile-page .post-actions .action-btn {
-    min-width: 44px !important;
-    min-height: 44px !important;
-    padding: 0.5rem !important;
-    display: inline-flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-  }
+  /* Action buttons already styled with mobile-first approach above */
 }
 
 /* Extra small devices - ONLY for very small screens */
@@ -2466,15 +2505,12 @@ html:not([data-theme="dark"]):not([data-quiet-mode="true"]) .section-title {
     padding: 0 0.5rem 1rem;
   }
 
-  .cover-photo {
-    height: 150px;
-  }
-
+  /* Smaller avatar for very small screens */
   .profile-avatar {
     width: 80px;
     height: 80px;
     font-size: 2.5rem;
-    margin-top: -40px;
+    margin-top: -40px; /* Half of 80px */
   }
 
   .profile-name {
