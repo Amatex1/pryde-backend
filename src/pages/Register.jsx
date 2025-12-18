@@ -11,6 +11,7 @@ function Register({ setIsAuth }) {
     username: '',
     email: '',
     password: '',
+    fullName: '',
     displayName: '',
     birthday: '',
     birthMonth: '',
@@ -342,6 +343,22 @@ function Register({ setIsAuth }) {
           </div>
 
           <div className="form-group">
+            <label htmlFor="fullName">Full Name <span style={{ color: 'var(--pryde-purple)', fontWeight: 'bold' }}>*</span></label>
+            <input
+              type="text"
+              id="fullName"
+              name="fullName"
+              value={formData.fullName}
+              onChange={handleChange}
+              required
+              className="form-input glossy"
+              placeholder="Enter your full name"
+              autoComplete="name"
+              aria-required="true"
+            />
+          </div>
+
+          <div className="form-group">
             <label htmlFor="displayName">Display Name</label>
             <input
               type="text"
@@ -351,7 +368,7 @@ function Register({ setIsAuth }) {
               onChange={handleChange}
               className="form-input glossy"
               placeholder="Your display name (optional)"
-              autoComplete="name"
+              autoComplete="off"
             />
           </div>
 
