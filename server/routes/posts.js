@@ -270,12 +270,29 @@ router.post('/', auth, postLimiter, sanitizeFields(['content', 'contentWarning']
       tagIds = tagIds.filter(id => id !== null);
     }
 
-    // If poll is present, use post content as poll question
-    let pollData = poll;
-    if (poll && content) {
+    // If poll is present, transform options and use post content as poll question
+    let pollData = null;
+    if (poll) {
+      // Transform poll options from array of strings to array of objects
+      const transformedOptions = poll.options
+        ? poll.options
+            .filter(opt => typeof opt === 'string' ? opt.trim() !== '' : opt.text && opt.text.trim() !== '')
+            .map(opt => {
+              // If option is already an object with text property, use it
+              if (typeof opt === 'object' && opt.text) {
+                return { text: opt.text, votes: opt.votes || [] };
+              }
+              // If option is a string, convert to object
+              return { text: opt, votes: [] };
+            })
+        : [];
+
       pollData = {
-        ...poll,
-        question: content.trim()
+        question: content ? content.trim() : '',
+        options: transformedOptions,
+        endsAt: poll.endsAt || null,
+        allowMultipleVotes: poll.allowMultipleVotes || false,
+        showResultsBeforeVoting: poll.showResultsBeforeVoting || false
       };
     }
 

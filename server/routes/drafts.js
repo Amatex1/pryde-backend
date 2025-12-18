@@ -105,7 +105,28 @@ router.post('/', auth, async (req, res) => {
       if (hideMetrics !== undefined) draft.hideMetrics = hideMetrics;
       if (mood !== undefined) draft.mood = mood;
       if (tags !== undefined) draft.tags = tags;
-      if (poll !== undefined) draft.poll = poll;
+      if (poll !== undefined) {
+        // Transform poll options from array of strings to array of objects
+        if (poll && poll.options) {
+          const transformedOptions = poll.options
+            .filter(opt => typeof opt === 'string' ? opt.trim() !== '' : opt.text && opt.text.trim() !== '')
+            .map(opt => {
+              if (typeof opt === 'object' && opt.text) {
+                return { text: opt.text, votes: opt.votes || [] };
+              }
+              return { text: opt, votes: [] };
+            });
+          draft.poll = {
+            question: poll.question || '',
+            options: transformedOptions,
+            endsAt: poll.endsAt || null,
+            allowMultipleVotes: poll.allowMultipleVotes || false,
+            showResultsBeforeVoting: poll.showResultsBeforeVoting || false
+          };
+        } else {
+          draft.poll = poll;
+        }
+      }
 
       await draft.save();
       console.log('✅ Draft updated:', draft._id);
@@ -113,6 +134,26 @@ router.post('/', auth, async (req, res) => {
     }
 
     // Create new draft
+    // Transform poll options if present
+    let pollData = null;
+    if (poll && poll.options) {
+      const transformedOptions = poll.options
+        .filter(opt => typeof opt === 'string' ? opt.trim() !== '' : opt.text && opt.text.trim() !== '')
+        .map(opt => {
+          if (typeof opt === 'object' && opt.text) {
+            return { text: opt.text, votes: opt.votes || [] };
+          }
+          return { text: opt, votes: [] };
+        });
+      pollData = {
+        question: poll.question || '',
+        options: transformedOptions,
+        endsAt: poll.endsAt || null,
+        allowMultipleVotes: poll.allowMultipleVotes || false,
+        showResultsBeforeVoting: poll.showResultsBeforeVoting || false
+      };
+    }
+
     const draft = new Draft({
       user: req.userId,
       draftType: draftType || 'post',
@@ -126,7 +167,7 @@ router.post('/', auth, async (req, res) => {
       hideMetrics: hideMetrics || false,
       mood: mood || null,
       tags: tags || [],
-      poll: poll || null
+      poll: pollData
     });
 
     await draft.save();
