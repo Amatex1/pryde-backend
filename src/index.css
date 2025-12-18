@@ -1,17 +1,14 @@
 /* ========================================
    PRYDE SOCIAL - MAIN STYLES
-   Import global design system first
+   Import order matters: Design system → Theme → Components
    ======================================== */
 
-@import './styles/theme.css';
-@import './styles/components.css';
-@import './styles/fluidResponsive.css';
+@import './styles/design-system.css';  /* NEW: Unified mobile-first design system */
+@import './styles/theme.css';          /* Brand colors and theme variables */
+@import './styles/components.css';     /* Reusable component styles */
 
-/* Responsive HTML base - automatically scales for all devices */
+/* HTML base - design-system.css handles font-size */
 html {
-  /* Base font size for rem calculations */
-  font-size: 16px;
-
   /* Prevent horizontal overflow on all devices */
   overflow-x: hidden;
   width: 100%;
@@ -26,34 +23,25 @@ html {
 
   /* Smooth transitions for theme changes */
   transition: background-color 0.25s ease-in-out, color 0.25s ease-in-out;
+
+  /* Background from theme */
+  background: var(--bg) !important;
 }
 
 body {
-  /* Font family is now set in theme.css */
+  /* Font family and sizing handled by design-system.css */
   background: var(--bg) !important;
   min-height: 100vh;
   color: var(--text-main) !important;
   transition: background-color 0.3s ease, color 0.3s ease;
 
-  /* Prevent horizontal overflow and squishing */
+  /* Prevent horizontal overflow */
   overflow-x: hidden;
   width: 100%;
   max-width: 100vw;
-  min-width: 320px; /* Minimum width to prevent extreme squishing */
 
   /* Better touch scrolling on mobile */
   -webkit-overflow-scrolling: touch;
-
-  /* Prevent text size adjustment on mobile */
-  -webkit-text-size-adjust: 100%;
-  -moz-text-size-adjust: 100%;
-  -ms-text-size-adjust: 100%;
-  text-size-adjust: 100%;
-}
-
-/* Ensure html element also gets the background */
-html {
-  background: var(--bg) !important;
 }
 
 /* Root container responsive sizing */
@@ -82,19 +70,7 @@ html {
   box-sizing: border-box;
 }
 
-/* Fluid responsive font scaling - automatically adapts to all screen sizes */
-/* Uses CSS clamp() for smooth scaling without manual breakpoints */
-@media screen and (min-width: 1024px) {
-  html { font-size: 16px; } /* Desktop and larger */
-}
-
-@media screen and (min-width: 768px) and (max-width: 1023px) {
-  html { font-size: 15px; } /* Tablet */
-}
-
-@media screen and (max-width: 767px) {
-  html { font-size: 14px; } /* Mobile */
-}
+/* Font scaling removed - handled by design-system.css */
 
 /* ========================================
    LEGACY VARIABLE MAPPINGS
