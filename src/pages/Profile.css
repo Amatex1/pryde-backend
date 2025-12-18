@@ -2280,10 +2280,12 @@ html:not([data-theme="dark"]):not([data-quiet-mode="true"]) .section-title {
   }
 
   /* FIX: Remove blue box gap between cover and avatar */
-  .profile-header {
+  .profile-header,
+  .profile-header.glossy {
     padding: 0 !important;
     margin-bottom: 1rem !important;
-    background: transparent !important; /* Remove blue background */
+    background: transparent !important; /* Remove blue background - override .glossy class */
+    backdrop-filter: none !important; /* Remove glossy blur effect */
   }
 
   .cover-photo {
