@@ -3,7 +3,6 @@ import './PollCreator.css';
 
 const PollCreator = ({ onPollChange, initialPoll = null }) => {
   const [poll, setPoll] = useState(initialPoll || {
-    question: '',
     options: ['', ''],
     endsAt: null,
     allowMultipleVotes: false,
@@ -48,18 +47,7 @@ const PollCreator = ({ onPollChange, initialPoll = null }) => {
     <div className="poll-creator">
       <div className="poll-header">
         <h4>📊 Create a Poll</h4>
-      </div>
-
-      <div className="poll-field">
-        <label>Question</label>
-        <input
-          type="text"
-          placeholder="Ask a question..."
-          value={poll.question}
-          onChange={(e) => updatePoll({ question: e.target.value })}
-          maxLength={200}
-        />
-        <span className="char-count">{poll.question.length}/200</span>
+        <p className="poll-hint">Your question will be the post text above</p>
       </div>
 
       <div className="poll-field">

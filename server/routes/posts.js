@@ -270,6 +270,15 @@ router.post('/', auth, postLimiter, sanitizeFields(['content', 'contentWarning']
       tagIds = tagIds.filter(id => id !== null);
     }
 
+    // If poll is present, use post content as poll question
+    let pollData = poll;
+    if (poll && content) {
+      pollData = {
+        ...poll,
+        question: content.trim()
+      };
+    }
+
     const post = new Post({
       author: userId,
       content: content || '',
@@ -281,7 +290,7 @@ router.post('/', auth, postLimiter, sanitizeFields(['content', 'contentWarning']
       contentWarning: contentWarning || '',
       tags: tagIds, // PHASE 4: Add tags
       hideMetrics: hideMetrics || false,
-      poll: poll || null
+      poll: pollData || null
     });
 
     await post.save();

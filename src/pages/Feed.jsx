@@ -817,9 +817,19 @@ function Feed() {
 
   const handlePostSubmit = async (e) => {
     e.preventDefault();
-    if (!newPost.trim() && selectedMedia.length === 0) {
-      showAlert('Please add some content or media to your post', 'Empty Post');
+    // Allow posting with just a poll, or content, or media
+    if (!newPost.trim() && selectedMedia.length === 0 && !poll) {
+      showAlert('Please add some content, media, or a poll to your post', 'Empty Post');
       return;
+    }
+
+    // If poll is present, require at least 2 options with text
+    if (poll && poll.options) {
+      const validOptions = poll.options.filter(opt => opt.trim() !== '');
+      if (validOptions.length < 2) {
+        showAlert('Poll must have at least 2 options', 'Invalid Poll');
+        return;
+      }
     }
 
     setLoading(true);
@@ -1496,7 +1506,7 @@ function Feed() {
               <textarea
                 value={newPost}
                 onChange={(e) => setNewPost(e.target.value)}
-                placeholder="What are you reflecting on today?"
+                placeholder={showPollCreator ? "Ask a question..." : "What are you reflecting on today?"}
                 className="post-input glossy"
                 rows="4"
               />
