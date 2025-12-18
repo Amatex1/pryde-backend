@@ -205,9 +205,9 @@ div.profile-layout,
 
 .profile-header {
   border-radius: var(--radius-card);
-  overflow: hidden;
+  overflow: visible; /* Changed from hidden to allow emoji picker to show */
   margin-bottom: var(--space-6);
-  background: var(--bg-card);
+  background: transparent; /* Changed from var(--bg-card) to remove blue background */
   border: 1px solid var(--border-subtle);
   box-shadow: var(--shadow-medium);
 }
@@ -215,9 +215,10 @@ div.profile-layout,
 /* MOBILE-FIRST: Cover photo */
 .cover-photo {
   height: var(--cover-height-mobile);
-  overflow: hidden;
+  overflow: hidden; /* Keep hidden to clip cover image */
   background: var(--gradient-primary);
   position: relative;
+  border-radius: var(--radius-card) var(--radius-card) 0 0; /* Round top corners only */
 }
 
 /* DESKTOP: Taller cover photo */
@@ -323,6 +324,7 @@ div.profile-layout,
 .profile-info {
   padding: 0 1rem 1rem; /* Mobile: No top padding to allow avatar overlap */
   position: relative;
+  background: transparent; /* Ensure no background color shows */
 }
 
 /* MOBILE-FIRST: Profile avatar */

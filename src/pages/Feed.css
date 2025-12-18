@@ -47,7 +47,7 @@
   flex-direction: column;
   gap: var(--space-4);
   min-width: 0;
-  overflow: hidden;
+  overflow: visible; /* Changed from hidden to allow emoji picker to show */
   padding: 15px;
 }
 
