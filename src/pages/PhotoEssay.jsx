@@ -53,11 +53,14 @@ function PhotoEssay() {
         const formData = new FormData();
         formData.append('media', file);
 
-        const response = await api.post('/upload', formData, {
+        // CRITICAL: Use correct upload endpoint for post media
+        const response = await api.post('/upload/post-media', formData, {
           headers: { 'Content-Type': 'multipart/form-data' }
         });
 
-        setPhotos(prev => [...prev, { url: response.data.url, caption: '' }]);
+        // Extract first media URL from response (post-media returns array)
+        const mediaUrl = response.data.media?.[0]?.url || response.data.url;
+        setPhotos(prev => [...prev, { url: mediaUrl, caption: '' }]);
       }
       showToast('Photos uploaded successfully', 'success');
     } catch (error) {
