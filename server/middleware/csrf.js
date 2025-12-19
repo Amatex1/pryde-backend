@@ -159,12 +159,14 @@ export const enforceCsrf = (req, res, next) => {
   // These endpoints don't have a CSRF token yet since the user hasn't made any requests
   const authPaths = [
     '/api/auth/login',
+    '/api/auth/signup',
     '/api/auth/register',
     '/api/auth/refresh',
     '/api/refresh',
     '/api/auth/forgot-password',
     '/api/auth/reset-password',
-    '/api/auth/verify-email'
+    '/api/auth/verify-email',
+    '/api/auth/verify-2fa-login'
   ];
 
   if (authPaths.includes(req.path)) {
