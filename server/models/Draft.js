@@ -60,10 +60,12 @@ const draftSchema = new mongoose.Schema({
     default: false
   },
   // Journal-specific
+  // CRITICAL: mood is optional - default: undefined allows absence
+  // Enum validation only applies when value is present
   mood: {
     type: String,
     enum: ['happy', 'sad', 'anxious', 'calm', 'excited', 'reflective', 'grateful', 'other'],
-    default: null
+    default: undefined // Allow absence, do NOT use null
   },
   // Tags
   tags: [{

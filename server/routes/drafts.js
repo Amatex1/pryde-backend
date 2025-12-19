@@ -103,7 +103,10 @@ router.post('/', auth, async (req, res) => {
       if (visibility !== undefined) draft.visibility = visibility;
       if (contentWarning !== undefined) draft.contentWarning = contentWarning;
       if (hideMetrics !== undefined) draft.hideMetrics = hideMetrics;
-      if (mood !== undefined) draft.mood = mood;
+      // CRITICAL: Normalize null to undefined for mood (prevents enum validation error)
+      if (mood !== undefined) {
+        draft.mood = mood === null ? undefined : mood;
+      }
       if (tags !== undefined) draft.tags = tags;
       if (poll !== undefined) {
         // Transform poll options from array of strings to array of objects
@@ -154,7 +157,8 @@ router.post('/', auth, async (req, res) => {
       };
     }
 
-    const draft = new Draft({
+    // CRITICAL: Prepare draft data with proper null handling for mood
+    const draftData = {
       user: req.userId,
       draftType: draftType || 'post',
       content: content || '',
@@ -165,10 +169,16 @@ router.post('/', auth, async (req, res) => {
       visibility: visibility || 'followers',
       contentWarning: contentWarning || '',
       hideMetrics: hideMetrics || false,
-      mood: mood || null,
       tags: tags || [],
       poll: pollData
-    });
+    };
+
+    // Only set mood if it's a valid value (not null or undefined)
+    if (mood && mood !== null) {
+      draftData.mood = mood;
+    }
+
+    const draft = new Draft(draftData);
 
     await draft.save();
     console.log('✅ New draft created:', draft._id);
