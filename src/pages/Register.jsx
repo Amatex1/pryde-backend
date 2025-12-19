@@ -127,19 +127,19 @@ function Register({ setIsAuth }) {
 
     // Validate CAPTCHA
     if (!captchaToken) {
-      setError('Please complete the CAPTCHA verification');
+      setError('The verification step is needed to continue.');
       return;
     }
 
     // Check username availability
     if (usernameAvailable && !usernameAvailable.available) {
-      setError(usernameAvailable.message || 'Username is not available');
+      setError(usernameAvailable.message || 'That username is taken.');
       return;
     }
 
     // Validate birthday dropdowns are all filled
     if (!formData.birthMonth || !formData.birthDay || !formData.birthYear) {
-      setError('Please enter your full birthday');
+      setError('Your birthday is needed to confirm age requirements.');
       return;
     }
 
@@ -158,7 +158,7 @@ function Register({ setIsAuth }) {
 
     // Validate age is 18 or older
     if (age < 18) {
-      setError('You must be 18 years or older to register');
+      setError('Pryde is for people 18 and older.');
       return;
     }
 
@@ -167,26 +167,26 @@ function Register({ setIsAuth }) {
 
     // Validate terms accepted
     if (!formData.termsAccepted) {
-      setError('You must accept the terms to register');
+      setError('Accepting the terms is needed to continue.');
       return;
     }
 
     // Frontend validation - must match backend requirements (12 characters minimum)
     if (formData.password.length < 12) {
-      setError('Password must be at least 12 characters');
+      setError('Your password needs to be at least 12 characters.');
       return;
     }
 
     // Validate password complexity - must match backend requirements
     const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#^()_+\-=\[\]{};':"\\|,.<>\/])/;
     if (!passwordRegex.test(formData.password)) {
-      setError('Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character');
+      setError('Your password needs at least one uppercase letter, one lowercase letter, one number, and one special character.');
       return;
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(formData.email)) {
-      setError('Please enter a valid email address');
+      setError('That email doesn't look right.');
       return;
     }
 
@@ -224,7 +224,7 @@ function Register({ setIsAuth }) {
 
       const errorMessage = err.response?.data?.message
         || err.message
-        || 'Registration failed. Please try again.';
+        || 'That didn't work. You can try again in a moment.';
       setError(errorMessage);
 
       // Reset CAPTCHA on error
@@ -251,22 +251,25 @@ function Register({ setIsAuth }) {
         <div className="auth-header">
           <h1 className="auth-title text-shadow">✨ Pryde Social</h1>
           <p className="auth-subtitle">
-            {showPasskeySetup ? 'Secure Your Account' : 'Join a queer-centred space built for safety, connection, and authenticity'}
+            {showPasskeySetup ? 'Secure your account' : 'Create an account'}
           </p>
           {!showPasskeySetup && (
-            <div style={{
-              background: 'var(--soft-lavender)',
-              border: '2px solid var(--pryde-purple)',
-              borderRadius: 'var(--border-radius-md)',
-              padding: 'var(--space-md)',
-              marginTop: 'var(--space-md)',
-              fontSize: 'var(--font-size-sm)',
-              lineHeight: 'var(--line-height-relaxed)'
-            }}>
-              <p style={{ margin: 0, color: 'var(--text-main)' }}>
-                <strong>🏳️‍🌈 This is an LGBTQ+-first space.</strong> We welcome respectful allies, but queer voices are prioritised. By joining, you agree to treat all identities with respect, care, and emotional intelligence.
-              </p>
-            </div>
+            <>
+              <p className="auth-subtext">You can come back to this later.</p>
+              <div style={{
+                background: 'var(--soft-lavender)',
+                border: '2px solid var(--pryde-purple)',
+                borderRadius: 'var(--border-radius-md)',
+                padding: 'var(--space-md)',
+                marginTop: 'var(--space-md)',
+                fontSize: 'var(--font-size-sm)',
+                lineHeight: 'var(--line-height-relaxed)'
+              }}>
+                <p style={{ margin: 0, color: 'var(--text-main)' }}>
+                  <strong>🏳️‍🌈 This is an LGBTQ+-first space.</strong> We welcome respectful allies, but queer voices are prioritised. By joining, you agree to treat all identities with respect, care, and emotional intelligence.
+                </p>
+              </div>
+            </>
           )}
         </div>
 
@@ -284,8 +287,8 @@ function Register({ setIsAuth }) {
         {showPasskeySetup ? (
           <div className="passkey-setup-container">
             <div className="passkey-setup-info">
-              <h3>🎉 Account Created Successfully!</h3>
-              <p>Add a passkey for faster, more secure sign-in</p>
+              <h3>Your account is ready</h3>
+              <p>You can add a passkey for faster sign-in, or skip this for now.</p>
             </div>
 
             <PasskeySetup
@@ -299,7 +302,7 @@ function Register({ setIsAuth }) {
               className="btn-secondary"
               style={{ marginTop: 'var(--space-md)', width: '100%' }}
             >
-              Skip for Now
+              Skip for now
             </button>
           </div>
         ) : (
@@ -312,12 +315,12 @@ function Register({ setIsAuth }) {
                 marginBottom: 'var(--space-md)',
                 color: 'var(--pryde-purple)'
               }}>
-                Account Basics
+                Account basics
               </h3>
 
               <div className="form-group">
                 <label htmlFor="fullName">
-                  Full Name <span style={{ color: 'var(--pryde-purple)', fontWeight: 'bold' }}>*</span>
+                  Full name <span style={{ color: 'var(--pryde-purple)', fontWeight: 'bold' }}>*</span>
                 </label>
                 <input
                   type="text"
@@ -332,7 +335,7 @@ function Register({ setIsAuth }) {
                   aria-required="true"
                 />
                 <small style={{ color: 'var(--text-muted)', fontSize: 'var(--font-size-sm)', marginTop: 'var(--space-xs)', display: 'block' }}>
-                  This helps keep the community safe
+                  This is used for safety and verification.
                 </small>
               </div>
 
@@ -463,7 +466,7 @@ function Register({ setIsAuth }) {
                   id="password-requirements"
                   style={{ color: 'var(--text-muted)', fontSize: 'var(--font-size-sm)', marginTop: 'var(--space-sm)', display: 'block' }}
                 >
-                  Must contain at least one uppercase letter, one lowercase letter, and one number
+                  This needs at least one uppercase letter, one lowercase letter, and one number.
                 </small>
               </div>
             </div>
@@ -476,13 +479,13 @@ function Register({ setIsAuth }) {
                 marginBottom: 'var(--space-md)',
                 color: 'var(--pryde-purple)'
               }}>
-                Safety & Age Verification
+                Safety & age verification
               </h3>
 
               <div className="form-group">
                 <label>Birthday <span style={{ color: 'var(--pryde-purple)', fontWeight: 'bold' }}>*</span></label>
                 <small style={{ color: 'var(--text-muted)', fontSize: 'var(--font-size-sm)', marginBottom: 'var(--space-sm)', display: 'block' }}>
-                  You must be 18 or older to join Pryde
+                  We ask for this to confirm age requirements. Pryde is for people 18 and older.
                 </small>
                 <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1.5fr', gap: 'var(--space-sm)' }}>
                   <select
@@ -541,7 +544,7 @@ function Register({ setIsAuth }) {
             {!skipOptional && (
               <div className="about-optional">
                 <div className="about-optional-header">
-                  <h3>About You</h3>
+                  <h3>About you</h3>
                   <p>Optional — you can come back to this anytime.</p>
                 </div>
 
@@ -577,7 +580,7 @@ function Register({ setIsAuth }) {
                 </div>
 
                 <div className="form-group">
-                  <label htmlFor="displayName">Display Name</label>
+                  <label htmlFor="displayName">Display name</label>
                   <input
                     type="text"
                     id="displayName"
@@ -585,7 +588,7 @@ function Register({ setIsAuth }) {
                     value={formData.displayName}
                     onChange={handleChange}
                     className="form-input glossy"
-                    placeholder="How you'd like to be called (optional)"
+                    placeholder="How you'd like to be called"
                     autoComplete="off"
                   />
                 </div>
@@ -599,7 +602,7 @@ function Register({ setIsAuth }) {
                     value={formData.pronouns}
                     onChange={handleChange}
                     className="form-input glossy"
-                    placeholder="e.g., they/them, she/her, he/him (optional)"
+                    placeholder="e.g., they/them, she/her, he/him"
                     autoComplete="off"
                   />
                 </div>
@@ -612,7 +615,7 @@ function Register({ setIsAuth }) {
                     value={formData.bio}
                     onChange={handleChange}
                     className="form-input glossy"
-                    placeholder="Tell us a bit about yourself (optional)"
+                    placeholder="A bit about yourself"
                     rows="3"
                     maxLength="500"
                     style={{ resize: 'vertical', minHeight: '80px' }}
@@ -629,7 +632,7 @@ function Register({ setIsAuth }) {
                   onClick={() => setSkipOptional(true)}
                   className="btn-skip-optional"
                 >
-                  Skip for Now
+                  Skip for now
                 </button>
               </div>
             )}
@@ -693,7 +696,7 @@ function Register({ setIsAuth }) {
               disabled={loading || !formData.fullName || !formData.username || !formData.email || !formData.password || !formData.birthMonth || !formData.birthDay || !formData.birthYear || !formData.termsAccepted || !captchaToken}
               className="btn-primary glossy-gold"
             >
-              {loading ? 'Creating Account...' : 'Create Account'}
+              {loading ? 'Creating account…' : 'Create account'}
             </button>
         </form>
         )}

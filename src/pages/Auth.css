@@ -55,9 +55,18 @@
 }
 
 .auth-subtitle {
+  color: var(--text-main);
+  font-size: var(--font-size-lg);
+  font-weight: 400;
+  line-height: var(--line-height-relaxed);
+  margin-bottom: var(--space-xs);
+}
+
+.auth-subtext {
   color: var(--text-muted);
   font-size: var(--font-size-sm);
   line-height: var(--line-height-relaxed);
+  margin-top: var(--space-xs);
 }
 
 .auth-form {
@@ -106,8 +115,8 @@
   border-radius: var(--button-radius-pill);
   border: none;
   font-size: var(--font-size-base);
-  font-weight: 600;
-  background: var(--gradient-primary);
+  font-weight: 500;
+  background: var(--pryde-purple);
   color: white;
   cursor: pointer;
   transition: all 0.15s ease;
@@ -116,14 +125,12 @@
 }
 
 .btn-primary:hover {
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-lg);
+  background: var(--electric-blue);
 }
 
 .btn-primary:disabled {
-  opacity: 0.6;
+  opacity: 0.5;
   cursor: not-allowed;
-  transform: none;
 }
 
 .auth-footer {

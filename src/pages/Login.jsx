@@ -35,7 +35,7 @@ function Login({ setIsAuth }) {
     clearManualLogoutFlag();
 
     if (searchParams.get('expired') === 'true') {
-      setError('Your session has expired. Please log in again.');
+      setError('Your session timed out. You can sign in again when ready.');
     }
   }, [searchParams]);
 
@@ -86,7 +86,7 @@ function Login({ setIsAuth }) {
 
       const errorMessage = err.response?.data?.message
         || err.message
-        || 'Login failed. Please try again.';
+        || 'That didn't work. You can try again in a moment.';
       setError(errorMessage);
     } finally {
       setLoading(false);
@@ -121,7 +121,7 @@ function Login({ setIsAuth }) {
     } catch (err) {
       console.error('2FA verification error:', err);
       const errorMessage = err.response?.data?.message
-        || 'Invalid verification code. Please try again.';
+        || 'That code didn't match. You can try again.';
       setError(errorMessage);
     } finally {
       setLoading(false);
@@ -134,8 +134,11 @@ function Login({ setIsAuth }) {
         <div className="auth-header">
           <h1 className="auth-title text-shadow">✨ Pryde Social</h1>
           <p className="auth-subtitle">
-            {requires2FA ? 'Enter your verification code' : 'Welcome back! Sign in to continue.'}
+            {requires2FA ? 'Enter your verification code' : 'Sign in'}
           </p>
+          {!requires2FA && (
+            <p className="auth-subtext">Take your time.</p>
+          )}
         </div>
 
         {error && (
@@ -153,9 +156,9 @@ function Login({ setIsAuth }) {
         {requires2FA ? (
           <form onSubmit={handleVerify2FA} className="auth-form">
             <div className="form-group">
-              <label htmlFor="twoFactorCode">Two-Factor Authentication Code</label>
+              <label htmlFor="twoFactorCode">Verification code</label>
               <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--text-muted)', marginBottom: 'var(--space-sm)' }}>
-                Enter the 6-digit code from your authenticator app or use a backup code.
+                This is the 6-digit code from your authenticator app, or a backup code.
               </p>
               <input
                 type="text"
@@ -177,7 +180,7 @@ function Login({ setIsAuth }) {
             </div>
 
             <button type="submit" disabled={loading || twoFactorCode.length !== 6} className="btn-primary glossy-gold">
-              {loading ? 'Verifying...' : 'Verify Code'}
+              {loading ? 'Verifying…' : 'Verify code'}
             </button>
 
             <button
@@ -191,7 +194,7 @@ function Login({ setIsAuth }) {
               className="btn-secondary"
               style={{ marginTop: 'var(--space-sm)', width: '100%' }}
             >
-              ← Back to Login
+              ← Back
             </button>
           </form>
         ) : (
@@ -207,7 +210,7 @@ function Login({ setIsAuth }) {
               onChange={handleChange}
               required
               className="form-input glossy"
-              placeholder="Enter your email"
+              placeholder="Your email"
               autoComplete="email"
               aria-required="true"
               aria-invalid={error && error.toLowerCase().includes('email') ? 'true' : 'false'}
@@ -225,7 +228,7 @@ function Login({ setIsAuth }) {
               onChange={handleChange}
               required
               className="form-input glossy"
-              placeholder="Enter your password"
+              placeholder="Your password"
               autoComplete="current-password"
               aria-required="true"
               aria-invalid={error && error.toLowerCase().includes('password') ? 'true' : 'false'}
@@ -239,7 +242,7 @@ function Login({ setIsAuth }) {
           </div>
 
           <button type="submit" disabled={loading} className="btn-primary glossy-gold">
-            {loading ? 'Signing in...' : 'Sign In'}
+            {loading ? 'Signing in…' : 'Sign in'}
           </button>
 
           <div className="auth-divider">
