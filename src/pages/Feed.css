@@ -8,47 +8,37 @@
   z-index: 1;
 }
 
-/* FLUID RESPONSIVE LAYOUT - Automatically adapts to any screen size */
-.feed-container {
-  max-width: 1400px; /* Limit width on large monitors for readability */
-  margin: 0 auto;
-  padding: 0 var(--fluid-space-md);
+/* ========================================
+   FEED LAYOUT - CALM, CENTERED GRID
+   Sidebar ALWAYS stays beside feed on desktop
+   ======================================== */
+
+.feed-layout {
   display: grid;
-  grid-template-columns: 1fr;
-  gap: var(--fluid-gap-md);
-  transition: all 0.2s ease;
+  grid-template-columns: minmax(0, 640px) 320px;
+  gap: 24px;
+  justify-content: center;
+  align-items: start;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 var(--space-md);
 }
 
-/* Tablet and up: Sidebar on right with fluid sizing */
-@media (min-width: 769px) {
-  .feed-container {
-    grid-template-columns: var(--fluid-main-column) var(--fluid-sidebar-md);
-    gap: var(--fluid-gap-lg);
-  }
-}
-
-/* Desktop: Larger sidebar */
-@media (min-width: 1401px) {
-  .feed-container {
-    grid-template-columns: var(--fluid-main-column) var(--fluid-sidebar-lg);
-    gap: var(--fluid-gap-xl);
-  }
-}
-
-/* Ultrawide: Maximum sidebar size */
-@media (min-width: 2560px) {
-  .feed-container {
-    grid-template-columns: var(--fluid-main-column) var(--fluid-sidebar-xl);
-  }
-}
-
-.feed-content {
+.feed-main {
+  width: 100%;
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
+  gap: var(--space-3);
   min-width: 0;
-  overflow: visible; /* Changed from hidden to allow emoji picker to show */
+  overflow: visible; /* Allow emoji picker to show */
   padding: 15px;
+}
+
+.feed-sidebar {
+  position: sticky;
+  top: 88px; /* Below navbar */
+  align-self: start;
+  width: 100%;
 }
 
 /* ========================================
@@ -197,28 +187,30 @@
 }
 
 /* ========================================
-   POSTS LIST - CALM, STACKABLE DESIGN
+   POSTS LIST - CALM, COMPACT, STACKABLE
+   Cards size to content only
    ======================================== */
 
 .posts-list {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3); /* Reduced from var(--space-4) - tighter spacing */
+  gap: 12px; /* Tighter spacing for stackable feel */
 }
 
 .post-card {
-  padding: var(--space-md) 18px; /* Reduced from var(--space-4) to var(--space-md) */
-  border-radius: var(--border-radius-md); /* Reduced from var(--radius-card) */
+  padding: 14px 16px; /* Reduced vertical weight */
+  border-radius: 10px; /* Softer corners */
   background: var(--bg-card);
   border: 1px solid var(--border-subtle);
   box-shadow: var(--shadow-soft);
   transition: all 0.2s ease;
   min-width: 0;
-  /* REMOVED min-height: 150px - let content define height */
+  /* NO min-height - content defines height naturally */
+  /* NO flex-grow - cards don't expand */
   overflow: visible;
   word-wrap: break-word;
   contain: layout;
-  margin: 0; /* Match create-post - no margin */
+  margin-bottom: 12px; /* Consistent spacing */
 }
 
 .post-card:hover {
@@ -2230,13 +2222,29 @@ html:not([data-theme])[data-quiet-mode="true"] .hide-metrics-checkbox:hover {
   -webkit-backdrop-filter: none; /* Remove blur on iOS */
 }
 
-/* Only hide sidebar on mobile devices */
+/* ========================================
+   MOBILE LAYOUT - SIDEBAR BELOW FEED
+   ======================================== */
+
 @media (max-width: 768px) {
-  .feed-container {
+  .feed-layout {
     grid-template-columns: 1fr;
+    padding: 0 1rem 1rem;
   }
 
   .feed-sidebar {
+    position: static; /* Not sticky on mobile */
+    order: 2; /* Sidebar appears after feed */
+    margin-top: 24px;
+  }
+
+  /* Optional: Keep sidebar toggle functionality if needed */
+  .feed-sidebar:not(.mobile-visible) {
+    display: none; /* Hide by default on mobile */
+  }
+
+  .feed-sidebar.mobile-visible {
+    display: block;
     position: fixed;
     top: 0;
     right: 0;
@@ -2245,40 +2253,34 @@ html:not([data-theme])[data-quiet-mode="true"] .hide-metrics-checkbox:hover {
     max-width: 85vw;
     background: var(--card-surface);
     box-shadow: -4px 0 12px rgba(0, 0, 0, 0.1);
-    z-index: 1999; /* Below navbar (2000) but above page content */
-    transform: translateX(100%);
-    transition: transform 0.3s ease;
+    z-index: 1999;
     overflow-y: auto;
     padding: 1rem;
-    padding-top: 5rem; /* Account for navbar */
-  }
-
-  .feed-sidebar.mobile-visible {
-    transform: translateX(0);
+    padding-top: 5rem;
+    margin-top: 0;
   }
 
   .mobile-sidebar-toggle {
-    display: none !important; /* Hidden - using navbar hamburger */
+    display: none !important;
   }
 
   .mobile-sidebar-overlay {
-    display: none !important; /* Not needed anymore */
+    display: none !important;
   }
 
-  /* Hide Friends list on mobile - show Featured Tags and Need Support only */
+  /* Hide Friends list on mobile */
   .feed-sidebar .sidebar-card:nth-child(3) {
     display: none;
   }
 
-  /* Ensure support card is visible and calm on mobile */
   .support-card {
     margin-bottom: var(--space-4);
   }
 }
 
 @media (max-width: 768px) {
-  .feed-container {
-    padding: 0 1rem 1rem;
+  .feed-main {
+    padding: 0;
   }
 
   /* Ensure post-input and create-post don't squish */
@@ -2629,7 +2631,7 @@ html:not([data-theme])[data-quiet-mode="true"] .hide-metrics-checkbox:hover {
 
 /* Extra small devices */
 @media (max-width: 480px) {
-  .feed-container {
+  .feed-layout {
     padding: 0 0.5rem 1rem;
   }
 }
@@ -2901,69 +2903,76 @@ label.btn-media-upload:disabled {
 }
 
 /* ========================================
-   POST MEDIA - CONTAINED, SUPPORTIVE DESIGN
+   POST MEDIA - CONTAINED, NEVER CROPPED
    Images feel supportive, not dominant
+   NO faces cut off, NO aggressive cropping
    ======================================== */
 
 .post-media-grid {
-  margin-top: var(--space-sm); /* Reduced from 1rem */
-  margin-bottom: var(--space-sm); /* Added bottom margin */
-  display: grid;
-  gap: 0.5rem;
-  /* Soft framing - image belongs inside the post */
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(0, 0, 0, 0.05);
-  border-radius: var(--border-radius-sm);
-  padding: var(--space-xs);
+  margin-top: 10px;
+  margin-bottom: 10px;
+  border-radius: 8px;
   overflow: hidden;
+  background: rgba(255, 255, 255, 0.02);
 }
 
-/* Dark mode support for soft framing */
+/* Dark mode support */
 [data-theme="dark"] .post-media-grid {
   background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .post-media-grid.single {
-  grid-template-columns: 1fr;
+  display: block; /* Single image - no grid */
 }
 
 .post-media-grid.double {
+  display: grid;
   grid-template-columns: repeat(2, 1fr);
+  gap: 0.5rem;
 }
 
 .post-media-grid.multiple {
+  display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.5rem;
 }
 
 .post-media-item {
   position: relative;
   width: 100%;
   background: var(--bg-light);
-  border-radius: var(--border-radius-sm);
+  border-radius: 8px;
   overflow: hidden;
-  aspect-ratio: 16 / 9;
 }
 
-/* DESKTOP: Contained image height */
+/* Single images: CONTAIN, not crop */
 .post-media-grid.single .post-media-item {
-  max-height: 420px; /* Reduced from 600px - images feel supportive, not dominant */
-  aspect-ratio: auto;
+  max-height: 420px;
 }
 
+.post-media-grid.single .post-media-item img {
+  width: 100%;
+  height: auto;
+  max-height: 420px;
+  object-fit: contain; /* NEVER crop - show full image */
+  display: block;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+/* Multiple images: Can use cover for grid consistency */
 .post-media-grid.double .post-media-item,
 .post-media-grid.multiple .post-media-item {
   aspect-ratio: 1;
-  max-height: 300px; /* Prevent tall images */
+  max-height: 300px;
 }
 
-.post-media-item img,
-.post-media-item video {
+.post-media-grid.double .post-media-item img,
+.post-media-grid.multiple .post-media-item img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: cover; /* Grid images can crop for consistency */
   cursor: pointer;
-  /* REMOVED hover scale effect - no zoom or hover effects */
   transition: opacity 0.2s ease;
 }
 
@@ -2972,8 +2981,11 @@ label.btn-media-upload:disabled {
 }
 
 .post-media-item video {
+  width: 100%;
+  height: 100%;
   object-fit: contain;
   background: #000;
+  cursor: pointer;
 }
 
 @media (max-width: 768px) {
@@ -3018,8 +3030,11 @@ label.btn-media-upload:disabled {
 
   /* MOBILE: Images never exceed 50% of viewport height */
   .post-media-grid.single .post-media-item {
-    max-height: 300px; /* Reduced from 420px on desktop */
     max-height: 50vh; /* Never exceed half viewport */
+  }
+
+  .post-media-grid.single .post-media-item img {
+    max-height: 50vh; /* Enforce on image too */
   }
 
   .post-media-grid.double .post-media-item,
@@ -3029,7 +3044,7 @@ label.btn-media-upload:disabled {
 
   /* Feed cards feel stackable on mobile */
   .posts-list {
-    gap: var(--space-2); /* Even tighter on mobile */
+    gap: 10px; /* Even tighter on mobile */
   }
 }
 

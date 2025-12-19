@@ -1473,8 +1473,8 @@ function Feed() {
         </button>
       )}
 
-      <div className="feed-container">
-        <div className="feed-content">
+      <div className="feed-layout">
+        <main className="feed-main">
           {/* Feed Filter Tabs */}
           <div className="feed-tabs glossy">
             <button
@@ -2250,9 +2250,9 @@ function Feed() {
               <p className="end-of-feed-secondary">Take a break, or check back later.</p>
             </div>
           )}
-        </div>
+        </main>
 
-        <div className={`feed-sidebar ${showMobileSidebar ? 'mobile-visible' : ''}`}>
+        <aside className={`feed-sidebar ${showMobileSidebar ? 'mobile-visible' : ''}`}>
           {/* Featured Tags */}
           <div className="sidebar-card glossy">
             <h3 className="sidebar-title">Featured Tags</h3>
@@ -2380,7 +2380,7 @@ function Feed() {
               )}
             </div>
           </div>
-        </div>
+        </aside>
       </div>
 
       <ReportModal

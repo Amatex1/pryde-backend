@@ -28,15 +28,15 @@
     overflow-x: hidden;
   }
 
-  /* Mobile-friendly cards - lighter, stackable design */
+  /* Mobile-friendly cards - compact, stackable design */
   .post-card,
   .create-post,
   .profile-card,
   .notification-card,
   .event-card {
-    border-radius: 8px !important; /* Reduced from 12px */
-    padding: 16px !important;
-    margin-bottom: 10px !important; /* Reduced from 12px - tighter stacking */
+    border-radius: 10px !important; /* Soft corners */
+    padding: 14px 16px !important; /* Reduced vertical weight */
+    margin-bottom: 12px !important; /* Consistent spacing */
   }
 
   /* ========================================
@@ -252,7 +252,7 @@
 
   /* ========================================
      IMAGES - MOBILE OPTIMIZED
-     Images feel supportive, not dominant
+     Images feel supportive, never cropped
      ======================================== */
 
   .post-image,
@@ -260,10 +260,22 @@
   .event-image {
     width: 100% !important;
     height: auto !important;
-    max-height: 300px !important; /* Reduced from 400px - never exceed 50vh */
     max-height: 50vh !important; /* Never exceed half viewport */
-    object-fit: cover !important;
-    border-radius: 8px !important; /* Reduced from 12px */
+    object-fit: contain !important; /* NEVER crop - show full image */
+    border-radius: 8px !important;
+    display: block !important;
+  }
+
+  /* Feed layout mobile adjustments */
+  .feed-layout {
+    grid-template-columns: 1fr !important;
+    padding: 0 1rem 1rem !important;
+  }
+
+  .feed-sidebar {
+    position: static !important;
+    order: 2 !important;
+    margin-top: 24px !important;
   }
 
   .avatar,
