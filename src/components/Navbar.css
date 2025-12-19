@@ -750,13 +750,23 @@
    DARK MODE OVERRIDES FOR SURFACE ELEMENTS
    ======================================== */
 
+/* 1️⃣ User profile trigger (top-right avatar button) - FINAL PASS */
 [data-theme="dark"] .user-profile-trigger {
-  background-color: var(--surface-muted);
-  border: 1px solid var(--surface-border);
+  background: var(--surface-2);
+  color: var(--text-main);
+  border: 1px solid var(--border-light);
 }
 
 [data-theme="dark"] .user-profile-trigger:hover {
-  background-color: var(--surface-elevated);
+  background: var(--surface-3);
+}
+
+[data-theme="dark"] .user-profile-trigger .user-name {
+  color: var(--text-main);
+}
+
+[data-theme="dark"] .user-profile-trigger .dropdown-arrow {
+  color: var(--text-muted);
 }
 
 [data-theme="dark"] .profile-dropdown {

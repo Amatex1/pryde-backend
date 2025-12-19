@@ -3830,30 +3830,74 @@ select.privacy-selector:focus {
 }
 
 /* ========================================
-   DARK MODE — PRIVACY SELECTOR FIX
+   DARK MODE FIXES — FINAL PASS
    ======================================== */
 
-[data-theme="dark"] .post-actions-bar .privacy-selector,
-[data-theme="dark"] select.privacy-selector {
-  background: var(--surface-dark) !important;
-  color: var(--text-primary-dark) !important;
-  border-color: var(--border-subtle-dark) !important;
+/* 2️⃣ Post privacy selector dropdown (audience selector) - FINAL PASS */
+[data-theme="dark"] .privacy-selector,
+[data-theme="dark"] select.privacy-selector,
+[data-theme="dark"] .post-actions-bar .privacy-selector {
+  background: var(--surface-2) !important;
+  color: var(--text-main) !important;
+  border: 1px solid var(--border-light) !important;
 }
 
-[data-theme="dark"] .post-actions-bar .privacy-selector option,
-[data-theme="dark"] select.privacy-selector option {
-  background: var(--surface-dark) !important;
-  color: var(--text-primary-dark) !important;
+[data-theme="dark"] .privacy-selector option,
+[data-theme="dark"] select.privacy-selector option,
+[data-theme="dark"] .post-actions-bar .privacy-selector option {
+  background: var(--surface-2) !important;
+  color: var(--text-main) !important;
 }
 
-[data-theme="dark"] .post-actions-bar .privacy-selector:hover,
-[data-theme="dark"] select.privacy-selector:hover {
-  background: var(--surface-elevated-dark) !important;
-  border-color: rgba(120, 120, 255, 0.4) !important;
+[data-theme="dark"] .privacy-selector:hover,
+[data-theme="dark"] select.privacy-selector:hover,
+[data-theme="dark"] .post-actions-bar .privacy-selector:hover {
+  background: var(--surface-3) !important;
+  border-color: var(--border-light) !important;
 }
 
-[data-theme="dark"] .post-actions-bar .privacy-selector:focus,
-[data-theme="dark"] select.privacy-selector:focus {
+[data-theme="dark"] .privacy-selector:focus,
+[data-theme="dark"] select.privacy-selector:focus,
+[data-theme="dark"] .post-actions-bar .privacy-selector:focus {
   border-color: rgba(120, 120, 255, 0.5) !important;
   box-shadow: 0 0 0 2px rgba(120, 120, 255, 0.15) !important;
+}
+
+/* ========================================
+   NORMALIZE ACTION ROW BUTTON SIZING
+   3️⃣ Hide Metrics fix - Final pass
+   ======================================== */
+
+/* Ensure all action buttons have consistent height */
+.post-actions button,
+.post-actions label,
+.post-actions-bar button,
+.post-actions-bar label,
+.composer-actions button,
+.composer-actions label {
+  height: 36px;
+  min-height: 36px;
+  max-height: 36px;
+  padding: 0 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 10px;
+  font-size: 0.875rem;
+  line-height: 1;
+  box-sizing: border-box;
+}
+
+/* Ensure checkbox labels don't grow taller */
+.hide-metrics-checkbox {
+  margin: 0 !important;
+  padding: 0 14px !important;
+  height: 36px !important;
+  min-height: 36px !important;
+  max-height: 36px !important;
+}
+
+.hide-metrics-checkbox input {
+  margin: 0 !important;
+  padding: 0 !important;
 }
