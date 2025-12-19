@@ -67,8 +67,8 @@ function EditProfileModal({ isOpen, onClose, user, onUpdate }) {
         lookingFor: user.lookingFor || [],
         communicationStyle: user.communicationStyle || '',
         safetyPreferences: user.safetyPreferences || '',
-        profilePhoto: null,
-        coverPhoto: null
+        profilePhoto: user.profilePhoto || null,
+        coverPhoto: user.coverPhoto || null
       });
 
       // Initialize photo positions from user data
@@ -239,7 +239,8 @@ function EditProfileModal({ isOpen, onClose, user, onUpdate }) {
 
     setLoading(true);
     try {
-      // Include photo position metadata in the update
+      // Include photo URLs and position metadata in the update
+      // formData already contains profilePhoto and coverPhoto from user or upload
       const updateData = {
         ...formData,
         coverPhotoPosition: coverPos,

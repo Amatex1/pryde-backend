@@ -516,6 +516,8 @@ router.put('/profile', auth, sanitizeFields([
       lookingFor,
       communicationStyle,
       safetyPreferences,
+      profilePhoto,
+      coverPhoto,
       coverPhotoPosition,
       profilePhotoPosition
     } = req.body;
@@ -545,6 +547,10 @@ router.put('/profile', auth, sanitizeFields([
     if (lookingFor !== undefined) user.lookingFor = lookingFor;
     if (communicationStyle !== undefined) user.communicationStyle = communicationStyle;
     if (safetyPreferences !== undefined) user.safetyPreferences = safetyPreferences;
+
+    // Update photo URLs
+    if (profilePhoto !== undefined) user.profilePhoto = profilePhoto;
+    if (coverPhoto !== undefined) user.coverPhoto = coverPhoto;
 
     // Update photo positions (includes x, y, scale)
     if (coverPhotoPosition !== undefined) {
