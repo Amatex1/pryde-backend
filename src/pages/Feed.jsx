@@ -1943,62 +1943,62 @@ function Feed() {
                             </div>
                           ) : (
                             <>
-                              {post.contentWarning && !revealedPosts[post._id] && autoHideContentWarnings ? (
-                                <div className="content-warning-overlay">
-                                  <div className="cw-header">
-                                    <span className="cw-icon">⚠️</span>
-                                    <span className="cw-text">Content Warning: {post.contentWarning}</span>
-                                  </div>
-                                  <button
-                                    className="btn-reveal-content"
-                                    onClick={() => setRevealedPosts({...revealedPosts, [post._id]: true})}
-                                  >
-                                    Show Content
-                                  </button>
-                                </div>
+                              {/* CRITICAL: Poll posts render poll UI, NOT text content */}
+                              {post.poll && post.poll.question ? (
+                                <Poll
+                                  poll={post.poll}
+                                  postId={post._id}
+                                  currentUserId={currentUser?._id}
+                                  onVote={(updatedPost) => {
+                                    setPosts(posts.map(p => p._id === updatedPost._id ? updatedPost : p));
+                                  }}
+                                />
                               ) : (
-                                post.content && (
-                                  <p>
-                                    <FormattedText text={post.content} />
-                                  </p>
-                                )
-                              )}
-                            </>
-                          )}
-
-                          {post.media && post.media.length > 0 && (!post.contentWarning || !autoHideContentWarnings || revealedPosts[post._id]) && (
-                            <div className={`post-media-grid ${post.media.length === 1 ? 'single' : post.media.length === 2 ? 'double' : 'multiple'}`}>
-                              {post.media.map((media, index) => (
-                                <div key={index} className="post-media-item">
-                                  {media.type === 'video' ? (
-                                    <video src={getImageUrl(media.url)} controls />
+                                <>
+                                  {post.contentWarning && !revealedPosts[post._id] && autoHideContentWarnings ? (
+                                    <div className="content-warning-overlay">
+                                      <div className="cw-header">
+                                        <span className="cw-icon">⚠️</span>
+                                        <span className="cw-text">Content Warning: {post.contentWarning}</span>
+                                      </div>
+                                      <button
+                                        className="btn-reveal-content"
+                                        onClick={() => setRevealedPosts({...revealedPosts, [post._id]: true})}
+                                      >
+                                        Show Content
+                                      </button>
+                                    </div>
                                   ) : (
-                                    <OptimizedImage
-                                      src={getImageUrl(media.url)}
-                                      alt={`Post media ${index + 1}`}
-                                      onClick={() => setPhotoViewerImage(getImageUrl(media.url))}
-                                      style={{ cursor: 'pointer' }}
-                                      fetchPriority={isFirstPost && index === 0 ? 'high' : undefined}
-                                      loading={isFirstPost && index === 0 ? 'eager' : 'lazy'}
-                                      responsiveSizes={media.sizes}
-                                    />
+                                    post.content && (
+                                      <p>
+                                        <FormattedText text={post.content} />
+                                      </p>
+                                    )
                                   )}
-                                </div>
-                              ))}
-                            </div>
-                          )}
 
-                          {/* Poll Component */}
-                          {post.poll && (
-                            <Poll
-                              poll={post.poll}
-                              postId={post._id}
-                              currentUserId={currentUser?._id}
-                              onVote={(updatedPost) => {
-                                setPosts(posts.map(p => p._id === updatedPost._id ? updatedPost : p));
-                              }}
-                            />
-                          )}
+                                  {post.media && post.media.length > 0 && (!post.contentWarning || !autoHideContentWarnings || revealedPosts[post._id]) && (
+                                    <div className={`post-media-grid ${post.media.length === 1 ? 'single' : post.media.length === 2 ? 'double' : 'multiple'}`}>
+                                      {post.media.map((media, index) => (
+                                        <div key={index} className="post-media-item">
+                                          {media.type === 'video' ? (
+                                            <video src={getImageUrl(media.url)} controls />
+                                          ) : (
+                                            <OptimizedImage
+                                              src={getImageUrl(media.url)}
+                                              alt={`Post media ${index + 1}`}
+                                              onClick={() => setPhotoViewerImage(getImageUrl(media.url))}
+                                              style={{ cursor: 'pointer' }}
+                                              fetchPriority={isFirstPost && index === 0 ? 'high' : undefined}
+                                              loading={isFirstPost && index === 0 ? 'eager' : 'lazy'}
+                                              responsiveSizes={media.sizes}
+                                            />
+                                          )}
+                                        </div>
+                                      ))}
+                                    </div>
+                                  )}
+                                </>
+                              )}
                         </>
                       )}
                     </div>

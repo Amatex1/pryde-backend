@@ -18,6 +18,7 @@ import ProfilePostSearch from '../components/ProfilePostSearch';
 import CommentThread from '../components/CommentThread';
 import PinnedPostBadge from '../components/PinnedPostBadge';
 import EditHistoryModal from '../components/EditHistoryModal';
+import Poll from '../components/Poll';
 import { useModal } from '../hooks/useModal';
 import api from '../utils/api';
 import { getCurrentUser } from '../utils/auth';
@@ -2015,25 +2016,39 @@ function Profile() {
                               </div>
                             ) : (
                               <>
-                                {post.content && <p><FormattedText text={post.content} /></p>}
-                                {post.media && post.media.length > 0 && (
-                                  <div className={`post-media-grid ${post.media.length === 1 ? 'single' : post.media.length === 2 ? 'double' : 'multiple'}`}>
-                                    {post.media.map((mediaItem, index) => (
-                                      <div key={index} className="post-media-item">
-                                        {mediaItem.type === 'video' ? (
-                                          <video src={getImageUrl(mediaItem.url)} controls />
-                                        ) : (
-                                          <OptimizedImage
-                                            src={getImageUrl(mediaItem.url)}
-                                            alt={`Post media ${index + 1}`}
-                                            onClick={() => setPhotoViewerImage(getImageUrl(mediaItem.url))}
-                                            style={{ cursor: 'pointer' }}
-                                            responsiveSizes={mediaItem.sizes}
-                                          />
-                                        )}
+                                {/* CRITICAL: Poll posts render poll UI, NOT text content */}
+                                {post.poll && post.poll.question ? (
+                                  <Poll
+                                    poll={post.poll}
+                                    postId={post._id}
+                                    currentUserId={currentUser?._id}
+                                    onVote={(updatedPost) => {
+                                      setPosts(posts.map(p => p._id === updatedPost._id ? updatedPost : p));
+                                    }}
+                                  />
+                                ) : (
+                                  <>
+                                    {post.content && <p><FormattedText text={post.content} /></p>}
+                                    {post.media && post.media.length > 0 && (
+                                      <div className={`post-media-grid ${post.media.length === 1 ? 'single' : post.media.length === 2 ? 'double' : 'multiple'}`}>
+                                        {post.media.map((mediaItem, index) => (
+                                          <div key={index} className="post-media-item">
+                                            {mediaItem.type === 'video' ? (
+                                              <video src={getImageUrl(mediaItem.url)} controls />
+                                            ) : (
+                                              <OptimizedImage
+                                                src={getImageUrl(mediaItem.url)}
+                                                alt={`Post media ${index + 1}`}
+                                                onClick={() => setPhotoViewerImage(getImageUrl(mediaItem.url))}
+                                                style={{ cursor: 'pointer' }}
+                                                responsiveSizes={mediaItem.sizes}
+                                              />
+                                            )}
+                                          </div>
+                                        ))}
                                       </div>
-                                    ))}
-                                  </div>
+                                    )}
+                                  </>
                                 )}
                               </>
                             )}
