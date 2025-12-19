@@ -2,8 +2,8 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  background: var(--card-bg);
-  border: 1px solid var(--border-color);
+  background: var(--bg-card);
+  border: 1px solid var(--border-default);
   border-radius: 20px;
   padding: 10px 16px;
   max-width: 350px;
@@ -13,8 +13,8 @@
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: var(--pryde-purple);
-  color: white;
+  background: var(--accent-primary);
+  color: var(--text-inverse);
   border: none;
   font-size: 1rem;
   cursor: pointer;
@@ -26,7 +26,7 @@
 }
 
 .play-pause-btn:hover {
-  background: var(--electric-blue);
+  background: var(--accent-hover);
   transform: scale(1.05);
 }
 
@@ -38,7 +38,7 @@
 .audio-progress-bar {
   position: relative;
   height: 6px;
-  background: var(--border-color);
+  background: var(--border-default);
   border-radius: 3px;
   cursor: pointer;
   margin-bottom: 6px;
@@ -49,7 +49,7 @@
   top: 0;
   left: 0;
   height: 100%;
-  background: linear-gradient(90deg, var(--pryde-purple), var(--electric-blue));
+  background: var(--gradient-primary);
   border-radius: 3px;
   transition: width 0.1s linear;
 }
@@ -60,10 +60,10 @@
   transform: translate(-50%, -50%);
   width: 14px;
   height: 14px;
-  background: white;
-  border: 2px solid var(--pryde-purple);
+  background: var(--text-inverse);
+  border: 2px solid var(--accent-primary);
   border-radius: 50%;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  box-shadow: var(--shadow-soft);
   transition: left 0.1s linear;
   pointer-events: none;
 }
@@ -77,7 +77,7 @@
 }
 
 .current-time {
-  color: var(--pryde-purple);
+  color: var(--accent-primary);
   font-weight: 600;
 }
 
@@ -87,39 +87,10 @@
 }
 
 /* ========================================
-   DARK MODE SUPPORT
+   THEME SUPPORT
+   All theming handled by CSS variables in variables.css
+   No component-specific theme overrides needed
    ======================================== */
-
-[data-theme="dark"] .audio-player {
-  background: rgba(255, 255, 255, 0.03);
-  border-color: rgba(255, 255, 255, 0.1);
-}
-
-[data-theme="dark"] .audio-progress-bar {
-  background: rgba(255, 255, 255, 0.1);
-}
-
-[data-theme="dark"] .audio-progress-handle {
-  background: #1a1b2d;
-  border-color: var(--color-primary);
-}
-
-[data-theme="dark"] .audio-time {
-  color: #a1a1aa;
-}
-
-/* ========================================
-   QUIET MODE SUPPORT
-   ======================================== */
-
-[data-quiet-mode="true"] .audio-player {
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
-}
-
-[data-quiet-mode="true"] .audio-play-btn:hover,
-[data-quiet-mode="true"] .audio-volume-btn:hover {
-  transform: none;
-}
 
 /* ========================================
    REDUCED MOTION SUPPORT (ACCESSIBILITY)
@@ -129,32 +100,14 @@
   .audio-player,
   .audio-play-btn,
   .audio-volume-btn {
-    animation: none !important;
-    transition: none !important;
+    animation: none;
+    transition: none;
   }
 
   .audio-play-btn:hover,
   .audio-volume-btn:hover {
-    transform: none !important;
+    transform: none;
   }
-}
-
-[data-theme="dark"] .current-time {
-  color: var(--color-primary);
-}
-
-/* Legacy dark mode support (for backwards compatibility) */
-body.dark-mode .audio-player {
-  background: var(--card-bg-dark);
-  border-color: var(--border-color-dark);
-}
-
-body.dark-mode .audio-progress-bar {
-  background: var(--border-color-dark);
-}
-
-body.dark-mode .audio-progress-handle {
-  background: var(--card-bg-dark);
 }
 
 /* Responsive */

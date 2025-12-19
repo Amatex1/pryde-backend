@@ -1,11 +1,11 @@
 .draft-manager {
-  background: var(--card-bg);
+  background: var(--bg-card);
   border-radius: 12px;
   padding: 20px;
   max-width: 600px;
   max-height: 70vh;
   overflow-y: auto;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--shadow-medium);
 }
 
 .draft-manager-header {
@@ -14,7 +14,7 @@
   align-items: center;
   margin-bottom: 20px;
   padding-bottom: 15px;
-  border-bottom: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border-default);
 }
 
 .draft-manager-header h3 {
@@ -40,7 +40,7 @@
 }
 
 .close-btn:hover {
-  background: var(--hover-bg);
+  background: var(--bg-hover);
   color: var(--text-primary);
 }
 
@@ -58,8 +58,8 @@
 }
 
 .draft-item {
-  background: var(--bg-primary);
-  border: 1px solid var(--border-color);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
   border-radius: 8px;
   padding: 15px;
   display: flex;
@@ -69,13 +69,13 @@
 }
 
 .draft-item:hover {
-  border-color: var(--pryde-purple);
-  box-shadow: 0 2px 8px rgba(108, 92, 231, 0.1);
+  border-color: var(--accent-primary);
+  box-shadow: var(--shadow-soft);
 }
 
 .draft-type-badge {
-  background: var(--pryde-purple);
-  color: white;
+  background: var(--accent-primary);
+  color: var(--text-inverse);
   padding: 4px 10px;
   border-radius: 12px;
   font-size: 0.75rem;
@@ -123,116 +123,32 @@
 }
 
 .restore-btn {
-  background: var(--pryde-purple);
-  color: white;
+  background: var(--accent-primary);
+  color: var(--text-inverse);
 }
 
 .restore-btn:hover {
-  background: var(--electric-blue);
+  background: var(--accent-hover);
   transform: translateY(-1px);
 }
 
 .delete-btn {
   background: transparent;
   color: var(--text-muted);
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--border-default);
 }
 
 .delete-btn:hover {
-  background: #ff4444;
-  color: white;
-  border-color: #ff4444;
+  background: var(--color-danger);
+  color: var(--text-inverse);
+  border-color: var(--color-danger);
 }
 
 /* ========================================
-   DARK MODE SUPPORT
+   THEME SUPPORT
+   All theming handled by CSS variables in variables.css
+   No component-specific theme overrides needed
    ======================================== */
-
-[data-theme="dark"] .draft-manager {
-  background: #1a1b2d;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
-}
-
-[data-theme="dark"] .draft-manager-header {
-  border-bottom-color: rgba(255, 255, 255, 0.1);
-}
-
-[data-theme="dark"] .draft-manager-header h3 {
-  color: #ffffff;
-}
-
-[data-theme="dark"] .close-btn {
-  color: #a1a1aa;
-}
-
-[data-theme="dark"] .close-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: #ffffff;
-}
-
-[data-theme="dark"] .draft-loading,
-[data-theme="dark"] .no-drafts {
-  color: #a1a1aa;
-}
-
-[data-theme="dark"] .draft-item {
-  background: rgba(255, 255, 255, 0.03);
-  border-color: rgba(255, 255, 255, 0.1);
-}
-
-[data-theme="dark"] .draft-item:hover {
-  border-color: var(--color-primary);
-  box-shadow: 0 2px 8px rgba(108, 92, 231, 0.3);
-}
-
-[data-theme="dark"] .draft-preview {
-  color: #ffffff;
-}
-
-[data-theme="dark"] .draft-time {
-  color: #a1a1aa;
-}
-
-[data-theme="dark"] .delete-btn {
-  color: #a1a1aa;
-  border-color: rgba(255, 255, 255, 0.1);
-}
-
-[data-theme="dark"] .delete-btn:hover {
-  background: #ff4444;
-  color: white;
-  border-color: #ff4444;
-}
-
-/* Legacy dark mode support (for backwards compatibility) */
-body.dark-mode .draft-manager {
-  background: var(--card-bg-dark);
-}
-
-body.dark-mode .draft-item {
-  background: var(--bg-primary-dark);
-  border-color: var(--border-color-dark);
-}
-
-body.dark-mode .draft-item:hover {
-  border-color: var(--pryde-purple);
-}
-
-/* ========================================
-   QUIET MODE SUPPORT
-   ======================================== */
-
-[data-quiet-mode="true"] .draft-manager {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-}
-
-[data-quiet-mode="true"] .draft-item:hover {
-  transform: none;
-}
-
-[data-quiet-mode="true"] .draft-actions button:hover {
-  transform: none;
-}
 
 /* ========================================
    REDUCED MOTION SUPPORT (ACCESSIBILITY)
@@ -241,13 +157,13 @@ body.dark-mode .draft-item:hover {
 @media (prefers-reduced-motion: reduce) {
   .draft-manager,
   .draft-item {
-    animation: none !important;
-    transition: none !important;
+    animation: none;
+    transition: none;
   }
 
   .draft-item:hover,
   .draft-actions button:hover {
-    transform: none !important;
+    transform: none;
   }
 }
 
