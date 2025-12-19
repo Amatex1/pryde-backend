@@ -46,8 +46,8 @@
 .poll-field input[type="text"]:focus,
 .poll-field select:focus {
   outline: none;
-  border-color: var(--pryde-purple);
-  box-shadow: 0 0 0 4px rgba(108, 92, 231, 0.15);
+  border-color: var(--accent-primary);
+  box-shadow: var(--shadow-soft);
   transform: translateY(-1px);
 }
 
@@ -71,7 +71,7 @@
 
 .remove-option-btn {
   background: transparent;
-  border: 2px solid var(--border-color);
+  border: 2px solid var(--border-default);
   color: var(--text-muted);
   width: 36px;
   height: 36px;
@@ -86,11 +86,11 @@
 }
 
 .remove-option-btn:hover {
-  background: #ff4444;
-  color: white;
-  border-color: #ff4444;
+  background: var(--color-danger);
+  color: var(--text-inverse);
+  border-color: var(--color-danger);
   transform: scale(1.05);
-  box-shadow: 0 2px 8px rgba(255, 68, 68, 0.3);
+  box-shadow: var(--shadow-soft);
 }
 
 .add-option-btn {
@@ -115,7 +115,7 @@
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(108, 92, 231, 0.1), transparent);
+  background: var(--gradient-soft);
   transition: left 0.5s ease;
 }
 
@@ -124,11 +124,11 @@
 }
 
 .add-option-btn:hover {
-  background: var(--soft-lavender);
-  border-color: var(--pryde-purple);
+  background: var(--accent-muted);
+  border-color: var(--accent-primary);
   border-style: solid;
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(108, 92, 231, 0.2);
+  box-shadow: var(--shadow-medium);
 }
 
 .poll-settings {
@@ -160,110 +160,10 @@
 }
 
 /* ========================================
-   DARK MODE SUPPORT
+   THEME SUPPORT
+   All theming handled by CSS variables in variables.css
+   No component-specific theme overrides needed
    ======================================== */
-
-[data-theme="dark"] .poll-creator {
-  background: rgba(255, 255, 255, 0.03);
-  border-color: rgba(255, 255, 255, 0.1);
-}
-
-[data-theme="dark"] .poll-header h4 {
-  color: #ffffff;
-}
-
-[data-theme="dark"] .poll-field label {
-  color: #ffffff;
-}
-
-[data-theme="dark"] .poll-field input[type="text"],
-[data-theme="dark"] .poll-field select {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.1);
-  color: #ffffff;
-}
-
-[data-theme="dark"] .poll-field input[type="text"]:focus,
-[data-theme="dark"] .poll-field select:focus {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 4px rgba(108, 92, 231, 0.15);
-}
-
-[data-theme="dark"] .poll-field input[type="text"]::placeholder {
-  color: #6b6e80;
-}
-
-[data-theme="dark"] .char-count {
-  color: #a1a1aa;
-}
-
-[data-theme="dark"] .remove-option-btn {
-  border-color: rgba(255, 255, 255, 0.1);
-  color: #a1a1aa;
-}
-
-[data-theme="dark"] .remove-option-btn:hover {
-  background: #ff4444;
-  color: white;
-  border-color: #ff4444;
-}
-
-[data-theme="dark"] .add-option-btn {
-  border-color: rgba(255, 255, 255, 0.1);
-  color: var(--color-primary);
-}
-
-[data-theme="dark"] .add-option-btn:hover {
-  background: rgba(108, 92, 231, 0.15);
-  border-color: var(--color-primary);
-}
-
-[data-theme="dark"] .poll-settings {
-  border-top-color: rgba(255, 255, 255, 0.1);
-}
-
-[data-theme="dark"] .poll-checkbox {
-  color: #ffffff;
-}
-
-/* Legacy dark mode support (for backwards compatibility) */
-body.dark-mode .poll-creator {
-  background: var(--card-bg-dark);
-  border-color: var(--border-color-dark);
-}
-
-body.dark-mode .poll-field input[type="text"],
-body.dark-mode .poll-field select {
-  background: var(--bg-primary-dark);
-  border-color: var(--border-color-dark);
-}
-
-body.dark-mode .add-option-btn:hover {
-  background: rgba(108, 92, 231, 0.1);
-}
-
-/* Quiet mode */
-body.quiet-mode .poll-creator {
-  border-color: var(--border-light);
-}
-
-/* ========================================
-   QUIET MODE SUPPORT
-   ======================================== */
-
-[data-quiet-mode="true"] .poll-creator {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-}
-
-[data-quiet-mode="true"] .add-option-btn::before {
-  animation: none;
-}
-
-[data-quiet-mode="true"] .add-option-btn:hover,
-[data-quiet-mode="true"] .remove-option-btn:hover {
-  transform: none;
-}
 
 /* ========================================
    REDUCED MOTION SUPPORT (ACCESSIBILITY)
@@ -273,13 +173,13 @@ body.quiet-mode .poll-creator {
   .poll-creator,
   .add-option-btn,
   .remove-option-btn {
-    animation: none !important;
-    transition: none !important;
+    animation: none;
+    transition: none;
   }
 
   .add-option-btn:hover,
   .remove-option-btn:hover {
-    transform: none !important;
+    transform: none;
   }
 }
 

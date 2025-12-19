@@ -4,7 +4,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: var(--overlay-bg);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -23,10 +23,10 @@
 }
 
 .emoji-picker {
-  background: var(--card-surface);
+  background: var(--bg-card);
   border-radius: 1rem;
   padding: 1.5rem;
-  box-shadow: 0 0.625rem 2.5rem rgba(0, 0, 0, 0.2);
+  box-shadow: var(--shadow-strong);
   max-width: min(520px, 95vw);
   max-height: min(600px, 90vh);
   width: 95%;
@@ -134,59 +134,11 @@
    DARK MODE SUPPORT
    ======================================== */
 
-[data-theme="dark"] .emoji-picker-overlay {
-  background: rgba(0, 0, 0, 0.7);
-}
-
-[data-theme="dark"] .emoji-picker {
-  background: #1a1b2d;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
-}
-
-[data-theme="dark"] .emoji-picker-header {
-  border-bottom-color: rgba(255, 255, 255, 0.1);
-}
-
-[data-theme="dark"] .emoji-picker-header h4 {
-  color: #ffffff;
-}
-
-[data-theme="dark"] .emoji-picker-close {
-  color: #a1a1aa;
-}
-
-[data-theme="dark"] .emoji-picker-close:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: #ffffff;
-}
-
-[data-theme="dark"] .emoji-button {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: transparent;
-}
-
-[data-theme="dark"] .emoji-button:hover {
-  background: rgba(108, 92, 231, 0.2);
-  border-color: var(--color-primary);
-  transform: scale(1.1);
-}
-
 /* ========================================
-   QUIET MODE SUPPORT
+   THEME SUPPORT
+   All theming handled by CSS variables in variables.css
+   No component-specific theme overrides needed
    ======================================== */
-
-[data-quiet-mode="true"] .emoji-picker-overlay {
-  animation: none;
-}
-
-[data-quiet-mode="true"] .emoji-picker {
-  animation: none;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
-}
-
-[data-quiet-mode="true"] .emoji-button:hover {
-  transform: scale(1.05);
-}
 
 /* ========================================
    REDUCED MOTION SUPPORT (ACCESSIBILITY)
@@ -195,12 +147,12 @@
 @media (prefers-reduced-motion: reduce) {
   .emoji-picker-overlay,
   .emoji-picker {
-    animation: none !important;
-    transition: none !important;
+    animation: none;
+    transition: none;
   }
 
   .emoji-button:hover {
-    transform: none !important;
+    transform: none;
   }
 }
 
