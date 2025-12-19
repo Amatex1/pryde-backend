@@ -44,10 +44,16 @@ export const setCsrfToken = (req, res, next) => {
       // Token is still valid, reuse it
       req.csrfToken = existingToken;
       res.locals.csrfToken = existingToken;
+      if (config.nodeEnv === 'development') {
+        console.log('✅ Reusing existing CSRF token');
+      }
       return next();
     } else {
       // Token expired, remove it
       csrfTokens.delete(existingToken);
+      if (config.nodeEnv === 'development') {
+        console.log('⏰ CSRF token expired, generating new one');
+      }
     }
   }
 
@@ -60,14 +66,23 @@ export const setCsrfToken = (req, res, next) => {
     userId: req.userId || null
   });
 
-  // Set cookie with SameSite attribute
-  res.cookie('XSRF-TOKEN', token, {
+  const cookieOptions = {
     httpOnly: false, // Allow JavaScript to read for sending in headers
     secure: config.nodeEnv === 'production', // HTTPS only in production
     sameSite: config.nodeEnv === 'production' ? 'none' : 'lax', // 'none' for cross-origin in production
     path: '/', // Available on all routes
     maxAge: 3600000 // 1 hour
-  });
+  };
+
+  // Set cookie with SameSite attribute
+  res.cookie('XSRF-TOKEN', token, cookieOptions);
+
+  if (config.nodeEnv === 'development') {
+    console.log('🍪 Setting new CSRF token cookie:', {
+      token: token.substring(0, 10) + '...',
+      options: cookieOptions
+    });
+  }
 
   // Also make it available in response
   req.csrfToken = token;
