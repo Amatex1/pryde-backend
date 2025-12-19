@@ -48,6 +48,13 @@ function Journal() {
     // Only auto-save if there's content
     if (!formData.body.trim() && !formData.title.trim()) return;
 
+    // CRITICAL: Check if user is authenticated before attempting autosave
+    const currentUser = getCurrentUser();
+    if (!currentUser) {
+      console.debug('⏸️ Skipping autosave - user not authenticated');
+      return;
+    }
+
     // CRITICAL: Check if CSRF token exists before attempting autosave
     const csrfToken = getCsrfToken();
     if (!csrfToken) {

@@ -746,6 +746,14 @@ function Feed() {
       return;
     }
 
+    // CRITICAL: Check if user is authenticated before attempting autosave
+    const currentUser = getCurrentUser();
+    if (!currentUser) {
+      logger.debug('⏸️ Skipping autosave - user not authenticated');
+      setDraftSaveStatus('');
+      return;
+    }
+
     // CRITICAL: Check if CSRF token exists before attempting autosave
     // This prevents CSRF mismatch errors on page load or before auth is ready
     const csrfToken = getCsrfToken();

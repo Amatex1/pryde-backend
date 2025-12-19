@@ -103,9 +103,9 @@ router.post('/', auth, async (req, res) => {
       if (visibility !== undefined) draft.visibility = visibility;
       if (contentWarning !== undefined) draft.contentWarning = contentWarning;
       if (hideMetrics !== undefined) draft.hideMetrics = hideMetrics;
-      // CRITICAL: Normalize null to undefined for mood (prevents enum validation error)
+      // CRITICAL: Normalize null/empty to undefined for mood (prevents enum validation error)
       if (mood !== undefined) {
-        draft.mood = mood === null ? undefined : mood;
+        draft.mood = (mood === null || mood === '') ? undefined : mood;
       }
       if (tags !== undefined) draft.tags = tags;
       if (poll !== undefined) {

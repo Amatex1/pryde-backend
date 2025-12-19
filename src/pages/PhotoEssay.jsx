@@ -5,6 +5,7 @@ import Toast from '../components/Toast';
 import DraftManager from '../components/DraftManager';
 import { useToast } from '../hooks/useToast';
 import api, { getCsrfToken } from '../utils/api';
+import { getCurrentUser } from '../utils/auth';
 import { getImageUrl } from '../utils/imageUrl';
 import './PhotoEssay.css';
 
@@ -79,6 +80,13 @@ function PhotoEssay() {
   const autoSaveDraft = useCallback(async () => {
     // Only auto-save if there's content and not in edit mode
     if (editMode || (!title.trim() && photos.length === 0)) return;
+
+    // CRITICAL: Check if user is authenticated before attempting autosave
+    const currentUser = getCurrentUser();
+    if (!currentUser) {
+      console.debug('⏸️ Skipping autosave - user not authenticated');
+      return;
+    }
 
     // CRITICAL: Check if CSRF token exists before attempting autosave
     const csrfToken = getCsrfToken();
