@@ -1158,7 +1158,7 @@ html:not([data-theme])[data-quiet-mode="true"] .hide-metrics-checkbox:hover {
   border-top: 1px solid var(--border-light);
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.5rem;
 }
 
 /* ========================================
@@ -1174,7 +1174,7 @@ html:not([data-theme])[data-quiet-mode="true"] .hide-metrics-checkbox:hover {
 .comment {
   display: flex;
   gap: var(--space-2);
-  padding: var(--space-2) 0;
+  padding: var(--space-1) 0;
   background: transparent;
 }
 
@@ -1481,25 +1481,24 @@ html:not([data-theme])[data-quiet-mode="true"] .hide-metrics-checkbox:hover {
 }
 
 .comment-avatar {
-  width: 32px;
-  height: 32px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
-  background: var(--gradient-primary);
+  background: var(--bg-secondary);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 600;
-  color: white;
-  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-main);
+  font-size: 12px;
   flex-shrink: 0;
   overflow: hidden;
-  transition: all 0.15s ease;
+  transition: opacity 0.2s;
   align-self: flex-start;
 }
 
 .comment-avatar:hover {
-  transform: scale(1.05);
-  box-shadow: var(--shadow-medium);
+  opacity: 0.8;
 }
 
 .comment-avatar img {
@@ -1556,10 +1555,12 @@ html:not([data-theme])[data-quiet-mode="true"] .hide-metrics-checkbox:hover {
   overflow-wrap: break-word;
 }
 
-.comment-text .edited-indicator {
-  font-size: 11px;
+.comment-text .edited-indicator,
+.edited-indicator {
+  font-size: 10px;
   color: var(--text-muted);
-  font-style: italic;
+  font-style: normal;
+  opacity: 0.6;
   margin-left: var(--space-1);
 }
 
@@ -1612,32 +1613,30 @@ html:not([data-theme])[data-quiet-mode="true"] .hide-metrics-checkbox:hover {
 .btn-save-comment,
 .btn-cancel-comment {
   padding: 0.5rem 1rem;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   border: none;
   cursor: pointer;
   font-size: 0.875rem;
-  font-weight: 600;
-  transition: all 0.2s;
+  font-weight: 500;
+  transition: opacity 0.2s;
 }
 
 .btn-save-comment {
-  background: var(--gradient-primary);
-  color: white;
-}
-
-.btn-save-comment:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(108, 92, 231, 0.3);
-}
-
-.btn-cancel-comment {
-  background: var(--border-light);
+  background: var(--bg-secondary);
   color: var(--text-main);
 }
 
+.btn-save-comment:hover {
+  opacity: 0.8;
+}
+
+.btn-cancel-comment {
+  background: transparent;
+  color: var(--text-muted);
+}
+
 .btn-cancel-comment:hover {
-  background: var(--text-muted);
-  color: white;
+  opacity: 0.7;
 }
 
 .reply-input-box {
@@ -2585,8 +2584,8 @@ html:not([data-theme])[data-quiet-mode="true"] .hide-metrics-checkbox:hover {
   }
 
   .comment-avatar {
-    width: 28px;
-    height: 28px;
+    width: 24px;
+    height: 24px;
   }
 
   .comment-header {
@@ -3515,8 +3514,8 @@ select.privacy-selector:focus {
 
 .comment-modal-header h3 {
   margin: 0;
-  font-size: 18px;
-  font-weight: 600;
+  font-size: 16px;
+  font-weight: 500;
   color: var(--text-main);
 }
 
@@ -3604,21 +3603,19 @@ select.privacy-selector:focus {
 
 .btn-submit-comment {
   padding: 12px 24px;
-  background: var(--pryde-purple);
-  color: white;
+  background: var(--bg-secondary);
+  color: var(--text-main);
   border: none;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   cursor: pointer;
-  font-weight: 600;
+  font-weight: 500;
   font-size: 14px;
-  transition: all 0.2s ease;
+  transition: opacity 0.2s;
   min-width: 120px;
 }
 
 .btn-submit-comment:hover:not(:disabled) {
-  background: var(--electric-blue);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(108, 92, 231, 0.3);
+  opacity: 0.8;
 }
 
 .btn-submit-comment:disabled {

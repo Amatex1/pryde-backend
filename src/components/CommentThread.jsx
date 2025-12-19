@@ -75,7 +75,7 @@ const CommentThread = ({
         {comment.isDeleted ? (
           <div className="comment-deleted">
             <span className="deleted-icon">🗑️</span>
-            <span className="deleted-text">This comment was removed</span>
+            <span className="deleted-text">This reply was removed</span>
           </div>
         ) : (
           <>
@@ -124,16 +124,16 @@ const CommentThread = ({
                   />
                   <div className="comment-edit-actions">
                     <button
-                      className="btn-primary"
+                      className="btn-save-comment"
                       onClick={() => handleSaveEditComment(comment._id)}
                     >
                       Save
                     </button>
                     <button
-                      className="btn-secondary"
+                      className="btn-cancel-comment"
                       onClick={handleCancelEditComment}
                     >
-                      Cancel
+                      Never mind
                     </button>
                   </div>
                 </div>
@@ -358,16 +358,16 @@ const CommentThread = ({
                           />
                           <div className="comment-edit-actions">
                             <button
-                              className="btn-primary"
+                              className="btn-save-comment"
                               onClick={() => handleSaveEditComment(reply._id)}
                             >
                               Save
                             </button>
                             <button
-                              className="btn-secondary"
+                              className="btn-cancel-comment"
                               onClick={handleCancelEditComment}
                             >
-                              Cancel
+                              Never mind
                             </button>
                           </div>
                         </div>

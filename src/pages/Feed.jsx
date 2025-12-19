@@ -2086,7 +2086,7 @@ function Feed() {
                         className="action-btn subtle"
                         onClick={() => toggleCommentBox(post._id)}
                         aria-label={`Reply to post${!post.hideMetrics ? ` (${post.commentCount || 0} replies)` : ''}`}
-                        title="Join the conversation"
+                        title="Reply to this post"
                       >
                         <span>💬</span>
                         <span className="action-text">
@@ -2184,7 +2184,7 @@ function Feed() {
                             type="text"
                             value={commentText[post._id] || ''}
                             onChange={(e) => handleCommentChange(post._id, e.target.value)}
-                            placeholder={commentGif[post._id] ? "Add a caption (optional)" : "Write a reply"}
+                            placeholder={commentGif[post._id] ? "Caption, if you'd like" : "Reply, if you feel like it."}
                             className="comment-input glossy"
                           />
                           <button
@@ -2548,7 +2548,7 @@ function Feed() {
         <div className="comment-modal-overlay" onClick={() => setCommentModalOpen(null)}>
           <div className="comment-modal" onClick={(e) => e.stopPropagation()}>
             <div className="comment-modal-header">
-              <h3>💬 Add Comment</h3>
+              <h3>Reply</h3>
               <button className="btn-close-modal" onClick={() => setCommentModalOpen(null)}>✕</button>
             </div>
             <div className="comment-modal-body">
@@ -2576,7 +2576,7 @@ function Feed() {
                       e.target.style.height = 'auto';
                       e.target.style.height = e.target.scrollHeight + 'px';
                     }}
-                    placeholder={commentGif[commentModalOpen] ? "Add a caption (optional)..." : "Write a comment..."}
+                    placeholder={commentGif[commentModalOpen] ? "Caption, if you'd like" : "Reply, if you feel like it."}
                     className="comment-modal-textarea"
                     autoFocus
                     rows="3"
@@ -2616,7 +2616,7 @@ function Feed() {
                     className="btn-submit-comment"
                     disabled={!commentText[commentModalOpen]?.trim() && !commentGif[commentModalOpen]}
                   >
-                    Post Comment
+                    Reply
                   </button>
                 </div>
               </form>
