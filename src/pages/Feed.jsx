@@ -687,7 +687,7 @@ function Feed() {
   const getTimeSince = (date) => {
     if (!date) return 'Unknown';
     const seconds = Math.floor((new Date() - new Date(date)) / 1000);
-    if (seconds < 60) return 'Just now';
+    if (seconds < 60) return 'A moment ago';
     if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
     if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
     return `${Math.floor(seconds / 86400)}d ago`;
@@ -728,7 +728,7 @@ function Feed() {
       setSelectedMedia([...selectedMedia, ...response.data.media]);
     } catch (error) {
       logger.error('Media upload failed:', error);
-      showAlert('Failed to upload media. Please try again.', 'Upload Failed');
+      showAlert('This didn't upload properly. You can try again in a moment.', 'Upload issue');
     } finally {
       setUploadingMedia(false);
     }
@@ -879,7 +879,7 @@ function Feed() {
       setHideMetrics(false);
     } catch (error) {
       logger.error('Post creation failed:', error);
-      showAlert('Failed to create post. Please try again.', 'Post Failed');
+      showAlert('This didn't post properly. You can try again in a moment.', 'Post issue');
     } finally {
       setLoading(false);
     }
@@ -1157,7 +1157,7 @@ function Feed() {
     } catch (error) {
       logger.error('❌ Failed to create comment:', error);
       logger.error('Error details:', error.response?.data);
-      showAlert('Failed to add comment. Please try again.', 'Comment Failed');
+      showAlert('This didn't post properly. You can try again in a moment.', 'Reply issue');
     }
   };
 
@@ -1206,7 +1206,7 @@ function Feed() {
       setEditCommentText('');
     } catch (error) {
       logger.error('Failed to edit comment:', error);
-      showAlert('Failed to edit comment. Please try again.', 'Edit Failed');
+      showAlert('This didn't save properly. You can try again in a moment.', 'Edit issue');
     }
   };
 
@@ -1261,7 +1261,7 @@ function Feed() {
       showAlert('Post updated successfully!', 'Success');
     } catch (error) {
       logger.error('Failed to edit post:', error);
-      showAlert('Failed to edit post. Please try again.', 'Edit Failed');
+      showAlert('This didn't save properly. You can try again in a moment.', 'Edit issue');
     }
   };
 
@@ -1312,7 +1312,7 @@ function Feed() {
       ));
     } catch (error) {
       logger.error('Failed to delete comment:', error);
-      showAlert('Failed to delete comment. Please try again.', 'Delete Failed');
+      showAlert('This didn't delete properly. You can try again in a moment.', 'Delete issue');
     }
   };
 
@@ -1378,7 +1378,7 @@ function Feed() {
       }));
     } catch (error) {
       logger.error('Failed to reply to comment:', error);
-      showAlert('Failed to reply. Please try again.', 'Reply Failed');
+      showAlert('This didn't post properly. You can try again in a moment.', 'Reply issue');
     }
   };
 
@@ -1418,7 +1418,7 @@ function Feed() {
       }
     } catch (error) {
       logger.error('Failed to bookmark post:', error);
-      showAlert(error.response?.data?.message || 'Failed to bookmark post.', 'Bookmark Failed');
+      showAlert(error.response?.data?.message || 'This didn't save properly. You can try again in a moment.', 'Save issue');
     }
   };
 
@@ -1433,7 +1433,7 @@ function Feed() {
       setPosts(posts.filter(p => p._id !== postId));
     } catch (error) {
       logger.error('Failed to delete post:', error);
-      showAlert('Failed to delete post. Please try again.', 'Delete Failed');
+      showAlert('This didn't delete properly. You can try again in a moment.', 'Delete issue');
     }
   };
 
@@ -2017,7 +2017,8 @@ function Feed() {
                               }, 500);
                             }
                           }}
-                          aria-label={getUserReactionEmoji(post.reactions) ? `Change reaction from ${getUserReactionEmoji(post.reactions)}` : 'Respond to post'}
+                          aria-label={getUserReactionEmoji(post.reactions) ? `Change reaction from ${getUserReactionEmoji(post.reactions)}` : 'Acknowledge this post'}
+                          title={getUserReactionEmoji(post.reactions) ? 'Change reaction' : 'Acknowledge this post'}
                         >
                           <span>
                             {getUserReactionEmoji(post.reactions) || '💜'}
@@ -2085,6 +2086,7 @@ function Feed() {
                         className="action-btn subtle"
                         onClick={() => toggleCommentBox(post._id)}
                         aria-label={`Reply to post${!post.hideMetrics ? ` (${post.commentCount || 0} replies)` : ''}`}
+                        title="Join the conversation"
                       >
                         <span>💬</span>
                         <span className="action-text">
@@ -2106,7 +2108,7 @@ function Feed() {
                       <button
                         className={`action-btn ghost ${bookmarkedPosts.includes(post._id) ? 'bookmarked' : ''}`}
                         onClick={() => handleBookmark(post._id)}
-                        title={bookmarkedPosts.includes(post._id) ? 'Remove save' : 'Save post'}
+                        title={bookmarkedPosts.includes(post._id) ? 'Remove save' : 'Keep this for later'}
                         aria-label={bookmarkedPosts.includes(post._id) ? 'Remove save from post' : 'Save post'}
                       >
                         <span>{bookmarkedPosts.includes(post._id) ? '🔖' : '🔖'}</span>
@@ -2182,7 +2184,7 @@ function Feed() {
                             type="text"
                             value={commentText[post._id] || ''}
                             onChange={(e) => handleCommentChange(post._id, e.target.value)}
-                            placeholder={commentGif[post._id] ? "Add a caption (optional)..." : "Write a comment..."}
+                            placeholder={commentGif[post._id] ? "Add a caption (optional)" : "Write a reply"}
                             className="comment-input glossy"
                           />
                           <button
@@ -2238,7 +2240,7 @@ function Feed() {
                 onClick={loadMorePosts}
                 disabled={fetchingPosts}
               >
-                {fetchingPosts ? '⏳ Loading...' : '📥 Load More Posts'}
+                {fetchingPosts ? 'Loading…' : 'Load more'}
               </button>
             </div>
           )}
