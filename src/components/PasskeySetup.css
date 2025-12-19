@@ -123,99 +123,9 @@
 }
 
 /* ========================================
-   DARK MODE SUPPORT
+   THEME SUPPORT
+   All theming handled by CSS variables in variables.css
    ======================================== */
-
-[data-theme="dark"] .passkey-setup {
-  background: #1a1b2d;
-  box-shadow: 0 0.25rem 1rem rgba(0, 0, 0, 0.6);
-}
-
-[data-theme="dark"] .passkey-info h3 {
-  color: #ffffff;
-}
-
-[data-theme="dark"] .passkey-info p {
-  color: #a1a1aa;
-}
-
-[data-theme="dark"] .passkey-benefits li {
-  color: #ffffff;
-}
-
-[data-theme="dark"] .passkey-name-input h3 {
-  color: #ffffff;
-}
-
-[data-theme="dark"] .passkey-name-input p {
-  color: #a1a1aa;
-}
-
-[data-theme="dark"] .passkey-name-input input {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.1);
-  color: #ffffff;
-}
-
-[data-theme="dark"] .passkey-name-input input:focus {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px rgba(108, 92, 231, 0.15);
-}
-
-[data-theme="dark"] .passkey-name-input input::placeholder {
-  color: #6b6e80;
-}
-
-[data-theme="dark"] .btn-secondary {
-  background: rgba(255, 255, 255, 0.05);
-  color: #ffffff;
-  border-color: rgba(255, 255, 255, 0.1);
-}
-
-[data-theme="dark"] .btn-secondary:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.1);
-}
-
-[data-theme="dark"] .error-message {
-  background: rgba(255, 107, 107, 0.15);
-  border-color: #ff6b6b;
-  color: #ff6b6b;
-}
-
-@media (max-width: 768px) {
-  .passkey-setup {
-    padding: 1.5rem;
-  }
-
-  .passkey-icon {
-    font-size: 3rem;
-  }
-
-  .passkey-info h3 {
-    font-size: 1.25rem;
-  }
-
-  .passkey-actions {
-    flex-direction: column;
-  }
-
-  .passkey-actions button {
-    width: 100%;
-  }
-}
-
-/* ========================================
-   QUIET MODE SUPPORT
-   ======================================== */
-
-[data-quiet-mode="true"] .passkey-setup {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-}
-
-[data-quiet-mode="true"] .passkey-actions button:hover {
-  transform: none;
-}
 
 /* ========================================
    REDUCED MOTION SUPPORT (ACCESSIBILITY)
@@ -232,6 +142,4 @@
     transform: none !important;
   }
 }
-
-
 

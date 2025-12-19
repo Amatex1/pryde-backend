@@ -168,18 +168,6 @@
 }
 
 /* Dark mode */
-[data-theme="dark"] .safety-warning-modal {
-  background: var(--card-surface);
-}
-
-[data-theme="dark"] .safety-recommendations {
-  background: rgba(255, 140, 0, 0.15);
-}
-
-[data-theme="dark"] .safety-warning-notice {
-  background: rgba(108, 92, 231, 0.15);
-}
-
 /* Mobile responsive */
 @media (max-width: 768px) {
   .safety-warning-modal {

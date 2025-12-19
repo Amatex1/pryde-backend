@@ -27,18 +27,10 @@
 /* Dark mode - gradient looks good in both modes, no changes needed */
 
 /* Quiet mode */
-body.quiet-mode .pinned-post-badge {
-  background: var(--text-muted);
-  opacity: 0.7;
-}
-
 /* ========================================
-   QUIET MODE SUPPORT
+   THEME SUPPORT
+   All theming handled by CSS variables in variables.css
    ======================================== */
-
-[data-quiet-mode="true"] .pinned-post-badge {
-  opacity: 0.8;
-}
 
 /* ========================================
    REDUCED MOTION SUPPORT (ACCESSIBILITY)
@@ -50,6 +42,4 @@ body.quiet-mode .pinned-post-badge {
     transition: none !important;
   }
 }
-
-
 

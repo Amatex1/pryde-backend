@@ -127,12 +127,3 @@
 }
 
 /* Dark Mode */
-[data-theme="dark"] .passkey-banner-actions .btn-primary {
-  background: var(--card-surface);
-  color: var(--pryde-purple);
-}
-
-[data-theme="dark"] .passkey-banner-actions .btn-primary:hover {
-  background: var(--background-light);
-}
-

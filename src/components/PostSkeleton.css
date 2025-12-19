@@ -93,38 +93,5 @@
 }
 
 /* Dark mode */
-[data-theme="dark"] .skeleton-avatar,
-[data-theme="dark"] .skeleton-name,
-[data-theme="dark"] .skeleton-username,
-[data-theme="dark"] .skeleton-text,
-[data-theme="dark"] .skeleton-button {
-  background: linear-gradient(90deg, #2a2a2a 25%, #3a3a3a 50%, #2a2a2a 75%);
-  background-size: 200% 100%;
-  animation: shimmer 1.5s infinite;
-}
-
-[data-theme="dark"] .post-skeleton {
-  background: var(--card-surface);
-  border-color: var(--border-light);
-}
-
-[data-theme="dark"] .skeleton-actions {
-  border-top-color: var(--border-light);
-}
-
 /* Light Mode + Quiet Mode - Keep light skeleton */
-[data-theme="light"][data-quiet-mode="true"] .skeleton-avatar,
-[data-theme="light"][data-quiet-mode="true"] .skeleton-name,
-[data-theme="light"][data-quiet-mode="true"] .skeleton-username,
-[data-theme="light"][data-quiet-mode="true"] .skeleton-text,
-[data-theme="light"][data-quiet-mode="true"] .skeleton-button {
-  background: linear-gradient(90deg, #E8EAF6 25%, #D1D5E8 50%, #E8EAF6 75%);
-  background-size: 200% 100%;
-  animation: shimmer 1.5s infinite;
-}
-
-[data-theme="light"][data-quiet-mode="true"] .post-skeleton {
-  background: var(--card-surface);
-  border-color: var(--border-light);
-}
-
+[data-theme="light"][data-theme="light"]

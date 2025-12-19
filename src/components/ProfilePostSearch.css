@@ -117,118 +117,9 @@
 }
 
 /* ========================================
-   DARK MODE SUPPORT
+   THEME SUPPORT
+   All theming handled by CSS variables in variables.css
    ======================================== */
-
-[data-theme="dark"] .search-icon {
-  color: #a1a1aa;
-}
-
-[data-theme="dark"] .profile-search-input {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.1);
-  color: #ffffff;
-}
-
-[data-theme="dark"] .profile-search-input:focus {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 4px rgba(108, 92, 231, 0.15);
-}
-
-[data-theme="dark"] .profile-search-input::placeholder {
-  color: #6b6e80;
-}
-
-[data-theme="dark"] .clear-search-btn {
-  background: #a1a1aa;
-}
-
-[data-theme="dark"] .clear-search-btn:hover {
-  background: var(--color-primary);
-}
-
-[data-theme="dark"] .search-filters {
-  background: rgba(255, 255, 255, 0.03);
-  border-color: rgba(255, 255, 255, 0.1);
-}
-
-[data-theme="dark"] .filter-tabs::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.2);
-}
-
-[data-theme="dark"] .filter-tab {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.1);
-  color: #ffffff;
-}
-
-[data-theme="dark"] .filter-tab:hover {
-  background: rgba(108, 92, 231, 0.15);
-  border-color: var(--color-primary);
-}
-
-[data-theme="dark"] .filter-tab.active {
-  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%);
-  color: white;
-}
-
-[data-theme="dark"] .search-status {
-  color: #a1a1aa;
-}
-
-/* Legacy dark mode support (for backwards compatibility) */
-body.dark-mode .profile-search-input {
-  background: var(--bg-primary-dark);
-  border-color: var(--border-color-dark);
-}
-
-body.dark-mode .search-filters {
-  background: var(--card-bg-dark);
-  border-color: var(--border-color-dark);
-}
-
-body.dark-mode .filter-tab {
-  background: var(--bg-primary-dark);
-  border-color: var(--border-color-dark);
-}
-
-body.dark-mode .filter-tab:hover {
-  background: rgba(108, 92, 231, 0.1);
-}
-
-/* Responsive */
-@media (max-width: 768px) {
-  .profile-search-input {
-    font-size: 0.95rem;
-    padding: 12px 44px 12px 46px;
-  }
-
-  .filter-tabs {
-    gap: 6px;
-  }
-
-  .filter-tab {
-    padding: 6px 12px;
-    font-size: 0.85rem;
-  }
-}
-
-/* ========================================
-   QUIET MODE SUPPORT
-   ======================================== */
-
-[data-quiet-mode="true"] .search-filters {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-}
-
-[data-quiet-mode="true"] .filter-tab:hover {
-  transform: none;
-}
-
-[data-quiet-mode="true"] .clear-search-btn:hover {
-  transform: none;
-}
 
 /* ========================================
    REDUCED MOTION SUPPORT (ACCESSIBILITY)
@@ -247,6 +138,4 @@ body.dark-mode .filter-tab:hover {
     transform: none !important;
   }
 }
-
-
 

@@ -150,109 +150,9 @@
 }
 
 /* ========================================
-   DARK MODE SUPPORT
+   THEME SUPPORT
+   All theming handled by CSS variables in variables.css
    ======================================== */
-
-[data-theme="dark"] .search-icon {
-  color: #a1a1aa;
-}
-
-[data-theme="dark"] .message-search-input {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.1);
-  color: #ffffff;
-}
-
-[data-theme="dark"] .message-search-input:focus {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px rgba(108, 92, 231, 0.15);
-}
-
-[data-theme="dark"] .message-search-input::placeholder {
-  color: #6b6e80;
-}
-
-[data-theme="dark"] .clear-search-btn {
-  color: #a1a1aa;
-}
-
-[data-theme="dark"] .clear-search-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: #ffffff;
-}
-
-[data-theme="dark"] .search-results {
-  background: #1a1b2d;
-  border-color: rgba(255, 255, 255, 0.1);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
-}
-
-[data-theme="dark"] .search-loading,
-[data-theme="dark"] .no-results {
-  color: #a1a1aa;
-}
-
-[data-theme="dark"] .results-header {
-  color: #a1a1aa;
-  border-bottom-color: rgba(255, 255, 255, 0.1);
-}
-
-[data-theme="dark"] .search-result-item:hover {
-  background: rgba(108, 92, 231, 0.1);
-}
-
-[data-theme="dark"] .result-username {
-  color: var(--color-primary);
-}
-
-[data-theme="dark"] .result-message {
-  color: #ffffff;
-}
-
-[data-theme="dark"] .result-message .highlight {
-  background: rgba(108, 92, 231, 0.3);
-  color: var(--color-primary);
-}
-
-[data-theme="dark"] .result-date {
-  color: #a1a1aa;
-}
-
-/* Legacy dark mode support (for backwards compatibility) */
-body.dark-mode .message-search-input {
-  background: var(--bg-primary-dark);
-  border-color: var(--border-color-dark);
-}
-
-body.dark-mode .search-results {
-  background: var(--card-bg-dark);
-  border-color: var(--border-color-dark);
-}
-
-body.dark-mode .results-header {
-  border-bottom-color: var(--border-color-dark);
-}
-
-body.dark-mode .search-result-item:hover {
-  background: var(--hover-bg-dark);
-}
-
-body.dark-mode .result-message .highlight {
-  background: rgba(108, 92, 231, 0.3);
-}
-
-/* ========================================
-   QUIET MODE SUPPORT
-   ======================================== */
-
-[data-quiet-mode="true"] .message-search {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-}
-
-[data-quiet-mode="true"] .search-result-item:hover {
-  transform: none;
-}
 
 /* ========================================
    REDUCED MOTION SUPPORT (ACCESSIBILITY)
@@ -269,6 +169,4 @@ body.dark-mode .result-message .highlight {
     transform: none !important;
   }
 }
-
-
 

@@ -194,134 +194,9 @@
 }
 
 /* ========================================
-   DARK MODE SUPPORT
+   THEME SUPPORT
+   All theming handled by CSS variables in variables.css
    ======================================== */
-
-[data-theme="dark"] .passkey-manager {
-  background: #1a1b2d;
-  box-shadow: 0 0.25rem 1rem rgba(0, 0, 0, 0.6);
-}
-
-[data-theme="dark"] .passkey-manager.loading {
-  color: #a1a1aa;
-}
-
-[data-theme="dark"] .passkey-header h2 {
-  color: #ffffff;
-}
-
-[data-theme="dark"] .passkey-header p {
-  color: #a1a1aa;
-}
-
-[data-theme="dark"] .passkey-add-section {
-  border-bottom-color: rgba(255, 255, 255, 0.1);
-}
-
-[data-theme="dark"] .btn-cancel {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.1);
-  color: #ffffff;
-}
-
-[data-theme="dark"] .btn-cancel:hover {
-  background: rgba(255, 255, 255, 0.1);
-}
-
-[data-theme="dark"] .passkey-empty h3 {
-  color: #ffffff;
-}
-
-[data-theme="dark"] .passkey-empty p {
-  color: #a1a1aa;
-}
-
-[data-theme="dark"] .passkey-item {
-  background: rgba(255, 255, 255, 0.03);
-  border-color: rgba(255, 255, 255, 0.1);
-}
-
-[data-theme="dark"] .passkey-item:hover {
-  border-color: var(--color-primary);
-  box-shadow: 0 0.25rem 0.75rem rgba(108, 92, 231, 0.3);
-}
-
-[data-theme="dark"] .passkey-details h4 {
-  color: #ffffff;
-}
-
-[data-theme="dark"] .passkey-meta {
-  color: #a1a1aa;
-}
-
-[data-theme="dark"] .btn-delete:hover {
-  background: rgba(255, 107, 107, 0.15);
-}
-
-[data-theme="dark"] .delete-confirm-modal {
-  background: rgba(0, 0, 0, 0.7);
-}
-
-[data-theme="dark"] .delete-confirm-content {
-  background: #1a1b2d;
-  box-shadow: 0 1rem 3rem rgba(0, 0, 0, 0.8);
-}
-
-[data-theme="dark"] .delete-confirm-content h3 {
-  color: #ffffff;
-}
-
-[data-theme="dark"] .delete-confirm-content p {
-  color: #a1a1aa;
-}
-
-@media (max-width: 768px) {
-  .passkey-manager {
-    padding: 1.5rem;
-  }
-
-  .passkey-header {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .passkey-header button {
-    width: 100%;
-  }
-
-  .passkey-item {
-    padding: 1rem;
-  }
-
-  .passkey-icon-device {
-    font-size: 2rem;
-  }
-
-  .passkey-meta {
-    flex-direction: column;
-    gap: 0.25rem;
-  }
-
-  .passkey-meta span:nth-child(2) {
-    display: none;
-  }
-}
-
-/* ========================================
-   QUIET MODE SUPPORT
-   ======================================== */
-
-[data-quiet-mode="true"] .passkey-manager {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-}
-
-[data-quiet-mode="true"] .passkey-item:hover {
-  transform: none;
-}
-
-[data-quiet-mode="true"] .btn-remove-passkey:hover {
-  transform: none;
-}
 
 /* ========================================
    REDUCED MOTION SUPPORT (ACCESSIBILITY)
@@ -340,6 +215,4 @@
     transform: none !important;
   }
 }
-
-
 

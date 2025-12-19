@@ -383,11 +383,6 @@
 }
 
 /* Dark Mode */
-[data-theme="dark"] .message-date-header span {
-  background: var(--card-surface);
-  border-color: var(--border-light);
-}
-
 /* Mobile Responsive Styles */
 @media (max-width: 768px) {
   .mini-chat-box {

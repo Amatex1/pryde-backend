@@ -135,88 +135,9 @@
 }
 
 /* ========================================
-   DARK MODE SUPPORT
+   THEME SUPPORT
+   All theming handled by CSS variables in variables.css
    ======================================== */
-
-[data-theme="dark"] .voice-recorder {
-  background: rgba(255, 255, 255, 0.03);
-  border-color: rgba(255, 255, 255, 0.1);
-}
-
-[data-theme="dark"] .voice-recorder.uploading {
-  color: #a1a1aa;
-}
-
-[data-theme="dark"] .uploading-spinner {
-  border-color: rgba(255, 255, 255, 0.1);
-  border-top-color: var(--color-primary);
-}
-
-[data-theme="dark"] .recording-text {
-  color: #ffffff;
-}
-
-[data-theme="dark"] .recording-duration {
-  color: var(--color-primary);
-}
-
-[data-theme="dark"] .cancel-btn {
-  color: #a1a1aa;
-  border-color: rgba(255, 255, 255, 0.1);
-}
-
-[data-theme="dark"] .cancel-btn:hover {
-  background: #ff4444;
-  color: white;
-  border-color: #ff4444;
-}
-
-/* Legacy dark mode support (for backwards compatibility) */
-body.dark-mode .voice-recorder {
-  background: var(--card-bg-dark);
-  border-color: var(--border-color-dark);
-}
-
-body.dark-mode .uploading-spinner {
-  border-color: var(--border-color-dark);
-  border-top-color: var(--pryde-purple);
-}
-
-/* Responsive */
-@media (max-width: 768px) {
-  .voice-recorder.recording {
-    flex-wrap: wrap;
-  }
-
-  .recording-controls {
-    width: 100%;
-    justify-content: space-between;
-    margin-left: 0;
-  }
-}
-
-/* ========================================
-   QUIET MODE SUPPORT
-   ======================================== */
-
-[data-quiet-mode="true"] .voice-recorder {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-}
-
-[data-quiet-mode="true"] .recording-dot {
-  animation: none;
-}
-
-[data-quiet-mode="true"] .uploading-spinner {
-  animation: spin 1s linear infinite;
-}
-
-[data-quiet-mode="true"] .start-recording-btn:hover,
-[data-quiet-mode="true"] .pause-btn:hover,
-[data-quiet-mode="true"] .resume-btn:hover,
-[data-quiet-mode="true"] .stop-btn:hover {
-  transform: none;
-}
 
 /* ========================================
    REDUCED MOTION SUPPORT (ACCESSIBILITY)
@@ -237,6 +158,4 @@ body.dark-mode .uploading-spinner {
     transform: none !important;
   }
 }
-
-
 

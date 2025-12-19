@@ -243,94 +243,9 @@
 }
 
 /* ========================================
-   DARK MODE SUPPORT
+   THEME SUPPORT
+   All theming handled by CSS variables in variables.css
    ======================================== */
-
-[data-theme="dark"] .photo-reposition-modal {
-  background: #1a1b2d;
-}
-
-[data-theme="dark"] .reposition-header {
-  border-bottom-color: rgba(255, 255, 255, 0.1);
-}
-
-[data-theme="dark"] .reposition-instructions {
-  background: rgba(255, 255, 255, 0.03);
-  color: #ffffff;
-  border-bottom-color: rgba(255, 255, 255, 0.1);
-}
-
-[data-theme="dark"] .reposition-footer {
-  border-top-color: rgba(255, 255, 255, 0.1);
-}
-
-[data-theme="dark"] .btn-reset,
-[data-theme="dark"] .btn-cancel {
-  background: rgba(255, 255, 255, 0.05);
-  color: #ffffff;
-  border-color: rgba(255, 255, 255, 0.1);
-}
-
-[data-theme="dark"] .btn-reset:hover,
-[data-theme="dark"] .btn-cancel:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.2);
-}
-
-@media (max-width: 768px) {
-  .photo-reposition-modal {
-    width: 100%;
-    max-height: 100vh;
-    border-radius: 0;
-  }
-
-  .reposition-container {
-    max-width: 100%;
-  }
-
-  .profile-container {
-    max-width: 90vw;
-    max-height: 90vw;
-  }
-
-  .cover-container {
-    max-width: 95vw;
-  }
-
-  .visible-area-frame::after {
-    font-size: 0.75rem;
-    padding: 0.4rem 0.8rem;
-  }
-
-  .reposition-footer {
-    flex-direction: column;
-  }
-
-  .footer-actions {
-    width: 100%;
-  }
-
-  .btn-reset,
-  .btn-cancel,
-  .btn-save {
-    flex: 1;
-  }
-}
-
-/* ========================================
-   QUIET MODE SUPPORT
-   ======================================== */
-
-[data-quiet-mode="true"] .photo-reposition-modal {
-  animation: none;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
-}
-
-[data-quiet-mode="true"] .btn-save:hover,
-[data-quiet-mode="true"] .btn-reset:hover,
-[data-quiet-mode="true"] .btn-cancel:hover {
-  transform: none;
-}
 
 /* ========================================
    REDUCED MOTION SUPPORT (ACCESSIBILITY)
@@ -348,6 +263,4 @@
     transform: none !important;
   }
 }
-
-
 

@@ -98,27 +98,3 @@
 }
 
 /* Dark mode */
-[data-theme="dark"] .skeleton-cover,
-[data-theme="dark"] .skeleton-profile-avatar,
-[data-theme="dark"] .skeleton-profile-name,
-[data-theme="dark"] .skeleton-profile-username,
-[data-theme="dark"] .skeleton-profile-bio,
-[data-theme="dark"] .skeleton-stat {
-  background: linear-gradient(90deg, #2a2a2a 25%, #3a3a3a 50%, #2a2a2a 75%);
-  background-size: 200% 100%;
-  animation: shimmer 1.5s infinite;
-}
-
-[data-theme="dark"] .profile-skeleton {
-  background: var(--card-surface);
-  border-color: var(--border-light);
-}
-
-[data-theme="dark"] .skeleton-stats {
-  border-top-color: var(--border-light);
-}
-
-[data-theme="dark"] .skeleton-profile-avatar {
-  border-color: var(--card-surface);
-}
-

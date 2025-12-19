@@ -179,21 +179,6 @@
 }
 
 /* Dark mode adjustments - minimal since theme variables handle most */
-[data-theme="dark"] .report-form .form-input::placeholder {
-  color: var(--text-muted);
-  opacity: 0.6;
-}
-
-[data-theme="dark"] .btn-cancel {
-  border-color: rgba(108, 92, 231, 0.3);
-  color: var(--text-main);
-}
-
-[data-theme="dark"] .btn-cancel:hover {
-  background: rgba(108, 92, 231, 0.2);
-  border-color: var(--pryde-purple);
-}
-
 .btn-submit:disabled {
   opacity: 0.6;
   cursor: not-allowed;

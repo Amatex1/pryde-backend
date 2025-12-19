@@ -31,12 +31,6 @@
   gap: 1rem;
 }
 
-[data-theme="dark"] .pwa-install-content {
-  background: var(--background-dark);
-  border-color: var(--electric-blue);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
-}
-
 .pwa-install-icon {
   display: flex;
   justify-content: center;
@@ -114,17 +108,6 @@
   background: var(--soft-lavender);
   color: var(--pryde-purple);
   border-color: var(--pryde-purple);
-}
-
-[data-theme="dark"] .pwa-dismiss-btn {
-  border-color: var(--border-dark);
-  color: var(--text-light);
-}
-
-[data-theme="dark"] .pwa-dismiss-btn:hover {
-  background: rgba(108, 92, 231, 0.1);
-  border-color: var(--electric-blue);
-  color: var(--electric-blue);
 }
 
 /* Mobile adjustments */

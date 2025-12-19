@@ -87,22 +87,3 @@
 }
 
 /* Dark mode support */
-[data-theme="dark"] .optimized-image-container {
-  background: var(--card-surface);
-}
-
-[data-theme="dark"] .image-placeholder {
-  background: linear-gradient(
-    90deg,
-    var(--card-surface) 0%,
-    var(--border-light) 20%,
-    var(--card-surface) 40%,
-    var(--card-surface) 100%
-  );
-  background-size: 200% 100%;
-}
-
-[data-theme="dark"] .image-error {
-  background: var(--card-surface);
-}
-

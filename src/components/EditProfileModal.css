@@ -525,12 +525,6 @@
 
 /* Dark Mode Support */
 /* Dark mode specific adjustments for dropdown options */
-[data-theme="dark"] .form-group select option,
-[data-theme="dark"] .interest-dropdown option {
-  background: var(--bg-subtle);
-  color: var(--text-main);
-}
-
 /* Responsive */
 @media (max-width: 768px) {
   .edit-profile-modal {
