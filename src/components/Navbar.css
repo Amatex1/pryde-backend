@@ -750,23 +750,32 @@
    DARK MODE OVERRIDES FOR SURFACE ELEMENTS
    ======================================== */
 
-/* 1️⃣ User profile trigger (top-right avatar button) - FINAL PASS */
+/* 2️⃣ FORCE USER PROFILE TRIGGER DARK STYLES
+   (override .glossy + button defaults) - HARD OVERRIDE */
 [data-theme="dark"] .user-profile-trigger {
-  background: var(--surface-2);
-  color: var(--text-main);
-  border: 1px solid var(--border-light);
+  background: var(--surface-2) !important;
+  color: var(--text-main) !important;
+  border: 1px solid var(--border-light) !important;
 }
 
-[data-theme="dark"] .user-profile-trigger:hover {
-  background: var(--surface-3);
+/* Kill glossy light bleed */
+[data-theme="dark"] .user-profile-trigger.glossy {
+  background: var(--surface-2) !important;
+  backdrop-filter: none !important;
 }
 
+/* Text + arrow safety */
 [data-theme="dark"] .user-profile-trigger .user-name {
-  color: var(--text-main);
+  color: var(--text-main) !important;
 }
 
 [data-theme="dark"] .user-profile-trigger .dropdown-arrow {
-  color: var(--text-muted);
+  color: var(--text-muted) !important;
+}
+
+/* Hover state */
+[data-theme="dark"] .user-profile-trigger:hover {
+  background: var(--surface-3) !important;
 }
 
 [data-theme="dark"] .profile-dropdown {

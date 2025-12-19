@@ -773,16 +773,17 @@ button.btn-drafts:hover {
 }
 
 /* Hide Metrics Checkbox - Calm, available tool */
-/* 🔧 CRITICAL FIX: Reset ALL label defaults with 'all: unset' */
+/* 🔧 FINAL HARD OVERRIDE: Remove ALL padding from label */
 .post-actions-bar .hide-metrics-checkbox,
-label.hide-metrics-checkbox {
+label.hide-metrics-checkbox,
+.hide-metrics-checkbox {
   all: unset !important; /* Reset ALL browser defaults */
   cursor: pointer !important;
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
   gap: 8px !important;
-  padding: 0 14px !important;
+  padding: 0 !important; /* 🔥 HARD OVERRIDE: NO PADDING */
   height: 36px !important;
   min-height: 36px !important;
   max-height: 36px !important;
