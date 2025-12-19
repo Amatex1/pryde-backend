@@ -110,6 +110,14 @@ router.post('/', async (req, res) => {
     logger.debug('Setting refresh token cookie (refresh) with options:', cookieOptions);
     res.cookie('refreshToken', newRefreshToken, cookieOptions);
 
+    // CRITICAL: Also set access token in cookie for cross-origin auth
+    const accessTokenCookieOptions = {
+      ...cookieOptions,
+      maxAge: 15 * 60 * 1000 // 15 minutes (access token expiry)
+    };
+    logger.debug('Setting access token cookie (refresh) with options:', accessTokenCookieOptions);
+    res.cookie('token', accessToken, accessTokenCookieOptions);
+
     res.json({
       success: true,
       accessToken,

@@ -285,6 +285,13 @@ router.post('/signup', signupLimiter, validateSignup, async (req, res) => {
     logger.debug('Setting refresh token cookie (register) with options:', cookieOptions);
     res.cookie('refreshToken', refreshToken, cookieOptions);
 
+    // CRITICAL: Also set access token in cookie for cross-origin auth
+    const accessTokenCookieOptions = {
+      ...cookieOptions,
+      maxAge: 15 * 60 * 1000 // 15 minutes (access token expiry)
+    };
+    res.cookie('token', accessToken, accessTokenCookieOptions);
+
     res.status(201).json({
       success: true,
       message: 'User registered successfully',
@@ -586,6 +593,14 @@ router.post('/login', loginLimiter, validateLogin, async (req, res) => {
     logger.debug('Setting refresh token cookie (login) with options:', cookieOptions);
     logger.debug('Refresh token (first 20 chars):', refreshToken.substring(0, 20) + '...');
     res.cookie('refreshToken', refreshToken, cookieOptions);
+
+    // CRITICAL: Also set access token in cookie for cross-origin auth
+    const accessTokenCookieOptions = {
+      ...cookieOptions,
+      maxAge: 15 * 60 * 1000 // 15 minutes (access token expiry)
+    };
+    logger.debug('Setting access token cookie (login) with options:', accessTokenCookieOptions);
+    res.cookie('token', accessToken, accessTokenCookieOptions);
 
     res.json({
       success: true,

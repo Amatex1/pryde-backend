@@ -7,18 +7,27 @@ import { verifyAccessToken } from '../utils/tokenUtils.js';
 
 const auth = async (req, res, next) => {
   try {
-    // Get token from header
-    const token = req.header('Authorization')?.replace('Bearer ', '');
+    // CRITICAL: Try to get token from cookies FIRST (for cross-origin requests)
+    // Then fall back to Authorization header
+    let token = req.cookies?.token || req.cookies?.accessToken;
 
-    // Only log in development mode
+    // If no cookie token, try Authorization header
+    if (!token) {
+      token = req.header('Authorization')?.replace('Bearer ', '');
+    }
+
+    // Debug logging
     if (config.nodeEnv === 'development') {
       console.log('🔐 Auth middleware - Path:', req.path);
-      console.log('🔑 Token received:', token ? 'Yes' : 'No');
+      console.log('🍪 Cookies:', req.cookies);
+      console.log('🔑 Token from cookie:', req.cookies?.token ? 'Yes' : 'No');
+      console.log('🔑 Token from header:', req.header('Authorization') ? 'Yes' : 'No');
+      console.log('🔑 Final token:', token ? 'Yes' : 'No');
     }
 
     if (!token) {
       if (config.nodeEnv === 'development') {
-        console.log('❌ No token provided');
+        console.log('❌ No token provided in cookies or header');
       }
       return res.status(401).json({ message: 'No authentication token, access denied' });
     }

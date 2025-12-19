@@ -78,10 +78,12 @@ router.delete('/:sessionId', authenticateToken, async (req, res) => {
 
     // Clear refresh token cookie if this is the current session
     if (sessionId === req.sessionId) {
+      const isProduction = process.env.NODE_ENV === 'production';
       res.clearCookie('refreshToken', {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict'
+        secure: isProduction,
+        sameSite: isProduction ? 'none' : 'lax', // Must match cookie settings
+        path: '/'
       });
     }
 
@@ -163,10 +165,12 @@ router.post('/logout-all', authenticateToken, async (req, res) => {
     }
 
     // Clear refresh token cookie
+    const isProduction = process.env.NODE_ENV === 'production';
     res.clearCookie('refreshToken', {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict'
+      secure: isProduction,
+      sameSite: isProduction ? 'none' : 'lax', // Must match cookie settings
+      path: '/'
     });
 
     res.json({
