@@ -186,7 +186,7 @@ function Register({ setIsAuth }) {
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(formData.email)) {
-      setError('That email doesn't look right.');
+      setError('That email doesn\'t look right.');
       return;
     }
 
@@ -224,7 +224,7 @@ function Register({ setIsAuth }) {
 
       const errorMessage = err.response?.data?.message
         || err.message
-        || 'That didn't work. You can try again in a moment.';
+        || 'That didn\'t work. You can try again in a moment.';
       setError(errorMessage);
 
       // Reset CAPTCHA on error

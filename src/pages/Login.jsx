@@ -86,7 +86,7 @@ function Login({ setIsAuth }) {
 
       const errorMessage = err.response?.data?.message
         || err.message
-        || 'That didn't work. You can try again in a moment.';
+        || 'That didn\'t work. You can try again in a moment.';
       setError(errorMessage);
     } finally {
       setLoading(false);
@@ -121,7 +121,7 @@ function Login({ setIsAuth }) {
     } catch (err) {
       console.error('2FA verification error:', err);
       const errorMessage = err.response?.data?.message
-        || 'That code didn't match. You can try again.';
+        || 'That code didn\'t match. You can try again.';
       setError(errorMessage);
     } finally {
       setLoading(false);
