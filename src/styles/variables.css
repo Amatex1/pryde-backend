@@ -1,0 +1,146 @@
+/* ========================================
+   PRYDE SOCIAL - UNIFIED VARIABLE SYSTEM
+   Single source of truth for all theming
+   ======================================== */
+
+:root {
+  /* ========================================
+     BACKGROUNDS
+     ======================================== */
+  --bg-page: #F5F6FA;
+  --bg-surface: #FFFFFF;
+  --bg-card: #FFFFFF;
+  --bg-hover: rgba(108, 92, 231, 0.05);
+  --bg-subtle: #FAFBFC;
+
+  /* ========================================
+     TEXT COLORS
+     ======================================== */
+  --text-primary: #1E1E26;
+  --text-secondary: #6B6E80;
+  --text-muted: #9CA0B3;
+  --text-inverse: #FFFFFF;
+
+  /* ========================================
+     BORDERS
+     ======================================== */
+  --border-subtle: #E2E4EC;
+  --border-default: #D1D3E0;
+  --border-strong: #B8BAC9;
+
+  /* ========================================
+     ACCENTS (Brand Colors)
+     ======================================== */
+  --accent-primary: #6C5CE7;
+  --accent-hover: #5a4bd8;
+  --accent-muted: rgba(108, 92, 231, 0.15);
+  --accent-secondary: #0984E3;
+
+  /* ========================================
+     SEMANTIC COLORS
+     ======================================== */
+  --color-success: #00B894;
+  --color-success-soft: rgba(0, 184, 148, 0.15);
+  --color-danger: #FF7675;
+  --color-danger-soft: rgba(255, 118, 117, 0.15);
+  --color-warning: #FDCB6E;
+  --color-warning-soft: rgba(253, 203, 110, 0.15);
+
+  /* ========================================
+     SHADOWS
+     ======================================== */
+  --shadow-soft: 0 2px 8px rgba(0, 0, 0, 0.08);
+  --shadow-medium: 0 4px 16px rgba(0, 0, 0, 0.12);
+  --shadow-strong: 0 8px 32px rgba(0, 0, 0, 0.16);
+  --shadow-none: none;
+
+  /* ========================================
+     GRADIENTS
+     ======================================== */
+  --gradient-primary: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%);
+  --gradient-soft: linear-gradient(135deg, var(--accent-muted) 0%, var(--accent-primary) 100%);
+
+  /* ========================================
+     LEGACY MAPPINGS (Backward Compatibility)
+     Remove these gradually as components are updated
+     ======================================== */
+  --bg: var(--bg-page);
+  --bg-card: var(--bg-card);
+  --text-main: var(--text-primary);
+  --text-light: var(--text-muted);
+  --pryde-purple: var(--accent-primary);
+  --electric-blue: var(--accent-secondary);
+  --soft-lavender: var(--accent-muted);
+  --border-light: var(--border-subtle);
+  --card-surface: var(--bg-surface);
+  --background-light: var(--bg-page);
+}
+
+/* ========================================
+   DARK MODE OVERRIDES
+   Only override variables, NO component-specific styles
+   ======================================== */
+
+[data-theme="dark"] {
+  /* BACKGROUNDS */
+  --bg-page: #0F1021;
+  --bg-surface: #15162A;
+  --bg-card: #1A1B30;
+  --bg-hover: rgba(108, 92, 231, 0.08);
+  --bg-subtle: #1F2038;
+
+  /* TEXT */
+  --text-primary: #F8F7FF;
+  --text-secondary: #B0B2D0;
+  --text-muted: #9FA1C0;
+  --text-inverse: #1E1E26;
+
+  /* BORDERS */
+  --border-subtle: #262842;
+  --border-default: #33355A;
+  --border-strong: #454872;
+
+  /* ACCENTS - Keep brand colors consistent */
+  --accent-primary: #6C5CE7;
+  --accent-hover: #7F6FF2;
+  --accent-muted: rgba(108, 92, 231, 0.20);
+  --accent-secondary: #0984E3;
+
+  /* SEMANTIC COLORS - Slightly adjusted for dark backgrounds */
+  --color-success: #00D9A5;
+  --color-success-soft: rgba(0, 217, 165, 0.20);
+  --color-danger: #FF8B8A;
+  --color-danger-soft: rgba(255, 139, 138, 0.20);
+  --color-warning: #FFD97E;
+  --color-warning-soft: rgba(255, 217, 126, 0.20);
+
+  /* SHADOWS - Disabled in dark mode */
+  --shadow-soft: none;
+  --shadow-medium: none;
+  --shadow-strong: none;
+}
+
+/* ========================================
+   QUIET MODE MODIFIERS
+   Only adjust intensity, NEVER introduce new colors
+   Uses color-mix() to soften existing variables
+   ======================================== */
+
+[data-quiet="true"] {
+  /* Soften accents */
+  --accent-primary: color-mix(in srgb, var(--accent-primary) 65%, transparent);
+  --accent-hover: color-mix(in srgb, var(--accent-hover) 70%, transparent);
+  
+  /* Reduce text contrast slightly */
+  --text-primary: color-mix(in srgb, var(--text-primary) 92%, transparent);
+  --text-secondary: color-mix(in srgb, var(--text-secondary) 85%, transparent);
+  
+  /* Soften borders */
+  --border-default: color-mix(in srgb, var(--border-default) 60%, transparent);
+  --border-strong: color-mix(in srgb, var(--border-strong) 70%, transparent);
+  
+  /* Reduce shadows */
+  --shadow-soft: color-mix(in srgb, var(--shadow-soft) 50%, transparent);
+  --shadow-medium: color-mix(in srgb, var(--shadow-medium) 50%, transparent);
+}
+

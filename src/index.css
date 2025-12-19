@@ -1,9 +1,10 @@
 /* ========================================
    PRYDE SOCIAL - MAIN STYLES
-   Import order matters: Design system → Theme → Components
+   Import order matters: Variables → Design system → Theme → Components
    ======================================== */
 
-@import './styles/design-system.css';  /* NEW: Unified mobile-first design system */
+@import './styles/variables.css';      /* CRITICAL: Unified variable system (must be first) */
+@import './styles/design-system.css';  /* Unified mobile-first design system */
 @import './styles/theme.css';          /* Brand colors and theme variables */
 @import './styles/components.css';     /* Reusable component styles */
 
@@ -109,53 +110,40 @@ body {
 /* NOTE: Dark Mode CSS is in darkMode.css, loaded separately in main.jsx */
 /* NOTE: Quiet Mode CSS is in quiet-mode.css, loaded after darkMode.css */
 
-/* Scrollbar styling */
+/* Scrollbar styling - Uses CSS variables only */
 ::-webkit-scrollbar {
   width: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--border-light);
+  background: var(--border-subtle);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--pryde-purple);
+  background: var(--accent-primary);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--electric-blue);
+  background: var(--accent-hover);
 }
 
-/* Dark mode scrollbar */
-[data-theme="dark"] ::-webkit-scrollbar-track {
-  background: var(--background-dark);
-}
-
-[data-theme="dark"] ::-webkit-scrollbar-thumb {
-  background: var(--pryde-purple);
-}
-
-[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
-  background: var(--electric-blue);
-}
-
-/* Glossy effect utility - Updated for new theme */
+/* Glossy effect utility - Uses CSS variables only */
 .glossy {
-  background: var(--card-surface);
+  background: var(--bg-surface);
   backdrop-filter: blur(10px);
-  border: 1px solid var(--border-light);
-  box-shadow: 0 4px 20px rgba(108, 92, 231, 0.1);
+  border: 1px solid var(--border-subtle);
+  box-shadow: var(--shadow-soft);
 }
 
 .glossy-gradient {
   background: var(--gradient-primary);
-  box-shadow: 0 4px 15px rgba(108, 92, 231, 0.3);
-  color: white;
+  box-shadow: var(--shadow-medium);
+  color: var(--text-inverse);
 }
 
 .text-shadow {
-  text-shadow: 0 2px 10px rgba(108, 92, 231, 0.3);
+  text-shadow: var(--shadow-soft);
 }
 
 /* Button styles */
@@ -205,9 +193,9 @@ input, textarea {
 .shimmer {
   background: linear-gradient(
     90deg,
-    rgba(108, 92, 231, 0.1) 0%,
-    rgba(108, 92, 231, 0.3) 50%,
-    rgba(108, 92, 231, 0.1) 100%
+    var(--accent-muted) 0%,
+    var(--accent-primary) 50%,
+    var(--accent-muted) 100%
   );
   background-size: 1000px 100%;
   animation: shimmer 2s infinite;
@@ -223,15 +211,15 @@ input, textarea {
 }
 
 .text-purple {
-  color: var(--pryde-purple);
+  color: var(--accent-primary);
 }
 
 .text-blue {
-  color: var(--electric-blue);
+  color: var(--accent-secondary);
 }
 
 .border-purple {
-  border-color: var(--pryde-purple);
+  border-color: var(--accent-primary);
 }
 
 .hover-lift {
@@ -240,7 +228,7 @@ input, textarea {
 
 .hover-lift:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(108, 92, 231, 0.2);
+  box-shadow: var(--shadow-strong);
 }
 
 /* ========================================
