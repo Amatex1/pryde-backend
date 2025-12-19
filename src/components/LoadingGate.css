@@ -1,0 +1,71 @@
+/* ====================================
+   LOADING GATE — PREVENT UI POPPING
+   ==================================== */
+
+.loading-gate {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-primary, #f7f7f7);
+  z-index: 9999;
+  transition: opacity 0.3s ease;
+}
+
+.loading-gate-content {
+  text-align: center;
+  padding: 2rem;
+  max-width: 400px;
+}
+
+.loading-gate-spinner {
+  width: 50px;
+  height: 50px;
+  border: 4px solid var(--pryde-purple, #6C5CE7);
+  border-top: 4px solid transparent;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 1.5rem;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.loading-gate-progress {
+  width: 100%;
+  height: 4px;
+  background: rgba(108, 92, 231, 0.1);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-bottom: 1rem;
+}
+
+.loading-gate-progress-bar {
+  height: 100%;
+  background: var(--pryde-purple, #6C5CE7);
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+.loading-gate-text {
+  font-size: 0.875rem;
+  color: var(--text-muted, #616161);
+  margin: 0;
+  font-weight: 500;
+}
+
+/* Dark mode */
+[data-theme="dark"] .loading-gate {
+  background: var(--bg-primary-dark, #1a1a1a);
+}
+
+[data-theme="dark"] .loading-gate-text {
+  color: var(--text-muted-dark, #9e9e9e);
+}
+

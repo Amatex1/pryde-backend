@@ -4,6 +4,7 @@ import { isAuthenticated, getCurrentUser } from './utils/auth';
 import { initializeSocket, disconnectSocket, onNewMessage } from './utils/socket';
 import { playNotificationSound, requestNotificationPermission } from './utils/notifications';
 import { initializeQuietMode } from './utils/quietMode';
+import { preloadCriticalResources, preloadFeedData } from './utils/resourcePreloader';
 import api from './utils/api';
 import { API_BASE_URL } from './config/api';
 import logger from './utils/logger';
@@ -14,6 +15,8 @@ import SafetyWarning from './components/SafetyWarning';
 import PWAInstallPrompt from './components/PWAInstallPrompt';
 import CookieBanner from './components/CookieBanner';
 import ErrorBoundary from './components/ErrorBoundary';
+import { AppReadyProvider } from './state/appReady';
+import LoadingGate from './components/LoadingGate';
 
 // Lazy load ALL pages (including Home, Login, Register) to avoid Router context errors
 const Home = lazy(() => import('./pages/Home'));
@@ -164,6 +167,17 @@ function App() {
           authenticated: isCurrentlyAuth,
           user: response.data.user?.username
         });
+
+        // 🚀 OPTIMIZATION: Preload critical resources after auth
+        if (isCurrentlyAuth) {
+          // Preload in parallel (non-blocking)
+          Promise.all([
+            preloadCriticalResources(),
+            preloadFeedData()
+          ]).catch(err => {
+            logger.debug('Resource preload failed (non-critical):', err);
+          });
+        }
       } catch (error) {
         // If auth status check fails, fall back to localStorage check
         logger.warn('Auth status check failed, using localStorage:', error);
@@ -252,14 +266,16 @@ function App() {
 
   return (
     <ErrorBoundary>
-      <Router>
-        <Suspense fallback={<PageLoader />}>
-          <div className="app-container">
-            {/* Safety Warning for high-risk regions */}
-            {isAuth && <SafetyWarning />}
+      <AppReadyProvider>
+        <LoadingGate>
+          <Router>
+            <Suspense fallback={<PageLoader />}>
+              <div className="app-container">
+                {/* Safety Warning for high-risk regions */}
+                {isAuth && <SafetyWarning />}
 
-            <main id="main-content">
-              <Routes>
+                <main id="main-content">
+                  <Routes>
             {/* Public Home Page - Redirect to feed if logged in */}
             <Route path="/" element={!isAuth ? <Home /> : <Navigate to="/feed" />} />
 
@@ -315,11 +331,13 @@ function App() {
           {/* PWA Install Prompt */}
           {isAuth && <PWAInstallPrompt />}
 
-          {/* Cookie Banner */}
-          <CookieBanner />
-        </div>
-      </Suspense>
-    </Router>
+              {/* Cookie Banner */}
+              <CookieBanner />
+            </div>
+          </Suspense>
+        </Router>
+      </LoadingGate>
+    </AppReadyProvider>
     </ErrorBoundary>
   );
 }
