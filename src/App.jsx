@@ -126,6 +126,23 @@ function App() {
   useEffect(() => {
     setIsAuth(isAuthenticated());
 
+    // Initialize CSRF token by making a lightweight GET request
+    // This ensures we have a CSRF token before making any POST requests
+    const initCsrfToken = async () => {
+      try {
+        // Make a lightweight GET request to trigger CSRF token generation
+        // The response will include the X-CSRF-Token header which our interceptor will capture
+        await api.get('/posts?limit=1').catch(() => {
+          // Ignore errors - we just want to get the CSRF token
+          logger.debug('CSRF token initialization request completed');
+        });
+      } catch (error) {
+        logger.warn('Failed to initialize CSRF token:', error);
+      }
+    };
+
+    initCsrfToken();
+
     // Initialize Quiet Mode globally with retry logic
     const initQuietMode = async (retries = 3) => {
       if (isAuthenticated()) {
