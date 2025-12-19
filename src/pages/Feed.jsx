@@ -1989,10 +1989,10 @@ function Feed() {
                       )}
                     </div>
 
-                    <div className="post-actions">
+                    <div className="post-actions soft-actions">
                       <div className="reaction-container">
                         <button
-                          className={`action-btn ${isLiked || post.reactions?.some(r => r.user?._id === currentUser?.id || r.user === currentUser?.id) ? 'liked' : ''}`}
+                          className={`action-btn subtle ${isLiked || post.reactions?.some(r => r.user?._id === currentUser?.id || r.user === currentUser?.id) ? 'liked' : ''}`}
                           onClick={() => {
                             // On mobile, click opens emoji picker
                             if (window.innerWidth <= 768) {
@@ -2020,13 +2020,13 @@ function Feed() {
                               }, 500);
                             }
                           }}
-                          aria-label={getUserReactionEmoji(post.reactions) ? `Change reaction from ${getUserReactionEmoji(post.reactions)}` : 'React to post'}
+                          aria-label={getUserReactionEmoji(post.reactions) ? `Change reaction from ${getUserReactionEmoji(post.reactions)}` : 'Respond to post'}
                         >
                           <span>
-                            {getUserReactionEmoji(post.reactions) || '🤍'}
+                            {getUserReactionEmoji(post.reactions) || '💜'}
                           </span>
                           <span className="action-text">
-                            {getUserReactionEmoji(post.reactions) ? 'Reacted' : 'React'}
+                            {getUserReactionEmoji(post.reactions) ? 'Responded' : 'Respond'}
                           </span>
                         </button>
                         {showReactionPicker === `post-${post._id}` && (
@@ -2085,13 +2085,13 @@ function Feed() {
                         </button>
                       )}
                       <button
-                        className="action-btn"
+                        className="action-btn subtle"
                         onClick={() => toggleCommentBox(post._id)}
-                        aria-label={`Comment on post${!post.hideMetrics ? ` (${post.commentCount || 0} comments)` : ''}`}
+                        aria-label={`Reply to post${!post.hideMetrics ? ` (${post.commentCount || 0} replies)` : ''}`}
                       >
                         <span>💬</span>
                         <span className="action-text">
-                          Comment {!post.hideMetrics && `(${post.commentCount || 0})`}
+                          Reply {!post.hideMetrics && `(${post.commentCount || 0})`}
                         </span>
                       </button>
                       {/* REMOVED: Share button - backend support incomplete (relies on deprecated Friends system) */}
@@ -2107,13 +2107,13 @@ function Feed() {
                         </span>
                       </button> */}
                       <button
-                        className={`action-btn ${bookmarkedPosts.includes(post._id) ? 'bookmarked' : ''}`}
+                        className={`action-btn ghost ${bookmarkedPosts.includes(post._id) ? 'bookmarked' : ''}`}
                         onClick={() => handleBookmark(post._id)}
-                        title={bookmarkedPosts.includes(post._id) ? 'Remove bookmark' : 'Bookmark post'}
-                        aria-label={bookmarkedPosts.includes(post._id) ? 'Remove bookmark from post' : 'Bookmark post'}
+                        title={bookmarkedPosts.includes(post._id) ? 'Remove save' : 'Save post'}
+                        aria-label={bookmarkedPosts.includes(post._id) ? 'Remove save from post' : 'Save post'}
                       >
-                        <span>{bookmarkedPosts.includes(post._id) ? '🔖' : '📑'}</span>
-                        <span className="action-text">Bookmark</span>
+                        <span>{bookmarkedPosts.includes(post._id) ? '🔖' : '🔖'}</span>
+                        <span className="action-text">Save</span>
                       </button>
                     </div>
 

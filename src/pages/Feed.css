@@ -938,60 +938,104 @@ html:not([data-theme])[data-quiet-mode="true"] .hide-metrics-checkbox:hover {
   position: relative;
 }
 
+/* Remove border for soft-actions variant */
+.post-actions.soft-actions {
+  border-top: none;
+  padding-top: var(--space-3);
+}
+
+/* ========================================
+   SOFT ACTIONS - CALM, SUPPORTIVE TONE
+   ======================================== */
+
+.soft-actions {
+  display: flex;
+  gap: var(--space-sm);
+  margin-top: var(--space-sm);
+  opacity: 0.85;
+}
+
 .action-btn {
   padding: var(--space-2) var(--space-3);
-  border-radius: var(--radius-pill);
+  border-radius: var(--radius-md);
   border: none;
-  background: var(--bg-subtle);
-  color: #2d2f3e; /* Darker for better contrast (WCAG AA) */
+  background: transparent;
+  color: var(--text-muted, #8b8d9e);
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: background 0.2s ease, color 0.2s ease;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: var(--space-2);
   font-size: 14px;
-  font-weight: 600; /* Increased for better visibility */
+  font-weight: 400; /* Lighter weight for softer feel */
   white-space: nowrap;
 }
 
 .action-btn:hover {
-  background: var(--color-primary);
-  color: white;
-  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-main);
+}
+
+/* Subtle variant - for primary actions (Respond, Reply) */
+.action-btn.subtle {
+  font-weight: 400;
+}
+
+/* Ghost variant - for secondary actions (Save) */
+.action-btn.ghost {
+  opacity: 0.6;
+}
+
+.action-btn.ghost:hover {
+  opacity: 1;
 }
 
 .action-btn.liked {
-  background: var(--color-danger-soft);
+  background: transparent;
   color: #d63031; /* Darker red for better contrast */
 }
 
 .action-btn.liked:hover {
-  background: var(--color-danger);
-  color: white;
+  background: rgba(214, 48, 49, 0.1);
+  color: #d63031;
 }
 
 .action-btn.bookmarked {
-  background: var(--color-primary-soft);
+  background: transparent;
   color: #5a4bd8; /* Darker purple for better contrast */
+  opacity: 1;
 }
 
 .action-btn.bookmarked:hover {
-  background: var(--color-primary);
-  color: white;
+  background: rgba(90, 75, 216, 0.1);
+  color: #5a4bd8;
 }
 
 /* Dark mode action buttons */
 [data-theme="dark"] .action-btn {
-  color: #e8e9f0; /* Lighter for dark backgrounds */
+  color: #a8aab8; /* Softer, muted for dark backgrounds */
+}
+
+[data-theme="dark"] .action-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #e8e9f0;
 }
 
 [data-theme="dark"] .action-btn.liked {
   color: #ff9999; /* Lighter red for dark backgrounds */
 }
 
+[data-theme="dark"] .action-btn.liked:hover {
+  background: rgba(255, 153, 153, 0.15);
+}
+
 [data-theme="dark"] .action-btn.bookmarked {
   color: #9b8ef7; /* Lighter purple for dark backgrounds */
+}
+
+[data-theme="dark"] .action-btn.bookmarked:hover {
+  background: rgba(155, 142, 247, 0.15);
 }
 
 .reaction-count-btn {
