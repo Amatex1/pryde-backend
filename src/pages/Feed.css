@@ -773,13 +773,19 @@ button.btn-drafts:hover {
 }
 
 /* Hide Metrics Checkbox - Calm, available tool */
+/* 🔧 CRITICAL FIX: Reset ALL label defaults with 'all: unset' */
 .post-actions-bar .hide-metrics-checkbox,
 label.hide-metrics-checkbox {
-  height: 36px !important;
-  padding: 0 14px !important;
+  all: unset !important; /* Reset ALL browser defaults */
+  cursor: pointer !important;
   display: inline-flex !important;
   align-items: center !important;
+  justify-content: center !important;
   gap: 8px !important;
+  padding: 0 14px !important;
+  height: 36px !important;
+  min-height: 36px !important;
+  max-height: 36px !important;
   font-size: 0.875rem !important; /* 14px */
   line-height: 1 !important;
   border-radius: 10px !important;
@@ -787,11 +793,11 @@ label.hide-metrics-checkbox {
   background: transparent !important; /* Transparent - not featured */
   color: var(--text-main) !important;
   font-weight: 400 !important; /* Normal weight - not bold */
-  cursor: pointer !important;
   transition: all 0.2s ease !important;
   user-select: none !important;
   white-space: nowrap !important;
   flex-shrink: 0 !important;
+  box-sizing: border-box !important;
 }
 
 .post-actions-bar .hide-metrics-checkbox:hover,
@@ -801,11 +807,39 @@ label.hide-metrics-checkbox:hover {
 }
 
 .hide-metrics-checkbox input[type="checkbox"] {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
   margin: 0 !important;
+  padding: 0 !important;
   width: 14px !important;
   height: 14px !important;
+  min-width: 14px !important;
+  min-height: 14px !important;
+  max-width: 14px !important;
+  max-height: 14px !important;
+  border-radius: 4px !important;
+  border: 1px solid var(--border-subtle) !important;
+  background: transparent !important;
   cursor: pointer !important;
-  accent-color: var(--pryde-purple) !important;
+  display: inline-block !important;
+  position: relative !important;
+}
+
+.hide-metrics-checkbox input[type="checkbox"]:checked {
+  background: var(--pryde-purple) !important;
+  border-color: var(--pryde-purple) !important;
+}
+
+.hide-metrics-checkbox input[type="checkbox"]:checked::after {
+  content: '✓' !important;
+  position: absolute !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  color: white !important;
+  font-size: 10px !important;
+  line-height: 1 !important;
 }
 
 .hide-metrics-checkbox span {
@@ -815,15 +849,30 @@ label.hide-metrics-checkbox:hover {
   white-space: nowrap !important;
 }
 
-/* Dark mode */
+/* Dark mode safety */
+[data-theme="dark"] .hide-metrics-checkbox,
 body.dark-mode .hide-metrics-checkbox {
-  background: var(--bg-primary-dark);
-  border-color: var(--border-color-dark);
-  color: var(--text-primary);
+  background: transparent !important;
+  border-color: var(--border-subtle-dark) !important;
+  color: var(--text-primary-dark) !important;
 }
 
+[data-theme="dark"] .hide-metrics-checkbox:hover,
 body.dark-mode .hide-metrics-checkbox:hover {
-  background: rgba(108, 92, 231, 0.1);
+  background: rgba(108, 92, 231, 0.1) !important;
+  border-color: rgba(120, 120, 255, 0.4) !important;
+}
+
+[data-theme="dark"] .hide-metrics-checkbox input[type="checkbox"],
+body.dark-mode .hide-metrics-checkbox input[type="checkbox"] {
+  border-color: var(--border-subtle-dark) !important;
+  background: transparent !important;
+}
+
+[data-theme="dark"] .hide-metrics-checkbox input[type="checkbox"]:checked,
+body.dark-mode .hide-metrics-checkbox input[type="checkbox"]:checked {
+  background: var(--pryde-purple) !important;
+  border-color: var(--pryde-purple) !important;
 }
 
 /* Light mode + Quiet mode - Fix visibility */
@@ -2870,43 +2919,111 @@ html:not([data-theme])[data-quiet-mode="true"] .hide-metrics-checkbox:hover {
 }
 
 /* Normalize checkbox-based buttons (Hide Metrics) */
+/* 🔧 KEY FIX: Use 'all: unset' to completely reset label defaults */
 .composer-actions label,
 .composer-actions .hide-metrics,
-.post-actions-bar label {
-  height: 36px;
-  padding: 0 14px;
-  display: inline-flex;
-  align-items: center;
+.composer-actions .hide-metrics-checkbox,
+.post-actions-bar label,
+.post-actions-bar .hide-metrics-checkbox {
+  all: unset; /* Reset ALL browser defaults */
+  cursor: pointer;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center;
   gap: 8px;
+  padding: 0 14px;
+  height: 36px;
+  min-height: 36px;
+  max-height: 36px;
   font-size: 0.875rem; /* 14px */
   line-height: 1;
   border-radius: 10px;
+  box-sizing: border-box;
 }
 
-/* Remove default checkbox spacing */
+/* Remove default checkbox spacing and normalize appearance */
 .composer-actions input[type="checkbox"],
-.post-actions-bar input[type="checkbox"] {
-  margin: 0;
+.post-actions-bar input[type="checkbox"],
+.hide-metrics-checkbox input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
   width: 14px;
   height: 14px;
+  min-width: 14px;
+  min-height: 14px;
+  max-width: 14px;
+  max-height: 14px;
+  border-radius: 4px;
+  border: 1px solid var(--border-subtle);
+  background: transparent;
+  display: inline-block;
+  position: relative;
+  margin: 0;
+  padding: 0;
+  cursor: pointer;
+}
+
+/* Checked state */
+.composer-actions input[type="checkbox"]:checked,
+.post-actions-bar input[type="checkbox"]:checked,
+.hide-metrics-checkbox input[type="checkbox"]:checked {
+  background: var(--pryde-purple);
+  border-color: var(--pryde-purple);
+}
+
+/* Checkmark icon */
+.composer-actions input[type="checkbox"]:checked::after,
+.post-actions-bar input[type="checkbox"]:checked::after,
+.hide-metrics-checkbox input[type="checkbox"]:checked::after {
+  content: '✓';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  font-size: 10px;
+  line-height: 1;
 }
 
 /* Ensure text + icon alignment matches other buttons */
 .composer-actions label span,
 .composer-actions button span,
+.composer-actions .hide-metrics-checkbox span,
 .post-actions-bar label span,
-.post-actions-bar button span {
+.post-actions-bar button span,
+.post-actions-bar .hide-metrics-checkbox span {
   line-height: 1;
   display: inline-flex;
   align-items: center;
+  white-space: nowrap;
+}
+
+/* Dark mode safety for checkboxes */
+[data-theme="dark"] .composer-actions input[type="checkbox"],
+[data-theme="dark"] .post-actions-bar input[type="checkbox"],
+[data-theme="dark"] .hide-metrics-checkbox input[type="checkbox"] {
+  border-color: var(--border-subtle-dark);
+  background: transparent;
+}
+
+[data-theme="dark"] .composer-actions input[type="checkbox"]:checked,
+[data-theme="dark"] .post-actions-bar input[type="checkbox"]:checked,
+[data-theme="dark"] .hide-metrics-checkbox input[type="checkbox"]:checked {
+  background: var(--pryde-purple);
+  border-color: var(--pryde-purple);
 }
 
 /* Quiet mode stays subtle, not larger */
 [data-quiet="true"] .composer-actions label,
 [data-quiet="true"] .composer-actions button,
+[data-quiet="true"] .composer-actions .hide-metrics-checkbox,
 [data-quiet="true"] .post-actions-bar label,
-[data-quiet="true"] .post-actions-bar button {
+[data-quiet="true"] .post-actions-bar button,
+[data-quiet="true"] .post-actions-bar .hide-metrics-checkbox {
   height: 36px !important;
+  min-height: 36px !important;
+  max-height: 36px !important;
   opacity: 0.85;
 }
 
