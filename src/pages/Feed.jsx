@@ -2276,36 +2276,18 @@ function Feed() {
             </div>
           </div>
 
-          {/* Crisis Support */}
-          <div className="sidebar-card glossy" style={{
-            background: 'linear-gradient(135deg, var(--soft-lavender) 0%, rgba(108, 92, 231, 0.1) 100%)',
-            border: '2px solid var(--pryde-purple)'
-          }}>
-            <h3 className="sidebar-title" style={{ color: 'var(--pryde-purple)' }}>💜 Need Support?</h3>
-            <div style={{ padding: '0.5rem 0' }}>
-              <p style={{ fontSize: '0.9rem', marginBottom: '1rem', color: 'var(--text-main)' }}>
-                If you're in crisis, help is available 24/7.
-              </p>
-              <Link
-                to="/helplines"
-                className="btn-primary"
-                style={{
-                  display: 'block',
-                  textAlign: 'center',
-                  padding: '0.75rem',
-                  borderRadius: '8px',
-                  textDecoration: 'none',
-                  background: 'var(--pryde-purple)',
-                  color: 'white',
-                  fontWeight: '600',
-                  transition: 'all 0.3s ease'
-                }}
-                onMouseEnter={(e) => e.target.style.background = 'var(--electric-blue)'}
-                onMouseLeave={(e) => e.target.style.background = 'var(--pryde-purple)'}
-              >
-                View Crisis Helplines
-              </Link>
-            </div>
+          {/* Need Support */}
+          <div className="sidebar-card support-card glossy">
+            <h3 className="sidebar-title support-title">Need support?</h3>
+            <p className="support-description">
+              If you're going through something, help is available.
+            </p>
+            <Link
+              to="/helplines"
+              className="support-link"
+            >
+              View helplines
+            </Link>
           </div>
 
           {/* Friends List */}

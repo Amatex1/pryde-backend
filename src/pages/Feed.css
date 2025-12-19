@@ -1783,10 +1783,12 @@ html:not([data-theme])[data-quiet-mode="true"] .hide-metrics-checkbox:hover {
   height: fit-content;
   min-width: 0; /* Prevent overflow */
   overflow: hidden; /* Prevent content from breaking out */
+  /* Visually lighter than main feed - secondary attention */
+  opacity: 0.98;
 }
 
 /* ========================================
-   SIDEBAR
+   SIDEBAR - SECONDARY, OPTIONAL ATTENTION
    ======================================== */
 
 .sidebar-card {
@@ -1798,6 +1800,12 @@ html:not([data-theme])[data-quiet-mode="true"] .hide-metrics-checkbox:hover {
   margin-bottom: var(--space-4);
   min-width: 0;
   overflow: hidden;
+  /* Sidebar feels intentional, not leftover */
+  transition: opacity 0.2s ease;
+}
+
+.sidebar-card:hover {
+  opacity: 1;
 }
 
 @media (max-width: 1200px) {
@@ -1814,6 +1822,49 @@ html:not([data-theme])[data-quiet-mode="true"] .hide-metrics-checkbox:hover {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* ========================================
+   SUPPORT CARD - CALM & GENTLE
+   ======================================== */
+
+.support-card {
+  /* Visually lighter than other sidebar cards */
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  opacity: 0.95;
+}
+
+.support-title {
+  color: var(--text-main);
+  font-size: 15px;
+  font-weight: 500;
+  margin-bottom: var(--space-3);
+  /* No emoji, no urgency colors */
+}
+
+.support-description {
+  color: var(--text-muted);
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.5;
+  margin-bottom: var(--space-3);
+  opacity: 0.9;
+}
+
+.support-link {
+  display: inline-block;
+  color: var(--pryde-purple);
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+  padding: 0.5rem 0;
+  transition: opacity 0.2s ease;
+}
+
+.support-link:hover {
+  opacity: 0.7;
+  text-decoration: underline;
 }
 
 /* Friends Search Bar */
@@ -2214,9 +2265,14 @@ html:not([data-theme])[data-quiet-mode="true"] .hide-metrics-checkbox:hover {
     display: none !important; /* Not needed anymore */
   }
 
-  /* Hide Friends list on mobile - only show Trending */
-  .feed-sidebar .sidebar-card:nth-child(2) {
+  /* Hide Friends list on mobile - show Featured Tags and Need Support only */
+  .feed-sidebar .sidebar-card:nth-child(3) {
     display: none;
+  }
+
+  /* Ensure support card is visible and calm on mobile */
+  .support-card {
+    margin-bottom: var(--space-4);
   }
 }
 
