@@ -2,21 +2,21 @@
   width: 45px;
   height: 45px;
   border-radius: 50%;
-  border: 2px solid var(--border-light);
-  background: var(--card-surface);
+  border: 2px solid var(--border-default);
+  background: var(--bg-card);
   font-size: 1.5rem;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: all 0.3s ease;
-  box-shadow: 0 2px 8px rgba(108, 92, 231, 0.1);
+  box-shadow: var(--shadow-soft);
 }
 
 .dark-mode-toggle:hover {
   transform: scale(1.1) rotate(20deg);
-  box-shadow: 0 4px 16px rgba(108, 92, 231, 0.3);
-  border-color: var(--pryde-purple);
+  box-shadow: var(--shadow-medium);
+  border-color: var(--accent-primary);
 }
 
 .dark-mode-toggle:active {
@@ -38,32 +38,10 @@
 }
 
 /* ========================================
-   DARK MODE SUPPORT
+   THEME SUPPORT
+   All theming handled by CSS variables in variables.css
+   No component-specific theme overrides needed
    ======================================== */
-
-[data-theme="dark"] .dark-mode-toggle {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.1);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
-}
-
-[data-theme="dark"] .dark-mode-toggle:hover {
-  background: rgba(108, 92, 231, 0.15);
-  border-color: var(--color-primary);
-  box-shadow: 0 4px 16px rgba(108, 92, 231, 0.4);
-}
-
-/* ========================================
-   QUIET MODE SUPPORT
-   ======================================== */
-
-[data-quiet-mode="true"] .dark-mode-toggle {
-  transition: all 0.2s ease;
-}
-
-[data-quiet-mode="true"] .dark-mode-toggle:hover {
-  transform: none;
-}
 
 /* ========================================
    REDUCED MOTION SUPPORT (ACCESSIBILITY)
@@ -71,12 +49,12 @@
 
 @media (prefers-reduced-motion: reduce) {
   .dark-mode-toggle {
-    animation: none !important;
-    transition: none !important;
+    animation: none;
+    transition: none;
   }
 
   .dark-mode-toggle:hover {
-    transform: none !important;
+    transform: none;
   }
 }
 

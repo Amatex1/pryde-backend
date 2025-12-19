@@ -3,10 +3,10 @@
   bottom: 0;
   left: 0;
   right: 0;
-  background: linear-gradient(135deg, #6C5CE7 0%, #0984E3 100%);
-  color: white;
+  background: var(--gradient-primary);
+  color: var(--text-inverse);
   padding: 1rem 2rem;
-  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--shadow-medium);
   z-index: 9999;
   animation: slideUp 0.4s ease-out;
 }
@@ -50,7 +50,7 @@
 .cookie-learn-more {
   background: transparent;
   border: none;
-  color: white;
+  color: var(--text-inverse);
   text-decoration: underline;
   font-weight: 600;
   font-size: 0.95rem;
@@ -64,8 +64,8 @@
 }
 
 .cookie-acknowledge-btn {
-  background: white;
-  color: #6C5CE7;
+  background: var(--bg-surface);
+  color: var(--accent-primary);
   border: none;
   padding: 0.6rem 1.5rem;
   border-radius: 8px;
@@ -78,32 +78,18 @@
 
 .cookie-acknowledge-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  box-shadow: var(--shadow-medium);
 }
 
 .cookie-acknowledge-btn:active {
   transform: translateY(0);
 }
 
-/* Dark Mode */
-[data-theme="dark"] .cookie-banner {
-  background: linear-gradient(135deg, #2a2550 0%, #1a1a2e 100%);
-  border-top: 1px solid var(--border-dark);
-}
-
-[data-theme="dark"] .cookie-acknowledge-btn {
-  background: var(--pryde-purple);
-  color: white;
-}
-
-[data-theme="dark"] .cookie-acknowledge-btn:hover {
-  background: #7d6ef7;
-}
-
-/* Quiet Mode */
-[data-quiet-mode="true"] .cookie-banner {
-  background: linear-gradient(135deg, #1a1530 0%, #0F1021 100%);
-}
+/* ========================================
+   THEME SUPPORT
+   All theming handled by CSS variables in variables.css
+   No component-specific theme overrides needed
+   ======================================== */
 
 /* Mobile Responsive */
 @media (max-width: 768px) {

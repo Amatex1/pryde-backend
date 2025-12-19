@@ -83,7 +83,7 @@
 }
 
 .required {
-  color: #ff6b6b;
+  color: var(--color-danger);
 }
 
 .info-text {
@@ -274,7 +274,7 @@
 }
 
 .tag-remove:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--bg-hover);
 }
 
 .add-tag {
@@ -417,7 +417,7 @@
 
 .btn-add-compact:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(108, 92, 231, 0.4);
+  box-shadow: var(--shadow-medium);
 }
 
 .btn-add-compact:disabled {
@@ -443,19 +443,19 @@
 
 .btn-add:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(108, 92, 231, 0.3);
+  box-shadow: var(--shadow-medium);
 }
 
 .btn-remove {
-  background: #ff6b6b;
-  color: white;
+  background: var(--color-danger);
+  color: var(--text-inverse);
   padding: 0.5rem 0.75rem;
   font-size: 1.2rem;
   line-height: 1;
 }
 
 .btn-remove:hover {
-  background: #ff5252;
+  opacity: 0.9;
 }
 
 /* Form Footer */
