@@ -5,8 +5,6 @@ import ReportModal from '../components/ReportModal';
 import PhotoViewer from '../components/PhotoViewer';
 import Toast from '../components/Toast';
 import CustomModal from '../components/CustomModal';
-// REMOVED: ShareModal - Share/Repost feature disabled until backend support is complete
-// import ShareModal from '../components/ShareModal';
 import EditProfileModal from '../components/EditProfileModal';
 import ReactionDetailsModal from '../components/ReactionDetailsModal';
 import FormattedText from '../components/FormattedText';
@@ -41,8 +39,6 @@ function Profile() {
   const [uploadMessage, setUploadMessage] = useState('');
   const [showCommentBox, setShowCommentBox] = useState({});
   const [commentText, setCommentText] = useState({});
-  // REMOVED: shareModal state - Share/Repost feature disabled
-  // const [shareModal, setShareModal] = useState({ isOpen: false, post: null });
   const [editingCommentId, setEditingCommentId] = useState(null);
   const [editCommentText, setEditCommentText] = useState('');
   const [replyingToComment, setReplyingToComment] = useState(null);
@@ -902,23 +898,6 @@ function Profile() {
     }
     return null;
   };
-
-  // REMOVED: Share/Repost feature - backend support incomplete (relies on deprecated Friends system)
-  // TODO: Reimplement when backend is updated to work with Followers system
-  // const handleShare = (post) => {
-  //   setShareModal({ isOpen: true, post });
-  // };
-
-  // const handleShareComplete = async () => {
-  //   try {
-  //     const response = await api.post(`/posts/${shareModal.post._id}/share`);
-  //     setPosts((prevPosts) => prevPosts.map(p => p._id === shareModal.post._id ? response.data : p));
-  //     showAlert('Post shared successfully!', 'Shared');
-  //   } catch (error) {
-  //     logger.error('Failed to share post:', error);
-  //     showAlert(error.response?.data?.message || 'Failed to share post.', 'Share Failed');
-  //   }
-  // };
 
   const handleProfileUpdate = (updatedUser) => {
     setUser(updatedUser);
@@ -2306,14 +2285,6 @@ function Profile() {
           onClose={() => removeToast(toast.id)}
         />
       ))}
-
-      {/* REMOVED: ShareModal - Share/Repost feature disabled until backend support is complete */}
-      {/* <ShareModal
-        isOpen={shareModal.isOpen}
-        onClose={() => setShareModal({ isOpen: false, post: null })}
-        post={shareModal.post}
-        onShare={handleShareComplete}
-      /> */}
 
       <EditProfileModal
         isOpen={editProfileModal}
