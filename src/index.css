@@ -26,14 +26,14 @@ html {
   transition: background-color 0.25s ease-in-out, color 0.25s ease-in-out;
 
   /* Background from theme */
-  background: var(--bg) !important;
+  background: var(--bg);
 }
 
 body {
   /* Font family and sizing handled by design-system.css */
-  background: var(--bg) !important;
+  background: var(--bg);
   min-height: 100vh;
-  color: var(--text-main) !important;
+  color: var(--text-main);
   transition: background-color 0.3s ease, color 0.3s ease;
 
   /* Prevent horizontal overflow */
