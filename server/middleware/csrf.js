@@ -82,6 +82,13 @@ export const setCsrfToken = (req, res, next) => {
   // So we need to send the token in a header that the frontend can read
   res.setHeader('X-CSRF-Token', token);
 
+  // ALWAYS log in production to debug header issue
+  console.log('🔐 CSRF Token Header Set:', {
+    token: token.substring(0, 10) + '...',
+    headerSet: res.getHeader('X-CSRF-Token') !== undefined,
+    environment: config.nodeEnv
+  });
+
   if (config.nodeEnv === 'development') {
     console.log('🍪 Setting new CSRF token cookie:', {
       token: token.substring(0, 10) + '...',
