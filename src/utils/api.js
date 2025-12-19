@@ -46,6 +46,11 @@ const getCsrfToken = () => {
 // Add auth token and CSRF token to requests
 api.interceptors.request.use(
   (config) => {
+    // Ensure headers object exists
+    if (!config.headers) {
+      config.headers = {};
+    }
+
     // Add JWT token for authentication
     const token = getAuthToken();
     if (token) {
@@ -58,7 +63,7 @@ api.interceptors.request.use(
       const csrfToken = getCsrfToken();
       if (csrfToken) {
         config.headers['X-XSRF-TOKEN'] = csrfToken;
-        logger.debug(`🛡️ CSRF token attached to ${method} ${config.url}`);
+        logger.debug(`🛡️ CSRF token attached to ${method} ${config.url}:`, csrfToken.substring(0, 20) + '...');
       } else {
         logger.warn(`⚠️ No CSRF token found for ${method} ${config.url}`);
         logger.warn(`📋 Current cookies: ${document.cookie}`);
