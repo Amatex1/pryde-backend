@@ -1505,12 +1505,12 @@ function Feed() {
 
           {/* Create Post Section */}
           <div className="create-post glossy fade-in">
-            <h2 className="section-title">✨ Share a thought...</h2>
+            <h2 className="section-title">Share something</h2>
             <form onSubmit={handlePostSubmit}>
               <textarea
                 value={newPost}
                 onChange={(e) => setNewPost(e.target.value)}
-                placeholder={showPollCreator ? "Ask a question..." : "What are you reflecting on today?"}
+                placeholder={showPollCreator ? "Ask a question..." : "Share something, if you feel like it."}
                 className="post-input glossy"
                 rows="4"
               />

@@ -42,19 +42,21 @@
 }
 
 /* ========================================
-   CREATE POST SECTION
+   CREATE POST SECTION - CALM, OPTIONAL, NON-PERFORMATIVE
+   Composer feels secondary to feed
    ======================================== */
 
 .create-post {
-  padding: var(--space-4) 18px;
-  border-radius: var(--radius-card);
-  background: var(--bg-card);
-  border: 1px solid var(--border-subtle);
-  box-shadow: var(--shadow-soft);
+  padding: 14px 16px; /* Reduced from var(--space-4) 18px - lighter weight */
+  border-radius: 10px; /* Softer corners */
+  background: rgba(255, 255, 255, 0.015); /* Barely visible - optional feel */
+  border: 1px solid rgba(255, 255, 255, 0.06); /* Subtle border */
+  box-shadow: none; /* NO shadow - composer ranks below feed cards */
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
-  margin: 0; /* Ensure no margin difference from post-card */
+  margin: 0;
+  /* NO gradients, NO glow, NO visual dominance */
 }
 
 .section-title {
@@ -149,41 +151,46 @@
   width: 100%;
   max-width: 100%;
   padding: 1rem;
-  border-radius: 12px;
-  border: 2px solid var(--border-light);
+  border-radius: 10px; /* Softer corners */
+  border: 1px solid rgba(255, 255, 255, 0.08); /* Subtle border */
   outline: none;
   font-size: 1rem;
   color: var(--text-main);
-  background: var(--card-surface);
-  resize: vertical;
+  background: rgba(255, 255, 255, 0.02); /* Barely visible */
+  resize: none; /* NO resize - fixed height */
+  min-height: 72px; /* Reduced from 100px - less pressure */
+  max-height: 180px; /* Prevent dominating viewport */
   font-family: inherit;
   margin-bottom: 1rem;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease; /* Faster, calmer */
   box-sizing: border-box;
+  /* NO aggressive expansion, NO viewport dominance */
 }
 
 .post-input:focus {
-  border-color: var(--pryde-purple);
-  box-shadow: 0 0 0 3px rgba(108, 92, 231, 0.1);
+  border-color: rgba(120, 120, 255, 0.3); /* Muted focus */
+  box-shadow: 0 0 0 2px rgba(120, 120, 255, 0.08); /* Subtle glow */
 }
 
 .btn-post {
   padding: 0.875rem 1.5rem;
-  border-radius: 12px;
+  border-radius: 10px; /* Softer corners */
   border: none;
   font-size: 1rem;
-  font-weight: 600;
-  background: var(--gradient-primary);
-  color: white;
+  font-weight: 500; /* Reduced from 600 - not bold */
+  background: rgba(120, 120, 255, 0.12); /* Muted, calm background */
+  color: var(--text-main); /* Not white - equal to other buttons */
   cursor: pointer;
-  transition: all 0.3s ease;
-  white-space: nowrap; /* Prevent text wrapping */
-  flex-shrink: 0; /* Prevent button from shrinking */
+  transition: all 0.2s ease; /* Faster, calmer */
+  white-space: nowrap;
+  flex-shrink: 0;
+  /* NO gradients, NO glow, NO scale, NO transform */
+  /* Button feels equal to other calm buttons, NOT a CTA */
 }
 
 .btn-post:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(108, 92, 231, 0.3);
+  background: rgba(120, 120, 255, 0.18); /* Subtle hover */
+  /* NO transform, NO shadow, NO scale */
 }
 
 /* ========================================
@@ -580,22 +587,23 @@
   color: var(--text-main);
 }
 
-/* Poll Button - Ensure styles load immediately */
+/* Poll Button - Calm, available tool */
 .post-actions-bar .btn-poll,
 button.btn-poll {
   padding: 0.75rem 1rem !important;
-  border-radius: 12px !important;
-  border: 2px solid #9b8ef7 !important; /* Darker border for better contrast */
-  background: var(--card-surface) !important;
-  color: #2d2f3e !important; /* Darker text for better contrast (WCAG AA) */
-  font-weight: 700 !important; /* Bolder for better visibility */
+  border-radius: 10px !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important; /* Subtle border */
+  background: transparent !important; /* Transparent - not featured */
+  color: var(--text-main) !important;
+  font-size: 13px !important; /* Smaller text */
+  font-weight: 400 !important; /* Normal weight - not bold */
   cursor: pointer !important;
-  transition: all 0.3s ease !important;
-  min-width: 80px !important; /* Ensure button doesn't get cut off */
-  min-height: 48px !important; /* Ensure minimum touch target size */
-  white-space: nowrap !important; /* Prevent text wrapping */
-  flex-shrink: 0 !important; /* Prevent button from shrinking */
-  overflow: visible !important; /* Ensure content is not clipped */
+  transition: all 0.2s ease !important;
+  min-width: 80px !important;
+  min-height: 48px !important; /* Touch target */
+  white-space: nowrap !important;
+  flex-shrink: 0 !important;
+  overflow: visible !important;
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
@@ -604,16 +612,15 @@ button.btn-poll {
 
 .post-actions-bar .btn-poll:hover,
 button.btn-poll:hover {
-  border-color: var(--pryde-purple) !important;
-  background: var(--soft-lavender) !important;
-  color: var(--pryde-purple) !important;
+  background: rgba(120, 120, 255, 0.08) !important; /* Subtle hover */
+  border-color: rgba(120, 120, 255, 0.3) !important;
 }
 
 .post-actions-bar .btn-poll.active,
 button.btn-poll.active {
-  border-color: var(--pryde-purple) !important;
-  background: var(--pryde-purple) !important;
-  color: white !important;
+  background: rgba(120, 120, 255, 0.15) !important; /* Subtle active */
+  border-color: rgba(120, 120, 255, 0.4) !important;
+  color: var(--text-main) !important; /* Not white - calm */
 }
 
 [data-theme="dark"] .post-actions-bar .btn-poll,
@@ -637,22 +644,23 @@ button.btn-poll.active {
   border-color: var(--pryde-purple) !important;
 }
 
-/* Content Warning Button - Ensure styles load immediately */
+/* Content Warning Button - Calm, available tool */
 .post-actions-bar .btn-content-warning,
 button.btn-content-warning {
   padding: 0.75rem 1rem !important;
-  border-radius: 12px !important;
-  border: 2px solid #0984E3 !important; /* Electric blue border for better contrast */
-  background: var(--card-surface) !important;
-  color: #2d2f3e !important; /* Darker text for better contrast (WCAG AA) */
-  font-weight: 700 !important; /* Bolder for better visibility */
+  border-radius: 10px !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important; /* Subtle border */
+  background: transparent !important; /* Transparent - not featured */
+  color: var(--text-main) !important;
+  font-size: 13px !important; /* Smaller text */
+  font-weight: 400 !important; /* Normal weight - not bold */
   cursor: pointer !important;
-  transition: all 0.3s ease !important;
-  min-width: 80px !important; /* Ensure button doesn't get cut off */
-  min-height: 48px !important; /* Ensure minimum touch target size */
-  white-space: nowrap !important; /* Prevent text wrapping */
-  flex-shrink: 0 !important; /* Prevent button from shrinking */
-  overflow: visible !important; /* Ensure content is not clipped */
+  transition: all 0.2s ease !important;
+  min-width: 80px !important;
+  min-height: 48px !important; /* Touch target */
+  white-space: nowrap !important;
+  flex-shrink: 0 !important;
+  overflow: visible !important;
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
@@ -661,16 +669,15 @@ button.btn-content-warning {
 
 .post-actions-bar .btn-content-warning:hover,
 button.btn-content-warning:hover {
-  border-color: var(--electric-blue) !important;
-  background: var(--soft-lavender) !important;
-  color: var(--electric-blue) !important;
+  background: rgba(120, 120, 255, 0.08) !important; /* Subtle hover */
+  border-color: rgba(120, 120, 255, 0.3) !important;
 }
 
 .post-actions-bar .btn-content-warning.active,
 button.btn-content-warning.active {
-  border-color: var(--electric-blue) !important;
-  background: var(--electric-blue) !important;
-  color: white !important;
+  background: rgba(120, 120, 255, 0.15) !important; /* Subtle active */
+  border-color: rgba(120, 120, 255, 0.4) !important;
+  color: var(--text-main) !important; /* Not white - calm */
 }
 
 [data-theme="dark"] .post-actions-bar .btn-content-warning,
@@ -694,17 +701,18 @@ button.btn-content-warning.active {
   border-color: var(--electric-blue) !important;
 }
 
-/* Drafts Button - Ensure styles load immediately */
+/* Drafts Button - Calm, available tool */
 .post-actions-bar .btn-drafts,
 button.btn-drafts {
   padding: 0.75rem 1rem !important;
-  border-radius: 12px !important;
-  border: 2px solid var(--pryde-purple) !important;
-  background: var(--card-surface) !important;
+  border-radius: 10px !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important; /* Subtle border */
+  background: transparent !important; /* Transparent - not featured */
   color: var(--text-main) !important;
-  font-weight: 600 !important;
+  font-size: 13px !important; /* Smaller text */
+  font-weight: 400 !important; /* Normal weight - not bold */
   cursor: pointer !important;
-  transition: all 0.3s ease !important;
+  transition: all 0.2s ease !important;
   min-width: 80px !important;
   min-height: 48px !important;
   display: inline-flex !important;
@@ -745,9 +753,8 @@ button.btn-drafts {
 
 .post-actions-bar .btn-drafts:hover,
 button.btn-drafts:hover {
-  border-color: var(--pryde-purple) !important;
-  background: var(--soft-lavender) !important;
-  color: var(--pryde-purple) !important;
+  background: rgba(120, 120, 255, 0.08) !important; /* Subtle hover */
+  border-color: rgba(120, 120, 255, 0.3) !important;
 }
 
 [data-theme="dark"] .post-actions-bar .btn-drafts,
@@ -764,29 +771,30 @@ button.btn-drafts:hover {
   border-color: var(--pryde-purple) !important;
 }
 
-/* Hide Metrics Checkbox - Ensure styles load immediately */
+/* Hide Metrics Checkbox - Calm, available tool */
 .post-actions-bar .hide-metrics-checkbox,
 label.hide-metrics-checkbox {
   display: flex !important;
   align-items: center !important;
   gap: 8px !important;
   padding: 0.75rem 1rem !important;
-  border-radius: 12px !important;
-  border: 2px solid var(--border-light) !important;
-  background: var(--card-surface) !important;
+  border-radius: 10px !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important; /* Subtle border */
+  background: transparent !important; /* Transparent - not featured */
   color: var(--text-main) !important;
-  font-weight: 600 !important;
+  font-size: 13px !important; /* Smaller text */
+  font-weight: 400 !important; /* Normal weight - not bold */
   cursor: pointer !important;
-  transition: all 0.3s ease !important;
+  transition: all 0.2s ease !important;
   user-select: none !important;
   white-space: nowrap !important;
-  flex-shrink: 0 !important; /* Prevent button from shrinking */
+  flex-shrink: 0 !important;
 }
 
 .post-actions-bar .hide-metrics-checkbox:hover,
 label.hide-metrics-checkbox:hover {
-  border-color: var(--pryde-purple) !important;
-  background: var(--soft-lavender) !important;
+  background: rgba(120, 120, 255, 0.08) !important; /* Subtle hover */
+  border-color: rgba(120, 120, 255, 0.3) !important;
 }
 
 .hide-metrics-checkbox input[type="checkbox"] {
@@ -2291,10 +2299,17 @@ html:not([data-theme])[data-quiet-mode="true"] .hide-metrics-checkbox:hover {
     min-width: 0;
   }
 
-  .create-post,
+  /* MOBILE: Composer feels even lighter, less dominant */
+  .create-post {
+    padding: 12px 14px !important; /* Reduced from 14px 16px - lighter on mobile */
+    border-radius: 10px !important;
+    /* Composer does NOT dominate above-the-fold */
+    /* Feed posts remain immediately visible */
+  }
+
   .post-card {
-    padding: var(--space-md); /* Reduced from 1.5rem - lighter, stackable cards */
-    border-radius: var(--border-radius-md); /* Reduced from 16px */
+    padding: var(--space-md);
+    border-radius: var(--border-radius-md);
   }
 
   .post-actions {
@@ -2815,37 +2830,44 @@ html:not([data-theme])[data-quiet-mode="true"] .hide-metrics-checkbox:hover {
   }
 }
 
-/* Media Upload Styles */
+/* ========================================
+   COMPOSER TOOLS - AVAILABLE, NOT FEATURED
+   Tools feel optional, not demanding
+   ======================================== */
+
 .post-actions-bar {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 0.5rem;
+  gap: 8px; /* Reduced from 0.5rem - tighter spacing */
   margin-top: 1rem;
-  flex-wrap: wrap; /* Allow wrapping on very small screens */
+  flex-wrap: wrap;
+  opacity: 0.85; /* Soften tool row - available, not featured */
 }
 
-/* Media Upload Button - Ensure styles load immediately */
+/* Media Upload Button - Calm, available tool */
 .post-actions-bar .btn-media-upload,
 label.btn-media-upload {
   padding: 0.75rem 1rem !important;
   border-radius: 10px !important;
-  border: 2px solid var(--pryde-purple) !important;
-  background: var(--soft-lavender) !important;
-  color: var(--pryde-purple) !important;
-  font-weight: 600 !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important; /* Subtle border */
+  background: transparent !important; /* Transparent - not featured */
+  color: var(--text-main) !important;
+  font-size: 13px !important; /* Smaller text */
+  font-weight: 400 !important; /* Normal weight - not bold */
   cursor: pointer !important;
-  transition: all 0.3s ease !important;
+  transition: all 0.2s ease !important;
   display: inline-block !important;
-  white-space: nowrap !important; /* Prevent text wrapping */
-  flex-shrink: 0 !important; /* Prevent button from shrinking */
+  white-space: nowrap !important;
+  flex-shrink: 0 !important;
+  /* Tools feel available, not featured */
 }
 
 .post-actions-bar .btn-media-upload:hover,
 label.btn-media-upload:hover {
-  background: var(--pryde-purple) !important;
-  color: white !important;
-  transform: translateY(-2px) !important;
+  background: rgba(120, 120, 255, 0.08) !important; /* Subtle hover */
+  border-color: rgba(120, 120, 255, 0.3) !important;
+  /* NO transform, NO scale */
 }
 
 .post-actions-bar .btn-media-upload:disabled,
@@ -3203,28 +3225,30 @@ label.btn-media-upload:disabled {
 .post-actions-bar .privacy-selector,
 select.privacy-selector {
   padding: 0.75rem 1rem !important;
-  border-radius: 12px !important;
-  border: 2px solid var(--border-light) !important;
-  background: var(--card-surface) !important;
+  border-radius: 10px !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important; /* Subtle border */
+  background: transparent !important; /* Transparent - not featured */
   color: var(--text-main) !important;
-  font-size: 0.95rem !important;
+  font-size: 13px !important; /* Smaller text */
+  font-weight: 400 !important; /* Normal weight */
   cursor: pointer !important;
   outline: none !important;
-  transition: all 0.3s ease !important;
-  white-space: nowrap !important; /* Prevent text wrapping */
-  flex-shrink: 0 !important; /* Prevent dropdown from shrinking */
-  min-width: 120px !important; /* Ensure enough space for "Public" text */
+  transition: all 0.2s ease !important;
+  white-space: nowrap !important;
+  flex-shrink: 0 !important;
+  min-width: 120px !important;
 }
 
 .post-actions-bar .privacy-selector:hover,
 select.privacy-selector:hover {
-  border-color: var(--pryde-purple) !important;
+  background: rgba(120, 120, 255, 0.08) !important; /* Subtle hover */
+  border-color: rgba(120, 120, 255, 0.3) !important;
 }
 
 .post-actions-bar .privacy-selector:focus,
 select.privacy-selector:focus {
-  border-color: var(--pryde-purple) !important;
-  box-shadow: 0 0 0 3px rgba(108, 92, 231, 0.1) !important;
+  border-color: rgba(120, 120, 255, 0.4) !important;
+  box-shadow: 0 0 0 2px rgba(120, 120, 255, 0.08) !important; /* Subtle focus */
 }
 
 /* Privacy Modal */
