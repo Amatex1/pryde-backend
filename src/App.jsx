@@ -1,7 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { useState, useEffect, lazy, Suspense } from 'react';
 import { isAuthenticated, getCurrentUser } from './utils/auth';
-import { initializeSocket, disconnectSocket, onNewMessage } from './utils/socket';
+import { initializeSocket, disconnectSocket, disconnectSocketForLogout, resetLogoutFlag, onNewMessage } from './utils/socket';
 import { playNotificationSound, requestNotificationPermission } from './utils/notifications';
 import { initializeQuietMode } from './utils/quietMode';
 import { preloadCriticalResources, preloadFeedData } from './utils/resourcePreloader';
@@ -228,6 +228,10 @@ function App() {
 
     // Initialize Socket.IO when user is authenticated - only after auth bootstrap
     if (authBootstrapped && isAuth) {
+      // 🔥 CRITICAL: Reset logout flag when user is authenticated
+      // This allows socket to reconnect after a fresh login
+      resetLogoutFlag();
+
       const user = getCurrentUser();
       if (user && (user.id || user._id)) {
         try {
@@ -249,7 +253,8 @@ function App() {
           return () => {
             cleanupNewMessage?.();
             if (!isAuth) {
-              disconnectSocket();
+              // Use logout-specific disconnect to prevent reconnection
+              disconnectSocketForLogout();
             }
           };
         } catch (error) {
@@ -257,6 +262,9 @@ function App() {
           // Don't block the app - socket features just won't work
         }
       }
+    } else if (authBootstrapped && !isAuth) {
+      // 🔥 CRITICAL: User is not authenticated, ensure socket is disconnected
+      disconnectSocketForLogout();
     }
   }, [isAuth, authBootstrapped]);
 

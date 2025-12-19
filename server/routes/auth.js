@@ -1113,6 +1113,27 @@ router.post('/logout', auth, async (req, res) => {
       logger.debug(`Session ${sessionId} removed for user ${user.username}`);
     }
 
+    // 🔥 CRITICAL: Force disconnect Socket.IO for this session
+    // This prevents zombie sockets and ensures clean logout
+    const io = req.app.get('io');
+    if (io && sessionId) {
+      try {
+        const sockets = await io.fetchSockets();
+        for (const socket of sockets) {
+          if (socket.sessionId === sessionId && socket.userId === user._id.toString()) {
+            logger.debug(`🔌 Force disconnecting socket for session ${sessionId}`);
+            socket.emit('force_logout', {
+              reason: 'Logged out',
+              final: true // Flag to prevent reconnection
+            });
+            socket.disconnect(true);
+          }
+        }
+      } catch (socketError) {
+        logger.warn('Socket disconnect error (non-critical):', socketError);
+      }
+    }
+
     // Clear refresh token cookie
     const isProduction = config.nodeEnv === 'production';
     res.clearCookie('refreshToken', {

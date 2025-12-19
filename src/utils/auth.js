@@ -76,7 +76,16 @@ export const logout = async () => {
   // Set flag to indicate manual logout (not session expiration)
   sessionStorage.setItem('manualLogout', 'true');
 
+  // 🔥 CRITICAL: Disconnect socket FIRST to prevent zombie sockets
+  try {
+    const { disconnectSocketForLogout } = await import('./socket');
+    disconnectSocketForLogout();
+  } catch (error) {
+    // Silently fail - socket might not be initialized
+  }
+
   // Call backend logout endpoint to invalidate refresh token
+  // Backend will also force disconnect the socket from server side
   try {
     // Import api dynamically to avoid circular dependency
     const { default: api } = await import('./api');

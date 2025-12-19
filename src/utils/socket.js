@@ -6,6 +6,8 @@ import logger from './logger';
 const SOCKET_URL = API_CONFIG.SOCKET_URL;
 
 let socket = null;
+let isLoggingOut = false; // Flag to prevent reconnection during logout
+
 // Initialize socket with userId (Blink expects this)
 export const initializeSocket = (userId) => {
     return connectSocket(userId);
@@ -13,6 +15,12 @@ export const initializeSocket = (userId) => {
 
 // Connect socket
 export const connectSocket = (userId) => {
+    // 🔥 CRITICAL: Don't reconnect if we're logging out
+    if (isLoggingOut) {
+        logger.debug('🚫 Skipping socket connection - logout in progress');
+        return null;
+    }
+
     if (!socket) {
         // Get JWT token from localStorage
         const token = localStorage.getItem('token');
@@ -40,7 +48,7 @@ export const connectSocket = (userId) => {
                 token: token
             },
             // ❌ REMOVED: query: { userId } - Identity now from JWT only
-            // ✅ Infinite reconnection attempts for resilience
+            // ✅ Conditional reconnection (disabled during logout)
             reconnection: true,
             reconnectionAttempts: Infinity, // Never give up reconnecting
             reconnectionDelay: 1000, // Start with 1 second
@@ -59,19 +67,52 @@ export const connectSocket = (userId) => {
 
         socket.on('connect_error', (error) => {
             logger.error('❌ Socket connection error:', error.message);
+
+            // 🔥 CRITICAL: If we're logging out, stop reconnection attempts
+            if (isLoggingOut) {
+                logger.debug('🚫 Stopping reconnection - logout in progress');
+                socket.io.opts.reconnection = false;
+                socket.disconnect();
+            }
         });
 
         socket.on('disconnect', (reason) => {
             logger.debug('🔌 Socket disconnected:', reason);
+
+            // 🔥 CRITICAL: If we're logging out, prevent reconnection
+            if (isLoggingOut) {
+                logger.debug('🚫 Preventing reconnection - logout in progress');
+                socket.io.opts.reconnection = false;
+            }
         });
 
-        // Listen for force logout (session terminated from another device)
+        // Listen for force logout (session terminated from another device or manual logout)
         socket.on('force_logout', (data) => {
             logger.debug('🚪 Force logout received:', data.reason);
-            alert(`You have been logged out: ${data.reason}`);
-            // Clear local storage and redirect to login
+
+            // 🔥 CRITICAL: Set logout flag to prevent reconnection
+            isLoggingOut = true;
+
+            // Disable reconnection immediately
+            if (socket) {
+                socket.io.opts.reconnection = false;
+                socket.disconnect();
+                socket = null;
+            }
+
+            // Clear all auth state
             localStorage.removeItem('token');
+            localStorage.removeItem('tokenSetTime');
+            localStorage.removeItem('refreshToken');
             localStorage.removeItem('user');
+            sessionStorage.clear();
+
+            // Show message if not a final logout (from another device)
+            if (!data.final) {
+                alert(`You have been logged out: ${data.reason}`);
+            }
+
+            // Redirect to login
             window.location.href = '/login';
         });
 
@@ -110,9 +151,33 @@ export const connectSocket = (userId) => {
 // Disconnect socket
 export const disconnectSocket = () => {
     if (socket) {
+        logger.debug('🔌 Disconnecting socket');
         socket.disconnect();
         socket = null;
     }
+};
+
+// 🔥 NEW: Disconnect socket for logout (prevents reconnection)
+export const disconnectSocketForLogout = () => {
+    logger.debug('🚪 Disconnecting socket for logout');
+
+    // Set logout flag to prevent reconnection
+    isLoggingOut = true;
+
+    if (socket) {
+        // Disable reconnection
+        socket.io.opts.reconnection = false;
+
+        // Disconnect
+        socket.disconnect();
+        socket = null;
+    }
+};
+
+// 🔥 NEW: Reset logout flag (for testing or re-login)
+export const resetLogoutFlag = () => {
+    isLoggingOut = false;
+    logger.debug('🔄 Logout flag reset');
 };
 
 // Get socket instance
@@ -289,6 +354,8 @@ export default {
     initializeSocket,
     connectSocket,
     disconnectSocket,
+    disconnectSocketForLogout,
+    resetLogoutFlag,
     sendMessage,
     onMessageSent,
     onNewMessage,
