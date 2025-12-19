@@ -728,7 +728,7 @@ function Feed() {
       setSelectedMedia([...selectedMedia, ...response.data.media]);
     } catch (error) {
       logger.error('Media upload failed:', error);
-      showAlert('This didn't upload properly. You can try again in a moment.', 'Upload issue');
+      showAlert('This didn\'t upload properly. You can try again in a moment.', 'Upload issue');
     } finally {
       setUploadingMedia(false);
     }
@@ -879,7 +879,7 @@ function Feed() {
       setHideMetrics(false);
     } catch (error) {
       logger.error('Post creation failed:', error);
-      showAlert('This didn't post properly. You can try again in a moment.', 'Post issue');
+      showAlert('This didn\'t post properly. You can try again in a moment.', 'Post issue');
     } finally {
       setLoading(false);
     }
@@ -1157,7 +1157,7 @@ function Feed() {
     } catch (error) {
       logger.error('❌ Failed to create comment:', error);
       logger.error('Error details:', error.response?.data);
-      showAlert('This didn't post properly. You can try again in a moment.', 'Reply issue');
+      showAlert('This didn\'t post properly. You can try again in a moment.', 'Reply issue');
     }
   };
 
@@ -1206,7 +1206,7 @@ function Feed() {
       setEditCommentText('');
     } catch (error) {
       logger.error('Failed to edit comment:', error);
-      showAlert('This didn't save properly. You can try again in a moment.', 'Edit issue');
+      showAlert('This didn\'t save properly. You can try again in a moment.', 'Edit issue');
     }
   };
 
@@ -1261,7 +1261,7 @@ function Feed() {
       showAlert('Post updated successfully!', 'Success');
     } catch (error) {
       logger.error('Failed to edit post:', error);
-      showAlert('This didn't save properly. You can try again in a moment.', 'Edit issue');
+      showAlert('This didn\'t save properly. You can try again in a moment.', 'Edit issue');
     }
   };
 
@@ -1312,7 +1312,7 @@ function Feed() {
       ));
     } catch (error) {
       logger.error('Failed to delete comment:', error);
-      showAlert('This didn't delete properly. You can try again in a moment.', 'Delete issue');
+      showAlert('This didn\'t delete properly. You can try again in a moment.', 'Delete issue');
     }
   };
 
@@ -1378,7 +1378,7 @@ function Feed() {
       }));
     } catch (error) {
       logger.error('Failed to reply to comment:', error);
-      showAlert('This didn't post properly. You can try again in a moment.', 'Reply issue');
+      showAlert('This didn\'t post properly. You can try again in a moment.', 'Reply issue');
     }
   };
 
@@ -1418,7 +1418,7 @@ function Feed() {
       }
     } catch (error) {
       logger.error('Failed to bookmark post:', error);
-      showAlert(error.response?.data?.message || 'This didn't save properly. You can try again in a moment.', 'Save issue');
+      showAlert(error.response?.data?.message || 'This didn\'t save properly. You can try again in a moment.', 'Save issue');
     }
   };
 
@@ -1433,7 +1433,7 @@ function Feed() {
       setPosts(posts.filter(p => p._id !== postId));
     } catch (error) {
       logger.error('Failed to delete post:', error);
-      showAlert('This didn't delete properly. You can try again in a moment.', 'Delete issue');
+      showAlert('This didn\'t delete properly. You can try again in a moment.', 'Delete issue');
     }
   };
 
