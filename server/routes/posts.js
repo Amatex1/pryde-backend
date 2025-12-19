@@ -5,11 +5,12 @@ import Post from '../models/Post.js';
 import User from '../models/User.js';
 import Notification from '../models/Notification.js';
 import auth from '../middleware/auth.js';
-import { postLimiter, commentLimiter } from '../middleware/rateLimiter.js';
+import { postLimiter, commentLimiter, reactionLimiter } from '../middleware/rateLimiter.js';
 import { checkMuted, moderateContent } from '../middleware/moderation.js';
 import { sanitizeFields } from '../utils/sanitize.js';
 import { sendPushNotification } from './pushNotifications.js';
 import logger from '../utils/logger.js';
+import { getBlockedUserIds } from '../utils/blockHelper.js';
 
 // PHASE 1 REFACTOR: Helper function to sanitize post for private likes
 // Removes like count and list of who liked, only shows if current user liked
@@ -51,33 +52,38 @@ router.get('/', auth, async (req, res) => {
     const currentUser = await User.findById(userId);
     const followingIds = currentUser.following || [];
 
+    // Get blocked user IDs to filter them out
+    const blockedUserIds = await getBlockedUserIds(userId);
+
     let query = {};
 
     if (filter === 'public') {
-      // Public feed: All public posts from everyone (not hidden from user)
+      // Public feed: All public posts from everyone (not hidden from user, excluding blocked users)
       query = {
         visibility: 'public',
-        hiddenFrom: { $ne: userId }
+        hiddenFrom: { $ne: userId },
+        author: { $nin: blockedUserIds }
       };
     } else if (filter === 'followers') {
-      // Followers feed: Posts from people you follow + your own posts
+      // Followers feed: Posts from people you follow + your own posts (excluding blocked users)
       query = {
         $or: [
           { author: userId }, // User's own posts (always visible)
           {
-            author: { $in: followingIds },
+            author: { $in: followingIds, $nin: blockedUserIds },
             visibility: 'public',
             hiddenFrom: { $ne: userId }
           },
           {
-            author: { $in: followingIds },
+            author: { $in: followingIds, $nin: blockedUserIds },
             visibility: 'followers',
             hiddenFrom: { $ne: userId }
           },
           {
             visibility: 'custom',
             sharedWith: userId,
-            hiddenFrom: { $ne: userId }
+            hiddenFrom: { $ne: userId },
+            author: { $nin: blockedUserIds }
           }
         ]
       };
@@ -324,7 +330,7 @@ router.post('/', auth, postLimiter, sanitizeFields(['content', 'contentWarning']
 // @route   PUT /api/posts/:id
 // @desc    Update a post
 // @access  Private
-router.put('/:id', auth, async (req, res) => {
+router.put('/:id', auth, sanitizeFields(['content', 'contentWarning']), async (req, res) => {
   try {
     const post = await Post.findById(req.params.id);
 
@@ -414,7 +420,7 @@ router.delete('/:id', auth, async (req, res) => {
 // @route   POST /api/posts/:id/like
 // @desc    Like/Unlike a post
 // @access  Private
-router.post('/:id/like', auth, async (req, res) => {
+router.post('/:id/like', auth, reactionLimiter, async (req, res) => {
   try {
     const post = await Post.findById(req.params.id);
 
@@ -488,7 +494,7 @@ router.post('/:id/like', auth, async (req, res) => {
 // @route   POST /api/posts/:id/react
 // @desc    Add a reaction to a post
 // @access  Private
-router.post('/:id/react', auth, async (req, res) => {
+router.post('/:id/react', auth, reactionLimiter, async (req, res) => {
   try {
     const { emoji } = req.body;
 
@@ -592,7 +598,7 @@ router.post('/:id/react', auth, async (req, res) => {
 // @route   POST /api/posts/:id/comment/:commentId/react
 // @desc    Add a reaction to a comment
 // @access  Private
-router.post('/:id/comment/:commentId/react', auth, async (req, res) => {
+router.post('/:id/comment/:commentId/react', auth, reactionLimiter, async (req, res) => {
   try {
     const { emoji } = req.body;
 
@@ -904,7 +910,7 @@ router.post('/:id/comment', auth, commentLimiter, sanitizeFields(['content']), c
 // @route   POST /api/posts/:id/comment/:commentId/reply
 // @desc    Reply to a comment
 // @access  Private
-router.post('/:id/comment/:commentId/reply', auth, commentLimiter, checkMuted, moderateContent, async (req, res) => {
+router.post('/:id/comment/:commentId/reply', auth, commentLimiter, sanitizeFields(['content']), checkMuted, moderateContent, async (req, res) => {
   try {
     const { content, gifUrl } = req.body;
 

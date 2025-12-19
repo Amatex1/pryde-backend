@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import OptimizedImage from './OptimizedImage';
 import { getImageUrl } from '../utils/imageUrl';
+import { sanitizeContent } from '../utils/sanitize';
 import '../pages/Feed.css';
 
 /**
@@ -138,7 +139,7 @@ const CommentThread = ({
                 </div>
               ) : (
                 <>
-                  <p className="comment-text">{comment.content}</p>
+                  <p className="comment-text">{sanitizeContent(comment.content)}</p>
                   {comment.gifUrl && (
                     <div className="comment-gif">
                       <img src={comment.gifUrl} alt="GIF" />

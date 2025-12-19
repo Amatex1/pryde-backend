@@ -2,6 +2,7 @@ import express from 'express';
 import Comment from '../models/Comment.js';
 import Post from '../models/Post.js';
 import auth from '../middleware/auth.js';
+import { reactionLimiter } from '../middleware/rateLimiter.js';
 import logger from '../utils/logger.js';
 
 const router = express.Router();
@@ -257,7 +258,7 @@ router.delete('/comments/:commentId', auth, async (req, res) => {
 // @route   POST /api/comments/:commentId/react
 // @desc    Add a reaction to a comment
 // @access  Private
-router.post('/comments/:commentId/react', auth, async (req, res) => {
+router.post('/comments/:commentId/react', auth, reactionLimiter, async (req, res) => {
   try {
     const { commentId } = req.params;
     const { emoji } = req.body;

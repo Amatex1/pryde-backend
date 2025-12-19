@@ -1,4 +1,5 @@
 import User from '../models/User.js';
+import { isBlocked } from '../utils/blockHelper.js';
 
 // Check if user is blocked
 export const checkBlocked = async (req, res, next) => {
@@ -10,21 +11,11 @@ export const checkBlocked = async (req, res, next) => {
       return next();
     }
 
-    const currentUser = await User.findById(currentUserId).select('blockedUsers');
-    const targetUser = await User.findById(targetUserId).select('blockedUsers');
+    // Check if users have blocked each other (bidirectional)
+    const blocked = await isBlocked(currentUserId, targetUserId);
 
-    if (!targetUser) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-
-    // Check if current user is blocked by target user
-    if (targetUser.blockedUsers.includes(currentUserId)) {
+    if (blocked) {
       return res.status(403).json({ message: 'You cannot interact with this user' });
-    }
-
-    // Check if target user is blocked by current user
-    if (currentUser.blockedUsers.includes(targetUserId)) {
-      return res.status(403).json({ message: 'You have blocked this user' });
     }
 
     next();
@@ -50,11 +41,11 @@ export const checkProfileVisibility = async (req, res, next) => {
     const mongoose = (await import('mongoose')).default;
 
     if (mongoose.Types.ObjectId.isValid(profileIdentifier) && profileIdentifier.length === 24) {
-      profileUser = await User.findById(profileIdentifier).select('_id privacySettings friends followers blockedUsers');
+      profileUser = await User.findById(profileIdentifier).select('_id privacySettings friends followers');
     }
 
     if (!profileUser) {
-      profileUser = await User.findOne({ username: profileIdentifier }).select('_id privacySettings friends followers blockedUsers');
+      profileUser = await User.findOne({ username: profileIdentifier }).select('_id privacySettings friends followers');
     }
 
     if (!profileUser) {
@@ -66,14 +57,10 @@ export const checkProfileVisibility = async (req, res, next) => {
       return next();
     }
 
-    const currentUser = await User.findById(currentUserId).select('blockedUsers');
+    // Check if blocked using Block model
+    const blocked = await isBlocked(currentUserId, profileUser._id.toString());
 
-    if (!currentUser) {
-      return res.status(401).json({ message: 'Authentication required' });
-    }
-
-    // Check if blocked
-    if (profileUser.blockedUsers.includes(currentUserId) || currentUser.blockedUsers.includes(profileUser._id)) {
+    if (blocked) {
       return res.status(403).json({ message: 'Profile not accessible' });
     }
 
@@ -171,15 +158,16 @@ export const checkMessagingPermission = async (req, res, next) => {
     }
 
     // PHASE 1 REFACTOR: Use followers only (friends system removed)
-    const recipient = await User.findById(recipientId).select('privacySettings followers blockedUsers');
-    const currentUser = await User.findById(currentUserId).select('blockedUsers');
+    const recipient = await User.findById(recipientId).select('privacySettings followers');
 
     if (!recipient) {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // Check if blocked
-    if (recipient.blockedUsers.includes(currentUserId) || currentUser.blockedUsers.includes(recipientId)) {
+    // Check if blocked using Block model
+    const blocked = await isBlocked(currentUserId, recipientId);
+
+    if (blocked) {
       return res.status(403).json({ message: 'Cannot send message to this user' });
     }
 

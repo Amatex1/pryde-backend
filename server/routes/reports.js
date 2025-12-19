@@ -2,11 +2,12 @@ import express from 'express';
 const router = express.Router();
 import Report from '../models/Report.js';
 import auth from '../middleware/auth.js';
+import { reportLimiter } from '../middleware/rateLimiter.js';
 
 // @route   POST /api/reports
 // @desc    Create a new report
 // @access  Private
-router.post('/', auth, async (req, res) => {
+router.post('/', auth, reportLimiter, async (req, res) => {
   try {
     const { reportType, reportedContent, reportedUser, reason, description } = req.body;
     const userId = req.userId || req.user._id;

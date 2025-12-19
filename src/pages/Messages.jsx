@@ -12,6 +12,7 @@ import api from '../utils/api';
 import { getImageUrl } from '../utils/imageUrl';
 import { getUserChatColor, getSentMessageColor } from '../utils/chatColors';
 import logger from '../utils/logger';
+import { sanitizeMessage } from '../utils/sanitize';
 import {
   onNewMessage,
   onMessageSent,
@@ -1294,7 +1295,7 @@ function Messages() {
                                       }
                                 }
                               >
-                                {msg.content}
+                                {sanitizeMessage(msg.content)}
 
                                 {/* Voice Note Player */}
                                 {msg.voiceNote?.url && (

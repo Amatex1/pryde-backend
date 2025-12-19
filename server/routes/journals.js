@@ -8,13 +8,14 @@ import mongoose from 'mongoose';
 import Journal from '../models/Journal.js';
 import User from '../models/User.js';
 import { authenticateToken } from '../middleware/auth.js';
+import { sanitizeFields } from '../middleware/sanitize.js';
 
 const router = express.Router();
 
 // @route   POST /api/journals
 // @desc    Create a new journal entry
 // @access  Private
-router.post('/', authenticateToken, async (req, res) => {
+router.post('/', authenticateToken, sanitizeFields(['title', 'body']), async (req, res) => {
   try {
     const { title, body, visibility, mood, tags } = req.body;
 
@@ -129,7 +130,7 @@ router.get('/user/:userId', authenticateToken, async (req, res) => {
 // @route   PATCH /api/journals/:id
 // @desc    Update a journal entry
 // @access  Private
-router.patch('/:id', authenticateToken, async (req, res) => {
+router.patch('/:id', authenticateToken, sanitizeFields(['title', 'body']), async (req, res) => {
   try {
     const { id } = req.params;
     const { title, body, visibility, mood, tags } = req.body;

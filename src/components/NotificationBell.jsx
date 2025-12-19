@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../utils/api';
 import { getImageUrl } from '../utils/imageUrl';
+import { sanitizeText } from '../utils/sanitize';
 import './NotificationBell.css';
 
 function NotificationBell() {
@@ -111,7 +112,10 @@ function NotificationBell() {
   };
 
   const getNotificationText = (notification) => {
-    const name = notification.sender?.displayName || notification.sender?.username || 'Someone';
+    // SECURITY: Sanitize user-generated content to prevent XSS
+    const rawName = notification.sender?.displayName || notification.sender?.username || 'Someone';
+    const name = sanitizeText(rawName);
+
     switch (notification.type) {
       case 'like':
         return `${name} liked your post`;
@@ -124,7 +128,7 @@ function NotificationBell() {
       case 'friend_accept':
         return `${name} accepted your friend request`;
       default:
-        return notification.message || 'New notification';
+        return sanitizeText(notification.message || 'New notification');
     }
   };
 

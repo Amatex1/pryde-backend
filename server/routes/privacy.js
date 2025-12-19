@@ -1,6 +1,7 @@
 import express from 'express';
 const router = express.Router();
 import User from '../models/User.js';
+import Block from '../models/Block.js';
 import auth from '../middleware/auth.js';
 
 // @route   GET /api/privacy
@@ -70,7 +71,7 @@ router.put('/', auth, async (req, res) => {
 });
 
 // @route   POST /api/privacy/block/:userId
-// @desc    Block a user
+// @desc    Block a user (MIGRATED TO BLOCK MODEL)
 // @access  Private
 router.post('/block/:userId', auth, async (req, res) => {
   try {
@@ -81,31 +82,41 @@ router.post('/block/:userId', auth, async (req, res) => {
       return res.status(400).json({ message: 'You cannot block yourself' });
     }
 
-    const user = await User.findById(currentUserId);
     const userToBlock = await User.findById(userIdToBlock);
 
     if (!userToBlock) {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // Check if already blocked
-    if (user.blockedUsers.includes(userIdToBlock)) {
+    // Check if already blocked using Block model
+    const existingBlock = await Block.findOne({
+      blocker: currentUserId,
+      blocked: userIdToBlock
+    });
+
+    if (existingBlock) {
       return res.status(400).json({ message: 'User is already blocked' });
     }
 
-    // Add to blocked users
-    user.blockedUsers.push(userIdToBlock);
+    // Create block in Block collection
+    const block = new Block({
+      blocker: currentUserId,
+      blocked: userIdToBlock,
+      reason: 'Blocked via privacy settings'
+    });
 
-    // Remove from friends if they are friends
-    user.friends = user.friends.filter(friendId => friendId.toString() !== userIdToBlock);
-    userToBlock.friends = userToBlock.friends.filter(friendId => friendId.toString() !== currentUserId);
+    await block.save();
 
-    await user.save();
-    await userToBlock.save();
+    // Get all blocks for response (for backward compatibility)
+    const allBlocks = await Block.find({ blocker: currentUserId })
+      .populate('blocked', 'username displayName profilePhoto')
+      .lean();
+
+    const blockedUsers = allBlocks.map(b => b.blocked);
 
     res.json({
       message: 'User blocked successfully',
-      blockedUsers: user.blockedUsers
+      blockedUsers
     });
   } catch (error) {
     console.error('Block user error:', error);
@@ -114,29 +125,33 @@ router.post('/block/:userId', auth, async (req, res) => {
 });
 
 // @route   POST /api/privacy/unblock/:userId
-// @desc    Unblock a user
+// @desc    Unblock a user (MIGRATED TO BLOCK MODEL)
 // @access  Private
 router.post('/unblock/:userId', auth, async (req, res) => {
   try {
     const userIdToUnblock = req.params.userId;
     const currentUserId = req.userId;
 
-    const user = await User.findById(currentUserId);
+    // Remove block from Block collection
+    const block = await Block.findOneAndDelete({
+      blocker: currentUserId,
+      blocked: userIdToUnblock
+    });
 
-    if (!user.blockedUsers.includes(userIdToUnblock)) {
-      return res.status(400).json({ message: 'User is not blocked' });
+    if (!block) {
+      return res.status(404).json({ message: 'User is not blocked' });
     }
 
-    // Remove from blocked users
-    user.blockedUsers = user.blockedUsers.filter(
-      blockedId => blockedId.toString() !== userIdToUnblock
-    );
+    // Get remaining blocks for response (for backward compatibility)
+    const allBlocks = await Block.find({ blocker: currentUserId })
+      .populate('blocked', 'username displayName profilePhoto')
+      .lean();
 
-    await user.save();
+    const blockedUsers = allBlocks.map(b => b.blocked);
 
     res.json({
       message: 'User unblocked successfully',
-      blockedUsers: user.blockedUsers
+      blockedUsers
     });
   } catch (error) {
     console.error('Unblock user error:', error);
@@ -145,15 +160,19 @@ router.post('/unblock/:userId', auth, async (req, res) => {
 });
 
 // @route   GET /api/privacy/blocked
-// @desc    Get list of blocked users
+// @desc    Get list of blocked users (MIGRATED TO BLOCK MODEL)
 // @access  Private
 router.get('/blocked', auth, async (req, res) => {
   try {
-    const user = await User.findById(req.userId)
-      .populate('blockedUsers', 'username displayName profilePhoto');
+    // Get blocks from Block collection
+    const blocks = await Block.find({ blocker: req.userId })
+      .populate('blocked', 'username displayName profilePhoto')
+      .lean();
+
+    const blockedUsers = blocks.map(block => block.blocked);
 
     res.json({
-      blockedUsers: user.blockedUsers
+      blockedUsers
     });
   } catch (error) {
     console.error('Get blocked users error:', error);

@@ -16,6 +16,7 @@ import helmet from "helmet";
 import mongoSanitize from "express-mongo-sanitize";
 import cookieParser from "cookie-parser";
 import compression from "compression";
+import sanitizeHtml from "sanitize-html";
 
 // Import routes
 import authRoutes from './routes/auth.js';
@@ -54,6 +55,7 @@ import backupRoutes from './routes/backup.js';
 
 // Import middleware
 import auth from './middleware/auth.js';
+import { setCsrfToken, enforceCsrf } from './middleware/csrf.js';
 
 // Import rate limiters
 import {
@@ -66,7 +68,9 @@ import {
   friendRequestLimiter,
   passwordResetLimiter,
   uploadLimiter,
-  searchLimiter
+  searchLimiter,
+  reactionLimiter,
+  reportLimiter
 } from './middleware/rateLimiter.js';
 
 import connectDB from "./dbConn.js";
@@ -238,9 +242,13 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // Apply global rate limiter to all requests
 app.use(globalLimiter);
 
-// Note: CSRF protection is handled via JWT tokens for API routes
-// JWT authentication provides sufficient protection against CSRF for API endpoints
-// For traditional form-based routes, use the csrf middleware from middleware/csrf.js
+// CSRF Protection - Set token on all requests
+// This generates and sends CSRF token in cookie for client to use
+app.use(setCsrfToken);
+
+// CSRF Protection - Verify token on state-changing requests (POST, PUT, PATCH, DELETE)
+// This provides defense-in-depth even with JWT authentication
+app.use(enforceCsrf);
 
 // Store online users
 const onlineUsers = new Map(); // userId -> socketId
@@ -435,10 +443,16 @@ io.on('connection', (socket) => {
   // Handle real-time message
   socket.on('send_message', async (data) => {
     try {
+      // SECURITY: Sanitize message content to prevent XSS
+      const sanitizedContent = data.content ? sanitizeHtml(data.content, {
+        allowedTags: [],
+        allowedAttributes: {}
+      }).trim() : '';
+
       const messageData = {
         sender: userId,
         recipient: data.recipientId,
-        content: data.content,
+        content: sanitizedContent,
         attachment: data.attachment || null
       };
 

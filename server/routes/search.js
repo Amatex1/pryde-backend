@@ -9,6 +9,7 @@ import Longform from '../models/Longform.js';
 import { searchLimiter } from '../middleware/rateLimiter.js';
 import { decryptMessage } from '../utils/encryption.js';
 import logger from '../utils/logger.js';
+import { getBlockedUserIds } from '../utils/blockHelper.js';
 
 /**
  * Escape special regex characters to prevent ReDoS attacks
@@ -41,6 +42,9 @@ router.get('/', auth, searchLimiter, async (req, res) => {
       hashtags: []
     };
 
+    // Get blocked user IDs to filter them out
+    const blockedUserIds = await getBlockedUserIds(req.userId);
+
     // Search users (if type is 'all' or 'users')
     if (!type || type === 'all' || type === 'users') {
       results.users = await User.find({
@@ -48,6 +52,7 @@ router.get('/', auth, searchLimiter, async (req, res) => {
           { username: { $regex: searchQuery, $options: 'i' } },
           { displayName: { $regex: searchQuery, $options: 'i' } }
         ],
+        _id: { $nin: blockedUserIds }, // Exclude blocked users
         isActive: true, // Only show active accounts
         isBanned: { $ne: true } // Exclude banned users
       })
@@ -66,6 +71,7 @@ router.get('/', auth, searchLimiter, async (req, res) => {
       if (req.user.role !== 'super_admin') {
         postQuery.visibility = 'public';
         postQuery.hiddenFrom = { $ne: req.userId };
+        postQuery.author = { $nin: blockedUserIds }; // Exclude blocked users
       }
 
       results.posts = await Post.find(postQuery)

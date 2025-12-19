@@ -1,6 +1,7 @@
 import { memo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { convertEmojiShortcuts } from '../utils/textFormatting';
+import { sanitizeContent } from '../utils/sanitize';
 import './FormattedText.css';
 
 const FormattedText = memo(function FormattedText({ text, className = '' }) {
@@ -8,8 +9,11 @@ const FormattedText = memo(function FormattedText({ text, className = '' }) {
 
   if (!text) return null;
 
+  // SECURITY: Sanitize content to prevent XSS attacks
+  const sanitizedText = sanitizeContent(text);
+
   // Convert emoji shortcuts
-  const textWithEmojis = convertEmojiShortcuts(text);
+  const textWithEmojis = convertEmojiShortcuts(sanitizedText);
 
   // Split text into parts (words and spaces)
   const parts = textWithEmojis.split(/(\s+)/);

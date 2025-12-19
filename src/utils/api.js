@@ -25,23 +25,78 @@ const processQueue = (error, token = null) => {
   failedQueue = [];
 };
 
-// Add auth token to requests
+/**
+ * Get CSRF token from cookie
+ * The backend sets this cookie automatically on all requests
+ */
+const getCsrfToken = () => {
+  const name = 'XSRF-TOKEN=';
+  const decodedCookie = decodeURIComponent(document.cookie);
+  const cookieArray = decodedCookie.split(';');
+
+  for (let i = 0; i < cookieArray.length; i++) {
+    let cookie = cookieArray[i].trim();
+    if (cookie.indexOf(name) === 0) {
+      return cookie.substring(name.length, cookie.length);
+    }
+  }
+  return null;
+};
+
+// Add auth token and CSRF token to requests
 api.interceptors.request.use(
   (config) => {
+    // Add JWT token for authentication
     const token = getAuthToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+
+    // Add CSRF token for state-changing requests (POST, PUT, PATCH, DELETE)
+    const method = config.method?.toUpperCase();
+    if (method && !['GET', 'HEAD', 'OPTIONS'].includes(method)) {
+      const csrfToken = getCsrfToken();
+      if (csrfToken) {
+        config.headers['X-XSRF-TOKEN'] = csrfToken;
+      }
+    }
+
     return config;
   },
   (error) => Promise.reject(error)
 );
 
-// Handle 401 errors (unauthorized) - try to refresh token first
+// Handle 401 errors (unauthorized) and 403 CSRF errors
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
+
+    // Handle CSRF token errors (403)
+    if (error.response?.status === 403) {
+      const errorMessage = error.response?.data?.message || '';
+
+      // Check if it's a CSRF error
+      if (errorMessage.includes('CSRF') || errorMessage.includes('csrf')) {
+        logger.error('🛡️ CSRF token error:', errorMessage);
+
+        // If CSRF token is missing or expired, the backend will set a new one
+        // Retry the request once to get the new token
+        if (!originalRequest._csrfRetry) {
+          originalRequest._csrfRetry = true;
+
+          // Wait a moment for the new CSRF cookie to be set
+          await new Promise(resolve => setTimeout(resolve, 100));
+
+          // Retry the request with the new CSRF token
+          return api(originalRequest);
+        }
+
+        // If retry failed, show user-friendly error
+        logger.error('❌ CSRF protection failed. Please refresh the page.');
+        return Promise.reject(new Error('Security token expired. Please refresh the page and try again.'));
+      }
+    }
 
     // If error is 401 and we haven't tried to refresh yet
     if (error.response?.status === 401 && !originalRequest._retry) {

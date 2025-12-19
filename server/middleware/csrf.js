@@ -125,7 +125,23 @@ export const verifyCsrfToken = (req, res, next) => {
 };
 
 /**
- * Middleware to skip CSRF for API routes with JWT authentication
+ * Middleware to enforce CSRF for all state-changing requests
+ * Even with JWT authentication, CSRF protection adds defense in depth
+ * This prevents attacks where an attacker tricks a user's browser into making requests
+ */
+export const enforceCsrf = (req, res, next) => {
+  // Skip CSRF check for GET, HEAD, OPTIONS (safe methods)
+  if (['GET', 'HEAD', 'OPTIONS'].includes(req.method)) {
+    return next();
+  }
+
+  // For all other methods (POST, PUT, PATCH, DELETE), verify CSRF token
+  verifyCsrfToken(req, res, next);
+};
+
+/**
+ * Middleware to skip CSRF for API routes with JWT authentication (DEPRECATED)
+ * Use enforceCsrf instead for better security
  * JWT tokens provide sufficient protection for API endpoints
  */
 export const skipCsrfForApi = (req, res, next) => {
@@ -133,7 +149,7 @@ export const skipCsrfForApi = (req, res, next) => {
   if (req.headers.authorization?.startsWith('Bearer ')) {
     return next();
   }
-  
+
   // Otherwise, verify CSRF
   verifyCsrfToken(req, res, next);
 };
@@ -142,6 +158,7 @@ export default {
   generateCsrfToken,
   setCsrfToken,
   verifyCsrfToken,
+  enforceCsrf,
   skipCsrfForApi
 };
 

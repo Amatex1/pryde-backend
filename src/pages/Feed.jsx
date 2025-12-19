@@ -5,7 +5,8 @@ import PasskeyBanner from '../components/PasskeyBanner';
 import ReportModal from '../components/ReportModal';
 import PhotoViewer from '../components/PhotoViewer';
 import CustomModal from '../components/CustomModal';
-import ShareModal from '../components/ShareModal';
+// REMOVED: ShareModal - Share/Repost feature disabled until backend support is complete
+// import ShareModal from '../components/ShareModal';
 import ReactionDetailsModal from '../components/ReactionDetailsModal';
 import FormattedText from '../components/FormattedText';
 import PostSkeleton from '../components/PostSkeleton';
@@ -72,7 +73,8 @@ function Feed() {
   const [unreadMessageCounts, setUnreadMessageCounts] = useState({});
   const [trending, setTrending] = useState([]);
   const [bookmarkedPosts, setBookmarkedPosts] = useState([]);
-  const [shareModal, setShareModal] = useState({ isOpen: false, post: null });
+  // REMOVED: shareModal state - Share/Repost feature disabled
+  // const [shareModal, setShareModal] = useState({ isOpen: false, post: null });
   const [showMobileSidebar, setShowMobileSidebar] = useState(false);
   const [reactionDetailsModal, setReactionDetailsModal] = useState({ isOpen: false, reactions: [], likes: [] });
   const [feedFilter, setFeedFilter] = useState('followers'); // 'followers', 'public'
@@ -1386,20 +1388,22 @@ function Feed() {
     setReplyGif(null);
   };
 
-  const handleShare = (post) => {
-    setShareModal({ isOpen: true, post });
-  };
+  // REMOVED: Share/Repost feature - backend support incomplete (relies on deprecated Friends system)
+  // TODO: Reimplement when backend is updated to work with Followers system
+  // const handleShare = (post) => {
+  //   setShareModal({ isOpen: true, post });
+  // };
 
-  const handleShareComplete = async () => {
-    try {
-      const response = await api.post(`/posts/${shareModal.post._id}/share`);
-      setPosts(posts.map(p => p._id === shareModal.post._id ? response.data : p));
-      showAlert('Post shared successfully!', 'Shared');
-    } catch (error) {
-      logger.error('Failed to share post:', error);
-      showAlert(error.response?.data?.message || 'Failed to share post.', 'Share Failed');
-    }
-  };
+  // const handleShareComplete = async () => {
+  //   try {
+  //     const response = await api.post(`/posts/${shareModal.post._id}/share`);
+  //     setPosts(posts.map(p => p._id === shareModal.post._id ? response.data : p));
+  //     showAlert('Post shared successfully!', 'Shared');
+  //   } catch (error) {
+  //     logger.error('Failed to share post:', error);
+  //     showAlert(error.response?.data?.message || 'Failed to share post.', 'Share Failed');
+  //   }
+  // };
 
   const handleBookmark = async (postId) => {
     const isBookmarked = bookmarkedPosts.includes(postId);
@@ -2090,7 +2094,9 @@ function Feed() {
                           Comment {!post.hideMetrics && `(${post.commentCount || 0})`}
                         </span>
                       </button>
-                      <button
+                      {/* REMOVED: Share button - backend support incomplete (relies on deprecated Friends system) */}
+                      {/* TODO: Reimplement when backend is updated to work with Followers system */}
+                      {/* <button
                         className="action-btn"
                         onClick={() => handleShare(post)}
                         aria-label={`Share post${!post.hideMetrics ? ` (${post.shares?.length || 0} shares)` : ''}`}
@@ -2099,7 +2105,7 @@ function Feed() {
                         <span className="action-text">
                           Share {!post.hideMetrics && `(${post.shares?.length || 0})`}
                         </span>
-                      </button>
+                      </button> */}
                       <button
                         className={`action-btn ${bookmarkedPosts.includes(post._id) ? 'bookmarked' : ''}`}
                         onClick={() => handleBookmark(post._id)}
@@ -2530,12 +2536,13 @@ function Feed() {
         defaultValue={modalState.defaultValue}
       />
 
-      <ShareModal
+      {/* REMOVED: ShareModal - Share/Repost feature disabled until backend support is complete */}
+      {/* <ShareModal
         isOpen={shareModal.isOpen}
         onClose={() => setShareModal({ isOpen: false, post: null })}
         post={shareModal.post}
         onShare={handleShareComplete}
-      />
+      /> */}
 
       {reactionDetailsModal.isOpen && (
         <ReactionDetailsModal

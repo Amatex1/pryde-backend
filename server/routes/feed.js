@@ -8,6 +8,7 @@
 import express from 'express';
 import Post from '../models/Post.js';
 import { authenticateToken } from '../middleware/auth.js';
+import { getBlockedUserIds } from '../utils/blockHelper.js';
 
 const router = express.Router();
 
@@ -21,9 +22,15 @@ router.get('/global', authenticateToken, async (req, res) => {
     const { before, limit = 20, tag } = req.query;
     const currentUserId = req.user.id;
 
+    // Get blocked user IDs to filter them out
+    const blockedUserIds = await getBlockedUserIds(currentUserId);
+
     // Build query
-    const query = { visibility: 'public' };
-    
+    const query = {
+      visibility: 'public',
+      author: { $nin: blockedUserIds } // Exclude blocked users
+    };
+
     // Pagination: posts before a certain timestamp
     if (before) {
       query.createdAt = { $lt: new Date(before) };
@@ -76,17 +83,23 @@ router.get('/following', authenticateToken, async (req, res) => {
     // Get user's following list
     const User = (await import('../models/User.js')).default;
     const currentUser = await User.findById(currentUserId).select('following');
-    
+
     if (!currentUser) {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // Build query - posts from followed users
+    // Get blocked user IDs to filter them out
+    const blockedUserIds = await getBlockedUserIds(currentUserId);
+
+    // Build query - posts from followed users (excluding blocked users)
     const query = {
-      author: { $in: currentUser.following },
+      author: {
+        $in: currentUser.following,
+        $nin: blockedUserIds // Exclude blocked users
+      },
       visibility: { $in: ['public', 'followers'] }
     };
-    
+
     // Pagination
     if (before) {
       query.createdAt = { $lt: new Date(before) };

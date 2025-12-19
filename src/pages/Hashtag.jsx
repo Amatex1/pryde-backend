@@ -39,14 +39,16 @@ function Hashtag() {
     }
   };
 
-  const handleShare = async (postId) => {
-    try {
-      await api.post(`/posts/${postId}/share`);
-      alert('Post shared successfully!');
-    } catch (error) {
-      console.error('Failed to share post:', error);
-    }
-  };
+  // REMOVED: Share/Repost feature - backend support incomplete (relies on deprecated Friends system)
+  // TODO: Reimplement when backend is updated to work with Followers system
+  // const handleShare = async (postId) => {
+  //   try {
+  //     await api.post(`/posts/${postId}/share`);
+  //     alert('Post shared successfully!');
+  //   } catch (error) {
+  //     console.error('Failed to share post:', error);
+  //   }
+  // };
 
   return (
     <div className="page-container">
@@ -123,9 +125,11 @@ function Hashtag() {
                     <button className="action-btn">
                       <span>💬</span> Comment ({post.commentCount || 0})
                     </button>
-                    <button className="action-btn" onClick={() => handleShare(post._id)}>
+                    {/* REMOVED: Share button - backend support incomplete (relies on deprecated Friends system) */}
+                    {/* TODO: Reimplement when backend is updated to work with Followers system */}
+                    {/* <button className="action-btn" onClick={() => handleShare(post._id)}>
                       <span>🔗</span> Share ({post.shares?.length || 0})
-                    </button>
+                    </button> */}
                   </div>
 
                   {post.comments && post.comments.length > 0 && (

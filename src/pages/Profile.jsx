@@ -5,7 +5,8 @@ import ReportModal from '../components/ReportModal';
 import PhotoViewer from '../components/PhotoViewer';
 import Toast from '../components/Toast';
 import CustomModal from '../components/CustomModal';
-import ShareModal from '../components/ShareModal';
+// REMOVED: ShareModal - Share/Repost feature disabled until backend support is complete
+// import ShareModal from '../components/ShareModal';
 import EditProfileModal from '../components/EditProfileModal';
 import PhotoRepositionModal from '../components/PhotoRepositionModal';
 import ReactionDetailsModal from '../components/ReactionDetailsModal';
@@ -25,6 +26,7 @@ import { useToast } from '../hooks/useToast';
 import { convertEmojiShortcuts } from '../utils/textFormatting';
 import { getSocket } from '../utils/socket';
 import logger from '../utils/logger';
+import { sanitizeBio, sanitizeURL, sanitizeText } from '../utils/sanitize';
 import './Profile.css';
 
 function Profile() {
@@ -39,7 +41,8 @@ function Profile() {
   const [uploadMessage, setUploadMessage] = useState('');
   const [showCommentBox, setShowCommentBox] = useState({});
   const [commentText, setCommentText] = useState({});
-  const [shareModal, setShareModal] = useState({ isOpen: false, post: null });
+  // REMOVED: shareModal state - Share/Repost feature disabled
+  // const [shareModal, setShareModal] = useState({ isOpen: false, post: null });
   const [editingCommentId, setEditingCommentId] = useState(null);
   const [editCommentText, setEditCommentText] = useState('');
   const [replyingToComment, setReplyingToComment] = useState(null);
@@ -901,20 +904,22 @@ function Profile() {
     return null;
   };
 
-  const handleShare = (post) => {
-    setShareModal({ isOpen: true, post });
-  };
+  // REMOVED: Share/Repost feature - backend support incomplete (relies on deprecated Friends system)
+  // TODO: Reimplement when backend is updated to work with Followers system
+  // const handleShare = (post) => {
+  //   setShareModal({ isOpen: true, post });
+  // };
 
-  const handleShareComplete = async () => {
-    try {
-      const response = await api.post(`/posts/${shareModal.post._id}/share`);
-      setPosts((prevPosts) => prevPosts.map(p => p._id === shareModal.post._id ? response.data : p));
-      showAlert('Post shared successfully!', 'Shared');
-    } catch (error) {
-      logger.error('Failed to share post:', error);
-      showAlert(error.response?.data?.message || 'Failed to share post.', 'Share Failed');
-    }
-  };
+  // const handleShareComplete = async () => {
+  //   try {
+  //     const response = await api.post(`/posts/${shareModal.post._id}/share`);
+  //     setPosts((prevPosts) => prevPosts.map(p => p._id === shareModal.post._id ? response.data : p));
+  //     showAlert('Post shared successfully!', 'Shared');
+  //   } catch (error) {
+  //     logger.error('Failed to share post:', error);
+  //     showAlert(error.response?.data?.message || 'Failed to share post.', 'Share Failed');
+  //   }
+  // };
 
   const handleProfileUpdate = (updatedUser) => {
     setUser(updatedUser);
@@ -1374,7 +1379,7 @@ function Profile() {
 
               </div>
 
-              {user.bio && <p className="profile-bio">{user.bio}</p>}
+              {user.bio && <p className="profile-bio">{sanitizeBio(user.bio)}</p>}
 
               {!isOwnProfile && (
                 <div className="profile-action-buttons">
@@ -1449,11 +1454,11 @@ function Profile() {
 
               <div className="profile-meta">
                 {user.location && (
-                  <span className="meta-item">📍 {user.location}</span>
+                  <span className="meta-item">📍 {sanitizeText(user.location)}</span>
                 )}
                 {user.website && (
-                  <a href={user.website} target="_blank" rel="noopener noreferrer" className="meta-item">
-                    🔗 {user.website}
+                  <a href={sanitizeURL(user.website)} target="_blank" rel="noopener noreferrer" className="meta-item">
+                    🔗 {sanitizeText(user.website)}
                   </a>
                 )}
               </div>
@@ -2133,7 +2138,9 @@ function Profile() {
                             Comment {!post.hideMetrics && `(${post.commentCount || 0})`}
                           </span>
                         </button>
-                        <button
+                        {/* REMOVED: Share button - backend support incomplete (relies on deprecated Friends system) */}
+                        {/* TODO: Reimplement when backend is updated to work with Followers system */}
+                        {/* <button
                           className="action-btn"
                           onClick={() => handleShare(post)}
                           aria-label={`Share post${!post.hideMetrics ? ` (${post.shares?.length || 0} shares)` : ''}`}
@@ -2142,7 +2149,7 @@ function Profile() {
                           <span className="action-text">
                             Share {!post.hideMetrics && `(${post.shares?.length || 0})`}
                           </span>
-                        </button>
+                        </button> */}
                       </div>
 
                       {/* Comments Section - Facebook Style */}
@@ -2375,12 +2382,13 @@ function Profile() {
         />
       ))}
 
-      <ShareModal
+      {/* REMOVED: ShareModal - Share/Repost feature disabled until backend support is complete */}
+      {/* <ShareModal
         isOpen={shareModal.isOpen}
         onClose={() => setShareModal({ isOpen: false, post: null })}
         post={shareModal.post}
         onShare={handleShareComplete}
-      />
+      /> */}
 
       <EditProfileModal
         isOpen={editProfileModal}

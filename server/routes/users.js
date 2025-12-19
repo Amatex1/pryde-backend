@@ -8,6 +8,7 @@ import GroupChat from '../models/GroupChat.js';
 import Notification from '../models/Notification.js';
 import auth from '../middleware/auth.js';
 import { checkProfileVisibility, checkBlocked } from '../middleware/privacy.js';
+import { sanitizeFields } from '../middleware/sanitize.js';
 import mongoose from 'mongoose';
 
 // PHASE 1 REFACTOR: Helper function to sanitize user data for private follower counts
@@ -491,7 +492,10 @@ router.get('/:identifier', auth, checkProfileVisibility, async (req, res) => {
 // @route   PUT /api/users/profile
 // @desc    Update user profile
 // @access  Private
-router.put('/profile', auth, async (req, res) => {
+router.put('/profile', auth, sanitizeFields([
+  'fullName', 'nickname', 'customDisplayName', 'pronouns',
+  'bio', 'city', 'website', 'communicationStyle', 'safetyPreferences'
+]), async (req, res) => {
   try {
     const {
       fullName,
