@@ -45,7 +45,7 @@ export const setCsrfToken = (req, res, next) => {
   res.cookie('XSRF-TOKEN', token, {
     httpOnly: false, // Allow JavaScript to read for sending in headers
     secure: config.nodeEnv === 'production', // HTTPS only in production
-    sameSite: 'strict', // CSRF protection
+    sameSite: config.nodeEnv === 'production' ? 'none' : 'lax', // 'none' for cross-origin in production
     maxAge: 3600000 // 1 hour
   });
 
