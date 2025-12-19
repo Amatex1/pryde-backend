@@ -54,6 +54,36 @@ router.get('/', authenticateToken, async (req, res) => {
   }
 });
 
+// @route   GET /api/tags/trending
+// @desc    Get trending hashtags (alias to /api/search/trending)
+// @access  Private
+router.get('/trending', authenticateToken, async (req, res) => {
+  try {
+    const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+
+    // Build match query - only public posts from last 24 hours
+    const trendingMatchQuery = {
+      createdAt: { $gte: oneDayAgo },
+      visibility: 'public'
+    };
+
+    // Aggregate hashtags by count
+    const trending = await Post.aggregate([
+      { $match: trendingMatchQuery },
+      { $unwind: '$hashtags' },
+      { $group: { _id: '$hashtags', count: { $sum: 1 } } },
+      { $sort: { count: -1 } },
+      { $limit: 10 },
+      { $project: { hashtag: '$_id', count: 1, _id: 0 } }
+    ]);
+
+    res.json(trending);
+  } catch (error) {
+    console.error('Trending tags error:', error);
+    res.status(500).json({ message: 'Failed to fetch trending tags' });
+  }
+});
+
 // @route   GET /api/tags/:slug
 // @desc    Get a single tag by slug
 // @access  Private

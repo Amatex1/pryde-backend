@@ -13,6 +13,59 @@ import { getBlockedUserIds } from '../utils/blockHelper.js';
 const router = express.Router();
 
 /**
+ * GET /api/feed
+ * Root feed endpoint - defaults to global feed
+ * Supports page/limit params for backward compatibility
+ */
+router.get('/', authenticateToken, async (req, res) => {
+  try {
+    const { page = 1, limit = 20, tag } = req.query;
+    const currentUserId = req.user.id;
+
+    // Get blocked user IDs to filter them out
+    const blockedUserIds = await getBlockedUserIds(currentUserId);
+
+    // Build query
+    const query = {
+      visibility: 'public',
+      author: { $nin: blockedUserIds } // Exclude blocked users
+    };
+
+    // Tag filter (for Phase 4 - Community Tags)
+    if (tag) {
+      query.hashtags = tag.toLowerCase();
+    }
+
+    // Calculate skip for pagination
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+
+    // Fetch posts
+    const posts = await Post.find(query)
+      .populate('author', 'username displayName profilePhoto isVerified')
+      .populate({
+        path: 'originalPost',
+        select: 'content media author createdAt',
+        populate: {
+          path: 'author',
+          select: 'username displayName profilePhoto isVerified'
+        }
+      })
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(parseInt(limit))
+      .lean();
+
+    // Apply post sanitization (hide likes, etc.)
+    const sanitizedPosts = posts.map(post => sanitizePostForPrivateLikes(post, currentUserId));
+
+    res.json({ posts: sanitizedPosts });
+  } catch (error) {
+    console.error('Error fetching feed:', error);
+    res.status(500).json({ message: 'Failed to fetch feed' });
+  }
+});
+
+/**
  * GET /api/feed/global
  * Returns public posts in reverse chronological order
  * Optional slow weighting for promoted posts
