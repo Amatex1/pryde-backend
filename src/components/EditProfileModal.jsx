@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import api from '../utils/api';
 import { getImageUrl } from '../utils/imageUrl';
 import './EditProfileModal.css';
@@ -35,6 +35,15 @@ function EditProfileModal({ isOpen, onClose, user, onUpdate }) {
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [locationSuggestions, setLocationSuggestions] = useState([]);
 
+  // Photo positioning and zoom state
+  const [coverPos, setCoverPos] = useState({ x: 0, y: 0, scale: 1 });
+  const [avatarPos, setAvatarPos] = useState({ x: 0, y: 0, scale: 1 });
+  const [isDraggingCover, setIsDraggingCover] = useState(false);
+  const [isDraggingAvatar, setIsDraggingAvatar] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const coverPreviewRef = useRef(null);
+  const avatarPreviewRef = useRef(null);
+
   useEffect(() => {
     if (isOpen && user) {
       setFormData({
@@ -60,6 +69,18 @@ function EditProfileModal({ isOpen, onClose, user, onUpdate }) {
         safetyPreferences: user.safetyPreferences || '',
         profilePhoto: null,
         coverPhoto: null
+      });
+
+      // Initialize photo positions from user data
+      setCoverPos({
+        x: user.coverPhotoPosition?.x || 0,
+        y: user.coverPhotoPosition?.y || 0,
+        scale: user.coverPhotoPosition?.scale || 1
+      });
+      setAvatarPos({
+        x: user.profilePhotoPosition?.x || 0,
+        y: user.profilePhotoPosition?.y || 0,
+        scale: user.profilePhotoPosition?.scale || 1
       });
     }
   }, [isOpen, user]);
@@ -112,6 +133,71 @@ function EditProfileModal({ isOpen, onClose, user, onUpdate }) {
     }));
   };
 
+  // Drag handlers for cover photo
+  const startCoverDrag = (e) => {
+    e.preventDefault();
+    setIsDraggingCover(true);
+    setDragStart({ x: e.clientX - coverPos.x, y: e.clientY - coverPos.y });
+  };
+
+  const handleCoverDrag = (e) => {
+    if (!isDraggingCover) return;
+    e.preventDefault();
+    setCoverPos(prev => ({
+      ...prev,
+      x: e.clientX - dragStart.x,
+      y: e.clientY - dragStart.y
+    }));
+  };
+
+  const endCoverDrag = () => {
+    setIsDraggingCover(false);
+  };
+
+  // Drag handlers for avatar photo
+  const startAvatarDrag = (e) => {
+    e.preventDefault();
+    setIsDraggingAvatar(true);
+    setDragStart({ x: e.clientX - avatarPos.x, y: e.clientY - avatarPos.y });
+  };
+
+  const handleAvatarDrag = (e) => {
+    if (!isDraggingAvatar) return;
+    e.preventDefault();
+    setAvatarPos(prev => ({
+      ...prev,
+      x: e.clientX - dragStart.x,
+      y: e.clientY - dragStart.y
+    }));
+  };
+
+  const endAvatarDrag = () => {
+    setIsDraggingAvatar(false);
+  };
+
+  // Global mouse event listeners for dragging
+  useEffect(() => {
+    if (isDraggingCover) {
+      window.addEventListener('mousemove', handleCoverDrag);
+      window.addEventListener('mouseup', endCoverDrag);
+      return () => {
+        window.removeEventListener('mousemove', handleCoverDrag);
+        window.removeEventListener('mouseup', endCoverDrag);
+      };
+    }
+  }, [isDraggingCover, dragStart, coverPos]);
+
+  useEffect(() => {
+    if (isDraggingAvatar) {
+      window.addEventListener('mousemove', handleAvatarDrag);
+      window.addEventListener('mouseup', endAvatarDrag);
+      return () => {
+        window.removeEventListener('mousemove', handleAvatarDrag);
+        window.removeEventListener('mouseup', endAvatarDrag);
+      };
+    }
+  }, [isDraggingAvatar, dragStart, avatarPos]);
+
   const handlePhotoUpload = async (e, type) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -128,8 +214,12 @@ function EditProfileModal({ isOpen, onClose, user, onUpdate }) {
 
       if (type === 'profile') {
         setFormData(prev => ({ ...prev, profilePhoto: response.data.url }));
+        // Reset avatar position for new photo
+        setAvatarPos({ x: 0, y: 0, scale: 1 });
       } else {
         setFormData(prev => ({ ...prev, coverPhoto: response.data.url }));
+        // Reset cover position for new photo
+        setCoverPos({ x: 0, y: 0, scale: 1 });
       }
     } catch (error) {
       console.error('Failed to upload photo:', error);
@@ -141,7 +231,7 @@ function EditProfileModal({ isOpen, onClose, user, onUpdate }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!formData.fullName.trim()) {
       alert('Full Name is required');
       return;
@@ -149,7 +239,14 @@ function EditProfileModal({ isOpen, onClose, user, onUpdate }) {
 
     setLoading(true);
     try {
-      const response = await api.put('/users/profile', formData);
+      // Include photo position metadata in the update
+      const updateData = {
+        ...formData,
+        coverPhotoPosition: coverPos,
+        profilePhotoPosition: avatarPos
+      };
+
+      const response = await api.put('/users/profile', updateData);
       onUpdate(response.data.user);
       onClose();
     } catch (error) {
@@ -176,43 +273,118 @@ function EditProfileModal({ isOpen, onClose, user, onUpdate }) {
             <section className="form-section">
               <h3>📸 Visual</h3>
 
-              <div className="photo-uploads">
-                <div className="photo-upload-item">
-                  <label htmlFor="profile-photo-upload">Profile Photo</label>
-                  <div className="photo-preview">
-                    {formData.profilePhoto || user?.profilePhoto ? (
-                      <img src={getImageUrl(formData.profilePhoto || user.profilePhoto)} alt="Profile" />
-                    ) : (
-                      <div className="photo-placeholder">No photo</div>
-                    )}
+              <div className="photo-editors">
+                {/* Cover Photo Editor */}
+                <div className="photo-editor-item">
+                  <label>Cover Photo</label>
+                  <div className="photo-editor-container">
+                    <div
+                      ref={coverPreviewRef}
+                      className="photo-preview-interactive cover"
+                      onMouseDown={startCoverDrag}
+                      style={{
+                        cursor: isDraggingCover ? 'grabbing' : 'grab',
+                        overflow: 'hidden',
+                        position: 'relative',
+                        userSelect: 'none'
+                      }}
+                    >
+                      {formData.coverPhoto || user?.coverPhoto ? (
+                        <div
+                          style={{
+                            backgroundImage: `url(${getImageUrl(formData.coverPhoto || user.coverPhoto)})`,
+                            backgroundSize: 'cover',
+                            backgroundPosition: 'center',
+                            width: '100%',
+                            height: '100%',
+                            transform: `translate(${coverPos.x}px, ${coverPos.y}px) scale(${coverPos.scale})`,
+                            transformOrigin: 'center',
+                            transition: isDraggingCover ? 'none' : 'transform 0.1s ease'
+                          }}
+                        />
+                      ) : (
+                        <div className="photo-placeholder">No cover photo</div>
+                      )}
+                    </div>
+                    <div className="photo-controls">
+                      <label htmlFor="cover-zoom">Zoom: {coverPos.scale.toFixed(2)}x</label>
+                      <input
+                        id="cover-zoom"
+                        type="range"
+                        min="1"
+                        max="2"
+                        step="0.01"
+                        value={coverPos.scale}
+                        onChange={(e) => setCoverPos({ ...coverPos, scale: parseFloat(e.target.value) })}
+                        className="zoom-slider"
+                      />
+                      <input
+                        type="file"
+                        id="cover-photo-upload"
+                        accept="image/*"
+                        onChange={(e) => handlePhotoUpload(e, 'cover')}
+                        disabled={uploadingPhoto}
+                        style={{ marginTop: '8px' }}
+                      />
+                    </div>
                   </div>
-                  <input
-                    type="file"
-                    id="profile-photo-upload"
-                    name="profilePhoto"
-                    accept="image/*"
-                    onChange={(e) => handlePhotoUpload(e, 'profile')}
-                    disabled={uploadingPhoto}
-                  />
                 </div>
 
-                <div className="photo-upload-item">
-                  <label htmlFor="cover-photo-upload">Cover Photo</label>
-                  <div className="photo-preview cover">
-                    {formData.coverPhoto || user?.coverPhoto ? (
-                      <img src={getImageUrl(formData.coverPhoto || user.coverPhoto)} alt="Cover" />
-                    ) : (
-                      <div className="photo-placeholder">No cover photo</div>
-                    )}
+                {/* Profile Photo Editor */}
+                <div className="photo-editor-item">
+                  <label>Profile Photo</label>
+                  <div className="photo-editor-container">
+                    <div
+                      ref={avatarPreviewRef}
+                      className="photo-preview-interactive avatar"
+                      onMouseDown={startAvatarDrag}
+                      style={{
+                        cursor: isDraggingAvatar ? 'grabbing' : 'grab',
+                        overflow: 'hidden',
+                        position: 'relative',
+                        userSelect: 'none',
+                        borderRadius: '50%'
+                      }}
+                    >
+                      {formData.profilePhoto || user?.profilePhoto ? (
+                        <div
+                          style={{
+                            backgroundImage: `url(${getImageUrl(formData.profilePhoto || user.profilePhoto)})`,
+                            backgroundSize: 'cover',
+                            backgroundPosition: 'center',
+                            width: '100%',
+                            height: '100%',
+                            transform: `translate(${avatarPos.x}px, ${avatarPos.y}px) scale(${avatarPos.scale})`,
+                            transformOrigin: 'center',
+                            transition: isDraggingAvatar ? 'none' : 'transform 0.1s ease'
+                          }}
+                        />
+                      ) : (
+                        <div className="photo-placeholder">No photo</div>
+                      )}
+                    </div>
+                    <div className="photo-controls">
+                      <label htmlFor="avatar-zoom">Zoom: {avatarPos.scale.toFixed(2)}x</label>
+                      <input
+                        id="avatar-zoom"
+                        type="range"
+                        min="1"
+                        max="2"
+                        step="0.01"
+                        value={avatarPos.scale}
+                        onChange={(e) => setAvatarPos({ ...avatarPos, scale: parseFloat(e.target.value) })}
+                        className="zoom-slider"
+                      />
+                      <input
+                        type="file"
+                        id="profile-photo-upload"
+                        accept="image/*"
+                        onChange={(e) => handlePhotoUpload(e, 'profile')}
+                        disabled={uploadingPhoto}
+                        style={{ marginTop: '8px' }}
+                      />
+                    </div>
                   </div>
-                  <input
-                    type="file"
-                    id="cover-photo-upload"
-                    name="coverPhoto"
-                    accept="image/*"
-                    onChange={(e) => handlePhotoUpload(e, 'cover')}
-                    disabled={uploadingPhoto}
-                  />
                 </div>
               </div>
             </section>

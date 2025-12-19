@@ -8,7 +8,6 @@ import CustomModal from '../components/CustomModal';
 // REMOVED: ShareModal - Share/Repost feature disabled until backend support is complete
 // import ShareModal from '../components/ShareModal';
 import EditProfileModal from '../components/EditProfileModal';
-import PhotoRepositionModal from '../components/PhotoRepositionModal';
 import ReactionDetailsModal from '../components/ReactionDetailsModal';
 import FormattedText from '../components/FormattedText';
 import ProfileSkeleton from '../components/ProfileSkeleton';
@@ -91,7 +90,6 @@ function Profile() {
   const [editPostVisibility, setEditPostVisibility] = useState('friends');
   const [reactionDetailsModal, setReactionDetailsModal] = useState({ isOpen: false, reactions: [], likes: [] });
   const [profileError, setProfileError] = useState(null); // Track profile loading errors
-  const [repositionModal, setRepositionModal] = useState({ isOpen: false, photoType: null, photoUrl: null, position: null });
   const [searchResults, setSearchResults] = useState(null); // Search results from ProfilePostSearch
   const [showEditHistory, setShowEditHistory] = useState(false);
   const [editHistoryPostId, setEditHistoryPostId] = useState(null);
@@ -980,53 +978,7 @@ function Profile() {
     }
   };
 
-  const handlePhotoUpload = async (e, type) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    const formData = new FormData();
-    formData.append('photo', file);
-
-    try {
-      const endpoint = type === 'profile' ? '/upload/profile-photo' : '/upload/cover-photo';
-      await api.post(endpoint, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
-      setUploadMessage(`${type === 'profile' ? 'Profile' : 'Cover'} photo updated!`);
-      setTimeout(() => setUploadMessage(''), 3000);
-      fetchUserProfile();
-    } catch (error) {
-      setUploadMessage('Failed to upload photo');
-      setTimeout(() => setUploadMessage(''), 3000);
-      logger.error('Upload error:', error);
-    }
-  };
-
-  const handleOpenRepositionModal = (type) => {
-    const photoUrl = type === 'profile' ? user.profilePhoto : user.coverPhoto;
-    const position = type === 'profile' ? user.profilePhotoPosition : user.coverPhotoPosition;
-
-    setRepositionModal({
-      isOpen: true,
-      photoType: type,
-      photoUrl,
-      position: position || { x: 50, y: 50 }
-    });
-  };
-
-  const handleCloseRepositionModal = () => {
-    setRepositionModal({ isOpen: false, photoType: null, photoUrl: null, position: null });
-  };
-
-  const handleUpdatePhotoPosition = (newPosition) => {
-    // Update local user state with new position
-    setUser(prev => ({
-      ...prev,
-      [repositionModal.photoType === 'profile' ? 'profilePhotoPosition' : 'coverPhotoPosition']: newPosition
-    }));
-    setUploadMessage(`${repositionModal.photoType === 'profile' ? 'Profile' : 'Cover'} photo repositioned!`);
-    setTimeout(() => setUploadMessage(''), 3000);
-  };
+  // REMOVED: Photo upload and reposition handlers - All image editing moved to EditProfileModal
 
   const handleAddFriend = async () => {
     try {
@@ -1272,49 +1224,7 @@ function Profile() {
           )}
 
           <div className="profile-info">
-            {/* Photo Upload Buttons - Top right under cover photo */}
-            {isOwnProfile && (
-              <div className="profile-upload-buttons">
-                <label htmlFor="profile-photo-upload" className="btn-profile-upload">
-                  📷 Update Profile Photo
-                  <input
-                    type="file"
-                    id="profile-photo-upload"
-                    accept="image/*"
-                    onChange={(e) => handlePhotoUpload(e, 'profile')}
-                    style={{ display: 'none' }}
-                  />
-                </label>
-                {user.profilePhoto && (
-                  <button
-                    className="btn-profile-upload"
-                    onClick={() => handleOpenRepositionModal('profile')}
-                    title="Reposition Profile Photo"
-                  >
-                    🔄 Reposition Profile
-                  </button>
-                )}
-                <label htmlFor="cover-photo-upload" className="btn-profile-upload">
-                  🖼️ Update Cover Photo
-                  <input
-                    type="file"
-                    id="cover-photo-upload"
-                    accept="image/*"
-                    onChange={(e) => handlePhotoUpload(e, 'cover')}
-                    style={{ display: 'none' }}
-                  />
-                </label>
-                {user.coverPhoto && (
-                  <button
-                    className="btn-profile-upload"
-                    onClick={() => handleOpenRepositionModal('cover')}
-                    title="Reposition Cover Photo"
-                  >
-                    🔄 Reposition Cover
-                  </button>
-                )}
-              </div>
-            )}
+            {/* Photo Upload Buttons - REMOVED: All image editing moved to Edit Profile modal */}
             <div className="profile-avatar">
               {user.profilePhoto ? (
                 <OptimizedImage
@@ -2470,16 +2380,7 @@ function Profile() {
         />
       )}
 
-      {repositionModal.isOpen && (
-        <PhotoRepositionModal
-          isOpen={repositionModal.isOpen}
-          onClose={handleCloseRepositionModal}
-          photoUrl={repositionModal.photoUrl}
-          photoType={repositionModal.photoType}
-          currentPosition={repositionModal.position}
-          onUpdate={handleUpdatePhotoPosition}
-        />
-      )}
+      {/* REMOVED: PhotoRepositionModal - All image editing moved to Edit Profile modal */}
 
       <EditHistoryModal
         isOpen={showEditHistory}

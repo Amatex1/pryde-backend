@@ -86,7 +86,8 @@ const userSchema = new mongoose.Schema({
   },
   profilePhotoPosition: {
     x: { type: Number, default: 50 },
-    y: { type: Number, default: 50 }
+    y: { type: Number, default: 50 },
+    scale: { type: Number, default: 1 }
   },
   coverPhoto: {
     type: String,
@@ -94,7 +95,8 @@ const userSchema = new mongoose.Schema({
   },
   coverPhotoPosition: {
     x: { type: Number, default: 50 },
-    y: { type: Number, default: 50 }
+    y: { type: Number, default: 50 },
+    scale: { type: Number, default: 1 }
   },
   location: {
     type: String,

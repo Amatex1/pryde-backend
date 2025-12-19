@@ -515,7 +515,9 @@ router.put('/profile', auth, sanitizeFields([
       interests,
       lookingFor,
       communicationStyle,
-      safetyPreferences
+      safetyPreferences,
+      coverPhotoPosition,
+      profilePhotoPosition
     } = req.body;
 
     const user = await User.findById(req.userId);
@@ -544,6 +546,24 @@ router.put('/profile', auth, sanitizeFields([
     if (communicationStyle !== undefined) user.communicationStyle = communicationStyle;
     if (safetyPreferences !== undefined) user.safetyPreferences = safetyPreferences;
 
+    // Update photo positions (includes x, y, scale)
+    if (coverPhotoPosition !== undefined) {
+      user.coverPhotoPosition = {
+        x: coverPhotoPosition.x ?? user.coverPhotoPosition.x ?? 50,
+        y: coverPhotoPosition.y ?? user.coverPhotoPosition.y ?? 50,
+        scale: coverPhotoPosition.scale ?? user.coverPhotoPosition.scale ?? 1
+      };
+      user.markModified('coverPhotoPosition');
+    }
+    if (profilePhotoPosition !== undefined) {
+      user.profilePhotoPosition = {
+        x: profilePhotoPosition.x ?? user.profilePhotoPosition.x ?? 50,
+        y: profilePhotoPosition.y ?? user.profilePhotoPosition.y ?? 50,
+        scale: profilePhotoPosition.scale ?? user.profilePhotoPosition.scale ?? 1
+      };
+      user.markModified('profilePhotoPosition');
+    }
+
     // Update displayName based on displayNameType
     if (displayNameType === 'fullName') {
       user.displayName = fullName;
@@ -563,11 +583,11 @@ router.put('/profile', auth, sanitizeFields([
 });
 
 // @route   PUT /api/users/photo-position
-// @desc    Update profile or cover photo position
+// @desc    Update profile or cover photo position (DEPRECATED - use /users/profile instead)
 // @access  Private
 router.put('/photo-position', auth, async (req, res) => {
   try {
-    const { type, x, y } = req.body;
+    const { type, x, y, scale } = req.body;
 
     if (!type || (type !== 'profile' && type !== 'cover')) {
       return res.status(400).json({ message: 'Invalid photo type' });
@@ -583,11 +603,21 @@ router.put('/photo-position', auth, async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // Update position
+    // Update position (with optional scale parameter)
     if (type === 'profile') {
-      user.profilePhotoPosition = { x, y };
+      user.profilePhotoPosition = {
+        x,
+        y,
+        scale: typeof scale === 'number' ? scale : user.profilePhotoPosition.scale ?? 1
+      };
+      user.markModified('profilePhotoPosition');
     } else {
-      user.coverPhotoPosition = { x, y };
+      user.coverPhotoPosition = {
+        x,
+        y,
+        scale: typeof scale === 'number' ? scale : user.coverPhotoPosition.scale ?? 1
+      };
+      user.markModified('coverPhotoPosition');
     }
 
     await user.save();
