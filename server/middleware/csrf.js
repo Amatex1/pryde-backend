@@ -5,20 +5,10 @@ import config from '../config/config.js';
  * CSRF Protection Middleware
  * Uses double-submit cookie pattern with SameSite cookies
  * This is a modern alternative to the deprecated csurf package
+ *
+ * CRITICAL: Tokens are NOT stored server-side
+ * Security relies on comparing cookie value to header value (double-submit pattern)
  */
-
-// Store for CSRF tokens (in production, use Redis or similar)
-const csrfTokens = new Map();
-
-// Clean up old tokens every hour
-setInterval(() => {
-  const now = Date.now();
-  for (const [token, data] of csrfTokens.entries()) {
-    if (now - data.timestamp > 3600000) { // 1 hour
-      csrfTokens.delete(token);
-    }
-  }
-}, 3600000);
 
 /**
  * Generate a CSRF token
@@ -29,74 +19,41 @@ export const generateCsrfToken = () => {
 
 /**
  * Middleware to generate and set CSRF token
- * Use this on routes that render forms or need CSRF protection
+ * CRITICAL: Reuse existing token to prevent 403 errors on subsequent requests
  */
 export const setCsrfToken = (req, res, next) => {
-  // Check if client already has a valid CSRF token
-  const existingToken = req.cookies?.['XSRF-TOKEN'];
+  // CRITICAL: Reuse existing XSRF-TOKEN cookie if present
+  let token = req.cookies['XSRF-TOKEN'];
 
-  // If token exists and is still valid, reuse it
-  if (existingToken && csrfTokens.has(existingToken)) {
-    const tokenData = csrfTokens.get(existingToken);
+  // Only generate a new token if one does not already exist
+  if (!token) {
+    token = generateCsrfToken();
 
-    // Check if token is not expired (1 hour)
-    if (Date.now() - tokenData.timestamp <= 3600000) {
-      // Token is still valid, reuse it
-      req.csrfToken = existingToken;
-      res.locals.csrfToken = existingToken;
-      if (config.nodeEnv === 'development') {
-        console.log('✅ Reusing existing CSRF token');
-      }
-      return next();
-    } else {
-      // Token expired, remove it
-      csrfTokens.delete(existingToken);
-      if (config.nodeEnv === 'development') {
-        console.log('⏰ CSRF token expired, generating new one');
-      }
+    const cookieOptions = {
+      httpOnly: false, // Allow JavaScript to read for sending in headers
+      secure: config.nodeEnv === 'production', // HTTPS only in production
+      sameSite: config.nodeEnv === 'production' ? 'none' : 'lax', // 'none' for cross-origin in production
+      path: '/', // Available on all routes
+      maxAge: 3600000 // 1 hour
+    };
+
+    // Set cookie with SameSite attribute
+    res.cookie('XSRF-TOKEN', token, cookieOptions);
+
+    if (config.nodeEnv === 'development') {
+      console.log('🍪 Generated new CSRF token:', token.substring(0, 10) + '...');
+    }
+  } else {
+    if (config.nodeEnv === 'development') {
+      console.log('✅ Reusing existing CSRF token:', token.substring(0, 10) + '...');
     }
   }
 
-  // Generate new token only if needed
-  const token = generateCsrfToken();
-
-  // Store token with timestamp
-  csrfTokens.set(token, {
-    timestamp: Date.now(),
-    userId: req.userId || null
-  });
-
-  const cookieOptions = {
-    httpOnly: false, // Allow JavaScript to read for sending in headers
-    secure: config.nodeEnv === 'production', // HTTPS only in production
-    sameSite: config.nodeEnv === 'production' ? 'none' : 'lax', // 'none' for cross-origin in production
-    path: '/', // Available on all routes
-    maxAge: 3600000 // 1 hour
-  };
-
-  // Set cookie with SameSite attribute
-  res.cookie('XSRF-TOKEN', token, cookieOptions);
-
-  // IMPORTANT: Also send token in response header for cross-origin requests
+  // IMPORTANT: Always send token in response header for cross-origin requests
   // Cross-origin cookies with sameSite='none' are not accessible via document.cookie
-  // So we need to send the token in a header that the frontend can read
   res.setHeader('X-CSRF-Token', token);
 
-  // ALWAYS log in production to debug header issue
-  console.log('🔐 CSRF Token Header Set:', {
-    token: token.substring(0, 10) + '...',
-    headerSet: res.getHeader('X-CSRF-Token') !== undefined,
-    environment: config.nodeEnv
-  });
-
-  if (config.nodeEnv === 'development') {
-    console.log('🍪 Setting new CSRF token cookie:', {
-      token: token.substring(0, 10) + '...',
-      options: cookieOptions
-    });
-  }
-
-  // Also make it available in response
+  // Make token available in request/response
   req.csrfToken = token;
   res.locals.csrfToken = token;
 
@@ -105,7 +62,8 @@ export const setCsrfToken = (req, res, next) => {
 
 /**
  * Middleware to verify CSRF token
- * Use this on state-changing routes (POST, PUT, DELETE, PATCH)
+ * CRITICAL: Only compare cookie token to header token (double-submit pattern)
+ * Do NOT regenerate tokens during verification
  */
 export const verifyCsrfToken = (req, res, next) => {
   // Skip CSRF check for GET, HEAD, OPTIONS
@@ -113,61 +71,55 @@ export const verifyCsrfToken = (req, res, next) => {
     return next();
   }
 
-  // Get token from header or body
-  const token = req.headers['x-xsrf-token'] || 
-                req.headers['x-csrf-token'] || 
-                req.body._csrf ||
-                req.query._csrf;
+  // Read token from cookie
+  const cookieToken = req.cookies['XSRF-TOKEN'];
 
-  // Get token from cookie
-  const cookieToken = req.cookies?.['XSRF-TOKEN'];
+  // Read token from header (x-xsrf-token OR x-csrf-token)
+  const headerToken = req.headers['x-xsrf-token'] || req.headers['x-csrf-token'];
 
   // In development, log CSRF attempts
   if (config.nodeEnv === 'development') {
     console.log('🛡️ CSRF Check:', {
       method: req.method,
       path: req.path,
-      hasToken: !!token,
       hasCookie: !!cookieToken,
-      tokensMatch: token === cookieToken
+      hasHeader: !!headerToken,
+      tokensMatch: cookieToken === headerToken
     });
   }
 
-  // Verify token exists
-  if (!token || !cookieToken) {
-    return res.status(403).json({ 
+  // Reject if missing
+  if (!cookieToken || !headerToken) {
+    if (config.nodeEnv === 'development') {
+      console.log('❌ CSRF token missing:', {
+        cookieToken: cookieToken ? cookieToken.substring(0, 10) + '...' : 'MISSING',
+        headerToken: headerToken ? headerToken.substring(0, 10) + '...' : 'MISSING'
+      });
+    }
+    return res.status(403).json({
       message: 'CSRF token missing',
       error: 'Invalid CSRF token'
     });
   }
 
-  // Verify tokens match (double-submit cookie pattern)
-  if (token !== cookieToken) {
-    return res.status(403).json({ 
+  // Reject if mismatched
+  if (cookieToken !== headerToken) {
+    if (config.nodeEnv === 'development') {
+      console.log('❌ CSRF token mismatch:', {
+        cookieToken: cookieToken.substring(0, 10) + '...',
+        headerToken: headerToken.substring(0, 10) + '...'
+      });
+    }
+    return res.status(403).json({
       message: 'CSRF token mismatch',
       error: 'Invalid CSRF token'
     });
   }
 
-  // Verify token exists in our store
-  const tokenData = csrfTokens.get(token);
-  if (!tokenData) {
-    return res.status(403).json({ 
-      message: 'CSRF token expired or invalid',
-      error: 'Invalid CSRF token'
-    });
+  // Allow request if values match exactly
+  if (config.nodeEnv === 'development') {
+    console.log('✅ CSRF token valid');
   }
-
-  // Verify token is not too old (1 hour)
-  if (Date.now() - tokenData.timestamp > 3600000) {
-    csrfTokens.delete(token);
-    return res.status(403).json({ 
-      message: 'CSRF token expired',
-      error: 'Invalid CSRF token'
-    });
-  }
-
-  // Token is valid
   next();
 };
 
