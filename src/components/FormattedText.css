@@ -34,67 +34,10 @@
 }
 
 /* ========================================
-   DARK MODE SUPPORT (WCAG AAA Compliant)
+   THEME SUPPORT
+   All theming handled by CSS variables in variables.css
+   Link colors use --link-accent and --link-primary (WCAG AAA compliant)
    ======================================== */
-
-[data-theme="dark"] .hashtag-link {
-  color: var(--link-accent);  /* WCAG AAA: 7.1:1 on dark bg */
-}
-
-[data-theme="dark"] .hashtag-link:hover {
-  color: var(--link-primary);  /* WCAG AAA: 7.3:1 on dark bg */
-}
-
-[data-theme="dark"] .mention-link {
-  color: var(--link-primary);  /* WCAG AAA: 7.3:1 on dark bg */
-}
-
-[data-theme="dark"] .mention-link:hover {
-  color: var(--link-accent);  /* WCAG AAA: 7.1:1 on dark bg */
-}
-
-[data-theme="dark"] .url-link {
-  color: var(--link-accent);  /* WCAG AAA: 7.1:1 on dark bg */
-}
-
-[data-theme="dark"] .url-link:hover {
-  color: var(--link-primary);  /* WCAG AAA: 7.3:1 on dark bg */
-}
-
-/* Legacy dark mode support (for backwards compatibility) */
-@media (prefers-color-scheme: dark) {
-  .hashtag-link {
-    color: #74b9ff;
-  }
-
-  .hashtag-link:hover {
-    color: #a29bfe;
-  }
-
-  .mention-link {
-    color: #a29bfe;
-  }
-
-  .mention-link:hover {
-    color: #74b9ff;
-  }
-
-  .url-link {
-    color: #74b9ff;
-  }
-
-  .url-link:hover {
-    color: #a29bfe;
-  }
-}
-
-/* ========================================
-   QUIET MODE SUPPORT
-   ======================================== */
-
-[data-quiet-mode="true"] .formatted-text a:hover {
-  transform: none;
-}
 
 /* ========================================
    REDUCED MOTION SUPPORT (ACCESSIBILITY)

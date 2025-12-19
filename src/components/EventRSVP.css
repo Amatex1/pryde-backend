@@ -27,7 +27,7 @@
 
 .rsvp-btn:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-medium);
 }
 
 .rsvp-btn:disabled {
@@ -36,18 +36,18 @@
 }
 
 .rsvp-btn.going {
-  border-color: #4CAF50;
+  border-color: var(--color-success);
 }
 
 .rsvp-btn.going:hover:not(:disabled) {
-  background: rgba(76, 175, 80, 0.1);
-  border-color: #4CAF50;
+  background: color-mix(in srgb, var(--color-success) 10%, transparent);
+  border-color: var(--color-success);
 }
 
 .rsvp-btn.going.active {
-  background: #4CAF50;
-  color: white;
-  border-color: #4CAF50;
+  background: var(--color-success);
+  color: var(--text-inverse);
+  border-color: var(--color-success);
 }
 
 .rsvp-btn.interested {
@@ -55,8 +55,8 @@
 }
 
 .rsvp-btn.interested:hover:not(:disabled) {
-  background: rgba(9, 132, 227, 0.1);
-  border-color: var(--electric-blue);
+  background: color-mix(in srgb, var(--accent-secondary) 10%, transparent);
+  border-color: var(--accent-secondary);
 }
 
 .rsvp-btn.interested.active {
@@ -74,7 +74,7 @@
 }
 
 .rsvp-count {
-  background: rgba(255, 255, 255, 0.3);
+  background: color-mix(in srgb, var(--text-inverse) 30%, transparent);
   padding: 2px 8px;
   border-radius: 12px;
   font-size: 0.8rem;
@@ -83,69 +83,13 @@
 }
 
 .rsvp-btn.active .rsvp-count {
-  background: rgba(255, 255, 255, 0.25);
+  background: color-mix(in srgb, var(--text-inverse) 25%, transparent);
 }
 
 /* ========================================
-   DARK MODE SUPPORT
+   THEME SUPPORT
+   All theming handled by CSS variables in variables.css
    ======================================== */
-
-[data-theme="dark"] .rsvp-btn {
-  background: rgba(255, 255, 255, 0.03);
-  border-color: rgba(255, 255, 255, 0.1);
-  color: #ffffff;
-}
-
-[data-theme="dark"] .rsvp-btn:hover:not(:disabled) {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-}
-
-[data-theme="dark"] .rsvp-btn.going {
-  border-color: #4CAF50;
-}
-
-[data-theme="dark"] .rsvp-btn.going:hover:not(:disabled) {
-  background: rgba(76, 175, 80, 0.15);
-  border-color: #4CAF50;
-}
-
-[data-theme="dark"] .rsvp-btn.going.active {
-  background: #4CAF50;
-  color: white;
-}
-
-[data-theme="dark"] .rsvp-btn.interested {
-  border-color: var(--color-accent);
-}
-
-[data-theme="dark"] .rsvp-btn.interested:hover:not(:disabled) {
-  background: rgba(9, 132, 227, 0.15);
-  border-color: var(--color-accent);
-}
-
-[data-theme="dark"] .rsvp-btn.interested.active {
-  background: var(--color-accent);
-  color: white;
-}
-
-/* Legacy dark mode support (for backwards compatibility) */
-body.dark-mode .rsvp-btn {
-  background: var(--bg-primary-dark);
-  border-color: var(--border-color-dark);
-}
-
-body.dark-mode .rsvp-btn.going:hover:not(:disabled) {
-  background: rgba(76, 175, 80, 0.15);
-}
-
-body.dark-mode .rsvp-btn.interested:hover:not(:disabled) {
-  background: rgba(9, 132, 227, 0.15);
-}
-
-/* Quiet mode - hide counts */
-body.quiet-mode .rsvp-count {
-  display: none;
-}
 
 /* Responsive */
 @media (max-width: 480px) {
@@ -159,20 +103,14 @@ body.quiet-mode .rsvp-count {
 }
 
 /* ========================================
-   QUIET MODE SUPPORT
-   ======================================== */
-
-[data-quiet-mode="true"] .event-rsvp {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-}
-
-[data-quiet-mode="true"] .rsvp-btn:hover {
-  transform: none;
-}
-
-/* ========================================
    REDUCED MOTION SUPPORT (ACCESSIBILITY)
    ======================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  .rsvp-btn:hover {
+    transform: none;
+  }
+}
 
 @media (prefers-reduced-motion: reduce) {
   .event-rsvp,
