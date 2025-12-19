@@ -197,24 +197,24 @@
 }
 
 /* ========================================
-   POSTS LIST
+   POSTS LIST - CALM, STACKABLE DESIGN
    ======================================== */
 
 .posts-list {
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
+  gap: var(--space-3); /* Reduced from var(--space-4) - tighter spacing */
 }
 
 .post-card {
-  padding: var(--space-4) 18px;
-  border-radius: var(--radius-card);
+  padding: var(--space-md) 18px; /* Reduced from var(--space-4) to var(--space-md) */
+  border-radius: var(--border-radius-md); /* Reduced from var(--radius-card) */
   background: var(--bg-card);
   border: 1px solid var(--border-subtle);
   box-shadow: var(--shadow-soft);
   transition: all 0.2s ease;
   min-width: 0;
-  min-height: 150px;
+  /* REMOVED min-height: 150px - let content define height */
   overflow: visible;
   word-wrap: break-word;
   contain: layout;
@@ -2291,8 +2291,8 @@ html:not([data-theme])[data-quiet-mode="true"] .hide-metrics-checkbox:hover {
 
   .create-post,
   .post-card {
-    padding: 1.5rem;
-    border-radius: 16px;
+    padding: var(--space-md); /* Reduced from 1.5rem - lighter, stackable cards */
+    border-radius: var(--border-radius-md); /* Reduced from 16px */
   }
 
   .post-actions {
@@ -2773,8 +2773,8 @@ html:not([data-theme])[data-quiet-mode="true"] .hide-metrics-checkbox:hover {
 
   .create-post,
   .post-card {
-    padding: 1rem;
-    border-radius: 12px;
+    padding: var(--space-md); /* Consistent with other mobile breakpoint */
+    border-radius: var(--border-radius-md);
   }
 
   /* Removed - conflicts with mobile icon-only styles above */
@@ -2900,13 +2900,28 @@ label.btn-media-upload:disabled {
   transform: scale(1.1);
 }
 
-/* Post Media Grid */
+/* ========================================
+   POST MEDIA - CONTAINED, SUPPORTIVE DESIGN
+   Images feel supportive, not dominant
+   ======================================== */
+
 .post-media-grid {
-  margin-top: 1rem;
+  margin-top: var(--space-sm); /* Reduced from 1rem */
+  margin-bottom: var(--space-sm); /* Added bottom margin */
   display: grid;
   gap: 0.5rem;
-  border-radius: 12px;
+  /* Soft framing - image belongs inside the post */
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  border-radius: var(--border-radius-sm);
+  padding: var(--space-xs);
   overflow: hidden;
+}
+
+/* Dark mode support for soft framing */
+[data-theme="dark"] .post-media-grid {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .post-media-grid.single {
@@ -2925,19 +2940,21 @@ label.btn-media-upload:disabled {
   position: relative;
   width: 100%;
   background: var(--bg-light);
-  border-radius: 8px;
+  border-radius: var(--border-radius-sm);
   overflow: hidden;
   aspect-ratio: 16 / 9;
 }
 
+/* DESKTOP: Contained image height */
 .post-media-grid.single .post-media-item {
-  max-height: 600px;
+  max-height: 420px; /* Reduced from 600px - images feel supportive, not dominant */
   aspect-ratio: auto;
 }
 
 .post-media-grid.double .post-media-item,
 .post-media-grid.multiple .post-media-item {
   aspect-ratio: 1;
+  max-height: 300px; /* Prevent tall images */
 }
 
 .post-media-item img,
@@ -2946,11 +2963,12 @@ label.btn-media-upload:disabled {
   height: 100%;
   object-fit: cover;
   cursor: pointer;
-  transition: transform 0.3s ease;
+  /* REMOVED hover scale effect - no zoom or hover effects */
+  transition: opacity 0.2s ease;
 }
 
 .post-media-item img:hover {
-  transform: scale(1.05);
+  opacity: 0.95; /* Subtle feedback only */
 }
 
 .post-media-item video {
@@ -2996,6 +3014,22 @@ label.btn-media-upload:disabled {
 
   .post-media-grid.multiple {
     grid-template-columns: repeat(2, 1fr);
+  }
+
+  /* MOBILE: Images never exceed 50% of viewport height */
+  .post-media-grid.single .post-media-item {
+    max-height: 300px; /* Reduced from 420px on desktop */
+    max-height: 50vh; /* Never exceed half viewport */
+  }
+
+  .post-media-grid.double .post-media-item,
+  .post-media-grid.multiple .post-media-item {
+    max-height: 200px; /* Smaller on mobile */
+  }
+
+  /* Feed cards feel stackable on mobile */
+  .posts-list {
+    gap: var(--space-2); /* Even tighter on mobile */
   }
 }
 

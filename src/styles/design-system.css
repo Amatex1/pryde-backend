@@ -16,7 +16,10 @@
      ======================================== */
   --space-xs: 4px;   /* Tiny gaps */
   --space-sm: 8px;   /* Small gaps */
+  --space-2: 12px;   /* Between sm and md */
+  --space-3: 14px;   /* Between sm and md */
   --space-md: 16px;  /* Default spacing */
+  --space-4: 18px;   /* Between md and lg */
   --space-lg: 24px;  /* Section spacing */
   --space-xl: 32px;  /* Large section spacing */
   --space-2xl: 48px; /* Page-level spacing */
