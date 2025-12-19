@@ -345,18 +345,22 @@ app.get('/api/status', (req, res) => {
 
 // Socket.IO authentication middleware
 io.use(async (socket, next) => {
-  const token = socket.handshake.auth.token;
+  // Try to get token from auth object first, then from Authorization header
+  const token = socket.handshake.auth?.token ||
+                socket.handshake.headers?.authorization?.split(' ')[1];
 
   if (config.nodeEnv === 'development') {
     console.log('🔌 Socket.IO authentication attempt');
     console.log('🔑 Token received:', token ? 'Yes' : 'No');
+    console.log('🔑 Token source:', socket.handshake.auth?.token ? 'auth.token' :
+                socket.handshake.headers?.authorization ? 'Authorization header' : 'none');
   }
 
   if (!token) {
     if (config.nodeEnv === 'development') {
       console.log('❌ No token provided');
     }
-    return next(new Error('Authentication error'));
+    return next(new Error('Authentication required'));
   }
 
   try {

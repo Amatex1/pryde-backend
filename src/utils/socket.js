@@ -27,17 +27,19 @@ export const connectSocket = (userId) => {
             }
         }
 
-        logger.debug('🔌 Connecting socket with userId:', userId);
+        logger.debug('🔌 Connecting socket (userId from JWT)');
         logger.debug('🔑 Token exists:', !!token);
         logger.debug('🔑 Token preview:', token ? token.substring(0, 20) + '...' : 'null');
 
         socket = io(SOCKET_URL, {
-            // Use polling first for faster connection on Render
-            transports: ["polling", "websocket"],
+            // Use websocket first, fallback to polling
+            transports: ["websocket", "polling"],
+            // ✅ Send JWT via auth object (NOT query params)
+            // Identity comes from verified JWT, not client-provided userId
             auth: {
                 token: token
             },
-            query: { userId },
+            // ❌ REMOVED: query: { userId } - Identity now from JWT only
             reconnection: true,
             reconnectionDelay: 1000,
             reconnectionDelayMax: 5000,
@@ -45,6 +47,7 @@ export const connectSocket = (userId) => {
             timeout: 10000, // 10 second timeout instead of default 20s
             forceNew: true, // Force new connection to use new token
             upgrade: true, // Allow upgrade to websocket after polling connects
+            withCredentials: true // Enable cookies for cross-origin
         });
 
         // Add connection event listeners

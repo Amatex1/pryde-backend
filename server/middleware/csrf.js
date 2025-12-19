@@ -134,6 +134,11 @@ export const verifyCsrfToken = (req, res, next) => {
  * This prevents attacks where an attacker tricks a user's browser into making requests
  */
 export const enforceCsrf = (req, res, next) => {
+  // ✅ Skip CSRF for Socket.IO (uses JWT auth in handshake)
+  if (req.path.startsWith('/socket.io')) {
+    return next();
+  }
+
   // Skip CSRF check for GET, HEAD, OPTIONS (safe methods)
   if (['GET', 'HEAD', 'OPTIONS'].includes(req.method)) {
     return next();
