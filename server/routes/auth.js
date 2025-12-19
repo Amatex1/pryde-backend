@@ -24,6 +24,59 @@ import logger from '../utils/logger.js';
 import { generateTokenPair, getRefreshTokenExpiry } from '../utils/tokenUtils.js';
 import { getRefreshTokenCookieOptions } from '../utils/cookieUtils.js';
 
+// @route   GET /api/auth/status
+// @desc    Check authentication status (lightweight endpoint for CSRF initialization)
+// @access  Public (returns auth status without requiring token)
+router.get('/status', async (req, res) => {
+  try {
+    // Try to get token from cookies or header
+    let token = req.cookies?.token || req.cookies?.accessToken;
+    if (!token) {
+      token = req.header('Authorization')?.replace('Bearer ', '');
+    }
+
+    // If no token, user is not authenticated
+    if (!token) {
+      return res.json({
+        authenticated: false,
+        user: null
+      });
+    }
+
+    // Verify token
+    try {
+      const decoded = jwt.verify(token, config.jwtSecret);
+      const user = await User.findById(decoded.userId).select('_id username displayName profilePhoto');
+
+      if (!user) {
+        return res.json({
+          authenticated: false,
+          user: null
+        });
+      }
+
+      return res.json({
+        authenticated: true,
+        user: {
+          id: user._id,
+          username: user.username,
+          displayName: user.displayName,
+          profilePhoto: user.profilePhoto
+        }
+      });
+    } catch (tokenError) {
+      // Token invalid or expired
+      return res.json({
+        authenticated: false,
+        user: null
+      });
+    }
+  } catch (error) {
+    logger.error('Auth status check error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // @route   GET /api/auth/check-username/:username
 // @desc    Check if username is available
 // @access  Public

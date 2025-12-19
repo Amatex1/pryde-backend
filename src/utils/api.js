@@ -140,6 +140,20 @@ api.interceptors.response.use(
 
     // If error is 401 and we haven't tried to refresh yet
     if (error.response?.status === 401 && !originalRequest._retry) {
+      // CRITICAL: Never attempt refresh on login/register pages
+      const currentPath = window.location.pathname;
+      if (currentPath === '/login' || currentPath === '/register' || currentPath === '/') {
+        logger.debug('⏸️ Skipping refresh on public page:', currentPath);
+        return Promise.reject(error);
+      }
+
+      // Only attempt refresh if user was previously authenticated
+      const refreshToken = getRefreshToken();
+      if (!refreshToken) {
+        logger.debug('⏸️ No refresh token available - skipping refresh');
+        return Promise.reject(error);
+      }
+
       if (isRefreshing) {
         // If already refreshing, queue this request
         return new Promise((resolve, reject) => {

@@ -57,7 +57,21 @@ self.addEventListener('fetch', (event) => {
   }
 
   // API requests - network only (don't cache)
+  // CRITICAL: Never prefetch or cache auth-related endpoints
   if (url.pathname.startsWith('/api/')) {
+    // Block all API requests except auth status check
+    // This prevents service worker from making background auth requests
+    const allowedPaths = ['/api/auth/status'];
+    const isAllowed = allowedPaths.some(path => url.pathname === path);
+
+    if (!isAllowed && (request.method !== 'GET' ||
+        url.pathname.includes('/posts') ||
+        url.pathname.includes('/drafts') ||
+        url.pathname.includes('/feed'))) {
+      // Don't intercept - let the app handle it
+      return;
+    }
+
     event.respondWith(fetch(request));
     return;
   }

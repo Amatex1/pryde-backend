@@ -121,31 +121,46 @@ const PageLoader = () => {
 
 function App() {
   const [isAuth, setIsAuth] = useState(isAuthenticated());
+  const [authBootstrapped, setAuthBootstrapped] = useState(false);
   const [initError, setInitError] = useState(false);
 
   useEffect(() => {
-    setIsAuth(isAuthenticated());
-
-    // Initialize CSRF token by making a lightweight GET request
-    // This ensures we have a CSRF token before making any POST requests
-    const initCsrfToken = async () => {
+    // CRITICAL: Bootstrap auth state on app load
+    // This prevents refresh loops and ensures CSRF token is available
+    const bootstrapAuth = async () => {
       try {
-        // Make a lightweight GET request to trigger CSRF token generation
-        // The response will include the X-CSRF-Token header which our interceptor will capture
-        await api.get('/posts?limit=1').catch(() => {
-          // Ignore errors - we just want to get the CSRF token
-          logger.debug('CSRF token initialization request completed');
+        // Call lightweight auth status endpoint to:
+        // 1. Get CSRF token (from response header)
+        // 2. Verify current auth state
+        // 3. Avoid triggering refresh logic
+        const response = await api.get('/auth/status');
+
+        const isCurrentlyAuth = response.data.authenticated;
+        setIsAuth(isCurrentlyAuth);
+        setAuthBootstrapped(true);
+
+        logger.debug('🔐 Auth bootstrap complete:', {
+          authenticated: isCurrentlyAuth,
+          user: response.data.user?.username
         });
       } catch (error) {
-        logger.warn('Failed to initialize CSRF token:', error);
+        // If auth status check fails, fall back to localStorage check
+        logger.warn('Auth status check failed, using localStorage:', error);
+        setIsAuth(isAuthenticated());
+        setAuthBootstrapped(true);
       }
     };
 
-    initCsrfToken();
+    bootstrapAuth();
 
-    // Initialize Quiet Mode globally with retry logic
+    // Initialize Quiet Mode globally - only after auth is bootstrapped
     const initQuietMode = async (retries = 3) => {
-      if (isAuthenticated()) {
+      // Wait for auth bootstrap to complete
+      if (!authBootstrapped) {
+        return;
+      }
+
+      if (isAuth) {
         try {
           const response = await api.get('/auth/me', {
             timeout: 10000 // 10 second timeout
@@ -171,10 +186,13 @@ function App() {
       }
     };
 
-    initQuietMode();
+    // Only initialize quiet mode after auth bootstrap
+    if (authBootstrapped) {
+      initQuietMode();
+    }
 
-    // Initialize Socket.IO when user is authenticated with timeout
-    if (isAuthenticated()) {
+    // Initialize Socket.IO when user is authenticated - only after auth bootstrap
+    if (authBootstrapped && isAuth) {
       const user = getCurrentUser();
       if (user && (user.id || user._id)) {
         try {
@@ -195,7 +213,7 @@ function App() {
           // Cleanup on unmount or when user logs out
           return () => {
             cleanupNewMessage?.();
-            if (!isAuthenticated()) {
+            if (!isAuth) {
               disconnectSocket();
             }
           };
@@ -205,7 +223,7 @@ function App() {
         }
       }
     }
-  }, [isAuth]);
+  }, [isAuth, authBootstrapped]);
 
   const PrivateRoute = ({ children }) => {
     return isAuth ? children : <Navigate to="/login" />;
