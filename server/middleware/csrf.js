@@ -32,9 +32,28 @@ export const generateCsrfToken = () => {
  * Use this on routes that render forms or need CSRF protection
  */
 export const setCsrfToken = (req, res, next) => {
-  // Generate token
+  // Check if client already has a valid CSRF token
+  const existingToken = req.cookies?.['XSRF-TOKEN'];
+
+  // If token exists and is still valid, reuse it
+  if (existingToken && csrfTokens.has(existingToken)) {
+    const tokenData = csrfTokens.get(existingToken);
+
+    // Check if token is not expired (1 hour)
+    if (Date.now() - tokenData.timestamp <= 3600000) {
+      // Token is still valid, reuse it
+      req.csrfToken = existingToken;
+      res.locals.csrfToken = existingToken;
+      return next();
+    } else {
+      // Token expired, remove it
+      csrfTokens.delete(existingToken);
+    }
+  }
+
+  // Generate new token only if needed
   const token = generateCsrfToken();
-  
+
   // Store token with timestamp
   csrfTokens.set(token, {
     timestamp: Date.now(),
