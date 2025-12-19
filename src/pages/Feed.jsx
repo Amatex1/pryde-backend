@@ -1669,12 +1669,9 @@ function Feed() {
               </>
             ) : posts.length === 0 ? (
               <div className="empty-state glossy">
-                <h3>No posts yet</h3>
-                <p>
-                  {feedFilter === 'followers'
-                    ? 'Follow some users to see their posts here!'
-                    : 'No public posts available yet.'}
-                </p>
+                <p className="empty-state-primary">There's nothing new right now — and that's okay.</p>
+                <p className="empty-state-secondary">When people share, you'll see it here.</p>
+                <p className="empty-state-tertiary">Pryde moves at a human pace.</p>
               </div>
             ) : (
               posts
@@ -2249,7 +2246,8 @@ function Feed() {
           {/* End of Feed Message */}
           {!fetchingPosts && !hasMore && posts.length > 0 && (
             <div className="end-of-feed">
-              <p>🎉 You're all caught up!</p>
+              <p className="end-of-feed-primary">🎉 You're all caught up!</p>
+              <p className="end-of-feed-secondary">Take a break, or check back later.</p>
             </div>
           )}
         </div>
@@ -2272,8 +2270,7 @@ function Feed() {
                 ))
               ) : (
                 <div className="no-trending">
-                  <p>No trending topics yet</p>
-                  <p className="trending-hint">Start using hashtags in your posts!</p>
+                  <p className="no-trending-primary">Nothing is trending right now — and that's okay.</p>
                 </div>
               )}
             </div>

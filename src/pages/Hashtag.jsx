@@ -64,7 +64,8 @@ function Hashtag() {
             <div className="loading-spinner">Loading posts...</div>
           ) : posts.length === 0 ? (
             <div className="no-posts glossy">
-              <p>No posts found with #{tag}</p>
+              <p className="no-posts-primary">No posts with #{tag} yet.</p>
+              <p className="no-posts-secondary">Tags appear as people share what matters to them.</p>
             </div>
           ) : (
             <div className="posts-list">
