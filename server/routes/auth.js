@@ -1090,4 +1090,58 @@ router.post('/resend-verification', auth, async (req, res) => {
   }
 });
 
+// @route   POST /api/auth/logout
+// @desc    Logout user and invalidate refresh token
+// @access  Private
+router.post('/logout', auth, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Get current session ID from JWT
+    const sessionId = req.sessionId;
+
+    // Remove the current session from activeSessions
+    if (sessionId) {
+      user.activeSessions = user.activeSessions.filter(
+        s => s.sessionId !== sessionId
+      );
+      await user.save();
+      logger.debug(`Session ${sessionId} removed for user ${user.username}`);
+    }
+
+    // Clear refresh token cookie
+    const isProduction = config.nodeEnv === 'production';
+    res.clearCookie('refreshToken', {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: isProduction ? 'none' : 'lax',
+      path: '/'
+    });
+
+    // Clear CSRF token cookie
+    res.clearCookie('XSRF-TOKEN', {
+      secure: isProduction,
+      sameSite: isProduction ? 'none' : 'lax',
+      path: '/'
+    });
+
+    logger.debug(`User ${user.username} logged out successfully`);
+
+    return res.status(200).json({
+      message: 'Logged out successfully',
+      success: true
+    });
+  } catch (error) {
+    logger.error('Logout error:', error);
+    return res.status(500).json({
+      message: 'Logout failed',
+      success: false
+    });
+  }
+});
+
 export default router;

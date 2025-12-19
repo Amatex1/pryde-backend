@@ -6,7 +6,8 @@ import { disconnectSocket, initializeSocket } from './socket';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
-  withCredentials: true // Enable cookies for refresh token
+  withCredentials: true, // Enable cookies for refresh token
+  timeout: 10000 // 10 second timeout for better UX
 });
 
 // Track if we're currently refreshing the token

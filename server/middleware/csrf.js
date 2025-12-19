@@ -71,6 +71,11 @@ export const verifyCsrfToken = (req, res, next) => {
     return next();
   }
 
+  // Skip CSRF check for health endpoint (used for pre-warming)
+  if (req.path === '/api/health' || req.path === '/health') {
+    return next();
+  }
+
   // Read token from cookie
   const cookieToken = req.cookies['XSRF-TOKEN'];
 

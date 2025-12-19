@@ -5,6 +5,7 @@ import { initializeSocket, disconnectSocket, onNewMessage } from './utils/socket
 import { playNotificationSound, requestNotificationPermission } from './utils/notifications';
 import { initializeQuietMode } from './utils/quietMode';
 import api from './utils/api';
+import { API_BASE_URL } from './config/api';
 import logger from './utils/logger';
 
 // Eager load critical components (needed immediately)
@@ -125,6 +126,26 @@ function App() {
   const [initError, setInitError] = useState(false);
 
   useEffect(() => {
+    // 🔥 PRE-WARM BACKEND: Wake backend immediately on app load
+    // This prevents cold start delays on first API call
+    const preWarmBackend = async () => {
+      try {
+        // Use lightweight health endpoint to wake backend
+        // This doesn't require auth and is very fast
+        await fetch(API_BASE_URL.replace('/api', '') + '/api/health', {
+          credentials: 'include',
+          signal: AbortSignal.timeout(5000) // 5 second timeout
+        });
+        logger.debug('🔥 Backend pre-warmed successfully');
+      } catch (error) {
+        // Silently fail - this is just an optimization
+        logger.debug('Backend pre-warm failed (non-critical):', error);
+      }
+    };
+
+    // Start pre-warming immediately (non-blocking)
+    preWarmBackend();
+
     // CRITICAL: Bootstrap auth state on app load
     // This prevents refresh loops and ensures CSRF token is available
     const bootstrapAuth = async () => {

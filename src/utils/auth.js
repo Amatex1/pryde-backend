@@ -72,13 +72,27 @@ export const getCurrentUser = () => {
   }
 };
 
-export const logout = () => {
+export const logout = async () => {
   // Set flag to indicate manual logout (not session expiration)
   sessionStorage.setItem('manualLogout', 'true');
+
+  // Call backend logout endpoint to invalidate refresh token
+  try {
+    // Import api dynamically to avoid circular dependency
+    const { default: api } = await import('./api');
+    await api.post('/auth/logout').catch(() => {
+      // Silently fail - we'll clear local state anyway
+    });
+  } catch (error) {
+    // Silently fail - we'll clear local state anyway
+  }
+
+  // Clear all local auth state
   localStorage.removeItem('token');
   localStorage.removeItem('tokenSetTime');
   localStorage.removeItem('refreshToken');
   localStorage.removeItem('user');
+  sessionStorage.clear();
 
   // Immediately redirect to login to prevent flash of protected content
   window.location.href = '/login';
