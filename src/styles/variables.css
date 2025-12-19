@@ -13,6 +13,12 @@
   --bg-hover: rgba(108, 92, 231, 0.05);
   --bg-subtle: #FAFBFC;
 
+  /* Surface system for elevated elements */
+  --surface-default: #FFFFFF;
+  --surface-muted: #F4F5FA;
+  --surface-elevated: #FFFFFF;
+  --surface-border: rgba(0, 0, 0, 0.08);
+
   /* ========================================
      TEXT COLORS
      ======================================== */
@@ -88,6 +94,12 @@
   --bg-card: #1A1B30;
   --bg-hover: rgba(108, 92, 231, 0.08);
   --bg-subtle: #1F2038;
+
+  /* Surface system for elevated elements */
+  --surface-default: #12172A;
+  --surface-muted: #161C33;
+  --surface-elevated: #1B2140;
+  --surface-border: rgba(255, 255, 255, 0.08);
 
   /* TEXT */
   --text-primary: #F8F7FF;

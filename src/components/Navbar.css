@@ -747,6 +747,38 @@
 }
 
 /* ========================================
+   DARK MODE OVERRIDES FOR SURFACE ELEMENTS
+   ======================================== */
+
+[data-theme="dark"] .user-profile-trigger {
+  background-color: var(--surface-muted);
+  border: 1px solid var(--surface-border);
+}
+
+[data-theme="dark"] .user-profile-trigger:hover {
+  background-color: var(--surface-elevated);
+}
+
+[data-theme="dark"] .profile-dropdown {
+  background-color: var(--surface-elevated);
+  border-color: var(--surface-border);
+}
+
+/* ========================================
+   QUIET MODE OVERRIDES
+   ======================================== */
+
+[data-quiet="true"][data-theme="dark"] .user-profile-trigger {
+  background-color: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.06);
+}
+
+[data-quiet="true"][data-theme="dark"] .profile-dropdown {
+  background-color: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.06);
+}
+
+/* ========================================
    THEME SUPPORT
    All theming handled by CSS variables in variables.css
    ======================================== */

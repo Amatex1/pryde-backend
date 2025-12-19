@@ -274,6 +274,63 @@ input:focus, textarea:focus, select:focus {
 }
 
 /* ========================================
+   DARK MODE FORM ELEMENTS
+   ======================================== */
+
+[data-theme="dark"] select,
+[data-theme="dark"] option {
+  background-color: var(--surface-elevated);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] select:focus {
+  background-color: var(--surface-elevated);
+  border-color: var(--accent-primary);
+}
+
+[data-theme="dark"] option {
+  background-color: var(--surface-elevated);
+}
+
+[data-theme="dark"] option:hover,
+[data-theme="dark"] option:checked {
+  background-color: var(--surface-muted);
+}
+
+/* ========================================
+   DROPDOWN MENUS
+   ======================================== */
+
+[data-theme="dark"] .dropdown-menu,
+[data-theme="dark"] .menu,
+[data-theme="dark"] .select-menu {
+  background-color: var(--surface-elevated);
+  border: 1px solid var(--surface-border);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .dropdown-item:hover {
+  background-color: var(--surface-muted);
+}
+
+/* ========================================
+   QUIET MODE OVERRIDES
+   ======================================== */
+
+[data-quiet="true"][data-theme="dark"] select,
+[data-quiet="true"][data-theme="dark"] option {
+  background-color: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.06);
+}
+
+[data-quiet="true"][data-theme="dark"] .dropdown-menu,
+[data-quiet="true"][data-theme="dark"] .menu,
+[data-quiet="true"][data-theme="dark"] .select-menu {
+  background-color: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.06);
+}
+
+/* ========================================
    UTILITY CLASSES
    ======================================== */
 
