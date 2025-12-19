@@ -4,7 +4,7 @@ import Navbar from '../components/Navbar';
 import Toast from '../components/Toast';
 import DraftManager from '../components/DraftManager';
 import { useToast } from '../hooks/useToast';
-import api from '../utils/api';
+import api, { getCsrfToken } from '../utils/api';
 import { getImageUrl } from '../utils/imageUrl';
 import './PhotoEssay.css';
 
@@ -79,6 +79,13 @@ function PhotoEssay() {
   const autoSaveDraft = useCallback(async () => {
     // Only auto-save if there's content and not in edit mode
     if (editMode || (!title.trim() && photos.length === 0)) return;
+
+    // CRITICAL: Check if CSRF token exists before attempting autosave
+    const csrfToken = getCsrfToken();
+    if (!csrfToken) {
+      console.debug('⏸️ Skipping autosave - CSRF token not yet available');
+      return;
+    }
 
     try {
       const draftData = {

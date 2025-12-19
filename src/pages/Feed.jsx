@@ -19,7 +19,7 @@ import PinnedPostBadge from '../components/PinnedPostBadge';
 import EditHistoryModal from '../components/EditHistoryModal';
 import DraftManager from '../components/DraftManager';
 import { useModal } from '../hooks/useModal';
-import api from '../utils/api';
+import api, { getCsrfToken } from '../utils/api';
 import { getCurrentUser } from '../utils/auth';
 import { getImageUrl } from '../utils/imageUrl';
 import { onUserOnline, onUserOffline, onOnlineUsers, requestOnlineUsers, getSocket } from '../utils/socket';
@@ -742,6 +742,15 @@ function Feed() {
   const autoSaveDraft = useCallback(async () => {
     // Only auto-save if there's content
     if (!newPost.trim() && selectedMedia.length === 0) {
+      setDraftSaveStatus('');
+      return;
+    }
+
+    // CRITICAL: Check if CSRF token exists before attempting autosave
+    // This prevents CSRF mismatch errors on page load or before auth is ready
+    const csrfToken = getCsrfToken();
+    if (!csrfToken) {
+      logger.debug('⏸️ Skipping autosave - CSRF token not yet available');
       setDraftSaveStatus('');
       return;
     }
