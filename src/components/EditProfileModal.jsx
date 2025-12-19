@@ -774,18 +774,58 @@ function EditProfileModal({ isOpen, onClose, user, onUpdate }) {
                 <label>Looking For</label>
                 <p className="field-description">Select what you're hoping to find on Pryde Social</p>
                 <div className="checkbox-group">
-                  {['Friends', 'Support', 'Community', 'Networking'].map(option => (
-                    <label key={option} className="checkbox-label-compact">
-                      <input
-                        type="checkbox"
-                        id={`looking-for-${option.toLowerCase()}`}
-                        name={`lookingFor-${option.toLowerCase()}`}
-                        checked={formData.lookingFor.includes(option.toLowerCase())}
-                        onChange={() => toggleLookingFor(option.toLowerCase())}
-                      />
-                      <span>{option}</span>
-                    </label>
-                  ))}
+                  <label className="checkbox-label-compact">
+                    <input
+                      type="checkbox"
+                      id="looking-for-friends"
+                      name="lookingFor-friends"
+                      checked={formData.lookingFor.includes('friends')}
+                      onChange={() => toggleLookingFor('friends')}
+                    />
+                    <span className="checkbox-option-wrapper">
+                      <span className="checkbox-option-label">Friends</span>
+                      <span className="checkbox-option-helper">Casual connections and people to chat with</span>
+                    </span>
+                  </label>
+                  <label className="checkbox-label-compact">
+                    <input
+                      type="checkbox"
+                      id="looking-for-support"
+                      name="lookingFor-support"
+                      checked={formData.lookingFor.includes('support')}
+                      onChange={() => toggleLookingFor('support')}
+                    />
+                    <span className="checkbox-option-wrapper">
+                      <span className="checkbox-option-label">Support</span>
+                      <span className="checkbox-option-helper">Emotional support, understanding, or a safe space</span>
+                    </span>
+                  </label>
+                  <label className="checkbox-label-compact">
+                    <input
+                      type="checkbox"
+                      id="looking-for-community"
+                      name="lookingFor-community"
+                      checked={formData.lookingFor.includes('community')}
+                      onChange={() => toggleLookingFor('community')}
+                    />
+                    <span className="checkbox-option-wrapper">
+                      <span className="checkbox-option-label">Community</span>
+                      <span className="checkbox-option-helper">Shared identity, belonging, and group connection</span>
+                    </span>
+                  </label>
+                  <label className="checkbox-label-compact">
+                    <input
+                      type="checkbox"
+                      id="looking-for-networking"
+                      name="lookingFor-networking"
+                      checked={formData.lookingFor.includes('networking')}
+                      onChange={() => toggleLookingFor('networking')}
+                    />
+                    <span className="checkbox-option-wrapper">
+                      <span className="checkbox-option-label">Networking</span>
+                      <span className="checkbox-option-helper">Professional, creative, or collaboration connections</span>
+                    </span>
+                  </label>
                 </div>
               </div>
             </section>
@@ -793,6 +833,7 @@ function EditProfileModal({ isOpen, onClose, user, onUpdate }) {
             {/* Accessibility & Communication */}
             <section className="form-section">
               <h3>♿ Accessibility & Communication</h3>
+              <p className="section-description">Help others understand how to communicate with you best.</p>
 
               <div className="form-group">
                 <label>Preferred Communication Style</label>
@@ -800,7 +841,7 @@ function EditProfileModal({ isOpen, onClose, user, onUpdate }) {
                   name="communicationStyle"
                   value={formData.communicationStyle}
                   onChange={handleChange}
-                  placeholder="e.g., Direct, Casual, Formal..."
+                  placeholder="e.g., I prefer direct and clear communication, I may take time to reply, Clear boundaries help me feel safe..."
                   rows="3"
                 />
               </div>
@@ -811,7 +852,7 @@ function EditProfileModal({ isOpen, onClose, user, onUpdate }) {
                   name="safetyPreferences"
                   value={formData.safetyPreferences}
                   onChange={handleChange}
-                  placeholder="Any safety preferences or boundaries you'd like to share..."
+                  placeholder="e.g., Please avoid sudden topics, I appreciate content warnings, I prefer gentle communication..."
                   rows="3"
                 />
               </div>

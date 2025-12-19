@@ -41,8 +41,8 @@
 }
 
 .form-section {
-  margin-bottom: 2rem;
-  padding-bottom: 2rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1.5rem;
   border-bottom: 1px solid var(--border-subtle);
 }
 
@@ -53,10 +53,9 @@
 .mt-2 {
   margin-top: 0.5rem;
 }
-}
 
 .form-section h3 {
-  margin: 0 0 1rem 0;
+  margin: 0 0 0.75rem 0;
   color: var(--text-main);
   font-size: 1.1rem;
   display: flex;
@@ -68,10 +67,11 @@
   color: var(--text-muted);
   font-size: 0.9rem;
   margin-bottom: 1rem;
+  line-height: 1.5;
 }
 
 .form-group {
-  margin-bottom: 1.25rem;
+  margin-bottom: 1rem;
 }
 
 .form-group label {
@@ -377,8 +377,8 @@
 
 /* Checkbox Group */
 .checkbox-group {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  display: flex;
+  flex-direction: column;
   gap: 0.75rem;
 }
 
@@ -418,9 +418,9 @@
 /* Compact checkbox for Looking For section */
 .checkbox-label-compact {
   display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 0.75rem;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.75rem;
   background: var(--bg);
   border-radius: 8px;
   cursor: pointer;
@@ -434,19 +434,36 @@
   border-color: var(--color-primary);
 }
 
-.checkbox-label-compact span {
+.checkbox-label-compact input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.checkbox-option-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  flex: 1;
+}
+
+.checkbox-option-label {
+  font-size: 0.95rem;
+  font-weight: 500;
   color: var(--text-main);
 }
 
-.checkbox-label-compact input[type="checkbox"] {
-  width: 16px;
-  height: 16px;
-  cursor: pointer;
-  flex-shrink: 0;
+.checkbox-option-helper {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  line-height: 1.4;
 }
 
-.checkbox-label-compact span {
-  font-size: 0.9rem;
+.checkbox-label-compact input[type="checkbox"]:checked ~ .checkbox-option-wrapper .checkbox-option-label {
+  color: var(--color-primary);
+  font-weight: 600;
 }
 
 .checkbox-label-compact input[type="checkbox"]:checked + span {

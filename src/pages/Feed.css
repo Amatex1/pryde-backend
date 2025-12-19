@@ -3895,13 +3895,15 @@ select.privacy-selector:focus {
   box-sizing: border-box;
 }
 
-/* Ensure checkbox labels don't grow taller */
+/* Ensure checkbox labels don't grow taller - Match other action buttons */
 .hide-metrics-checkbox {
   margin: 0 !important;
-  padding: 0 14px !important;
-  height: 36px !important;
-  min-height: 36px !important;
-  max-height: 36px !important;
+  padding: 0 var(--btn-padding-x) !important; /* Use design system padding to match other buttons */
+  height: var(--btn-height) !important;
+  min-height: var(--btn-height) !important;
+  max-height: var(--btn-height) !important;
+  font-size: var(--btn-font-size) !important;
+  line-height: 1 !important;
 }
 
 .hide-metrics-checkbox input {
