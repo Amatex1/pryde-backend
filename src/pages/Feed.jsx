@@ -2001,9 +2001,11 @@ function Feed() {
                               )}
                         </>
                       )}
-                    </div>
+                    </>
+                  )}
+                </div>
 
-                    <div className="post-actions soft-actions">
+                <div className="post-actions soft-actions">
                       <div className="reaction-container">
                         <button
                           className={`action-btn subtle ${isLiked || post.reactions?.some(r => r.user?._id === currentUser?.id || r.user === currentUser?.id) ? 'liked' : ''}`}
