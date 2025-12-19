@@ -135,6 +135,22 @@ export const enforceCsrf = (req, res, next) => {
     return next();
   }
 
+  // Skip CSRF for authentication endpoints (login, register, refresh)
+  // These endpoints don't have a CSRF token yet since the user hasn't made any requests
+  const authPaths = [
+    '/api/auth/login',
+    '/api/auth/register',
+    '/api/auth/refresh',
+    '/api/refresh',
+    '/api/auth/forgot-password',
+    '/api/auth/reset-password',
+    '/api/auth/verify-email'
+  ];
+
+  if (authPaths.includes(req.path)) {
+    return next();
+  }
+
   // For all other methods (POST, PUT, PATCH, DELETE), verify CSRF token
   verifyCsrfToken(req, res, next);
 };
