@@ -590,24 +590,24 @@
 /* Poll Button - Calm, available tool */
 .post-actions-bar .btn-poll,
 button.btn-poll {
-  padding: 0.75rem 1rem !important;
+  height: 36px !important;
+  padding: 0 14px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  font-size: 0.875rem !important; /* 14px */
+  line-height: 1 !important;
   border-radius: 10px !important;
   border: 1px solid rgba(255, 255, 255, 0.1) !important; /* Subtle border */
   background: transparent !important; /* Transparent - not featured */
   color: var(--text-main) !important;
-  font-size: 13px !important; /* Smaller text */
   font-weight: 400 !important; /* Normal weight - not bold */
   cursor: pointer !important;
   transition: all 0.2s ease !important;
-  min-width: 80px !important;
-  min-height: 48px !important; /* Touch target */
   white-space: nowrap !important;
   flex-shrink: 0 !important;
   overflow: visible !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  gap: 0.25rem !important;
 }
 
 .post-actions-bar .btn-poll:hover,
@@ -647,24 +647,24 @@ button.btn-poll.active {
 /* Content Warning Button - Calm, available tool */
 .post-actions-bar .btn-content-warning,
 button.btn-content-warning {
-  padding: 0.75rem 1rem !important;
+  height: 36px !important;
+  padding: 0 14px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  font-size: 0.875rem !important; /* 14px */
+  line-height: 1 !important;
   border-radius: 10px !important;
   border: 1px solid rgba(255, 255, 255, 0.1) !important; /* Subtle border */
   background: transparent !important; /* Transparent - not featured */
   color: var(--text-main) !important;
-  font-size: 13px !important; /* Smaller text */
   font-weight: 400 !important; /* Normal weight - not bold */
   cursor: pointer !important;
   transition: all 0.2s ease !important;
-  min-width: 80px !important;
-  min-height: 48px !important; /* Touch target */
   white-space: nowrap !important;
   flex-shrink: 0 !important;
   overflow: visible !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  gap: 0.25rem !important;
 }
 
 .post-actions-bar .btn-content-warning:hover,
@@ -704,20 +704,21 @@ button.btn-content-warning.active {
 /* Drafts Button - Calm, available tool */
 .post-actions-bar .btn-drafts,
 button.btn-drafts {
-  padding: 0.75rem 1rem !important;
+  height: 36px !important;
+  padding: 0 14px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  font-size: 0.875rem !important; /* 14px */
+  line-height: 1 !important;
   border-radius: 10px !important;
   border: 1px solid rgba(255, 255, 255, 0.1) !important; /* Subtle border */
   background: transparent !important; /* Transparent - not featured */
   color: var(--text-main) !important;
-  font-size: 13px !important; /* Smaller text */
   font-weight: 400 !important; /* Normal weight - not bold */
   cursor: pointer !important;
   transition: all 0.2s ease !important;
-  min-width: 80px !important;
-  min-height: 48px !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
   gap: 0.25rem !important;
 }
 
@@ -774,15 +775,17 @@ button.btn-drafts:hover {
 /* Hide Metrics Checkbox - Calm, available tool */
 .post-actions-bar .hide-metrics-checkbox,
 label.hide-metrics-checkbox {
-  display: flex !important;
+  height: 36px !important;
+  padding: 0 14px !important;
+  display: inline-flex !important;
   align-items: center !important;
   gap: 8px !important;
-  padding: 0.75rem 1rem !important;
+  font-size: 0.875rem !important; /* 14px */
+  line-height: 1 !important;
   border-radius: 10px !important;
   border: 1px solid rgba(255, 255, 255, 0.1) !important; /* Subtle border */
   background: transparent !important; /* Transparent - not featured */
   color: var(--text-main) !important;
-  font-size: 13px !important; /* Smaller text */
   font-weight: 400 !important; /* Normal weight - not bold */
   cursor: pointer !important;
   transition: all 0.2s ease !important;
@@ -798,15 +801,18 @@ label.hide-metrics-checkbox:hover {
 }
 
 .hide-metrics-checkbox input[type="checkbox"] {
-  width: 18px;
-  height: 18px;
-  cursor: pointer;
-  accent-color: var(--pryde-purple);
+  margin: 0 !important;
+  width: 14px !important;
+  height: 14px !important;
+  cursor: pointer !important;
+  accent-color: var(--pryde-purple) !important;
 }
 
 .hide-metrics-checkbox span {
-  font-size: 0.9rem;
-  white-space: nowrap;
+  line-height: 1 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  white-space: nowrap !important;
 }
 
 /* Dark mode */
@@ -2844,19 +2850,83 @@ html:not([data-theme])[data-quiet-mode="true"] .hide-metrics-checkbox:hover {
   opacity: 0.85; /* Soften tool row - available, not featured */
 }
 
+/* ========================================
+   COMPOSER ACTION BUTTONS - CONSISTENT HEIGHT
+   All buttons normalized to 36px height
+   ======================================== */
+
+.composer-actions button,
+.composer-actions .action-btn,
+.post-actions-bar button,
+.post-actions-bar .action-btn {
+  height: 36px;
+  padding: 0 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.875rem; /* 14px */
+  line-height: 1;
+  border-radius: 10px;
+}
+
+/* Normalize checkbox-based buttons (Hide Metrics) */
+.composer-actions label,
+.composer-actions .hide-metrics,
+.post-actions-bar label {
+  height: 36px;
+  padding: 0 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.875rem; /* 14px */
+  line-height: 1;
+  border-radius: 10px;
+}
+
+/* Remove default checkbox spacing */
+.composer-actions input[type="checkbox"],
+.post-actions-bar input[type="checkbox"] {
+  margin: 0;
+  width: 14px;
+  height: 14px;
+}
+
+/* Ensure text + icon alignment matches other buttons */
+.composer-actions label span,
+.composer-actions button span,
+.post-actions-bar label span,
+.post-actions-bar button span {
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+}
+
+/* Quiet mode stays subtle, not larger */
+[data-quiet="true"] .composer-actions label,
+[data-quiet="true"] .composer-actions button,
+[data-quiet="true"] .post-actions-bar label,
+[data-quiet="true"] .post-actions-bar button {
+  height: 36px !important;
+  opacity: 0.85;
+}
+
 /* Media Upload Button - Calm, available tool */
 .post-actions-bar .btn-media-upload,
 label.btn-media-upload {
-  padding: 0.75rem 1rem !important;
+  height: 36px !important;
+  padding: 0 14px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  font-size: 0.875rem !important; /* 14px */
+  line-height: 1 !important;
   border-radius: 10px !important;
   border: 1px solid rgba(255, 255, 255, 0.1) !important; /* Subtle border */
   background: transparent !important; /* Transparent - not featured */
   color: var(--text-main) !important;
-  font-size: 13px !important; /* Smaller text */
   font-weight: 400 !important; /* Normal weight - not bold */
   cursor: pointer !important;
   transition: all 0.2s ease !important;
-  display: inline-block !important;
   white-space: nowrap !important;
   flex-shrink: 0 !important;
   /* Tools feel available, not featured */
