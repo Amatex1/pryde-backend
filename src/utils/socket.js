@@ -32,7 +32,7 @@ export const connectSocket = (userId) => {
         logger.debug('🔑 Token preview:', token ? token.substring(0, 20) + '...' : 'null');
 
         socket = io(SOCKET_URL, {
-            // Use websocket first, fallback to polling
+            // ✅ WebSocket first for better performance, polling as fallback
             transports: ["websocket", "polling"],
             // ✅ Send JWT via auth object (NOT query params)
             // Identity comes from verified JWT, not client-provided userId
@@ -40,11 +40,12 @@ export const connectSocket = (userId) => {
                 token: token
             },
             // ❌ REMOVED: query: { userId } - Identity now from JWT only
+            // ✅ Infinite reconnection attempts for resilience
             reconnection: true,
-            reconnectionDelay: 1000,
-            reconnectionDelayMax: 5000,
-            reconnectionAttempts: 5,
-            timeout: 10000, // 10 second timeout instead of default 20s
+            reconnectionAttempts: Infinity, // Never give up reconnecting
+            reconnectionDelay: 1000, // Start with 1 second
+            reconnectionDelayMax: 5000, // Max 5 seconds between attempts
+            timeout: 20000, // 20 second timeout for better stability
             forceNew: true, // Force new connection to use new token
             upgrade: true, // Allow upgrade to websocket after polling connects
             withCredentials: true // Enable cookies for cross-origin

@@ -410,10 +410,11 @@ io.on('connection', (socket) => {
   
   // Store user's socket connection
   onlineUsers.set(userId, socket.id);
-  
-  // Emit online status to all users
+
+  // Emit online status to all users (dual events for compatibility)
   io.emit('user_online', { userId });
-  
+  io.emit('presence:update', { userId, online: true });
+
   // Send list of online users to the newly connected user
   socket.emit('online_users', Array.from(onlineUsers.keys()));
   
@@ -637,19 +638,24 @@ io.on('connection', (socket) => {
   // Handle disconnect
   socket.on('disconnect', async () => {
     console.log(`User disconnected: ${userId}`);
-    onlineUsers.delete(userId);
 
-    // Update lastSeen timestamp
-    try {
-      await User.findByIdAndUpdate(userId, {
-        lastSeen: new Date()
-      });
-    } catch (error) {
-      console.error('Error updating lastSeen:', error);
+    // Only remove from onlineUsers if this is the user's current socket
+    if (onlineUsers.get(userId) === socket.id) {
+      onlineUsers.delete(userId);
+
+      // Update lastSeen timestamp
+      try {
+        await User.findByIdAndUpdate(userId, {
+          lastSeen: new Date()
+        });
+      } catch (error) {
+        console.error('Error updating lastSeen:', error);
+      }
+
+      // Emit offline status to all users (dual events for compatibility)
+      io.emit('user_offline', { userId });
+      io.emit('presence:update', { userId, online: false });
     }
-
-    // Emit offline status to all users
-    io.emit('user_offline', { userId });
 
     // Emit updated global chat online count
     const globalChatOnlineCount = io.sockets.adapter.rooms.get('global_chat')?.size || 0;

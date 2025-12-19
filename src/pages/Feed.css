@@ -3711,3 +3711,32 @@ select.privacy-selector:focus {
     transform: translateY(0);
   }
 }
+
+/* ========================================
+   DARK MODE — PRIVACY SELECTOR FIX
+   ======================================== */
+
+[data-theme="dark"] .post-actions-bar .privacy-selector,
+[data-theme="dark"] select.privacy-selector {
+  background: var(--surface-dark) !important;
+  color: var(--text-primary-dark) !important;
+  border-color: var(--border-subtle-dark) !important;
+}
+
+[data-theme="dark"] .post-actions-bar .privacy-selector option,
+[data-theme="dark"] select.privacy-selector option {
+  background: var(--surface-dark) !important;
+  color: var(--text-primary-dark) !important;
+}
+
+[data-theme="dark"] .post-actions-bar .privacy-selector:hover,
+[data-theme="dark"] select.privacy-selector:hover {
+  background: var(--surface-elevated-dark) !important;
+  border-color: rgba(120, 120, 255, 0.4) !important;
+}
+
+[data-theme="dark"] .post-actions-bar .privacy-selector:focus,
+[data-theme="dark"] select.privacy-selector:focus {
+  border-color: rgba(120, 120, 255, 0.5) !important;
+  box-shadow: 0 0 0 2px rgba(120, 120, 255, 0.15) !important;
+}
