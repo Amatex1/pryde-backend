@@ -77,6 +77,11 @@ export const setCsrfToken = (req, res, next) => {
   // Set cookie with SameSite attribute
   res.cookie('XSRF-TOKEN', token, cookieOptions);
 
+  // IMPORTANT: Also send token in response header for cross-origin requests
+  // Cross-origin cookies with sameSite='none' are not accessible via document.cookie
+  // So we need to send the token in a header that the frontend can read
+  res.setHeader('X-CSRF-Token', token);
+
   if (config.nodeEnv === 'development') {
     console.log('🍪 Setting new CSRF token cookie:', {
       token: token.substring(0, 10) + '...',

@@ -26,21 +26,25 @@ const processQueue = (error, token = null) => {
 };
 
 /**
- * Get CSRF token from cookie
- * The backend sets this cookie automatically on all requests
+ * CSRF token storage
+ * For cross-origin requests, we can't read the XSRF-TOKEN cookie via document.cookie
+ * because sameSite='none' cookies are not accessible to JavaScript.
+ * Instead, we store the token from the X-CSRF-Token response header.
+ */
+let csrfToken = null;
+
+/**
+ * Get CSRF token from storage
  */
 const getCsrfToken = () => {
-  const name = 'XSRF-TOKEN=';
-  const decodedCookie = decodeURIComponent(document.cookie);
-  const cookieArray = decodedCookie.split(';');
+  return csrfToken;
+};
 
-  for (let i = 0; i < cookieArray.length; i++) {
-    let cookie = cookieArray[i].trim();
-    if (cookie.indexOf(name) === 0) {
-      return cookie.substring(name.length, cookie.length);
-    }
-  }
-  return null;
+/**
+ * Set CSRF token from response header
+ */
+const setCsrfToken = (token) => {
+  csrfToken = token;
 };
 
 // Add auth token and CSRF token to requests
@@ -77,7 +81,15 @@ api.interceptors.request.use(
 
 // Handle 401 errors (unauthorized) and 403 CSRF errors
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // Extract CSRF token from response header if present
+    const csrfTokenHeader = response.headers['x-csrf-token'];
+    if (csrfTokenHeader) {
+      setCsrfToken(csrfTokenHeader);
+      logger.debug('🛡️ CSRF token updated from response header');
+    }
+    return response;
+  },
   async (error) => {
     const originalRequest = error.config;
 
