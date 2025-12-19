@@ -58,6 +58,10 @@ api.interceptors.request.use(
       const csrfToken = getCsrfToken();
       if (csrfToken) {
         config.headers['X-XSRF-TOKEN'] = csrfToken;
+        logger.debug(`🛡️ CSRF token attached to ${method} ${config.url}`);
+      } else {
+        logger.warn(`⚠️ No CSRF token found for ${method} ${config.url}`);
+        logger.warn(`📋 Current cookies: ${document.cookie}`);
       }
     }
 
@@ -79,21 +83,40 @@ api.interceptors.response.use(
       // Check if it's a CSRF error
       if (errorMessage.includes('CSRF') || errorMessage.includes('csrf')) {
         logger.error('🛡️ CSRF token error:', errorMessage);
+        logger.error('📋 Current cookies:', document.cookie);
+        logger.error('📋 Request headers:', originalRequest.headers);
 
-        // If CSRF token is missing or expired, the backend will set a new one
-        // Retry the request once to get the new token
+        // If CSRF token is missing or expired, make a GET request to get a new token
+        // The backend's setCsrfToken middleware will set a new cookie on any request
         if (!originalRequest._csrfRetry) {
           originalRequest._csrfRetry = true;
 
-          // Wait a moment for the new CSRF cookie to be set
-          await new Promise(resolve => setTimeout(resolve, 100));
+          try {
+            // Make a lightweight GET request to trigger CSRF token refresh
+            logger.debug('🔄 Requesting new CSRF token...');
+            await api.get('/posts?limit=1');
 
-          // Retry the request with the new CSRF token
-          return api(originalRequest);
+            // Wait a moment for the cookie to be set
+            await new Promise(resolve => setTimeout(resolve, 100));
+
+            // Check if we now have a CSRF token
+            const newCsrfToken = getCsrfToken();
+            if (newCsrfToken) {
+              logger.debug('✅ New CSRF token obtained, retrying request');
+              // Retry the original request with the new CSRF token
+              return api(originalRequest);
+            } else {
+              logger.error('❌ Failed to obtain new CSRF token');
+              return Promise.reject(new Error('Security token expired. Please refresh the page and try again.'));
+            }
+          } catch (refreshError) {
+            logger.error('❌ Failed to refresh CSRF token:', refreshError);
+            return Promise.reject(new Error('Security token expired. Please refresh the page and try again.'));
+          }
         }
 
         // If retry failed, show user-friendly error
-        logger.error('❌ CSRF protection failed. Please refresh the page.');
+        logger.error('❌ CSRF protection failed after retry. Please refresh the page.');
         return Promise.reject(new Error('Security token expired. Please refresh the page and try again.'));
       }
     }
