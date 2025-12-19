@@ -28,16 +28,25 @@ const draftSchema = new mongoose.Schema({
     default: '',
     maxlength: 100000
   },
-  // Media
+  // Media - CRITICAL: All fields optional for drafts
+  // Drafts should accept partial/incomplete media data
   media: [{
     url: {
-      type: String,
-      required: true
+      type: String
+      // NOT required - drafts may have incomplete media
     },
     type: {
       type: String,
-      enum: ['image', 'video', 'gif'],
-      required: true
+      enum: ['image', 'video', 'gif']
+      // NOT required - drafts may not specify type yet
+    },
+    width: {
+      type: Number
+      // Optional - may not be available during draft
+    },
+    height: {
+      type: Number
+      // Optional - may not be available during draft
     }
   }],
   coverImage: {

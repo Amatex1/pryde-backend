@@ -94,10 +94,11 @@ router.post('/', auth, async (req, res) => {
         return res.status(403).json({ message: 'Not authorized' });
       }
 
-      // Update fields
+      // Update fields - CRITICAL: Accept partial payloads without validation
       if (content !== undefined) draft.content = content;
       if (title !== undefined) draft.title = title;
       if (body !== undefined) draft.body = body;
+      // Media: Accept as-is, no validation (schema allows optional fields)
       if (media !== undefined) draft.media = media;
       if (coverImage !== undefined) draft.coverImage = coverImage;
       if (visibility !== undefined) draft.visibility = visibility;
@@ -157,13 +158,15 @@ router.post('/', auth, async (req, res) => {
       };
     }
 
-    // CRITICAL: Prepare draft data with proper null handling for mood
+    // CRITICAL: Prepare draft data with proper null handling
+    // Drafts accept partial payloads - no strict validation
     const draftData = {
       user: req.userId,
       draftType: draftType || 'post',
       content: content || '',
       title: title || '',
       body: body || '',
+      // Media: Accept as-is, schema allows optional fields
       media: media || [],
       coverImage: coverImage || '',
       visibility: visibility || 'followers',
