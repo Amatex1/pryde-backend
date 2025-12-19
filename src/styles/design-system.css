@@ -56,10 +56,15 @@
      ======================================== */
   --button-height-mobile: 44px;  /* Apple HIG minimum touch target */
   --button-height-desktop: 40px; /* Can be slightly smaller on desktop */
+  --button-height-compact: 36px; /* Compact buttons (composer actions, etc.) */
   --button-padding-x: 16px;
   --button-padding-y: 12px;
+  --button-padding-x-compact: 14px; /* Compact button horizontal padding */
   --button-radius: 8px;
+  --button-radius-compact: 10px; /* Compact button radius */
   --button-radius-pill: 999px;
+  --button-font-size: 14px; /* Unified button font size */
+  --button-gap: 8px; /* Gap between icon and text in buttons */
 
   /* ========================================
      BREAKPOINTS
@@ -352,4 +357,91 @@ input:focus, textarea:focus, select:focus {
 .p-md { padding: var(--space-md); }
 .p-lg { padding: var(--space-lg); }
 .p-xl { padding: var(--space-xl); }
+
+/* ========================================
+   GLOBAL BUTTON NORMALIZATION
+   Ensures ALL buttons (including checkbox-lookalikes) follow the same contract
+   ======================================== */
+
+/* Normalize ALL button-like elements */
+button,
+.btn,
+[role="button"],
+[type="button"],
+[type="submit"],
+label[for]:has(input[type="checkbox"]),
+.button-like {
+  /* Reset browser defaults */
+  box-sizing: border-box;
+
+  /* Unified sizing */
+  min-height: var(--button-height-compact);
+  height: var(--button-height-compact);
+  max-height: var(--button-height-compact);
+
+  /* Unified spacing */
+  padding: 0 var(--button-padding-x-compact);
+  gap: var(--button-gap);
+
+  /* Unified appearance */
+  border-radius: var(--button-radius-compact);
+  font-size: var(--button-font-size);
+  line-height: 1;
+
+  /* Unified layout */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  /* Unified behavior */
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+/* Desktop: Use standard button height */
+@media (min-width: 1024px) {
+  button,
+  .btn,
+  [role="button"],
+  [type="button"],
+  [type="submit"] {
+    min-height: var(--button-height-desktop);
+    height: var(--button-height-desktop);
+    max-height: var(--button-height-desktop);
+  }
+
+  /* Keep compact buttons compact on desktop */
+  .btn-compact,
+  .composer-actions button,
+  .composer-actions label,
+  .post-actions-bar button,
+  .post-actions-bar label,
+  .hide-metrics-checkbox,
+  .privacy-selector {
+    min-height: var(--button-height-compact) !important;
+    height: var(--button-height-compact) !important;
+    max-height: var(--button-height-compact) !important;
+  }
+}
+
+/* Ensure checkbox labels behave like buttons */
+label.hide-metrics-checkbox,
+.hide-metrics-checkbox {
+  all: unset;
+  box-sizing: border-box;
+  min-height: var(--button-height-compact);
+  height: var(--button-height-compact);
+  max-height: var(--button-height-compact);
+  padding: 0 var(--button-padding-x-compact);
+  gap: var(--button-gap);
+  border-radius: var(--button-radius-compact);
+  font-size: var(--button-font-size);
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
 

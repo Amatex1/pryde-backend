@@ -772,8 +772,7 @@ button.btn-drafts:hover {
   border-color: var(--pryde-purple) !important;
 }
 
-/* Hide Metrics Checkbox - Calm, available tool */
-/* 🔧 FINAL HARD OVERRIDE: Remove ALL padding from label */
+/* Hide Metrics Checkbox - Use design system variables */
 .post-actions-bar .hide-metrics-checkbox,
 label.hide-metrics-checkbox,
 .hide-metrics-checkbox {
@@ -782,15 +781,15 @@ label.hide-metrics-checkbox,
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
-  gap: 8px !important;
-  padding: 0 !important; /* 🔥 HARD OVERRIDE: NO PADDING */
-  height: 36px !important;
-  min-height: 36px !important;
-  max-height: 36px !important;
-  font-size: 0.875rem !important; /* 14px */
+  gap: var(--button-gap) !important; /* Use design system gap */
+  padding: 0 var(--button-padding-x-compact) !important; /* Use design system padding */
+  height: var(--button-height-compact) !important; /* Use design system height */
+  min-height: var(--button-height-compact) !important;
+  max-height: var(--button-height-compact) !important;
+  font-size: var(--button-font-size) !important; /* Use design system font size */
   line-height: 1 !important;
-  border-radius: 10px !important;
-  border: 1px solid rgba(255, 255, 255, 0.1) !important; /* Subtle border */
+  border-radius: var(--button-radius-compact) !important; /* Use design system radius */
+  border: 1px solid var(--border-subtle) !important; /* Use design system border */
   background: transparent !important; /* Transparent - not featured */
   color: var(--text-main) !important;
   font-weight: 400 !important; /* Normal weight - not bold */
@@ -850,18 +849,18 @@ label.hide-metrics-checkbox:hover {
   white-space: nowrap !important;
 }
 
-/* Dark mode safety */
+/* Dark mode - Use design system variables */
 [data-theme="dark"] .hide-metrics-checkbox,
 body.dark-mode .hide-metrics-checkbox {
   background: transparent !important;
-  border-color: var(--border-subtle-dark) !important;
-  color: var(--text-primary-dark) !important;
+  border-color: var(--border-subtle) !important; /* Use unified border variable */
+  color: var(--text-main) !important; /* Use unified text variable */
 }
 
 [data-theme="dark"] .hide-metrics-checkbox:hover,
 body.dark-mode .hide-metrics-checkbox:hover {
-  background: rgba(108, 92, 231, 0.1) !important;
-  border-color: rgba(120, 120, 255, 0.4) !important;
+  background: var(--bg-hover) !important; /* Use design system hover background */
+  border-color: var(--color-primary) !important; /* Use design system primary color */
 }
 
 [data-theme="dark"] .hide-metrics-checkbox input[type="checkbox"],
@@ -3408,34 +3407,41 @@ label.btn-media-upload:disabled {
   cursor: not-allowed;
 }
 
-/* Privacy Selector - Ensure styles load immediately */
+/* Privacy Selector - Use design system variables */
 .post-actions-bar .privacy-selector,
 select.privacy-selector {
-  padding: 0.75rem 1rem !important;
-  border-radius: 10px !important;
-  border: 1px solid rgba(255, 255, 255, 0.1) !important; /* Subtle border */
+  padding: 0 var(--button-padding-x-compact) !important; /* Use design system padding */
+  border-radius: var(--button-radius-compact) !important; /* Use design system radius */
+  border: 1px solid var(--border-subtle) !important; /* Use design system border */
   background: transparent !important; /* Transparent - not featured */
   color: var(--text-main) !important;
-  font-size: 13px !important; /* Smaller text */
+  font-size: var(--button-font-size) !important; /* Use design system font size */
   font-weight: 400 !important; /* Normal weight */
   cursor: pointer !important;
   outline: none !important;
   transition: all 0.2s ease !important;
   white-space: nowrap !important;
   flex-shrink: 0 !important;
+  height: var(--button-height-compact) !important; /* Use design system height */
+  min-height: var(--button-height-compact) !important;
+  max-height: var(--button-height-compact) !important;
   min-width: 120px !important;
+  box-sizing: border-box !important;
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
 }
 
 .post-actions-bar .privacy-selector:hover,
 select.privacy-selector:hover {
-  background: rgba(120, 120, 255, 0.08) !important; /* Subtle hover */
-  border-color: rgba(120, 120, 255, 0.3) !important;
+  background: var(--bg-hover) !important; /* Use design system hover background */
+  border-color: var(--color-primary) !important; /* Use design system primary color */
 }
 
 .post-actions-bar .privacy-selector:focus,
 select.privacy-selector:focus {
-  border-color: rgba(120, 120, 255, 0.4) !important;
-  box-shadow: 0 0 0 2px rgba(120, 120, 255, 0.08) !important; /* Subtle focus */
+  border-color: var(--color-primary) !important; /* Use design system primary color */
+  box-shadow: 0 0 0 2px var(--bg-hover) !important; /* Use design system hover background */
 }
 
 /* Privacy Modal */
@@ -3834,34 +3840,34 @@ select.privacy-selector:focus {
    DARK MODE FIXES — FINAL PASS
    ======================================== */
 
-/* 2️⃣ Post privacy selector dropdown (audience selector) - FINAL PASS */
+/* 2️⃣ Post privacy selector dropdown (audience selector) - Use design system variables */
 [data-theme="dark"] .privacy-selector,
 [data-theme="dark"] select.privacy-selector,
 [data-theme="dark"] .post-actions-bar .privacy-selector {
-  background: var(--surface-2) !important;
+  background: transparent !important; /* Keep transparent like other buttons */
   color: var(--text-main) !important;
-  border: 1px solid var(--border-light) !important;
+  border: 1px solid var(--border-subtle) !important; /* Use unified border variable */
 }
 
 [data-theme="dark"] .privacy-selector option,
 [data-theme="dark"] select.privacy-selector option,
 [data-theme="dark"] .post-actions-bar .privacy-selector option {
-  background: var(--surface-2) !important;
+  background: var(--bg-card) !important; /* Use design system card background */
   color: var(--text-main) !important;
 }
 
 [data-theme="dark"] .privacy-selector:hover,
 [data-theme="dark"] select.privacy-selector:hover,
 [data-theme="dark"] .post-actions-bar .privacy-selector:hover {
-  background: var(--surface-3) !important;
-  border-color: var(--border-light) !important;
+  background: var(--bg-hover) !important; /* Use design system hover background */
+  border-color: var(--color-primary) !important; /* Use design system primary color */
 }
 
 [data-theme="dark"] .privacy-selector:focus,
 [data-theme="dark"] select.privacy-selector:focus,
 [data-theme="dark"] .post-actions-bar .privacy-selector:focus {
-  border-color: rgba(120, 120, 255, 0.5) !important;
-  box-shadow: 0 0 0 2px rgba(120, 120, 255, 0.15) !important;
+  border-color: var(--color-primary) !important; /* Use design system primary color */
+  box-shadow: 0 0 0 2px var(--bg-hover) !important; /* Use design system hover background */
 }
 
 /* ========================================
