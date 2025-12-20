@@ -5,7 +5,7 @@
 }
 
 .tag-feed-header {
-  background: white;
+  /* Glossy background applied via .glossy class */
   padding: 2rem;
   border-radius: 12px;
   text-align: center;
