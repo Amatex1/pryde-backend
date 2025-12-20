@@ -1411,7 +1411,6 @@ html:not([data-theme])[data-quiet-mode="true"] .hide-metrics-checkbox:hover {
 .reaction-container .action-btn {
   padding: 0.75rem 1rem;
   min-width: 48px;
-  min-height: 48px;
   display: inline-flex;
   align-items: center;
   justify-content: center;

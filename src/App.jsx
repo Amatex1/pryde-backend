@@ -1,6 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { useState, useEffect, lazy, Suspense } from 'react';
-import { isAuthenticated, getCurrentUser } from './utils/auth';
+import { isAuthenticated, getCurrentUser, setAuthToken, setRefreshToken } from './utils/auth';
 import { initializeSocket, disconnectSocket, disconnectSocketForLogout, resetLogoutFlag, onNewMessage } from './utils/socket';
 import { playNotificationSound, requestNotificationPermission } from './utils/notifications';
 import { initializeQuietMode } from './utils/quietMode';
@@ -8,6 +8,7 @@ import { preloadCriticalResources, preloadFeedData } from './utils/resourcePrelo
 import { startVersionCheck, checkForUpdate } from './utils/versionCheck';
 import { registerSW } from 'virtual:pwa-register';
 import api from './utils/api';
+import axios from 'axios';
 import { API_BASE_URL } from './config/api';
 import logger from './utils/logger';
 import {
@@ -171,10 +172,11 @@ function App() {
       try {
         // Check if token exists in localStorage
         const token = localStorage.getItem('token');
+        const refreshToken = localStorage.getItem('refreshToken');
 
-        if (!token) {
-          // No token = definitely unauthenticated
-          logger.debug('🔐 No token found - marking unauthenticated');
+        if (!token && !refreshToken) {
+          // No tokens = definitely unauthenticated
+          logger.debug('🔐 No tokens found - marking unauthenticated');
           setAuthStatusState(AUTH_STATUS.UNAUTHENTICATED);
           markUnauthenticated();
           return;
@@ -182,35 +184,109 @@ function App() {
 
         // Token exists - verify it with backend
         logger.debug('🔐 Token found - verifying with backend...');
-        const response = await api.get('/auth/status');
 
-        const isCurrentlyAuth = response.data.authenticated;
+        try {
+          const response = await api.get('/auth/status');
+          const isCurrentlyAuth = response.data.authenticated;
 
-        if (isCurrentlyAuth) {
-          logger.debug('🔐 Auth verified - marking authenticated');
-          setAuthStatusState(AUTH_STATUS.AUTHENTICATED);
-          markAuthenticated();
+          if (isCurrentlyAuth) {
+            logger.debug('🔐 Auth verified - marking authenticated');
+            setAuthStatusState(AUTH_STATUS.AUTHENTICATED);
+            markAuthenticated();
 
-          // 🚀 OPTIMIZATION: Preload critical resources after auth
-          Promise.all([
-            preloadCriticalResources(),
-            preloadFeedData()
-          ]).catch(err => {
-            logger.debug('Resource preload failed (non-critical):', err);
+            // 🚀 OPTIMIZATION: Preload critical resources after auth
+            Promise.all([
+              preloadCriticalResources(),
+              preloadFeedData()
+            ]).catch(err => {
+              logger.debug('Resource preload failed (non-critical):', err);
+            });
+          } else {
+            // Auth status returned false - try to refresh token before giving up
+            logger.debug('🔐 Auth status false - attempting token refresh...');
+
+            if (refreshToken) {
+              try {
+                const refreshResponse = await axios.post(`${API_BASE_URL}/refresh`, {
+                  refreshToken
+                }, {
+                  withCredentials: true
+                });
+
+                if (refreshResponse.data.accessToken) {
+                  logger.debug('✅ Token refreshed successfully during bootstrap');
+                  setAuthToken(refreshResponse.data.accessToken);
+
+                  if (refreshResponse.data.refreshToken) {
+                    setRefreshToken(refreshResponse.data.refreshToken);
+                  }
+
+                  // Now verify auth again with new token
+                  const retryResponse = await api.get('/auth/status');
+                  if (retryResponse.data.authenticated) {
+                    logger.debug('🔐 Auth verified after refresh - marking authenticated');
+                    setAuthStatusState(AUTH_STATUS.AUTHENTICATED);
+                    markAuthenticated();
+                    return;
+                  }
+                }
+              } catch (refreshError) {
+                logger.warn('Token refresh failed during bootstrap:', refreshError);
+              }
+            }
+
+            // If we get here, refresh failed or no refresh token
+            logger.debug('🔐 Auth failed - marking unauthenticated');
+            setAuthStatusState(AUTH_STATUS.UNAUTHENTICATED);
+            markUnauthenticated();
+          }
+
+          logger.debug('🔐 Auth bootstrap complete:', {
+            status: isCurrentlyAuth ? 'authenticated' : 'unauthenticated',
+            user: response.data.user?.username
           });
-        } else {
-          logger.debug('🔐 Auth failed - marking unauthenticated');
+        } catch (statusError) {
+          // If auth status check fails with error, try to refresh token
+          logger.warn('Auth status check failed - attempting token refresh:', statusError);
+
+          if (refreshToken) {
+            try {
+              const refreshResponse = await axios.post(`${API_BASE_URL}/refresh`, {
+                refreshToken
+              }, {
+                withCredentials: true
+              });
+
+              if (refreshResponse.data.accessToken) {
+                logger.debug('✅ Token refreshed successfully after status error');
+                setAuthToken(refreshResponse.data.accessToken);
+
+                if (refreshResponse.data.refreshToken) {
+                  setRefreshToken(refreshResponse.data.refreshToken);
+                }
+
+                // Verify auth with new token
+                const retryResponse = await api.get('/auth/status');
+                if (retryResponse.data.authenticated) {
+                  logger.debug('🔐 Auth verified after refresh - marking authenticated');
+                  setAuthStatusState(AUTH_STATUS.AUTHENTICATED);
+                  markAuthenticated();
+                  return;
+                }
+              }
+            } catch (refreshError) {
+              logger.warn('Token refresh failed:', refreshError);
+            }
+          }
+
+          // If we get here, everything failed
+          logger.debug('🔐 All auth attempts failed - marking unauthenticated');
           setAuthStatusState(AUTH_STATUS.UNAUTHENTICATED);
           markUnauthenticated();
         }
-
-        logger.debug('🔐 Auth bootstrap complete:', {
-          status: isCurrentlyAuth ? 'authenticated' : 'unauthenticated',
-          user: response.data.user?.username
-        });
       } catch (error) {
-        // If auth status check fails, mark as unauthenticated
-        logger.warn('Auth status check failed - marking unauthenticated:', error);
+        // Unexpected error
+        logger.error('Unexpected error during auth bootstrap:', error);
         setAuthStatusState(AUTH_STATUS.UNAUTHENTICATED);
         markUnauthenticated();
       }
