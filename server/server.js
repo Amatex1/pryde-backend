@@ -615,6 +615,64 @@ io.on('connection', (socket) => {
     io.to('global_chat').emit('global_chat:online_count', { count: globalChatOnlineCount });
   });
 
+  // Handle request for online users list (privileged users only)
+  socket.on('global_chat:get_online_users', async () => {
+    try {
+      // Get current user to check role
+      const user = await User.findById(userId).select('role');
+
+      if (!user) {
+        socket.emit('error', { message: 'User not found' });
+        return;
+      }
+
+      // Only allow super_admin, admin, and moderator to see online users list
+      if (!['super_admin', 'admin', 'moderator'].includes(user.role)) {
+        socket.emit('error', { message: 'Insufficient permissions' });
+        return;
+      }
+
+      // Get all online user IDs from the global_chat room
+      const globalChatRoom = io.sockets.adapter.rooms.get('global_chat');
+      if (!globalChatRoom) {
+        socket.emit('global_chat:online_users_list', { users: [] });
+        return;
+      }
+
+      // Get socket IDs from the room
+      const socketIds = Array.from(globalChatRoom);
+
+      // Map socket IDs to user IDs
+      const onlineUserIds = [];
+      for (const [uid, sid] of onlineUsers.entries()) {
+        if (socketIds.includes(sid)) {
+          onlineUserIds.push(uid);
+        }
+      }
+
+      // Fetch user details for online users
+      const onlineUsersDetails = await User.find({
+        _id: { $in: onlineUserIds }
+      }).select('username displayName profilePhoto avatar role');
+
+      // Format response
+      const formattedUsers = onlineUsersDetails.map(u => ({
+        id: u._id,
+        username: u.username,
+        displayName: u.displayName || u.username,
+        avatar: u.profilePhoto || u.avatar,
+        role: u.role
+      }));
+
+      socket.emit('global_chat:online_users_list', { users: formattedUsers });
+      console.log(`📡 Sent online users list to ${user.role} ${userId}`);
+
+    } catch (error) {
+      console.error('❌ Error fetching online users:', error);
+      socket.emit('error', { message: 'Error fetching online users' });
+    }
+  });
+
   // Handle global message send
   socket.on('global_message:send', async (data) => {
     try {

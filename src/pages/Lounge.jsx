@@ -22,6 +22,9 @@ function Lounge() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [showGifPicker, setShowGifPicker] = useState(false);
   const [selectedGif, setSelectedGif] = useState(null);
+  const [showOnlineUsersModal, setShowOnlineUsersModal] = useState(false);
+  const [onlineUsers, setOnlineUsers] = useState([]);
+  const [loadingOnlineUsers, setLoadingOnlineUsers] = useState(false);
   const messagesEndRef = useRef(null);
   const messagesContainerRef = useRef(null);
   const socketRef = useRef(null);
@@ -99,10 +102,17 @@ function Lounge() {
         setOnlineCount(count);
       });
 
+      // Listen for online users list (for privileged users)
+      socket.on('global_chat:online_users_list', ({ users }) => {
+        setOnlineUsers(users);
+        setLoadingOnlineUsers(false);
+      });
+
       // Handle errors
       socket.on('error', (data) => {
         setError(data.message);
         setTimeout(() => setError(''), 5000);
+        setLoadingOnlineUsers(false);
       });
     }
 
@@ -111,6 +121,7 @@ function Lounge() {
         socket.off('global_message:new');
         socket.off('global_message:deleted');
         socket.off('global_chat:online_count');
+        socket.off('global_chat:online_users_list');
         socket.off('error');
       }
     };
@@ -206,6 +217,29 @@ function Lounge() {
     navigate(`/messages?user=${userId}`);
   };
 
+  // Handle clicking online count (for privileged users)
+  const handleOnlineCountClick = () => {
+    // Check if user has permission to view online users
+    if (!currentUser || !['super_admin', 'admin', 'moderator'].includes(currentUser.role)) {
+      return; // Don't show modal for regular users
+    }
+
+    setShowOnlineUsersModal(true);
+    setLoadingOnlineUsers(true);
+
+    // Request online users list from server
+    const socket = socketRef.current;
+    if (socket) {
+      socket.emit('global_chat:get_online_users');
+    }
+  };
+
+  // Close online users modal
+  const closeOnlineUsersModal = () => {
+    setShowOnlineUsersModal(false);
+    setOnlineUsers([]);
+  };
+
   // Format timestamp
   const formatTime = (date) => {
     const messageDate = new Date(date);
@@ -246,7 +280,11 @@ function Lounge() {
           </div>
 
           {onlineCount > 0 && (
-            <div className="lounge-online-count">
+            <div
+              className={`lounge-online-count ${currentUser && ['super_admin', 'admin', 'moderator'].includes(currentUser.role) ? 'clickable' : ''}`}
+              onClick={handleOnlineCountClick}
+              style={{ cursor: currentUser && ['super_admin', 'admin', 'moderator'].includes(currentUser.role) ? 'pointer' : 'default' }}
+            >
               <span className="online-indicator"></span>
               {onlineCount} {onlineCount === 1 ? 'member' : 'members'} online
             </div>
@@ -453,6 +491,65 @@ function Lounge() {
           )}
         </form>
       </div>
+
+      {/* Online Users Modal (for privileged users) */}
+      {showOnlineUsersModal && (
+        <div className="modal-overlay" onClick={closeOnlineUsersModal}>
+          <div className="modal-content online-users-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Online Members ({onlineUsers.length})</h2>
+              <button className="modal-close" onClick={closeOnlineUsersModal}>✕</button>
+            </div>
+
+            <div className="modal-body">
+              {loadingOnlineUsers ? (
+                <div className="loading-state">Loading...</div>
+              ) : onlineUsers.length === 0 ? (
+                <div className="empty-state">No users online</div>
+              ) : (
+                <div className="online-users-list">
+                  {onlineUsers.map(user => (
+                    <div key={user.id} className="online-user-item">
+                      <div className="online-user-avatar">
+                        {user.avatar ? (
+                          <img src={getImageUrl(user.avatar)} alt={user.displayName} />
+                        ) : (
+                          <div className="avatar-placeholder">
+                            {user.displayName.charAt(0).toUpperCase()}
+                          </div>
+                        )}
+                        <span className="online-indicator-small"></span>
+                      </div>
+                      <div className="online-user-info">
+                        <div className="online-user-name">
+                          {user.displayName}
+                          {user.role !== 'user' && (
+                            <span className={`role-badge role-${user.role}`}>
+                              {user.role === 'super_admin' ? 'Super Admin' :
+                               user.role === 'admin' ? 'Admin' :
+                               user.role === 'moderator' ? 'Moderator' : ''}
+                            </span>
+                          )}
+                        </div>
+                        <div className="online-user-username">@{user.username}</div>
+                      </div>
+                      <button
+                        className="btn-message-user"
+                        onClick={() => {
+                          handleMessageUser(user.id);
+                          closeOnlineUsersModal();
+                        }}
+                      >
+                        Message
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
