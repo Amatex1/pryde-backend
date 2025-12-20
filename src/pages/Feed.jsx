@@ -221,24 +221,52 @@ function Feed() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Handle ?post= query parameter to scroll to specific post
+  // Merged: Handle scrolling to specific post/comment from query parameters and auto-fetch comments
   useEffect(() => {
+    // Auto-fetch comments for posts that have comments
+    posts.forEach(post => {
+      if (post.commentCount > 0 && !postComments[post._id]) {
+        logger.debug(`📥 Auto-fetching ${post.commentCount} comments for post ${post._id}`);
+        fetchCommentsForPost(post._id);
+      }
+    });
+
+    // Handle scrolling to specific post/comment from notifications
     const postId = searchParams.get('post');
+    const commentId = searchParams.get('comment');
+
     if (postId && posts.length > 0 && !fetchingPosts) {
       // Wait for DOM to update
       setTimeout(() => {
-        const postElement = document.getElementById(`post-${postId}`);
+        const postElement = postRefs.current[postId];
         if (postElement) {
           postElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          // Highlight the post briefly
-          postElement.style.boxShadow = '0 0 20px rgba(138, 43, 226, 0.5)';
+          postElement.classList.add('highlighted-post');
+
+          // Remove highlight after 3 seconds
           setTimeout(() => {
-            postElement.style.boxShadow = '';
-          }, 2000);
+            postElement.classList.remove('highlighted-post');
+          }, 3000);
+
+          // If there's a specific comment, scroll to it
+          if (commentId) {
+            setTimeout(() => {
+              const commentElement = commentRefs.current[commentId];
+              if (commentElement) {
+                commentElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                commentElement.classList.add('highlighted-comment');
+
+                // Remove highlight after 3 seconds
+                setTimeout(() => {
+                  commentElement.classList.remove('highlighted-comment');
+                }, 3000);
+              }
+            }, 500);
+          }
         }
-      }, 300);
+      }, 500);
     }
-  }, [searchParams, posts, fetchingPosts]);
+  }, [posts, searchParams, fetchingPosts, postComments]);
 
   // Handle scroll detection for scroll-to-top button and infinite scroll
   useEffect(() => {
@@ -353,16 +381,7 @@ function Feed() {
     fetchPosts(1, false);
   }, [feedFilter]); // Only depend on feedFilter, not fetchPosts
 
-  // Auto-fetch comments for posts that have comments
-  useEffect(() => {
-    posts.forEach(post => {
-      // Only fetch if post has comments and we haven't fetched them yet
-      if (post.commentCount > 0 && !postComments[post._id]) {
-        logger.debug(`📥 Auto-fetching ${post.commentCount} comments for post ${post._id}`);
-        fetchCommentsForPost(post._id);
-      }
-    });
-  }, [posts]); // Run when posts change
+  // Note: Auto-fetch comments merged into scroll-to-post effect above (lines 224-269)
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -581,43 +600,7 @@ function Feed() {
     };
   }, [fetchFriends]);
 
-  // Handle scrolling to specific post/comment from notifications
-  useEffect(() => {
-    const postId = searchParams.get('post');
-    const commentId = searchParams.get('comment');
-
-    if (postId && posts.length > 0) {
-      // Wait for DOM to update
-      setTimeout(() => {
-        const postElement = postRefs.current[postId];
-        if (postElement) {
-          postElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          postElement.classList.add('highlighted-post');
-
-          // Remove highlight after 3 seconds
-          setTimeout(() => {
-            postElement.classList.remove('highlighted-post');
-          }, 3000);
-
-          // If there's a specific comment, scroll to it
-          if (commentId) {
-            setTimeout(() => {
-              const commentElement = commentRefs.current[commentId];
-              if (commentElement) {
-                commentElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                commentElement.classList.add('highlighted-comment');
-
-                // Remove highlight after 3 seconds
-                setTimeout(() => {
-                  commentElement.classList.remove('highlighted-comment');
-                }, 3000);
-              }
-            }, 500);
-          }
-        }
-      }, 500);
-    }
-  }, [posts, searchParams]);
+  // Note: Scroll-to-post/comment effect merged with auto-fetch comments (lines 224-269)
 
   // Helper function to format time since last seen
   const getTimeSince = (date) => {
