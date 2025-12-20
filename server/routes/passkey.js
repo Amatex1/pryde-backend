@@ -4,6 +4,7 @@ import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
 import auth from '../middleware/auth.js';
 import config from '../config/config.js';
+import logger from '../utils/logger.js';
 import {
   generatePasskeyRegistrationOptions,
   verifyPasskeyRegistration,
@@ -177,34 +178,67 @@ router.post('/register-finish', auth, async (req, res) => {
 // @access  Public
 router.post('/login-start', async (req, res) => {
   try {
+    console.log('🔐 Starting passkey login...');
     const { email } = req.body;
+    console.log('   Email:', email || 'none (discoverable credential)');
 
     let passkeys = [];
-    
+
     // If email provided, get user's passkeys
     if (email) {
       const user = await User.findOne({ email });
       if (user && user.passkeys) {
         passkeys = user.passkeys;
+        console.log('   Found', passkeys.length, 'passkey(s) for user');
+      } else {
+        console.log('   No user or passkeys found for email');
       }
     }
 
     // Generate authentication options
-    const options = await generatePasskeyAuthenticationOptions(passkeys);
+    console.log('🔐 Generating authentication options...');
+    let options;
+    try {
+      options = await generatePasskeyAuthenticationOptions(passkeys);
+      console.log('✅ Authentication options generated');
+    } catch (optionsError) {
+      console.error('❌ Failed to generate authentication options:', optionsError);
+      return res.status(500).json({
+        message: 'Failed to generate authentication options',
+        code: 'OPTIONS_GENERATION_FAILED',
+        details: optionsError.message
+      });
+    }
 
     // Store challenge (use email or 'anonymous' as key)
     const challengeKey = email || `anonymous-${Date.now()}`;
     challenges.set(challengeKey, options.challenge);
+    console.log('✅ Challenge stored with key:', challengeKey);
 
     // Set challenge to expire in 5 minutes
     setTimeout(() => {
       challenges.delete(challengeKey);
+      console.log('🗑️ Challenge expired and deleted:', challengeKey);
     }, 5 * 60 * 1000);
 
     res.json({ ...options, challengeKey });
   } catch (error) {
-    console.error('Passkey login start error:', error);
-    res.status(500).json({ message: 'Failed to start passkey login' });
+    console.error('❌ Passkey login start error:', error);
+    console.error('   Error name:', error.name);
+    console.error('   Error message:', error.message);
+    console.error('   Error stack:', error.stack);
+
+    // Return detailed error in development, generic in production
+    const isDevelopment = process.env.NODE_ENV !== 'production';
+
+    res.status(500).json({
+      message: 'Failed to start passkey login. Please try again.',
+      code: 'INTERNAL_ERROR',
+      ...(isDevelopment && {
+        details: error.message,
+        errorType: error.name
+      })
+    });
   }
 });
 
@@ -215,6 +249,19 @@ router.post('/login-finish', async (req, res) => {
   try {
     console.log('🔐 Starting passkey login finish...');
     const { credential, challengeKey } = req.body;
+
+    // Validate request body
+    if (!credential || !challengeKey) {
+      console.error('❌ Missing required fields');
+      return res.status(400).json({
+        message: 'Missing required fields',
+        details: {
+          credential: !credential ? 'missing' : 'present',
+          challengeKey: !challengeKey ? 'missing' : 'present'
+        }
+      });
+    }
+
     console.log('   Challenge key:', challengeKey);
     console.log('   Credential ID:', credential?.id);
 
@@ -222,9 +269,21 @@ router.post('/login-finish', async (req, res) => {
     const expectedChallenge = challenges.get(challengeKey);
     if (!expectedChallenge) {
       console.error('❌ Challenge not found or expired');
-      return res.status(400).json({ message: 'Challenge expired or not found' });
+      return res.status(400).json({
+        message: 'Challenge expired or not found. Please try logging in again.',
+        code: 'CHALLENGE_EXPIRED'
+      });
     }
     console.log('✅ Challenge found');
+
+    // Validate credential ID
+    if (!credential.id) {
+      console.error('❌ Credential ID missing');
+      return res.status(400).json({
+        message: 'Invalid credential data',
+        code: 'INVALID_CREDENTIAL'
+      });
+    }
 
     // Find user by credential ID
     console.log('🔍 Looking for user with credential ID:', credential.id);
@@ -232,7 +291,12 @@ router.post('/login-finish', async (req, res) => {
 
     if (!user) {
       console.error('❌ User not found for credential ID:', credential.id);
-      return res.status(404).json({ message: 'Passkey not found' });
+      // Clean up challenge
+      challenges.delete(challengeKey);
+      return res.status(404).json({
+        message: 'Passkey not found. It may have been removed.',
+        code: 'PASSKEY_NOT_FOUND'
+      });
     }
     console.log('✅ User found:', user.username);
 
@@ -240,17 +304,23 @@ router.post('/login-finish', async (req, res) => {
     if (user.isSuspended) {
       const suspendedUntil = user.suspendedUntil ? new Date(user.suspendedUntil) : null;
       if (suspendedUntil && suspendedUntil > new Date()) {
+        // Clean up challenge
+        challenges.delete(challengeKey);
         return res.status(403).json({
           message: `Account suspended until ${suspendedUntil.toLocaleDateString()}`,
-          reason: user.suspensionReason
+          reason: user.suspensionReason,
+          code: 'ACCOUNT_SUSPENDED'
         });
       }
     }
 
     if (user.isBanned) {
+      // Clean up challenge
+      challenges.delete(challengeKey);
       return res.status(403).json({
         message: 'Account has been permanently banned',
-        reason: user.bannedReason
+        reason: user.bannedReason,
+        code: 'ACCOUNT_BANNED'
       });
     }
 
@@ -258,16 +328,39 @@ router.post('/login-finish', async (req, res) => {
     const passkey = user.passkeys.find(pk => pk.credentialId === credential.id);
     if (!passkey) {
       console.error('❌ Passkey not found in user passkeys');
-      return res.status(404).json({ message: 'Passkey not found' });
+      // Clean up challenge
+      challenges.delete(challengeKey);
+      return res.status(404).json({
+        message: 'Passkey not found in user account',
+        code: 'PASSKEY_MISMATCH'
+      });
     }
     console.log('✅ Passkey found:', passkey.deviceName);
 
     // Verify authentication response
     console.log('🔐 Verifying authentication...');
-    const verification = await verifyPasskeyAuthentication(credential, expectedChallenge, passkey);
+    let verification;
+    try {
+      verification = await verifyPasskeyAuthentication(credential, expectedChallenge, passkey);
+    } catch (verifyError) {
+      console.error('❌ Verification error:', verifyError);
+      // Clean up challenge
+      challenges.delete(challengeKey);
+      return res.status(400).json({
+        message: 'Passkey verification failed. Please try again.',
+        code: 'VERIFICATION_ERROR',
+        details: verifyError.message
+      });
+    }
 
     if (!verification.verified) {
-      return res.status(400).json({ message: 'Passkey verification failed' });
+      console.error('❌ Verification failed');
+      // Clean up challenge
+      challenges.delete(challengeKey);
+      return res.status(400).json({
+        message: 'Passkey verification failed. The signature did not match.',
+        code: 'VERIFICATION_FAILED'
+      });
     }
 
     // Update passkey counter and last used
@@ -337,8 +430,22 @@ router.post('/login-finish', async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Passkey login finish error:', error);
-    res.status(500).json({ message: 'Failed to complete passkey login' });
+    console.error('❌ Passkey login finish error:', error);
+    console.error('   Error name:', error.name);
+    console.error('   Error message:', error.message);
+    console.error('   Error stack:', error.stack);
+
+    // Return detailed error in development, generic in production
+    const isDevelopment = process.env.NODE_ENV !== 'production';
+
+    res.status(500).json({
+      message: 'Failed to complete passkey login. Please try again.',
+      code: 'INTERNAL_ERROR',
+      ...(isDevelopment && {
+        details: error.message,
+        errorType: error.name
+      })
+    });
   }
 });
 

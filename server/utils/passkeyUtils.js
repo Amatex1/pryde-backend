@@ -8,18 +8,39 @@ import config from '../config/config.js';
 
 /**
  * WebAuthn/Passkey Configuration
+ *
+ * CRITICAL: RP ID and Origin must match EXACTLY for WebAuthn to work
+ * - RP ID: The domain (without protocol or port)
+ * - Origin: The full URL (with protocol, without trailing slash)
+ *
+ * Production: prydeapp.com (behind Cloudflare)
+ * Development: localhost
  */
 
 // Relying Party (RP) Information
 const rpName = 'Pryde Social';
-const rpID = process.env.RP_ID || 'localhost'; // Your domain (e.g., 'prydesocial.com')
-const origin = process.env.ORIGIN || 'http://localhost:3000'; // Your frontend URL
+
+// FORCE CORRECT RP ID & ORIGIN FOR PRODUCTION
+// RP ID must be the domain only (no protocol, no port, no path)
+const RP_ID = 'prydeapp.com';
+const ORIGIN = 'https://prydeapp.com';
+
+// Use environment variables ONLY in development
+const rpID = process.env.NODE_ENV === 'production'
+  ? RP_ID
+  : (process.env.RP_ID || 'localhost');
+
+const origin = process.env.NODE_ENV === 'production'
+  ? ORIGIN
+  : (process.env.ORIGIN || 'http://localhost:3000');
 
 // Log configuration on startup
 console.log('🔐 Passkey Configuration:');
+console.log('   Environment:', process.env.NODE_ENV || 'development');
 console.log('   RP Name:', rpName);
 console.log('   RP ID:', rpID);
 console.log('   Origin:', origin);
+console.log('   RP ID Source:', process.env.NODE_ENV === 'production' ? 'FORCED (production)' : 'ENV/DEFAULT');
 
 /**
  * Generate registration options for creating a new passkey
