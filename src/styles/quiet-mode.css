@@ -47,10 +47,5 @@ html[data-quiet-mode="true"] * {
 /* ========================================
    LEGACY SUPPORT
    Map old data-quiet-mode attribute to new data-quiet
+   All styling is handled by [data-quiet="true"] in variables.css
    ======================================== */
-
-[data-quiet-mode="true"] {
-  /* All styling is handled by [data-quiet="true"] in variables.css */
-  /* This selector exists only for backward compatibility */
-}
-

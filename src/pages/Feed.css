@@ -3404,8 +3404,6 @@ label.btn-media-upload:disabled {
   display: block;
   border-radius: 12px;
 }
-  cursor: not-allowed;
-}
 
 /* Privacy Selector - Use design system variables */
 .post-actions-bar .privacy-selector,
