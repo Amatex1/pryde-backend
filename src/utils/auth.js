@@ -76,7 +76,15 @@ export const logout = async () => {
   // Set flag to indicate manual logout (not session expiration)
   sessionStorage.setItem('manualLogout', 'true');
 
-  // 🔥 CRITICAL: Disconnect socket FIRST to prevent zombie sockets
+  // 🔥 CRITICAL: Mark as unauthenticated FIRST to prevent redirects
+  try {
+    const { markUnauthenticated } = await import('../state/authStatus');
+    markUnauthenticated();
+  } catch (error) {
+    console.error('Failed to mark unauthenticated:', error);
+  }
+
+  // 🔥 CRITICAL: Disconnect socket SECOND to prevent zombie sockets
   try {
     const { disconnectSocketForLogout } = await import('./socket');
     disconnectSocketForLogout();

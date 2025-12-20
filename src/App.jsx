@@ -8,6 +8,13 @@ import { preloadCriticalResources, preloadFeedData } from './utils/resourcePrelo
 import api from './utils/api';
 import { API_BASE_URL } from './config/api';
 import logger from './utils/logger';
+import {
+  AUTH_STATUS,
+  getAuthStatus,
+  setAuthStatus,
+  markAuthenticated,
+  markUnauthenticated
+} from './state/authStatus';
 
 // Eager load critical components (needed immediately)
 // IMPORTANT: Only load components that DON'T use React Router hooks
@@ -124,9 +131,16 @@ const PageLoader = () => {
 };
 
 function App() {
-  const [isAuth, setIsAuth] = useState(isAuthenticated());
-  const [authBootstrapped, setAuthBootstrapped] = useState(false);
+  // CRITICAL: Use 3-state auth model to prevent redirect loops
+  // - "loading": Auth state unknown (initial state, checking token)
+  // - "authenticated": User is confirmed logged in
+  // - "unauthenticated": User is confirmed logged out
+  const [authStatus, setAuthStatusState] = useState(AUTH_STATUS.UNKNOWN);
   const [initError, setInitError] = useState(false);
+
+  // Derived state for backward compatibility
+  const isAuth = authStatus === AUTH_STATUS.AUTHENTICATED;
+  const authLoading = authStatus === AUTH_STATUS.UNKNOWN;
 
   useEffect(() => {
     // 🔥 PRE-WARM BACKEND: Wake backend immediately on app load
@@ -153,81 +167,93 @@ function App() {
     // This prevents refresh loops and ensures CSRF token is available
     const bootstrapAuth = async () => {
       try {
-        // Call lightweight auth status endpoint to:
-        // 1. Get CSRF token (from response header)
-        // 2. Verify current auth state
-        // 3. Avoid triggering refresh logic
+        // Check if token exists in localStorage
+        const token = localStorage.getItem('token');
+
+        if (!token) {
+          // No token = definitely unauthenticated
+          logger.debug('🔐 No token found - marking unauthenticated');
+          setAuthStatusState(AUTH_STATUS.UNAUTHENTICATED);
+          markUnauthenticated();
+          return;
+        }
+
+        // Token exists - verify it with backend
+        logger.debug('🔐 Token found - verifying with backend...');
         const response = await api.get('/auth/status');
 
         const isCurrentlyAuth = response.data.authenticated;
-        setIsAuth(isCurrentlyAuth);
-        setAuthBootstrapped(true);
 
-        logger.debug('🔐 Auth bootstrap complete:', {
-          authenticated: isCurrentlyAuth,
-          user: response.data.user?.username
-        });
-
-        // 🚀 OPTIMIZATION: Preload critical resources after auth
         if (isCurrentlyAuth) {
-          // Preload in parallel (non-blocking)
+          logger.debug('🔐 Auth verified - marking authenticated');
+          setAuthStatusState(AUTH_STATUS.AUTHENTICATED);
+          markAuthenticated();
+
+          // 🚀 OPTIMIZATION: Preload critical resources after auth
           Promise.all([
             preloadCriticalResources(),
             preloadFeedData()
           ]).catch(err => {
             logger.debug('Resource preload failed (non-critical):', err);
           });
+        } else {
+          logger.debug('🔐 Auth failed - marking unauthenticated');
+          setAuthStatusState(AUTH_STATUS.UNAUTHENTICATED);
+          markUnauthenticated();
         }
+
+        logger.debug('🔐 Auth bootstrap complete:', {
+          status: isCurrentlyAuth ? 'authenticated' : 'unauthenticated',
+          user: response.data.user?.username
+        });
       } catch (error) {
-        // If auth status check fails, fall back to localStorage check
-        logger.warn('Auth status check failed, using localStorage:', error);
-        setIsAuth(isAuthenticated());
-        setAuthBootstrapped(true);
+        // If auth status check fails, mark as unauthenticated
+        logger.warn('Auth status check failed - marking unauthenticated:', error);
+        setAuthStatusState(AUTH_STATUS.UNAUTHENTICATED);
+        markUnauthenticated();
       }
     };
 
     bootstrapAuth();
 
-    // Initialize Quiet Mode globally - only after auth is bootstrapped
+    // Initialize Quiet Mode globally - only when authenticated
     const initQuietMode = async (retries = 3) => {
-      // Wait for auth bootstrap to complete
-      if (!authBootstrapped) {
+      // Only initialize if authenticated
+      if (authStatus !== AUTH_STATUS.AUTHENTICATED) {
         return;
       }
 
-      if (isAuth) {
-        try {
-          const response = await api.get('/auth/me', {
-            timeout: 10000 // 10 second timeout
-          });
-          const user = response.data;
+      try {
+        const response = await api.get('/auth/me', {
+          timeout: 10000 // 10 second timeout
+        });
+        const user = response.data;
 
-          // Initialize quiet mode with user settings
-          initializeQuietMode(user);
-          setInitError(false);
-        } catch (error) {
-          logger.error('Failed to initialize quiet mode:', error);
+        // Initialize quiet mode with user settings
+        initializeQuietMode(user);
+        setInitError(false);
+      } catch (error) {
+        logger.error('Failed to initialize quiet mode:', error);
 
-          // Retry if we have retries left
-          if (retries > 0) {
-            logger.debug(`Retrying quiet mode initialization... (${retries} retries left)`);
-            setTimeout(() => initQuietMode(retries - 1), 2000);
-          } else {
-            logger.warn('Quiet mode initialization failed after all retries');
-            // Don't block the app - just use default settings
-            setInitError(true);
-          }
+        // Retry if we have retries left
+        if (retries > 0) {
+          logger.debug(`Retrying quiet mode initialization... (${retries} retries left)`);
+          setTimeout(() => initQuietMode(retries - 1), 2000);
+        } else {
+          logger.warn('Quiet mode initialization failed after all retries');
+          // Don't block the app - just use default settings
+          setInitError(true);
         }
       }
     };
 
-    // Only initialize quiet mode after auth bootstrap
-    if (authBootstrapped) {
+    // Only initialize quiet mode when authenticated
+    if (authStatus === AUTH_STATUS.AUTHENTICATED) {
       initQuietMode();
     }
 
-    // Initialize Socket.IO when user is authenticated - only after auth bootstrap
-    if (authBootstrapped && isAuth) {
+    // Initialize Socket.IO when user is authenticated
+    if (authStatus === AUTH_STATUS.AUTHENTICATED) {
       // 🔥 CRITICAL: Reset logout flag when user is authenticated
       // This allows socket to reconnect after a fresh login
       resetLogoutFlag();
@@ -252,7 +278,7 @@ function App() {
           // Cleanup on unmount or when user logs out
           return () => {
             cleanupNewMessage?.();
-            if (!isAuth) {
+            if (authStatus !== AUTH_STATUS.AUTHENTICATED) {
               // Use logout-specific disconnect to prevent reconnection
               disconnectSocketForLogout();
             }
@@ -262,13 +288,19 @@ function App() {
           // Don't block the app - socket features just won't work
         }
       }
-    } else if (authBootstrapped && !isAuth) {
+    } else if (authStatus === AUTH_STATUS.UNAUTHENTICATED) {
       // 🔥 CRITICAL: User is not authenticated, ensure socket is disconnected
       disconnectSocketForLogout();
     }
-  }, [isAuth, authBootstrapped]);
+  }, [authStatus]);
 
   const PrivateRoute = ({ children }) => {
+    // CRITICAL: Don't redirect while auth state is loading
+    // This prevents redirect loops
+    if (authLoading) {
+      return <PageLoader />;
+    }
+
     return isAuth ? children : <Navigate to="/login" />;
   };
 
@@ -285,13 +317,36 @@ function App() {
                 <main id="main-content">
                   <Routes>
             {/* Public Home Page - Redirect to feed if logged in */}
-            <Route path="/" element={!isAuth ? <Home /> : <Navigate to="/feed" />} />
+            <Route path="/" element={
+              authLoading ? <PageLoader /> :
+              !isAuth ? <Home /> : <Navigate to="/feed" />
+            } />
 
-            {/* Auth Pages */}
-            <Route path="/login" element={!isAuth ? <Login setIsAuth={setIsAuth} /> : <Navigate to="/feed" />} />
-            <Route path="/register" element={!isAuth ? <Register setIsAuth={setIsAuth} /> : <Navigate to="/feed" />} />
-            <Route path="/forgot-password" element={!isAuth ? <ForgotPassword /> : <Navigate to="/feed" />} />
-            <Route path="/reset-password" element={!isAuth ? <ResetPassword /> : <Navigate to="/feed" />} />
+            {/* Auth Pages - Don't redirect while loading */}
+            <Route path="/login" element={
+              authLoading ? <PageLoader /> :
+              !isAuth ? <Login setIsAuth={(val) => {
+                setAuthStatusState(val ? AUTH_STATUS.AUTHENTICATED : AUTH_STATUS.UNAUTHENTICATED);
+                if (val) markAuthenticated();
+                else markUnauthenticated();
+              }} /> : <Navigate to="/feed" />
+            } />
+            <Route path="/register" element={
+              authLoading ? <PageLoader /> :
+              !isAuth ? <Register setIsAuth={(val) => {
+                setAuthStatusState(val ? AUTH_STATUS.AUTHENTICATED : AUTH_STATUS.UNAUTHENTICATED);
+                if (val) markAuthenticated();
+                else markUnauthenticated();
+              }} /> : <Navigate to="/feed" />
+            } />
+            <Route path="/forgot-password" element={
+              authLoading ? <PageLoader /> :
+              !isAuth ? <ForgotPassword /> : <Navigate to="/feed" />
+            } />
+            <Route path="/reset-password" element={
+              authLoading ? <PageLoader /> :
+              !isAuth ? <ResetPassword /> : <Navigate to="/feed" />
+            } />
 
           {/* Protected Routes */}
           <Route path="/feed" element={<PrivateRoute><Feed /></PrivateRoute>} />
