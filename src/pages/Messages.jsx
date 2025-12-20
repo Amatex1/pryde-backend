@@ -20,7 +20,8 @@ import {
   sendMessage as socketSendMessage,
   emitTyping,
   onUserTyping,
-  isSocketConnected
+  isSocketConnected,
+  getSocket
 } from '../utils/socket';
 import { setupSocketListeners } from '../utils/socketHelpers';
 import './Messages.css';
