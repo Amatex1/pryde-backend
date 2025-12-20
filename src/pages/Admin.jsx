@@ -7,8 +7,7 @@ import { useModal } from '../hooks/useModal';
 import api from '../utils/api';
 import { getCurrentUser } from '../utils/auth';
 import { getImageUrl } from '../utils/imageUrl';
-import { getSocket } from '../utils/socket';
-import { setupSocketListeners } from '../utils/socketHelpers';
+import { getSocket, setupSocketListeners } from '../utils/socketHelpers';
 import './Admin.css';
 
 function Admin() {
