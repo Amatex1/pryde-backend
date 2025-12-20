@@ -2,6 +2,7 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App.jsx'
 import './index.css'
+import './styles/breakpoints.css' // Responsive breakpoint system + PWA utilities (MUST be loaded early)
 import './styles/darkMode.css'
 import './styles/quiet-mode.css' // MUST be loaded AFTER darkMode.css to override properly
 import './styles/mobileFriendly.css' // Mobile-friendly layout fixes for PWA
