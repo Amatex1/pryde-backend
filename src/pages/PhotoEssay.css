@@ -1,13 +1,14 @@
 .photo-essay-page {
   min-height: 100vh;
   background: var(--background-light);
-  padding-top: 80px;
+  /* Removed padding-top: 80px - Navbar is sticky and handles its own positioning */
 }
 
 .photo-essay-container {
   max-width: 900px;
   margin: 0 auto;
   padding: 20px;
+  padding-top: 100px; /* Space for sticky navbar */
 }
 
 .photo-essay-header {
