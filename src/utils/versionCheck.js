@@ -51,6 +51,13 @@ export const isNewVersionAvailable = () => {
  * Show a toast notification prompting user to refresh
  */
 export const promptUserToRefresh = () => {
+  // Prevent duplicate toasts
+  const existingToast = document.getElementById('version-update-toast');
+  if (existingToast) {
+    console.log('⚠️ Update notification already showing');
+    return;
+  }
+
   // Create a custom toast notification
   const toast = document.createElement('div');
   toast.id = 'version-update-toast';
@@ -124,20 +131,36 @@ export const promptUserToRefresh = () => {
   `;
   
   document.body.appendChild(toast);
-  
-  // Add event listeners
-  document.getElementById('refresh-now-btn')?.addEventListener('click', () => {
-    window.location.reload(true); // Hard reload
-  });
-  
-  document.getElementById('refresh-later-btn')?.addEventListener('click', () => {
-    toast.remove();
-  });
+
+  // Add event listeners after DOM insertion
+  // Use setTimeout to ensure DOM is ready
+  setTimeout(() => {
+    const refreshNowBtn = document.getElementById('refresh-now-btn');
+    const refreshLaterBtn = document.getElementById('refresh-later-btn');
+
+    if (refreshNowBtn) {
+      refreshNowBtn.addEventListener('click', () => {
+        console.log('🔄 Refreshing page...');
+        // Update stored version before reload to prevent loop
+        storeBuildVersion(getCurrentBuildVersion());
+        window.location.reload(true); // Hard reload
+      });
+    }
+
+    if (refreshLaterBtn) {
+      refreshLaterBtn.addEventListener('click', () => {
+        console.log('⏰ User chose to refresh later');
+        toast.remove();
+      });
+    }
+  }, 0);
   
   // Auto-remove after 30 seconds if user doesn't interact
   setTimeout(() => {
-    if (document.getElementById('version-update-toast')) {
-      toast.remove();
+    const existingToast = document.getElementById('version-update-toast');
+    if (existingToast) {
+      console.log('⏰ Auto-dismissing update notification');
+      existingToast.remove();
     }
   }, 30000);
 };
