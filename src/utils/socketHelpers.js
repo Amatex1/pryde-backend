@@ -1,6 +1,9 @@
 import { getSocket } from './socket';
 import logger from './logger';
 
+// Re-export getSocket for convenience (components can import from socketHelpers)
+export { getSocket };
+
 /**
  * Waits for socket to be initialized and connected, then executes a setup callback.
  * Handles retry logic with configurable interval and max retries.
