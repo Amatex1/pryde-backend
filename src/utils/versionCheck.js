@@ -166,23 +166,43 @@ export const promptUserToRefresh = () => {
 };
 
 /**
+ * Perform a single version check
+ * Used by startVersionCheck and can be called manually for testing
+ */
+export const checkForUpdate = () => {
+  console.log('🔍 Checking for new version...');
+
+  const currentVersion = getCurrentBuildVersion();
+  const storedVersion = getStoredBuildVersion();
+
+  console.log('📊 Version info:', {
+    current: currentVersion,
+    stored: storedVersion,
+    isNew: currentVersion !== storedVersion && currentVersion !== 'unknown'
+  });
+
+  if (isNewVersionAvailable()) {
+    console.log('🎉 New version detected!');
+    promptUserToRefresh();
+  } else {
+    console.log('✅ Already on latest version');
+  }
+};
+
+/**
  * Start periodic version checking
  * Call this once when the app initializes
  */
 export const startVersionCheck = () => {
   // Check immediately on load
-  if (isNewVersionAvailable()) {
-    console.log('🎉 New version detected!');
-    promptUserToRefresh();
-    return;
-  }
-  
-  // Then check periodically
+  checkForUpdate();
+
+  // Then check periodically by fetching fresh index.html
   setInterval(() => {
-    console.log('🔍 Checking for new version...');
-    
+    console.log('🔍 Periodic version check...');
+
     // Fetch the current index.html to check meta tag
-    fetch('/', { 
+    fetch('/', {
       cache: 'no-cache',
       headers: { 'Cache-Control': 'no-cache' }
     })
@@ -193,7 +213,9 @@ export const startVersionCheck = () => {
         const doc = parser.parseFromString(html, 'text/html');
         const metaTag = doc.querySelector('meta[name="build-version"]');
         const newVersion = metaTag?.content;
-        
+
+        console.log('📊 Fetched version:', newVersion, 'Current:', getCurrentBuildVersion());
+
         if (newVersion && newVersion !== getCurrentBuildVersion()) {
           console.log('✅ New version available:', newVersion);
           promptUserToRefresh();
