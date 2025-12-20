@@ -418,6 +418,9 @@ router.post('/login-finish', async (req, res) => {
       success: true,
       message: 'Login successful',
       accessToken,
+      // Send refresh token in response for cross-domain setups (Cloudflare Pages → Render)
+      // Frontend will store it securely and send it back when needed
+      refreshToken,
       user: {
         id: user._id,
         username: user.username,
