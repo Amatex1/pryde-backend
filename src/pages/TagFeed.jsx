@@ -5,6 +5,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import Navbar from '../components/Navbar';
 import OptimizedImage from '../components/OptimizedImage';
 import api from '../utils/api';
 import './TagFeed.css';
@@ -86,8 +87,10 @@ function TagFeed() {
   }
 
   return (
-    <div className="tag-feed-container">
-      <div className="tag-feed-header glossy">
+    <div className="page-container">
+      <Navbar />
+      <div className="tag-feed-container">
+        <div className="tag-feed-header glossy">
         <div className="tag-feed-icon">{tag.icon}</div>
         <h1>{tag.label}</h1>
         <p className="tag-feed-description">{tag.description}</p>
@@ -181,6 +184,7 @@ function TagFeed() {
             </div>
           ))
         )}
+      </div>
       </div>
     </div>
   );

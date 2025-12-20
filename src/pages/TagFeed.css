@@ -1,7 +1,7 @@
 .tag-feed-container {
   max-width: 800px;
   margin: 0 auto;
-  padding: 2rem 1rem;
+  padding: 100px 1rem 2rem 1rem; /* Top padding for navbar */
 }
 
 .tag-feed-header {
