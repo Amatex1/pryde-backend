@@ -13,6 +13,16 @@ function PasskeyLogin({ onSuccess, email }) {
       setLoading(true);
       setError('');
 
+      // Step 0: Get CSRF token before attempting passkey login
+      // Passkey endpoints require CSRF protection but user isn't logged in yet
+      // Make a lightweight GET request to trigger CSRF token generation
+      try {
+        await api.get('/auth/status');
+      } catch (csrfError) {
+        // Ignore errors - we just need the CSRF token from the response header
+        console.debug('CSRF token fetch completed');
+      }
+
       // Step 1: Start authentication
       const { data: options } = await api.post('/passkey/login-start', {
         email: email || undefined
