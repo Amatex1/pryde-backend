@@ -20,12 +20,12 @@ import {
   emitTyping,
   onUserTyping,
   isSocketConnected,
-  getSocket,
   onUserOnline,
   onUserOffline,
   onOnlineUsers,
   requestOnlineUsers
 } from '../utils/socket';
+import { setupSocketListeners } from '../utils/socketHelpers';
 import './Messages.css';
 import '../styles/themes/messages.css';
 
@@ -324,40 +324,17 @@ function Messages() {
       cleanupFunctions.push(cleanupUserOffline);
     };
 
-    // Try to get socket, retry if not available yet
-    const checkSocket = () => {
-      const socket = getSocket();
-
-      if (!socket) {
-        logger.debug('⏳ Socket not initialized yet, retrying in 100ms...');
-        setTimeout(checkSocket, 100);
-        return;
-      }
-
-      logger.debug('✅ Socket found, checking connection status');
-
-      // Set up listeners if already connected, or wait for connection
-      if (socket.connected) {
-        logger.debug('✅ Socket already connected, setting up listeners');
-        setupListeners();
-        // Request online users list (important for mobile/slow connections)
-        setTimeout(() => requestOnlineUsers(), 500);
-      } else {
-        logger.debug('⏳ Socket not connected yet, waiting for connection...');
-        const onConnect = () => {
-          logger.debug('✅ Socket connected, setting up listeners');
-          setupListeners();
-          // Request online users list (important for mobile/slow connections)
-          setTimeout(() => requestOnlineUsers(), 500);
-        };
-        socket.once('connect', onConnect);
-      }
-    };
-
-    checkSocket();
+    // Use shared socket helper with retry logic
+    const cancelSocketRetry = setupSocketListeners((socket) => {
+      setupListeners();
+      // Request online users list (important for mobile/slow connections)
+      setTimeout(() => requestOnlineUsers(), 500);
+    });
 
     // Cleanup on unmount
     return () => {
+      // Cancel pending socket retries
+      cancelSocketRetry();
       cleanupFunctions.forEach(cleanup => cleanup?.());
     };
   }, []); // Empty dependency array - only run once on mount
@@ -365,14 +342,7 @@ function Messages() {
   // Socket.IO listeners for messages and typing - depend on selectedChat
   useEffect(() => {
     // Ensure socket is connected before setting up listeners
-    const setupListeners = () => {
-      const socket = getSocket();
-
-      if (!socket) {
-        logger.warn('⚠️ Socket not initialized yet for message listeners, retrying...');
-        setTimeout(setupListeners, 100);
-        return null;
-      }
+    const setupListeners = (socket) => {
       logger.debug('🎧 Setting up message socket listeners for chat:', selectedChat);
 
       // Listen for new messages
@@ -452,11 +422,16 @@ function Messages() {
       };
     };
 
-    const cleanup = setupListeners();
+    // Use shared socket helper with retry logic
+    let messageCleanup = null;
+    const cancelSocketRetry = setupSocketListeners((socket) => {
+      messageCleanup = setupListeners(socket);
+    }, { retryInterval: 500 });
 
     return () => {
-      if (cleanup) {
-        cleanup();
+      cancelSocketRetry();
+      if (messageCleanup) {
+        messageCleanup();
       }
     };
   }, [selectedChat, currentUser]);

@@ -7,7 +7,7 @@ import { useModal } from '../hooks/useModal';
 import api from '../utils/api';
 import { getCurrentUser } from '../utils/auth';
 import { getImageUrl } from '../utils/imageUrl';
-import { getSocket } from '../utils/socket';
+import { setupSocketListeners } from '../utils/socketHelpers';
 import './Admin.css';
 
 function Admin() {
@@ -161,22 +161,14 @@ function Admin() {
 
     listenersSetUpRef.current = true;
 
-    const checkSocket = () => {
-      const socket = getSocket();
-      if (!socket) {
-        setTimeout(checkSocket, 100);
-        return;
-      }
-      if (socket.connected) {
-        setupListeners();
-      } else {
-        socket.once('connect', setupListeners);
-      }
-    };
-
-    checkSocket();
+    // Use shared socket helper with retry logic
+    const cancelSocketRetry = setupSocketListeners((socket) => {
+      setupListeners();
+    });
 
     return () => {
+      // Cancel pending socket retries
+      cancelSocketRetry();
       cleanupFunctions.forEach(cleanup => cleanup?.());
     };
   }, [activeTab, stats]);

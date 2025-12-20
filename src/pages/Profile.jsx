@@ -22,7 +22,7 @@ import { getCurrentUser } from '../utils/auth';
 import { getImageUrl } from '../utils/imageUrl';
 import { useToast } from '../hooks/useToast';
 import { convertEmojiShortcuts } from '../utils/textFormatting';
-import { getSocket } from '../utils/socket';
+import { setupSocketListeners } from '../utils/socketHelpers';
 import logger from '../utils/logger';
 import { sanitizeBio, sanitizeURL, sanitizeText } from '../utils/sanitize';
 import './Profile.css';
@@ -309,53 +309,58 @@ function Profile() {
 
   // Socket.io real-time updates
   useEffect(() => {
-    const socket = getSocket();
-    if (!socket) return;
-
     const cleanupFunctions = [];
 
-    // Listen for real-time post reactions
-    const handlePostReaction = (data) => {
-      logger.debug('💜 Real-time post reaction received:', data);
-      setPosts((prevPosts) =>
-        prevPosts.map(p => p._id === data.postId ? data.post : p)
-      );
-    };
-    socket.on('post_reaction_added', handlePostReaction);
-    cleanupFunctions.push(() => socket.off('post_reaction_added', handlePostReaction));
+    const setupListeners = (socket) => {
+      // Listen for real-time post reactions
+      const handlePostReaction = (data) => {
+        logger.debug('💜 Real-time post reaction received:', data);
+        setPosts((prevPosts) =>
+          prevPosts.map(p => p._id === data.postId ? data.post : p)
+        );
+      };
+      socket.on('post_reaction_added', handlePostReaction);
+      cleanupFunctions.push(() => socket.off('post_reaction_added', handlePostReaction));
 
-    // Listen for real-time comment reactions
-    const handleCommentReactionRT = (data) => {
-      logger.debug('💜 Real-time comment reaction received:', data);
-      const updatedComment = data.comment;
+      // Listen for real-time comment reactions
+      const handleCommentReactionRT = (data) => {
+        logger.debug('💜 Real-time comment reaction received:', data);
+        const updatedComment = data.comment;
 
-      // Update in postComments
-      setPostComments(prev => {
-        const updated = { ...prev };
-        Object.keys(updated).forEach(postId => {
-          updated[postId] = updated[postId].map(c =>
-            c._id === updatedComment._id ? updatedComment : c
-          );
+        // Update in postComments
+        setPostComments(prev => {
+          const updated = { ...prev };
+          Object.keys(updated).forEach(postId => {
+            updated[postId] = updated[postId].map(c =>
+              c._id === updatedComment._id ? updatedComment : c
+            );
+          });
+          return updated;
         });
-        return updated;
-      });
 
-      // Update in commentReplies
-      setCommentReplies(prev => {
-        const updated = { ...prev };
-        Object.keys(updated).forEach(parentId => {
-          updated[parentId] = updated[parentId].map(c =>
-            c._id === updatedComment._id ? updatedComment : c
-          );
+        // Update in commentReplies
+        setCommentReplies(prev => {
+          const updated = { ...prev };
+          Object.keys(updated).forEach(parentId => {
+            updated[parentId] = updated[parentId].map(c =>
+              c._id === updatedComment._id ? updatedComment : c
+            );
+          });
+          return updated;
         });
-        return updated;
-      });
+      };
+      socket.on('comment_reaction_added', handleCommentReactionRT);
+      cleanupFunctions.push(() => socket.off('comment_reaction_added', handleCommentReactionRT));
     };
-    socket.on('comment_reaction_added', handleCommentReactionRT);
-    cleanupFunctions.push(() => socket.off('comment_reaction_added', handleCommentReactionRT));
+
+    // Use shared socket helper with retry logic
+    const cancelSocketRetry = setupSocketListeners((socket) => {
+      setupListeners(socket);
+    });
 
     // Cleanup all socket listeners
     return () => {
+      cancelSocketRetry();
       cleanupFunctions.forEach(cleanup => cleanup());
     };
   }, []);

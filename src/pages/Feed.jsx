@@ -20,7 +20,8 @@ import { useModal } from '../hooks/useModal';
 import api, { getCsrfToken } from '../utils/api';
 import { getCurrentUser } from '../utils/auth';
 import { getImageUrl } from '../utils/imageUrl';
-import { onUserOnline, onUserOffline, onOnlineUsers, requestOnlineUsers, getSocket } from '../utils/socket';
+import { onUserOnline, onUserOffline, onOnlineUsers, requestOnlineUsers } from '../utils/socket';
+import { setupSocketListeners } from '../utils/socketHelpers';
 import { convertEmojiShortcuts } from '../utils/textFormatting';
 import logger from '../utils/logger';
 import './Feed.css';
@@ -587,50 +588,20 @@ function Feed() {
     // Mark as set up immediately to prevent duplicate setup
     listenersSetUpRef.current = true;
 
-    // Try to get socket, retry if not available yet (max 50 retries = 5 seconds)
-    let retryCount = 0;
-    const maxRetries = 50;
-
-    const checkSocket = () => {
-      const socket = getSocket();
-
-      if (!socket) {
-        retryCount++;
-        if (retryCount < maxRetries) {
-          logger.debug(`⏳ Socket not initialized yet, retrying in 100ms... (${retryCount}/${maxRetries})`);
-          setTimeout(checkSocket, 100);
-        } else {
-          logger.warn('⚠️ Socket initialization timed out after 5 seconds');
-        }
-        return;
-      }
-
-      logger.debug('✅ Socket found, checking connection status');
-
-      // Set up listeners if already connected, or wait for connection
-      if (socket.connected) {
-        logger.debug('✅ Socket already connected, setting up listeners');
-        setupListeners();
-        // Request online users list (important for mobile/slow connections)
-        setTimeout(() => requestOnlineUsers(), 500);
-      } else {
-        logger.debug('⏳ Socket not connected yet, waiting for connection...');
-        const onConnect = () => {
-          logger.debug('✅ Socket connected, setting up listeners');
-          setupListeners();
-          // Request online users list (important for mobile/slow connections)
-          setTimeout(() => requestOnlineUsers(), 500);
-        };
-        socket.once('connect', onConnect);
-      }
-    };
-
-    checkSocket();
+    // Use shared socket helper with retry logic
+    const cancelSocketRetry = setupSocketListeners((socket) => {
+      setupListeners();
+      // Request online users list (important for mobile/slow connections)
+      setTimeout(() => requestOnlineUsers(), 500);
+    });
 
     // Refresh friends list every 30 seconds
     friendsIntervalRef.current = setInterval(fetchFriends, 30000);
 
     return () => {
+      // Cancel pending socket retries
+      cancelSocketRetry();
+
       if (friendsIntervalRef.current) {
         clearInterval(friendsIntervalRef.current);
         friendsIntervalRef.current = null;
