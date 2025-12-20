@@ -4,26 +4,26 @@ import logger from './logger';
 /**
  * Waits for socket to be initialized and connected, then executes a setup callback.
  * Handles retry logic with configurable interval and max retries.
- * 
+ *
  * @param {Function} setupCallback - Function to call when socket is ready
  * @param {Object} options - Configuration options
- * @param {number} options.retryInterval - Milliseconds between retries (default: 500ms)
- * @param {number} options.maxRetries - Maximum retry attempts (default: 20, ~10 seconds)
+ * @param {number} options.retryInterval - Milliseconds between retries (default: 750ms)
+ * @param {number} options.maxRetries - Maximum retry attempts (default: 20, ~15 seconds)
  * @param {Function} options.onTimeout - Callback if max retries exceeded
  * @returns {Function} Cleanup function to cancel pending retries
- * 
+ *
  * @example
  * const cleanup = setupSocketListeners(() => {
  *   const socket = getSocket();
  *   socket.on('event', handler);
  * });
- * 
+ *
  * // Later, on component unmount:
  * cleanup();
  */
 export function setupSocketListeners(setupCallback, options = {}) {
   const {
-    retryInterval = 500,
+    retryInterval = 750,
     maxRetries = 20,
     onTimeout = null
   } = options;

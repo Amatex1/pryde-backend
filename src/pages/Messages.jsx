@@ -372,11 +372,11 @@ function Messages() {
       };
     };
 
-    // Use shared socket helper with retry logic
+    // Use shared socket helper with retry logic (uses default 750ms interval)
     let messageCleanup = null;
     const cancelSocketRetry = setupSocketListeners((socket) => {
       messageCleanup = setupListeners(socket);
-    }, { retryInterval: 500 });
+    });
 
     return () => {
       cancelSocketRetry();
