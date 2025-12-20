@@ -615,7 +615,7 @@
 
 .btn-cta-primary {
   background: white;
-  color: var(--pryde-purple);
+  color: var(--pryde-purple) !important;
 }
 
 .btn-cta-primary:hover {
@@ -625,7 +625,7 @@
 
 .btn-cta-secondary {
   background: white;
-  color: var(--pryde-purple);
+  color: var(--pryde-purple) !important;
 }
 
 .btn-cta-secondary:hover {
