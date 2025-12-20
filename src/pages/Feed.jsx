@@ -2032,7 +2032,7 @@ function Feed() {
                         aria-label={bookmarkedPosts.includes(post._id) ? 'Remove save from post' : 'Save post'}
                       >
                         <span>{bookmarkedPosts.includes(post._id) ? '🔖' : '🔖'}</span>
-                        <span className="action-text">Save</span>
+                        <span className="action-text">{bookmarkedPosts.includes(post._id) ? 'Saved' : 'Save'}</span>
                       </button>
                     </div>
 
