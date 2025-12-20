@@ -139,11 +139,39 @@ export const promptUserToRefresh = () => {
     const refreshLaterBtn = document.getElementById('refresh-later-btn');
 
     if (refreshNowBtn) {
-      refreshNowBtn.addEventListener('click', () => {
-        console.log('🔄 Refreshing page...');
+      refreshNowBtn.addEventListener('click', async () => {
+        console.log('🔄 Refreshing page and clearing all caches...');
+
         // Update stored version before reload to prevent loop
         storeBuildVersion(getCurrentBuildVersion());
-        window.location.reload(true); // Hard reload
+
+        // CRITICAL: Clear ALL caches to force fresh content
+        try {
+          // 1. Unregister all service workers
+          if ('serviceWorker' in navigator) {
+            const registrations = await navigator.serviceWorker.getRegistrations();
+            console.log(`🗑️ Unregistering ${registrations.length} service workers...`);
+            for (const registration of registrations) {
+              await registration.unregister();
+            }
+          }
+
+          // 2. Clear all caches
+          if ('caches' in window) {
+            const cacheNames = await caches.keys();
+            console.log(`🗑️ Clearing ${cacheNames.length} caches...`);
+            await Promise.all(cacheNames.map(name => caches.delete(name)));
+          }
+
+          console.log('✅ All caches cleared');
+        } catch (error) {
+          console.error('⚠️ Error clearing caches:', error);
+        }
+
+        // 3. Force reload with cache-busting parameter
+        // This ensures Cloudflare and browser fetch fresh content
+        const timestamp = Date.now();
+        window.location.href = `${window.location.origin}${window.location.pathname}?v=${timestamp}`;
       });
     }
 

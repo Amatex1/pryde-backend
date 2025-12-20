@@ -298,8 +298,20 @@ function App() {
     // This will automatically reload the page when a new service worker is installed
     const updateSW = registerSW({
       immediate: true,
-      onNeedRefresh() {
-        console.log('🔄 New service worker available - reloading page...');
+      async onNeedRefresh() {
+        console.log('🔄 New service worker available - clearing caches and reloading...');
+
+        // Clear all caches before updating to ensure fresh content
+        try {
+          if ('caches' in window) {
+            const cacheNames = await caches.keys();
+            console.log(`🗑️ Clearing ${cacheNames.length} caches before update...`);
+            await Promise.all(cacheNames.map(name => caches.delete(name)));
+          }
+        } catch (error) {
+          console.error('⚠️ Error clearing caches:', error);
+        }
+
         // Automatically reload when new service worker is ready
         // This ensures users always get the latest version
         updateSW(true);
@@ -309,12 +321,12 @@ function App() {
       },
       onRegistered(registration) {
         console.log('✅ Service worker registered');
-        // Check for updates every hour
+        // Check for updates every 5 minutes (more frequent for faster updates)
         if (registration) {
           setInterval(() => {
             console.log('🔍 Checking for service worker updates...');
             registration.update();
-          }, 60 * 60 * 1000); // 1 hour
+          }, 5 * 60 * 1000); // 5 minutes (changed from 1 hour)
         }
       },
       onRegisterError(error) {
