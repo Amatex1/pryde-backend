@@ -410,12 +410,11 @@ function Feed() {
 
     let cleanupFunctions = [];
 
-    const setupListeners = () => {
+    const setupListeners = (socket) => {
       logger.debug('🔌 Setting up socket listeners in Feed');
       // Note: Online user presence is now managed by useOnlineUsers hook
 
       // Listen for real-time post reactions
-      const socket = getSocket();
       if (socket) {
         const handlePostReaction = (data) => {
           logger.debug('💜 Real-time post reaction received:', data);

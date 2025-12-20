@@ -62,8 +62,7 @@ function Admin() {
 
     const cleanupFunctions = [];
 
-    const setupListeners = () => {
-      const socket = getSocket();
+    const setupListeners = (socket) => {
       if (socket) {
         // Listen for new user registrations
         const handleUserCreated = (data) => {
