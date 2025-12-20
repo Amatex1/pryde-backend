@@ -6,6 +6,7 @@ import { playNotificationSound, requestNotificationPermission } from './utils/no
 import { initializeQuietMode } from './utils/quietMode';
 import { preloadCriticalResources, preloadFeedData } from './utils/resourcePreloader';
 import { startVersionCheck, checkForUpdate } from './utils/versionCheck';
+import { registerSW } from 'virtual:pwa-register';
 import api from './utils/api';
 import { API_BASE_URL } from './config/api';
 import logger from './utils/logger';
@@ -216,6 +217,34 @@ function App() {
     };
 
     bootstrapAuth();
+
+    // 🔄 Register service worker with auto-update handling
+    // This will automatically reload the page when a new service worker is installed
+    const updateSW = registerSW({
+      immediate: true,
+      onNeedRefresh() {
+        console.log('🔄 New service worker available - reloading page...');
+        // Automatically reload when new service worker is ready
+        // This ensures users always get the latest version
+        updateSW(true);
+      },
+      onOfflineReady() {
+        console.log('✅ App ready to work offline');
+      },
+      onRegistered(registration) {
+        console.log('✅ Service worker registered');
+        // Check for updates every hour
+        if (registration) {
+          setInterval(() => {
+            console.log('🔍 Checking for service worker updates...');
+            registration.update();
+          }, 60 * 60 * 1000); // 1 hour
+        }
+      },
+      onRegisterError(error) {
+        console.error('❌ Service worker registration failed:', error);
+      }
+    });
 
     // 🔄 Start version checking for auto-refresh on new deployments
     // This will check every 5 minutes and prompt user to refresh if new version is available
