@@ -2,10 +2,13 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { visualizer } from 'rollup-plugin-visualizer'
 import { VitePWA } from 'vite-plugin-pwa'
+import buildVersionPlugin from './vite-plugin-build-version.js'
 
 export default defineConfig({
   plugins: [
     react(),
+    // Inject build version into HTML for auto-refresh detection
+    buildVersionPlugin(),
     // PWA Plugin with Workbox
     VitePWA({
       registerType: 'autoUpdate',

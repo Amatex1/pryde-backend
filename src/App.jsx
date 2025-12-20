@@ -5,6 +5,7 @@ import { initializeSocket, disconnectSocket, disconnectSocketForLogout, resetLog
 import { playNotificationSound, requestNotificationPermission } from './utils/notifications';
 import { initializeQuietMode } from './utils/quietMode';
 import { preloadCriticalResources, preloadFeedData } from './utils/resourcePreloader';
+import { startVersionCheck } from './utils/versionCheck';
 import api from './utils/api';
 import { API_BASE_URL } from './config/api';
 import logger from './utils/logger';
@@ -215,6 +216,10 @@ function App() {
     };
 
     bootstrapAuth();
+
+    // 🔄 Start version checking for auto-refresh on new deployments
+    // This will check every 5 minutes and prompt user to refresh if new version is available
+    startVersionCheck();
 
     // Initialize Quiet Mode globally - only when authenticated
     const initQuietMode = async (retries = 3) => {
