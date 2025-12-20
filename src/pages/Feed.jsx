@@ -17,10 +17,10 @@ import PinnedPostBadge from '../components/PinnedPostBadge';
 import EditHistoryModal from '../components/EditHistoryModal';
 import DraftManager from '../components/DraftManager';
 import { useModal } from '../hooks/useModal';
+import { useOnlineUsers } from '../hooks/useOnlineUsers';
 import api, { getCsrfToken } from '../utils/api';
 import { getCurrentUser } from '../utils/auth';
 import { getImageUrl } from '../utils/imageUrl';
-import { onUserOnline, onUserOffline, onOnlineUsers, requestOnlineUsers } from '../utils/socket';
 import { setupSocketListeners } from '../utils/socketHelpers';
 import { convertEmojiShortcuts } from '../utils/textFormatting';
 import logger from '../utils/logger';
@@ -29,6 +29,7 @@ import './Feed.css';
 function Feed() {
   const [searchParams] = useSearchParams();
   const { modalState, closeModal, showAlert, showConfirm } = useModal();
+  const { onlineUsers, isUserOnline } = useOnlineUsers();
   const [posts, setPosts] = useState([]);
   const [newPost, setNewPost] = useState('');
   const [loading, setLoading] = useState(false);
@@ -67,7 +68,6 @@ function Feed() {
   const [editHiddenFromUsers, setEditHiddenFromUsers] = useState([]);
   const [editSharedWithUsers, setEditSharedWithUsers] = useState([]);
   const [friends, setFriends] = useState([]);
-  const [onlineUsers, setOnlineUsers] = useState([]);
   const [friendSearchQuery, setFriendSearchQuery] = useState('');
   const [unreadMessageCounts, setUnreadMessageCounts] = useState({});
   const [trending, setTrending] = useState([]);
@@ -392,37 +392,8 @@ function Feed() {
     let cleanupFunctions = [];
 
     const setupListeners = () => {
-      logger.debug('🔌 Setting up online status listeners in Feed');
-
-      // Get initial online users list
-      const cleanupOnlineUsers = onOnlineUsers((users) => {
-        logger.debug('📋 Received online users list:', users);
-        setOnlineUsers(users);
-      });
-      cleanupFunctions.push(cleanupOnlineUsers);
-
-      // Listen for users coming online
-      const cleanupUserOnline = onUserOnline((data) => {
-        logger.debug('✅ User came online:', data.userId);
-        setOnlineUsers((prev) => {
-          if (!prev.includes(data.userId)) {
-            return [...prev, data.userId];
-          }
-          return prev;
-        });
-        // Refresh friends list
-        fetchFriends();
-      });
-      cleanupFunctions.push(cleanupUserOnline);
-
-      // Listen for users going offline
-      const cleanupUserOffline = onUserOffline((data) => {
-        logger.debug('❌ User went offline:', data.userId);
-        setOnlineUsers((prev) => prev.filter(id => id !== data.userId));
-        // Refresh friends list
-        fetchFriends();
-      });
-      cleanupFunctions.push(cleanupUserOffline);
+      logger.debug('🔌 Setting up socket listeners in Feed');
+      // Note: Online user presence is now managed by useOnlineUsers hook
 
       // Listen for real-time post reactions
       const socket = getSocket();
@@ -591,8 +562,6 @@ function Feed() {
     // Use shared socket helper with retry logic
     const cancelSocketRetry = setupSocketListeners((socket) => {
       setupListeners();
-      // Request online users list (important for mobile/slow connections)
-      setTimeout(() => requestOnlineUsers(), 500);
     });
 
     // Refresh friends list every 30 seconds

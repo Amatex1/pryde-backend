@@ -8,6 +8,7 @@ import MessageSearch from '../components/MessageSearch';
 import VoiceRecorder from '../components/VoiceRecorder';
 import AudioPlayer from '../components/AudioPlayer';
 import { useModal } from '../hooks/useModal';
+import { useOnlineUsers } from '../hooks/useOnlineUsers';
 import api from '../utils/api';
 import { getImageUrl } from '../utils/imageUrl';
 import { getUserChatColor, getSentMessageColor } from '../utils/chatColors';
@@ -19,11 +20,7 @@ import {
   sendMessage as socketSendMessage,
   emitTyping,
   onUserTyping,
-  isSocketConnected,
-  onUserOnline,
-  onUserOffline,
-  onOnlineUsers,
-  requestOnlineUsers
+  isSocketConnected
 } from '../utils/socket';
 import { setupSocketListeners } from '../utils/socketHelpers';
 import './Messages.css';
@@ -32,6 +29,7 @@ import '../styles/themes/messages.css';
 function Messages() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { modalState, closeModal, showAlert, showConfirm } = useModal();
+  const { onlineUsers, isUserOnline } = useOnlineUsers();
 
   // Don't restore selected chat on mobile - always show conversation list first
   const [selectedChat, setSelectedChat] = useState(() => {
@@ -67,7 +65,6 @@ function Messages() {
   const [groupName, setGroupName] = useState('');
   const [groupDescription, setGroupDescription] = useState('');
   const [selectedMembers, setSelectedMembers] = useState([]);
-  const [onlineUsers, setOnlineUsers] = useState([]);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [reactingToMessage, setReactingToMessage] = useState(null);
   const [editingMessageId, setEditingMessageId] = useState(null);
@@ -290,54 +287,7 @@ function Messages() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Socket.IO listeners for online/offline status - set up ONCE on mount
-  useEffect(() => {
-    const cleanupFunctions = [];
-
-    const setupListeners = () => {
-      logger.debug('🔌 Setting up online/offline status listeners in Messages');
-
-      // Listen for online users list
-      const cleanupOnlineUsers = onOnlineUsers((users) => {
-        logger.debug('👥 Online users:', users);
-        setOnlineUsers(users);
-      });
-      cleanupFunctions.push(cleanupOnlineUsers);
-
-      // Listen for users coming online
-      const cleanupUserOnline = onUserOnline((data) => {
-        logger.debug('✅ User came online:', data.userId);
-        setOnlineUsers((prev) => {
-          if (!prev.includes(data.userId)) {
-            return [...prev, data.userId];
-          }
-          return prev;
-        });
-      });
-      cleanupFunctions.push(cleanupUserOnline);
-
-      // Listen for users going offline
-      const cleanupUserOffline = onUserOffline((data) => {
-        logger.debug('❌ User went offline:', data.userId);
-        setOnlineUsers((prev) => prev.filter(id => id !== data.userId));
-      });
-      cleanupFunctions.push(cleanupUserOffline);
-    };
-
-    // Use shared socket helper with retry logic
-    const cancelSocketRetry = setupSocketListeners((socket) => {
-      setupListeners();
-      // Request online users list (important for mobile/slow connections)
-      setTimeout(() => requestOnlineUsers(), 500);
-    });
-
-    // Cleanup on unmount
-    return () => {
-      // Cancel pending socket retries
-      cancelSocketRetry();
-      cleanupFunctions.forEach(cleanup => cleanup?.());
-    };
-  }, []); // Empty dependency array - only run once on mount
+  // Note: Online user presence is now managed by useOnlineUsers hook
 
   // Socket.IO listeners for messages and typing - depend on selectedChat
   useEffect(() => {
