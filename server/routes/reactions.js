@@ -3,7 +3,7 @@ import mongoose from 'mongoose';
 import Reaction, { APPROVED_REACTIONS } from '../models/Reaction.js';
 import Post from '../models/Post.js';
 import Comment from '../models/Comment.js';
-import { auth } from '../middleware/auth.js';
+import auth from '../middleware/auth.js';
 import { reactionLimiter } from '../middleware/rateLimiter.js';
 import logger from '../utils/logger.js';
 
