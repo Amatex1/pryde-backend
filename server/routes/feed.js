@@ -28,7 +28,8 @@ router.get('/', authenticateToken, async (req, res) => {
     // Build query
     const query = {
       visibility: 'public',
-      author: { $nin: blockedUserIds } // Exclude blocked users
+      author: { $nin: blockedUserIds }, // Exclude blocked users
+      tagOnly: { $ne: true } // Exclude tag-only posts from main feed
     };
 
     // Tag filter (for Phase 4 - Community Tags)
@@ -81,7 +82,8 @@ router.get('/global', authenticateToken, async (req, res) => {
     // Build query
     const query = {
       visibility: 'public',
-      author: { $nin: blockedUserIds } // Exclude blocked users
+      author: { $nin: blockedUserIds }, // Exclude blocked users
+      tagOnly: { $ne: true } // Exclude tag-only posts from main feed
     };
 
     // Pagination: posts before a certain timestamp
@@ -150,7 +152,8 @@ router.get('/following', authenticateToken, async (req, res) => {
         $in: currentUser.following,
         $nin: blockedUserIds // Exclude blocked users
       },
-      visibility: { $in: ['public', 'followers'] }
+      visibility: { $in: ['public', 'followers'] },
+      tagOnly: { $ne: true } // Exclude tag-only posts from following feed
     };
 
     // Pagination

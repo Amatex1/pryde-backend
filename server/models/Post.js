@@ -22,6 +22,11 @@ const postSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Tag'
   }],
+  // PHASE 4: Tag-only posts (only visible in tag feeds, not main feed or profile)
+  tagOnly: {
+    type: Boolean,
+    default: false
+  },
   images: [{
     type: String
   }],

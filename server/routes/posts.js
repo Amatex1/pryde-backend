@@ -62,28 +62,32 @@ router.get('/', auth, async (req, res) => {
       query = {
         visibility: 'public',
         hiddenFrom: { $ne: userId },
-        author: { $nin: blockedUserIds }
+        author: { $nin: blockedUserIds },
+        tagOnly: { $ne: true } // Exclude tag-only posts from main feed
       };
     } else if (filter === 'followers') {
       // Followers feed: Posts from people you follow + your own posts (excluding blocked users)
       query = {
         $or: [
-          { author: userId }, // User's own posts (always visible)
+          { author: userId, tagOnly: { $ne: true } }, // User's own posts (always visible, except tag-only)
           {
             author: { $in: followingIds, $nin: blockedUserIds },
             visibility: 'public',
-            hiddenFrom: { $ne: userId }
+            hiddenFrom: { $ne: userId },
+            tagOnly: { $ne: true }
           },
           {
             author: { $in: followingIds, $nin: blockedUserIds },
             visibility: 'followers',
-            hiddenFrom: { $ne: userId }
+            hiddenFrom: { $ne: userId },
+            tagOnly: { $ne: true }
           },
           {
             visibility: 'custom',
             sharedWith: userId,
             hiddenFrom: { $ne: userId },
-            author: { $nin: blockedUserIds }
+            author: { $nin: blockedUserIds },
+            tagOnly: { $ne: true }
           }
         ]
       };
@@ -175,12 +179,13 @@ router.get('/user/:identifier', auth, async (req, res) => {
     const isOwnProfile = currentUserId.toString() === profileUserId.toString();
 
     // Build query based on relationship
-    let query = { author: profileUserId };
+    let query = { author: profileUserId, tagOnly: { $ne: true } }; // Exclude tag-only posts from profile
 
     if (!isOwnProfile) {
       // Not viewing own profile - apply privacy filters
       query = {
         author: profileUserId,
+        tagOnly: { $ne: true }, // Exclude tag-only posts from profile
         $or: [
           { visibility: 'public', hiddenFrom: { $ne: currentUserId } },
           { visibility: 'followers', hiddenFrom: { $ne: currentUserId }, ...(isFollowing ? {} : { _id: null }) }, // Only if following
@@ -250,7 +255,7 @@ router.get('/:id', auth, async (req, res) => {
 // @access  Private
 router.post('/', auth, postLimiter, sanitizeFields(['content', 'contentWarning']), checkMuted, moderateContent, async (req, res) => {
   try {
-    const { content, images, media, visibility, hiddenFrom, sharedWith, contentWarning, tags, hideMetrics, poll } = req.body;
+    const { content, images, media, visibility, hiddenFrom, sharedWith, contentWarning, tags, hideMetrics, poll, tagOnly } = req.body;
 
     // Require either content, media, or poll
     if ((!content || content.trim() === '') && (!media || media.length === 0) && !poll) {
@@ -313,7 +318,8 @@ router.post('/', auth, postLimiter, sanitizeFields(['content', 'contentWarning']
       contentWarning: contentWarning || '',
       tags: tagIds, // PHASE 4: Add tags
       hideMetrics: hideMetrics || false,
-      poll: pollData || null
+      poll: pollData || null,
+      tagOnly: tagOnly || false // PHASE 4: Tag-only posts
     });
 
     await post.save();

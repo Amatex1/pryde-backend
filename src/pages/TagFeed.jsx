@@ -65,7 +65,8 @@ function TagFeed() {
       const response = await api.post('/posts', {
         content: newPost,
         tags: [tag.slug], // Use slug instead of _id
-        visibility: 'public'
+        visibility: 'public',
+        tagOnly: true // Mark as tag-only post (won't appear in main feed or profile)
       });
 
       // The response should have populated author and tags
