@@ -201,6 +201,10 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: true
   },
+  deactivatedAt: {
+    type: Date,
+    default: null
+  },
   role: {
     type: String,
     enum: ['user', 'moderator', 'admin', 'super_admin'],

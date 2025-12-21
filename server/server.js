@@ -428,15 +428,31 @@ io.use(async (socket, next) => {
       console.log('✅ Token verified successfully');
     }
 
-    // Check if session still exists (session logout validation)
+    // Check if session still exists and user is active (session logout validation)
     if (decoded.sessionId) {
-      const user = await User.findById(decoded.userId).select('activeSessions');
+      const user = await User.findById(decoded.userId).select('activeSessions isActive isDeleted');
 
       if (!user) {
         if (config.nodeEnv === 'development') {
           console.log('❌ User not found');
         }
         return next(new Error('User not found'));
+      }
+
+      // CRITICAL: Block deleted users from socket connection
+      if (user.isDeleted) {
+        if (config.nodeEnv === 'development') {
+          console.log('❌ Account has been deleted');
+        }
+        return next(new Error('Account deleted'));
+      }
+
+      // CRITICAL: Block deactivated users from socket connection
+      if (!user.isActive) {
+        if (config.nodeEnv === 'development') {
+          console.log('❌ Account is deactivated');
+        }
+        return next(new Error('Account deactivated'));
       }
 
       const sessionExists = user.activeSessions.some(

@@ -398,6 +398,22 @@ router.post('/login', loginLimiter, validateLogin, async (req, res) => {
       return res.status(401).json({ message: 'Invalid email or password' });
     }
 
+    // CRITICAL: Check if account is deleted (hard block - cannot login)
+    if (user.isDeleted) {
+      return res.status(401).json({
+        message: 'Account deleted',
+        code: 'ACCOUNT_DELETED'
+      });
+    }
+
+    // CRITICAL: Check if account is deactivated (soft block - cannot login)
+    if (!user.isActive) {
+      return res.status(403).json({
+        message: 'Account deactivated. Contact support to reactivate.',
+        code: 'ACCOUNT_DEACTIVATED'
+      });
+    }
+
     // Check if account is locked
     if (user.isLocked()) {
       const lockoutMinutes = Math.ceil((user.lockoutUntil - Date.now()) / 60000);
@@ -515,11 +531,7 @@ router.post('/login', loginLimiter, validateLogin, async (req, res) => {
       await user.resetLoginAttempts();
     }
 
-    // Reactivate account if it was deactivated
-    if (user.isActive === false) {
-      user.isActive = true;
-      await user.save();
-    }
+    // NOTE: Removed auto-reactivation logic - deactivated users must contact support
 
     // Get device and IP info
     const ipAddress = getClientIp(req);

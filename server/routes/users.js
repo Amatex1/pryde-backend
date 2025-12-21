@@ -53,6 +53,7 @@ router.get('/search', auth, async (req, res) => {
       ],
       _id: { $ne: req.userId }, // Exclude current user
       isActive: true, // Only show active accounts
+      isDeleted: { $ne: true }, // Exclude deleted accounts
       isBanned: { $ne: true } // Exclude banned users
     })
     .select('username displayName profilePhoto bio')
@@ -88,6 +89,7 @@ router.get('/suggested', auth, async (req, res) => {
     const matchCriteria = {
       _id: { $nin: excludeIds },
       isActive: true,
+      isDeleted: { $ne: true }, // Exclude deleted accounts
       isBanned: { $ne: true }
     };
 
@@ -478,8 +480,18 @@ router.get('/:identifier', auth, checkProfileVisibility, async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // PHASE 1 REFACTOR: Sanitize user to hide follower/following counts
+    // CRITICAL: Block access to deleted user profiles
+    if (user.isDeleted) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // CRITICAL: Block access to deactivated user profiles (except for own profile)
     const currentUserId = req.userId || req.user._id;
+    if (!user.isActive && user._id.toString() !== currentUserId.toString()) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // PHASE 1 REFACTOR: Sanitize user to hide follower/following counts
     const sanitizedUser = sanitizeUserForPrivateFollowers(user, currentUserId);
 
     res.json(sanitizedUser);
@@ -756,15 +768,45 @@ router.put('/deactivate', auth, async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // Add isActive field if it doesn't exist
+    // Deactivate account
     user.isActive = false;
+    user.deactivatedAt = new Date();
+
+    // Clear all sessions (force logout everywhere)
+    user.activeSessions = [];
+
     await user.save();
 
-    // Emit real-time event for user deactivation (for admin panel)
-    if (req.io) {
-      req.io.emit('user_deactivated', {
+    // CRITICAL: Force disconnect all sockets for this user
+    const io = req.app.get('io');
+    const onlineUsers = req.app.get('onlineUsers');
+
+    if (io) {
+      try {
+        const sockets = await io.fetchSockets();
+        for (const socket of sockets) {
+          if (socket.userId === user._id.toString()) {
+            console.log(`🔌 Force disconnecting socket for deactivated user ${user._id}`);
+            socket.emit('force_logout', {
+              reason: 'Account deactivated',
+              final: true
+            });
+            socket.disconnect(true);
+          }
+        }
+      } catch (socketError) {
+        console.error('Socket disconnect error (non-critical):', socketError);
+      }
+
+      // Emit real-time event for user deactivation (for admin panel)
+      io.emit('user_deactivated', {
         userId: user._id
       });
+    }
+
+    // Remove from online users map
+    if (onlineUsers) {
+      onlineUsers.delete(user._id.toString());
     }
 
     res.json({ message: 'Account deactivated successfully' });
@@ -776,7 +818,8 @@ router.put('/deactivate', auth, async (req, res) => {
 
 // @route   PUT /api/users/reactivate
 // @desc    Reactivate user account
-// @access  Private
+// @access  Private (NOTE: This route is blocked for deactivated users by auth middleware)
+// This route is intended for admin use or special reactivation flows
 router.put('/reactivate', auth, async (req, res) => {
   try {
     const user = await User.findById(req.userId);
@@ -786,11 +829,13 @@ router.put('/reactivate', auth, async (req, res) => {
     }
 
     user.isActive = true;
+    user.deactivatedAt = null; // Clear deactivation timestamp
     await user.save();
 
     // Emit real-time event for user reactivation (for admin panel)
-    if (req.io) {
-      req.io.emit('user_reactivated', {
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('user_reactivated', {
         userId: user._id
       });
     }
@@ -884,6 +929,38 @@ router.post('/account/delete-confirm', async (req, res) => {
     user.activeSessions = [];
 
     await user.save();
+
+    // CRITICAL: Force disconnect all sockets for this user
+    const io = req.app.get('io');
+    const onlineUsers = req.app.get('onlineUsers');
+
+    if (io) {
+      try {
+        const sockets = await io.fetchSockets();
+        for (const socket of sockets) {
+          if (socket.userId === user._id.toString()) {
+            console.log(`🔌 Force disconnecting socket for deleted user ${user._id}`);
+            socket.emit('force_logout', {
+              reason: 'Account deleted',
+              final: true
+            });
+            socket.disconnect(true);
+          }
+        }
+      } catch (socketError) {
+        console.error('Socket disconnect error (non-critical):', socketError);
+      }
+
+      // Emit real-time event for user deletion (for admin panel)
+      io.emit('user_deleted', {
+        userId: user._id
+      });
+    }
+
+    // Remove from online users map
+    if (onlineUsers) {
+      onlineUsers.delete(user._id.toString());
+    }
 
     // Anonymize user's posts (keep content but mark as deleted user)
     // Posts remain but author is anonymized

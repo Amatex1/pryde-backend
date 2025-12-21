@@ -42,16 +42,27 @@ const auth = async (req, res, next) => {
     // Get user from database
     const user = await User.findById(decoded.userId).select('-password');
 
-    // Check if user is soft deleted
-    if (user && user.isDeleted) {
-      return res.status(401).json({ message: 'Account has been deleted' });
-    }
-
     if (!user) {
       if (config.nodeEnv === 'development') {
         console.log('❌ User not found in database');
       }
       return res.status(401).json({ message: 'User not found' });
+    }
+
+    // CRITICAL: Check if user account is deleted (hard block)
+    if (user.isDeleted) {
+      if (config.nodeEnv === 'development') {
+        console.log('❌ Account has been deleted');
+      }
+      return res.status(401).json({ message: 'Account deleted', code: 'ACCOUNT_DELETED' });
+    }
+
+    // CRITICAL: Check if user account is deactivated (soft block)
+    if (!user.isActive) {
+      if (config.nodeEnv === 'development') {
+        console.log('❌ Account is deactivated');
+      }
+      return res.status(403).json({ message: 'Account deactivated', code: 'ACCOUNT_DEACTIVATED' });
     }
 
     // Check if session still exists (session logout validation)
@@ -167,7 +178,8 @@ export const optionalAuth = async (req, res, next) => {
     // Get user from database
     const user = await User.findById(decoded.userId).select('-password');
 
-    if (user && !user.isDeleted) {
+    // Only set user if account is active and not deleted
+    if (user && !user.isDeleted && user.isActive !== false) {
       req.user = user;
       req.userId = user._id;
     }

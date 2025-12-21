@@ -158,10 +158,20 @@ export const checkMessagingPermission = async (req, res, next) => {
     }
 
     // PHASE 1 REFACTOR: Use followers only (friends system removed)
-    const recipient = await User.findById(recipientId).select('privacySettings followers');
+    const recipient = await User.findById(recipientId).select('privacySettings followers isActive isDeleted');
 
     if (!recipient) {
       return res.status(404).json({ message: 'User not found' });
+    }
+
+    // CRITICAL: Block messaging to deleted users
+    if (recipient.isDeleted) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // CRITICAL: Block messaging to deactivated users
+    if (!recipient.isActive) {
+      return res.status(403).json({ message: 'This user is not available' });
     }
 
     // Check if blocked using Block model

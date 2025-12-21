@@ -45,9 +45,20 @@ router.post('/', async (req, res) => {
       return res.status(401).json({ message: 'User not found' });
     }
 
-    // Check if user is soft deleted
+    // CRITICAL: Check if user is deleted (hard block)
     if (user.isDeleted) {
-      return res.status(401).json({ message: 'Account has been deleted' });
+      return res.status(401).json({
+        message: 'Account deleted',
+        code: 'ACCOUNT_DELETED'
+      });
+    }
+
+    // CRITICAL: Check if user is deactivated (soft block)
+    if (!user.isActive) {
+      return res.status(403).json({
+        message: 'Account deactivated',
+        code: 'ACCOUNT_DEACTIVATED'
+      });
     }
 
     // Check if user is banned or suspended
