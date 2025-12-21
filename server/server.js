@@ -55,7 +55,8 @@ import reactionsRoutes from './routes/reactions.js';
 import backupRoutes from './routes/backup.js';
 
 // Import middleware
-import auth, { requireActiveUser } from './middleware/auth.js';
+import auth from './middleware/auth.js';
+import requireActiveUser from './middleware/requireActiveUser.js';
 import { setCsrfToken, enforceCsrf } from './middleware/csrf.js';
 
 // Import rate limiters
