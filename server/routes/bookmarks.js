@@ -3,11 +3,12 @@ const router = express.Router();
 import User from '../models/User.js';
 import Post from '../models/Post.js';
 import auth from '../middleware/auth.js';
+import requireActiveUser from '../middleware/requireActiveUser.js';
 
 // @route   GET /api/bookmarks
 // @desc    Get all bookmarked posts
 // @access  Private
-router.get('/', auth, async (req, res) => {
+router.get('/', auth, requireActiveUser, async (req, res) => {
   try {
     const user = await User.findById(req.userId)
       .populate({
@@ -37,7 +38,7 @@ router.get('/', auth, async (req, res) => {
 // @route   POST /api/bookmarks/:postId
 // @desc    Bookmark a post
 // @access  Private
-router.post('/:postId', auth, async (req, res) => {
+router.post('/:postId', auth, requireActiveUser, async (req, res) => {
   try {
     const { postId } = req.params;
 
@@ -71,7 +72,7 @@ router.post('/:postId', auth, async (req, res) => {
 // @route   DELETE /api/bookmarks/:postId
 // @desc    Remove bookmark from a post
 // @access  Private
-router.delete('/:postId', auth, async (req, res) => {
+router.delete('/:postId', auth, requireActiveUser, async (req, res) => {
   try {
     const { postId } = req.params;
 
@@ -103,7 +104,7 @@ router.delete('/:postId', auth, async (req, res) => {
 // @route   GET /api/bookmarks/check/:postId
 // @desc    Check if a post is bookmarked
 // @access  Private
-router.get('/check/:postId', auth, async (req, res) => {
+router.get('/check/:postId', auth, requireActiveUser, async (req, res) => {
   try {
     const { postId } = req.params;
 

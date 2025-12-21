@@ -3,7 +3,8 @@ import mongoose from 'mongoose';
 import Reaction, { APPROVED_REACTIONS } from '../models/Reaction.js';
 import Post from '../models/Post.js';
 import Comment from '../models/Comment.js';
-import { authActive, optionalAuth } from '../middleware/auth.js';
+import auth, { optionalAuth } from '../middleware/auth.js';
+import requireActiveUser from '../middleware/requireActiveUser.js';
 import { reactionLimiter } from '../middleware/rateLimiter.js';
 import logger from '../utils/logger.js';
 
@@ -21,7 +22,7 @@ const router = express.Router();
  * - If user clicks same emoji: Remove reaction (toggle off)
  * - If user clicks different emoji: Update to new emoji
  */
-router.post('/', authActive, reactionLimiter, async (req, res) => {
+router.post('/', auth, requireActiveUser, reactionLimiter, async (req, res) => {
   try {
     const { targetType, targetId, emoji } = req.body;
     const userId = req.userId || req.user._id;
@@ -159,7 +160,7 @@ router.post('/', authActive, reactionLimiter, async (req, res) => {
  *
  * Body: { targetType: 'post' | 'comment', targetId: string }
  */
-router.delete('/', authActive, async (req, res) => {
+router.delete('/', auth, requireActiveUser, async (req, res) => {
   try {
     const { targetType, targetId } = req.body;
     const userId = req.userId || req.user._id;

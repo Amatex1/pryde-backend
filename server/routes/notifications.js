@@ -2,9 +2,10 @@ import express from 'express';
 const router = express.Router();
 import Notification from '../models/Notification.js';
 import authMiddleware from '../middleware/auth.js';
+import requireActiveUser from '../middleware/requireActiveUser.js';
 
 // Get user notifications
-router.get('/', authMiddleware, async (req, res) => {
+router.get('/', authMiddleware, requireActiveUser, async (req, res) => {
   try {
     const notifications = await Notification.find({ recipient: req.userId })
       .populate('sender', 'username displayName profilePhoto')
@@ -18,7 +19,7 @@ router.get('/', authMiddleware, async (req, res) => {
 });
 
 // Mark notification as read
-router.put('/:id/read', authMiddleware, async (req, res) => {
+router.put('/:id/read', authMiddleware, requireActiveUser, async (req, res) => {
   try {
     const notification = await Notification.findOneAndUpdate(
       { _id: req.params.id, recipient: req.userId },
@@ -37,7 +38,7 @@ router.put('/:id/read', authMiddleware, async (req, res) => {
 });
 
 // Mark all notifications as read
-router.put('/read-all', authMiddleware, async (req, res) => {
+router.put('/read-all', authMiddleware, requireActiveUser, async (req, res) => {
   try {
     await Notification.updateMany(
       { recipient: req.userId, read: false },
@@ -51,7 +52,7 @@ router.put('/read-all', authMiddleware, async (req, res) => {
 });
 
 // Delete notification
-router.delete('/:id', authMiddleware, async (req, res) => {
+router.delete('/:id', authMiddleware, requireActiveUser, async (req, res) => {
   try {
     await Notification.findOneAndDelete({ _id: req.params.id, recipient: req.userId });
     res.json({ message: 'Notification deleted' });

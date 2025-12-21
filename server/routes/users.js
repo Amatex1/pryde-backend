@@ -6,7 +6,8 @@ import Message from '../models/Message.js';
 import FriendRequest from '../models/FriendRequest.js';
 import GroupChat from '../models/GroupChat.js';
 import Notification from '../models/Notification.js';
-import auth, { requireActiveUser } from '../middleware/auth.js';
+import auth from '../middleware/auth.js';
+import requireActiveUser from '../middleware/requireActiveUser.js';
 import { checkProfileVisibility, checkBlocked } from '../middleware/privacy.js';
 import { sanitizeFields } from '../middleware/sanitize.js';
 import mongoose from 'mongoose';
@@ -222,7 +223,7 @@ router.get('/suggested', auth, async (req, res) => {
 // @desc    Request account verification
 // @access  Private
 // NOTE: This route MUST be before /:identifier route to avoid being caught by it
-router.post('/verification-request', auth, async (req, res) => {
+router.post('/verification-request', auth, requireActiveUser, async (req, res) => {
   try {
     const { reason } = req.body;
 
@@ -504,7 +505,7 @@ router.get('/:identifier', auth, checkProfileVisibility, async (req, res) => {
 // @route   PUT /api/users/profile
 // @desc    Update user profile
 // @access  Private
-router.put('/profile', auth, sanitizeFields([
+router.put('/profile', auth, requireActiveUser, sanitizeFields([
   'fullName', 'nickname', 'customDisplayName', 'pronouns',
   'bio', 'city', 'website', 'communicationStyle', 'safetyPreferences'
 ]), async (req, res) => {
@@ -603,7 +604,7 @@ router.put('/profile', auth, sanitizeFields([
 // @route   PUT /api/users/photo-position
 // @desc    Update profile or cover photo position (DEPRECATED - use /users/profile instead)
 // @access  Private
-router.put('/photo-position', auth, async (req, res) => {
+router.put('/photo-position', auth, requireActiveUser, async (req, res) => {
   try {
     const { type, x, y, scale } = req.body;
 
@@ -653,7 +654,7 @@ router.put('/photo-position', auth, async (req, res) => {
 // @route   PATCH /api/users/me/settings
 // @desc    Update user settings (PHASE 2: Quiet Mode)
 // @access  Private
-router.patch('/me/settings', auth, async (req, res) => {
+router.patch('/me/settings', auth, requireActiveUser, async (req, res) => {
   try {
     const { quietModeEnabled } = req.body;
     const user = await User.findById(req.userId);
@@ -689,7 +690,7 @@ router.patch('/me/settings', auth, async (req, res) => {
 // @route   PATCH /api/users/me/creator
 // @desc    Update creator mode settings (PHASE 5)
 // @access  Private
-router.patch('/me/creator', auth, async (req, res) => {
+router.patch('/me/creator', auth, requireActiveUser, async (req, res) => {
   try {
     const { isCreator, creatorTagline, creatorBio, featuredPosts } = req.body;
     const user = await User.findById(req.userId);
@@ -731,7 +732,7 @@ router.patch('/me/creator', auth, async (req, res) => {
 // @route   PATCH /api/users/me/ally
 // @desc    Update ally status (PHASE 6)
 // @access  Private
-router.patch('/me/ally', auth, async (req, res) => {
+router.patch('/me/ally', auth, requireActiveUser, async (req, res) => {
   try {
     const { isAlly } = req.body;
     const user = await User.findById(req.userId);
@@ -864,7 +865,7 @@ router.put('/reactivate', auth, async (req, res) => {
 // @route   POST /api/users/account/delete-request
 // @desc    Request account deletion (sends confirmation email)
 // @access  Private
-router.post('/account/delete-request', auth, async (req, res) => {
+router.post('/account/delete-request', auth, requireActiveUser, async (req, res) => {
   try {
     const userId = req.userId;
     const user = await User.findById(userId);

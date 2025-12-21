@@ -2,6 +2,7 @@ import express from 'express';
 import Comment from '../models/Comment.js';
 import Post from '../models/Post.js';
 import auth from '../middleware/auth.js';
+import requireActiveUser from '../middleware/requireActiveUser.js';
 import { reactionLimiter } from '../middleware/rateLimiter.js';
 import logger from '../utils/logger.js';
 
@@ -10,7 +11,7 @@ const router = express.Router();
 // @route   GET /api/posts/:postId/comments
 // @desc    Get all comments for a post (top-level only, sorted oldest first)
 // @access  Private
-router.get('/posts/:postId/comments', auth, async (req, res) => {
+router.get('/posts/:postId/comments', auth, requireActiveUser, async (req, res) => {
   try {
     const { postId } = req.params;
 
@@ -58,7 +59,7 @@ router.get('/posts/:postId/comments', auth, async (req, res) => {
 // @route   GET /api/comments/:commentId/replies
 // @desc    Get all replies for a comment
 // @access  Private
-router.get('/comments/:commentId/replies', auth, async (req, res) => {
+router.get('/comments/:commentId/replies', auth, requireActiveUser, async (req, res) => {
   try {
     const { commentId } = req.params;
 
@@ -87,7 +88,7 @@ router.get('/comments/:commentId/replies', auth, async (req, res) => {
 // @route   POST /api/posts/:postId/comments
 // @desc    Add a comment to a post (or reply to a comment)
 // @access  Private
-router.post('/posts/:postId/comments', auth, async (req, res) => {
+router.post('/posts/:postId/comments', auth, requireActiveUser, async (req, res) => {
   try {
     const { postId } = req.params;
     const { content, gifUrl, parentCommentId } = req.body;
@@ -167,7 +168,7 @@ router.post('/posts/:postId/comments', auth, async (req, res) => {
 // @route   PUT /api/comments/:commentId
 // @desc    Edit a comment
 // @access  Private
-router.put('/comments/:commentId', auth, async (req, res) => {
+router.put('/comments/:commentId', auth, requireActiveUser, async (req, res) => {
   try {
     const { commentId } = req.params;
     const { content } = req.body;
@@ -213,7 +214,7 @@ router.put('/comments/:commentId', auth, async (req, res) => {
 // @route   DELETE /api/comments/:commentId
 // @desc    Delete a comment
 // @access  Private
-router.delete('/comments/:commentId', auth, async (req, res) => {
+router.delete('/comments/:commentId', auth, requireActiveUser, async (req, res) => {
   try {
     const { commentId } = req.params;
     const userId = req.userId || req.user._id;
@@ -262,7 +263,7 @@ router.delete('/comments/:commentId', auth, async (req, res) => {
 // @route   POST /api/comments/:commentId/react
 // @desc    Add a reaction to a comment
 // @access  Private
-router.post('/comments/:commentId/react', auth, reactionLimiter, async (req, res) => {
+router.post('/comments/:commentId/react', auth, requireActiveUser, reactionLimiter, async (req, res) => {
   try {
     const { commentId } = req.params;
     const { emoji } = req.body;

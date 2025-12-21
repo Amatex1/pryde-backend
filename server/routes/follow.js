@@ -3,12 +3,13 @@ const router = express.Router();
 import User from '../models/User.js';
 import FollowRequest from '../models/FollowRequest.js';
 import auth from '../middleware/auth.js';
+import requireActiveUser from '../middleware/requireActiveUser.js';
 import { checkBlocked } from '../middleware/privacy.js';
 
 // @route   POST /api/follow/:userId
 // @desc    Follow a user (instant for public accounts, request for private)
 // @access  Private
-router.post('/:userId', auth, checkBlocked, async (req, res) => {
+router.post('/:userId', auth, requireActiveUser, checkBlocked, async (req, res) => {
   try {
     const targetUserId = req.params.userId;
     const currentUserId = req.userId;
@@ -79,7 +80,7 @@ router.post('/:userId', auth, checkBlocked, async (req, res) => {
 // @route   DELETE /api/follow/:userId
 // @desc    Unfollow a user
 // @access  Private
-router.delete('/:userId', auth, async (req, res) => {
+router.delete('/:userId', auth, requireActiveUser, async (req, res) => {
   try {
     const targetUserId = req.params.userId;
     const currentUserId = req.userId;
@@ -108,7 +109,7 @@ router.delete('/:userId', auth, async (req, res) => {
 // @route   GET /api/follow/followers/:userId
 // @desc    Get user's followers
 // @access  Private
-router.get('/followers/:userId', auth, async (req, res) => {
+router.get('/followers/:userId', auth, requireActiveUser, async (req, res) => {
   try {
     const userId = req.params.userId;
 
@@ -130,7 +131,7 @@ router.get('/followers/:userId', auth, async (req, res) => {
 // @route   GET /api/follow/following/:userId
 // @desc    Get users that this user is following
 // @access  Private
-router.get('/following/:userId', auth, async (req, res) => {
+router.get('/following/:userId', auth, requireActiveUser, async (req, res) => {
   try {
     const userId = req.params.userId;
 
@@ -152,7 +153,7 @@ router.get('/following/:userId', auth, async (req, res) => {
 // @route   GET /api/follow/requests
 // @desc    Get pending follow requests (received)
 // @access  Private
-router.get('/requests', auth, async (req, res) => {
+router.get('/requests', auth, requireActiveUser, async (req, res) => {
   try {
     const followRequests = await FollowRequest.find({
       receiver: req.userId,
@@ -171,7 +172,7 @@ router.get('/requests', auth, async (req, res) => {
 // @route   GET /api/follow/requests/sent
 // @desc    Get sent follow requests (pending)
 // @access  Private
-router.get('/requests/sent', auth, async (req, res) => {
+router.get('/requests/sent', auth, requireActiveUser, async (req, res) => {
   try {
     const sentRequests = await FollowRequest.find({
       sender: req.userId,
@@ -190,7 +191,7 @@ router.get('/requests/sent', auth, async (req, res) => {
 // @route   POST /api/follow/requests/:requestId/accept
 // @desc    Accept follow request
 // @access  Private
-router.post('/requests/:requestId/accept', auth, async (req, res) => {
+router.post('/requests/:requestId/accept', auth, requireActiveUser, async (req, res) => {
   try {
     const followRequest = await FollowRequest.findById(req.params.requestId);
 
@@ -230,7 +231,7 @@ router.post('/requests/:requestId/accept', auth, async (req, res) => {
 // @route   POST /api/follow/requests/:requestId/reject
 // @desc    Reject follow request
 // @access  Private
-router.post('/requests/:requestId/reject', auth, async (req, res) => {
+router.post('/requests/:requestId/reject', auth, requireActiveUser, async (req, res) => {
   try {
     const followRequest = await FollowRequest.findById(req.params.requestId);
 
@@ -259,7 +260,7 @@ router.post('/requests/:requestId/reject', auth, async (req, res) => {
 // @route   DELETE /api/follow/requests/:requestId
 // @desc    Cancel follow request
 // @access  Private
-router.delete('/requests/:requestId', auth, async (req, res) => {
+router.delete('/requests/:requestId', auth, requireActiveUser, async (req, res) => {
   try {
     const followRequest = await FollowRequest.findById(req.params.requestId);
 

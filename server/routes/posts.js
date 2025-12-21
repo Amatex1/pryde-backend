@@ -4,7 +4,8 @@ import mongoose from 'mongoose';
 import Post from '../models/Post.js';
 import User from '../models/User.js';
 import Notification from '../models/Notification.js';
-import { authActive } from '../middleware/auth.js';
+import auth from '../middleware/auth.js';
+import requireActiveUser from '../middleware/requireActiveUser.js';
 import { postLimiter, commentLimiter, reactionLimiter } from '../middleware/rateLimiter.js';
 import { checkMuted, moderateContent } from '../middleware/moderation.js';
 import { sanitizeFields } from '../utils/sanitize.js';
@@ -48,7 +49,7 @@ const sanitizePostForPrivateLikes = (post, currentUserId) => {
 // @route   GET /api/posts
 // @desc    Get all posts (feed)
 // @access  Private
-router.get('/', authActive, async (req, res) => {
+router.get('/', auth, requireActiveUser, async (req, res) => {
   try {
     const { page = 1, limit = 20, filter = 'followers' } = req.query;
 
@@ -159,7 +160,7 @@ router.get('/', authActive, async (req, res) => {
 // @route   GET /api/posts/user/:identifier
 // @desc    Get posts by user (by ID or username)
 // @access  Private
-router.get('/user/:identifier', authActive, async (req, res) => {
+router.get('/user/:identifier', auth, requireActiveUser, async (req, res) => {
   try {
     const currentUserId = req.userId || req.user._id;
     const { identifier } = req.params;
@@ -229,7 +230,7 @@ router.get('/user/:identifier', authActive, async (req, res) => {
 // @route   GET /api/posts/:id
 // @desc    Get single post
 // @access  Private
-router.get('/:id', authActive, async (req, res) => {
+router.get('/:id', auth, requireActiveUser, async (req, res) => {
   try {
     // PHASE 1 REFACTOR: Don't populate likes (keep private)
     const post = await Post.findById(req.params.id)
@@ -257,7 +258,7 @@ router.get('/:id', authActive, async (req, res) => {
 // @route   POST /api/posts
 // @desc    Create a new post
 // @access  Private
-router.post('/', authActive, postLimiter, sanitizeFields(['content', 'contentWarning']), checkMuted, moderateContent, async (req, res) => {
+router.post('/', auth, requireActiveUser, postLimiter, sanitizeFields(['content', 'contentWarning']), checkMuted, moderateContent, async (req, res) => {
   try {
     const { content, images, media, visibility, hiddenFrom, sharedWith, contentWarning, tags, hideMetrics, poll, tagOnly } = req.body;
 
@@ -340,7 +341,7 @@ router.post('/', authActive, postLimiter, sanitizeFields(['content', 'contentWar
 // @route   PUT /api/posts/:id
 // @desc    Update a post
 // @access  Private
-router.put('/:id', authActive, sanitizeFields(['content', 'contentWarning']), async (req, res) => {
+router.put('/:id', auth, requireActiveUser, sanitizeFields(['content', 'contentWarning']), async (req, res) => {
   try {
     const post = await Post.findById(req.params.id);
 
@@ -403,7 +404,7 @@ router.put('/:id', authActive, sanitizeFields(['content', 'contentWarning']), as
 // @route   DELETE /api/posts/:id
 // @desc    Delete a post
 // @access  Private
-router.delete('/:id', authActive, async (req, res) => {
+router.delete('/:id', auth, requireActiveUser, async (req, res) => {
   try {
     const post = await Post.findById(req.params.id);
 
@@ -430,7 +431,7 @@ router.delete('/:id', authActive, async (req, res) => {
 // @route   POST /api/posts/:id/like
 // @desc    Like/Unlike a post
 // @access  Private
-router.post('/:id/like', authActive, reactionLimiter, async (req, res) => {
+router.post('/:id/like', auth, requireActiveUser, reactionLimiter, async (req, res) => {
   try {
     const post = await Post.findById(req.params.id);
 
@@ -504,7 +505,7 @@ router.post('/:id/like', authActive, reactionLimiter, async (req, res) => {
 // @route   POST /api/posts/:id/react
 // @desc    Add a reaction to a post
 // @access  Private
-router.post('/:id/react', authActive, reactionLimiter, async (req, res) => {
+router.post('/:id/react', auth, requireActiveUser, reactionLimiter, async (req, res) => {
   try {
     const { emoji } = req.body;
 
@@ -608,7 +609,7 @@ router.post('/:id/react', authActive, reactionLimiter, async (req, res) => {
 // @route   POST /api/posts/:id/comment/:commentId/react
 // @desc    Add a reaction to a comment
 // @access  Private
-router.post('/:id/comment/:commentId/react', authActive, reactionLimiter, async (req, res) => {
+router.post('/:id/comment/:commentId/react', auth, requireActiveUser, reactionLimiter, async (req, res) => {
   try {
     const { emoji } = req.body;
 
@@ -711,7 +712,7 @@ router.post('/:id/comment/:commentId/react', authActive, reactionLimiter, async 
 // @route   POST /api/posts/:id/share
 // @desc    Share/Repost a post
 // @access  Private
-router.post('/:id/share', authActive, postLimiter, checkMuted, async (req, res) => {
+router.post('/:id/share', auth, requireActiveUser, postLimiter, checkMuted, async (req, res) => {
   try {
     const originalPost = await Post.findById(req.params.id);
 
@@ -788,7 +789,7 @@ router.post('/:id/share', authActive, postLimiter, checkMuted, async (req, res) 
 // @route   DELETE /api/posts/:id/share
 // @desc    Unshare/Remove repost
 // @access  Private
-router.delete('/:id/share', authActive, async (req, res) => {
+router.delete('/:id/share', auth, requireActiveUser, async (req, res) => {
   try {
     const userId = req.userId || req.user._id;
 
@@ -825,7 +826,7 @@ router.delete('/:id/share', authActive, async (req, res) => {
 // @route   POST /api/posts/:id/comment
 // @desc    Add a comment to a post
 // @access  Private
-router.post('/:id/comment', authActive, commentLimiter, sanitizeFields(['content']), checkMuted, moderateContent, async (req, res) => {
+router.post('/:id/comment', auth, requireActiveUser, commentLimiter, sanitizeFields(['content']), checkMuted, moderateContent, async (req, res) => {
   try {
     const { content, gifUrl } = req.body;
 
@@ -920,7 +921,7 @@ router.post('/:id/comment', authActive, commentLimiter, sanitizeFields(['content
 // @route   POST /api/posts/:id/comment/:commentId/reply
 // @desc    Reply to a comment
 // @access  Private
-router.post('/:id/comment/:commentId/reply', authActive, commentLimiter, sanitizeFields(['content']), checkMuted, moderateContent, async (req, res) => {
+router.post('/:id/comment/:commentId/reply', auth, requireActiveUser, commentLimiter, sanitizeFields(['content']), checkMuted, moderateContent, async (req, res) => {
   try {
     const { content, gifUrl } = req.body;
 
@@ -986,7 +987,7 @@ router.post('/:id/comment/:commentId/reply', authActive, commentLimiter, sanitiz
 // @route   PUT /api/posts/:id/comment/:commentId
 // @desc    Edit a comment on a post
 // @access  Private
-router.put('/:id/comment/:commentId', authActive, async (req, res) => {
+router.put('/:id/comment/:commentId', auth, requireActiveUser, async (req, res) => {
   try {
     const { content } = req.body;
 
@@ -1044,7 +1045,7 @@ router.put('/:id/comment/:commentId', authActive, async (req, res) => {
 // @route   DELETE /api/posts/:id/comment/:commentId
 // @desc    Delete a comment from a post
 // @access  Private
-router.delete('/:id/comment/:commentId', authActive, async (req, res) => {
+router.delete('/:id/comment/:commentId', auth, requireActiveUser, async (req, res) => {
   try {
     const post = await Post.findById(req.params.id);
 
@@ -1094,7 +1095,7 @@ router.delete('/:id/comment/:commentId', authActive, async (req, res) => {
 // @route   POST /api/posts/:id/pin
 // @desc    Pin/unpin a post (OPTIONAL FEATURES)
 // @access  Private
-router.post('/:id/pin', authActive, async (req, res) => {
+router.post('/:id/pin', auth, requireActiveUser, async (req, res) => {
   try {
     const { id } = req.params;
     const userId = req.userId;
@@ -1129,7 +1130,7 @@ router.post('/:id/pin', authActive, async (req, res) => {
 // @route   POST /api/posts/:id/poll/vote
 // @desc    Vote on a poll
 // @access  Private
-router.post('/:id/poll/vote', authActive, async (req, res) => {
+router.post('/:id/poll/vote', auth, requireActiveUser, async (req, res) => {
   try {
     const { optionIndex } = req.body;
     const userId = req.userId;
@@ -1182,7 +1183,7 @@ router.post('/:id/poll/vote', authActive, async (req, res) => {
 // @route   GET /api/posts/:id/edit-history
 // @desc    Get edit history for a post
 // @access  Private
-router.get('/:id/edit-history', authActive, async (req, res) => {
+router.get('/:id/edit-history', auth, requireActiveUser, async (req, res) => {
   try {
     const post = await Post.findById(req.params.id)
       .populate('editHistory.editedBy', 'username displayName profilePhoto');

@@ -151,47 +151,6 @@ const auth = async (req, res, next) => {
 export const authenticateToken = auth;
 
 /**
- * Middleware that requires an active (non-deactivated) user
- * Use AFTER auth middleware on routes that should block deactivated users
- *
- * Routes that should use this:
- * - Feed, Posts, Messages, Reactions, Profile edits
- *
- * Routes that should NOT use this:
- * - /reactivate, /logout
- */
-export const requireActiveUser = (req, res, next) => {
-  // req.user is set by auth middleware
-  if (!req.user) {
-    return res.status(401).json({ message: 'Authentication required' });
-  }
-
-  // Block deactivated users from accessing protected routes
-  if (!req.user.isActive) {
-    if (config.nodeEnv === 'development') {
-      console.log('❌ Account is deactivated - blocking access to protected route');
-    }
-    return res.status(403).json({
-      message: 'Account deactivated',
-      code: 'ACCOUNT_DEACTIVATED',
-      redirect: '/reactivate'
-    });
-  }
-
-  next();
-};
-
-/**
- * Combined auth + requireActiveUser middleware
- * Use this on routes that require both authentication AND an active account
- *
- * This is the standard middleware for most protected routes.
- * Use plain `auth` only for routes that deactivated users need access to
- * (e.g., /reactivate, /logout)
- */
-export const authActive = [auth, requireActiveUser];
-
-/**
  * Optional authentication middleware
  * Sets req.user and req.userId if valid token present, but doesn't reject if missing
  * Useful for endpoints that work for both authenticated and unauthenticated users
