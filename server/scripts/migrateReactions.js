@@ -1,10 +1,16 @@
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import Post from '../models/Post.js';
 import Comment from '../models/Comment.js';
 import Reaction, { APPROVED_REACTIONS } from '../models/Reaction.js';
 
-dotenv.config();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Load .env from server directory
+dotenv.config({ path: path.join(__dirname, '../.env') });
 
 /**
  * Migration Script: Convert Post and Comment reactions to universal Reaction model
