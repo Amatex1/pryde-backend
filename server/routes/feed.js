@@ -7,7 +7,7 @@
 
 import express from 'express';
 import Post from '../models/Post.js';
-import { authenticateToken } from '../middleware/auth.js';
+import { authActive } from '../middleware/auth.js';
 import { getBlockedUserIds } from '../utils/blockHelper.js';
 
 const router = express.Router();
@@ -17,7 +17,7 @@ const router = express.Router();
  * Root feed endpoint - defaults to global feed
  * Supports page/limit params for backward compatibility
  */
-router.get('/', authenticateToken, async (req, res) => {
+router.get('/', authActive, async (req, res) => {
   try {
     const { page = 1, limit = 20, tag } = req.query;
     const currentUserId = req.user.id;
@@ -71,7 +71,7 @@ router.get('/', authenticateToken, async (req, res) => {
  * Returns public posts in reverse chronological order
  * Optional slow weighting for promoted posts
  */
-router.get('/global', authenticateToken, async (req, res) => {
+router.get('/global', authActive, async (req, res) => {
   try {
     const { before, limit = 20, tag } = req.query;
     const currentUserId = req.user.id;
@@ -130,7 +130,7 @@ router.get('/global', authenticateToken, async (req, res) => {
  * Returns posts only from users the current user follows
  * Same slow sorting logic as global feed
  */
-router.get('/following', authenticateToken, async (req, res) => {
+router.get('/following', authActive, async (req, res) => {
   try {
     const { before, limit = 20, tag } = req.query;
     const currentUserId = req.user.id;

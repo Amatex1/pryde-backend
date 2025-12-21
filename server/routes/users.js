@@ -6,7 +6,7 @@ import Message from '../models/Message.js';
 import FriendRequest from '../models/FriendRequest.js';
 import GroupChat from '../models/GroupChat.js';
 import Notification from '../models/Notification.js';
-import auth, { authAllowDeactivated } from '../middleware/auth.js';
+import auth, { requireActiveUser } from '../middleware/auth.js';
 import { checkProfileVisibility, checkBlocked } from '../middleware/privacy.js';
 import { sanitizeFields } from '../middleware/sanitize.js';
 import mongoose from 'mongoose';
@@ -818,8 +818,8 @@ router.put('/deactivate', auth, async (req, res) => {
 
 // @route   PUT /api/users/reactivate
 // @desc    Reactivate user account
-// @access  Private (uses authAllowDeactivated to permit deactivated users)
-router.put('/reactivate', authAllowDeactivated, async (req, res) => {
+// @access  Private (auth only - no requireActiveUser, allows deactivated users)
+router.put('/reactivate', auth, async (req, res) => {
   try {
     const user = await User.findById(req.userId);
 

@@ -49,7 +49,7 @@ const auth = async (req, res, next) => {
       return res.status(401).json({ message: 'User not found' });
     }
 
-    // CRITICAL: Check if user account is deleted (hard block)
+    // CRITICAL: Check if user account is deleted (hard block - permanent)
     if (user.isDeleted) {
       if (config.nodeEnv === 'development') {
         console.log('❌ Account has been deleted');
@@ -57,13 +57,9 @@ const auth = async (req, res, next) => {
       return res.status(401).json({ message: 'Account deleted', code: 'ACCOUNT_DELETED' });
     }
 
-    // CRITICAL: Check if user account is deactivated (soft block)
-    if (!user.isActive) {
-      if (config.nodeEnv === 'development') {
-        console.log('❌ Account is deactivated');
-      }
-      return res.status(403).json({ message: 'Account deactivated', code: 'ACCOUNT_DEACTIVATED' });
-    }
+    // NOTE: We no longer block deactivated users at auth level
+    // Deactivated users can authenticate, but app routes use requireActiveUser middleware
+    // This allows deactivated users to access /reactivate and /logout
 
     // Check if session still exists (session logout validation)
     if (decoded.sessionId) {
@@ -155,59 +151,45 @@ const auth = async (req, res, next) => {
 export const authenticateToken = auth;
 
 /**
- * Auth middleware that allows deactivated users (for reactivation flow)
- * Blocks deleted users but allows deactivated users to proceed
- * Used only for the /reactivate endpoint
+ * Middleware that requires an active (non-deactivated) user
+ * Use AFTER auth middleware on routes that should block deactivated users
+ *
+ * Routes that should use this:
+ * - Feed, Posts, Messages, Reactions, Profile edits
+ *
+ * Routes that should NOT use this:
+ * - /reactivate, /logout
  */
-export const authAllowDeactivated = async (req, res, next) => {
-  try {
-    // Get token from cookies or header
-    let token = req.cookies?.token || req.cookies?.accessToken;
-    if (!token) {
-      token = req.header('Authorization')?.replace('Bearer ', '');
-    }
-
-    if (!token) {
-      return res.status(401).json({ message: 'No authentication token, access denied' });
-    }
-
-    // Verify token
-    const decoded = verifyAccessToken(token);
-
-    // Get user from database
-    const user = await User.findById(decoded.userId).select('-password');
-
-    if (!user) {
-      return res.status(401).json({ message: 'User not found' });
-    }
-
-    // Block deleted users (permanent)
-    if (user.isDeleted) {
-      return res.status(401).json({ message: 'Account deleted', code: 'ACCOUNT_DELETED' });
-    }
-
-    // NOTE: We intentionally DO NOT check isActive here
-    // This allows deactivated users to call the reactivate endpoint
-
-    // Check session validity
-    if (decoded.sessionId) {
-      const sessionExists = user.activeSessions.some(
-        s => s.sessionId === decoded.sessionId
-      );
-
-      if (!sessionExists) {
-        return res.status(401).json({ message: 'Session has been logged out. Please log in again.' });
-      }
-    }
-
-    req.user = user;
-    req.userId = decoded.userId;
-    req.sessionId = decoded.sessionId;
-    next();
-  } catch (error) {
-    res.status(401).json({ message: 'Token is not valid' });
+export const requireActiveUser = (req, res, next) => {
+  // req.user is set by auth middleware
+  if (!req.user) {
+    return res.status(401).json({ message: 'Authentication required' });
   }
+
+  // Block deactivated users from accessing protected routes
+  if (!req.user.isActive) {
+    if (config.nodeEnv === 'development') {
+      console.log('❌ Account is deactivated - blocking access to protected route');
+    }
+    return res.status(403).json({
+      message: 'Account deactivated',
+      code: 'ACCOUNT_DEACTIVATED',
+      redirect: '/reactivate'
+    });
+  }
+
+  next();
 };
+
+/**
+ * Combined auth + requireActiveUser middleware
+ * Use this on routes that require both authentication AND an active account
+ *
+ * This is the standard middleware for most protected routes.
+ * Use plain `auth` only for routes that deactivated users need access to
+ * (e.g., /reactivate, /logout)
+ */
+export const authActive = [auth, requireActiveUser];
 
 /**
  * Optional authentication middleware

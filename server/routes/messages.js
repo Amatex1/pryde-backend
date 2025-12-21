@@ -4,7 +4,7 @@ import Message from '../models/Message.js';
 import User from '../models/User.js';
 import Conversation from '../models/Conversation.js';
 import mongoose from 'mongoose';
-import authMiddleware from '../middleware/auth.js';
+import { authActive } from '../middleware/auth.js';
 import { messageLimiter } from '../middleware/rateLimiter.js';
 import { checkMessagingPermission, checkBlocked } from '../middleware/privacy.js';
 import { checkMuted, moderateContent } from '../middleware/moderation.js';
@@ -12,7 +12,7 @@ import { sanitizeFields } from '../utils/sanitize.js';
 import logger from '../utils/logger.js';
 
 // Get conversation with a user
-router.get('/:userId', authMiddleware, checkBlocked, async (req, res) => {
+router.get('/:userId', authActive, checkBlocked, async (req, res) => {
   try {
     const { userId } = req.params;
     const currentUserId = req.userId;
@@ -37,7 +37,7 @@ router.get('/:userId', authMiddleware, checkBlocked, async (req, res) => {
 });
 
 // Get unread message counts per user
-router.get('/unread/counts', authMiddleware, async (req, res) => {
+router.get('/unread/counts', authActive, async (req, res) => {
   try {
     const currentUserId = req.userId;
 
@@ -107,7 +107,7 @@ router.get('/unread/counts', authMiddleware, async (req, res) => {
 });
 
 // Get all conversations
-router.get('/', authMiddleware, async (req, res) => {
+router.get('/', authActive, async (req, res) => {
   try {
     const currentUserId = req.userId;
 
@@ -198,7 +198,7 @@ router.get('/', authMiddleware, async (req, res) => {
 });
 
 // Send a message
-router.post('/', authMiddleware, messageLimiter, sanitizeFields(['content']), checkMessagingPermission, checkMuted, moderateContent, async (req, res) => {
+router.post('/', authActive, messageLimiter, sanitizeFields(['content']), checkMessagingPermission, checkMuted, moderateContent, async (req, res) => {
   try {
     const { recipient, content, attachment, groupChatId, voiceNote } = req.body;
 
@@ -240,7 +240,7 @@ router.post('/', authMiddleware, messageLimiter, sanitizeFields(['content']), ch
 });
 
 // Edit a message
-router.put('/:id', authMiddleware, async (req, res) => {
+router.put('/:id', authActive, async (req, res) => {
   try {
     const { content } = req.body;
 
@@ -277,7 +277,7 @@ router.put('/:id', authMiddleware, async (req, res) => {
 });
 
 // Delete a message
-router.delete('/:id', authMiddleware, async (req, res) => {
+router.delete('/:id', authActive, async (req, res) => {
   try {
     const message = await Message.findById(req.params.id);
 
@@ -300,7 +300,7 @@ router.delete('/:id', authMiddleware, async (req, res) => {
 });
 
 // Mark message as read (with read receipts)
-router.put('/:id/read', authMiddleware, async (req, res) => {
+router.put('/:id/read', authActive, async (req, res) => {
   try {
     const message = await Message.findById(req.params.id);
 
@@ -334,7 +334,7 @@ router.put('/:id/read', authMiddleware, async (req, res) => {
 });
 
 // Mark message as delivered
-router.put('/:id/delivered', authMiddleware, async (req, res) => {
+router.put('/:id/delivered', authActive, async (req, res) => {
   try {
     const message = await Message.findById(req.params.id);
 
@@ -362,7 +362,7 @@ router.put('/:id/delivered', authMiddleware, async (req, res) => {
 });
 
 // Get group chat messages
-router.get('/group/:groupId', authMiddleware, async (req, res) => {
+router.get('/group/:groupId', authActive, async (req, res) => {
   try {
     const { groupId } = req.params;
     
@@ -381,7 +381,7 @@ router.get('/group/:groupId', authMiddleware, async (req, res) => {
 // @route   POST /api/messages/:id/react
 // @desc    Add a reaction to a message
 // @access  Private
-router.post('/:id/react', authMiddleware, async (req, res) => {
+router.post('/:id/react', authActive, async (req, res) => {
   try {
     const { emoji } = req.body;
 
@@ -424,7 +424,7 @@ router.post('/:id/react', authMiddleware, async (req, res) => {
 // @route   DELETE /api/messages/:id/react
 // @desc    Remove a reaction from a message
 // @access  Private
-router.delete('/:id/react', authMiddleware, async (req, res) => {
+router.delete('/:id/react', authActive, async (req, res) => {
   try {
     const { emoji } = req.body;
 
@@ -460,7 +460,7 @@ router.delete('/:id/react', authMiddleware, async (req, res) => {
 // @route   POST /api/messages/conversations/:userId/archive
 // @desc    Archive a conversation with a user
 // @access  Private
-router.post('/conversations/:userId/archive', authMiddleware, async (req, res) => {
+router.post('/conversations/:userId/archive', authActive, async (req, res) => {
   try {
     const currentUserId = req.userId;
     const otherUserId = req.params.userId;
@@ -493,7 +493,7 @@ router.post('/conversations/:userId/archive', authMiddleware, async (req, res) =
 // @route   POST /api/messages/conversations/:userId/unarchive
 // @desc    Unarchive a conversation with a user
 // @access  Private
-router.post('/conversations/:userId/unarchive', authMiddleware, async (req, res) => {
+router.post('/conversations/:userId/unarchive', authActive, async (req, res) => {
   try {
     const currentUserId = req.userId;
     const otherUserId = req.params.userId;
@@ -520,7 +520,7 @@ router.post('/conversations/:userId/unarchive', authMiddleware, async (req, res)
 // @route   POST /api/messages/conversations/:userId/mute
 // @desc    Mute notifications for a conversation
 // @access  Private
-router.post('/conversations/:userId/mute', authMiddleware, async (req, res) => {
+router.post('/conversations/:userId/mute', authActive, async (req, res) => {
   try {
     const currentUserId = req.userId;
     const otherUserId = req.params.userId;
@@ -562,7 +562,7 @@ router.post('/conversations/:userId/mute', authMiddleware, async (req, res) => {
 // @route   POST /api/messages/conversations/:userId/unmute
 // @desc    Unmute notifications for a conversation
 // @access  Private
-router.post('/conversations/:userId/unmute', authMiddleware, async (req, res) => {
+router.post('/conversations/:userId/unmute', authActive, async (req, res) => {
   try {
     const currentUserId = req.userId;
     const otherUserId = req.params.userId;
@@ -589,7 +589,7 @@ router.post('/conversations/:userId/unmute', authMiddleware, async (req, res) =>
 // @route   POST /api/messages/conversations/:userId/mark-unread
 // @desc    Mark conversation as unread
 // @access  Private
-router.post('/conversations/:userId/mark-unread', authMiddleware, async (req, res) => {
+router.post('/conversations/:userId/mark-unread', authActive, async (req, res) => {
   try {
     const currentUserId = req.userId;
     const otherUserId = req.params.userId;
@@ -629,7 +629,7 @@ router.post('/conversations/:userId/mark-unread', authMiddleware, async (req, re
 // @route   DELETE /api/messages/conversations/:userId/mark-unread
 // @desc    Remove manual unread status from conversation
 // @access  Private
-router.delete('/conversations/:userId/mark-unread', authMiddleware, async (req, res) => {
+router.delete('/conversations/:userId/mark-unread', authActive, async (req, res) => {
   try {
     const currentUserId = req.userId;
     const otherUserId = req.params.userId;
@@ -661,7 +661,7 @@ router.delete('/conversations/:userId/mark-unread', authMiddleware, async (req, 
 // @route   DELETE /api/messages/conversations/:userId
 // @desc    Delete entire conversation with a user
 // @access  Private
-router.delete('/conversations/:userId', authMiddleware, async (req, res) => {
+router.delete('/conversations/:userId', authActive, async (req, res) => {
   try {
     const currentUserId = req.userId;
     const otherUserId = req.params.userId;
