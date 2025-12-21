@@ -5,6 +5,7 @@ server/node_modules/
 # Environment variables
 .env
 .env.local
+.env.production
 server/.env
 
 # Build output
@@ -26,3 +27,39 @@ Thumbs.db
 .idea/
 *.swp
 *.swo
+
+# Documentation (exclude all markdown files except README)
+*.md
+!README.md
+!server/README.md
+
+# Workspace files
+*.code-workspace
+
+# Scripts
+*.ps1
+*.sh
+
+# Test files
+/tests/
+/security-tests/
+
+# Cloudflare
+.wrangler/
+wrangler.toml
+cloudflare-*.js
+cloudflare-*.py
+
+# Frontend files (not needed in backend repo)
+/src/
+/public/
+/scripts/
+vite.config.js
+vite-plugin-build-version.js
+index.html
+
+# Other config files
+check-deployment.html
+debug-auth.html
+test-cloudflare-token.js
+fix-and-deploy.ps1
