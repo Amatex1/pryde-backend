@@ -378,23 +378,24 @@ app._router.stack.forEach((middleware) => {
   }
 });
 
-// Health check and status endpoints
-app.get('/', (req, res) => {
-  res.json({
-    status: 'Pryde API running',
-    timestamp: new Date().toISOString(),
-    passkeySupport: !!passkeyRoutes,
-    version: '1.0.1-passkey-debug'
-  });
-});
+// Serve static files from the React app (dist folder)
+import path from 'path';
+import { fileURLToPath } from 'url';
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Serve static files from dist directory
+app.use(express.static(path.join(__dirname, '../dist')));
+
+// Health check and status endpoints
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'Pryde Social API is running', timestamp: new Date().toISOString() });
 });
 
 app.get('/api/status', (req, res) => {
-  res.json({ 
-    status: 'running', 
+  res.json({
+    status: 'running',
     service: 'Pryde Social API',
     timestamp: new Date().toISOString(),
     version: '1.0.0'
@@ -782,6 +783,12 @@ io.on('connection', (socket) => {
 // Make io accessible in routes
 app.set('io', io);
 app.set('onlineUsers', onlineUsers);
+
+// Catch-all route - serve React app for all non-API routes
+// This MUST be after all API routes
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../dist/index.html'));
+});
 
 // Error handling middleware
 app.use((err, req, res, next) => {
