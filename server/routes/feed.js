@@ -194,26 +194,30 @@ router.get('/following', authenticateToken, async (req, res) => {
 
 // Helper function to sanitize posts (same as in posts.js)
 const sanitizePostForPrivateLikes = (post, currentUserId) => {
-  const postObj = post.toObject ? post.toObject() : post;
-  
+  // CRITICAL: Convert Mongoose document to plain object to remove .on() and other methods
+  const postObj = post.toObject ? post.toObject() : { ...post };
+
   // Check if current user liked this post
-  const hasLiked = postObj.likes?.some(like => 
+  const hasLiked = postObj.likes?.some(like =>
     (like._id || like).toString() === currentUserId.toString()
   );
-  
+
   // Replace likes array with just a boolean
   postObj.hasLiked = hasLiked;
   delete postObj.likes;
-  
+
   // Handle originalPost (shared posts)
   if (postObj.originalPost) {
-    const originalHasLiked = postObj.originalPost.likes?.some(like =>
+    // CRITICAL: Also convert nested originalPost to plain object
+    const originalPostObj = postObj.originalPost.toObject ? postObj.originalPost.toObject() : { ...postObj.originalPost };
+    const originalHasLiked = originalPostObj.likes?.some(like =>
       (like._id || like).toString() === currentUserId.toString()
     );
-    postObj.originalPost.hasLiked = originalHasLiked;
-    delete postObj.originalPost.likes;
+    originalPostObj.hasLiked = originalHasLiked;
+    delete originalPostObj.likes;
+    postObj.originalPost = originalPostObj;
   }
-  
+
   return postObj;
 };
 
