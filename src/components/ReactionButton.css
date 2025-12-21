@@ -1,0 +1,154 @@
+/* Universal Reaction Button Styles */
+
+.reaction-button-container {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.reaction-button {
+  background: none;
+  border: none;
+  font-size: 1.25rem;
+  cursor: pointer;
+  padding: var(--space-1);
+  border-radius: var(--radius-sm);
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  min-height: 32px;
+  opacity: 0.7;
+}
+
+.reaction-button:hover {
+  opacity: 1;
+  background: var(--bg-subtle);
+  transform: scale(1.1);
+}
+
+.reaction-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.reaction-button.has-reaction {
+  opacity: 1;
+  background: var(--bg-subtle);
+}
+
+[data-theme="dark"] .reaction-button:hover {
+  background: rgba(108, 92, 231, 0.15);
+}
+
+[data-theme="dark"] .reaction-button.has-reaction {
+  background: rgba(108, 92, 231, 0.2);
+}
+
+.reaction-count {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  font-weight: 500;
+  min-width: 20px;
+  text-align: left;
+}
+
+/* Reaction Picker */
+.reaction-picker {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-bottom: var(--space-2);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: var(--space-2);
+  display: flex;
+  gap: var(--space-1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  animation: slideUp 0.2s ease;
+}
+
+[data-theme="dark"] .reaction-picker {
+  background: var(--bg-surface);
+  border-color: var(--border-subtle);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+.reaction-emoji {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: var(--space-1);
+  border-radius: var(--radius-sm);
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  min-height: 36px;
+}
+
+.reaction-emoji:hover {
+  background: var(--bg-subtle);
+  transform: scale(1.2);
+}
+
+.reaction-emoji.selected {
+  background: var(--color-primary);
+  background: rgba(108, 92, 231, 0.2);
+}
+
+[data-theme="dark"] .reaction-emoji:hover {
+  background: rgba(108, 92, 231, 0.15);
+}
+
+[data-theme="dark"] .reaction-emoji.selected {
+  background: rgba(108, 92, 231, 0.3);
+}
+
+/* Mobile adjustments */
+@media (max-width: 768px) {
+  .reaction-picker {
+    position: fixed;
+    bottom: auto;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    margin-bottom: 0;
+    padding: var(--space-3);
+    gap: var(--space-2);
+    max-width: 90vw;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .reaction-emoji {
+    font-size: 2rem;
+    min-width: 48px;
+    min-height: 48px;
+  }
+
+  .reaction-button {
+    min-width: 44px;
+    min-height: 44px;
+    font-size: 1.5rem;
+  }
+}
+

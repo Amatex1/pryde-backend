@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import OptimizedImage from './OptimizedImage';
+import ReactionButton from './ReactionButton';
 import { getImageUrl } from '../utils/imageUrl';
 import { sanitizeContent } from '../utils/sanitize';
 import '../pages/Feed.css';
@@ -149,104 +150,11 @@ const CommentThread = ({
               )}
 
               <div className="comment-actions">
-                <div className="reaction-container">
-                  <button
-                    className={`comment-action-btn ${userReactionEmoji ? 'liked' : ''}`}
-                    onClick={(e) => {
-                      if (window.innerWidth <= 768) {
-                        e.preventDefault();
-                        setShowReactionPicker(showReactionPicker === `comment-${comment._id}` ? null : `comment-${comment._id}`);
-                      } else {
-                        handleCommentReaction(comment._id, userReactionEmoji || '👍');
-                      }
-                    }}
-                    onMouseEnter={() => {
-                      if (window.innerWidth > 768) {
-                        if (reactionPickerTimeoutRef.current) {
-                          clearTimeout(reactionPickerTimeoutRef.current);
-                          reactionPickerTimeoutRef.current = null;
-                        }
-                        setShowReactionPicker(`comment-${comment._id}`);
-                      }
-                    }}
-                    onMouseLeave={() => {
-                      if (window.innerWidth > 768) {
-                        reactionPickerTimeoutRef.current = setTimeout(() => {
-                          setShowReactionPicker(null);
-                        }, 500);
-                      }
-                    }}
-                    onTouchStart={(e) => {
-                      const touchTimer = setTimeout(() => {
-                        setShowReactionPicker(`comment-${comment._id}`);
-                      }, 500);
-                      e.currentTarget.dataset.touchTimer = touchTimer;
-                    }}
-                    onTouchEnd={(e) => {
-                      if (e.currentTarget.dataset.touchTimer) {
-                        clearTimeout(parseInt(e.currentTarget.dataset.touchTimer));
-                        delete e.currentTarget.dataset.touchTimer;
-                      }
-                    }}
-                  >
-                    <span>{userReactionEmoji || '👍'}</span>
-                  </button>
-                  {Object.values(comment.reactions || {}).flat().length > 0 && (
-                    <button
-                      className="reaction-count-btn"
-                      onClick={() => {
-                        const reactionsArray = [];
-                        Object.entries(comment.reactions || {}).forEach(([emoji, userIds]) => {
-                          userIds.forEach(userId => {
-                            reactionsArray.push({ user: userId, emoji });
-                          });
-                        });
-                        setReactionDetailsModal({
-                          isOpen: true,
-                          reactions: reactionsArray,
-                          likes: []
-                        });
-                      }}
-                    >
-                      {Object.values(comment.reactions || {}).flat().length}
-                    </button>
-                  )}
-                  {showReactionPicker === `comment-${comment._id}` && (
-                    <div
-                      className="reaction-picker"
-                      onMouseEnter={() => {
-                        if (window.innerWidth > 768) {
-                          if (reactionPickerTimeoutRef.current) {
-                            clearTimeout(reactionPickerTimeoutRef.current);
-                            reactionPickerTimeoutRef.current = null;
-                          }
-                          setShowReactionPicker(`comment-${comment._id}`);
-                        }
-                      }}
-                      onMouseLeave={() => {
-                        if (window.innerWidth > 768) {
-                          reactionPickerTimeoutRef.current = setTimeout(() => {
-                            setShowReactionPicker(null);
-                          }, 500);
-                        }
-                      }}
-                    >
-                      {['👍', '❤️', '😂', '😮', '😢', '😡', '🤗', '🎉', '🤔', '🔥', '👏', '🤯', '🤢', '👎', '🏳️‍🌈', '🏳️‍⚧️'].map(emoji => (
-                        <button
-                          key={emoji}
-                          className="reaction-btn"
-                          onClick={() => {
-                            handleCommentReaction(comment._id, emoji);
-                            setShowReactionPicker(null);
-                          }}
-                          title={emoji}
-                        >
-                          {emoji}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
+                <ReactionButton
+                  targetType="comment"
+                  targetId={comment._id}
+                  currentUserId={currentUser?.id}
+                />
                 <button
                   className="comment-action-btn"
                   onClick={() => handleReplyToComment(postId, comment._id)}
@@ -383,104 +291,11 @@ const CommentThread = ({
                       )}
 
                       <div className="comment-actions">
-                        <div className="reaction-container">
-                          <button
-                            className={`comment-action-btn ${replyReactionEmoji ? 'liked' : ''}`}
-                            onClick={(e) => {
-                              if (window.innerWidth <= 768) {
-                                e.preventDefault();
-                                setShowReactionPicker(showReactionPicker === `reply-${reply._id}` ? null : `reply-${reply._id}`);
-                              } else {
-                                handleCommentReaction(reply._id, replyReactionEmoji || '👍');
-                              }
-                            }}
-                            onMouseEnter={() => {
-                              if (window.innerWidth > 768) {
-                                if (reactionPickerTimeoutRef.current) {
-                                  clearTimeout(reactionPickerTimeoutRef.current);
-                                  reactionPickerTimeoutRef.current = null;
-                                }
-                                setShowReactionPicker(`reply-${reply._id}`);
-                              }
-                            }}
-                            onMouseLeave={() => {
-                              if (window.innerWidth > 768) {
-                                reactionPickerTimeoutRef.current = setTimeout(() => {
-                                  setShowReactionPicker(null);
-                                }, 500);
-                              }
-                            }}
-                            onTouchStart={(e) => {
-                              const touchTimer = setTimeout(() => {
-                                setShowReactionPicker(`reply-${reply._id}`);
-                              }, 500);
-                              e.currentTarget.dataset.touchTimer = touchTimer;
-                            }}
-                            onTouchEnd={(e) => {
-                              if (e.currentTarget.dataset.touchTimer) {
-                                clearTimeout(parseInt(e.currentTarget.dataset.touchTimer));
-                                delete e.currentTarget.dataset.touchTimer;
-                              }
-                            }}
-                          >
-                            <span>{replyReactionEmoji || '👍'}</span>
-                          </button>
-                          {Object.values(reply.reactions || {}).flat().length > 0 && (
-                            <button
-                              className="reaction-count-btn"
-                              onClick={() => {
-                                const reactionsArray = [];
-                                Object.entries(reply.reactions || {}).forEach(([emoji, userIds]) => {
-                                  userIds.forEach(userId => {
-                                    reactionsArray.push({ user: userId, emoji });
-                                  });
-                                });
-                                setReactionDetailsModal({
-                                  isOpen: true,
-                                  reactions: reactionsArray,
-                                  likes: []
-                                });
-                              }}
-                            >
-                              {Object.values(reply.reactions || {}).flat().length}
-                            </button>
-                          )}
-                          {showReactionPicker === `reply-${reply._id}` && (
-                            <div
-                              className="reaction-picker"
-                              onMouseEnter={() => {
-                                if (window.innerWidth > 768) {
-                                  if (reactionPickerTimeoutRef.current) {
-                                    clearTimeout(reactionPickerTimeoutRef.current);
-                                    reactionPickerTimeoutRef.current = null;
-                                  }
-                                  setShowReactionPicker(`reply-${reply._id}`);
-                                }
-                              }}
-                              onMouseLeave={() => {
-                                if (window.innerWidth > 768) {
-                                  reactionPickerTimeoutRef.current = setTimeout(() => {
-                                    setShowReactionPicker(null);
-                                  }, 500);
-                                }
-                              }}
-                            >
-                              {['👍', '❤️', '😂', '😮', '😢', '😡', '🤗', '🎉', '🤔', '🔥', '👏', '🤯', '🤢', '👎', '🏳️‍🌈', '🏳️‍⚧️'].map(emoji => (
-                                <button
-                                  key={emoji}
-                                  className="reaction-btn"
-                                  onClick={() => {
-                                    handleCommentReaction(reply._id, emoji);
-                                    setShowReactionPicker(null);
-                                  }}
-                                  title={emoji}
-                                >
-                                  {emoji}
-                                </button>
-                              ))}
-                            </div>
-                          )}
-                        </div>
+                        <ReactionButton
+                          targetType="comment"
+                          targetId={reply._id}
+                          currentUserId={currentUser?.id}
+                        />
                         {isOwnReply ? (
                           <>
                             <button

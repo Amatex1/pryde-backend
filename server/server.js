@@ -51,6 +51,7 @@ import loginApprovalRoutes from './routes/loginApproval.js';
 import draftsRoutes from './routes/drafts.js';
 import recoveryContactsRoutes from './routes/recoveryContacts.js';
 import commentsRoutes from './routes/comments.js';
+import reactionsRoutes from './routes/reactions.js';
 import backupRoutes from './routes/backup.js';
 
 // Import middleware
@@ -347,6 +348,7 @@ app.use('/api/login-approval', loginApprovalRoutes);
 app.use('/api/drafts', draftsRoutes);
 app.use('/api/recovery-contacts', recoveryContactsRoutes);
 app.use('/api', commentsRoutes); // Comment routes (handles /api/posts/:postId/comments and /api/comments/:commentId)
+app.use('/api/reactions', reactionsRoutes); // Universal reaction system
 app.use('/api/backup', backupRoutes); // Backup download routes
 
 // Debug: Log the passkey router before registering
