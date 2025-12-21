@@ -64,10 +64,11 @@ function TagFeed() {
     try {
       const response = await api.post('/posts', {
         content: newPost,
-        tags: [tag._id],
+        tags: [tag.slug], // Use slug instead of _id
         visibility: 'public'
       });
 
+      // The response should have populated author and tags
       setPosts([response.data, ...posts]);
       setNewPost('');
     } catch (error) {
