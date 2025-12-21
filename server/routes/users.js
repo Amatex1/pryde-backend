@@ -6,7 +6,7 @@ import Message from '../models/Message.js';
 import FriendRequest from '../models/FriendRequest.js';
 import GroupChat from '../models/GroupChat.js';
 import Notification from '../models/Notification.js';
-import auth from '../middleware/auth.js';
+import auth, { authAllowDeactivated } from '../middleware/auth.js';
 import { checkProfileVisibility, checkBlocked } from '../middleware/privacy.js';
 import { sanitizeFields } from '../middleware/sanitize.js';
 import mongoose from 'mongoose';
@@ -818,9 +818,8 @@ router.put('/deactivate', auth, async (req, res) => {
 
 // @route   PUT /api/users/reactivate
 // @desc    Reactivate user account
-// @access  Private (NOTE: This route is blocked for deactivated users by auth middleware)
-// This route is intended for admin use or special reactivation flows
-router.put('/reactivate', auth, async (req, res) => {
+// @access  Private (uses authAllowDeactivated to permit deactivated users)
+router.put('/reactivate', authAllowDeactivated, async (req, res) => {
   try {
     const user = await User.findById(req.userId);
 
@@ -828,6 +827,12 @@ router.put('/reactivate', auth, async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
+    // Double-check: deleted users cannot reactivate
+    if (user.isDeleted) {
+      return res.status(401).json({ message: 'Account has been permanently deleted', code: 'ACCOUNT_DELETED' });
+    }
+
+    // Reactivate the account
     user.isActive = true;
     user.deactivatedAt = null; // Clear deactivation timestamp
     await user.save();
@@ -840,7 +845,16 @@ router.put('/reactivate', auth, async (req, res) => {
       });
     }
 
-    res.json({ message: 'Account reactivated successfully' });
+    // Return success with updated user data
+    res.json({
+      message: 'Account reactivated successfully',
+      user: {
+        _id: user._id,
+        username: user.username,
+        displayName: user.displayName,
+        isActive: user.isActive
+      }
+    });
   } catch (error) {
     console.error('Reactivate account error:', error);
     res.status(500).json({ message: 'Server error' });

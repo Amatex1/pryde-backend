@@ -155,6 +155,61 @@ const auth = async (req, res, next) => {
 export const authenticateToken = auth;
 
 /**
+ * Auth middleware that allows deactivated users (for reactivation flow)
+ * Blocks deleted users but allows deactivated users to proceed
+ * Used only for the /reactivate endpoint
+ */
+export const authAllowDeactivated = async (req, res, next) => {
+  try {
+    // Get token from cookies or header
+    let token = req.cookies?.token || req.cookies?.accessToken;
+    if (!token) {
+      token = req.header('Authorization')?.replace('Bearer ', '');
+    }
+
+    if (!token) {
+      return res.status(401).json({ message: 'No authentication token, access denied' });
+    }
+
+    // Verify token
+    const decoded = verifyAccessToken(token);
+
+    // Get user from database
+    const user = await User.findById(decoded.userId).select('-password');
+
+    if (!user) {
+      return res.status(401).json({ message: 'User not found' });
+    }
+
+    // Block deleted users (permanent)
+    if (user.isDeleted) {
+      return res.status(401).json({ message: 'Account deleted', code: 'ACCOUNT_DELETED' });
+    }
+
+    // NOTE: We intentionally DO NOT check isActive here
+    // This allows deactivated users to call the reactivate endpoint
+
+    // Check session validity
+    if (decoded.sessionId) {
+      const sessionExists = user.activeSessions.some(
+        s => s.sessionId === decoded.sessionId
+      );
+
+      if (!sessionExists) {
+        return res.status(401).json({ message: 'Session has been logged out. Please log in again.' });
+      }
+    }
+
+    req.user = user;
+    req.userId = decoded.userId;
+    req.sessionId = decoded.sessionId;
+    next();
+  } catch (error) {
+    res.status(401).json({ message: 'Token is not valid' });
+  }
+};
+
+/**
  * Optional authentication middleware
  * Sets req.user and req.userId if valid token present, but doesn't reject if missing
  * Useful for endpoints that work for both authenticated and unauthenticated users
