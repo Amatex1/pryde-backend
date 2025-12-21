@@ -1256,50 +1256,22 @@ html:not([data-theme])[data-quiet-mode="true"] .hide-metrics-checkbox:hover {
 
 .comment-replies {
   margin-left: 40px;
-  padding-left: 0;
+  padding-left: 16px;
   padding-top: var(--space-3);
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
   margin-top: var(--space-3);
-  position: relative;
+  border-left: 2px solid var(--border-subtle);
 }
 
-/* Vertical threading line connecting parent to all replies */
-.comment-replies::before {
-  content: '';
-  position: absolute;
-  left: -24px; /* Position relative to the indented replies container */
-  top: -20px; /* Start above the first reply */
-  bottom: 20px; /* End before the last reply */
-  width: 2px;
-  background: rgba(0, 0, 0, 0.1);
-}
-
-[data-theme="dark"] .comment-replies::before {
-  background: rgba(255, 255, 255, 0.15);
+[data-theme="dark"] .comment-replies {
+  border-left-color: rgba(255, 255, 255, 0.15);
 }
 
 .comment.reply {
   background: transparent;
   padding: var(--space-2) 0;
-  position: relative;
-  padding-left: 0;
-}
-
-/* Horizontal connector from vertical line to each reply */
-.comment.reply::before {
-  content: '';
-  position: absolute;
-  left: -24px; /* Align with vertical line */
-  top: 20px; /* Center vertically with avatar (32px avatar / 2 + padding) */
-  width: 20px; /* Length of horizontal connector */
-  height: 2px;
-  background: rgba(0, 0, 0, 0.1);
-}
-
-[data-theme="dark"] .comment.reply::before {
-  background: rgba(255, 255, 255, 0.15);
 }
 
 /* Facebook-style: Username INSIDE comment bubble at top */

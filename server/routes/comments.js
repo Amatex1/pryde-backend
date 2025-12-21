@@ -114,6 +114,10 @@ router.post('/posts/:postId/comments', auth, async (req, res) => {
       if (parentComment.parentCommentId !== null) {
         return res.status(400).json({ message: 'Cannot reply to a reply. Only one level of nesting allowed.' });
       }
+      // Ensure reply belongs to the same post
+      if (parentComment.postId.toString() !== postId) {
+        return res.status(400).json({ message: 'Reply must belong to the same post as the parent comment.' });
+      }
     }
 
     // Create comment
