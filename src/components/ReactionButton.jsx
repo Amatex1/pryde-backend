@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import api from '../utils/api';
+import socket from '../utils/socket';
 import './ReactionButton.css';
 
 /**
@@ -46,11 +47,41 @@ const ReactionButton = ({
     fetchReactions();
   }, [targetType, targetId]);
 
-  // Available emojis (same as current system)
+  // Listen for real-time reaction updates
+  useEffect(() => {
+    const handleReactionAdded = (data) => {
+      if (data.targetType === targetType && data.targetId === targetId) {
+        setReactions(data.reactions);
+        // Update user reaction if it was this user who reacted
+        if (data.userId === currentUserId) {
+          setUserReaction(data.emoji);
+        }
+      }
+    };
+
+    const handleReactionRemoved = (data) => {
+      if (data.targetType === targetType && data.targetId === targetId) {
+        setReactions(data.reactions);
+        // Update user reaction if it was this user who removed their reaction
+        if (data.userId === currentUserId) {
+          setUserReaction(null);
+        }
+      }
+    };
+
+    socket.on('reaction_added', handleReactionAdded);
+    socket.on('reaction_removed', handleReactionRemoved);
+
+    return () => {
+      socket.off('reaction_added', handleReactionAdded);
+      socket.off('reaction_removed', handleReactionRemoved);
+    };
+  }, [targetType, targetId, currentUserId]);
+
+  // Approved Pryde Reaction Set
   const availableEmojis = [
-    '👍', '❤️', '😂', '😮', '😢', '😡', 
-    '🤗', '🎉', '🤔', '🔥', '👏', '🤯', 
-    '🤢', '👎', '🏳️‍🌈', '🏳️‍⚧️'
+    '👍', '❤️', '😂', '😮', '🥺', '😡',
+    '🤗', '🎉', '🔥', '👏', '🏳️‍🌈', '🏳️‍⚧️'
   ];
 
   // Close picker when clicking outside
@@ -138,7 +169,7 @@ const ReactionButton = ({
       }
       hoverTimeoutRef.current = setTimeout(() => {
         setShowPicker(true);
-      }, 300);
+      }, 500);
     }
   };
 

@@ -1,8 +1,17 @@
 import mongoose from 'mongoose';
 
 /**
+ * Approved Pryde Reaction Set
+ * Only these emojis are allowed for reactions
+ */
+export const APPROVED_REACTIONS = [
+  '👍', '❤️', '😂', '😮', '🥺', '😡',
+  '🤗', '🎉', '🔥', '👏', '🏳️‍🌈', '🏳️‍⚧️'
+];
+
+/**
  * Universal Reaction Model
- * 
+ *
  * Supports reactions for posts, comments, and replies using a single collection.
  * Enforces one reaction per user per target.
  */
@@ -26,7 +35,13 @@ const reactionSchema = new mongoose.Schema({
   },
   emoji: {
     type: String,
-    required: true
+    required: true,
+    validate: {
+      validator: function(v) {
+        return APPROVED_REACTIONS.includes(v);
+      },
+      message: props => `${props.value} is not an approved reaction emoji`
+    }
   },
   createdAt: {
     type: Date,

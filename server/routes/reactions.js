@@ -1,10 +1,10 @@
 import express from 'express';
 import mongoose from 'mongoose';
-import Reaction from '../models/Reaction.js';
+import Reaction, { APPROVED_REACTIONS } from '../models/Reaction.js';
 import Post from '../models/Post.js';
 import Comment from '../models/Comment.js';
-import { auth } from '../middleware/auth.js';
-import { reactionLimiter } from '../middleware/rateLimiter.js';
+import auth from '../middleware/auth.js';
+import reactionLimiter from '../middleware/rateLimiter.js';
 import logger from '../utils/logger.js';
 
 const router = express.Router();
@@ -33,6 +33,11 @@ router.post('/', auth, reactionLimiter, async (req, res) => {
 
     if (!['post', 'comment'].includes(targetType)) {
       return res.status(400).json({ message: 'targetType must be "post" or "comment"' });
+    }
+
+    // Validate emoji against approved list
+    if (!APPROVED_REACTIONS.includes(emoji)) {
+      return res.status(400).json({ message: 'Invalid emoji. Only approved reactions are allowed.' });
     }
 
     // Verify target exists
@@ -68,14 +73,15 @@ router.post('/', auth, reactionLimiter, async (req, res) => {
 
         // Emit real-time event
         if (req.io) {
-          req.io.emit('reaction_updated', {
+          req.io.emit('reaction_removed', {
             targetType,
             targetId,
-            reactions
+            reactions,
+            userId
           });
         }
 
-        return res.json({ 
+        return res.json({
           action: 'removed',
           reactions
         });
@@ -92,14 +98,16 @@ router.post('/', auth, reactionLimiter, async (req, res) => {
 
         // Emit real-time event
         if (req.io) {
-          req.io.emit('reaction_updated', {
+          req.io.emit('reaction_added', {
             targetType,
             targetId,
-            reactions
+            reactions,
+            userId,
+            emoji
           });
         }
 
-        return res.json({ 
+        return res.json({
           action: 'updated',
           emoji,
           reactions
@@ -123,14 +131,16 @@ router.post('/', auth, reactionLimiter, async (req, res) => {
 
       // Emit real-time event
       if (req.io) {
-        req.io.emit('reaction_updated', {
+        req.io.emit('reaction_added', {
           targetType,
           targetId,
-          reactions
+          reactions,
+          userId,
+          emoji
         });
       }
 
-      return res.json({ 
+      return res.json({
         action: 'added',
         emoji,
         reactions

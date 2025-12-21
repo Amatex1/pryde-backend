@@ -13,6 +13,7 @@ import PostSkeleton from '../components/PostSkeleton';
 import OptimizedImage from '../components/OptimizedImage';
 import ProfilePostSearch from '../components/ProfilePostSearch';
 import CommentThread from '../components/CommentThread';
+import ReactionButton from '../components/ReactionButton';
 import PinnedPostBadge from '../components/PinnedPostBadge';
 import EditHistoryModal from '../components/EditHistoryModal';
 import Poll from '../components/Poll';
@@ -1968,87 +1969,22 @@ function Profile() {
                         <span>{post.shares?.length || 0} shares</span>
                       </div>
 
-                      <div className="post-actions">
-                        <div className="reaction-container">
-                          <button
-                            className={`action-btn ${isLiked || post.reactions?.some(r => r.user?._id === currentUser?.id || r.user === currentUser?.id) ? 'liked' : ''}`}
-                            onClick={() => {
-                              // On mobile, click opens emoji picker
-                              if (window.innerWidth <= 768) {
-                                setShowReactionPicker(`post-${post._id}`);
-                              } else {
-                                // On desktop, click reacts with default emoji (heart)
-                                handlePostReaction(post._id, '❤️');
-                              }
-                            }}
-                            onMouseEnter={() => {
-                              // Hover shows emoji picker on desktop
-                              if (window.innerWidth > 768) {
-                                setShowReactionPicker(`post-${post._id}`);
-                              }
-                            }}
-                            onMouseLeave={() => {
-                              // Delay hiding to allow moving to picker
-                              if (window.innerWidth > 768) {
-                                setTimeout(() => {
-                                  if (showReactionPicker === `post-${post._id}`) {
-                                    setShowReactionPicker(null);
-                                  }
-                                }, 300);
-                              }
-                            }}
-                            aria-label={getUserReactionEmoji(post.reactions) ? `Change reaction from ${getUserReactionEmoji(post.reactions)}` : 'React to post'}
-                          >
-                            <span className="action-emoji">
-                              {getUserReactionEmoji(post.reactions) || '🤍'}
-                            </span>
-                            <span className="action-text">
-                              {getUserReactionEmoji(post.reactions) ? 'Reacted' : 'React'}
-                            </span>
-                          </button>
-                          {post.reactions?.length > 0 && (
-                            <button
-                              className="reaction-count-btn"
-                              onClick={() => setReactionDetailsModal({
-                                isOpen: true,
-                                reactions: post.reactions || [],
-                                likes: post.likes || []
-                              })}
-                              title="See who reacted"
-                            >
-                              ({post.reactions.length})
-                            </button>
-                          )}
-                          {showReactionPicker === `post-${post._id}` && (
-                            <div
-                              className="reaction-picker"
-                              onMouseEnter={() => {
-                                if (window.innerWidth > 768) {
-                                  setShowReactionPicker(`post-${post._id}`);
-                                }
-                              }}
-                              onMouseLeave={() => {
-                                if (window.innerWidth > 768) {
-                                  setShowReactionPicker(null);
-                                }
-                              }}
-                            >
-                              {['👍', '❤️', '😂', '😮', '😢', '😡', '🤗', '🎉', '🤔', '🔥', '👏', '🤯', '🤢', '👎', '🏳️‍🌈', '🏳️‍⚧️'].map(emoji => (
-                                <button
-                                  key={emoji}
-                                  className="reaction-btn"
-                                  onClick={() => {
-                                    handlePostReaction(post._id, emoji);
-                                    setShowReactionPicker(null);
-                                  }}
-                                  title={emoji}
-                                >
-                                  {emoji}
-                                </button>
-                              ))}
-                            </div>
-                          )}
-                        </div>
+                      <div className="post-actions soft-actions">
+                        <ReactionButton
+                          targetType="post"
+                          targetId={post._id}
+                          currentUserId={currentUser?.id}
+                          onReactionChange={(reactions, userReaction) => {
+                            // Update post in state with new reactions
+                            setPosts(prevPosts =>
+                              prevPosts.map(p =>
+                                p._id === post._id
+                                  ? { ...p, _reactionsUpdated: Date.now() }
+                                  : p
+                              )
+                            );
+                          }}
+                        />
                         <button
                           className="action-btn"
                           onClick={() => toggleCommentBox(post._id)}
