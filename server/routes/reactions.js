@@ -3,7 +3,7 @@ import mongoose from 'mongoose';
 import Reaction, { APPROVED_REACTIONS } from '../models/Reaction.js';
 import Post from '../models/Post.js';
 import Comment from '../models/Comment.js';
-import auth from '../middleware/auth.js';
+import auth, { optionalAuth } from '../middleware/auth.js';
 import { reactionLimiter } from '../middleware/rateLimiter.js';
 import logger from '../utils/logger.js';
 
@@ -207,11 +207,11 @@ router.delete('/', auth, async (req, res) => {
 /**
  * @route   GET /api/reactions/:targetType/:targetId
  * @desc    Get aggregated reactions for a target
- * @access  Public
+ * @access  Public (with optional auth to get user's reaction)
  *
  * Returns: { emoji: count, ... } and userReaction (if authenticated)
  */
-router.get('/:targetType/:targetId', async (req, res) => {
+router.get('/:targetType/:targetId', optionalAuth, async (req, res) => {
   try {
     const { targetType, targetId } = req.params;
     const userId = req.userId || req.user?._id;

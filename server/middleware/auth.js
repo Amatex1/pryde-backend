@@ -143,4 +143,40 @@ const auth = async (req, res, next) => {
 // Named export for consistency
 export const authenticateToken = auth;
 
+/**
+ * Optional authentication middleware
+ * Sets req.user and req.userId if valid token present, but doesn't reject if missing
+ * Useful for endpoints that work for both authenticated and unauthenticated users
+ */
+export const optionalAuth = async (req, res, next) => {
+  try {
+    // Try to get token from cookies or header
+    let token = req.cookies?.token || req.cookies?.accessToken;
+    if (!token) {
+      token = req.header('Authorization')?.replace('Bearer ', '');
+    }
+
+    // No token - continue without authentication
+    if (!token) {
+      return next();
+    }
+
+    // Verify token
+    const decoded = verifyAccessToken(token);
+
+    // Get user from database
+    const user = await User.findById(decoded.userId).select('-password');
+
+    if (user && !user.isDeleted) {
+      req.user = user;
+      req.userId = user._id;
+    }
+
+    next();
+  } catch (error) {
+    // Token invalid or expired - continue without authentication
+    next();
+  }
+};
+
 export default auth;
