@@ -670,7 +670,30 @@ function Profile() {
       });
 
       // API call
-      await api.post(`/comments/${commentId}/react`, { emoji });
+      const response = await api.post(`/comments/${commentId}/react`, { emoji });
+
+      // Update with server response to ensure consistency
+      const serverComment = response.data;
+      setPostComments(prev => {
+        const updated = { ...prev };
+        Object.keys(updated).forEach(postId => {
+          updated[postId] = updated[postId].map(c =>
+            c._id === commentId ? serverComment : c
+          );
+        });
+        return updated;
+      });
+
+      setCommentReplies(prev => {
+        const updated = { ...prev };
+        Object.keys(updated).forEach(parentId => {
+          updated[parentId] = updated[parentId].map(c =>
+            c._id === commentId ? serverComment : c
+          );
+        });
+        return updated;
+      });
+
       setShowReactionPicker(null);
     } catch (error) {
       logger.error('Failed to react to comment:', error);
@@ -1764,9 +1787,9 @@ function Profile() {
                                     )}
                                     <button
                                       className="dropdown-item delete"
-                                      onClick={async () => {
+                                      onClick={() => {
+                                        handleDeletePost(post._id);
                                         setOpenDropdownId(null);
-                                        await handleDeletePost(post._id);
                                       }}
                                     >
                                       🗑️ Delete
