@@ -1,217 +1,165 @@
 import rateLimit from 'express-rate-limit';
+import RedisStore from 'rate-limit-redis';
+import Redis from 'ioredis';
 import logger from '../utils/logger.js';
+import config from '../config/config.js';
 
-/**
- * Helper function to log rate limit violations
- * @param {Object} req - Express request object
- * @param {string} limitType - Type of rate limit (e.g., 'global', 'login', 'post')
- */
-const logRateLimitViolation = (req, limitType) => {
-  const ip = req.ip || req.connection.remoteAddress;
-  const userId = req.userId || req.user?._id || 'anonymous';
-  const path = req.path;
-  const method = req.method;
+// Redis connection for rate limiting
+const redisClient = new Redis({
+  host: config.redis.host,
+  port: config.redis.port,
+  password: config.redis.password,
+  enableOfflineQueue: false
+});
 
-  logger.warn(`🚨 Rate limit exceeded - ${limitType}`, {
-    ip,
-    userId,
-    path,
-    method,
-    userAgent: req.headers['user-agent'],
-    timestamp: new Date().toISOString()
+// Advanced rate limiting configuration
+const createAdvancedLimiter = (options) => {
+  const { 
+    windowMs = 15 * 60 * 1000, // 15 minutes default
+    max = 100, // 100 requests per window default
+    message = 'Too many requests, please try again later.',
+    keyGenerator = (req) => req.ip,
+    skipFailedRequests = false,
+    standardHeaders = true,
+    legacyHeaders = false,
+    handler = (req, res, next, options) => {
+      res.status(429).json({
+        error: 'Too Many Requests',
+        message: options.message,
+        retryAfter: Math.ceil(options.windowMs / 1000 / 60) // minutes
+      });
+    }
+  } = options;
+
+  return rateLimit({
+    windowMs,
+    max,
+    message,
+    keyGenerator,
+    skipFailedRequests,
+    standardHeaders,
+    legacyHeaders,
+    handler,
+    store: new RedisStore({
+      sendCommand: (...args) => redisClient.call(...args),
+      prefix: `rate_limit:${options.prefix || 'default'}:`,
+    }),
+    // Dynamic scaling based on user role
+    skip: (req, res) => {
+      // Exempt admin and system users from rate limiting
+      const userRole = req.user?.role;
+      const exemptRoles = ['admin', 'super_admin', 'system'];
+      return exemptRoles.includes(userRole);
+    },
+    // Logging for rate limit events
+    onLimitReached: (req, res, options) => {
+      logger.warn('Rate limit reached', {
+        ip: req.ip,
+        path: req.path,
+        method: req.method
+      });
+    }
   });
 };
 
-// Global rate limiter - applies to all requests
-export const globalLimiter = rateLimit({
+// Specialized rate limiters for different endpoints
+export const globalLimiter = createAdvancedLimiter({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 1000, // Limit each IP to 1000 requests per windowMs
-  message: 'Too many requests from this IP, please try again later.',
-  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
-  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
-  handler: (req, res) => {
-    logRateLimitViolation(req, 'global');
-    res.status(429).json({
-      message: 'Too many requests from this IP, please try again later.',
-      retryAfter: Math.ceil(req.rateLimit.resetTime / 1000)
-    });
-  }
+  max: 500, // 500 requests per 15 minutes
+  prefix: 'global'
 });
 
-// Login rate limiter - stricter to prevent brute force attacks
-export const loginLimiter = rateLimit({
+export const loginLimiter = createAdvancedLimiter({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 10, // Limit each IP to 10 login attempts per windowMs
-  skipSuccessfulRequests: false, // Count successful requests
-  message: 'Too many login attempts from this IP, please try again after 15 minutes.',
-  standardHeaders: true,
-  legacyHeaders: false,
-  handler: (req, res) => {
-    logRateLimitViolation(req, 'login');
-    res.status(429).json({
-      message: 'Too many login attempts. Please try again after 15 minutes.',
-      retryAfter: Math.ceil(req.rateLimit.resetTime / 1000)
-    });
-  }
+  max: 10, // 10 login attempts per 15 minutes
+  prefix: 'login',
+  message: 'Too many login attempts, please try again later.'
 });
 
-// Signup rate limiter - prevent spam account creation
-export const signupLimiter = rateLimit({
+export const signupLimiter = createAdvancedLimiter({
   windowMs: 60 * 60 * 1000, // 1 hour
-  max: 5, // Limit each IP to 5 signups per hour
-  message: 'Too many accounts created from this IP, please try again after an hour.',
-  standardHeaders: true,
-  legacyHeaders: false,
-  handler: (req, res) => {
-    logRateLimitViolation(req, 'signup');
-    res.status(429).json({
-      message: 'Too many accounts created from this IP. Please try again after an hour.',
-      retryAfter: Math.ceil(req.rateLimit.resetTime / 1000)
-    });
-  }
+  max: 5, // 5 signup attempts per hour
+  prefix: 'signup',
+  message: 'Too many signup attempts, please try again later.'
 });
 
-// Post creation rate limiter
-export const postLimiter = rateLimit({
+export const postLimiter = createAdvancedLimiter({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 50, // 50 posts per 15 minutes
+  prefix: 'post'
+});
+
+export const messageLimiter = createAdvancedLimiter({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // 100 messages per 15 minutes
+  prefix: 'message'
+});
+
+export const commentLimiter = createAdvancedLimiter({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 50, // 50 comments per 15 minutes
+  prefix: 'comment'
+});
+
+export const friendRequestLimiter = createAdvancedLimiter({
   windowMs: 60 * 60 * 1000, // 1 hour
-  max: 50, // Limit each IP to 50 posts per hour
-  message: 'You are posting too frequently. Please slow down.',
-  standardHeaders: true,
-  legacyHeaders: false,
-  handler: (req, res) => {
-    logRateLimitViolation(req, 'post');
-    res.status(429).json({
-      message: 'You are posting too frequently. Please slow down.',
-      retryAfter: Math.ceil(req.rateLimit.resetTime / 1000)
-    });
-  }
+  max: 20, // 20 friend requests per hour
+  prefix: 'friend_request'
 });
 
-// Message rate limiter
-export const messageLimiter = rateLimit({
-  windowMs: 60 * 1000, // 1 minute
-  max: 30, // Limit each IP to 30 messages per minute
-  message: 'You are sending messages too quickly. Please slow down.',
-  standardHeaders: true,
-  legacyHeaders: false,
-  handler: (req, res) => {
-    logRateLimitViolation(req, 'message');
-    res.status(429).json({
-      message: 'You are sending messages too quickly. Please slow down.',
-      retryAfter: Math.ceil(req.rateLimit.resetTime / 1000)
-    });
-  }
-});
-
-// Comment rate limiter (also applies to replies)
-export const commentLimiter = rateLimit({
-  windowMs: 60 * 1000, // 1 minute
-  max: 20, // Limit each IP to 20 comments per minute
-  message: 'You are commenting too frequently. Please slow down.',
-  standardHeaders: true,
-  legacyHeaders: false,
-  handler: (req, res) => {
-    logRateLimitViolation(req, 'comment');
-    res.status(429).json({
-      message: 'You are commenting too frequently. Please slow down.',
-      retryAfter: Math.ceil(req.rateLimit.resetTime / 1000)
-    });
-  }
-});
-
-// Friend request rate limiter
-export const friendRequestLimiter = rateLimit({
+export const passwordResetLimiter = createAdvancedLimiter({
   windowMs: 60 * 60 * 1000, // 1 hour
-  max: 30, // Limit each IP to 30 friend requests per hour
-  message: 'You are sending friend requests too frequently. Please slow down.',
-  standardHeaders: true,
-  legacyHeaders: false,
-  handler: (req, res) => {
-    logRateLimitViolation(req, 'friend_request');
-    res.status(429).json({
-      message: 'You are sending friend requests too frequently. Please slow down.',
-      retryAfter: Math.ceil(req.rateLimit.resetTime / 1000)
-    });
-  }
+  max: 5, // 5 password reset attempts per hour
+  prefix: 'password_reset',
+  message: 'Too many password reset attempts, please try again later.'
 });
 
-// Password reset rate limiter
-export const passwordResetLimiter = rateLimit({
+export const uploadLimiter = createAdvancedLimiter({
   windowMs: 60 * 60 * 1000, // 1 hour
-  max: 5, // Limit each IP to 5 password reset requests per hour
-  message: 'Too many password reset requests. Please try again later.',
-  standardHeaders: true,
-  legacyHeaders: false,
-  handler: (req, res) => {
-    logRateLimitViolation(req, 'password_reset');
-    res.status(429).json({
-      message: 'Too many password reset requests. Please try again later.',
-      retryAfter: Math.ceil(req.rateLimit.resetTime / 1000)
-    });
-  }
+  max: 20, // 20 uploads per hour
+  prefix: 'upload'
 });
 
-// File upload rate limiter
-export const uploadLimiter = rateLimit({
+export const searchLimiter = createAdvancedLimiter({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // 100 searches per 15 minutes
+  prefix: 'search'
+});
+
+export const reactionLimiter = createAdvancedLimiter({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 200, // 200 reactions per 15 minutes
+  prefix: 'reaction'
+});
+
+export const reportLimiter = createAdvancedLimiter({
   windowMs: 60 * 60 * 1000, // 1 hour
-  max: 100, // Limit each IP to 100 uploads per hour
-  message: 'Too many file uploads. Please try again later.',
-  standardHeaders: true,
-  legacyHeaders: false,
-  handler: (req, res) => {
-    logRateLimitViolation(req, 'upload');
-    res.status(429).json({
-      message: 'Too many file uploads. Please try again later.',
-      retryAfter: Math.ceil(req.rateLimit.resetTime / 1000)
-    });
+  max: 10, // 10 reports per hour
+  prefix: 'report',
+  message: 'Too many reports submitted, please try again later.'
+});
+
+// Cleanup Redis connection on process exit
+process.on('SIGINT', async () => {
+  try {
+    await redisClient.quit();
+    console.log('Redis client disconnected');
+  } catch (error) {
+    console.error('Error closing Redis connection:', error);
   }
 });
 
-// Search rate limiter
-export const searchLimiter = rateLimit({
-  windowMs: 60 * 1000, // 1 minute
-  max: 30, // Limit each IP to 30 searches per minute
-  message: 'Too many search requests. Please slow down.',
-  standardHeaders: true,
-  legacyHeaders: false,
-  handler: (req, res) => {
-    logRateLimitViolation(req, 'search');
-    res.status(429).json({
-      message: 'Too many search requests. Please slow down.',
-      retryAfter: Math.ceil(req.rateLimit.resetTime / 1000)
-    });
-  }
-});
-
-// Reaction rate limiter - prevent spam reactions (likes, emoji reactions)
-export const reactionLimiter = rateLimit({
-  windowMs: 60 * 1000, // 1 minute
-  max: 60, // Limit each IP to 60 reactions per minute (1 per second)
-  message: 'You are reacting too frequently. Please slow down.',
-  standardHeaders: true,
-  legacyHeaders: false,
-  handler: (req, res) => {
-    logRateLimitViolation(req, 'reaction');
-    res.status(429).json({
-      message: 'You are reacting too frequently. Please slow down.',
-      retryAfter: Math.ceil(req.rateLimit.resetTime / 1000)
-    });
-  }
-});
-
-// Report rate limiter - prevent spam reports
-export const reportLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000, // 1 hour
-  max: 10, // Limit each IP to 10 reports per hour
-  message: 'You are submitting reports too frequently. Please slow down.',
-  standardHeaders: true,
-  legacyHeaders: false,
-  handler: (req, res) => {
-    logRateLimitViolation(req, 'report');
-    res.status(429).json({
-      message: 'You are submitting reports too frequently. Please slow down.',
-      retryAfter: Math.ceil(req.rateLimit.resetTime / 1000)
-    });
-  }
-});
-
+export default {
+  globalLimiter,
+  loginLimiter,
+  signupLimiter,
+  postLimiter,
+  messageLimiter,
+  commentLimiter,
+  friendRequestLimiter,
+  passwordResetLimiter,
+  uploadLimiter,
+  searchLimiter,
+  reactionLimiter,
+  reportLimiter
+};
