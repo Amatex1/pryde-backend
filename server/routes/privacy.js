@@ -3,182 +3,174 @@ const router = express.Router();
 import User from '../models/User.js';
 import Block from '../models/Block.js';
 import auth from '../middleware/auth.js';
+import { getBlockedUserIds, hasBlocked } from '../utils/blockHelper.js';
+import logger from '../utils/logger.js';
 
-// @route   GET /api/privacy
-// @desc    Get current user's privacy settings
-// @access  Private
-router.get('/', auth, async (req, res) => {
+// GET /api/privacy/settings
+router.get('/settings', auth, async (req, res) => {
   try {
-    const user = await User.findById(req.userId).select('privacySettings blockedUsers');
-    
+    const user = await User.findById(req.userId).select('privacySettings');
+
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    res.json({
-      privacySettings: user.privacySettings,
-      blockedUsers: user.blockedUsers
-    });
+    // Normalize settings to match frontend expectations
+    const settings = {
+      profileVisibility: user.privacySettings?.profileVisibility || 'public',
+      whoCanMessage: user.privacySettings?.whoCanMessage || 'followers',
+      quietModeEnabled: user.privacySettings?.quietModeEnabled || false
+    };
+
+    res.json(settings);
   } catch (error) {
-    console.error('Get privacy settings error:', error);
+    logger.error('Get privacy settings error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
 
-// @route   PUT /api/privacy
-// @desc    Update privacy settings
-// @access  Private
-router.put('/', auth, async (req, res) => {
+// PATCH /api/privacy/settings
+router.patch('/settings', auth, async (req, res) => {
   try {
-    const { privacySettings } = req.body;
-
-    if (!privacySettings) {
-      return res.status(400).json({ message: 'Privacy settings are required' });
-    }
-
     const user = await User.findById(req.userId);
 
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // Initialize privacySettings if it doesn't exist
-    if (!user.privacySettings) {
-      user.privacySettings = {};
-    }
+    // Allowed fields for update
+    const allowedFields = [
+      'profileVisibility', 
+      'whoCanMessage', 
+      'quietModeEnabled'
+    ];
 
-    // Update privacy settings - convert to plain object first to avoid Mongoose issues
-    const currentSettings = user.privacySettings.toObject ? user.privacySettings.toObject() : user.privacySettings;
-    user.privacySettings = {
-      ...currentSettings,
-      ...privacySettings
-    };
-
-    // Mark the nested object as modified so Mongoose saves it
-    user.markModified('privacySettings');
+    // Update only allowed fields
+    allowedFields.forEach(field => {
+      if (req.body[field] !== undefined) {
+        if (!user.privacySettings) {
+          user.privacySettings = {};
+        }
+        user.privacySettings[field] = req.body[field];
+      }
+    });
 
     await user.save();
 
     res.json({
-      message: 'Privacy settings updated successfully',
-      privacySettings: user.privacySettings
+      message: 'Privacy settings updated',
+      settings: {
+        profileVisibility: user.privacySettings?.profileVisibility,
+        whoCanMessage: user.privacySettings?.whoCanMessage,
+        quietModeEnabled: user.privacySettings?.quietModeEnabled
+      }
     });
   } catch (error) {
-    console.error('Update privacy settings error:', error);
-    console.error('Error details:', error.message);
-    res.status(500).json({ message: 'Server error', error: error.message });
+    logger.error('Update privacy settings error:', error);
+    res.status(500).json({ message: 'Server error' });
   }
 });
 
-// @route   POST /api/privacy/block/:userId
-// @desc    Block a user (MIGRATED TO BLOCK MODEL)
-// @access  Private
-router.post('/block/:userId', auth, async (req, res) => {
+// GET /api/privacy/blocked-users
+router.get('/blocked-users', auth, async (req, res) => {
   try {
-    const userIdToBlock = req.params.userId;
-    const currentUserId = req.userId;
+    // Get IDs of blocked users
+    const blockedUserIds = await getBlockedUserIds(req.userId);
 
-    if (userIdToBlock === currentUserId) {
-      return res.status(400).json({ message: 'You cannot block yourself' });
+    // Fetch full user details for blocked users
+    const blockedUsers = await User.find({
+      _id: { $in: blockedUserIds }
+    }).select('_id username displayName profilePhoto');
+
+    res.json({ 
+      blockedUsers,
+      count: blockedUsers.length
+    });
+  } catch (error) {
+    logger.error('Get blocked users error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// POST /api/privacy/block
+router.post('/block', auth, async (req, res) => {
+  try {
+    const { userId } = req.body;
+
+    // Validate input
+    if (!userId) {
+      return res.status(400).json({ message: 'User ID is required' });
     }
 
-    const userToBlock = await User.findById(userIdToBlock);
+    // Prevent self-blocking
+    if (userId === req.userId) {
+      return res.status(400).json({ message: 'Cannot block yourself' });
+    }
 
-    if (!userToBlock) {
+    // Check if target user exists
+    const targetUser = await User.findById(userId);
+    if (!targetUser) {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // Check if already blocked using Block model
-    const existingBlock = await Block.findOne({
-      blocker: currentUserId,
-      blocked: userIdToBlock
-    });
-
-    if (existingBlock) {
+    // Check if already blocked
+    const alreadyBlocked = await hasBlocked(req.userId, userId);
+    if (alreadyBlocked) {
       return res.status(400).json({ message: 'User is already blocked' });
     }
 
-    // Create block in Block collection
+    // Create block record
     const block = new Block({
-      blocker: currentUserId,
-      blocked: userIdToBlock,
-      reason: 'Blocked via privacy settings'
+      blocker: req.userId,
+      blocked: userId,
+      createdAt: new Date()
     });
 
     await block.save();
 
-    // Get all blocks for response (for backward compatibility)
-    const allBlocks = await Block.find({ blocker: currentUserId })
-      .populate('blocked', 'username displayName profilePhoto')
-      .lean();
-
-    const blockedUsers = allBlocks.map(b => b.blocked);
-
-    res.json({
+    res.status(201).json({ 
       message: 'User blocked successfully',
-      blockedUsers
+      blockedUser: {
+        _id: targetUser._id,
+        username: targetUser.username,
+        displayName: targetUser.displayName,
+        profilePhoto: targetUser.profilePhoto
+      }
     });
   } catch (error) {
-    console.error('Block user error:', error);
+    logger.error('Block user error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
 
-// @route   POST /api/privacy/unblock/:userId
-// @desc    Unblock a user (MIGRATED TO BLOCK MODEL)
-// @access  Private
-router.post('/unblock/:userId', auth, async (req, res) => {
+// DELETE /api/privacy/block/:userId
+router.delete('/block/:userId', auth, async (req, res) => {
   try {
-    const userIdToUnblock = req.params.userId;
-    const currentUserId = req.userId;
+    const { userId } = req.params;
 
-    // Remove block from Block collection
-    const block = await Block.findOneAndDelete({
-      blocker: currentUserId,
-      blocked: userIdToUnblock
-    });
-
-    if (!block) {
-      return res.status(404).json({ message: 'User is not blocked' });
+    // Validate input
+    if (!userId) {
+      return res.status(400).json({ message: 'User ID is required' });
     }
 
-    // Get remaining blocks for response (for backward compatibility)
-    const allBlocks = await Block.find({ blocker: currentUserId })
-      .populate('blocked', 'username displayName profilePhoto')
-      .lean();
+    // Remove block record
+    const result = await Block.findOneAndDelete({
+      blocker: req.userId,
+      blocked: userId
+    });
 
-    const blockedUsers = allBlocks.map(b => b.blocked);
+    if (!result) {
+      return res.status(404).json({ message: 'Block record not found' });
+    }
 
-    res.json({
+    res.json({ 
       message: 'User unblocked successfully',
-      blockedUsers
+      unblockedUserId: userId
     });
   } catch (error) {
-    console.error('Unblock user error:', error);
-    res.status(500).json({ message: 'Server error' });
-  }
-});
-
-// @route   GET /api/privacy/blocked
-// @desc    Get list of blocked users (MIGRATED TO BLOCK MODEL)
-// @access  Private
-router.get('/blocked', auth, async (req, res) => {
-  try {
-    // Get blocks from Block collection
-    const blocks = await Block.find({ blocker: req.userId })
-      .populate('blocked', 'username displayName profilePhoto')
-      .lean();
-
-    const blockedUsers = blocks.map(block => block.blocked);
-
-    res.json({
-      blockedUsers
-    });
-  } catch (error) {
-    console.error('Get blocked users error:', error);
+    logger.error('Unblock user error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
 
 export default router;
-
