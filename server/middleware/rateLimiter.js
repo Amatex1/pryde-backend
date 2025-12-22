@@ -1,20 +1,51 @@
 import rateLimit from 'express-rate-limit';
-import RedisStore from 'rate-limit-redis';
-import Redis from 'ioredis';
 import logger from '../utils/logger.js';
 import config from '../config/config.js';
 
-// Redis connection for rate limiting
-const redisClient = new Redis({
-  host: config.redis.host,
-  port: config.redis.port,
-  password: config.redis.password,
-  enableOfflineQueue: false
+// Optional Redis support for distributed rate limiting
+let redisClient = null;
+let RedisStore = null;
+
+// Only initialize Redis if configuration is available
+const initializeRedis = async () => {
+  try {
+    if (config.redis && config.redis.host && config.redis.port) {
+      const Redis = (await import('ioredis')).default;
+      RedisStore = (await import('rate-limit-redis')).default;
+
+      redisClient = new Redis({
+        host: config.redis.host,
+        port: config.redis.port,
+        password: config.redis.password,
+        enableOfflineQueue: false,
+        lazyConnect: true
+      });
+
+      // Test connection
+      await redisClient.connect();
+      logger.info('Redis connected for rate limiting');
+
+      // Handle Redis errors gracefully
+      redisClient.on('error', (err) => {
+        logger.error('Redis error:', err);
+      });
+    } else {
+      logger.warn('Redis not configured - using in-memory rate limiting (not recommended for production)');
+    }
+  } catch (error) {
+    logger.error('Failed to initialize Redis, falling back to in-memory rate limiting:', error);
+    redisClient = null;
+  }
+};
+
+// Initialize Redis (non-blocking)
+initializeRedis().catch(err => {
+  logger.error('Redis initialization error:', err);
 });
 
 // Advanced rate limiting configuration
 const createAdvancedLimiter = (options) => {
-  const { 
+  const {
     windowMs = 15 * 60 * 1000, // 15 minutes default
     max = 100, // 100 requests per window default
     message = 'Too many requests, please try again later.',
@@ -22,7 +53,7 @@ const createAdvancedLimiter = (options) => {
     skipFailedRequests = false,
     standardHeaders = true,
     legacyHeaders = false,
-    handler = (req, res, next, options) => {
+    handler = (_req, res, _next, options) => {
       res.status(429).json({
         error: 'Too Many Requests',
         message: options.message,
@@ -31,7 +62,7 @@ const createAdvancedLimiter = (options) => {
     }
   } = options;
 
-  return rateLimit({
+  const limiterConfig = {
     windowMs,
     max,
     message,
@@ -40,26 +71,42 @@ const createAdvancedLimiter = (options) => {
     standardHeaders,
     legacyHeaders,
     handler,
-    store: new RedisStore({
-      sendCommand: (...args) => redisClient.call(...args),
-      prefix: `rate_limit:${options.prefix || 'default'}:`,
-    }),
     // Dynamic scaling based on user role
-    skip: (req, res) => {
+    skip: (req) => {
       // Exempt admin and system users from rate limiting
       const userRole = req.user?.role;
       const exemptRoles = ['admin', 'super_admin', 'system'];
       return exemptRoles.includes(userRole);
     },
     // Logging for rate limit events
-    onLimitReached: (req, res, options) => {
+    onLimitReached: (req) => {
       logger.warn('Rate limit reached', {
         ip: req.ip,
         path: req.path,
         method: req.method
       });
     }
-  });
+  };
+
+  // Use Redis store if available, otherwise use default in-memory store
+  if (redisClient && RedisStore) {
+    limiterConfig.store = new RedisStore({
+      sendCommand: (...args) => redisClient.call(...args),
+      prefix: `rate_limit:${options.prefix || 'default'}:`,
+    });
+  } else {
+    // In-memory store warning (only log once per limiter type)
+    if (!createAdvancedLimiter._warnedPrefixes) {
+      createAdvancedLimiter._warnedPrefixes = new Set();
+    }
+    const prefix = options.prefix || 'default';
+    if (!createAdvancedLimiter._warnedPrefixes.has(prefix)) {
+      logger.warn(`Using in-memory rate limiting for ${prefix} - not suitable for multi-instance deployments`);
+      createAdvancedLimiter._warnedPrefixes.add(prefix);
+    }
+  }
+
+  return rateLimit(limiterConfig);
 };
 
 // Specialized rate limiters for different endpoints
@@ -142,10 +189,12 @@ export const reportLimiter = createAdvancedLimiter({
 // Cleanup Redis connection on process exit
 process.on('SIGINT', async () => {
   try {
-    await redisClient.quit();
-    console.log('Redis client disconnected');
+    if (redisClient) {
+      await redisClient.quit();
+      logger.info('Redis client disconnected');
+    }
   } catch (error) {
-    console.error('Error closing Redis connection:', error);
+    logger.error('Error closing Redis connection:', error);
   }
 });
 
