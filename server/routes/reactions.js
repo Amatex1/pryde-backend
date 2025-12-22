@@ -247,6 +247,45 @@ router.get('/:targetType/:targetId', optionalAuth, async (req, res) => {
 });
 
 /**
+ * @route   GET /api/reactions/:targetType/:targetId/details
+ * @desc    Get detailed reactions with user information for a target
+ * @access  Public
+ *
+ * Returns: Array of reaction objects with populated user data
+ * [{ emoji: '❤️', user: { _id, username, displayName, profilePhoto }, createdAt }, ...]
+ */
+router.get('/:targetType/:targetId/details', async (req, res) => {
+  try {
+    const { targetType, targetId } = req.params;
+
+    // Validation
+    if (!['post', 'comment'].includes(targetType)) {
+      return res.status(400).json({ message: 'targetType must be "post" or "comment"' });
+    }
+
+    // Get reactions with populated user data
+    const reactions = await Reaction.find({
+      targetType,
+      targetId
+    })
+      .populate('userId', 'username displayName profilePhoto')
+      .sort({ createdAt: -1 }); // Most recent first
+
+    // Transform to match expected format
+    const detailedReactions = reactions.map(r => ({
+      emoji: r.emoji,
+      user: r.userId, // Already populated
+      createdAt: r.createdAt
+    }));
+
+    res.json(detailedReactions);
+  } catch (error) {
+    logger.error('Get detailed reactions error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+/**
  * Helper function to get aggregated reactions
  * Returns: { emoji: count, ... }
  */
