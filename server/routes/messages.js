@@ -18,28 +18,8 @@ router.get('/:userId', auth, requireActiveUser, checkBlocked, async (req, res) =
     const { userId } = req.params;
     const currentUserId = req.userId;
 
-    // Validate user availability before fetching conversation
-    const otherUser = await User.findById(userId);
-
-    if (!otherUser) {
-      return res.status(403).json({ message: 'This user is unavailable.' });
-    }
-
-    // Check if user is active
-    if (otherUser.isActive === false) {
-      return res.status(403).json({ message: 'This user is unavailable.' });
-    }
-
-    // Check if user is deleted
-    if (otherUser.isDeleted === true) {
-      return res.status(403).json({ message: 'This user is unavailable.' });
-    }
-
-    // Check if user has blocked the current user
-    if (otherUser.blockedUsers && otherUser.blockedUsers.some(blockedId => blockedId.toString() === currentUserId)) {
-      return res.status(403).json({ message: 'This user is unavailable.' });
-    }
-
+    // Allow viewing existing message threads regardless of user status
+    // This preserves chat history even if user is deactivated/deleted
     const messages = await Message.find({
       $or: [
         { sender: currentUserId, recipient: userId },
