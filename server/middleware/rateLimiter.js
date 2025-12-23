@@ -112,7 +112,7 @@ const createAdvancedLimiter = (options) => {
 // Specialized rate limiters for different endpoints
 export const globalLimiter = createAdvancedLimiter({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 500, // 500 requests per 15 minutes
+  max: 2000, // 2000 requests per 15 minutes (increased for testing)
   prefix: 'global'
 });
 
