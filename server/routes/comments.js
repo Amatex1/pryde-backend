@@ -231,25 +231,39 @@ router.delete('/comments/:commentId', auth, requireActiveUser, async (req, res) 
       return res.status(403).json({ message: 'Not authorized to delete this comment' });
     }
 
-    // Soft delete: mark as deleted instead of removing
-    comment.isDeleted = true;
-    comment.content = ''; // Clear content for privacy
-    comment.gifUrl = null; // Clear GIF
-    await comment.save();
-
-    // If this is a top-level comment, also soft delete all its replies
+    // Check if comment has replies (only for parent comments)
+    let hasReplies = false;
     if (comment.parentCommentId === null) {
-      await Comment.updateMany(
-        { parentCommentId: commentId },
-        { isDeleted: true, content: '', gifUrl: null }
-      );
+      const replyCount = await Comment.countDocuments({
+        parentCommentId: commentId,
+        isDeleted: false
+      });
+      hasReplies = replyCount > 0;
+    }
+
+    // If comment has replies, soft delete (keep replies intact)
+    // If comment is a reply or has no replies, hard delete
+    if (hasReplies) {
+      // Soft delete: mark as deleted, clear content, keep replies
+      comment.isDeleted = true;
+      comment.content = ''; // Clear content for privacy
+      comment.gifUrl = null; // Clear GIF
+      await comment.save();
+
+      logger.info(`Soft deleted comment ${commentId} (has ${hasReplies} replies)`);
+    } else {
+      // Hard delete: remove comment completely
+      await Comment.findByIdAndDelete(commentId);
+
+      logger.info(`Hard deleted comment ${commentId} (no replies)`);
     }
 
     // Emit real-time event
     if (req.io) {
       req.io.emit('comment_deleted', {
         postId: comment.postId,
-        commentId
+        commentId,
+        hardDelete: !hasReplies
       });
     }
 

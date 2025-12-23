@@ -47,12 +47,19 @@ router.get('/search', auth, async (req, res) => {
       return res.json([]);
     }
 
+    // Get current user to check blocked users
+    const currentUser = await User.findById(req.userId).select('blockedUsers');
+    const blockedUserIds = currentUser?.blockedUsers || [];
+
     const users = await User.find({
       $or: [
         { username: { $regex: q, $options: 'i' } },
         { displayName: { $regex: q, $options: 'i' } }
       ],
-      _id: { $ne: req.userId }, // Exclude current user
+      _id: {
+        $ne: req.userId, // Exclude current user
+        $nin: blockedUserIds // Exclude blocked users
+      },
       isActive: true, // Only show active accounts
       isDeleted: { $ne: true }, // Exclude deleted accounts
       isBanned: { $ne: true } // Exclude banned users

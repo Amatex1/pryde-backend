@@ -114,14 +114,27 @@ router.get('/followers/:userId', auth, requireActiveUser, async (req, res) => {
     const userId = req.params.userId;
 
     const user = await User.findById(userId)
-      .select('followers username')
-      .populate('followers', 'username displayName profilePhoto coverPhoto bio');
+      .select('followers username isActive isDeleted')
+      .populate({
+        path: 'followers',
+        match: {
+          isActive: true,
+          isDeleted: { $ne: true },
+          isBanned: { $ne: true }
+        },
+        select: 'username displayName profilePhoto coverPhoto bio'
+      });
 
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    res.json({ followers: user.followers });
+    // Return empty array if user is deactivated or deleted
+    if (user.isActive === false || user.isDeleted === true) {
+      return res.json({ followers: [] });
+    }
+
+    res.json({ followers: user.followers || [] });
   } catch (error) {
     console.error('Get followers error:', error);
     res.status(500).json({ message: 'Server error' });
@@ -136,14 +149,27 @@ router.get('/following/:userId', auth, requireActiveUser, async (req, res) => {
     const userId = req.params.userId;
 
     const user = await User.findById(userId)
-      .select('following username')
-      .populate('following', 'username displayName profilePhoto coverPhoto bio');
+      .select('following username isActive isDeleted')
+      .populate({
+        path: 'following',
+        match: {
+          isActive: true,
+          isDeleted: { $ne: true },
+          isBanned: { $ne: true }
+        },
+        select: 'username displayName profilePhoto coverPhoto bio'
+      });
 
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    res.json({ following: user.following });
+    // Return empty array if user is deactivated or deleted
+    if (user.isActive === false || user.isDeleted === true) {
+      return res.json({ following: [] });
+    }
+
+    res.json({ following: user.following || [] });
   } catch (error) {
     console.error('Get following error:', error);
     res.status(500).json({ message: 'Server error' });
