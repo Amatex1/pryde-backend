@@ -403,6 +403,14 @@ app.get('/api/status', (req, res) => {
   });
 });
 
+// Version endpoint for update detection
+app.get('/api/version', (req, res) => {
+  res.json({
+    version: process.env.APP_VERSION || '1.0.0',
+    buildTime: process.env.BUILD_TIME || new Date().toISOString()
+  });
+});
+
 // Socket.IO authentication middleware
 io.use(async (socket, next) => {
   // Try to get token from auth object first, then from Authorization header
