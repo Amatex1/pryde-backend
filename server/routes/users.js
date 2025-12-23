@@ -502,6 +502,11 @@ router.get('/:identifier', auth, checkProfileVisibility, async (req, res) => {
     // PHASE 1 REFACTOR: Sanitize user to hide follower/following counts
     const sanitizedUser = sanitizeUserForPrivateFollowers(user, currentUserId);
 
+    // Check if this user has blocked the current user (for messaging availability)
+    const { hasBlocked } = await import('../utils/blockHelper.js');
+    const hasBlockedCurrentUser = await hasBlocked(user._id.toString(), currentUserId.toString());
+    sanitizedUser.hasBlockedCurrentUser = hasBlockedCurrentUser;
+
     res.json(sanitizedUser);
   } catch (error) {
     console.error('Get user error:', error);
