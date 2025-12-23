@@ -54,6 +54,7 @@ import commentsRoutes from './routes/comments.js';
 import reactionsRoutes from './routes/reactions.js';
 import backupRoutes from './routes/backup.js';
 import auditRoutes from './routes/audit.js';
+import versionRoutes from './routes/version.js';
 
 // Import middleware
 import auth from './middleware/auth.js';
@@ -353,6 +354,7 @@ app.use('/api', commentsRoutes); // Comment routes (handles /api/posts/:postId/c
 app.use('/api/reactions', reactionsRoutes); // Universal reaction system
 app.use('/api/backup', backupRoutes); // Backup download routes
 app.use('/api/audit', auditRoutes); // Admin audit routes
+app.use('/api/version', versionRoutes); // Version endpoint for update detection
 
 // Debug: Log the passkey router before registering
 console.log('🔍 Passkey router type:', typeof passkeyRoutes);
