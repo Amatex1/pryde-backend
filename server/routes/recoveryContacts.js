@@ -4,6 +4,8 @@ import User from '../models/User.js';
 import auth from '../middleware/auth.js';
 import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
+import SecurityLog from '../models/SecurityLog.js';
+import { sendRecoveryContactNotificationEmail } from '../utils/emailService.js';
 
 // @route   GET /api/recovery-contacts
 // @desc    Get user's recovery contacts
@@ -139,10 +141,14 @@ router.post('/initiate-recovery', async (req, res) => {
       return res.json({ message: 'If this email has recovery contacts, they will be notified' });
     }
 
-    const acceptedContacts = user.recoveryContacts.filter(rc => rc.status === 'accepted');
+    const acceptedContacts = user.recoveryContacts.filter(
+      c => c.status === 'accepted'
+    );
 
     if (acceptedContacts.length < 2) {
-      return res.status(400).json({ message: 'Insufficient recovery contacts. Please use password reset instead.' });
+      return res.status(400).json({
+        error: 'At least 2 accepted recovery contacts are required to enable account recovery.'
+      });
     }
 
     // Hash the new password
@@ -152,6 +158,8 @@ router.post('/initiate-recovery', async (req, res) => {
     // Create recovery request
     const requestId = crypto.randomBytes(32).toString('hex');
 
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+
     user.recoveryRequests.push({
       requestId,
       contactsNotified: acceptedContacts.map(rc => rc.user),
@@ -160,12 +168,76 @@ router.post('/initiate-recovery', async (req, res) => {
       status: 'pending',
       newPasswordHash: hashedPassword,
       createdAt: new Date(),
-      expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
+      expiresAt
     });
 
     await user.save();
 
-    // TODO: Send notifications to recovery contacts
+    // Send notifications to recovery contacts
+    const notificationPromises = acceptedContacts.map(async (contact) => {
+      try {
+        // Populate contact user details
+        const contactUser = await User.findById(contact.user).select('email username');
+
+        if (!contactUser) {
+          console.error(`Recovery contact user not found: ${contact.user}`);
+          return { success: false, contactId: contact.user, error: 'User not found' };
+        }
+
+        // Send email notification
+        const emailResult = await sendRecoveryContactNotificationEmail(
+          contactUser.email,
+          contactUser.username,
+          user.username,
+          requestId,
+          expiresAt
+        );
+
+        // Log security event for each notified contact
+        if (emailResult.success) {
+          SecurityLog.create({
+            type: 'recovery_contact_notified',
+            severity: 'high',
+            userId: contactUser._id,
+            username: contactUser.username,
+            email: contactUser.email,
+            ipAddress: req.headers['x-forwarded-for']?.split(',')[0].trim() ||
+                       req.headers['x-real-ip'] ||
+                       req.connection?.remoteAddress ||
+                       'Unknown',
+            userAgent: req.headers['user-agent'] || 'Unknown',
+            details: `Notified as recovery contact for ${user.username}'s account recovery request. Request ID: ${requestId}`,
+            action: 'logged'
+          }).catch(err => {
+            console.error('Failed to log recovery contact notification:', err);
+          });
+        }
+
+        return {
+          success: emailResult.success,
+          contactId: contact.user,
+          contactUsername: contactUser.username,
+          error: emailResult.error
+        };
+      } catch (error) {
+        console.error(`Error notifying recovery contact ${contact.user}:`, error);
+        return { success: false, contactId: contact.user, error: error.message };
+      }
+    });
+
+    // Wait for all notifications to complete (don't block response)
+    Promise.all(notificationPromises).then(results => {
+      const successCount = results.filter(r => r.success).length;
+      const failureCount = results.filter(r => !r.success).length;
+
+      console.log(`Recovery contact notifications: ${successCount} sent, ${failureCount} failed`);
+
+      if (failureCount > 0) {
+        console.error('Failed notifications:', results.filter(r => !r.success));
+      }
+    }).catch(err => {
+      console.error('Error processing recovery contact notifications:', err);
+    });
 
     res.json({
       message: 'Recovery request sent to your trusted contacts',
@@ -223,16 +295,55 @@ router.post('/approve-recovery/:requestId', auth, async (req, res) => {
       user.password = request.newPasswordHash;
       user.resetPasswordToken = null;
       user.resetPasswordExpires = null;
+
+      // CRITICAL SECURITY: Reset 2FA to prevent compromised second-factor persistence
+      const had2FAEnabled = user.twoFactorEnabled || user.pushTwoFactorEnabled;
+      user.twoFactorEnabled = false;
+      user.twoFactorSecret = null;
+      user.twoFactorBackupCodes = [];
+      user.pushTwoFactorEnabled = false;
+
+      // Save user first
+      await user.save();
+
+      // Log security event (async, don't wait)
+      if (had2FAEnabled) {
+        SecurityLog.create({
+          type: 'account_recovery_2fa_reset',
+          severity: 'critical',
+          userId: user._id,
+          username: user.username,
+          email: user.email,
+          ipAddress: req.headers['x-forwarded-for']?.split(',')[0].trim() ||
+                     req.headers['x-real-ip'] ||
+                     req.connection?.remoteAddress ||
+                     'Unknown',
+          userAgent: req.headers['user-agent'] || 'Unknown',
+          details: `Account recovered via trusted contacts. 2FA has been reset and must be re-enabled. Recovery request: ${requestId}`,
+          action: 'logged'
+        }).catch(err => {
+          console.error('Failed to log account recovery 2FA reset:', err);
+        });
+      }
+
+      res.json({
+        message: 'Recovery request approved. Account recovered successfully. For security, 2FA has been reset and must be re-enabled.',
+        approved: request.contactsApproved.length,
+        required: request.requiredApprovals,
+        status: request.status,
+        twoFactorReset: had2FAEnabled
+      });
+    } else {
+      // Not enough approvals yet
+      await user.save();
+
+      res.json({
+        message: 'Recovery request approved',
+        approved: request.contactsApproved.length,
+        required: request.requiredApprovals,
+        status: request.status
+      });
     }
-
-    await user.save();
-
-    res.json({
-      message: 'Recovery request approved',
-      approved: request.contactsApproved.length,
-      required: request.requiredApprovals,
-      status: request.status
-    });
   } catch (error) {
     console.error('Approve recovery error:', error);
     res.status(500).json({ message: 'Server error' });

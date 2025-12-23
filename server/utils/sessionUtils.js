@@ -5,6 +5,62 @@ export function generateSessionId() {
   return crypto.randomBytes(32).toString('hex');
 }
 
+// Get IP geolocation data
+export async function getIpGeolocation(ipAddress) {
+  // Skip geolocation for local/private IPs
+  if (!ipAddress ||
+      ipAddress === 'Unknown' ||
+      ipAddress.startsWith('127.') ||
+      ipAddress.startsWith('192.168.') ||
+      ipAddress.startsWith('10.') ||
+      ipAddress === '::1' ||
+      ipAddress === 'localhost') {
+    return {
+      country: '',
+      region: '',
+      city: ''
+    };
+  }
+
+  try {
+    // Use ipapi.co - free tier, no API key required
+    // Rate limit: 1,000 requests/day for free tier
+    const response = await fetch(`https://ipapi.co/${ipAddress}/json/`, {
+      headers: {
+        'User-Agent': 'Pryde-Social-Backend/1.0'
+      },
+      signal: AbortSignal.timeout(5000) // 5 second timeout
+    });
+
+    if (!response.ok) {
+      console.warn(`IP geolocation API returned ${response.status} for IP ${ipAddress}`);
+      return { country: '', region: '', city: '' };
+    }
+
+    const data = await response.json();
+
+    // Check for API error response
+    if (data.error) {
+      console.warn(`IP geolocation API error for IP ${ipAddress}:`, data.reason);
+      return { country: '', region: '', city: '' };
+    }
+
+    return {
+      country: data.country_name || '',
+      region: data.region || '',
+      city: data.city || ''
+    };
+  } catch (error) {
+    // Don't fail login if geolocation fails
+    console.warn(`Failed to get geolocation for IP ${ipAddress}:`, error.message);
+    return {
+      country: '',
+      region: '',
+      city: ''
+    };
+  }
+}
+
 // Parse user agent to extract device info
 export function parseUserAgent(userAgent) {
   if (!userAgent) {
@@ -84,7 +140,7 @@ export function isNewDevice(user, ipAddress, deviceInfo) {
 }
 
 // Check if login is suspicious
-export function isSuspiciousLogin(user, ipAddress, deviceInfo) {
+export function isSuspiciousLogin(user, ipAddress, deviceInfo, currentLocation = null) {
   if (!user.loginHistory || user.loginHistory.length === 0) {
     return false; // First login, not suspicious
   }
@@ -104,8 +160,24 @@ export function isSuspiciousLogin(user, ipAddress, deviceInfo) {
     device.ipAddress === ipAddress || device.deviceInfo === deviceInfo
   );
 
-  // Suspicious if both IP and device are new and not trusted
-  return !knownIp && !knownDevice && !trustedDevice;
+  // Check for country change (if location data is available)
+  let countryChanged = false;
+  if (currentLocation && currentLocation.country) {
+    // Get the most recent successful login with location data
+    const recentLogins = user.loginHistory
+      .filter(login => login.success && login.location && login.location.country)
+      .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+    if (recentLogins.length > 0) {
+      const lastCountry = recentLogins[0].location.country;
+      countryChanged = lastCountry !== currentLocation.country;
+    }
+  }
+
+  // Suspicious if:
+  // 1. Both IP and device are new and not trusted, OR
+  // 2. Country has changed from last login
+  return (!knownIp && !knownDevice && !trustedDevice) || countryChanged;
 }
 
 // Clean up old sessions (remove sessions inactive for more than 30 days)

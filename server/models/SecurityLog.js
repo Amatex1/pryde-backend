@@ -18,7 +18,9 @@ const securityLogSchema = new mongoose.Schema({
       'passkey_removed',
       'account_deleted',
       'profile_updated',
-      'privacy_settings_changed'
+      'privacy_settings_changed',
+      'account_recovery_2fa_reset',
+      'recovery_contact_notified'
     ],
     required: true
   },

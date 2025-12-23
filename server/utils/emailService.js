@@ -723,11 +723,189 @@ export const sendPasswordChangedEmail = async (email, username) => {
   }
 };
 
+/**
+ * Send account recovery request notification to recovery contact
+ */
+export const sendRecoveryContactNotificationEmail = async (contactEmail, contactUsername, requesterUsername, requestId, expiresAt) => {
+  try {
+    const resendClient = getResendClient();
+
+    if (!resendClient) {
+      console.warn('Resend API key not configured. Email not sent.');
+      return { success: false, error: 'Email service not configured' };
+    }
+
+    const approveUrl = `${config.frontendURL}/recovery/approve/${requestId}`;
+    const expirationDate = new Date(expiresAt).toLocaleString('en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      timeZoneName: 'short'
+    });
+
+    const { data, error } = await resendClient.emails.send({
+      from: FROM_EMAIL,
+      to: contactEmail,
+      subject: `🔐 Account Recovery Request for ${requesterUsername} - Pryde Social`,
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        </head>
+        <body style="margin: 0; padding: 0; background-color: #F7F7F7; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+          <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #F7F7F7;">
+            <tr>
+              <td style="padding: 40px 20px;">
+                <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="max-width: 600px; margin: 0 auto;">
+
+                  <!-- Header with Orange/Warning Gradient -->
+                  <tr>
+                    <td style="background: linear-gradient(135deg, #FF9800 0%, #F57C00 100%); border-radius: 16px 16px 0 0; padding: 40px 30px; text-align: center;">
+                      <h1 style="margin: 0; color: white; font-size: 28px; font-weight: 700; text-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                        🔐 Account Recovery Request
+                      </h1>
+                      <p style="margin: 10px 0 0 0; color: rgba(255,255,255,0.95); font-size: 16px;">
+                        Your help is needed to recover an account
+                      </p>
+                    </td>
+                  </tr>
+
+                  <!-- Content -->
+                  <tr>
+                    <td style="background: white; padding: 40px 30px; border-radius: 0 0 16px 16px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+
+                      <p style="margin: 0 0 20px 0; color: #2B2B2B; font-size: 16px; line-height: 1.6;">
+                        Hi <strong>${contactUsername}</strong>,
+                      </p>
+
+                      <p style="margin: 0 0 20px 0; color: #2B2B2B; font-size: 16px; line-height: 1.6;">
+                        <strong>${requesterUsername}</strong> has requested to recover their Pryde Social account, and you are listed as one of their trusted recovery contacts.
+                      </p>
+
+                      <!-- Info Box -->
+                      <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 30px 0;">
+                        <tr>
+                          <td style="background: #FFF3E0; border-left: 4px solid #FF9800; padding: 20px; border-radius: 8px;">
+                            <p style="margin: 0 0 10px 0; color: #2B2B2B; font-size: 14px; font-weight: 600;">
+                              📋 Recovery Request Details
+                            </p>
+                            <p style="margin: 5px 0; color: #555; font-size: 14px;">
+                              <strong>Requested by:</strong> ${requesterUsername}
+                            </p>
+                            <p style="margin: 5px 0; color: #555; font-size: 14px;">
+                              <strong>Request time:</strong> ${new Date().toLocaleString('en-US', {
+                                weekday: 'long',
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit',
+                                timeZoneName: 'short'
+                              })}
+                            </p>
+                            <p style="margin: 5px 0; color: #555; font-size: 14px;">
+                              <strong>Expires:</strong> ${expirationDate}
+                            </p>
+                            <p style="margin: 5px 0; color: #555; font-size: 14px;">
+                              <strong>Time remaining:</strong> 24 hours
+                            </p>
+                          </td>
+                        </tr>
+                      </table>
+
+                      <p style="margin: 0 0 20px 0; color: #2B2B2B; font-size: 16px; line-height: 1.6;">
+                        To help them recover their account, please review and approve this request. At least 2 trusted contacts must approve before the account can be recovered.
+                      </p>
+
+                      <!-- Action Buttons -->
+                      <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 30px 0;">
+                        <tr>
+                          <td align="center">
+                            <a href="${approveUrl}" style="display: inline-block; background: linear-gradient(135deg, #6C5CE7 0%, #0984E3 100%); color: white; text-decoration: none; padding: 16px 40px; border-radius: 12px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 6px rgba(108, 92, 231, 0.3); transition: all 0.3s;">
+                              ✓ Review Recovery Request
+                            </a>
+                          </td>
+                        </tr>
+                      </table>
+
+                      <!-- Warning Box -->
+                      <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 30px 0;">
+                        <tr>
+                          <td style="background: #FFEBEE; border-left: 4px solid #F44336; padding: 20px; border-radius: 8px;">
+                            <p style="margin: 0 0 10px 0; color: #2B2B2B; font-size: 14px; font-weight: 600;">
+                              ⚠️ Important Security Notice
+                            </p>
+                            <p style="margin: 5px 0; color: #555; font-size: 14px; line-height: 1.6;">
+                              • Only approve this request if you personally know <strong>${requesterUsername}</strong> and can verify their identity
+                            </p>
+                            <p style="margin: 5px 0; color: #555; font-size: 14px; line-height: 1.6;">
+                              • If you did not expect this request or suspect fraud, please ignore this email
+                            </p>
+                            <p style="margin: 5px 0; color: #555; font-size: 14px; line-height: 1.6;">
+                              • This request will automatically expire in 24 hours
+                            </p>
+                            <p style="margin: 5px 0; color: #555; font-size: 14px; line-height: 1.6;">
+                              • Contact us immediately if you believe this is a security threat
+                            </p>
+                          </td>
+                        </tr>
+                      </table>
+
+                      <p style="margin: 20px 0 0 0; color: #777; font-size: 14px; line-height: 1.6;">
+                        If you cannot click the button above, copy and paste this link into your browser:
+                      </p>
+                      <p style="margin: 10px 0 0 0; color: #6C5CE7; font-size: 13px; word-break: break-all;">
+                        ${approveUrl}
+                      </p>
+
+                    </td>
+                  </tr>
+
+                  <!-- Footer -->
+                  <tr>
+                    <td style="padding: 30px 20px; text-align: center;">
+                      <p style="margin: 0 0 10px 0; color: #999; font-size: 14px;">
+                        This is an automated security notification from Pryde Social
+                      </p>
+                      <p style="margin: 0; color: #999; font-size: 12px;">
+                        © ${new Date().getFullYear()} Pryde Social. All rights reserved.
+                      </p>
+                    </td>
+                  </tr>
+
+                </table>
+              </td>
+            </tr>
+          </table>
+        </body>
+        </html>
+      `
+    });
+
+    if (error) {
+      console.error('Error sending recovery contact notification email:', error);
+      return { success: false, error: error.message };
+    }
+
+    console.log('Recovery contact notification email sent:', data.id);
+    return { success: true, messageId: data.id };
+  } catch (error) {
+    console.error('Error sending recovery contact notification email:', error);
+    return { success: false, error: error.message };
+  }
+};
+
 export default {
   sendPasswordResetEmail,
   sendLoginAlertEmail,
   sendSuspiciousLoginEmail,
   sendVerificationEmail,
-  sendPasswordChangedEmail
+  sendPasswordChangedEmail,
+  sendRecoveryContactNotificationEmail
 };
 
