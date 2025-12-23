@@ -16,7 +16,8 @@ import {
   parseUserAgent,
   getClientIp,
   cleanupOldSessions,
-  findOrCreateSession
+  findOrCreateSession,
+  getIpGeolocation
 } from '../utils/sessionUtils.js';
 import { generateTokenPair } from '../utils/tokenUtils.js';
 
@@ -375,13 +376,16 @@ router.post('/login-finish', async (req, res) => {
     const ipAddress = getClientIp(req);
     const { browser, os, deviceInfo } = parseUserAgent(req.headers['user-agent']);
 
+    // Get IP geolocation (async, but don't block login if it fails)
+    const location = await getIpGeolocation(ipAddress);
+
     // Clean up old sessions first
     cleanupOldSessions(user);
 
     // Generate token pair with new session
     const { accessToken, refreshToken, sessionId } = generateTokenPair(user._id);
 
-    // Create session with refresh token
+    // Create session with refresh token and location
     const session = {
       sessionId,
       refreshToken,
@@ -390,6 +394,7 @@ router.post('/login-finish', async (req, res) => {
       browser,
       os,
       ipAddress,
+      location,
       createdAt: new Date(),
       lastActive: new Date()
     };

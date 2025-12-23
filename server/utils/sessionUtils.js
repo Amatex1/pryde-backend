@@ -194,15 +194,18 @@ export function cleanupOldSessions(user) {
 
 // Find or create session for device/IP combination
 // This prevents duplicate sessions from the same device
-export function findOrCreateSession(user, ipAddress, deviceInfo, browser, os) {
+export function findOrCreateSession(user, ipAddress, deviceInfo, browser, os, location = null) {
   // Look for existing session with same IP and device info
   const existingSession = user.activeSessions.find(session =>
     session.ipAddress === ipAddress && session.deviceInfo === deviceInfo
   );
 
   if (existingSession) {
-    // Update existing session
+    // Update existing session with new location data if provided
     existingSession.lastActive = new Date();
+    if (location) {
+      existingSession.location = location;
+    }
     return { session: existingSession, isNew: false };
   }
 
@@ -214,7 +217,7 @@ export function findOrCreateSession(user, ipAddress, deviceInfo, browser, os) {
     browser,
     os,
     ipAddress,
-    location: {
+    location: location || {
       city: '',
       region: '',
       country: ''

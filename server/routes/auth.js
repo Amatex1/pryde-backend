@@ -15,7 +15,8 @@ import {
   isSuspiciousLogin,
   cleanupOldSessions,
   limitLoginHistory,
-  findOrCreateSession
+  findOrCreateSession,
+  getIpGeolocation
 } from '../utils/sessionUtils.js';
 import { logEmailVerification, logPasswordChange } from '../utils/securityLogger.js';
 import { loginLimiter, signupLimiter, passwordResetLimiter } from '../middleware/rateLimiter.js';
@@ -537,10 +538,50 @@ router.post('/login', loginLimiter, validateLogin, async (req, res) => {
     const ipAddress = getClientIp(req);
     const { browser, os, deviceInfo } = parseUserAgent(req.headers['user-agent']);
 
+    // Get IP geolocation (async, but don't block login if it fails)
+    const location = await getIpGeolocation(ipAddress);
+
+    // Check for login after prolonged inactivity (90+ days)
+    const INACTIVITY_THRESHOLD_DAYS = 90;
+    const INACTIVITY_THRESHOLD_MS = INACTIVITY_THRESHOLD_DAYS * 24 * 60 * 60 * 1000;
+    let loginAfterInactivity = false;
+
+    if (user.lastLogin) {
+      const daysSinceLastLogin = (Date.now() - new Date(user.lastLogin).getTime()) / (24 * 60 * 60 * 1000);
+
+      if (daysSinceLastLogin > INACTIVITY_THRESHOLD_DAYS) {
+        loginAfterInactivity = true;
+
+        // Log security event (async, don't block login)
+        SecurityLog.create({
+          type: 'login_after_inactivity',
+          severity: 'medium',
+          username: user.username,
+          email: user.email,
+          userId: user._id,
+          ipAddress,
+          userAgent: req.headers['user-agent'],
+          details: {
+            daysSinceLastLogin: Math.floor(daysSinceLastLogin),
+            lastLoginDate: user.lastLogin,
+            currentLoginDate: new Date(),
+            deviceInfo,
+            browser,
+            os,
+            location
+          }
+        }).catch(err => {
+          logger.error('Failed to log login after inactivity event:', err);
+        });
+
+        logger.info(`Login after ${Math.floor(daysSinceLastLogin)} days of inactivity: ${user.username}`);
+      }
+    }
+
     // Check if 2FA is enabled (push or TOTP)
     if (user.pushTwoFactorEnabled || user.twoFactorEnabled) {
-      // Check if login is suspicious
-      const suspicious = isSuspiciousLogin(user, ipAddress, deviceInfo);
+      // Check if login is suspicious (with location data)
+      const suspicious = isSuspiciousLogin(user, ipAddress, deviceInfo, location);
 
       // Prefer push 2FA if enabled and user has push subscription
       if (user.pushTwoFactorEnabled && user.preferPushTwoFactor && user.pushSubscription) {
@@ -583,8 +624,8 @@ router.post('/login', loginLimiter, validateLogin, async (req, res) => {
       }
     }
 
-    // Check if login is suspicious
-    const suspicious = isSuspiciousLogin(user, ipAddress, deviceInfo);
+    // Check if login is suspicious (with location data or inactivity)
+    const suspicious = isSuspiciousLogin(user, ipAddress, deviceInfo, location) || loginAfterInactivity;
 
     // Clean up old sessions first
     cleanupOldSessions(user);
@@ -592,7 +633,7 @@ router.post('/login', loginLimiter, validateLogin, async (req, res) => {
     // Generate token pair with new session
     const { accessToken, refreshToken, sessionId } = generateTokenPair(user._id);
 
-    // Create session with refresh token
+    // Create session with refresh token and location
     const session = {
       sessionId,
       refreshToken,
@@ -601,6 +642,7 @@ router.post('/login', loginLimiter, validateLogin, async (req, res) => {
       browser,
       os,
       ipAddress,
+      location,
       createdAt: new Date(),
       lastActive: new Date()
     };
@@ -608,10 +650,11 @@ router.post('/login', loginLimiter, validateLogin, async (req, res) => {
     // Add new session
     user.activeSessions.push(session);
 
-    // Log successful login
+    // Log successful login with location
     user.loginHistory.push({
       ipAddress,
       deviceInfo,
+      location,
       success: true,
       timestamp: new Date()
     });
@@ -631,7 +674,7 @@ router.post('/login', loginLimiter, validateLogin, async (req, res) => {
         browser,
         os,
         ipAddress,
-        location: { city: '', region: '', country: '' },
+        location,
         timestamp: new Date()
       };
 
@@ -773,11 +816,51 @@ router.post('/verify-2fa-login', loginLimiter, async (req, res) => {
     const ipAddress = getClientIp(req);
     const { browser, os, deviceInfo } = parseUserAgent(req.headers['user-agent']);
 
+    // Get IP geolocation (async, but don't block login if it fails)
+    const location = await getIpGeolocation(ipAddress);
+
+    // Check for login after prolonged inactivity (90+ days)
+    const INACTIVITY_THRESHOLD_DAYS = 90;
+    const INACTIVITY_THRESHOLD_MS = INACTIVITY_THRESHOLD_DAYS * 24 * 60 * 60 * 1000;
+    let loginAfterInactivity = false;
+
+    if (user.lastLogin) {
+      const daysSinceLastLogin = (Date.now() - new Date(user.lastLogin).getTime()) / (24 * 60 * 60 * 1000);
+
+      if (daysSinceLastLogin > INACTIVITY_THRESHOLD_DAYS) {
+        loginAfterInactivity = true;
+
+        // Log security event (async, don't block login)
+        SecurityLog.create({
+          type: 'login_after_inactivity',
+          severity: 'medium',
+          username: user.username,
+          email: user.email,
+          userId: user._id,
+          ipAddress,
+          userAgent: req.headers['user-agent'],
+          details: {
+            daysSinceLastLogin: Math.floor(daysSinceLastLogin),
+            lastLoginDate: user.lastLogin,
+            currentLoginDate: new Date(),
+            deviceInfo,
+            browser,
+            os,
+            location
+          }
+        }).catch(err => {
+          logger.error('Failed to log login after inactivity event:', err);
+        });
+
+        logger.info(`Login after ${Math.floor(daysSinceLastLogin)} days of inactivity: ${user.username}`);
+      }
+    }
+
     // Clean up old sessions first
     cleanupOldSessions(user);
 
     // Find or create session (prevents duplicates from same device/IP)
-    const { session, isNew: isNewSession } = findOrCreateSession(user, ipAddress, deviceInfo, browser, os);
+    const { session, isNew: isNewSession } = findOrCreateSession(user, ipAddress, deviceInfo, browser, os, location);
 
     // Add new session only if it doesn't exist
     if (isNewSession) {
@@ -787,10 +870,11 @@ router.post('/verify-2fa-login', loginLimiter, async (req, res) => {
     // Get session ID for JWT token
     const sessionId = session.sessionId;
 
-    // Log successful login
+    // Log successful login with location
     user.loginHistory.push({
       ipAddress,
       deviceInfo,
+      location,
       success: true,
       timestamp: new Date()
     });
@@ -803,7 +887,7 @@ router.post('/verify-2fa-login', loginLimiter, async (req, res) => {
 
     // Send login alert emails ONLY for new devices or suspicious logins (async, don't wait)
     const isNew = isNewDevice(user, ipAddress, deviceInfo);
-    const suspicious = isSuspiciousLogin(user, ipAddress, deviceInfo);
+    const suspicious = isSuspiciousLogin(user, ipAddress, deviceInfo, location) || loginAfterInactivity;
 
     if (user.loginAlerts?.enabled) {
       const loginInfo = {
@@ -811,7 +895,7 @@ router.post('/verify-2fa-login', loginLimiter, async (req, res) => {
         browser,
         os,
         ipAddress,
-        location: { city: '', region: '', country: '' },
+        location,
         timestamp: new Date()
       };
 

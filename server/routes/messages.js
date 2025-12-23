@@ -18,6 +18,28 @@ router.get('/:userId', auth, requireActiveUser, checkBlocked, async (req, res) =
     const { userId } = req.params;
     const currentUserId = req.userId;
 
+    // Validate user availability before fetching conversation
+    const otherUser = await User.findById(userId);
+
+    if (!otherUser) {
+      return res.status(403).json({ message: 'This user is unavailable.' });
+    }
+
+    // Check if user is active
+    if (otherUser.isActive === false) {
+      return res.status(403).json({ message: 'This user is unavailable.' });
+    }
+
+    // Check if user is deleted
+    if (otherUser.isDeleted === true) {
+      return res.status(403).json({ message: 'This user is unavailable.' });
+    }
+
+    // Check if user has blocked the current user
+    if (otherUser.blockedUsers && otherUser.blockedUsers.some(blockedId => blockedId.toString() === currentUserId)) {
+      return res.status(403).json({ message: 'This user is unavailable.' });
+    }
+
     const messages = await Message.find({
       $or: [
         { sender: currentUserId, recipient: userId },
@@ -202,6 +224,30 @@ router.get('/', auth, requireActiveUser, async (req, res) => {
 router.post('/', auth, requireActiveUser, messageLimiter, sanitizeFields(['content']), checkMessagingPermission, checkMuted, moderateContent, async (req, res) => {
   try {
     const { recipient, content, attachment, groupChatId, voiceNote } = req.body;
+
+    // Validate recipient availability (only for direct messages, not group chats)
+    if (!groupChatId && recipient) {
+      const recipientUser = await User.findById(recipient);
+
+      if (!recipientUser) {
+        return res.status(403).json({ message: 'This user is unavailable.' });
+      }
+
+      // Check if recipient is active
+      if (recipientUser.isActive === false) {
+        return res.status(403).json({ message: 'This user is unavailable.' });
+      }
+
+      // Check if recipient is deleted
+      if (recipientUser.isDeleted === true) {
+        return res.status(403).json({ message: 'This user is unavailable.' });
+      }
+
+      // Check if recipient has blocked the sender
+      if (recipientUser.blockedUsers && recipientUser.blockedUsers.some(blockedId => blockedId.toString() === req.userId)) {
+        return res.status(403).json({ message: 'This user is unavailable.' });
+      }
+    }
 
     const messageData = {
       sender: req.userId,

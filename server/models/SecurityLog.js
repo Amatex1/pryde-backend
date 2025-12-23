@@ -20,7 +20,8 @@ const securityLogSchema = new mongoose.Schema({
       'profile_updated',
       'privacy_settings_changed',
       'account_recovery_2fa_reset',
-      'recovery_contact_notified'
+      'recovery_contact_notified',
+      'login_after_inactivity'
     ],
     required: true
   },
