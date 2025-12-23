@@ -155,18 +155,27 @@ const userSchema = new mongoose.Schema({
     select: false // Hide from queries by default
   }],
   // Follow system (primary social graph)
-  followers: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User'
-  }],
-  following: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User'
-  }],
-  bookmarkedPosts: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Post'
-  }],
+  followers: {
+    type: [{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
+    }],
+    default: []
+  },
+  following: {
+    type: [{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
+    }],
+    default: []
+  },
+  bookmarkedPosts: {
+    type: [{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Post'
+    }],
+    default: []
+  },
   ageVerified: {
     type: Boolean,
     required: true,
@@ -277,47 +286,53 @@ const userSchema = new mongoose.Schema({
     default: null
   },
   // Passkeys (WebAuthn credentials)
-  passkeys: [{
-    credentialId: {
-      type: String,
-      required: true,
-      unique: true
-    },
-    publicKey: {
-      type: String,
-      required: true
-    },
-    counter: {
-      type: Number,
-      required: true,
-      default: 0
-    },
-    deviceName: {
-      type: String,
-      default: 'Unknown Device'
-    },
-    transports: [{
-      type: String,
-      enum: ['usb', 'nfc', 'ble', 'internal', 'hybrid', 'cable', 'smart-card']
+  passkeys: {
+    type: [{
+      credentialId: {
+        type: String,
+        required: true,
+        unique: true
+      },
+      publicKey: {
+        type: String,
+        required: true
+      },
+      counter: {
+        type: Number,
+        required: true,
+        default: 0
+      },
+      deviceName: {
+        type: String,
+        default: 'Unknown Device'
+      },
+      transports: {
+        type: [{
+          type: String,
+          enum: ['usb', 'nfc', 'ble', 'internal', 'hybrid', 'cable', 'smart-card']
+        }],
+        default: []
+      },
+      deviceType: {
+        type: String,
+        enum: ['singleDevice', 'multiDevice'],
+        default: 'singleDevice'
+      },
+      backedUp: {
+        type: Boolean,
+        default: false
+      },
+      createdAt: {
+        type: Date,
+        default: Date.now
+      },
+      lastUsedAt: {
+        type: Date,
+        default: Date.now
+      }
     }],
-    deviceType: {
-      type: String,
-      enum: ['singleDevice', 'multiDevice'],
-      default: 'singleDevice'
-    },
-    backedUp: {
-      type: Boolean,
-      default: false
-    },
-    createdAt: {
-      type: Date,
-      default: Date.now
-    },
-    lastUsedAt: {
-      type: Date,
-      default: Date.now
-    }
-  }],
+    default: []
+  },
   createdAt: {
     type: Date,
     default: Date.now
@@ -368,49 +383,52 @@ const userSchema = new mongoose.Schema({
     default: true
   },
   // Session Management
-  activeSessions: [{
-    sessionId: {
-      type: String,
-      required: true
-    },
-    refreshToken: {
-      type: String,
-      default: null
-    },
-    refreshTokenExpiry: {
-      type: Date,
-      default: null
-    },
-    deviceInfo: {
-      type: String,
-      default: ''
-    },
-    browser: {
-      type: String,
-      default: ''
-    },
-    os: {
-      type: String,
-      default: ''
-    },
-    ipAddress: {
-      type: String,
-      default: ''
-    },
-    location: {
-      city: { type: String, default: '' },
-      region: { type: String, default: '' },
-      country: { type: String, default: '' }
-    },
-    createdAt: {
-      type: Date,
-      default: Date.now
-    },
-    lastActive: {
-      type: Date,
-      default: Date.now
-    }
-  }],
+  activeSessions: {
+    type: [{
+      sessionId: {
+        type: String,
+        required: true
+      },
+      refreshToken: {
+        type: String,
+        default: null
+      },
+      refreshTokenExpiry: {
+        type: Date,
+        default: null
+      },
+      deviceInfo: {
+        type: String,
+        default: ''
+      },
+      browser: {
+        type: String,
+        default: ''
+      },
+      os: {
+        type: String,
+        default: ''
+      },
+      ipAddress: {
+        type: String,
+        default: ''
+      },
+      location: {
+        city: { type: String, default: '' },
+        region: { type: String, default: '' },
+        country: { type: String, default: '' }
+      },
+      createdAt: {
+        type: Date,
+        default: Date.now
+      },
+      lastActive: {
+        type: Date,
+        default: Date.now
+      }
+    }],
+    default: []
+  },
   // Login Alerts & Security
   loginAlerts: {
     enabled: {
@@ -426,109 +444,127 @@ const userSchema = new mongoose.Schema({
       default: true
     }
   },
-  trustedDevices: [{
-    deviceId: {
-      type: String,
-      required: true
-    },
-    deviceInfo: {
-      type: String,
-      default: ''
-    },
-    ipAddress: {
-      type: String,
-      default: ''
-    },
-    addedAt: {
-      type: Date,
-      default: Date.now
-    }
-  }],
-  loginHistory: [{
-    ipAddress: {
-      type: String,
-      required: true
-    },
-    deviceInfo: {
-      type: String,
-      default: ''
-    },
-    location: {
-      city: { type: String, default: '' },
-      region: { type: String, default: '' },
-      country: { type: String, default: '' }
-    },
-    success: {
-      type: Boolean,
-      default: true
-    },
-    failureReason: {
-      type: String,
-      default: ''
-    },
-    timestamp: {
-      type: Date,
-      default: Date.now
-    }
-  }],
+  trustedDevices: {
+    type: [{
+      deviceId: {
+        type: String,
+        required: true
+      },
+      deviceInfo: {
+        type: String,
+        default: ''
+      },
+      ipAddress: {
+        type: String,
+        default: ''
+      },
+      addedAt: {
+        type: Date,
+        default: Date.now
+      }
+    }],
+    default: []
+  },
+  loginHistory: {
+    type: [{
+      ipAddress: {
+        type: String,
+        required: true
+      },
+      deviceInfo: {
+        type: String,
+        default: ''
+      },
+      location: {
+        city: { type: String, default: '' },
+        region: { type: String, default: '' },
+        country: { type: String, default: '' }
+      },
+      success: {
+        type: Boolean,
+        default: true
+      },
+      failureReason: {
+        type: String,
+        default: ''
+      },
+      timestamp: {
+        type: Date,
+        default: Date.now
+      }
+    }],
+    default: []
+  },
   // Trusted Recovery Contacts
-  recoveryContacts: [{
-    user: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
-      required: true
-    },
-    status: {
-      type: String,
-      enum: ['pending', 'accepted', 'declined'],
-      default: 'pending'
-    },
-    addedAt: {
-      type: Date,
-      default: Date.now
-    },
-    acceptedAt: {
-      type: Date,
-      default: null
-    }
-  }],
+  recoveryContacts: {
+    type: [{
+      user: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        required: true
+      },
+      status: {
+        type: String,
+        enum: ['pending', 'accepted', 'declined'],
+        default: 'pending'
+      },
+      addedAt: {
+        type: Date,
+        default: Date.now
+      },
+      acceptedAt: {
+        type: Date,
+        default: null
+      }
+    }],
+    default: []
+  },
   // Recovery requests initiated by this user
-  recoveryRequests: [{
-    requestId: {
-      type: String,
-      required: true,
-      unique: true
-    },
-    contactsNotified: [{
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User'
+  recoveryRequests: {
+    type: [{
+      requestId: {
+        type: String,
+        required: true,
+        unique: true
+      },
+      contactsNotified: {
+        type: [{
+          type: mongoose.Schema.Types.ObjectId,
+          ref: 'User'
+        }],
+        default: []
+      },
+      contactsApproved: {
+        type: [{
+          type: mongoose.Schema.Types.ObjectId,
+          ref: 'User'
+        }],
+        default: []
+      },
+      requiredApprovals: {
+        type: Number,
+        default: 2 // Require 2 out of 3 contacts to approve
+      },
+      status: {
+        type: String,
+        enum: ['pending', 'approved', 'denied', 'expired'],
+        default: 'pending'
+      },
+      createdAt: {
+        type: Date,
+        default: Date.now
+      },
+      expiresAt: {
+        type: Date,
+        default: () => new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
+      },
+      newPasswordHash: {
+        type: String,
+        default: null
+      }
     }],
-    contactsApproved: [{
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User'
-    }],
-    requiredApprovals: {
-      type: Number,
-      default: 2 // Require 2 out of 3 contacts to approve
-    },
-    status: {
-      type: String,
-      enum: ['pending', 'approved', 'denied', 'expired'],
-      default: 'pending'
-    },
-    createdAt: {
-      type: Date,
-      default: Date.now
-    },
-    expiresAt: {
-      type: Date,
-      default: () => new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
-    },
-    newPasswordHash: {
-      type: String,
-      default: null
-    }
-  }],
+    default: []
+  },
   // Privacy Settings
   // PHASE 1 REFACTOR: Simplified privacy options
   privacySettings: {
@@ -626,10 +662,13 @@ const userSchema = new mongoose.Schema({
     maxlength: 1000,
     default: ''
   },
-  featuredPosts: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Post'
-  }],
+  featuredPosts: {
+    type: [{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Post'
+    }],
+    default: []
+  },
   // PHASE 6: Ally System (DEPRECATED - use identity field instead)
   isAlly: {
     type: Boolean,
@@ -648,10 +687,13 @@ const userSchema = new mongoose.Schema({
     default: 'registered'
   },
   // Blocked Users
-  blockedUsers: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User'
-  }],
+  blockedUsers: {
+    type: [{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
+    }],
+    default: []
+  },
   // Moderation & Auto-Mute
   moderation: {
     isMuted: {
@@ -679,34 +721,37 @@ const userSchema = new mongoose.Schema({
       default: true
     }
   },
-  moderationHistory: [{
-    action: {
-      type: String,
-      enum: ['warning', 'mute', 'unmute', 'content-removed', 'spam-detected'],
-      required: true
-    },
-    reason: {
-      type: String,
-      default: ''
-    },
-    contentType: {
-      type: String,
-      enum: ['post', 'comment', 'message', 'profile'],
-      default: 'post'
-    },
-    contentId: {
-      type: mongoose.Schema.Types.ObjectId,
-      default: null
-    },
-    timestamp: {
-      type: Date,
-      default: Date.now
-    },
-    automated: {
-      type: Boolean,
-      default: false
-    }
-  }],
+  moderationHistory: {
+    type: [{
+      action: {
+        type: String,
+        enum: ['warning', 'mute', 'unmute', 'content-removed', 'spam-detected'],
+        required: true
+      },
+      reason: {
+        type: String,
+        default: ''
+      },
+      contentType: {
+        type: String,
+        enum: ['post', 'comment', 'message', 'profile'],
+        default: 'post'
+      },
+      contentId: {
+        type: mongoose.Schema.Types.ObjectId,
+        default: null
+      },
+      timestamp: {
+        type: Date,
+        default: Date.now
+      },
+      automated: {
+        type: Boolean,
+        default: false
+      }
+    }],
+    default: []
+  },
   // Soft Deletion & Account Recovery
   isDeleted: {
     type: Boolean,

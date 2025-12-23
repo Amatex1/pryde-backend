@@ -8,7 +8,7 @@
 import mongoose from 'mongoose';
 import User from '../models/User.js';
 import { getUserCapabilities } from '../utils/featureCapability.js';
-import config from '../config/config.js';
+import config from '../config/index.js';
 import logger from '../utils/logger.js';
 
 // Connect to database

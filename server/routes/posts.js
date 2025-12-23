@@ -351,8 +351,12 @@ router.put('/:id', auth, requireActiveUser, sanitizeFields(['content', 'contentW
 
     const userId = req.userId || req.user._id;
 
-    // Check if user is the author
-    if (post.author.toString() !== userId.toString()) {
+    // Get user to check role
+    const user = await User.findById(userId);
+    const isAdmin = user && ['moderator', 'admin', 'super_admin'].includes(user.role);
+
+    // Check if user is the author OR admin
+    if (post.author.toString() !== userId.toString() && !isAdmin) {
       return res.status(403).json({ message: 'Not authorized to edit this post' });
     }
 
@@ -414,8 +418,12 @@ router.delete('/:id', auth, requireActiveUser, async (req, res) => {
 
     const userId = req.userId || req.user._id;
 
-    // Check if user is the author
-    if (post.author.toString() !== userId.toString()) {
+    // Get user to check role
+    const user = await User.findById(userId);
+    const isAdmin = user && ['moderator', 'admin', 'super_admin'].includes(user.role);
+
+    // Check if user is the author OR admin
+    if (post.author.toString() !== userId.toString() && !isAdmin) {
       return res.status(403).json({ message: 'Not authorized to delete this post' });
     }
 
