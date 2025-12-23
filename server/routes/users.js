@@ -13,7 +13,7 @@ import { sanitizeFields } from '../middleware/sanitize.js';
 import mongoose from 'mongoose';
 
 // PHASE 1 REFACTOR: Helper function to sanitize user data for private follower counts
-// Removes follower/following arrays and counts, only shows if current user follows them
+// Keeps counts but removes detailed arrays, only shows if current user follows them
 const sanitizeUserForPrivateFollowers = (user, currentUserId) => {
   const userObj = user.toObject ? user.toObject() : user;
 
@@ -27,11 +27,17 @@ const sanitizeUserForPrivateFollowers = (user, currentUserId) => {
     (following._id || following).toString() === currentUserId.toString()
   );
 
-  // Replace follower/following arrays with just booleans
+  // Store counts before removing arrays
+  const followersCount = userObj.followers?.length || 0;
+  const followingCount = userObj.following?.length || 0;
+
+  // Replace follower/following arrays with just counts and booleans
   userObj.isFollowing = isFollowing; // Does current user follow this profile?
   userObj.followsYou = followsYou;   // Does this profile follow current user?
-  delete userObj.followers;
-  delete userObj.following;
+
+  // Keep counts but remove detailed arrays for privacy
+  userObj.followers = { length: followersCount };
+  userObj.following = { length: followingCount };
 
   return userObj;
 };
