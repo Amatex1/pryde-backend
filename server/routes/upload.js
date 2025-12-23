@@ -161,22 +161,53 @@ const saveToGridFS = async (file, generateSizes = false) => {
 router.post('/profile-photo', auth, uploadLimiter, (req, res) => {
   upload.single('photo')(req, res, async (err) => {
     try {
-      console.log('Profile photo upload request received');
+      console.log('📸 Profile photo upload request received');
 
       if (err) {
-        console.error('Multer error:', err);
-        return res.status(500).json({ message: 'Upload failed', error: err.message });
+        console.error('❌ Multer error:', err);
+
+        if (err.code === 'LIMIT_FILE_SIZE') {
+          return res.status(400).json({
+            error: 'File too large',
+            message: 'Profile photo exceeds 10MB limit. Please use a smaller image.',
+            detail: err.message
+          });
+        }
+
+        return res.status(500).json({
+          error: 'Upload failed',
+          message: 'Upload failed. Please try again.',
+          detail: err.message
+        });
       }
 
       if (!req.file) {
-        console.log('No file in request');
-        return res.status(400).json({ message: 'No file uploaded' });
+        console.log('⚠️ No file in request');
+        return res.status(400).json({
+          error: 'No file received',
+          message: 'No file uploaded. Please select an image and try again.'
+        });
+      }
+
+      // Validate it's an image
+      if (!req.file.mimetype.startsWith('image/')) {
+        console.error('❌ Invalid file type:', req.file.mimetype);
+        return res.status(400).json({
+          error: 'Invalid image type',
+          message: 'Only image files are allowed for profile photos.',
+          detail: `Received: ${req.file.mimetype}`
+        });
       }
 
       // Save to GridFS with EXIF stripping and responsive sizes (avatar-optimized)
       const fileInfo = await saveToGridFS(req.file, { isAvatar: true }); // Generate avatar-optimized sizes
+
+      if (!fileInfo || !fileInfo.filename) {
+        throw new Error('Failed to save profile photo to storage');
+      }
+
       const photoUrl = `/upload/image/${fileInfo.filename}`;
-      console.log('Photo URL:', photoUrl);
+      console.log('✅ Photo URL:', photoUrl);
 
       // Update user profile photo
       const updatedUser = await User.findByIdAndUpdate(
@@ -185,11 +216,15 @@ router.post('/profile-photo', auth, uploadLimiter, (req, res) => {
         { new: true }
       );
 
-      console.log('Profile photo updated for user:', req.userId);
+      console.log('✅ Profile photo updated for user:', req.userId);
       res.json({ url: photoUrl, user: updatedUser });
     } catch (error) {
-      console.error('Upload profile photo error:', error);
-      res.status(500).json({ message: 'Server error', error: error.message });
+      console.error('❌ Upload profile photo error:', error);
+      res.status(500).json({
+        error: 'Image upload failed',
+        message: 'Profile photo upload failed. Please try again or use a smaller image.',
+        detail: error.message
+      });
     }
   });
 });
@@ -200,22 +235,53 @@ router.post('/profile-photo', auth, uploadLimiter, (req, res) => {
 router.post('/cover-photo', auth, uploadLimiter, (req, res) => {
   upload.single('photo')(req, res, async (err) => {
     try {
-      console.log('Cover photo upload request received');
+      console.log('🖼️ Cover photo upload request received');
 
       if (err) {
-        console.error('Multer error:', err);
-        return res.status(500).json({ message: 'Upload failed', error: err.message });
+        console.error('❌ Multer error:', err);
+
+        if (err.code === 'LIMIT_FILE_SIZE') {
+          return res.status(400).json({
+            error: 'File too large',
+            message: 'Cover photo exceeds 10MB limit. Please use a smaller image.',
+            detail: err.message
+          });
+        }
+
+        return res.status(500).json({
+          error: 'Upload failed',
+          message: 'Upload failed. Please try again.',
+          detail: err.message
+        });
       }
 
       if (!req.file) {
-        console.log('No file in request');
-        return res.status(400).json({ message: 'No file uploaded' });
+        console.log('⚠️ No file in request');
+        return res.status(400).json({
+          error: 'No file received',
+          message: 'No file uploaded. Please select an image and try again.'
+        });
+      }
+
+      // Validate it's an image
+      if (!req.file.mimetype.startsWith('image/')) {
+        console.error('❌ Invalid file type:', req.file.mimetype);
+        return res.status(400).json({
+          error: 'Invalid image type',
+          message: 'Only image files are allowed for cover photos.',
+          detail: `Received: ${req.file.mimetype}`
+        });
       }
 
       // Save to GridFS with EXIF stripping and responsive sizes (cover photo doesn't need avatar optimization)
       const fileInfo = await saveToGridFS(req.file, true); // Generate standard responsive sizes
+
+      if (!fileInfo || !fileInfo.filename) {
+        throw new Error('Failed to save cover photo to storage');
+      }
+
       const photoUrl = `/upload/image/${fileInfo.filename}`;
-      console.log('Photo URL:', photoUrl);
+      console.log('✅ Photo URL:', photoUrl);
 
       // Update user cover photo
       const updatedUser = await User.findByIdAndUpdate(
@@ -224,11 +290,15 @@ router.post('/cover-photo', auth, uploadLimiter, (req, res) => {
         { new: true }
       );
 
-      console.log('Cover photo updated for user:', req.userId);
+      console.log('✅ Cover photo updated for user:', req.userId);
       res.json({ url: photoUrl, user: updatedUser });
     } catch (error) {
-      console.error('Upload cover photo error:', error);
-      res.status(500).json({ message: 'Server error', error: error.message });
+      console.error('❌ Upload cover photo error:', error);
+      res.status(500).json({
+        error: 'Image upload failed',
+        message: 'Cover photo upload failed. Please try again or use a smaller image.',
+        detail: error.message
+      });
     }
   });
 });
@@ -240,22 +310,49 @@ router.post('/chat-attachment', auth, uploadLimiter, (req, res) => {
   upload.single('file')(req, res, async (err) => {
     try {
       if (err) {
-        console.error('Multer error:', err);
-        return res.status(500).json({ message: 'Upload failed', error: err.message });
+        console.error('❌ Multer error:', err);
+
+        if (err.code === 'LIMIT_FILE_SIZE') {
+          return res.status(400).json({
+            error: 'File too large',
+            message: 'File exceeds 10MB limit. Please use a smaller file.',
+            detail: err.message
+          });
+        }
+
+        return res.status(500).json({
+          error: 'Upload failed',
+          message: 'Upload failed. Please try again.',
+          detail: err.message
+        });
       }
 
       if (!req.file) {
-        return res.status(400).json({ message: 'No file uploaded' });
+        console.log('⚠️ No file in request');
+        return res.status(400).json({
+          error: 'No file received',
+          message: 'No file uploaded. Please select a file and try again.'
+        });
       }
 
       // Save to GridFS with EXIF stripping
       const fileInfo = await saveToGridFS(req.file);
+
+      if (!fileInfo || !fileInfo.filename) {
+        throw new Error('Failed to save file to storage');
+      }
+
       const fileUrl = `/upload/image/${fileInfo.filename}`;
 
+      console.log('✅ Chat attachment uploaded successfully');
       res.json({ url: fileUrl });
     } catch (error) {
-      console.error('Upload chat attachment error:', error);
-      res.status(500).json({ message: 'Server error' });
+      console.error('❌ Upload chat attachment error:', error);
+      res.status(500).json({
+        error: 'Upload failed',
+        message: 'File upload failed. Please try again or use a smaller file.',
+        detail: error.message
+      });
     }
   });
 });
@@ -266,20 +363,74 @@ router.post('/chat-attachment', auth, uploadLimiter, (req, res) => {
 router.post('/post-media', auth, uploadLimiter, (req, res) => {
   upload.array('media', 3)(req, res, async (err) => {
     try {
+      // Enhanced error handling for multer errors
       if (err) {
-        console.error('Multer error:', err);
-        return res.status(500).json({ message: 'Upload failed', error: err.message });
+        console.error('❌ Multer error:', err);
+
+        // Provide specific error messages
+        if (err.code === 'LIMIT_FILE_SIZE') {
+          return res.status(400).json({
+            error: 'File too large',
+            message: 'File size exceeds 10MB limit. Please use a smaller file.',
+            detail: err.message
+          });
+        }
+
+        if (err.code === 'LIMIT_FILE_COUNT') {
+          return res.status(400).json({
+            error: 'Too many files',
+            message: 'Maximum 3 files allowed per upload.',
+            detail: err.message
+          });
+        }
+
+        if (err.code === 'LIMIT_UNEXPECTED_FILE') {
+          return res.status(400).json({
+            error: 'Invalid field name',
+            message: 'Upload failed. Please try again.',
+            detail: err.message
+          });
+        }
+
+        return res.status(500).json({
+          error: 'Upload failed',
+          message: 'Upload failed. Please try again.',
+          detail: err.message
+        });
       }
 
       if (!req.files || req.files.length === 0) {
-        return res.status(400).json({ message: 'No files uploaded' });
+        console.log('⚠️ No files in request');
+        return res.status(400).json({
+          error: 'No file received',
+          message: 'No files uploaded. Please select a file and try again.'
+        });
       }
+
+      // Validate file types
+      for (const file of req.files) {
+        if (!file.mimetype.startsWith('image/') && !file.mimetype.startsWith('video/')) {
+          console.error('❌ Invalid file type:', file.mimetype);
+          return res.status(400).json({
+            error: 'Invalid file type',
+            message: 'Only images and videos are allowed.',
+            detail: `Received: ${file.mimetype}`
+          });
+        }
+      }
+
+      console.log(`📤 Processing ${req.files.length} file(s)...`);
 
       // Process each file and save to GridFS with EXIF stripping and responsive sizes
       const mediaUrls = await Promise.all(req.files.map(async (file) => {
         // Generate responsive sizes for images (not videos or GIFs)
         const shouldGenerateSizes = file.mimetype.startsWith('image/') && file.mimetype !== 'image/gif';
         const fileInfo = await saveToGridFS(file, shouldGenerateSizes);
+
+        if (!fileInfo || !fileInfo.filename) {
+          throw new Error('Failed to save file to storage');
+        }
+
         const url = `/upload/file/${fileInfo.filename}`;
         let type = 'image';
 
@@ -303,10 +454,15 @@ router.post('/post-media', auth, uploadLimiter, (req, res) => {
         return result;
       }));
 
+      console.log(`✅ Successfully uploaded ${mediaUrls.length} file(s)`);
       res.json({ media: mediaUrls });
     } catch (error) {
-      console.error('Upload post media error:', error);
-      res.status(500).json({ message: 'Server error' });
+      console.error('❌ Upload post media error:', error);
+      res.status(500).json({
+        error: 'Image upload failed',
+        message: 'Image upload failed. Please try again or use a smaller image.',
+        detail: error.message
+      });
     }
   });
 });
