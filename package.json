@@ -12,7 +12,14 @@
     "server:start": "cd server && npm start",
     "optimize-images": "node scripts/optimize-images.js",
     "test": "mocha server/test/**/*.test.js --timeout 10000",
-    "test:watch": "mocha server/test/**/*.test.js --timeout 10000 --watch"
+    "test:watch": "mocha server/test/**/*.test.js --timeout 10000 --watch",
+    "audit": "node server/scripts/runFullAudit.js",
+    "audit:json": "node server/scripts/runFullAudit.js > audit-report.json",
+    "audit:dry-run": "node server/scripts/runFullAuditDryRun.js",
+    "test:mongo": "node server/scripts/testMongoConnection.js",
+    "fix:mongo": "node server/scripts/fixMongoConnectionString.js",
+    "backup": "node server/scripts/backupToCloud.js",
+    "backup:all": "node server/scripts/backupAll.js"
   },
   "dependencies": {
     "@hcaptcha/react-hcaptcha": "^1.17.1",

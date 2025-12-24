@@ -832,10 +832,16 @@ server.listen(PORT, () => {
   console.log(`Base URL: ${config.baseURL}`);
   console.log('Socket.IO server ready for real-time connections');
 
-  // Start continuous backup system
-  import('./scripts/continuousBackup.js')
-    .then(() => console.log('✅ Continuous backup system started'))
-    .catch(err => console.error('❌ Failed to start backup system:', err));
+  // Continuous backup system is DISABLED by default
+  // To enable backups, set ENABLE_AUTO_BACKUP=true in your .env file
+  // Or run manual backups with: npm run backup
+  if (process.env.ENABLE_AUTO_BACKUP === 'true') {
+    import('./scripts/continuousBackup.js')
+      .then(() => console.log('✅ Continuous backup system started'))
+      .catch(err => console.error('❌ Failed to start backup system:', err));
+  } else {
+    console.log('ℹ️  Automatic backups disabled (set ENABLE_AUTO_BACKUP=true to enable)');
+  }
 });
 
 // Export app for testing
