@@ -1,0 +1,35 @@
+# Augment Guidelines for Pryde Project
+
+## Repository Structure
+This project has TWO separate repositories:
+1. **pryde-backend** (F:\Desktop\pryde-backend) - Backend API server
+2. **pryde-frontend** (F:\Desktop\pryde-frontend) - Frontend React application
+
+## Git Workflow - CRITICAL
+⚠️ **ALWAYS commit and push BOTH repositories when making changes**
+
+When making changes that affect both frontend and backend:
+1. Commit backend changes in `F:\Desktop\pryde-backend`
+2. Commit frontend changes in `F:\Desktop\pryde-frontend`
+3. Push both repositories to their respective remotes
+
+### Example Workflow:
+```bash
+# Backend
+cd F:\Desktop\pryde-backend
+git add .
+git commit -m "feat: add feature X"
+git push origin main
+
+# Frontend
+cd F:\Desktop\pryde-frontend
+git add .
+git commit -m "feat: add feature X UI"
+git push origin main
+```
+
+## Common Patterns
+- Real-time features use Socket.IO
+- Backend emits events, frontend listens
+- Always sanitize data before emitting
+- Use interval guards to prevent duplicate timers in React Strict Mode
