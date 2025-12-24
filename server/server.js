@@ -115,12 +115,30 @@ const allowedOrigins = [
   config.cloudflareURL
 ].filter(Boolean); // Remove any undefined values
 
-// Socket.IO setup with CORS
+// Socket.IO setup with CORS and enhanced stability
 const io = new Server(server, {
   cors: {
     origin: allowedOrigins,
     methods: ['GET', 'POST'],
     credentials: true
+  },
+  // Enhanced stability settings
+  pingTimeout: 60000, // 60 seconds - how long to wait for pong before considering connection dead
+  pingInterval: 25000, // 25 seconds - how often to send ping packets
+  upgradeTimeout: 30000, // 30 seconds - how long to wait for upgrade to complete
+  maxHttpBufferSize: 1e6, // 1MB - max message size
+  transports: ['websocket', 'polling'], // Prefer WebSocket, fallback to polling
+  allowUpgrades: true, // Allow transport upgrades
+  perMessageDeflate: {
+    threshold: 1024 // Only compress messages larger than 1KB
+  },
+  httpCompression: {
+    threshold: 1024 // Only compress HTTP responses larger than 1KB
+  },
+  // Connection state recovery (experimental but helpful)
+  connectionStateRecovery: {
+    maxDisconnectionDuration: 2 * 60 * 1000, // 2 minutes
+    skipMiddlewares: true // Skip auth middleware on recovery
   }
 });
 
@@ -159,7 +177,7 @@ const corsOptions = {
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-XSRF-TOKEN'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-XSRF-TOKEN', 'x-auth-token', 'X-CSRF-Token'],
   exposedHeaders: ['Authorization', 'X-CSRF-Token'], // Expose CSRF token for cross-origin requests
   optionsSuccessStatus: 200
 };
