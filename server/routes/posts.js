@@ -331,6 +331,15 @@ router.post('/', auth, requireActiveUser, postLimiter, sanitizeFields(['content'
     await post.populate('author', 'username displayName profilePhoto isVerified pronouns');
     await post.populate('tags', 'slug label icon'); // PHASE 4: Populate tags
 
+    // ✅ Emit real-time event for new post
+    if (req.io) {
+      const sanitizedPost = sanitizePostForPrivateLikes(post, userId);
+      req.io.emit('post_created', {
+        post: sanitizedPost
+      });
+      logger.debug('📡 Emitted post_created event:', post._id);
+    }
+
     res.status(201).json(post);
   } catch (error) {
     logger.error('Create post error:', error);
@@ -398,6 +407,15 @@ router.put('/:id', auth, requireActiveUser, sanitizeFields(['content', 'contentW
     // PHASE 1 REFACTOR: Sanitize post to hide like counts
     const sanitizedPost = sanitizePostForPrivateLikes(post, userId);
 
+    // ✅ Emit real-time event for post update
+    if (req.io) {
+      req.io.emit('post_updated', {
+        postId: post._id,
+        post: sanitizedPost
+      });
+      logger.debug('📡 Emitted post_updated event:', post._id);
+    }
+
     res.json(sanitizedPost);
   } catch (error) {
     logger.error('Update post error:', error);
@@ -427,7 +445,17 @@ router.delete('/:id', auth, requireActiveUser, async (req, res) => {
       return res.status(403).json({ message: 'Not authorized to delete this post' });
     }
 
+    const postId = post._id; // Store ID before deletion
+
     await post.deleteOne();
+
+    // ✅ Emit real-time event for post deletion
+    if (req.io) {
+      req.io.emit('post_deleted', {
+        postId: postId
+      });
+      logger.debug('📡 Emitted post_deleted event:', postId);
+    }
 
     res.json({ message: 'Post deleted successfully' });
   } catch (error) {
