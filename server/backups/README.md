@@ -24,20 +24,17 @@ npm run backup
 
 ### Automatic Backups (Disabled by Default)
 
-Automatic backups are **disabled by default** to prevent:
-- Filling up disk space
-- Creating hundreds of backup files
-- Slowing down the server
+Automatic backups are **disabled by default** to prevent unnecessary disk usage.
 
-To enable automatic backups:
+To enable automatic daily backups:
 1. Set `ENABLE_AUTO_BACKUP=true` in your `.env` file
-2. Make sure you have adequate disk space
-3. Configure a backup retention/cleanup strategy
+2. Backups will run automatically once per day
 
 **Schedule:**
-- Every 30 minutes (safety backup)
-- Every hour (regular backup)
-- On server startup (initial backup)
+- **Once per day** at 3:00 AM UTC
+- **30-day retention** (old backups auto-deleted)
+- **~23 MB total** disk usage (for current data size)
+- **No startup backup** (prevents issues during restarts)
 
 ## Backup Files
 
@@ -57,8 +54,9 @@ Each backup includes:
 
 ## Backup Retention
 
-- **Automatic cleanup**: Backups older than 90 days are automatically deleted
+- **Automatic cleanup**: Backups older than 30 days are automatically deleted
 - **Manual cleanup**: Delete old backups manually if needed
+- **Maximum backups**: ~30 backups (one per day for 30 days)
 
 ## Restoring from Backup
 
