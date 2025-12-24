@@ -13,21 +13,25 @@ A modern, real-time social networking platform built with React, Node.js, and Mo
 - **Image Uploads** - Share photos with friends
 - **Push Notifications** - Web push notifications support
 
-## 🚀 Quick Deployment
+## 🚀 Quick Start
 
-**Want to deploy quickly?** Start here: **[QUICK_START.md](./QUICK_START.md)**
+**Want to deploy quickly?** Start here: **[docs/QUICK_START.md](./docs/QUICK_START.md)**
 
 This guide will get you deployed in about 1 hour.
 
 ## 📚 Documentation
 
-### Deployment Guides
-- **[QUICK_START.md](./QUICK_START.md)** - Fast deployment guide (~1 hour)
-- **[DEPLOYMENT_README.md](./DEPLOYMENT_README.md)** - Complete deployment overview
-- **[DEPLOYMENT_SUMMARY.md](./DEPLOYMENT_SUMMARY.md)** - What's been fixed and prepared
-- **[DEPLOYMENT_FRONTEND.md](./DEPLOYMENT_FRONTEND.md)** - SiteGround deployment details
-- **[DEPLOYMENT_BACKEND.md](./DEPLOYMENT_BACKEND.md)** - Render.com deployment details
-- **[DEPLOYMENT_CHECKLIST.md](./DEPLOYMENT_CHECKLIST.md)** - Step-by-step checklist
+**All documentation has been moved to the [`docs/`](./docs/) folder.**
+
+📖 **[View Documentation Index](./docs/INDEX.md)** - Complete organized documentation
+
+### Quick Links
+- **[Quick Start Guide](./docs/QUICK_START.md)** - Fast deployment guide (~1 hour)
+- **[Deployment Guide](./docs/DEPLOYMENT_GUIDE.md)** - Complete deployment overview
+- **[Daily Backup Setup](./docs/DAILY_BACKUP_SETUP.md)** - Backup system guide
+- **[MongoDB Fix Guide](./docs/MONGODB_FIX_GUIDE.md)** - Database troubleshooting
+- **[Security Implementation](./docs/SECURITY_IMPLEMENTATION.md)** - Security features
+- **[Troubleshooting](./docs/TROUBLESHOOTING.md)** - Common issues and solutions
 
 ## 🛠️ Tech Stack
 
@@ -65,8 +69,11 @@ pryde-backend/
 │   ├── models/             # Mongoose models
 │   ├── routes/             # API routes
 │   ├── middleware/         # Express middleware
+│   ├── scripts/            # Utility scripts (backups, etc.)
 │   └── server.js           # Main server file
-└── Deployment guides       # All DEPLOYMENT_*.md files
+├── docs/                    # Documentation (99 files)
+│   └── INDEX.md            # Documentation index
+└── README.md               # This file
 ```
 
 ## 🏃 Local Development
@@ -211,13 +218,14 @@ This project is private and proprietary.
 ## 🆘 Support
 
 Need help? Check these resources:
-1. [QUICK_START.md](./QUICK_START.md) - Quick deployment guide
-2. [DEPLOYMENT_README.md](./DEPLOYMENT_README.md) - Complete documentation
-3. [DEPLOYMENT_CHECKLIST.md](./DEPLOYMENT_CHECKLIST.md) - Deployment checklist
+1. **[Documentation Index](./docs/INDEX.md)** - Complete documentation index
+2. **[Quick Start Guide](./docs/QUICK_START.md)** - Quick deployment guide
+3. **[Troubleshooting](./docs/TROUBLESHOOTING.md)** - Common issues and solutions
+4. **[Deployment Guide](./docs/DEPLOYMENT_GUIDE.md)** - Complete deployment documentation
 
 ## 🎉 Ready to Deploy?
 
-Everything is set up and ready to go! Follow the **[QUICK_START.md](./QUICK_START.md)** guide to deploy your app in about an hour.
+Everything is set up and ready to go! Follow the **[Quick Start Guide](./docs/QUICK_START.md)** to deploy your app in about an hour.
 
 ---
 
