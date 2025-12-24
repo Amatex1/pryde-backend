@@ -4,7 +4,7 @@
  * Detects stale tokens, missing claims, and permission mismatches
  */
 
-import { verifyAccessToken } from './jwt.js';
+import { verifyAccessToken } from './tokenUtils.js';
 import User from '../models/User.js';
 import logger from './logger.js';
 
