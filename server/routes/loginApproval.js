@@ -5,6 +5,7 @@ import Notification from '../models/Notification.js';
 import User from '../models/User.js';
 import { authenticateToken } from '../middleware/auth.js';
 import { sendPushNotification } from './pushNotifications.js';
+import { emitNotificationCreated } from '../utils/notificationEmitter.js';
 import config from '../config/config.js';
 
 const router = express.Router();
@@ -86,6 +87,12 @@ router.post('/request', async (req, res) => {
     });
 
     await notification.save();
+
+    // Populate sender for Socket.IO emission (self-notification)
+    await notification.populate('sender', 'username displayName profilePhoto');
+
+    // ✅ Emit real-time notification
+    emitNotificationCreated(req.io, user._id.toString(), notification);
 
     // Send push notification
     try {

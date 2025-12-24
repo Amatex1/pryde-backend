@@ -12,6 +12,7 @@ import { sanitizeFields } from '../utils/sanitize.js';
 import { sendPushNotification } from './pushNotifications.js';
 import logger from '../utils/logger.js';
 import { getBlockedUserIds } from '../utils/blockHelper.js';
+import { emitNotificationCreated } from '../utils/notificationEmitter.js'; // ✅ Socket.IO notifications
 
 // PHASE 1 REFACTOR: Helper function to sanitize post for private likes
 // Removes like count and list of who liked, only shows if current user liked
@@ -496,6 +497,12 @@ router.post('/:id/like', auth, requireActiveUser, reactionLimiter, async (req, r
         });
         await notification.save();
 
+        // Populate sender for Socket.IO emission
+        await notification.populate('sender', 'username displayName profilePhoto');
+
+        // ✅ Emit real-time notification
+        emitNotificationCreated(req.io, post.author.toString(), notification);
+
         // Send push notification
         const liker = await User.findById(userId).select('username displayName');
         const likerName = liker.displayName || liker.username;
@@ -590,6 +597,12 @@ router.post('/:id/react', auth, requireActiveUser, reactionLimiter, async (req, 
           postId: post._id
         });
         await notification.save();
+
+        // Populate sender for Socket.IO emission
+        await notification.populate('sender', 'username displayName profilePhoto');
+
+        // ✅ Emit real-time notification
+        emitNotificationCreated(req.io, post.author.toString(), notification);
 
         // Send push notification
         const reactor = await User.findById(userId).select('username displayName');
@@ -803,6 +816,12 @@ router.post('/:id/share', auth, requireActiveUser, postLimiter, checkMuted, asyn
         postId: originalPost._id
       });
       await notification.save();
+
+      // Populate sender for Socket.IO emission
+      await notification.populate('sender', 'username displayName profilePhoto');
+
+      // ✅ Emit real-time notification
+      emitNotificationCreated(req.io, originalPost.author.toString(), notification);
     }
 
     // Populate the shared post
@@ -904,6 +923,9 @@ router.post('/:id/comment', auth, requireActiveUser, commentLimiter, sanitizeFie
       });
       await notification.save();
       await notification.populate('sender', 'username displayName profilePhoto');
+
+      // ✅ Emit real-time notification
+      emitNotificationCreated(req.io, post.author.toString(), notification);
 
       // Send push notification
       const commenter = await User.findById(userId).select('username displayName');

@@ -2,10 +2,12 @@ import express from 'express';
 const router = express.Router();
 import User from '../models/User.js';
 import FriendRequest from '../models/FriendRequest.js';
+import Notification from '../models/Notification.js';
 import auth from '../middleware/auth.js';
 import { friendRequestLimiter } from '../middleware/rateLimiter.js';
 import { checkFriendRequestPermission, checkBlocked } from '../middleware/privacy.js';
 import { sendPushNotification } from './pushNotifications.js';
+import { emitNotificationCreated } from '../utils/notificationEmitter.js';
 
 // @route   POST /api/friends/request/:userId
 // @desc    Send friend request
@@ -51,6 +53,23 @@ router.post('/request/:userId', auth, friendRequestLimiter, checkFriendRequestPe
     });
 
     await friendRequest.save();
+
+    // Create notification for receiver
+    const notification = new Notification({
+      recipient: receiverId,
+      sender: senderId,
+      type: 'friend_request',
+      message: 'sent you a friend request'
+    });
+    await notification.save();
+    await notification.populate('sender', 'username displayName profilePhoto');
+
+    // ✅ Emit real-time notification
+    emitNotificationCreated(req.io, receiverId, notification);
+
+    // ✅ Emit friend update event to both users
+    req.io.to(`user:${senderId}`).emit('friend:request_sent', { receiverId });
+    req.io.to(`user:${receiverId}`).emit('friend:request_received', { senderId });
 
     res.status(201).json({ message: 'Friend request sent', friendRequest });
   } catch (error) {
@@ -115,6 +134,27 @@ router.post('/accept/:requestId', auth, async (req, res) => {
       $addToSet: { friends: friendRequest.sender }
     });
 
+    // Create notification for sender
+    const notification = new Notification({
+      recipient: friendRequest.sender,
+      sender: req.userId,
+      type: 'friend_accept',
+      message: 'accepted your friend request'
+    });
+    await notification.save();
+    await notification.populate('sender', 'username displayName profilePhoto');
+
+    // ✅ Emit real-time notification
+    emitNotificationCreated(req.io, friendRequest.sender.toString(), notification);
+
+    // ✅ Emit friend update event to both users
+    req.io.to(`user:${friendRequest.sender}`).emit('friend:added', {
+      friendId: friendRequest.receiver
+    });
+    req.io.to(`user:${friendRequest.receiver}`).emit('friend:added', {
+      friendId: friendRequest.sender
+    });
+
     res.json({ message: 'Friend request accepted' });
   } catch (error) {
     console.error('Accept request error:', error);
@@ -139,6 +179,11 @@ router.post('/decline/:requestId', auth, async (req, res) => {
 
     friendRequest.status = 'declined';
     await friendRequest.save();
+
+    // ✅ Emit friend update event to sender (request was declined)
+    req.io.to(`user:${friendRequest.sender}`).emit('friend:request_declined', {
+      receiverId: friendRequest.receiver
+    });
 
     res.json({ message: 'Friend request declined' });
   } catch (error) {
@@ -171,6 +216,10 @@ router.delete('/:friendId', auth, async (req, res) => {
         { sender: friendId, receiver: userId }
       ]
     });
+
+    // ✅ Emit friend update event to both users
+    req.io.to(`user:${userId}`).emit('friend:removed', { friendId });
+    req.io.to(`user:${friendId}`).emit('friend:removed', { friendId: userId });
 
     res.json({ message: 'Friend removed' });
   } catch (error) {

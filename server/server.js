@@ -89,6 +89,7 @@ import Message from './models/Message.js';
 
 // Import push notification utility
 import { sendPushNotification } from './routes/pushNotifications.js';
+import { emitNotificationCreated } from './utils/notificationEmitter.js';
 
 const app = express();
 const server = http.createServer(app);
@@ -579,12 +580,10 @@ io.on('connection', (socket) => {
         link: `/messages`
       });
       await notification.save();
-      await notification.populate('sender', 'username profilePhoto');
+      await notification.populate('sender', 'username displayName profilePhoto');
 
-      // Send notification to recipient if online
-      if (recipientSocketId) {
-        io.to(recipientSocketId).emit('new_notification', notification);
-      }
+      // ✅ Emit real-time notification using centralized emitter
+      emitNotificationCreated(io, data.recipientId, notification);
 
       // Send push notification
       const sender = await User.findById(userId).select('username displayName');

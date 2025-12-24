@@ -31,6 +31,11 @@ router.put('/:id/read', authMiddleware, requireActiveUser, async (req, res) => {
       return res.status(404).json({ message: 'Notification not found' });
     }
 
+    // ✅ Emit real-time update to user
+    req.io.to(`user:${req.userId}`).emit('notification:read', {
+      notificationId: req.params.id
+    });
+
     res.json(notification);
   } catch (error) {
     res.status(500).json({ message: 'Error updating notification', error: error.message });
@@ -45,6 +50,9 @@ router.put('/read-all', authMiddleware, requireActiveUser, async (req, res) => {
       { read: true }
     );
 
+    // ✅ Emit real-time update to user
+    req.io.to(`user:${req.userId}`).emit('notification:read_all');
+
     res.json({ message: 'All notifications marked as read' });
   } catch (error) {
     res.status(500).json({ message: 'Error updating notifications', error: error.message });
@@ -55,6 +63,12 @@ router.put('/read-all', authMiddleware, requireActiveUser, async (req, res) => {
 router.delete('/:id', authMiddleware, requireActiveUser, async (req, res) => {
   try {
     await Notification.findOneAndDelete({ _id: req.params.id, recipient: req.userId });
+
+    // ✅ Emit real-time update to user
+    req.io.to(`user:${req.userId}`).emit('notification:deleted', {
+      notificationId: req.params.id
+    });
+
     res.json({ message: 'Notification deleted' });
   } catch (error) {
     res.status(500).json({ message: 'Error deleting notification', error: error.message });
