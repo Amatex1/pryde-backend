@@ -30,6 +30,27 @@ import {
   getActiveSessions,
   getTimelineSummary
 } from '../utils/sessionTimeline.js';
+import {
+  getAllClusters,
+  getClustersByFrequency,
+  getClustersByVersion,
+  getRecurringClusters,
+  getClusterSummary,
+  getCluster
+} from '../utils/bugClustering.js';
+import {
+  captureSessionSnapshot,
+  compareSessionSnapshots,
+  analyzeSessionDiff
+} from '../utils/sessionDiff.js';
+import {
+  generateRootCauseSuggestions,
+  formatSuggestions
+} from '../utils/rootCauseSuggestions.js';
+import {
+  getRollbackStatus,
+  resetMetrics
+} from '../utils/rollbackTriggers.js';
 
 const router = express.Router();
 
@@ -256,6 +277,81 @@ router.get('/timelines/:sessionId/snapshot', (req, res) => {
   const { sessionId } = req.params;
   const snapshot = getTimelineSnapshot(sessionId);
   res.json(snapshot);
+});
+
+// @route   GET /api/admin/debug/clusters
+// @desc    Get all error clusters
+// @access  Admin only
+router.get('/clusters', (req, res) => {
+  const { sortBy = 'frequency', version, minCount } = req.query;
+
+  let clusters;
+
+  if (version) {
+    clusters = getClustersByVersion(version);
+  } else if (minCount) {
+    clusters = getRecurringClusters(parseInt(minCount));
+  } else if (sortBy === 'frequency') {
+    clusters = getClustersByFrequency();
+  } else {
+    clusters = getAllClusters();
+  }
+
+  res.json({
+    clusters,
+    total: clusters.length
+  });
+});
+
+// @route   GET /api/admin/debug/clusters/summary
+// @desc    Get cluster summary
+// @access  Admin only
+router.get('/clusters/summary', (req, res) => {
+  const summary = getClusterSummary();
+  res.json(summary);
+});
+
+// @route   GET /api/admin/debug/clusters/:clusterId
+// @desc    Get specific cluster with analysis
+// @access  Admin only
+router.get('/clusters/:clusterId', (req, res) => {
+  const { clusterId } = req.params;
+  const cluster = getCluster(clusterId);
+
+  if (!cluster) {
+    return res.status(404).json({ message: 'Cluster not found' });
+  }
+
+  // Get session snapshots for failing sessions
+  const failingSnapshots = cluster.errors.slice(0, 10).map(error =>
+    captureSessionSnapshot(error.error)
+  );
+
+  // Generate root cause suggestions
+  const suggestions = generateRootCauseSuggestions(cluster, [], {});
+  const formattedSuggestions = formatSuggestions(suggestions);
+
+  res.json({
+    cluster,
+    failingSnapshots,
+    suggestions: formattedSuggestions
+  });
+});
+
+// @route   GET /api/admin/debug/rollback/status
+// @desc    Get rollback trigger status
+// @access  Admin only
+router.get('/rollback/status', (req, res) => {
+  const status = getRollbackStatus();
+  res.json(status);
+});
+
+// @route   POST /api/admin/debug/rollback/reset
+// @desc    Reset rollback metrics
+// @access  Admin only
+router.post('/rollback/reset', (req, res) => {
+  resetMetrics();
+  res.json({ message: 'Rollback metrics reset successfully' });
 });
 
 export default router;

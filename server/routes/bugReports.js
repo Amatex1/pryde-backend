@@ -11,6 +11,7 @@ import requireActiveUser from '../middleware/requireActiveUser.js';
 import BugReport from '../models/BugReport.js';
 import { getTimelineSnapshot } from '../utils/sessionTimeline.js';
 import { getAllMutations, getMutationsByStatus, MutationStatus } from '../utils/mutationTracker.js';
+import { clusterError } from '../utils/bugClustering.js';
 
 const router = express.Router();
 
@@ -86,12 +87,28 @@ router.post('/', auth, requireActiveUser, async (req, res) => {
     });
     
     await bugReport.save();
-    
+
     console.log(`🐛 [Bug Report] New report from user ${userId}: ${bugReport._id}`);
-    
+
+    // Cluster the error
+    const clusterResult = clusterError({
+      message: description,
+      stack: bugReport.sessionSnapshot.timeline?.events?.find(e => e.type === 'error')?.data?.stack || '',
+      route: currentRoute,
+      appVersion: frontendVersion,
+      serviceWorkerState: serviceWorker?.state || 'unknown',
+      authState: bugReport.sessionSnapshot.auth?.isAuthenticated ? 'authenticated' : 'unauthenticated',
+      sessionId,
+      userId: userId.toString()
+    });
+
+    console.log(`🐛 [Bug Report] Clustered as: ${clusterResult.clusterId} (${clusterResult.clusterCount} occurrences)`);
+
     res.status(201).json({
       message: 'Bug report submitted successfully',
-      reportId: bugReport._id
+      reportId: bugReport._id,
+      clusterId: clusterResult.clusterId,
+      isRecurring: clusterResult.isRecurring
     });
   } catch (error) {
     console.error('Submit bug report error:', error);
