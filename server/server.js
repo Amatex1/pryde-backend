@@ -184,8 +184,18 @@ const corsOptions = {
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-XSRF-TOKEN', 'x-auth-token', 'X-CSRF-Token'],
-  exposedHeaders: ['Authorization', 'X-CSRF-Token'], // Expose CSRF token for cross-origin requests
+  allowedHeaders: [
+    'Content-Type',
+    'Authorization',
+    'X-Requested-With',
+    'X-XSRF-TOKEN',
+    'x-auth-token',
+    'X-CSRF-Token',
+    'X-Frontend-Version',  // Version pinning for auto-refresh detection
+    'X-Session-Id',        // Session tracking
+    'X-Mutation-Id'        // Mutation tracking for consistency
+  ],
+  exposedHeaders: ['Authorization', 'X-CSRF-Token', 'X-Mutation-Id'], // Expose headers for cross-origin requests
   optionsSuccessStatus: 200
 };
 
