@@ -12,7 +12,12 @@
 
 import express from 'express';
 import auth from '../middleware/auth.js';
-import { getStabilityScore } from '../utils/stabilityScore.js';
+import {
+  calculateStabilityScore,
+  getStabilityLevel,
+  getStabilityMessage,
+  getUserStabilityReport
+} from '../utils/stabilityScore.js';
 import { getSafeModeStatus, enableSafeMode, disableSafeMode } from '../utils/autoSafeMode.js';
 import { captureSessionSnapshot } from '../utils/sessionDiff.js';
 import { reportBugWithSnapshot } from '../utils/bugClustering.js';
@@ -35,11 +40,11 @@ router.get('/status', (req, res) => {
   try {
     const userId = req.userId.toString();
     const sessionId = req.headers['x-session-id'] || 'unknown';
-    
-    const stabilityScore = getStabilityScore(userId);
+
+    const stabilityScore = getUserStabilityReport(userId);
     const safeModeStatus = getSafeModeStatus(sessionId);
     const diagnosticsOptIn = diagnosticsPreferences.get(userId) || false;
-    
+
     res.json({
       stabilityScore,
       safeModeEnabled: safeModeStatus.enabled,
@@ -151,10 +156,10 @@ router.post('/report-bug', async (req, res) => {
 router.get('/recommendations', (req, res) => {
   try {
     const userId = req.userId.toString();
-    const stabilityScore = getStabilityScore(userId);
-    
+    const stabilityScore = getUserStabilityReport(userId);
+
     const recommendations = [];
-    
+
     if (stabilityScore.score < 70) {
       recommendations.push({
         type: 'enable_safe_mode',
@@ -163,8 +168,8 @@ router.get('/recommendations', (req, res) => {
         priority: 'high'
       });
     }
-    
-    if (stabilityScore.metrics.errorRate > 0.1) {
+
+    if (stabilityScore.metrics.errors > 5) {
       recommendations.push({
         type: 'clear_cache',
         title: 'Clear Cache',

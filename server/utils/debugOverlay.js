@@ -16,6 +16,9 @@
  * - safe mode status
  */
 
+import { getUserStabilityReport } from './stabilityScore.js';
+import { getSafeModeStatus } from './autoSafeMode.js';
+
 /**
  * Get debug overlay data for current user
  * @param {string} userId - User ID
@@ -23,12 +26,9 @@
  * @returns {object} Debug overlay data
  */
 export function getDebugOverlayData(userId, sessionId) {
-  const { getStabilityScore } = require('./stabilityScore.js');
-  const { getSafeModeStatus } = require('./autoSafeMode.js');
-  
-  const stabilityScore = getStabilityScore(userId);
+  const stabilityScore = getUserStabilityReport(userId);
   const safeModeStatus = getSafeModeStatus(sessionId);
-  
+
   return {
     timestamp: Date.now(),
     userId,
