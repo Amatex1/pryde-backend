@@ -13,6 +13,7 @@ import { sendPushNotification } from './pushNotifications.js';
 import logger from '../utils/logger.js';
 import { getBlockedUserIds } from '../utils/blockHelper.js';
 import { emitNotificationCreated } from '../utils/notificationEmitter.js'; // ✅ Socket.IO notifications
+import { deleteFromGridFS } from './upload.js'; // For deleting images from storage
 
 // PHASE 1 REFACTOR: Helper function to sanitize post for private likes
 // Removes like count and list of who liked, only shows if current user liked
@@ -370,7 +371,7 @@ router.put('/:id', auth, requireActiveUser, sanitizeFields(['content', 'contentW
       return res.status(403).json({ message: 'Not authorized to edit this post' });
     }
 
-    const { content, images, visibility, hiddenFrom, sharedWith } = req.body;
+    const { content, images, media, visibility, hiddenFrom, sharedWith, deletedImages, deletedMedia } = req.body;
 
     // Save to edit history if content changed
     if (content !== undefined && content !== post.content) {
@@ -384,8 +385,63 @@ router.put('/:id', auth, requireActiveUser, sanitizeFields(['content', 'contentW
       });
     }
 
+    // Handle deleted images - remove from storage and post.images array
+    if (deletedImages && Array.isArray(deletedImages) && deletedImages.length > 0) {
+      logger.info(`🗑️ Processing ${deletedImages.length} deleted images for post ${post._id}`);
+
+      for (const imageUrl of deletedImages) {
+        // Safety check: only delete if image belongs to this post
+        if (post.images && post.images.includes(imageUrl)) {
+          try {
+            await deleteFromGridFS(imageUrl);
+            // Remove from post.images array
+            post.images = post.images.filter(img => img !== imageUrl);
+            logger.info(`✅ Deleted image: ${imageUrl}`);
+          } catch (deleteError) {
+            logger.error(`❌ Failed to delete image: ${imageUrl}`, deleteError);
+            // Continue with other deletions even if one fails
+          }
+        } else {
+          logger.warn(`⚠️ Attempted to delete image not owned by post: ${imageUrl}`);
+        }
+      }
+    }
+
+    // Handle deleted media - remove from storage and post.media array
+    if (deletedMedia && Array.isArray(deletedMedia) && deletedMedia.length > 0) {
+      logger.info(`🗑️ Processing ${deletedMedia.length} deleted media for post ${post._id}`);
+
+      for (const mediaUrl of deletedMedia) {
+        // Safety check: only delete if media belongs to this post
+        const existingMedia = post.media && post.media.find(m => m.url === mediaUrl);
+        if (existingMedia) {
+          try {
+            // Delete main file
+            await deleteFromGridFS(mediaUrl);
+
+            // Delete responsive sizes if they exist
+            if (existingMedia.sizes) {
+              if (existingMedia.sizes.thumbnail) await deleteFromGridFS(existingMedia.sizes.thumbnail);
+              if (existingMedia.sizes.small) await deleteFromGridFS(existingMedia.sizes.small);
+              if (existingMedia.sizes.medium) await deleteFromGridFS(existingMedia.sizes.medium);
+            }
+
+            // Remove from post.media array
+            post.media = post.media.filter(m => m.url !== mediaUrl);
+            logger.info(`✅ Deleted media: ${mediaUrl}`);
+          } catch (deleteError) {
+            logger.error(`❌ Failed to delete media: ${mediaUrl}`, deleteError);
+          }
+        } else {
+          logger.warn(`⚠️ Attempted to delete media not owned by post: ${mediaUrl}`);
+        }
+      }
+    }
+
     if (content !== undefined) post.content = content;
-    if (images) post.images = images;
+    // Only update images/media if explicitly provided (after deletions processed above)
+    if (images !== undefined) post.images = images;
+    if (media !== undefined) post.media = media;
     if (visibility) post.visibility = visibility;
     if (hiddenFrom !== undefined) post.hiddenFrom = hiddenFrom;
     if (sharedWith !== undefined) post.sharedWith = sharedWith;

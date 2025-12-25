@@ -46,6 +46,43 @@ mongoose.connection.once('open', () => {
 });
 
 /**
+ * Delete a file from GridFS by filename
+ * Handles both full URLs and just filenames
+ * @param {string} fileUrl - The file URL or filename to delete
+ * @returns {Promise<boolean>} - True if deleted, false if not found
+ */
+export const deleteFromGridFS = async (fileUrl) => {
+  try {
+    if (!gridfsBucket) {
+      console.error('❌ GridFS not initialized');
+      return false;
+    }
+
+    // Extract filename from URL if needed (e.g., /upload/file/1234-image.webp -> 1234-image.webp)
+    let filename = fileUrl;
+    if (fileUrl.includes('/')) {
+      filename = fileUrl.split('/').pop();
+    }
+
+    // Find the file in GridFS
+    const files = await gridfsBucket.find({ filename }).toArray();
+
+    if (!files || files.length === 0) {
+      console.log(`⚠️ File not found in GridFS: ${filename}`);
+      return false;
+    }
+
+    // Delete the file
+    await gridfsBucket.delete(files[0]._id);
+    console.log(`🗑️ Deleted file from GridFS: ${filename}`);
+    return true;
+  } catch (error) {
+    console.error(`❌ Error deleting file from GridFS: ${fileUrl}`, error);
+    return false;
+  }
+};
+
+/**
  * Save processed file to GridFS
  * Strips EXIF data from images before saving
  * @param {Object} file - Multer file object
