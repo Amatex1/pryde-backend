@@ -4,21 +4,40 @@ import webpush from 'web-push';
 import User from '../models/User.js';
 import auth from '../middleware/auth.js';
 
-// VAPID keys should be generated and stored in environment variables
+// VAPID keys MUST be set in environment variables
 // Generate keys with: npx web-push generate-vapid-keys
+// SECURITY: No fallback keys - crash in production if missing
 const vapidKeys = {
-  publicKey: process.env.VAPID_PUBLIC_KEY || 'BEl62iUYgUivxIkv69yViEuiBIa-Ib27SkeRMzN0hFx1cBE5rZ3m8tD8FGNi2nD_X2sIbCQMnvYaRhbqQ9UqGR4',
-  privateKey: process.env.VAPID_PRIVATE_KEY || 'UUxI4O8-FbRouAevSmBQ6o18BVGTLqBwZfKJXZF-eJE'
+  publicKey: process.env.VAPID_PUBLIC_KEY,
+  privateKey: process.env.VAPID_PRIVATE_KEY
 };
 
-webpush.setVapidDetails(
-  'mailto:contact@prydesocial.com',
-  vapidKeys.publicKey,
-  vapidKeys.privateKey
-);
+// SECURITY: Require VAPID keys in production
+if (process.env.NODE_ENV === 'production') {
+  if (!vapidKeys.publicKey || !vapidKeys.privateKey) {
+    throw new Error('VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY are required in production! Generate with: npx web-push generate-vapid-keys');
+  }
+}
+
+// Only set VAPID details if keys are available
+if (vapidKeys.publicKey && vapidKeys.privateKey) {
+  webpush.setVapidDetails(
+    'mailto:contact@prydesocial.com',
+    vapidKeys.publicKey,
+    vapidKeys.privateKey
+  );
+} else {
+  console.warn('⚠️ VAPID keys not configured. Push notifications will not work.');
+}
 
 // Get VAPID public key
 router.get('/vapid-public-key', (req, res) => {
+  if (!vapidKeys.publicKey) {
+    return res.status(503).json({
+      message: 'Push notifications not configured',
+      publicKey: null
+    });
+  }
   res.json({ publicKey: vapidKeys.publicKey });
 });
 

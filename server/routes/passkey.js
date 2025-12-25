@@ -17,7 +17,8 @@ import {
   getClientIp,
   cleanupOldSessions,
   findOrCreateSession,
-  getIpGeolocation
+  getIpGeolocation,
+  enforceMaxSessions
 } from '../utils/sessionUtils.js';
 import { generateTokenPair } from '../utils/tokenUtils.js';
 
@@ -401,6 +402,9 @@ router.post('/login-finish', async (req, res) => {
 
     // Add new session
     user.activeSessions.push(session);
+
+    // Enforce max concurrent sessions (removes oldest if limit exceeded)
+    enforceMaxSessions(user);
 
     await user.save();
 

@@ -237,3 +237,67 @@ export function limitLoginHistory(user) {
   return user;
 }
 
+// Maximum concurrent sessions per user
+const MAX_SESSIONS_PER_USER = 5;
+
+/**
+ * Enforce maximum concurrent sessions limit
+ * If limit is exceeded, removes oldest sessions first
+ * @param {Object} user - User document with activeSessions array
+ * @param {Function} logSecurityEvent - Optional callback to log security events
+ * @returns {Object} Result with removedSessions array
+ */
+export function enforceMaxSessions(user, logSecurityEvent = null) {
+  const result = { removedSessions: [] };
+
+  if (!user.activeSessions || user.activeSessions.length <= MAX_SESSIONS_PER_USER) {
+    return result;
+  }
+
+  // Sort sessions by lastActive (oldest first)
+  const sortedSessions = [...user.activeSessions].sort((a, b) =>
+    new Date(a.lastActive) - new Date(b.lastActive)
+  );
+
+  // Calculate how many sessions to remove
+  const sessionsToRemove = sortedSessions.length - MAX_SESSIONS_PER_USER;
+
+  if (sessionsToRemove > 0) {
+    // Get the oldest sessions to remove
+    const removedSessions = sortedSessions.slice(0, sessionsToRemove);
+    result.removedSessions = removedSessions;
+
+    // Keep only the newest MAX_SESSIONS_PER_USER sessions
+    const sessionIdsToKeep = sortedSessions.slice(sessionsToRemove).map(s => s.sessionId);
+    user.activeSessions = user.activeSessions.filter(s =>
+      sessionIdsToKeep.includes(s.sessionId)
+    );
+
+    // Log security event if callback provided
+    if (logSecurityEvent && removedSessions.length > 0) {
+      logSecurityEvent({
+        type: 'max_sessions_enforced',
+        severity: 'low',
+        userId: user._id,
+        details: {
+          removedCount: removedSessions.length,
+          removedSessions: removedSessions.map(s => ({
+            sessionId: s.sessionId,
+            deviceInfo: s.deviceInfo,
+            ipAddress: s.ipAddress,
+            lastActive: s.lastActive
+          })),
+          remainingSessions: MAX_SESSIONS_PER_USER
+        }
+      });
+    }
+
+    console.log(`🔒 Enforced max sessions for user ${user._id}: removed ${removedSessions.length} oldest session(s)`);
+  }
+
+  return result;
+}
+
+// Export the constant for use elsewhere
+export const MAX_CONCURRENT_SESSIONS = MAX_SESSIONS_PER_USER;
+

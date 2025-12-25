@@ -126,10 +126,30 @@ export function isEncrypted(text) {
   if (!text || typeof text !== 'string') {
     return false;
   }
-  
+
   // Encrypted messages are hex strings with specific minimum length
   const minLength = (SALT_LENGTH + IV_LENGTH + TAG_LENGTH) * 2; // *2 for hex encoding
   return /^[0-9a-f]+$/i.test(text) && text.length >= minLength;
+}
+
+/**
+ * Encrypt a string value (alias for encryptMessage)
+ * Use for encrypting sensitive data like 2FA secrets
+ * @param {string} value - Plain text to encrypt
+ * @returns {string} - Encrypted text in hex format
+ */
+export function encryptString(value) {
+  return encryptMessage(value);
+}
+
+/**
+ * Decrypt a string value (alias for decryptMessage)
+ * Use for decrypting sensitive data like 2FA secrets
+ * @param {string} encryptedValue - Encrypted text in hex format
+ * @returns {string} - Decrypted plain text
+ */
+export function decryptString(encryptedValue) {
+  return decryptMessage(encryptedValue);
 }
 
 // Export for testing

@@ -775,11 +775,12 @@ userSchema.index({ resetPasswordToken: 1 });
 userSchema.index({ lastSeen: -1 });
 
 // Hash password before saving
+// SECURITY: Using 12 rounds for stronger protection (OWASP recommended minimum)
 userSchema.pre('save', async function(next) {
   if (!this.isModified('password')) return next();
-  
+
   try {
-    const salt = await bcrypt.genSalt(10);
+    const salt = await bcrypt.genSalt(12);
     this.password = await bcrypt.hash(this.password, salt);
     next();
   } catch (error) {

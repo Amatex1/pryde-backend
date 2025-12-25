@@ -151,8 +151,8 @@ router.post('/initiate-recovery', async (req, res) => {
       });
     }
 
-    // Hash the new password
-    const salt = await bcrypt.genSalt(10);
+    // Hash the new password (SECURITY: 12 rounds for stronger protection)
+    const salt = await bcrypt.genSalt(12);
     const hashedPassword = await bcrypt.hash(newPassword, salt);
 
     // Create recovery request

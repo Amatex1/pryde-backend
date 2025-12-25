@@ -16,7 +16,8 @@ import {
   cleanupOldSessions,
   limitLoginHistory,
   findOrCreateSession,
-  getIpGeolocation
+  getIpGeolocation,
+  enforceMaxSessions
 } from '../utils/sessionUtils.js';
 import { logEmailVerification, logPasswordChange } from '../utils/securityLogger.js';
 import { loginLimiter, signupLimiter, passwordResetLimiter } from '../middleware/rateLimiter.js';
@@ -24,6 +25,23 @@ import { validateSignup, validateLogin } from '../middleware/validation.js';
 import logger from '../utils/logger.js';
 import { generateTokenPair, getRefreshTokenExpiry } from '../utils/tokenUtils.js';
 import { getRefreshTokenCookieOptions } from '../utils/cookieUtils.js';
+import { decryptString, isEncrypted } from '../utils/encryption.js';
+
+/**
+ * Helper to get the decrypted 2FA secret
+ * Handles both encrypted and legacy unencrypted secrets
+ */
+function getDecrypted2FASecret(user) {
+  if (!user.twoFactorSecret) return null;
+
+  // Check if secret is encrypted (hex string of sufficient length)
+  if (isEncrypted(user.twoFactorSecret)) {
+    return decryptString(user.twoFactorSecret);
+  }
+
+  // Legacy: return as-is (base32 encoded TOTP secret)
+  return user.twoFactorSecret;
+}
 
 // @route   GET /api/auth/status
 // @desc    Check authentication status (lightweight endpoint for CSRF initialization)
@@ -406,6 +424,9 @@ router.post('/signup', validateAgeBeforeRateLimit, signupLimiter, validateSignup
       lastActive: new Date()
     });
 
+    // Enforce max concurrent sessions (removes oldest if limit exceeded)
+    enforceMaxSessions(user);
+
     await user.save();
 
     logger.debug(`New user registered: ${username} (${email})`);
@@ -744,6 +765,9 @@ router.post('/login', loginLimiter, validateLogin, async (req, res) => {
     // Add new session
     user.activeSessions.push(session);
 
+    // Enforce max concurrent sessions (removes oldest if limit exceeded)
+    enforceMaxSessions(user);
+
     // Log successful login with location
     user.loginHistory.push({
       ipAddress,
@@ -887,9 +911,12 @@ router.post('/verify-2fa-login', loginLimiter, async (req, res) => {
       user.twoFactorBackupCodes[backupCodeIndex].used = true;
       verified = true;
     } else {
+      // Decrypt secret for verification (handles encrypted and legacy secrets)
+      const decryptedSecret = getDecrypted2FASecret(user);
+
       // Verify TOTP token
       verified = speakeasy.totp.verify({
-        secret: user.twoFactorSecret,
+        secret: decryptedSecret,
         encoding: 'base32',
         token: twoFactorToken,
         window: 2
@@ -1024,6 +1051,9 @@ router.post('/verify-2fa-login', loginLimiter, async (req, res) => {
     } else {
       user.activeSessions.push(baseSession);
     }
+
+    // Enforce max concurrent sessions (removes oldest if limit exceeded)
+    enforceMaxSessions(user);
 
     await user.save();
 

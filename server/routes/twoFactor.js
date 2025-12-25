@@ -3,8 +3,25 @@ import speakeasy from 'speakeasy';
 import QRCode from 'qrcode';
 import { authenticateToken } from '../middleware/auth.js';
 import User from '../models/User.js';
+import { encryptString, decryptString, isEncrypted } from '../utils/encryption.js';
 
 const router = express.Router();
+
+/**
+ * Helper to get the decrypted 2FA secret
+ * Handles both encrypted and legacy unencrypted secrets
+ */
+function getDecrypted2FASecret(user) {
+  if (!user.twoFactorSecret) return null;
+
+  // Check if secret is encrypted (hex string of sufficient length)
+  if (isEncrypted(user.twoFactorSecret)) {
+    return decryptString(user.twoFactorSecret);
+  }
+
+  // Legacy: return as-is (base32 encoded TOTP secret)
+  return user.twoFactorSecret;
+}
 
 // Generate 2FA secret and QR code
 router.post('/setup', authenticateToken, async (req, res) => {
@@ -38,8 +55,9 @@ router.post('/setup', authenticateToken, async (req, res) => {
       });
     }
 
-    // Save secret and backup codes (but don't enable 2FA yet)
-    user.twoFactorSecret = secret.base32;
+    // Save ENCRYPTED secret and backup codes (but don't enable 2FA yet)
+    // SECURITY: 2FA secrets are encrypted at rest
+    user.twoFactorSecret = encryptString(secret.base32);
     user.twoFactorBackupCodes = backupCodes;
     await user.save();
 
@@ -74,9 +92,12 @@ router.post('/verify', authenticateToken, async (req, res) => {
       return res.status(400).json({ message: 'Please set up 2FA first' });
     }
 
+    // Decrypt secret for verification
+    const decryptedSecret = getDecrypted2FASecret(user);
+
     // Verify token
     const verified = speakeasy.totp.verify({
-      secret: user.twoFactorSecret,
+      secret: decryptedSecret,
       encoding: 'base32',
       token: token,
       window: 2 // Allow 2 time steps before/after for clock drift
@@ -136,9 +157,12 @@ router.post('/verify-login', async (req, res) => {
       });
     }
 
+    // Decrypt secret for verification
+    const decryptedSecret = getDecrypted2FASecret(user);
+
     // Verify TOTP token
     const verified = speakeasy.totp.verify({
-      secret: user.twoFactorSecret,
+      secret: decryptedSecret,
       encoding: 'base32',
       token: token,
       window: 2

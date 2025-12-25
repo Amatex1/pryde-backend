@@ -111,8 +111,9 @@ const app = express();
 const server = http.createServer(app);
 
 // Allowed origins for CORS
+// SECURITY: Explicit allowlist only - no broad regex patterns
 const allowedOrigins = [
-  // Production domains (replace with your actual domain)
+  // Production domains
   'https://prydesocial.com',
   'https://www.prydesocial.com',
   'https://prydeapp.com',
@@ -123,10 +124,10 @@ const allowedOrigins = [
   'http://localhost:5173',
   // Render URLs
   'https://pryde-frontend.onrender.com',
+  'https://pryde-backend.onrender.com',
   'https://pryde-1flx.onrender.com',
-  // Cloudflare Pages URLs
+  // Cloudflare Pages URLs (explicit only - no regex)
   'https://pryde-social.pages.dev',
-  /\.pages\.dev$/, // Allow all Cloudflare Pages subdomains
   config.frontendURL,
   config.cloudflareURL
 ].filter(Boolean); // Remove any undefined values
@@ -162,6 +163,7 @@ const io = new Server(server, {
 setSocketIO(io);
 
 // Middleware - Enhanced CORS configuration
+// SECURITY: Strict allowlist - no regex patterns for security
 const corsOptions = {
   origin: function(origin, callback) {
     // Allow requests with no origin (like mobile apps or curl requests)
@@ -170,21 +172,8 @@ const corsOptions = {
       return;
     }
 
-    // Check if origin is in allowed list (string match)
-    if (allowedOrigins.indexOf(origin) !== -1) {
-      callback(null, true);
-      return;
-    }
-
-    // Check if origin matches any regex patterns
-    const isAllowed = allowedOrigins.some(allowed => {
-      if (allowed instanceof RegExp) {
-        return allowed.test(origin);
-      }
-      return false;
-    });
-
-    if (isAllowed) {
+    // Check if origin is in allowed list (exact string match only)
+    if (allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
       console.log(`CORS blocked origin: ${origin}`);
@@ -224,29 +213,32 @@ if (config.nodeEnv === 'production') {
 }
 
 // Security middleware - Helmet for security headers
-// ⚠️ CSP DISABLED IN HELMET - Using custom CSP override below to fix Workbox warnings
+// CSP is ENFORCED in production, report-only in development
+const isProd = config.nodeEnv === 'production';
 app.use(helmet({
-  contentSecurityPolicy: false, // ❌ DISABLED - Custom CSP override below
-  // ORIGINAL CSP CONFIG (COMMENTED OUT):
-  // contentSecurityPolicy: {
-  //   directives: {
-  //     defaultSrc: ["'self'"],
-  //     // Note: 'unsafe-inline' is a security risk but may be needed for React apps
-  //     // Consider using nonces or hashes in production for better security
-  //     scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"], // unsafe-eval needed for React DevTools
-  //     styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
-  //     imgSrc: ["'self'", "data:", "https:", "blob:"],
-  //     connectSrc: ["'self'", ...allowedOrigins.filter(o => typeof o === 'string')],
-  //     fontSrc: ["'self'", "data:", "https://fonts.gstatic.com"],
-  //     objectSrc: ["'none'"],
-  //     mediaSrc: ["'self'", "blob:"],
-  //     frameSrc: ["'none'"],
-  //     baseUri: ["'self'"],
-  //     formAction: ["'self'"],
-  //     frameAncestors: ["'none'"], // Prevent clickjacking
-  //     upgradeInsecureRequests: config.nodeEnv === 'production' ? [] : null, // Force HTTPS in production
-  //   },
-  // },
+  contentSecurityPolicy: {
+    reportOnly: !isProd, // Enforce in production, report-only in dev
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "blob:"], // unsafe-* needed for React, blob: for Workbox
+      scriptSrcElem: ["'self'", "'unsafe-inline'", "blob:"], // For Workbox service worker
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", "data:", "blob:"],
+      connectSrc: [
+        "'self'",
+        "https://pryde-backend.onrender.com",
+        "wss://pryde-backend.onrender.com",
+        "https://prydeapp.com"
+      ],
+      fontSrc: ["'self'", "data:"],
+      mediaSrc: ["'self'", "blob:"],
+      workerSrc: ["'self'", "blob:"], // For Workbox service worker
+      objectSrc: ["'none'"],
+      frameAncestors: ["'self'"],
+      baseUri: ["'self'"],
+      formAction: ["'self'"]
+    }
+  },
   crossOriginEmbedderPolicy: false, // Allow embedding for uploads
   crossOriginResourcePolicy: { policy: "cross-origin" }, // Allow cross-origin resources
   hsts: {
@@ -302,59 +294,6 @@ app.use(setCsrfToken);
 // CSRF Protection - Verify token on state-changing requests (POST, PUT, PATCH, DELETE)
 // This provides defense-in-depth even with JWT authentication
 app.use(enforceCsrf);
-
-// ====================================
-// CSP OVERRIDE MIDDLEWARE
-// ====================================
-// 🔧 FIX: Workbox Service Worker CSP warnings
-// MUST be AFTER helmet, cors, auth, csrf, etc.
-// MUST be BEFORE routes
-//
-// PROBLEM:
-// - Workbox generates blob: URLs for service worker scripts
-// - Default CSP blocks blob: in script-src
-// - Causes "script-src 'none'" warnings in console
-// - Cached CSP headers can break auth after deployment
-//
-// SOLUTION:
-// - Remove any cached CSP headers
-// - Set CSP-Report-Only (non-blocking, logs violations)
-// - Allow blob: for script-src and worker-src
-// - Maintain strict security for other directives
-//
-// SECURITY:
-// ✅ Report-Only mode (doesn't block, only reports)
-// ✅ Strict default-src 'self'
-// ✅ blob: only for scripts and workers (required for Workbox)
-// ✅ No 'unsafe-inline' or 'unsafe-eval' in script-src
-// ✅ frame-ancestors 'none' (prevent clickjacking)
-// ✅ object-src 'none' (prevent Flash/plugin exploits)
-//
-app.use((req, res, next) => {
-  // Remove any existing CSP headers (prevents cached header conflicts)
-  res.removeHeader("Content-Security-Policy");
-  res.removeHeader("Content-Security-Policy-Report-Only");
-
-  // Set CSP-Report-Only (non-blocking, logs violations)
-  res.setHeader(
-    "Content-Security-Policy-Report-Only",
-    [
-      "default-src 'self'",
-      "script-src 'self' blob:",
-      "script-src-elem 'self' blob:",
-      "style-src 'self' 'unsafe-inline'",
-      "img-src 'self' data: blob:",
-      "font-src 'self'",
-      "connect-src 'self' https://pryde-social.onrender.com wss:",
-      "worker-src 'self' blob:",
-      "frame-ancestors 'none'",
-      "base-uri 'self'",
-      "object-src 'none'"
-    ].join("; ")
-  );
-
-  next();
-});
 
 // Store online users
 const onlineUsers = new Map(); // userId -> socketId
