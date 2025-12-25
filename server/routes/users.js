@@ -11,6 +11,7 @@ import requireActiveUser from '../middleware/requireActiveUser.js';
 import { checkProfileVisibility, checkBlocked } from '../middleware/privacy.js';
 import { sanitizeFields } from '../middleware/sanitize.js';
 import mongoose from 'mongoose';
+import { getUserStabilityReport } from '../utils/stabilityScore.js';
 
 // PHASE 1 REFACTOR: Helper function to sanitize user data for private follower counts
 // Keeps counts but removes detailed arrays, only shows if current user follows them
@@ -715,6 +716,19 @@ router.patch('/me/creator', auth, requireActiveUser, async (req, res) => {
     deprecated: true,
     removedDate: '2025-12-25'
   });
+});
+
+// @route   GET /api/users/me/stability
+// @desc    Get user stability score
+// @access  Private
+router.get('/me/stability', auth, async (req, res) => {
+  try {
+    const report = getUserStabilityReport(req.userId);
+    res.json(report);
+  } catch (error) {
+    console.error('Get stability score error:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
 });
 
 // @route   PATCH /api/users/me/ally

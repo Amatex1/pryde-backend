@@ -51,6 +51,27 @@ import {
   getRollbackStatus,
   resetMetrics
 } from '../utils/rollbackTriggers.js';
+import {
+  getSessionMetricsDebug,
+  getAllActiveSessions,
+  getSafeModeSummary
+} from '../utils/autoSafeMode.js';
+import {
+  getAllDeploys,
+  getCanaryConfig,
+  promoteToStable,
+  isCanaryUser
+} from '../utils/canaryDeploy.js';
+import {
+  getUserStabilityReport,
+  getAllUserStabilityReports,
+  getStabilitySummary
+} from '../utils/stabilityScore.js';
+import {
+  getDeployHealthDashboard,
+  getDeployComparison,
+  getRollbackEvents
+} from '../utils/deployHealthDashboard.js';
 
 const router = express.Router();
 
@@ -352,6 +373,143 @@ router.get('/rollback/status', (req, res) => {
 router.post('/rollback/reset', (req, res) => {
   resetMetrics();
   res.json({ message: 'Rollback metrics reset successfully' });
+});
+
+// @route   GET /api/admin/debug/safe-mode/sessions
+// @desc    Get all active sessions with Safe Mode metrics
+// @access  Admin only
+router.get('/safe-mode/sessions', (req, res) => {
+  const sessions = getAllActiveSessions();
+  res.json({
+    sessions,
+    total: sessions.length
+  });
+});
+
+// @route   GET /api/admin/debug/safe-mode/sessions/:sessionId
+// @desc    Get Safe Mode metrics for specific session
+// @access  Admin only
+router.get('/safe-mode/sessions/:sessionId', (req, res) => {
+  const { sessionId } = req.params;
+  const metrics = getSessionMetricsDebug(sessionId);
+  res.json(metrics);
+});
+
+// @route   GET /api/admin/debug/safe-mode/summary
+// @desc    Get Safe Mode activation summary
+// @access  Admin only
+router.get('/safe-mode/summary', (req, res) => {
+  const summary = getSafeModeSummary();
+  res.json(summary);
+});
+
+// @route   GET /api/admin/debug/deploys
+// @desc    Get all active deploys
+// @access  Admin only
+router.get('/deploys', (req, res) => {
+  const deploys = getAllDeploys();
+  res.json({
+    deploys,
+    total: deploys.length
+  });
+});
+
+// @route   GET /api/admin/debug/deploys/canary-config
+// @desc    Get canary configuration
+// @access  Admin only
+router.get('/deploys/canary-config', (req, res) => {
+  const config = getCanaryConfig();
+  res.json(config);
+});
+
+// @route   POST /api/admin/debug/deploys/:version/promote
+// @desc    Promote canary deploy to stable
+// @access  Admin only
+router.post('/deploys/:version/promote', (req, res) => {
+  const { version } = req.params;
+
+  try {
+    const deploy = promoteToStable(version);
+    res.json({
+      message: `Deploy ${version} promoted to stable`,
+      deploy: deploy.getHealthReport()
+    });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+});
+
+// @route   GET /api/admin/debug/deploys/compare
+// @desc    Compare two deploys
+// @access  Admin only
+router.get('/deploys/compare', (req, res) => {
+  const { version1, version2 } = req.query;
+
+  if (!version1 || !version2) {
+    return res.status(400).json({ message: 'Both version1 and version2 are required' });
+  }
+
+  try {
+    const comparison = getDeployComparison(version1, version2);
+    res.json(comparison);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+});
+
+// @route   GET /api/admin/debug/stability/users
+// @desc    Get all user stability reports
+// @access  Admin only
+router.get('/stability/users', (req, res) => {
+  const reports = getAllUserStabilityReports();
+  res.json({
+    reports,
+    total: reports.length
+  });
+});
+
+// @route   GET /api/admin/debug/stability/users/:userId
+// @desc    Get stability report for specific user
+// @access  Admin only
+router.get('/stability/users/:userId', (req, res) => {
+  const { userId } = req.params;
+  const report = getUserStabilityReport(userId);
+  res.json(report);
+});
+
+// @route   GET /api/admin/debug/stability/summary
+// @desc    Get stability summary
+// @access  Admin only
+router.get('/stability/summary', (req, res) => {
+  const summary = getStabilitySummary();
+  res.json(summary);
+});
+
+// @route   GET /api/admin/debug/health-dashboard
+// @desc    Get deploy health dashboard
+// @access  Admin only
+router.get('/health-dashboard', (req, res) => {
+  const { platform, version, timeRange } = req.query;
+
+  const dashboard = getDeployHealthDashboard({
+    platform,
+    version,
+    timeRange
+  });
+
+  res.json(dashboard);
+});
+
+// @route   GET /api/admin/debug/rollback-events
+// @desc    Get rollback events
+// @access  Admin only
+router.get('/rollback-events', (req, res) => {
+  const { limit = 10 } = req.query;
+  const events = getRollbackEvents(parseInt(limit));
+  res.json({
+    events,
+    total: events.length
+  });
 });
 
 export default router;
