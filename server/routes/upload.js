@@ -4,6 +4,7 @@ import multer from 'multer';
 import mongoose from 'mongoose';
 import auth from '../middleware/auth.js';
 import User from '../models/User.js';
+import TempMedia from '../models/TempMedia.js';
 import config from '../config/config.js';
 import { uploadLimiter } from '../middleware/rateLimiter.js';
 import { stripExifData } from '../middleware/imageProcessing.js';
@@ -475,6 +476,9 @@ router.post('/post-media', auth, uploadLimiter, (req, res) => {
 
       console.log(`📤 Processing ${req.files.length} file(s)...`);
 
+      // Get draftId from request body (optional - for attaching to existing draft)
+      const { draftId } = req.body;
+
       // Process each file and save to GridFS with EXIF stripping and responsive sizes
       const mediaUrls = await Promise.all(req.files.map(async (file) => {
         // Generate responsive sizes for images (not videos or GIFs)
@@ -505,6 +509,41 @@ router.post('/post-media', auth, uploadLimiter, (req, res) => {
           };
         }
 
+        // CRITICAL: Create TempMedia record to track this upload
+        // This enables proper cleanup and prevents ghost media on refresh
+        try {
+          const tempMedia = new TempMedia({
+            userId: req.userId,
+            filename: fileInfo.filename,
+            url,
+            type,
+            mimetype: file.mimetype,
+            fileSize: file.size,
+            sizes: fileInfo.sizes ? {
+              thumbnail: fileInfo.sizes.thumbnail ? `/upload/file/${fileInfo.sizes.thumbnail}` : null,
+              small: fileInfo.sizes.small ? `/upload/file/${fileInfo.sizes.small}` : null,
+              medium: fileInfo.sizes.medium ? `/upload/file/${fileInfo.sizes.medium}` : null
+            } : undefined,
+            status: draftId ? 'attached' : 'temporary',
+            ownerType: draftId ? 'draft' : 'none',
+            ownerId: draftId || null,
+            attachedAt: draftId ? new Date() : null
+          });
+
+          await tempMedia.save();
+
+          // Add tempMediaId to result for frontend tracking
+          result.tempMediaId = tempMedia._id;
+
+          if (config.nodeEnv === 'development') {
+            console.log(`[TEMP MEDIA] Created record: ${tempMedia._id} for ${url}`);
+            console.log(`[TEMP MEDIA] Status: ${tempMedia.status}, Owner: ${tempMedia.ownerType}:${tempMedia.ownerId || 'none'}`);
+          }
+        } catch (tempMediaError) {
+          // Log but don't fail the upload - temp media tracking is non-critical
+          console.error('[TEMP MEDIA] Failed to create tracking record:', tempMediaError);
+        }
+
         return result;
       }));
 
@@ -519,6 +558,186 @@ router.post('/post-media', auth, uploadLimiter, (req, res) => {
       });
     }
   });
+});
+
+// @route   DELETE /api/upload/post-media/:mediaId
+// @desc    Delete temporary media (before post is published)
+// @access  Private
+router.delete('/post-media/:mediaId', auth, async (req, res) => {
+  try {
+    const { mediaId } = req.params;
+
+    if (config.nodeEnv === 'development') {
+      console.log(`[TEMP MEDIA DELETE] Request to delete: ${mediaId} by user: ${req.userId}`);
+    }
+
+    // Find the temp media record
+    const tempMedia = await TempMedia.findById(mediaId);
+
+    if (!tempMedia) {
+      if (config.nodeEnv === 'development') {
+        console.warn(`[TEMP MEDIA DELETE] Media not found: ${mediaId}`);
+      }
+      return res.status(404).json({ message: 'Media not found' });
+    }
+
+    // Verify ownership
+    if (tempMedia.userId.toString() !== req.userId.toString()) {
+      if (config.nodeEnv === 'development') {
+        console.warn(`[TEMP MEDIA DELETE] User ${req.userId} not authorized to delete media owned by ${tempMedia.userId}`);
+      }
+      return res.status(403).json({ message: 'Not authorized to delete this media' });
+    }
+
+    // Don't allow deleting published media
+    if (tempMedia.status === 'published') {
+      if (config.nodeEnv === 'development') {
+        console.warn(`[TEMP MEDIA DELETE] Cannot delete published media: ${mediaId}`);
+      }
+      return res.status(400).json({ message: 'Cannot delete published media' });
+    }
+
+    // Delete the physical file from GridFS
+    const mainFileDeleted = await deleteFromGridFS(tempMedia.url);
+
+    if (config.nodeEnv === 'development') {
+      console.log(`[TEMP MEDIA DELETE] Main file deleted: ${mainFileDeleted}`);
+    }
+
+    // Delete responsive size files if they exist
+    if (tempMedia.sizes) {
+      const sizesToDelete = [];
+
+      if (tempMedia.sizes.thumbnail) sizesToDelete.push(tempMedia.sizes.thumbnail);
+      if (tempMedia.sizes.small) sizesToDelete.push(tempMedia.sizes.small);
+      if (tempMedia.sizes.medium) sizesToDelete.push(tempMedia.sizes.medium);
+
+      // Avatar/feed format sizes
+      if (tempMedia.sizes.avatar?.webp) sizesToDelete.push(tempMedia.sizes.avatar.webp);
+      if (tempMedia.sizes.avatar?.avif) sizesToDelete.push(tempMedia.sizes.avatar.avif);
+      if (tempMedia.sizes.feed?.webp) sizesToDelete.push(tempMedia.sizes.feed.webp);
+      if (tempMedia.sizes.feed?.avif) sizesToDelete.push(tempMedia.sizes.feed.avif);
+      if (tempMedia.sizes.full?.webp) sizesToDelete.push(tempMedia.sizes.full.webp);
+      if (tempMedia.sizes.full?.avif) sizesToDelete.push(tempMedia.sizes.full.avif);
+
+      for (const sizeUrl of sizesToDelete) {
+        if (sizeUrl) {
+          await deleteFromGridFS(sizeUrl);
+        }
+      }
+
+      if (config.nodeEnv === 'development') {
+        console.log(`[TEMP MEDIA DELETE] Deleted ${sizesToDelete.length} responsive sizes`);
+      }
+    }
+
+    // Delete the temp media record
+    await tempMedia.deleteOne();
+
+    if (config.nodeEnv === 'development') {
+      console.log(`[TEMP MEDIA DELETE] Successfully deleted media: ${mediaId}`);
+    }
+
+    res.json({
+      message: 'Media deleted successfully',
+      deleted: true,
+      mediaId
+    });
+
+  } catch (error) {
+    console.error('[TEMP MEDIA DELETE] Error:', error);
+    res.status(500).json({
+      message: 'Failed to delete media',
+      error: error.message
+    });
+  }
+});
+
+// @route   DELETE /api/upload/post-media/by-url
+// @desc    Delete temporary media by URL (fallback for older uploads without tempMediaId)
+// @access  Private
+router.delete('/post-media/by-url', auth, async (req, res) => {
+  try {
+    const { url } = req.body;
+
+    if (!url) {
+      return res.status(400).json({ message: 'URL is required' });
+    }
+
+    if (config.nodeEnv === 'development') {
+      console.log(`[TEMP MEDIA DELETE BY URL] Request to delete: ${url} by user: ${req.userId}`);
+    }
+
+    // Find the temp media record by URL
+    const tempMedia = await TempMedia.findOne({ url, userId: req.userId });
+
+    if (!tempMedia) {
+      // Try to delete directly from GridFS even if no record exists
+      // This handles legacy uploads before TempMedia tracking
+      const deleted = await deleteFromGridFS(url);
+
+      if (deleted) {
+        if (config.nodeEnv === 'development') {
+          console.log(`[TEMP MEDIA DELETE BY URL] Deleted legacy file: ${url}`);
+        }
+        return res.json({
+          message: 'Media deleted successfully (legacy)',
+          deleted: true
+        });
+      }
+
+      if (config.nodeEnv === 'development') {
+        console.warn(`[TEMP MEDIA DELETE BY URL] Media not found: ${url}`);
+      }
+      return res.status(404).json({ message: 'Media not found' });
+    }
+
+    // Don't allow deleting published media
+    if (tempMedia.status === 'published') {
+      return res.status(400).json({ message: 'Cannot delete published media' });
+    }
+
+    // Delete the physical file from GridFS
+    await deleteFromGridFS(tempMedia.url);
+
+    // Delete responsive sizes
+    if (tempMedia.sizes) {
+      const sizesToDelete = [
+        tempMedia.sizes.thumbnail,
+        tempMedia.sizes.small,
+        tempMedia.sizes.medium,
+        tempMedia.sizes.avatar?.webp,
+        tempMedia.sizes.avatar?.avif,
+        tempMedia.sizes.feed?.webp,
+        tempMedia.sizes.feed?.avif,
+        tempMedia.sizes.full?.webp,
+        tempMedia.sizes.full?.avif
+      ].filter(Boolean);
+
+      for (const sizeUrl of sizesToDelete) {
+        await deleteFromGridFS(sizeUrl);
+      }
+    }
+
+    // Delete the temp media record
+    await tempMedia.deleteOne();
+
+    if (config.nodeEnv === 'development') {
+      console.log(`[TEMP MEDIA DELETE BY URL] Successfully deleted: ${url}`);
+    }
+
+    res.json({
+      message: 'Media deleted successfully',
+      deleted: true
+    });
+
+  } catch (error) {
+    console.error('[TEMP MEDIA DELETE BY URL] Error:', error);
+    res.status(500).json({
+      message: 'Failed to delete media',
+      error: error.message
+    });
+  }
 });
 
 // @route   GET /api/upload/image/:filename

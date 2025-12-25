@@ -40,6 +40,12 @@ const draftSchema = new mongoose.Schema({
       enum: ['image', 'video', 'gif']
       // NOT required - drafts may not specify type yet
     },
+    // TempMedia tracking ID for proper cleanup
+    tempMediaId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'TempMedia'
+      // Optional - legacy uploads may not have this
+    },
     width: {
       type: Number
       // Optional - may not be available during draft
@@ -47,6 +53,12 @@ const draftSchema = new mongoose.Schema({
     height: {
       type: Number
       // Optional - may not be available during draft
+    },
+    // Responsive sizes (if generated)
+    sizes: {
+      thumbnail: String,
+      small: String,
+      medium: String
     }
   }],
   coverImage: {

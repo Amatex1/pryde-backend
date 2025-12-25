@@ -845,6 +845,32 @@ server.listen(PORT, () => {
     console.log('ℹ️  Automatic backups disabled (set ENABLE_AUTO_BACKUP=true to enable)');
     console.log('ℹ️  For manual backups: npm run backup');
   }
+
+  // Temp media cleanup - runs every hour to clean up orphaned uploads
+  // This prevents storage leaks from abandoned media uploads
+  import('./scripts/cleanupTempMedia.js')
+    .then(({ cleanupTempMedia }) => {
+      // Run cleanup on startup (after 5 minutes to allow server to stabilize)
+      setTimeout(() => {
+        cleanupTempMedia()
+          .then(result => console.log('🧹 Initial temp media cleanup:', result))
+          .catch(err => console.error('❌ Temp media cleanup failed:', err));
+      }, 5 * 60 * 1000); // 5 minutes after startup
+
+      // Run cleanup every hour
+      setInterval(() => {
+        cleanupTempMedia()
+          .then(result => {
+            if (result.deleted > 0) {
+              console.log('🧹 Hourly temp media cleanup:', result);
+            }
+          })
+          .catch(err => console.error('❌ Temp media cleanup failed:', err));
+      }, 60 * 60 * 1000); // Every hour
+
+      console.log('🧹 Temp media cleanup scheduled (hourly, cleans uploads older than 60 min)');
+    })
+    .catch(err => console.error('❌ Failed to start temp media cleanup:', err));
 });
 
 // Export app for testing
