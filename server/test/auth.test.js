@@ -1,6 +1,9 @@
 /**
  * Authentication Tests
  * Tests for CAPTCHA validation and password requirements
+ *
+ * NOTE: NODE_ENV=test is set via server/test/setup.js (--require flag)
+ * This bypasses rate limiting so business logic tests work correctly.
  */
 
 import { describe, it, before, after } from 'mocha';

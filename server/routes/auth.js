@@ -127,10 +127,80 @@ router.get('/check-username/:username', async (req, res) => {
   }
 });
 
+// ═══════════════════════════════════════════════════════════════════════════
+// AGE VALIDATION MIDDLEWARE
+// ═══════════════════════════════════════════════════════════════════════════
+// CRITICAL: This middleware MUST run BEFORE the rate limiter.
+// Reason: Age validation is a core business rule (403 Forbidden).
+//         Rate limiting is a security mechanism (429 Too Many Requests).
+//         Users must always see 403 for age violations, never 429.
+// ═══════════════════════════════════════════════════════════════════════════
+const validateAgeBeforeRateLimit = async (req, res, next) => {
+  try {
+    const { birthday } = req.body;
+
+    // If no birthday provided, let the main handler deal with required field validation
+    if (!birthday) {
+      return next();
+    }
+
+    // Parse and validate birthday
+    const birthDate = new Date(birthday);
+
+    // Check for invalid date
+    if (isNaN(birthDate.getTime())) {
+      return next(); // Let the main handler deal with invalid date format
+    }
+
+    // Calculate age
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+
+    // CRITICAL: Return 403 Forbidden for underage users BEFORE rate limiting
+    if (age < 18) {
+      // Log underage registration attempt
+      try {
+        await SecurityLog.create({
+          type: 'underage_registration',
+          severity: 'high',
+          username: req.body.username || 'unknown',
+          email: req.body.email || 'unknown',
+          birthday: birthDate,
+          calculatedAge: age,
+          ipAddress: getClientIp(req),
+          userAgent: req.headers['user-agent'],
+          details: `Underage registration attempt blocked (pre-rate-limit). Age: ${age} years old.`,
+          action: 'blocked'
+        });
+      } catch (logError) {
+        logger.error('Failed to log underage registration attempt:', logError);
+      }
+
+      return res.status(403).json({
+        error: 'Forbidden',
+        message: 'You must be at least 18 years old to sign up.'
+      });
+    }
+
+    // Age is valid, proceed to rate limiter and other middleware
+    next();
+  } catch (error) {
+    // On error, proceed to next middleware (let main handler deal with it)
+    logger.error('Age validation middleware error:', error);
+    next();
+  }
+};
+
 // @route   POST /api/auth/signup
 // @desc    Register new user
 // @access  Public
-router.post('/signup', signupLimiter, validateSignup, async (req, res) => {
+// MIDDLEWARE ORDER: 1. Age validation → 2. Rate limiter → 3. Input validation → 4. Handler
+router.post('/signup', validateAgeBeforeRateLimit, signupLimiter, validateSignup, async (req, res) => {
   try {
     const {
       // Required fields
@@ -880,19 +950,8 @@ router.post('/verify-2fa-login', loginLimiter, async (req, res) => {
       }
     }
 
-    // Clean up old sessions first
-    cleanupOldSessions(user);
-
-    // Find or create session (prevents duplicates from same device/IP)
-    const { session, isNew: isNewSession } = findOrCreateSession(user, ipAddress, deviceInfo, browser, os, location);
-
-    // Add new session only if it doesn't exist
-    if (isNewSession) {
-      user.activeSessions.push(session);
-    }
-
-    // Get session ID for JWT token
-    const sessionId = session.sessionId;
+	    // Clean up old sessions first (same behavior as primary /login endpoint)
+	    cleanupOldSessions(user);
 
     // Log successful login with location
     user.loginHistory.push({
@@ -938,19 +997,57 @@ router.post('/verify-2fa-login', loginLimiter, async (req, res) => {
       // Otherwise, don't send any email (same device, not suspicious)
     }
 
-    // Create JWT token with session ID
-    const token = jwt.sign(
-      { userId: user._id, sessionId },
-      config.jwtSecret,
-      { expiresIn: '7d' }
-    );
+    // IMPORTANT: Use the same token issuance flow as standard login to keep
+    // auth behavior consistent and ensure token "type" fields, TTLs, and
+    // refresh rotation all match the primary login endpoint.
+
+	    // Generate token pair with new session (aligned with /api/auth/login)
+    const { accessToken, refreshToken, sessionId: newSessionId } = generateTokenPair(user._id);
+
+    // Create or update session with refresh token and location
+    const sessionIndex = user.activeSessions.findIndex(s => s.sessionId === newSessionId);
+    const baseSession = {
+      sessionId: newSessionId,
+      refreshToken,
+      refreshTokenExpiry: getRefreshTokenExpiry(),
+      deviceInfo,
+      browser,
+      os,
+      ipAddress,
+      location,
+      createdAt: new Date(),
+      lastActive: new Date()
+    };
+
+    if (sessionIndex >= 0) {
+      user.activeSessions[sessionIndex] = baseSession;
+    } else {
+      user.activeSessions.push(baseSession);
+    }
+
+    await user.save();
+
+    // Set refresh token cookie (reuse normal login cookie options)
+    const cookieOptions = getRefreshTokenCookieOptions();
+    logger.debug('Setting refresh token cookie (2FA login) with options:', cookieOptions);
+    res.cookie('refreshToken', refreshToken, cookieOptions);
+
+    // Also set access token cookie for cross-origin auth, matching /login
+    const accessTokenCookieOptions = {
+      ...cookieOptions,
+      maxAge: 15 * 60 * 1000 // 15 minutes (access token expiry)
+    };
+    logger.debug('Setting access token cookie (2FA login) with options:', accessTokenCookieOptions);
+    res.cookie('token', accessToken, accessTokenCookieOptions);
 
     logger.debug(`User logged in with 2FA: ${user.email} from ${ipAddress}`);
 
     res.json({
       success: true,
       message: 'Login successful',
-      token,
+      accessToken,
+      // Send refresh token in response for cross-domain setups (Cloudflare Pages → Render)
+      refreshToken,
       user: {
         id: user._id,
         username: user.username,

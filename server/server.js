@@ -87,7 +87,16 @@ import {
 import connectDB from "./dbConn.js";
 import config from "./config/config.js";
 
-connectDB();
+// Track DB connection state for scheduler guards
+let isDBConnected = false;
+
+// Connect to DB and track state
+connectDB().then(() => {
+  isDBConnected = true;
+}).catch((err) => {
+  console.error('❌ Failed to connect to MongoDB:', err);
+  process.exit(1);
+});
 
 // Import models
 import Notification from './models/Notification.js';
@@ -871,31 +880,50 @@ server.listen(PORT, () => {
     console.log('ℹ️  For manual backups: npm run backup');
   }
 
-  // Temp media cleanup - runs every hour to clean up orphaned uploads
+  // ========================================
+  // TEMP MEDIA CLEANUP SCHEDULER
+  // ========================================
+  // Runs every hour to clean up orphaned uploads
   // This prevents storage leaks from abandoned media uploads
-  import('./scripts/cleanupTempMedia.js')
-    .then(({ cleanupTempMedia }) => {
-      // Run cleanup on startup (after 5 minutes to allow server to stabilize)
-      setTimeout(() => {
-        cleanupTempMedia()
-          .then(result => console.log('🧹 Initial temp media cleanup:', result))
-          .catch(err => console.error('❌ Temp media cleanup failed:', err));
-      }, 5 * 60 * 1000); // 5 minutes after startup
+  //
+  // GUARDS:
+  // - Disabled in test environment (prevents flakiness)
+  // - Cleanup function itself checks DB readiness (fail-safe)
+  // - Never crashes the process (best-effort operation)
+  //
+  if (process.env.NODE_ENV === 'test') {
+    console.log('[Cleanup] Disabled in test environment');
+  } else {
+    import('./scripts/cleanupTempMedia.js')
+      .then(({ cleanupTempMedia }) => {
+        // Run cleanup on startup (after 5 minutes to allow server to stabilize)
+        // The cleanup function will check DB readiness before running
+        setTimeout(() => {
+          cleanupTempMedia()
+            .then(result => {
+              if (!result.skipped) {
+                console.log('🧹 Initial temp media cleanup:', result);
+              }
+            })
+            .catch(err => console.error('❌ Temp media cleanup failed:', err));
+        }, 5 * 60 * 1000); // 5 minutes after startup
 
-      // Run cleanup every hour
-      setInterval(() => {
-        cleanupTempMedia()
-          .then(result => {
-            if (result.deleted > 0) {
-              console.log('🧹 Hourly temp media cleanup:', result);
-            }
-          })
-          .catch(err => console.error('❌ Temp media cleanup failed:', err));
-      }, 60 * 60 * 1000); // Every hour
+        // Run cleanup every hour
+        // The cleanup function will check DB readiness before running
+        setInterval(() => {
+          cleanupTempMedia()
+            .then(result => {
+              if (!result.skipped && result.deleted > 0) {
+                console.log('🧹 Hourly temp media cleanup:', result);
+              }
+            })
+            .catch(err => console.error('❌ Temp media cleanup failed:', err));
+        }, 60 * 60 * 1000); // Every hour
 
-      console.log('🧹 Temp media cleanup scheduled (hourly, cleans uploads older than 60 min)');
-    })
-    .catch(err => console.error('❌ Failed to start temp media cleanup:', err));
+        console.log('🧹 Temp media cleanup scheduled (hourly, cleans uploads older than 60 min)');
+      })
+      .catch(err => console.error('❌ Failed to start temp media cleanup:', err));
+  }
 });
 
 // Export app for testing

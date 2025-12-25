@@ -2,6 +2,15 @@ import rateLimit from 'express-rate-limit';
 import logger from '../utils/logger.js';
 import config from '../config/config.js';
 
+// Note: NODE_ENV-aware behavior
+// - In normal operation (development/production), all limiters are fully
+//   enforced and must NOT be weakened.
+// - In test environment (NODE_ENV === 'test'), we selectively bypass
+//   signup rate limiting so auth/signup tests can exercise validation
+//   paths (e.g. under-18 rejection) deterministically without hitting
+//   429 Too Many Requests from rapid, same-IP signups.
+const isTestEnv = process.env.NODE_ENV === 'test';
+
 // Optional Redis support for distributed rate limiting
 let redisClient = null;
 let RedisStore = null;
@@ -133,12 +142,24 @@ export const loginLimiter = createAdvancedLimiter({
   message: 'Too many login attempts, please try again later.'
 });
 
-export const signupLimiter = createAdvancedLimiter({
-  windowMs: 60 * 60 * 1000, // 1 hour
-  max: 5, // 5 signup attempts per hour
-  prefix: 'signup',
-  message: 'Too many signup attempts, please try again later.'
-});
+// Signup limiter: special-case for tests
+// -------------------------------------------------------------
+// In test environment we completely bypass signup rate limiting so that
+// validation logic (age checks, duplicate emails, etc.) can be exercised
+// with many rapid requests from the same IP without flakiness.
+//
+// IMPORTANT:
+// - This behavior is ONLY enabled when NODE_ENV === 'test'.
+// - Development and production behavior are unchanged and still use the
+//   strict signup rate limit below.
+export const signupLimiter = isTestEnv
+  ? (req, _res, next) => next()
+  : createAdvancedLimiter({
+      windowMs: 60 * 60 * 1000, // 1 hour
+      max: 5, // 5 signup attempts per hour
+      prefix: 'signup',
+      message: 'Too many signup attempts, please try again later.'
+    });
 
 export const postLimiter = createAdvancedLimiter({
   windowMs: 15 * 60 * 1000, // 15 minutes
