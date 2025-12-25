@@ -160,6 +160,7 @@ router.post('/pwa/force-reload', (req, res) => {
 
   updatePWAControlState({
     forceReload: true,
+    forceReloadTimestamp: Date.now(), // 🔥 Set timestamp for auto-expiry
     maintenanceMessage: message || 'App update required - reloading...'
   });
 
@@ -170,10 +171,11 @@ router.post('/pwa/force-reload', (req, res) => {
 
   console.log(`🔄 [Admin Debug] Force reload triggered by ${req.user.username}`);
   console.log(`   Message: ${pwaControlState.maintenanceMessage}`);
+  console.log(`   Will auto-expire in 5 minutes`);
 
   res.json({
     success: true,
-    message: 'Force reload triggered - all clients will reload on next request',
+    message: 'Force reload triggered - all clients will reload on next request (expires in 5 minutes)',
     state: { ...pwaControlState, ...adminMetadata }
   });
 });
@@ -184,6 +186,7 @@ router.post('/pwa/force-reload', (req, res) => {
 router.post('/pwa/cancel-force-reload', (req, res) => {
   updatePWAControlState({
     forceReload: false,
+    forceReloadTimestamp: null, // 🔥 Clear timestamp
     maintenanceMessage: null
   });
 

@@ -23,6 +23,7 @@ const MIN_FRONTEND_VERSION = process.env.MIN_FRONTEND_VERSION || '1.0.0';
 export let pwaControlState = {
   pwaEnabled: process.env.PWA_ENABLED !== 'false',
   forceReload: process.env.FORCE_RELOAD === 'true',
+  forceReloadTimestamp: null, // Timestamp when force reload was triggered
   maintenanceMessage: process.env.MAINTENANCE_MESSAGE || null
 };
 
@@ -65,13 +66,31 @@ router.get('/', (req, res) => {
 // @desc    Get PWA safety status and version compatibility
 // @access  Public
 router.get('/status', (req, res) => {
+  // 🔥 CRITICAL: Auto-expire forceReload after 5 minutes to prevent infinite loops
+  // This ensures that if a client reloads, it won't get stuck in a loop
+  const now = Date.now();
+  const FORCE_RELOAD_EXPIRY = 5 * 60 * 1000; // 5 minutes
+
+  let shouldForceReload = pwaControlState.forceReload;
+
+  if (shouldForceReload && pwaControlState.forceReloadTimestamp) {
+    const timeSinceTriggered = now - pwaControlState.forceReloadTimestamp;
+
+    if (timeSinceTriggered > FORCE_RELOAD_EXPIRY) {
+      console.log('🔄 [Version] Force reload expired - resetting to false');
+      pwaControlState.forceReload = false;
+      pwaControlState.forceReloadTimestamp = null;
+      shouldForceReload = false;
+    }
+  }
+
   res.json({
     pwaEnabled: pwaControlState.pwaEnabled,
     minFrontendVersion: MIN_FRONTEND_VERSION,
-    forceReload: pwaControlState.forceReload,
+    forceReload: shouldForceReload,
     message: pwaControlState.maintenanceMessage,
     backendVersion: BACKEND_VERSION,
-    timestamp: Date.now()
+    timestamp: now
   });
 });
 
