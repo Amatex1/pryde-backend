@@ -535,6 +535,20 @@ router.delete('/:id', auth, requireActiveUser, async (req, res) => {
     mutation.addStep('AUTHORIZATION_PASSED', { isAdmin });
 
     const postId = post._id; // Store ID before deletion
+    const postTags = post.tags; // Store tags before deletion
+
+    // Decrement post count for all associated tags
+    if (postTags && postTags.length > 0) {
+      const Tag = (await import('../models/Tag.js')).default;
+      await Promise.all(postTags.map(async (tagId) => {
+        const tag = await Tag.findById(tagId);
+        if (tag && tag.postCount > 0) {
+          tag.postCount -= 1;
+          await tag.save();
+        }
+      }));
+      mutation.addStep('TAGS_UPDATED', { tagCount: postTags.length });
+    }
 
     await post.deleteOne();
     mutation.addStep('DOCUMENT_DELETED');
