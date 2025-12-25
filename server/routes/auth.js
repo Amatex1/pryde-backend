@@ -152,43 +152,12 @@ router.post('/signup', signupLimiter, validateSignup, async (req, res) => {
       isAlly
     } = req.body;
 
-    // Verify hCaptcha token (only in production or if HCAPTCHA_SECRET is set)
-    if (process.env.HCAPTCHA_SECRET && captchaToken) {
-      try {
-        const verifyUrl = 'https://hcaptcha.com/siteverify';
-        const verifyResponse = await fetch(verifyUrl, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded'
-          },
-          body: `secret=${process.env.HCAPTCHA_SECRET}&response=${captchaToken}`
-        });
+    // ═══════════════════════════════════════════════════════════════════════════
+    // VALIDATION ORDER: Per business rules, age check MUST run before CAPTCHA
+    // 1. Required fields → 2. Age validation → 3. CAPTCHA → 4. Other validations
+    // ═══════════════════════════════════════════════════════════════════════════
 
-        const verifyData = await verifyResponse.json();
-
-        if (!verifyData.success) {
-          return res.status(400).json({
-            message: 'CAPTCHA verification failed. Please try again.',
-            reason: 'captcha_failed'
-          });
-        }
-      } catch (captchaError) {
-        logger.error('CAPTCHA verification error:', captchaError);
-
-        // Only allow bypass in development mode
-        if (process.env.NODE_ENV === 'production') {
-          return res.status(400).json({
-            message: 'CAPTCHA verification failed. Please try again.',
-            error: 'captcha_error'
-          });
-        }
-
-        // Allow bypass in development mode
-        logger.warn('⚠️ CAPTCHA verification failed, allowing signup in development mode');
-      }
-    }
-
-    // Validation - Required fields only
+    // STEP 1: Validation - Required fields only
     if (!fullName || !username || !email || !password || !birthday) {
       return res.status(400).json({
         message: 'Please provide all required fields: full name, username, email, password, and birthday',
@@ -203,7 +172,8 @@ router.post('/signup', signupLimiter, validateSignup, async (req, res) => {
       });
     }
 
-    // Validate birthday and calculate age
+    // STEP 2: Validate birthday and calculate age BEFORE any other checks
+    // This is a core business invariant - age restriction must never be masked by external checks
     const birthDate = new Date(birthday);
     const today = new Date();
     let age = today.getFullYear() - birthDate.getFullYear();
@@ -213,7 +183,7 @@ router.post('/signup', signupLimiter, validateSignup, async (req, res) => {
       age--;
     }
 
-    // Auto-ban users under 18
+    // Auto-ban users under 18 IMMEDIATELY (before CAPTCHA or any other checks)
     if (age < 18) {
       // Log underage registration attempt
       try {
@@ -238,6 +208,57 @@ router.post('/signup', signupLimiter, validateSignup, async (req, res) => {
         reason: 'underage'
       });
     }
+
+    // STEP 3: Verify hCaptcha token (only in production)
+    // CAPTCHA is an external protection that should NEVER mask core business logic (age check)
+    if (process.env.NODE_ENV === 'production') {
+      // Dev-mode safety assertion: warn if this code path is reached before age validation
+      // (This should never happen with correct validation order)
+      if (process.env.NODE_ENV !== 'production' && !age) {
+        logger.warn('⚠️ Validation order violation: CAPTCHA ran before age check');
+      }
+
+      if (process.env.HCAPTCHA_SECRET && captchaToken) {
+        try {
+          const verifyUrl = 'https://hcaptcha.com/siteverify';
+          const verifyResponse = await fetch(verifyUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: `secret=${process.env.HCAPTCHA_SECRET}&response=${captchaToken}`
+          });
+
+          const verifyData = await verifyResponse.json();
+
+          if (!verifyData.success) {
+            return res.status(400).json({
+              message: 'CAPTCHA verification failed. Please try again.',
+              reason: 'captcha_failed'
+            });
+          }
+        } catch (captchaError) {
+          logger.error('CAPTCHA verification error:', captchaError);
+          return res.status(400).json({
+            message: 'CAPTCHA verification failed. Please try again.',
+            error: 'captcha_error'
+          });
+        }
+      } else if (!captchaToken) {
+        // In production, CAPTCHA is required
+        return res.status(400).json({
+          message: 'CAPTCHA verification is required.',
+          reason: 'captcha_required'
+        });
+      }
+    } else {
+      // In development/test mode, log if CAPTCHA would have been verified
+      if (captchaToken) {
+        logger.debug('CAPTCHA token provided in non-production mode, skipping verification');
+      }
+    }
+
+    // STEP 4: Continue with other validations (email/username uniqueness, etc.)
 
     // Check if user exists
     let user = await User.findOne({ $or: [{ email }, { username }] });

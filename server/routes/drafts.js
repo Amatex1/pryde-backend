@@ -2,6 +2,8 @@ import express from 'express';
 const router = express.Router();
 import Draft from '../models/Draft.js';
 import auth from '../middleware/auth.js';
+import { MutationTrace, verifyWrite } from '../utils/mutationTrace.js';
+import logger from '../utils/logger.js';
 
 // @route   GET /api/drafts
 // @desc    Get all drafts for the current user
@@ -57,6 +59,13 @@ router.get('/:id', auth, async (req, res) => {
 // @desc    Create or update a draft (auto-save)
 // @access  Private
 router.post('/', auth, async (req, res) => {
+  // Initialize mutation trace for end-to-end tracking
+  const mutationId = req.headers['x-mutation-id'] || req.body?._mutationId;
+  const isUpdate = !!req.body?.draftId;
+  const mutation = new MutationTrace(mutationId, isUpdate ? 'UPDATE' : 'CREATE', 'draft', req.userId);
+  mutation.addStep('REQUEST_RECEIVED', { method: 'POST', isUpdate });
+  res.setHeader('X-Mutation-Id', mutation.mutationId);
+
   try {
     const {
       draftId,
@@ -75,13 +84,14 @@ router.post('/', auth, async (req, res) => {
     } = req.body;
 
     // DIAGNOSTIC: Detailed draft creation logging
-    console.log('[DRAFT CREATE] Request received:', {
+    logger.debug('[DRAFT CREATE] Request received:', {
       draftId: draftId || 'NEW',
       draftType,
       userId: req.userId,
       contentLength: content?.length || 0,
       hasMedia: media?.length > 0,
-      isUpdate: !!draftId
+      isUpdate: !!draftId,
+      mutationId: mutation.mutationId
     });
 
     // If draftId provided, update existing draft
@@ -185,18 +195,28 @@ router.post('/', auth, async (req, res) => {
     }
 
     const draft = new Draft(draftData);
+    mutation.addStep('DOCUMENT_CREATED', { draftId: draft._id.toString() });
 
     await draft.save();
-    console.log('[DRAFT CREATE] New draft created successfully:', {
+    mutation.addStep('DOCUMENT_SAVED');
+
+    // CRITICAL: Verify write succeeded
+    await verifyWrite(Draft, draft._id, mutation, { user: req.userId });
+
+    logger.debug('[DRAFT CREATE] New draft created successfully:', {
       id: draft._id,
       type: draft.draftType,
-      userId: req.userId
+      userId: req.userId,
+      mutationId: mutation.mutationId
     });
-    res.status(201).json(draft);
+
+    mutation.success({ draftId: draft._id.toString() });
+    res.status(201).json({ ...draft.toObject(), _mutationId: mutation.mutationId });
   } catch (error) {
-    console.error('[DRAFT CREATE] Save draft error:', error);
-    console.error('[DRAFT CREATE] This will cause a ghost draft if frontend sets ID optimistically');
-    res.status(500).json({ message: 'Server error', error: error.message });
+    mutation.fail(error.message, 500);
+    logger.error('[DRAFT CREATE] Save draft error:', error);
+    logger.error('[DRAFT CREATE] This will cause a ghost draft if frontend sets ID optimistically');
+    res.status(500).json({ message: 'Server error', error: error.message, _mutationId: mutation.mutationId });
   }
 });
 
@@ -204,28 +224,53 @@ router.post('/', auth, async (req, res) => {
 // @desc    Delete a draft
 // @access  Private
 router.delete('/:id', auth, async (req, res) => {
+  // Initialize mutation trace for end-to-end tracking
+  const mutationId = req.headers['x-mutation-id'] || req.body?._mutationId;
+  const mutation = new MutationTrace(mutationId, 'DELETE', 'draft', req.userId);
+  mutation.addStep('REQUEST_RECEIVED', { method: 'DELETE', draftId: req.params.id });
+  res.setHeader('X-Mutation-Id', mutation.mutationId);
+
   try {
-    console.log('[DRAFT DELETE] Attempting to delete draft:', req.params.id, 'by user:', req.userId);
+    logger.debug('[DRAFT DELETE] Attempting to delete draft:', req.params.id, 'by user:', req.userId);
 
     const draft = await Draft.findById(req.params.id);
 
     if (!draft) {
-      console.warn('[DRAFT DELETE] Draft not found:', req.params.id);
-      console.warn('[DRAFT DELETE] This may be a ghost draft that was never persisted');
-      return res.status(404).json({ message: 'Draft not found' });
+      mutation.fail('Draft not found', 404);
+      logger.warn('[DRAFT DELETE] Draft not found:', req.params.id);
+      logger.warn('[DRAFT DELETE] This may be a ghost draft that was never persisted');
+      return res.status(404).json({ message: 'Draft not found', _mutationId: mutation.mutationId });
     }
+
+    mutation.addStep('DOCUMENT_FOUND', { ownerId: draft.user.toString() });
 
     if (draft.user.toString() !== req.userId.toString()) {
-      console.warn('[DRAFT DELETE] User not authorized:', req.userId, 'tried to delete draft owned by:', draft.user);
-      return res.status(403).json({ message: 'Not authorized' });
+      mutation.fail('Not authorized', 403);
+      logger.warn('[DRAFT DELETE] User not authorized:', req.userId, 'tried to delete draft owned by:', draft.user);
+      return res.status(403).json({ message: 'Not authorized', _mutationId: mutation.mutationId });
     }
 
+    mutation.addStep('AUTHORIZATION_PASSED');
+
+    const draftId = draft._id;
     await draft.deleteOne();
-    console.log('[DRAFT DELETE] Draft deleted successfully:', req.params.id);
-    res.json({ message: 'Draft deleted' });
+    mutation.addStep('DOCUMENT_DELETED');
+
+    // CRITICAL: Verify delete succeeded
+    const verifyDeleted = await Draft.findById(draftId).lean();
+    if (verifyDeleted) {
+      mutation.addStep('VERIFY_DELETE_FAILED', { reason: 'Document still exists' });
+      throw new Error(`Delete verification failed: Draft ${draftId} still exists after delete`);
+    }
+    mutation.addStep('VERIFY_DELETE_SUCCESS');
+
+    logger.debug('[DRAFT DELETE] Draft deleted successfully:', req.params.id);
+    mutation.success({ draftId: draftId.toString() });
+    res.json({ message: 'Draft deleted', _mutationId: mutation.mutationId });
   } catch (error) {
-    console.error('[DRAFT DELETE] Delete draft error:', error);
-    res.status(500).json({ message: 'Server error' });
+    mutation.fail(error.message, 500);
+    logger.error('[DRAFT DELETE] Delete draft error:', error);
+    res.status(500).json({ message: 'Server error', _mutationId: mutation.mutationId });
   }
 });
 

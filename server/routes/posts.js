@@ -14,6 +14,7 @@ import logger from '../utils/logger.js';
 import { getBlockedUserIds } from '../utils/blockHelper.js';
 import { emitNotificationCreated } from '../utils/notificationEmitter.js'; // ✅ Socket.IO notifications
 import { deleteFromGridFS } from './upload.js'; // For deleting images from storage
+import { MutationTrace, verifyWrite } from '../utils/mutationTrace.js';
 
 // PHASE 1 REFACTOR: Helper function to sanitize post for private likes
 // Removes like count and list of who liked, only shows if current user liked
@@ -261,15 +262,23 @@ router.get('/:id', auth, requireActiveUser, async (req, res) => {
 // @desc    Create a new post
 // @access  Private
 router.post('/', auth, requireActiveUser, postLimiter, sanitizeFields(['content', 'contentWarning']), checkMuted, moderateContent, async (req, res) => {
+  // Initialize mutation trace for end-to-end tracking
+  const mutationId = req.headers['x-mutation-id'] || req.body?._mutationId;
+  const userId = req.userId || req.user._id;
+  const mutation = new MutationTrace(mutationId, 'CREATE', 'post', userId);
+  mutation.addStep('REQUEST_RECEIVED', { method: 'POST', path: '/api/posts' });
+  res.setHeader('X-Mutation-Id', mutation.mutationId);
+
   try {
     const { content, images, media, visibility, hiddenFrom, sharedWith, contentWarning, tags, hideMetrics, poll, tagOnly } = req.body;
 
     // Require either content, media, or poll
     if ((!content || content.trim() === '') && (!media || media.length === 0) && !poll) {
-      return res.status(400).json({ message: 'Post must have content, media, or a poll' });
+      mutation.fail('Validation failed: missing content/media/poll', 400);
+      return res.status(400).json({ message: 'Post must have content, media, or a poll', _mutationId: mutation.mutationId });
     }
 
-    const userId = req.userId || req.user._id;
+    mutation.addStep('VALIDATION_PASSED');
 
     // PHASE 4: Handle tags
     let tagIds = [];
@@ -286,6 +295,7 @@ router.post('/', auth, requireActiveUser, postLimiter, sanitizeFields(['content'
         return null;
       }));
       tagIds = tagIds.filter(id => id !== null);
+      mutation.addStep('TAGS_RESOLVED', { tagCount: tagIds.length });
     }
 
     // If poll is present, transform options and use post content as poll question
@@ -312,6 +322,7 @@ router.post('/', auth, requireActiveUser, postLimiter, sanitizeFields(['content'
         allowMultipleVotes: poll.allowMultipleVotes || false,
         showResultsBeforeVoting: poll.showResultsBeforeVoting || false
       };
+      mutation.addStep('POLL_PREPARED', { optionCount: transformedOptions.length });
     }
 
     const post = new Post({
@@ -329,7 +340,14 @@ router.post('/', auth, requireActiveUser, postLimiter, sanitizeFields(['content'
       tagOnly: tagOnly || false // PHASE 4: Tag-only posts
     });
 
+    mutation.addStep('DOCUMENT_CREATED', { postId: post._id.toString() });
+
     await post.save();
+    mutation.addStep('DOCUMENT_SAVED');
+
+    // CRITICAL: Verify write succeeded - never assume MongoDB write worked silently
+    await verifyWrite(Post, post._id, mutation, { author: userId });
+
     await post.populate('author', 'username displayName profilePhoto isVerified pronouns');
     await post.populate('tags', 'slug label icon'); // PHASE 4: Populate tags
 
@@ -337,15 +355,18 @@ router.post('/', auth, requireActiveUser, postLimiter, sanitizeFields(['content'
     if (req.io) {
       const sanitizedPost = sanitizePostForPrivateLikes(post, userId);
       req.io.emit('post_created', {
-        post: sanitizedPost
+        post: sanitizedPost,
+        _mutationId: mutation.mutationId
       });
-      logger.debug('📡 Emitted post_created event:', post._id);
+      mutation.addStep('SOCKET_EMITTED', { event: 'post_created' });
     }
 
-    res.status(201).json(post);
+    mutation.success({ postId: post._id.toString() });
+    res.status(201).json({ ...post.toObject(), _mutationId: mutation.mutationId });
   } catch (error) {
+    mutation.fail(error.message, 500);
     logger.error('Create post error:', error);
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res.status(500).json({ message: 'Server error', error: error.message, _mutationId: mutation.mutationId });
   }
 });
 
@@ -484,14 +505,22 @@ router.put('/:id', auth, requireActiveUser, sanitizeFields(['content', 'contentW
 // @desc    Delete a post
 // @access  Private
 router.delete('/:id', auth, requireActiveUser, async (req, res) => {
+  // Initialize mutation trace for end-to-end tracking
+  const mutationId = req.headers['x-mutation-id'] || req.body?._mutationId;
+  const userId = req.userId || req.user._id;
+  const mutation = new MutationTrace(mutationId, 'DELETE', 'post', userId);
+  mutation.addStep('REQUEST_RECEIVED', { method: 'DELETE', postId: req.params.id });
+  res.setHeader('X-Mutation-Id', mutation.mutationId);
+
   try {
     const post = await Post.findById(req.params.id);
 
     if (!post) {
-      return res.status(404).json({ message: 'Post not found' });
+      mutation.fail('Post not found', 404);
+      return res.status(404).json({ message: 'Post not found', _mutationId: mutation.mutationId });
     }
 
-    const userId = req.userId || req.user._id;
+    mutation.addStep('DOCUMENT_FOUND', { authorId: post.author.toString() });
 
     // Get user to check role
     const user = await User.findById(userId);
@@ -499,25 +528,40 @@ router.delete('/:id', auth, requireActiveUser, async (req, res) => {
 
     // Check if user is the author OR admin
     if (post.author.toString() !== userId.toString() && !isAdmin) {
-      return res.status(403).json({ message: 'Not authorized to delete this post' });
+      mutation.fail('Not authorized', 403);
+      return res.status(403).json({ message: 'Not authorized to delete this post', _mutationId: mutation.mutationId });
     }
+
+    mutation.addStep('AUTHORIZATION_PASSED', { isAdmin });
 
     const postId = post._id; // Store ID before deletion
 
     await post.deleteOne();
+    mutation.addStep('DOCUMENT_DELETED');
+
+    // CRITICAL: Verify delete succeeded - document should NOT exist
+    const verifyDeleted = await Post.findById(postId).lean();
+    if (verifyDeleted) {
+      mutation.addStep('VERIFY_DELETE_FAILED', { reason: 'Document still exists after deleteOne' });
+      throw new Error(`Delete verification failed: Post ${postId} still exists after delete`);
+    }
+    mutation.addStep('VERIFY_DELETE_SUCCESS');
 
     // ✅ Emit real-time event for post deletion
     if (req.io) {
       req.io.emit('post_deleted', {
-        postId: postId
+        postId: postId,
+        _mutationId: mutation.mutationId
       });
-      logger.debug('📡 Emitted post_deleted event:', postId);
+      mutation.addStep('SOCKET_EMITTED', { event: 'post_deleted' });
     }
 
-    res.json({ message: 'Post deleted successfully' });
+    mutation.success({ postId: postId.toString() });
+    res.json({ message: 'Post deleted successfully', _mutationId: mutation.mutationId });
   } catch (error) {
+    mutation.fail(error.message, 500);
     logger.error('Delete post error:', error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Server error', _mutationId: mutation.mutationId });
   }
 });
 
