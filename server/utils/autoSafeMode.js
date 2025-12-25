@@ -186,12 +186,19 @@ async function activateSafeMode(sessionId, reason, details) {
   }
 
   metrics.safeModeActivated = true;
+  metrics.safeModeReason = reason;
+  metrics.safeModeDetails = details;
+  metrics.safeModeActivatedAt = Date.now();
 
   console.log(`[Auto Safe Mode] 🛡️ ACTIVATING SAFE MODE for ${sessionId}`);
   console.log(`[Auto Safe Mode] Reason: ${reason}`, details);
 
-  // TODO: Enable Safe Mode for user in database
-  // This would require userId, which we need to track in session metrics
+  // Degrade features when Safe Mode is activated
+  const { degradeFeature } = require('./featureFlags.js');
+  degradeFeature('PWA', `Safe Mode: ${reason}`);
+  degradeFeature('SOCKETS', `Safe Mode: ${reason}`);
+  degradeFeature('POLLING', `Safe Mode: ${reason}`);
+  degradeFeature('OPTIMISTIC_UI', `Safe Mode: ${reason}`);
 
   return {
     activated: true,
@@ -264,5 +271,61 @@ export function getSafeModeSummary() {
       : '0%',
     thresholds: THRESHOLDS
   };
+}
+
+/**
+ * Get Safe Mode status for session
+ */
+export function getSafeModeStatus(sessionId) {
+  const metrics = getSessionMetrics(sessionId);
+
+  return {
+    enabled: metrics.safeModeActivated,
+    trigger: metrics.safeModeReason || null,
+    details: metrics.safeModeDetails || null,
+    activatedAt: metrics.safeModeActivatedAt || null
+  };
+}
+
+/**
+ * Enable Safe Mode manually
+ */
+export function enableSafeMode(sessionId, reason = 'user_manual') {
+  const metrics = getSessionMetrics(sessionId);
+
+  if (metrics.safeModeActivated) {
+    return { success: false, message: 'Safe Mode already activated' };
+  }
+
+  activateSafeMode(sessionId, reason, { manual: true });
+
+  return { success: true, message: 'Safe Mode enabled' };
+}
+
+/**
+ * Disable Safe Mode manually
+ */
+export function disableSafeMode(sessionId) {
+  const metrics = getSessionMetrics(sessionId);
+
+  if (!metrics.safeModeActivated) {
+    return { success: false, message: 'Safe Mode not activated' };
+  }
+
+  metrics.safeModeActivated = false;
+  metrics.safeModeReason = null;
+  metrics.safeModeDetails = null;
+  metrics.safeModeActivatedAt = null;
+
+  // Restore features when Safe Mode is disabled
+  const { restoreFeature } = require('./featureFlags.js');
+  restoreFeature('PWA');
+  restoreFeature('SOCKETS');
+  restoreFeature('POLLING');
+  restoreFeature('OPTIMISTIC_UI');
+
+  console.log(`[Auto Safe Mode] ${sessionId}: Safe Mode disabled`);
+
+  return { success: true, message: 'Safe Mode disabled' };
 }
 

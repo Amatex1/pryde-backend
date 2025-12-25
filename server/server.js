@@ -57,6 +57,8 @@ import auditRoutes from './routes/audit.js';
 import versionRoutes from './routes/version.js';
 import devVerifyRoutes from './routes/devVerify.js';
 import adminDebugRoutes from './routes/adminDebug.js';
+import adminHealthRoutes from './routes/adminHealth.js';
+import stabilityControlsRoutes from './routes/stabilityControls.js';
 import safeModeRoutes from './routes/safeMode.js';
 import sessionInspectorRoutes from './routes/sessionInspector.js';
 import bugReportsRoutes from './routes/bugReports.js';
@@ -381,8 +383,10 @@ app.use('/api/audit', auditRoutes); // Admin audit routes
 app.use('/api/version', versionRoutes); // Version endpoint for update detection
 app.use('/api/dev', devVerifyRoutes); // Dev-only verification endpoints
 app.use('/api/admin/debug', adminDebugRoutes); // Admin-only PWA debug tools
+app.use('/api/admin/health', adminHealthRoutes); // Admin-only health & incident dashboard
 app.use('/api/safe-mode', safeModeRoutes); // User-controlled Safe Mode
 app.use('/api/session-inspector', sessionInspectorRoutes); // Session state inspector
+app.use('/api/stability', stabilityControlsRoutes); // User-visible stability controls
 app.use('/api/bug-reports', bugReportsRoutes); // Bug reporting with state snapshots
 
 // Debug: Log the passkey router before registering

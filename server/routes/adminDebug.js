@@ -72,6 +72,11 @@ import {
   getDeployComparison,
   getRollbackEvents
 } from '../utils/deployHealthDashboard.js';
+import {
+  getDebugOverlayData,
+  canAccessDebugOverlay,
+  logDebugOverlayAccess
+} from '../utils/debugOverlay.js';
 
 const router = express.Router();
 
@@ -510,6 +515,29 @@ router.get('/rollback-events', (req, res) => {
     events,
     total: events.length
   });
+});
+
+// @route   GET /api/admin/debug/overlay
+// @desc    Get debug overlay data
+// @access  Admin only
+router.get('/overlay', (req, res) => {
+  try {
+    const user = req.adminUser;
+
+    if (!canAccessDebugOverlay(user)) {
+      return res.status(403).json({ message: 'Access denied. Admin privileges required.' });
+    }
+
+    const sessionId = req.headers['x-session-id'] || 'unknown';
+    const data = getDebugOverlayData(user._id.toString(), sessionId);
+
+    logDebugOverlayAccess(user._id.toString(), 'accessed');
+
+    res.json(data);
+  } catch (error) {
+    console.error('Get debug overlay data error:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
 });
 
 export default router;
