@@ -20,7 +20,7 @@ import {
 } from '../utils/stabilityScore.js';
 import { getSafeModeStatus, enableSafeMode, disableSafeMode } from '../utils/autoSafeMode.js';
 import { captureSessionSnapshot } from '../utils/sessionDiff.js';
-import { reportBugWithSnapshot } from '../utils/bugClustering.js';
+import { clusterError } from '../utils/bugClustering.js';
 import { getSafeModeBanner, shouldShowSafeModeBanner, dismissSafeModeBanner } from '../utils/safeModeBanner.js';
 
 const router = express.Router();
@@ -114,8 +114,8 @@ router.post('/report-bug', async (req, res) => {
   try {
     const userId = req.userId.toString();
     const sessionId = req.headers['x-session-id'] || 'unknown';
-    const { description, category } = req.body;
-    
+    const { description, category, route, appVersion, serviceWorkerState } = req.body;
+
     // Check if user has opted in to diagnostics
     const diagnosticsOptIn = diagnosticsPreferences.get(userId) || false;
     if (!diagnosticsOptIn) {
@@ -123,23 +123,27 @@ router.post('/report-bug', async (req, res) => {
         message: 'Please opt in to diagnostics to report bugs with snapshots'
       });
     }
-    
+
     // Capture session snapshot
     const snapshot = captureSessionSnapshot(sessionId);
-    
-    // Report bug with snapshot
-    const report = await reportBugWithSnapshot({
-      userId,
+
+    // Cluster the error
+    const clusterResult = clusterError({
+      message: description,
+      stack: snapshot?.error?.stack || '',
+      route: route || 'unknown',
+      appVersion: appVersion || 'unknown',
+      serviceWorkerState: serviceWorkerState || 'unknown',
+      authState: 'authenticated',
       sessionId,
-      description,
-      category,
-      snapshot,
-      timestamp: Date.now()
+      userId
     });
-    
+
     res.json({
       success: true,
-      reportId: report.id,
+      clusterId: clusterResult.clusterId,
+      clusterCount: clusterResult.clusterCount,
+      isRecurring: clusterResult.isRecurring,
       message: 'Bug report submitted successfully'
     });
   } catch (error) {
