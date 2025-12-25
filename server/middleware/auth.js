@@ -11,9 +11,14 @@ const auth = async (req, res, next) => {
     // Then fall back to Authorization header
     let token = req.cookies?.token || req.cookies?.accessToken;
 
-    // If no cookie token, try Authorization header
+    // If no cookie token, try Authorization header (Bearer format)
     if (!token) {
       token = req.header('Authorization')?.replace('Bearer ', '');
+    }
+
+    // If still no token, try x-auth-token header (backwards compatibility for uploads)
+    if (!token) {
+      token = req.header('x-auth-token');
     }
 
     // Debug logging
@@ -21,13 +26,22 @@ const auth = async (req, res, next) => {
       console.log('🔐 Auth middleware - Path:', req.path);
       console.log('🍪 Cookies:', req.cookies);
       console.log('🔑 Token from cookie:', req.cookies?.token ? 'Yes' : 'No');
-      console.log('🔑 Token from header:', req.header('Authorization') ? 'Yes' : 'No');
+      console.log('🔑 Token from Authorization header:', req.header('Authorization') ? 'Yes' : 'No');
+      console.log('🔑 Token from x-auth-token header:', req.header('x-auth-token') ? 'Yes' : 'No');
       console.log('🔑 Final token:', token ? 'Yes' : 'No');
     }
 
     if (!token) {
       if (config.nodeEnv === 'development') {
-        console.log('❌ No token provided in cookies or header');
+        console.log('❌ No token provided in cookies or headers');
+
+        // DIAGNOSTIC: Special warning for upload routes
+        if (req.path.includes('/upload')) {
+          console.warn('[UPLOAD BLOCKED] Auth middleware returned 401');
+          console.warn('[UPLOAD BLOCKED] Reason: No authentication token');
+          console.warn('[UPLOAD BLOCKED] Path:', req.path);
+          console.warn('[UPLOAD BLOCKED] This is the exact cause of the auth failure');
+        }
       }
       return res.status(401).json({ message: 'No authentication token, access denied' });
     }
@@ -157,10 +171,14 @@ export const authenticateToken = auth;
  */
 export const optionalAuth = async (req, res, next) => {
   try {
-    // Try to get token from cookies or header
+    // Try to get token from cookies or headers
     let token = req.cookies?.token || req.cookies?.accessToken;
     if (!token) {
       token = req.header('Authorization')?.replace('Bearer ', '');
+    }
+    // Also check x-auth-token header (backwards compatibility for uploads)
+    if (!token) {
+      token = req.header('x-auth-token');
     }
 
     // No token - continue without authentication

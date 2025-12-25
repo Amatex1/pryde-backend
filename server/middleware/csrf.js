@@ -100,10 +100,20 @@ export const verifyCsrfToken = (req, res, next) => {
         cookieToken: cookieToken ? cookieToken.substring(0, 10) + '...' : 'MISSING',
         headerToken: headerToken ? headerToken.substring(0, 10) + '...' : 'MISSING'
       });
+
+      // DIAGNOSTIC: Special warning for upload routes
+      if (req.path.includes('/upload')) {
+        console.warn('[UPLOAD BLOCKED] CSRF middleware returned 403');
+        console.warn('[UPLOAD BLOCKED] Reason: CSRF token missing');
+        console.warn('[UPLOAD BLOCKED] Cookie present:', !!cookieToken);
+        console.warn('[UPLOAD BLOCKED] Header present:', !!headerToken);
+        console.warn('[UPLOAD BLOCKED] This is the exact cause of the 403 error');
+      }
     }
     return res.status(403).json({
       message: 'CSRF token missing',
-      error: 'Invalid CSRF token'
+      error: 'Invalid CSRF token',
+      code: 'CSRF_MISSING'
     });
   }
 
@@ -114,10 +124,20 @@ export const verifyCsrfToken = (req, res, next) => {
         cookieToken: cookieToken.substring(0, 10) + '...',
         headerToken: headerToken.substring(0, 10) + '...'
       });
+
+      // DIAGNOSTIC: Special warning for upload routes
+      if (req.path.includes('/upload')) {
+        console.warn('[UPLOAD BLOCKED] CSRF middleware returned 403');
+        console.warn('[UPLOAD BLOCKED] Reason: CSRF token mismatch');
+        console.warn('[UPLOAD BLOCKED] Cookie token:', cookieToken.substring(0, 10) + '...');
+        console.warn('[UPLOAD BLOCKED] Header token:', headerToken.substring(0, 10) + '...');
+        console.warn('[UPLOAD BLOCKED] This is the exact cause of the 403 error');
+      }
     }
     return res.status(403).json({
       message: 'CSRF token mismatch',
-      error: 'Invalid CSRF token'
+      error: 'Invalid CSRF token',
+      code: 'CSRF_MISMATCH'
     });
   }
 
@@ -160,6 +180,15 @@ export const enforceCsrf = (req, res, next) => {
 
   if (authPaths.includes(req.path)) {
     return next();
+  }
+
+  // DIAGNOSTIC: Log upload route CSRF check
+  if (config.nodeEnv === 'development' && req.path.includes('/upload')) {
+    console.log('[CSRF DEBUG] Checking CSRF for upload:', req.path);
+    console.log('[CSRF DEBUG] Method:', req.method);
+    console.log('[CSRF DEBUG] Content-Type:', req.headers['content-type']);
+    console.log('[CSRF DEBUG] Has JWT Authorization:', req.headers['authorization'] ? 'Yes' : 'No');
+    console.log('[CSRF DEBUG] Has x-auth-token:', req.headers['x-auth-token'] ? 'Yes' : 'No');
   }
 
   // For all other methods (POST, PUT, PATCH, DELETE), verify CSRF token

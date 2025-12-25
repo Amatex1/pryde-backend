@@ -74,12 +74,14 @@ router.post('/', auth, async (req, res) => {
       poll
     } = req.body;
 
-    console.log('💾 Saving draft:', {
-      draftId,
+    // DIAGNOSTIC: Detailed draft creation logging
+    console.log('[DRAFT CREATE] Request received:', {
+      draftId: draftId || 'NEW',
       draftType,
       userId: req.userId,
       contentLength: content?.length || 0,
-      hasMedia: media?.length > 0
+      hasMedia: media?.length > 0,
+      isUpdate: !!draftId
     });
 
     // If draftId provided, update existing draft
@@ -133,11 +135,12 @@ router.post('/', auth, async (req, res) => {
       }
 
       await draft.save();
-      console.log('✅ Draft updated:', draft._id);
+      console.log('[DRAFT UPDATE] Draft updated successfully:', draft._id);
       return res.json(draft);
     }
 
     // Create new draft
+    console.log('[DRAFT CREATE] Creating new draft for user:', req.userId);
     // Transform poll options if present
     let pollData = null;
     if (poll && poll.options) {
@@ -184,10 +187,15 @@ router.post('/', auth, async (req, res) => {
     const draft = new Draft(draftData);
 
     await draft.save();
-    console.log('✅ New draft created:', draft._id);
+    console.log('[DRAFT CREATE] New draft created successfully:', {
+      id: draft._id,
+      type: draft.draftType,
+      userId: req.userId
+    });
     res.status(201).json(draft);
   } catch (error) {
-    console.error('Save draft error:', error);
+    console.error('[DRAFT CREATE] Save draft error:', error);
+    console.error('[DRAFT CREATE] This will cause a ghost draft if frontend sets ID optimistically');
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
@@ -197,20 +205,26 @@ router.post('/', auth, async (req, res) => {
 // @access  Private
 router.delete('/:id', auth, async (req, res) => {
   try {
+    console.log('[DRAFT DELETE] Attempting to delete draft:', req.params.id, 'by user:', req.userId);
+
     const draft = await Draft.findById(req.params.id);
 
     if (!draft) {
+      console.warn('[DRAFT DELETE] Draft not found:', req.params.id);
+      console.warn('[DRAFT DELETE] This may be a ghost draft that was never persisted');
       return res.status(404).json({ message: 'Draft not found' });
     }
 
     if (draft.user.toString() !== req.userId.toString()) {
+      console.warn('[DRAFT DELETE] User not authorized:', req.userId, 'tried to delete draft owned by:', draft.user);
       return res.status(403).json({ message: 'Not authorized' });
     }
 
     await draft.deleteOne();
+    console.log('[DRAFT DELETE] Draft deleted successfully:', req.params.id);
     res.json({ message: 'Draft deleted' });
   } catch (error) {
-    console.error('Delete draft error:', error);
+    console.error('[DRAFT DELETE] Delete draft error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });

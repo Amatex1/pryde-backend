@@ -398,8 +398,25 @@ router.post('/chat-attachment', auth, uploadLimiter, (req, res) => {
 // @desc    Upload media for posts (images, videos, gifs) - Max 3 files
 // @access  Private
 router.post('/post-media', auth, uploadLimiter, (req, res) => {
+  // DIAGNOSTIC: Log middleware chain entry point
+  if (config.nodeEnv === 'development') {
+    console.log('[UPLOAD DEBUG] /post-media route handler entered');
+    console.log('[UPLOAD DEBUG] Auth passed - req.userId:', req.userId);
+    console.log('[UPLOAD DEBUG] Content-Type:', req.headers['content-type']);
+    console.log('[UPLOAD DEBUG] Authorization header:', req.headers['authorization'] ? 'Present' : 'Missing');
+    console.log('[UPLOAD DEBUG] x-auth-token header:', req.headers['x-auth-token'] ? 'Present' : 'Missing');
+    console.log('[UPLOAD DEBUG] CSRF cookie:', req.cookies?.['XSRF-TOKEN'] ? 'Present' : 'Missing');
+    console.log('[UPLOAD DEBUG] CSRF header:', req.headers['x-xsrf-token'] || req.headers['x-csrf-token'] ? 'Present' : 'Missing');
+  }
+
   upload.array('media', 3)(req, res, async (err) => {
     try {
+      // DIAGNOSTIC: Log multer result
+      if (config.nodeEnv === 'development') {
+        console.log('[UPLOAD DEBUG] Multer processing complete');
+        console.log('[UPLOAD DEBUG] Files received:', req.files?.length || 0);
+      }
+
       // Enhanced error handling for multer errors
       if (err) {
         console.error('❌ Multer error:', err);
