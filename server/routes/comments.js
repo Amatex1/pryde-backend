@@ -5,6 +5,12 @@ import auth from '../middleware/auth.js';
 import requireActiveUser from '../middleware/requireActiveUser.js';
 import { reactionLimiter } from '../middleware/rateLimiter.js';
 import logger from '../utils/logger.js';
+import {
+  trackMutation,
+  confirmMutation,
+  failMutation,
+  MutationType
+} from '../utils/mutationTracker.js';
 
 const router = express.Router();
 
@@ -89,6 +95,12 @@ router.get('/comments/:commentId/replies', auth, requireActiveUser, async (req, 
 // @desc    Add a comment to a post (or reply to a comment)
 // @access  Private
 router.post('/posts/:postId/comments', auth, requireActiveUser, async (req, res) => {
+  // Track mutation
+  const mutationId = trackMutation(MutationType.CREATE, 'Comment', {
+    postId: req.params.postId,
+    parentCommentId: req.body.parentCommentId
+  });
+
   try {
     const { postId } = req.params;
     const { content, gifUrl, parentCommentId } = req.body;
@@ -96,12 +108,14 @@ router.post('/posts/:postId/comments', auth, requireActiveUser, async (req, res)
 
     // Either content or gifUrl must be provided
     if ((!content || content.trim() === '') && !gifUrl) {
+      failMutation(mutationId, new Error('Comment content or GIF is required'));
       return res.status(400).json({ message: 'Comment content or GIF is required' });
     }
 
     // Verify post exists
     const post = await Post.findById(postId);
     if (!post) {
+      failMutation(mutationId, new Error('Post not found'));
       return res.status(404).json({ message: 'Post not found' });
     }
 
@@ -109,14 +123,17 @@ router.post('/posts/:postId/comments', auth, requireActiveUser, async (req, res)
     if (parentCommentId) {
       const parentComment = await Comment.findById(parentCommentId);
       if (!parentComment) {
+        failMutation(mutationId, new Error('Parent comment not found'));
         return res.status(404).json({ message: 'Parent comment not found' });
       }
       // Enforce 1-level nesting: replies cannot have replies
       if (parentComment.parentCommentId !== null) {
+        failMutation(mutationId, new Error('Cannot reply to a reply'));
         return res.status(400).json({ message: 'Cannot reply to a reply. Only one level of nesting allowed.' });
       }
       // Ensure reply belongs to the same post
       if (parentComment.postId.toString() !== postId) {
+        failMutation(mutationId, new Error('Reply must belong to same post'));
         return res.status(400).json({ message: 'Reply must belong to the same post as the parent comment.' });
       }
     }
@@ -138,6 +155,7 @@ router.post('/posts/:postId/comments', auth, requireActiveUser, async (req, res)
     });
 
     await comment.save();
+    confirmMutation(mutationId);
 
     logger.debug('✅ Comment saved to database:', {
       commentId: comment._id,
@@ -215,6 +233,11 @@ router.put('/comments/:commentId', auth, requireActiveUser, async (req, res) => 
 // @desc    Delete a comment
 // @access  Private
 router.delete('/comments/:commentId', auth, requireActiveUser, async (req, res) => {
+  // Track mutation
+  const mutationId = trackMutation(MutationType.DELETE, 'Comment', {
+    commentId: req.params.commentId
+  });
+
   try {
     const { commentId } = req.params;
     const userId = req.userId || req.user._id;
@@ -222,12 +245,14 @@ router.delete('/comments/:commentId', auth, requireActiveUser, async (req, res) 
     const comment = await Comment.findById(commentId);
 
     if (!comment) {
+      failMutation(mutationId, new Error('Comment not found'));
       return res.status(404).json({ message: 'Comment not found' });
     }
 
     // Check if user is the comment author or post author
     const post = await Post.findById(comment.postId);
     if (comment.authorId.toString() !== userId.toString() && post.author.toString() !== userId.toString()) {
+      failMutation(mutationId, new Error('Not authorized'));
       return res.status(403).json({ message: 'Not authorized to delete this comment' });
     }
 
@@ -258,6 +283,8 @@ router.delete('/comments/:commentId', auth, requireActiveUser, async (req, res) 
       logger.info(`Hard deleted comment ${commentId} (no replies)`);
     }
 
+    confirmMutation(mutationId);
+
     // Emit real-time event
     if (req.io) {
       req.io.emit('comment_deleted', {
@@ -269,6 +296,7 @@ router.delete('/comments/:commentId', auth, requireActiveUser, async (req, res) 
 
     res.json({ message: 'Comment deleted successfully' });
   } catch (error) {
+    failMutation(mutationId, error);
     logger.error('Delete comment error:', error);
     res.status(500).json({ message: 'Server error' });
   }

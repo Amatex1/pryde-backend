@@ -608,6 +608,11 @@ const userSchema = new mongoose.Schema({
       type: Boolean,
       default: true
     },
+    // Safe Mode - stability fallback (disables PWA, sockets, polling, optimistic UI)
+    safeModeEnabled: {
+      type: Boolean,
+      default: false
+    },
     whoCanSeeMyPosts: {
       type: String,
       enum: ['public', 'followers', 'only-me'], // REMOVED: 'friends'
@@ -647,28 +652,10 @@ const userSchema = new mongoose.Schema({
       default: false
     }
   },
-  // PHASE 5: Creator Mode
-  isCreator: {
-    type: Boolean,
-    default: false
-  },
-  creatorTagline: {
-    type: String,
-    maxlength: 100,
-    default: ''
-  },
-  creatorBio: {
-    type: String,
-    maxlength: 1000,
-    default: ''
-  },
-  featuredPosts: {
-    type: [{
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Post'
-    }],
-    default: []
-  },
+  // PHASE 5: Creator Mode (DEPRECATED - removed 2025-12-25)
+  // isCreator, creatorTagline, creatorBio, featuredPosts removed
+  // Use regular posts and profile bio instead
+
   // PHASE 6: Ally System (DEPRECATED - use identity field instead)
   isAlly: {
     type: Boolean,

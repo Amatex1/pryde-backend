@@ -47,12 +47,13 @@ router.get('/status', async (req, res) => {
     // Verify token
     try {
       const decoded = jwt.verify(token, config.jwtSecret);
-      const user = await User.findById(decoded.userId).select('_id username displayName profilePhoto');
+      const user = await User.findById(decoded.userId).select('_id username displayName profilePhoto privacySettings.safeModeEnabled');
 
       if (!user) {
         return res.json({
           authenticated: false,
-          user: null
+          user: null,
+          safeModeEnabled: false
         });
       }
 
@@ -63,13 +64,15 @@ router.get('/status', async (req, res) => {
           username: user.username,
           displayName: user.displayName,
           profilePhoto: user.profilePhoto
-        }
+        },
+        safeModeEnabled: user.privacySettings?.safeModeEnabled || false
       });
     } catch (tokenError) {
       // Token invalid or expired
       return res.json({
         authenticated: false,
-        user: null
+        user: null,
+        safeModeEnabled: false
       });
     }
   } catch (error) {

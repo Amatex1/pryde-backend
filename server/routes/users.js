@@ -706,45 +706,15 @@ router.patch('/me/settings', auth, requireActiveUser, async (req, res) => {
 });
 
 // @route   PATCH /api/users/me/creator
-// @desc    Update creator mode settings (PHASE 5)
+// @desc    DEPRECATED - Creator mode removed 2025-12-25
 // @access  Private
 router.patch('/me/creator', auth, requireActiveUser, async (req, res) => {
-  try {
-    const { isCreator, creatorTagline, creatorBio, featuredPosts } = req.body;
-    const user = await User.findById(req.userId);
-
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-
-    // Update creator fields
-    if (typeof isCreator === 'boolean') {
-      user.isCreator = isCreator;
-    }
-    if (creatorTagline !== undefined) {
-      user.creatorTagline = creatorTagline;
-    }
-    if (creatorBio !== undefined) {
-      user.creatorBio = creatorBio;
-    }
-    if (featuredPosts !== undefined && Array.isArray(featuredPosts)) {
-      user.featuredPosts = featuredPosts;
-    }
-
-    await user.save();
-
-    res.json({
-      message: 'Creator settings updated successfully',
-      isCreator: user.isCreator,
-      creatorTagline: user.creatorTagline,
-      creatorBio: user.creatorBio,
-      featuredPosts: user.featuredPosts
-    });
-  } catch (error) {
-    console.error('Update creator settings error:', error);
-    console.error('Error details:', error.message);
-    res.status(500).json({ message: 'Server error', error: error.message });
-  }
+  // Return 410 Gone to indicate this endpoint has been permanently removed
+  res.status(410).json({
+    message: 'Creator mode has been removed. All users now have access to creative features.',
+    deprecated: true,
+    removedDate: '2025-12-25'
+  });
 });
 
 // @route   PATCH /api/users/me/ally

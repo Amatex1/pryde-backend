@@ -56,6 +56,10 @@ import backupRoutes from './routes/backup.js';
 import auditRoutes from './routes/audit.js';
 import versionRoutes from './routes/version.js';
 import devVerifyRoutes from './routes/devVerify.js';
+import adminDebugRoutes from './routes/adminDebug.js';
+import safeModeRoutes from './routes/safeMode.js';
+import sessionInspectorRoutes from './routes/sessionInspector.js';
+import bugReportsRoutes from './routes/bugReports.js';
 
 // Import middleware
 import auth from './middleware/auth.js';
@@ -376,6 +380,10 @@ app.use('/api/backup', backupRoutes); // Backup download routes
 app.use('/api/audit', auditRoutes); // Admin audit routes
 app.use('/api/version', versionRoutes); // Version endpoint for update detection
 app.use('/api/dev', devVerifyRoutes); // Dev-only verification endpoints
+app.use('/api/admin/debug', adminDebugRoutes); // Admin-only PWA debug tools
+app.use('/api/safe-mode', safeModeRoutes); // User-controlled Safe Mode
+app.use('/api/session-inspector', sessionInspectorRoutes); // Session state inspector
+app.use('/api/bug-reports', bugReportsRoutes); // Bug reporting with state snapshots
 
 // Debug: Log the passkey router before registering
 console.log('🔍 Passkey router type:', typeof passkeyRoutes);
