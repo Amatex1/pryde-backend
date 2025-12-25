@@ -193,7 +193,8 @@ const corsOptions = {
     'X-CSRF-Token',
     'X-Frontend-Version',  // Version pinning for auto-refresh detection
     'X-Session-Id',        // Session tracking
-    'X-Mutation-Id'        // Mutation tracking for consistency
+    'X-Mutation-Id',       // Mutation tracking for consistency
+    'Cache-Control'        // Allow cache-control header
   ],
   exposedHeaders: ['Authorization', 'X-CSRF-Token', 'X-Mutation-Id'], // Expose headers for cross-origin requests
   optionsSuccessStatus: 200
