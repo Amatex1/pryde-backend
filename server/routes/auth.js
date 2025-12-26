@@ -1185,9 +1185,17 @@ router.post('/reset-password', async (req, res) => {
       return res.status(400).json({ message: 'Token and new password are required' });
     }
 
-    // Validate password length
-    if (newPassword.length < 6) {
-      return res.status(400).json({ message: 'Password must be at least 6 characters' });
+    // Validate password length (must match signup requirements)
+    if (newPassword.length < 12) {
+      return res.status(400).json({ message: 'Password must be at least 12 characters' });
+    }
+
+    // Validate password complexity (must match signup requirements)
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#^()_+\-=\[\]{};':"\\|,.<>\/])/;
+    if (!passwordRegex.test(newPassword)) {
+      return res.status(400).json({
+        message: 'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character'
+      });
     }
 
     // Hash the token from URL to compare with database
