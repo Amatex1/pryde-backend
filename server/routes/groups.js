@@ -34,8 +34,8 @@ router.get('/:slug', authenticateToken, async (req, res) => {
     const { slug } = req.params;
     const userId = req.user.id;
 
-    // Find group by slug
-    const group = await Group.findOne({ slug })
+    // Find group by slug (normalize to lowercase for consistency)
+    const group = await Group.findOne({ slug: slug.toLowerCase() })
       .populate('owner', 'username displayName profilePhoto')
       .populate('moderators', 'username displayName profilePhoto');
 
@@ -96,27 +96,37 @@ router.post('/:slug/join', authenticateToken, async (req, res) => {
     const { slug } = req.params;
     const userId = req.user.id;
 
-    const group = await Group.findOne({ slug });
+    // Use $addToSet for idempotent membership addition (no duplicates)
+    // findOneAndUpdate is atomic and returns the updated document
+    const group = await Group.findOneAndUpdate(
+      { slug: slug.toLowerCase() },
+      { $addToSet: { members: userId } },
+      { new: true }
+    )
+      .populate('owner', 'username displayName profilePhoto')
+      .populate('moderators', 'username displayName profilePhoto');
 
     if (!group) {
       return res.status(404).json({ message: 'Group not found' });
     }
 
-    // Check if already a member (idempotent)
-    if (group.isMember(userId)) {
-      return res.json({ 
-        message: 'Already a member',
-        isMember: true 
-      });
-    }
+    // Return full response with isMember flag for UI update
+    const memberCount = group.members.length + group.moderators.length + 1; // +1 for owner
 
-    // Add to members array
-    group.members.push(userId);
-    await group.save();
-
-    res.json({ 
+    res.json({
+      success: true,
       message: 'Successfully joined group',
-      isMember: true
+      isMember: true,
+      groupId: group._id,
+      slug: group.slug,
+      name: group.name,
+      description: group.description,
+      visibility: group.visibility,
+      owner: group.owner,
+      moderators: group.moderators,
+      memberCount,
+      createdAt: group.createdAt,
+      posts: [] // Posts will be fetched separately or in Phase 1+
     });
   } catch (error) {
     console.error('Join group error:', error);
@@ -134,7 +144,8 @@ router.post('/:slug/leave', authenticateToken, async (req, res) => {
     const { slug } = req.params;
     const userId = req.user.id;
 
-    const group = await Group.findOne({ slug });
+    // Normalize slug for consistency
+    const group = await Group.findOne({ slug: slug.toLowerCase() });
 
     if (!group) {
       return res.status(404).json({ message: 'Group not found' });
@@ -142,19 +153,27 @@ router.post('/:slug/leave', authenticateToken, async (req, res) => {
 
     // Owner cannot leave (must transfer ownership first)
     if (group.owner.toString() === userId) {
-      return res.status(400).json({ 
-        message: 'Owner cannot leave group. Transfer ownership first.' 
+      return res.status(400).json({
+        message: 'Owner cannot leave group. Transfer ownership first.'
       });
     }
 
-    // Remove from members and moderators
-    group.members = group.members.filter(m => m.toString() !== userId);
-    group.moderators = group.moderators.filter(m => m.toString() !== userId);
-    await group.save();
+    // Use $pull for atomic removal from both arrays
+    await Group.findOneAndUpdate(
+      { slug: slug.toLowerCase() },
+      {
+        $pull: {
+          members: userId,
+          moderators: userId
+        }
+      }
+    );
 
-    res.json({ 
+    res.json({
+      success: true,
       message: 'Left group successfully',
-      isMember: false
+      isMember: false,
+      slug: group.slug
     });
   } catch (error) {
     console.error('Leave group error:', error);
