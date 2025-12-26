@@ -27,7 +27,7 @@ router.get('/', auth, requireActiveUser, asyncHandler(async (req, res) => {
   const currentUserId = requireAuth(req, res);
   if (!currentUserId) return;
 
-  const { page = 1, limit = 20, tag } = req.query;
+  const { page = 1, limit = 20 } = req.query;
 
   // SAFETY: Validate pagination params
   const pageNum = Math.max(1, parseInt(page) || 1);
@@ -39,14 +39,11 @@ router.get('/', auth, requireActiveUser, asyncHandler(async (req, res) => {
   // Build query
   const query = {
     visibility: 'public',
-    author: { $nin: blockedUserIds }, // Exclude blocked users
-    tagOnly: { $ne: true } // Exclude tag-only posts from main feed
+    author: { $nin: blockedUserIds } // Exclude blocked users
+    // REMOVED 2025-12-26: tagOnly filter deleted (Phase 5)
   };
 
-  // Tag filter (for Phase 4 - Community Tags)
-  if (tag) {
-    query.hashtags = tag.toLowerCase();
-  }
+  // REMOVED 2025-12-26: Tag filter deleted (Phase 5 - hashtags removed)
 
   // Calculate skip for pagination
   const skip = (pageNum - 1) * limitNum;
@@ -54,14 +51,7 @@ router.get('/', auth, requireActiveUser, asyncHandler(async (req, res) => {
   // Fetch posts
   const posts = await Post.find(query)
     .populate('author', 'username displayName profilePhoto isVerified')
-    .populate({
-      path: 'originalPost',
-      select: 'content media author createdAt',
-      populate: {
-        path: 'author',
-        select: 'username displayName profilePhoto isVerified'
-      }
-    })
+    // REMOVED 2025-12-26: originalPost population deleted (Phase 5)
     .sort({ createdAt: -1 })
     .skip(skip)
     .limit(limitNum)
@@ -83,7 +73,7 @@ router.get('/global', auth, requireActiveUser, asyncHandler(async (req, res) => 
   const currentUserId = requireAuth(req, res);
   if (!currentUserId) return;
 
-  const { before, limit = 20, tag } = req.query;
+  const { before, limit = 20 } = req.query;
 
   // SAFETY: Validate limit param
   const limitNum = Math.min(100, Math.max(1, parseInt(limit) || 20));
@@ -94,8 +84,8 @@ router.get('/global', auth, requireActiveUser, asyncHandler(async (req, res) => 
   // Build query
   const query = {
     visibility: 'public',
-    author: { $nin: blockedUserIds }, // Exclude blocked users
-    tagOnly: { $ne: true } // Exclude tag-only posts from main feed
+    author: { $nin: blockedUserIds } // Exclude blocked users
+    // REMOVED 2025-12-26: tagOnly filter deleted (Phase 5)
   };
 
   // Pagination: posts before a certain timestamp
@@ -107,22 +97,12 @@ router.get('/global', auth, requireActiveUser, asyncHandler(async (req, res) => 
     }
   }
 
-  // Tag filter (for Phase 4 - Community Tags)
-  if (tag) {
-    query.hashtags = tag.toLowerCase();
-  }
+  // REMOVED 2025-12-26: Tag filter deleted (Phase 5 - hashtags removed)
 
   // Fetch posts with slow weighting
   const posts = await Post.find(query)
     .populate('author', 'username displayName profilePhoto isVerified')
-    .populate({
-      path: 'originalPost',
-      select: 'content media author createdAt',
-      populate: {
-        path: 'author',
-        select: 'username displayName profilePhoto isVerified'
-      }
-    })
+    // REMOVED 2025-12-26: originalPost population deleted (Phase 5)
     .sort({ createdAt: -1 })
     .limit(limitNum)
     .lean();
@@ -143,7 +123,7 @@ router.get('/following', auth, requireActiveUser, asyncHandler(async (req, res) 
   const currentUserId = requireAuth(req, res);
   if (!currentUserId) return;
 
-  const { before, limit = 20, tag } = req.query;
+  const { before, limit = 20 } = req.query;
 
   // SAFETY: Validate limit param
   const limitNum = Math.min(100, Math.max(1, parseInt(limit) || 20));
@@ -165,8 +145,8 @@ router.get('/following', auth, requireActiveUser, asyncHandler(async (req, res) 
       $in: currentUser.following || [],
       $nin: blockedUserIds // Exclude blocked users
     },
-    visibility: { $in: ['public', 'followers'] },
-    tagOnly: { $ne: true } // Exclude tag-only posts from following feed
+    visibility: { $in: ['public', 'followers'] }
+    // REMOVED 2025-12-26: tagOnly filter deleted (Phase 5)
   };
 
   // Pagination
@@ -178,22 +158,12 @@ router.get('/following', auth, requireActiveUser, asyncHandler(async (req, res) 
     }
   }
 
-  // Tag filter
-  if (tag) {
-    query.hashtags = tag.toLowerCase();
-  }
+  // REMOVED 2025-12-26: Tag filter deleted (Phase 5 - hashtags removed)
 
   // Fetch posts
   const posts = await Post.find(query)
     .populate('author', 'username displayName profilePhoto isVerified')
-    .populate({
-      path: 'originalPost',
-      select: 'content media author createdAt',
-      populate: {
-        path: 'author',
-        select: 'username displayName profilePhoto isVerified'
-      }
-    })
+    // REMOVED 2025-12-26: originalPost population deleted (Phase 5)
     .sort({ createdAt: -1 })
     .limit(limitNum)
     .lean();
@@ -218,17 +188,7 @@ const sanitizePostForPrivateLikes = (post, currentUserId) => {
   postObj.hasLiked = hasLiked;
   delete postObj.likes;
 
-  // Handle originalPost (shared posts)
-  if (postObj.originalPost) {
-    // CRITICAL: Also convert nested originalPost to plain object
-    const originalPostObj = postObj.originalPost.toObject ? postObj.originalPost.toObject() : { ...postObj.originalPost };
-    const originalHasLiked = originalPostObj.likes?.some(like =>
-      (like._id || like).toString() === currentUserId.toString()
-    );
-    originalPostObj.hasLiked = originalHasLiked;
-    delete originalPostObj.likes;
-    postObj.originalPost = originalPostObj;
-  }
+  // REMOVED 2025-12-26: originalPost handling deleted (Phase 5 - share system removed)
 
   return postObj;
 };
