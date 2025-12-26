@@ -193,6 +193,13 @@ router.get('/', auth, requireActiveUser, async (req, res) => {
       })
     );
 
+    // Sort conversations by lastMessage timestamp (most recent first)
+    populatedConversations.sort((a, b) => {
+      const timeA = a.lastMessage?.createdAt ? new Date(a.lastMessage.createdAt).getTime() : 0;
+      const timeB = b.lastMessage?.createdAt ? new Date(b.lastMessage.createdAt).getTime() : 0;
+      return timeB - timeA;
+    });
+
     res.json(populatedConversations);
   } catch (error) {
     logger.error('❌ Error fetching conversations:', error);
