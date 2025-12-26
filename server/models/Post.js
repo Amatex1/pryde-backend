@@ -12,6 +12,22 @@ const postSchema = new mongoose.Schema({
     required: false,
     maxlength: 5000
   },
+  /**
+   * Phase 2: Group-only posting
+   *
+   * groupId links a post to a specific Group.
+   * - null = normal post (appears in global feed, profile, etc.)
+   * - ObjectId = group post (ONLY visible within that group)
+   *
+   * Group posts are intentionally isolated from global feeds.
+   * Tags are legacy entry points only.
+   */
+  groupId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Group',
+    default: null,
+    index: true
+  },
   // REMOVED 2025-12-26: hashtags, tags, tagOnly deleted (Phase 5)
   images: [{
     type: String
@@ -103,9 +119,10 @@ const postSchema = new mongoose.Schema({
   }],
   // REMOVED 2025-12-26: shares, isShared, originalPost, shareComment deleted (Phase 5)
   // PHASE 1 REFACTOR: Simplified to 3 options (removed 'friends' and 'custom')
+  // Phase 2: Added 'group' visibility for group-only posts
   visibility: {
     type: String,
-    enum: ['public', 'followers', 'private'],
+    enum: ['public', 'followers', 'private', 'group'],
     default: 'followers'
   },
   // REMOVED 2025-12-26: hiddenFrom, sharedWith deleted (Phase 5)
@@ -178,6 +195,8 @@ const postSchema = new mongoose.Schema({
 postSchema.index({ author: 1, createdAt: -1 });
 postSchema.index({ createdAt: -1 });
 postSchema.index({ visibility: 1, createdAt: -1 }); // For filtering by visibility
+// Phase 2: Index for group posts - efficient group feed queries
+postSchema.index({ groupId: 1, createdAt: -1 });
 // REMOVED 2025-12-26: hashtags and tags indexes deleted (Phase 5)
 
 // Virtual for comment count from Comment collection

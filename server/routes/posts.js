@@ -68,17 +68,21 @@ router.get('/', auth, requireActiveUser, asyncHandler(async (req, res) => {
   // Get blocked user IDs to filter them out
   const blockedUserIds = await getBlockedUserIds(userId);
 
+  // Phase 2: All queries exclude group posts (groupId !== null)
+  // Group posts are intentionally isolated from global feeds
   let query = {};
 
   if (filter === 'public') {
-    // Public feed: All public posts from everyone (excluding blocked users)
+    // Public feed: All public posts from everyone (excluding blocked users and group posts)
     query = {
       visibility: 'public',
-      author: { $nin: blockedUserIds }
+      author: { $nin: blockedUserIds },
+      groupId: null // Phase 2: Exclude group posts
     };
   } else if (filter === 'followers') {
-    // Followers feed: Posts from people you follow + your own posts (excluding blocked users)
+    // Followers feed: Posts from people you follow + your own posts (excluding blocked users and group posts)
     query = {
+      groupId: null, // Phase 2: Exclude group posts
       $or: [
         { author: userId }, // User's own posts (always visible)
         {
@@ -94,6 +98,7 @@ router.get('/', auth, requireActiveUser, asyncHandler(async (req, res) => {
   } else {
     // Default: Followers feed (same as 'followers' filter)
     query = {
+      groupId: null, // Phase 2: Exclude group posts
       $or: [
         { author: userId },
         {
@@ -164,12 +169,18 @@ router.get('/user/:identifier', auth, requireActiveUser, asyncHandler(async (req
   const isOwnProfile = currentUserId === profileUserId?.toString();
 
   // Build query based on relationship
-  let query = { author: profileUserId };
+  // Phase 2: Exclude group posts (groupId !== null) from profile view
+  // Group posts are intentionally isolated from global feeds
+  let query = {
+    author: profileUserId,
+    groupId: null // Phase 2: Exclude group posts
+  };
 
   if (!isOwnProfile) {
     // Not viewing own profile - apply privacy filters
     query = {
       author: profileUserId,
+      groupId: null, // Phase 2: Exclude group posts
       $or: [
         { visibility: 'public' },
         { visibility: 'followers', ...(isFollowing ? {} : { _id: null }) } // Only if following

@@ -1,18 +1,21 @@
 /**
- * Migration Phase: TAGS → GROUPS (Phase 0 - Foundation)
- * 
+ * Phase 2: Group-only posting
+ *
  * Group Routes - Private, join-gated community groups
- * 
+ *
  * ENDPOINTS:
  * - GET  /api/groups/:slug       - Get group (metadata for all, posts only for members)
  * - POST /api/groups/:slug/join  - Join a group (idempotent)
  * - POST /api/groups/:slug/leave - Leave a group
- * 
- * NO discovery endpoints.
- * NO trending.
- * NO public listing.
- * 
- * NOTE: Tags are still legacy-active. These routes are isolated and additive.
+ * - POST /api/groups/:slug/posts - Create a post in this group (members only)
+ * - GET  /api/groups/:slug/posts - Get posts in this group (members only)
+ *
+ * ISOLATION:
+ * - Group posts are intentionally isolated from global feeds
+ * - Group posts NEVER appear in /feed, /profile, bookmarks, search, or notifications
+ * - All read/write operations verify membership on backend
+ *
+ * Tags are legacy entry points only.
  */
 
 import express from 'express';
@@ -70,11 +73,16 @@ router.get('/:slug', authenticateToken, async (req, res) => {
       });
     }
 
-    // Member: fetch posts scoped to this group
-    // Migration Phase: For now, we don't have groupId on posts yet
-    // This will be populated in future migration phases
-    // For Phase 0, return empty array (no posts in new groups yet)
-    const posts = []; // TODO: Phase 1+ will add Post.find({ groupId: group._id })
+    // Phase 2: Member - fetch posts scoped to this group
+    // Group posts are intentionally isolated from global feeds
+    const posts = await Post.find({
+      groupId: group._id,
+      visibility: 'group'
+    })
+      .populate('author', 'username displayName profilePhoto isVerified')
+      .sort({ createdAt: -1 })
+      .limit(50)
+      .lean();
 
     return res.json({
       ...response,
@@ -178,6 +186,130 @@ router.post('/:slug/leave', authenticateToken, async (req, res) => {
   } catch (error) {
     console.error('Leave group error:', error);
     res.status(500).json({ message: 'Failed to leave group' });
+  }
+});
+
+/**
+ * Phase 2: Group-only posting
+ *
+ * @route   POST /api/groups/:slug/posts
+ * @desc    Create a post in this group (members only)
+ * @access  Private (authenticated + member)
+ *
+ * Group posts are intentionally isolated from global feeds.
+ * They NEVER appear in /feed, /profile, bookmarks, search, or notifications.
+ */
+router.post('/:slug/posts', authenticateToken, async (req, res) => {
+  try {
+    const { slug } = req.params;
+    const userId = req.user.id;
+    const { content, media, contentWarning } = req.body;
+
+    // Find group
+    const group = await Group.findOne({ slug: slug.toLowerCase() });
+
+    if (!group) {
+      return res.status(404).json({ message: 'Group not found' });
+    }
+
+    // CRITICAL: Verify membership on backend
+    if (!group.isMember(userId)) {
+      return res.status(403).json({
+        message: 'You must be a member to post in this group'
+      });
+    }
+
+    // Validate content
+    if ((!content || content.trim() === '') && (!media || media.length === 0)) {
+      return res.status(400).json({ message: 'Post must have content or media' });
+    }
+
+    // Create group post
+    const post = new Post({
+      author: userId,
+      content: content || '',
+      media: media || [],
+      groupId: group._id,
+      visibility: 'group', // Phase 2: Group visibility isolates from global feeds
+      contentWarning: contentWarning || ''
+    });
+
+    await post.save();
+
+    // Populate author for response
+    await post.populate('author', 'username displayName profilePhoto isVerified');
+
+    res.status(201).json({
+      success: true,
+      message: 'Post created successfully',
+      post: post.toObject()
+    });
+  } catch (error) {
+    console.error('Create group post error:', error);
+    res.status(500).json({ message: 'Failed to create post' });
+  }
+});
+
+/**
+ * Phase 2: Group-only posting
+ *
+ * @route   GET /api/groups/:slug/posts
+ * @desc    Get posts in this group (members only)
+ * @access  Private (authenticated + member)
+ *
+ * Group posts are intentionally isolated from global feeds.
+ */
+router.get('/:slug/posts', authenticateToken, async (req, res) => {
+  try {
+    const { slug } = req.params;
+    const userId = req.user.id;
+    const { before, limit = 20 } = req.query;
+
+    // Find group
+    const group = await Group.findOne({ slug: slug.toLowerCase() });
+
+    if (!group) {
+      return res.status(404).json({ message: 'Group not found' });
+    }
+
+    // CRITICAL: Verify membership on backend
+    if (!group.isMember(userId)) {
+      return res.status(403).json({
+        message: 'You must be a member to view posts in this group'
+      });
+    }
+
+    // Build query
+    const query = {
+      groupId: group._id,
+      visibility: 'group'
+    };
+
+    // Pagination
+    if (before) {
+      const beforeDate = new Date(before);
+      if (!isNaN(beforeDate.getTime())) {
+        query.createdAt = { $lt: beforeDate };
+      }
+    }
+
+    // Fetch posts
+    const limitNum = Math.min(50, Math.max(1, parseInt(limit) || 20));
+    const posts = await Post.find(query)
+      .populate('author', 'username displayName profilePhoto isVerified')
+      .sort({ createdAt: -1 })
+      .limit(limitNum)
+      .lean();
+
+    res.json({
+      success: true,
+      posts,
+      groupId: group._id,
+      groupSlug: group.slug
+    });
+  } catch (error) {
+    console.error('Get group posts error:', error);
+    res.status(500).json({ message: 'Failed to fetch posts' });
   }
 });
 

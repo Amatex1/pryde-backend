@@ -8,11 +8,14 @@ import requireActiveUser from '../middleware/requireActiveUser.js';
 // @route   GET /api/bookmarks
 // @desc    Get all bookmarked posts
 // @access  Private
+// Phase 2: Exclude group posts from bookmarks display
+// Group posts are intentionally isolated from global feeds
 router.get('/', auth, requireActiveUser, async (req, res) => {
   try {
     const user = await User.findById(req.userId)
       .populate({
         path: 'bookmarkedPosts',
+        match: { groupId: null }, // Phase 2: Exclude group posts
         populate: [
           { path: 'author', select: 'username displayName profilePhoto' },
           { path: 'comments.user', select: 'username displayName profilePhoto' },
@@ -28,7 +31,10 @@ router.get('/', auth, requireActiveUser, async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    res.json({ bookmarks: user.bookmarkedPosts });
+    // Filter out null values (from match filter)
+    const filteredBookmarks = user.bookmarkedPosts.filter(post => post !== null);
+
+    res.json({ bookmarks: filteredBookmarks });
   } catch (error) {
     console.error('Get bookmarks error:', error);
     res.status(500).json({ message: 'Server error' });

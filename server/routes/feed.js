@@ -37,9 +37,12 @@ router.get('/', auth, requireActiveUser, asyncHandler(async (req, res) => {
   const blockedUserIds = await getBlockedUserIds(currentUserId);
 
   // Build query
+  // Phase 2: Exclude group posts (groupId !== null) from global feed
+  // Group posts are intentionally isolated from global feeds
   const query = {
     visibility: 'public',
-    author: { $nin: blockedUserIds } // Exclude blocked users
+    author: { $nin: blockedUserIds }, // Exclude blocked users
+    groupId: null // Phase 2: Exclude group posts
     // REMOVED 2025-12-26: tagOnly filter deleted (Phase 5)
   };
 
@@ -82,9 +85,12 @@ router.get('/global', auth, requireActiveUser, asyncHandler(async (req, res) => 
   const blockedUserIds = await getBlockedUserIds(currentUserId);
 
   // Build query
+  // Phase 2: Exclude group posts (groupId !== null) from global feed
+  // Group posts are intentionally isolated from global feeds
   const query = {
     visibility: 'public',
-    author: { $nin: blockedUserIds } // Exclude blocked users
+    author: { $nin: blockedUserIds }, // Exclude blocked users
+    groupId: null // Phase 2: Exclude group posts
     // REMOVED 2025-12-26: tagOnly filter deleted (Phase 5)
   };
 
@@ -140,12 +146,15 @@ router.get('/following', auth, requireActiveUser, asyncHandler(async (req, res) 
   const blockedUserIds = await getBlockedUserIds(currentUserId);
 
   // Build query - posts from followed users (excluding blocked users)
+  // Phase 2: Exclude group posts (groupId !== null) from following feed
+  // Group posts are intentionally isolated from global feeds
   const query = {
     author: {
       $in: currentUser.following || [],
       $nin: blockedUserIds // Exclude blocked users
     },
-    visibility: { $in: ['public', 'followers'] }
+    visibility: { $in: ['public', 'followers'] },
+    groupId: null // Phase 2: Exclude group posts
     // REMOVED 2025-12-26: tagOnly filter deleted (Phase 5)
   };
 
