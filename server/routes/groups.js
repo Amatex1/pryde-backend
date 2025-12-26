@@ -153,6 +153,108 @@ router.post('/', authenticateToken, async (req, res) => {
 });
 
 /**
+ * @route   PATCH /api/groups/:slug
+ * @desc    Edit a group (owner only)
+ * @access  Private (owner only)
+ */
+router.patch('/:slug', authenticateToken, async (req, res) => {
+  try {
+    const { slug } = req.params;
+    const userId = req.user.id || req.user._id;
+    const { name, description, visibility } = req.body;
+
+    const group = await Group.findOne({ slug });
+    if (!group) {
+      return res.status(404).json({ message: 'Group not found' });
+    }
+
+    // Only owner can edit
+    if (group.owner.toString() !== userId.toString()) {
+      return res.status(403).json({ message: 'Only the group owner can edit this group' });
+    }
+
+    // Update fields if provided
+    if (name !== undefined) {
+      const trimmedName = name.trim();
+      if (!trimmedName) {
+        return res.status(400).json({ message: 'Group name cannot be empty' });
+      }
+      if (trimmedName.length > 100) {
+        return res.status(400).json({ message: 'Group name must be 100 characters or less' });
+      }
+      group.name = trimmedName;
+    }
+
+    if (description !== undefined) {
+      group.description = description.trim().substring(0, 500);
+    }
+
+    if (visibility !== undefined) {
+      if (!['private', 'public', 'hidden'].includes(visibility)) {
+        return res.status(400).json({ message: 'Invalid visibility option' });
+      }
+      group.visibility = visibility;
+    }
+
+    await group.save();
+
+    res.json({
+      success: true,
+      message: 'Group updated successfully',
+      group: {
+        _id: group._id,
+        slug: group.slug,
+        name: group.name,
+        description: group.description,
+        visibility: group.visibility,
+        status: group.status
+      }
+    });
+
+  } catch (error) {
+    console.error('Edit group error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+/**
+ * @route   DELETE /api/groups/:slug
+ * @desc    Delete a group (owner only)
+ * @access  Private (owner only)
+ */
+router.delete('/:slug', authenticateToken, async (req, res) => {
+  try {
+    const { slug } = req.params;
+    const userId = req.user.id || req.user._id;
+
+    const group = await Group.findOne({ slug });
+    if (!group) {
+      return res.status(404).json({ message: 'Group not found' });
+    }
+
+    // Only owner can delete
+    if (group.owner.toString() !== userId.toString()) {
+      return res.status(403).json({ message: 'Only the group owner can delete this group' });
+    }
+
+    // Delete all posts in this group
+    await Post.deleteMany({ group: group._id });
+
+    // Delete the group
+    await Group.deleteOne({ _id: group._id });
+
+    res.json({
+      success: true,
+      message: 'Group deleted successfully'
+    });
+
+  } catch (error) {
+    console.error('Delete group error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+/**
  * @route   GET /api/groups/:slug
  * @desc    Get group by slug
  *          - Non-members: metadata only (name, description)
