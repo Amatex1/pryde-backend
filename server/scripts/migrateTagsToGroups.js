@@ -70,6 +70,7 @@ async function migrateTagsToGroups() {
           name: tag.label,
           description: tag.icon ? `${tag.icon} ${tag.description}` : tag.description,
           visibility: 'private', // All groups start as private
+          status: 'approved', // Migrated groups are auto-approved
           owner: defaultOwner._id,
           moderators: [],
           members: [],
