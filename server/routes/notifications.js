@@ -1,78 +1,90 @@
+/**
+ * Notification Routes
+ * PHASE 2 SAFETY: All routes use guard clauses and optional chaining
+ */
+
 import express from 'express';
 const router = express.Router();
 import Notification from '../models/Notification.js';
 import authMiddleware from '../middleware/auth.js';
 import requireActiveUser from '../middleware/requireActiveUser.js';
+import { asyncHandler, requireAuth, requireValidId, sendError, HttpStatus } from '../utils/errorHandler.js';
 
 // Get user notifications
-router.get('/', authMiddleware, requireActiveUser, async (req, res) => {
-  try {
-    const notifications = await Notification.find({ recipient: req.userId })
-      .populate('sender', 'username displayName profilePhoto')
-      .sort({ createdAt: -1 })
-      .limit(50);
+router.get('/', authMiddleware, requireActiveUser, asyncHandler(async (req, res) => {
+  // SAFETY: Guard clause for auth
+  const userId = requireAuth(req, res);
+  if (!userId) return;
 
-    res.json(notifications);
-  } catch (error) {
-    res.status(500).json({ message: 'Error fetching notifications', error: error.message });
-  }
-});
+  const notifications = await Notification.find({ recipient: userId })
+    .populate('sender', 'username displayName profilePhoto')
+    .sort({ createdAt: -1 })
+    .limit(50);
+
+  res.json(notifications);
+}));
 
 // Mark notification as read
-router.put('/:id/read', authMiddleware, requireActiveUser, async (req, res) => {
-  try {
-    const notification = await Notification.findOneAndUpdate(
-      { _id: req.params.id, recipient: req.userId },
-      { read: true },
-      { new: true }
-    );
+router.put('/:id/read', authMiddleware, requireActiveUser, asyncHandler(async (req, res) => {
+  // SAFETY: Guard clause for auth
+  const userId = requireAuth(req, res);
+  if (!userId) return;
 
-    if (!notification) {
-      return res.status(404).json({ message: 'Notification not found' });
-    }
+  // SAFETY: Validate ObjectId
+  if (!requireValidId(req.params.id, 'notification ID', res)) return;
 
-    // ✅ Emit real-time update to user
-    req.io.to(`user:${req.userId}`).emit('notification:read', {
-      notificationId: req.params.id
-    });
+  const notification = await Notification.findOneAndUpdate(
+    { _id: req.params.id, recipient: userId },
+    { read: true },
+    { new: true }
+  );
 
-    res.json(notification);
-  } catch (error) {
-    res.status(500).json({ message: 'Error updating notification', error: error.message });
+  if (!notification) {
+    return sendError(res, HttpStatus.NOT_FOUND, 'Notification not found');
   }
-});
+
+  // SAFETY: Optional chaining for io
+  req.io?.to(`user:${userId}`).emit('notification:read', {
+    notificationId: req.params.id
+  });
+
+  res.json(notification);
+}));
 
 // Mark all notifications as read
-router.put('/read-all', authMiddleware, requireActiveUser, async (req, res) => {
-  try {
-    await Notification.updateMany(
-      { recipient: req.userId, read: false },
-      { read: true }
-    );
+router.put('/read-all', authMiddleware, requireActiveUser, asyncHandler(async (req, res) => {
+  // SAFETY: Guard clause for auth
+  const userId = requireAuth(req, res);
+  if (!userId) return;
 
-    // ✅ Emit real-time update to user
-    req.io.to(`user:${req.userId}`).emit('notification:read_all');
+  await Notification.updateMany(
+    { recipient: userId, read: false },
+    { read: true }
+  );
 
-    res.json({ message: 'All notifications marked as read' });
-  } catch (error) {
-    res.status(500).json({ message: 'Error updating notifications', error: error.message });
-  }
-});
+  // SAFETY: Optional chaining for io
+  req.io?.to(`user:${userId}`).emit('notification:read_all');
+
+  res.json({ message: 'All notifications marked as read' });
+}));
 
 // Delete notification
-router.delete('/:id', authMiddleware, requireActiveUser, async (req, res) => {
-  try {
-    await Notification.findOneAndDelete({ _id: req.params.id, recipient: req.userId });
+router.delete('/:id', authMiddleware, requireActiveUser, asyncHandler(async (req, res) => {
+  // SAFETY: Guard clause for auth
+  const userId = requireAuth(req, res);
+  if (!userId) return;
 
-    // ✅ Emit real-time update to user
-    req.io.to(`user:${req.userId}`).emit('notification:deleted', {
-      notificationId: req.params.id
-    });
+  // SAFETY: Validate ObjectId
+  if (!requireValidId(req.params.id, 'notification ID', res)) return;
 
-    res.json({ message: 'Notification deleted' });
-  } catch (error) {
-    res.status(500).json({ message: 'Error deleting notification', error: error.message });
-  }
-});
+  await Notification.findOneAndDelete({ _id: req.params.id, recipient: userId });
+
+  // SAFETY: Optional chaining for io
+  req.io?.to(`user:${userId}`).emit('notification:deleted', {
+    notificationId: req.params.id
+  });
+
+  res.json({ message: 'Notification deleted' });
+}));
 
 export default router;

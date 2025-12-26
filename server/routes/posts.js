@@ -1,3 +1,8 @@
+/**
+ * Posts Routes
+ * PHASE 2 SAFETY: All routes use guard clauses and optional chaining
+ */
+
 import express from 'express';
 const router = express.Router();
 import mongoose from 'mongoose';
@@ -15,6 +20,7 @@ import { getBlockedUserIds } from '../utils/blockHelper.js';
 import { emitNotificationCreated } from '../utils/notificationEmitter.js'; // ✅ Socket.IO notifications
 import { deleteFromGridFS } from './upload.js'; // For deleting images from storage
 import { MutationTrace, verifyWrite } from '../utils/mutationTrace.js';
+import { asyncHandler, requireAuth, requireValidId, sendError, HttpStatus } from '../utils/errorHandler.js';
 
 // PHASE 1 REFACTOR: Helper function to sanitize post for private likes
 // Removes like count and list of who liked, only shows if current user liked
@@ -42,177 +48,177 @@ const sanitizePostForPrivateLikes = (post, currentUserId) => {
 // @route   GET /api/posts
 // @desc    Get all posts (feed)
 // @access  Private
-router.get('/', auth, requireActiveUser, async (req, res) => {
-  try {
-    const { page = 1, limit = 20, filter = 'followers' } = req.query;
+router.get('/', auth, requireActiveUser, asyncHandler(async (req, res) => {
+  // SAFETY: Guard clause for auth
+  const userId = requireAuth(req, res);
+  if (!userId) return;
 
-    const userId = req.userId || req.user._id;
-    const currentUser = await User.findById(userId);
-    const followingIds = currentUser.following || [];
+  const { page = 1, limit = 20, filter = 'followers' } = req.query;
 
-    // Get blocked user IDs to filter them out
-    const blockedUserIds = await getBlockedUserIds(userId);
+  // SAFETY: Validate pagination params
+  const pageNum = Math.max(1, parseInt(page) || 1);
+  const limitNum = Math.min(100, Math.max(1, parseInt(limit) || 20));
 
-    let query = {};
-
-    // REMOVED 2025-12-26: hiddenFrom, sharedWith, tagOnly filters deleted (Phase 5)
-    if (filter === 'public') {
-      // Public feed: All public posts from everyone (excluding blocked users)
-      query = {
-        visibility: 'public',
-        author: { $nin: blockedUserIds }
-      };
-    } else if (filter === 'followers') {
-      // Followers feed: Posts from people you follow + your own posts (excluding blocked users)
-      query = {
-        $or: [
-          { author: userId }, // User's own posts (always visible)
-          {
-            author: { $in: followingIds, $nin: blockedUserIds },
-            visibility: 'public'
-          },
-          {
-            author: { $in: followingIds, $nin: blockedUserIds },
-            visibility: 'followers'
-          }
-        ]
-      };
-    } else {
-      // Default: Followers feed (same as 'followers' filter)
-      // REMOVED 2025-12-26: hiddenFrom, sharedWith filters deleted (Phase 5)
-      query = {
-        $or: [
-          { author: userId },
-          {
-            author: { $in: followingIds },
-            visibility: 'public'
-          },
-          {
-            author: { $in: followingIds },
-            visibility: 'followers'
-          }
-        ]
-      };
-    }
-
-    // PHASE 1 REFACTOR: Don't populate likes (keep private)
-    // REMOVED 2025-12-26: tags, originalPost population deleted (Phase 5)
-    const posts = await Post.find(query)
-      .populate('author', 'username displayName profilePhoto isVerified pronouns')
-      .populate('comments.user', 'username displayName profilePhoto isVerified pronouns')
-      // .populate('likes', 'username displayName profilePhoto') // REMOVED - private likes
-      .populate('reactions.user', 'username displayName profilePhoto')
-      .populate('comments.reactions.user', 'username displayName profilePhoto')
-      .populate('commentCount') // Populate virtual comment count from Comment collection
-      .sort({ createdAt: -1 })
-      .limit(limit * 1)
-      .skip((page - 1) * limit);
-
-    const count = await Post.countDocuments(query);
-
-    // PHASE 1 REFACTOR: Sanitize posts to hide like counts
-    const sanitizedPosts = posts.map(post => sanitizePostForPrivateLikes(post, userId));
-
-    res.json({
-      posts: sanitizedPosts,
-      totalPages: Math.ceil(count / limit),
-      currentPage: page
-    });
-  } catch (error) {
-    logger.error('Get posts error:', error);
-    res.status(500).json({ message: 'Server error' });
+  const currentUser = await User.findById(userId);
+  if (!currentUser) {
+    return sendError(res, HttpStatus.NOT_FOUND, 'User not found');
   }
-});
+  const followingIds = currentUser.following || [];
+
+  // Get blocked user IDs to filter them out
+  const blockedUserIds = await getBlockedUserIds(userId);
+
+  let query = {};
+
+  if (filter === 'public') {
+    // Public feed: All public posts from everyone (excluding blocked users)
+    query = {
+      visibility: 'public',
+      author: { $nin: blockedUserIds }
+    };
+  } else if (filter === 'followers') {
+    // Followers feed: Posts from people you follow + your own posts (excluding blocked users)
+    query = {
+      $or: [
+        { author: userId }, // User's own posts (always visible)
+        {
+          author: { $in: followingIds, $nin: blockedUserIds },
+          visibility: 'public'
+        },
+        {
+          author: { $in: followingIds, $nin: blockedUserIds },
+          visibility: 'followers'
+        }
+      ]
+    };
+  } else {
+    // Default: Followers feed (same as 'followers' filter)
+    query = {
+      $or: [
+        { author: userId },
+        {
+          author: { $in: followingIds },
+          visibility: 'public'
+        },
+        {
+          author: { $in: followingIds },
+          visibility: 'followers'
+        }
+      ]
+    };
+  }
+
+  const posts = await Post.find(query)
+    .populate('author', 'username displayName profilePhoto isVerified pronouns')
+    .populate('comments.user', 'username displayName profilePhoto isVerified pronouns')
+    .populate('reactions.user', 'username displayName profilePhoto')
+    .populate('comments.reactions.user', 'username displayName profilePhoto')
+    .populate('commentCount')
+    .sort({ createdAt: -1 })
+    .limit(limitNum)
+    .skip((pageNum - 1) * limitNum);
+
+  const count = await Post.countDocuments(query);
+
+  // Sanitize posts to hide like counts
+  const sanitizedPosts = posts.map(post => sanitizePostForPrivateLikes(post, userId));
+
+  res.json({
+    posts: sanitizedPosts,
+    totalPages: Math.ceil(count / limitNum),
+    currentPage: pageNum
+  });
+}));
 
 // @route   GET /api/posts/user/:identifier
 // @desc    Get posts by user (by ID or username)
 // @access  Private
-router.get('/user/:identifier', auth, requireActiveUser, async (req, res) => {
-  try {
-    const currentUserId = req.userId || req.user._id;
-    const { identifier } = req.params;
-    let profileUserId;
+router.get('/user/:identifier', auth, requireActiveUser, asyncHandler(async (req, res) => {
+  // SAFETY: Guard clause for auth
+  const currentUserId = requireAuth(req, res);
+  if (!currentUserId) return;
 
-    // Check if identifier is a valid MongoDB ObjectId
-    if (mongoose.Types.ObjectId.isValid(identifier) && identifier.length === 24) {
-      profileUserId = identifier;
-    } else {
-      // Try to find user by username
-      const profileUser = await User.findOne({ username: identifier });
-      if (!profileUser) {
-        return res.status(404).json({ message: 'User not found' });
-      }
-      profileUserId = profileUser._id;
+  const { identifier } = req.params;
+  let profileUserId;
+
+  // Check if identifier is a valid MongoDB ObjectId
+  if (mongoose.Types.ObjectId.isValid(identifier) && identifier.length === 24) {
+    profileUserId = identifier;
+  } else {
+    // Try to find user by username
+    const profileUser = await User.findOne({ username: identifier });
+    if (!profileUser) {
+      return sendError(res, HttpStatus.NOT_FOUND, 'User not found');
     }
-
-    // Get current user to check following relationship
-    const currentUser = await User.findById(currentUserId);
-    const isFollowing = currentUser.following && currentUser.following.some(followId => followId.toString() === profileUserId.toString());
-    const isOwnProfile = currentUserId.toString() === profileUserId.toString();
-
-    // Build query based on relationship
-    // REMOVED 2025-12-26: tagOnly, hiddenFrom, sharedWith filters deleted (Phase 5)
-    let query = { author: profileUserId };
-
-    if (!isOwnProfile) {
-      // Not viewing own profile - apply privacy filters
-      query = {
-        author: profileUserId,
-        $or: [
-          { visibility: 'public' },
-          { visibility: 'followers', ...(isFollowing ? {} : { _id: null }) } // Only if following
-        ]
-      };
-    }
-
-    // PHASE 1 REFACTOR: Don't populate likes (keep private)
-    // REMOVED 2025-12-26: originalPost population deleted (Phase 5)
-    const posts = await Post.find(query)
-      .populate('author', 'username displayName profilePhoto isVerified pronouns')
-      .populate('comments.user', 'username displayName profilePhoto isVerified pronouns')
-      // .populate('likes', 'username displayName profilePhoto') // REMOVED - private likes
-      .populate('reactions.user', 'username displayName profilePhoto')
-      .populate('comments.reactions.user', 'username displayName profilePhoto')
-      .populate('commentCount') // Populate virtual comment count from Comment collection
-      .sort({ createdAt: -1 });
-
-    // PHASE 1 REFACTOR: Sanitize posts to hide like counts
-    const sanitizedPosts = posts.map(post => sanitizePostForPrivateLikes(post, currentUserId));
-
-    res.json(sanitizedPosts);
-  } catch (error) {
-    logger.error('Get user posts error:', error);
-    res.status(500).json({ message: 'Server error' });
+    profileUserId = profileUser._id;
   }
-});
+
+  // Get current user to check following relationship
+  const currentUser = await User.findById(currentUserId);
+  if (!currentUser) {
+    return sendError(res, HttpStatus.NOT_FOUND, 'Current user not found');
+  }
+
+  // SAFETY: Optional chaining for following array
+  const isFollowing = currentUser.following?.some(followId => followId?.toString() === profileUserId?.toString()) ?? false;
+  const isOwnProfile = currentUserId === profileUserId?.toString();
+
+  // Build query based on relationship
+  let query = { author: profileUserId };
+
+  if (!isOwnProfile) {
+    // Not viewing own profile - apply privacy filters
+    query = {
+      author: profileUserId,
+      $or: [
+        { visibility: 'public' },
+        { visibility: 'followers', ...(isFollowing ? {} : { _id: null }) } // Only if following
+      ]
+    };
+  }
+
+  const posts = await Post.find(query)
+    .populate('author', 'username displayName profilePhoto isVerified pronouns')
+    .populate('comments.user', 'username displayName profilePhoto isVerified pronouns')
+    .populate('reactions.user', 'username displayName profilePhoto')
+    .populate('comments.reactions.user', 'username displayName profilePhoto')
+    .populate('commentCount')
+    .sort({ createdAt: -1 });
+
+  // Sanitize posts to hide like counts
+  const sanitizedPosts = posts.map(post => sanitizePostForPrivateLikes(post, currentUserId));
+
+  res.json(sanitizedPosts);
+}));
 
 // @route   GET /api/posts/:id
 // @desc    Get single post
 // @access  Private
-router.get('/:id', auth, requireActiveUser, async (req, res) => {
-  try {
-    // PHASE 1 REFACTOR: Don't populate likes (keep private)
-    const post = await Post.findById(req.params.id)
-      .populate('author', 'username displayName profilePhoto isVerified pronouns')
-      .populate('comments.user', 'username displayName profilePhoto isVerified pronouns')
-      // .populate('likes', 'username displayName profilePhoto') // REMOVED - private likes
-      .populate('reactions.user', 'username displayName profilePhoto')
-      .populate('comments.reactions.user', 'username displayName profilePhoto');
+router.get('/:id', auth, requireActiveUser, asyncHandler(async (req, res) => {
+  // SAFETY: Guard clause for auth
+  const userId = requireAuth(req, res);
+  if (!userId) return;
 
-    if (!post) {
-      return res.status(404).json({ message: 'Post not found' });
-    }
+  const postId = req.params.id;
 
-    // PHASE 1 REFACTOR: Sanitize post to hide like counts
-    const userId = req.userId || req.user._id;
-    const sanitizedPost = sanitizePostForPrivateLikes(post, userId);
+  // SAFETY: Validate ObjectId
+  if (!requireValidId(postId, 'post ID', res)) return;
 
-    res.json(sanitizedPost);
-  } catch (error) {
-    logger.error('Get post error:', error);
-    res.status(500).json({ message: 'Server error' });
+  const post = await Post.findById(postId)
+    .populate('author', 'username displayName profilePhoto isVerified pronouns')
+    .populate('comments.user', 'username displayName profilePhoto isVerified pronouns')
+    .populate('reactions.user', 'username displayName profilePhoto')
+    .populate('comments.reactions.user', 'username displayName profilePhoto');
+
+  if (!post) {
+    return sendError(res, HttpStatus.NOT_FOUND, 'Post not found');
   }
-});
+
+  // Sanitize post to hide like counts
+  const sanitizedPost = sanitizePostForPrivateLikes(post, userId);
+
+  res.json(sanitizedPost);
+}));
 
 // @route   POST /api/posts
 // @desc    Create a new post

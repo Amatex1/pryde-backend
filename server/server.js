@@ -69,6 +69,9 @@ import auth from './middleware/auth.js';
 import requireActiveUser from './middleware/requireActiveUser.js';
 import { setCsrfToken, enforceCsrf } from './middleware/csrf.js';
 
+// Import global error handler (Phase 2 - Backend Failure Safety)
+import { globalErrorHandler, sendError, HttpStatus } from './utils/errorHandler.js';
+
 // Import rate limiters
 import {
   globalLimiter,
@@ -398,6 +401,23 @@ app.get('/api/version', (req, res) => {
     buildTime: process.env.BUILD_TIME || new Date().toISOString()
   });
 });
+
+// ============================================================================
+// PHASE 2 - Backend Failure Safety: Global Error Handling
+// ============================================================================
+
+// 404 Handler - Catch all unmatched routes
+app.use('/api/*', (req, res) => {
+  sendError(res, HttpStatus.NOT_FOUND, `API endpoint not found: ${req.method} ${req.originalUrl}`);
+});
+
+// Global Error Handler - Must be LAST middleware
+// Catches all uncaught errors and returns safe responses (no stack traces)
+app.use(globalErrorHandler);
+
+// ============================================================================
+// End Error Handling
+// ============================================================================
 
 // Socket.IO authentication middleware
 io.use(async (socket, next) => {
