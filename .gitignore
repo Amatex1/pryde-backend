@@ -34,10 +34,12 @@ Thumbs.db
 *.swp
 *.swo
 
-# Documentation (exclude all markdown files except README)
-*.md
+# Documentation (exclude generated/temporary markdown files)
+# Keep essential documentation
 !README.md
 !server/README.md
+!docs/*.md
+!.github/*.md
 
 # Workspace files
 *.code-workspace
