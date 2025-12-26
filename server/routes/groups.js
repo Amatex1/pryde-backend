@@ -34,7 +34,7 @@ const router = express.Router();
  */
 router.get('/', authenticateToken, async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user.id || req.user._id;
 
     // Get approved groups (excluding hidden) OR user's own pending groups
     const groups = await Group.find({
@@ -52,19 +52,25 @@ router.get('/', authenticateToken, async (req, res) => {
       .sort({ name: 1 });
 
     // Map groups to include membership status and member count
-    const groupsWithStatus = groups.map(group => ({
-      _id: group._id,
-      slug: group.slug,
-      name: group.name,
-      description: group.description,
-      visibility: group.visibility,
-      status: group.status,
-      owner: group.owner,
-      memberCount: group.members.length + group.moderators.length + 1,
-      isMember: group.isMember(userId),
-      isOwner: group.owner._id.toString() === userId,
-      createdAt: group.createdAt
-    }));
+    const groupsWithStatus = groups.map(group => {
+      // Handle owner ID comparison safely (owner could be populated or just ObjectId)
+      const ownerId = group.owner?._id?.toString() || group.owner?.toString();
+      const isOwner = ownerId === userId.toString();
+
+      return {
+        _id: group._id,
+        slug: group.slug,
+        name: group.name,
+        description: group.description,
+        visibility: group.visibility,
+        status: group.status,
+        owner: group.owner,
+        memberCount: group.members.length + group.moderators.length + 1,
+        isMember: group.isMember(userId),
+        isOwner,
+        createdAt: group.createdAt
+      };
+    });
 
     res.json({ groups: groupsWithStatus });
   } catch (error) {
