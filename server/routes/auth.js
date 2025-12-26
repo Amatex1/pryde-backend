@@ -238,9 +238,8 @@ router.post('/signup', validateAgeBeforeRateLimit, signupLimiter, validateSignup
       nickname,
       customPronouns,
       gender,
-      customGender,
-      relationshipStatus,
-      isAlly
+      customGender
+      // REMOVED 2025-12-26: relationshipStatus, isAlly (Phase 5)
     } = req.body;
 
     // ═══════════════════════════════════════════════════════════════════════════
@@ -380,8 +379,7 @@ router.post('/signup', validateAgeBeforeRateLimit, signupLimiter, validateSignup
       customPronouns: customPronouns?.trim() || '',
       gender: gender?.trim() || '',
       customGender: customGender?.trim() || '',
-      relationshipStatus: relationshipStatus?.trim() || '',
-      isAlly: isAlly || (identity === 'Ally') || false,
+      // REMOVED 2025-12-26: relationshipStatus, isAlly deleted (Phase 5)
 
       // Profile state
       profileComplete: false,
@@ -478,7 +476,7 @@ router.post('/signup', validateAgeBeforeRateLimit, signupLimiter, validateSignup
         customPronouns: user.customPronouns,
         gender: user.gender,
         customGender: user.customGender,
-        relationshipStatus: user.relationshipStatus,
+        // REMOVED 2025-12-26: relationshipStatus deleted (Phase 5)
         profilePhoto: user.profilePhoto,
         coverPhoto: user.coverPhoto,
         bio: user.bio,
@@ -847,7 +845,7 @@ router.post('/login', loginLimiter, validateLogin, async (req, res) => {
         customPronouns: user.customPronouns,
         gender: user.gender,
         customGender: user.customGender,
-        relationshipStatus: user.relationshipStatus,
+        // REMOVED 2025-12-26: relationshipStatus deleted (Phase 5)
         profilePhoto: user.profilePhoto,
         coverPhoto: user.coverPhoto,
         bio: user.bio,
@@ -1089,7 +1087,7 @@ router.post('/verify-2fa-login', loginLimiter, async (req, res) => {
         customPronouns: user.customPronouns,
         gender: user.gender,
         customGender: user.customGender,
-        relationshipStatus: user.relationshipStatus,
+        // REMOVED 2025-12-26: relationshipStatus deleted (Phase 5)
         profilePhoto: user.profilePhoto,
         coverPhoto: user.coverPhoto,
         bio: user.bio,

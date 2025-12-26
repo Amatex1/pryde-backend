@@ -24,19 +24,7 @@ const messageSchema = new mongoose.Schema({
     type: String,
     default: null
   },
-  voiceNote: {
-    type: {
-      url: {
-        type: String,
-        required: true
-      },
-      duration: {
-        type: Number, // Duration in seconds
-        required: true
-      }
-    },
-    default: undefined // Don't create the object if not provided
-  },
+  // REMOVED 2025-12-26: voiceNote deleted (Phase 5)
   read: {
     type: Boolean,
     default: false
@@ -68,21 +56,7 @@ const messageSchema = new mongoose.Schema({
   editedAt: {
     type: Date
   },
-  reactions: [{
-    user: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
-      required: true
-    },
-    emoji: {
-      type: String,
-      required: true
-    },
-    createdAt: {
-      type: Date,
-      default: Date.now
-    }
-  }],
+  // REMOVED 2025-12-26: reactions deleted (Phase 5)
   createdAt: {
     type: Date,
     default: Date.now

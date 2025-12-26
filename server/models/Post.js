@@ -12,21 +12,7 @@ const postSchema = new mongoose.Schema({
     required: false,
     maxlength: 5000
   },
-  hashtags: [{
-    type: String,
-    lowercase: true,
-    trim: true
-  }],
-  // PHASE 4: Community tags for discovery
-  tags: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Tag'
-  }],
-  // PHASE 4: Tag-only posts (only visible in tag feeds, not main feed or profile)
-  tagOnly: {
-    type: Boolean,
-    default: false
-  },
+  // REMOVED 2025-12-26: hashtags, tags, tagOnly deleted (Phase 5)
   images: [{
     type: String
   }],
@@ -115,48 +101,14 @@ const postSchema = new mongoose.Schema({
       type: mongoose.Schema.Types.ObjectId
     }]
   }],
-  shares: [{
-    user: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User'
-    },
-    sharedAt: {
-      type: Date,
-      default: Date.now
-    }
-  }],
-  // Shared/Reposted content
-  isShared: {
-    type: Boolean,
-    default: false
-  },
-  originalPost: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Post',
-    default: null
-  },
-  shareComment: {
-    type: String,
-    maxlength: 500,
-    default: ''
-  },
+  // REMOVED 2025-12-26: shares, isShared, originalPost, shareComment deleted (Phase 5)
   // PHASE 1 REFACTOR: Simplified to 3 options (removed 'friends' and 'custom')
   visibility: {
     type: String,
     enum: ['public', 'followers', 'private'],
     default: 'followers'
   },
-  // PHASE 1 REFACTOR: Deprecated custom privacy fields (kept for legacy data)
-  hiddenFrom: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    select: false // Hide from queries by default
-  }],
-  sharedWith: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    select: false // Hide from queries by default
-  }],
+  // REMOVED 2025-12-26: hiddenFrom, sharedWith deleted (Phase 5)
   contentWarning: {
     type: String,
     default: '',
@@ -189,21 +141,7 @@ const postSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
-  // Edit history
-  editHistory: [{
-    content: {
-      type: String,
-      required: true
-    },
-    editedAt: {
-      type: Date,
-      default: Date.now
-    },
-    editedBy: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User'
-    }
-  }],
+  // REMOVED 2025-12-26: editHistory deleted (Phase 5)
   // Poll feature
   poll: {
     question: {
@@ -240,8 +178,7 @@ const postSchema = new mongoose.Schema({
 postSchema.index({ author: 1, createdAt: -1 });
 postSchema.index({ createdAt: -1 });
 postSchema.index({ visibility: 1, createdAt: -1 }); // For filtering by visibility
-postSchema.index({ hashtags: 1 }); // For hashtag searches
-postSchema.index({ tags: 1 }); // For tag-based filtering
+// REMOVED 2025-12-26: hashtags and tags indexes deleted (Phase 5)
 
 // Virtual for comment count from Comment collection
 postSchema.virtual('commentCount', {
@@ -256,19 +193,10 @@ postSchema.virtual('commentCount', {
 postSchema.set('toJSON', { virtuals: true });
 postSchema.set('toObject', { virtuals: true });
 
-// Update the updatedAt timestamp and extract hashtags before saving
+// Update the updatedAt timestamp before saving
 postSchema.pre('save', function(next) {
   this.updatedAt = Date.now();
-
-  // Extract hashtags from content
-  if (this.content) {
-    const hashtagRegex = /#[\w]+/g;
-    const matches = this.content.match(hashtagRegex);
-    if (matches) {
-      this.hashtags = [...new Set(matches.map(tag => tag.toLowerCase()))];
-    }
-  }
-
+  // REMOVED 2025-12-26: hashtag extraction deleted (Phase 5)
   next();
 });
 

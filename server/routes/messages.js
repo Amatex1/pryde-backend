@@ -203,7 +203,8 @@ router.get('/', auth, requireActiveUser, async (req, res) => {
 // Send a message
 router.post('/', auth, requireActiveUser, messageLimiter, sanitizeFields(['content']), checkMessagingPermission, checkMuted, moderateContent, async (req, res) => {
   try {
-    const { recipient, content, attachment, groupChatId, voiceNote } = req.body;
+    // REMOVED 2025-12-26: voiceNote no longer accepted (Phase 5)
+    const { recipient, content, attachment, groupChatId } = req.body;
 
     // Validate recipient availability (only for direct messages, not group chats)
     if (!groupChatId && recipient) {
@@ -235,12 +236,8 @@ router.post('/', auth, requireActiveUser, messageLimiter, sanitizeFields(['conte
       groupChat: groupChatId || null,
       content,
       attachment: attachment || null
+      // REMOVED 2025-12-26: voiceNote deleted (Phase 5)
     };
-
-    // Only add voiceNote if it exists and has a URL
-    if (voiceNote && voiceNote.url) {
-      messageData.voiceNote = voiceNote;
-    }
 
     const message = new Message(messageData);
 

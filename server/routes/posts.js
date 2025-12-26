@@ -34,17 +34,7 @@ const sanitizePostForPrivateLikes = (post, currentUserId) => {
   // Do the same for reactions - keep them but remove counts from UI later
   // For now, keep reactions as they show different emotions, not just counts
 
-  // Handle originalPost (shared posts)
-  if (postObj.originalPost) {
-    // CRITICAL: Also convert nested originalPost to plain object
-    const originalPostObj = postObj.originalPost.toObject ? postObj.originalPost.toObject() : { ...postObj.originalPost };
-    const originalHasLiked = originalPostObj.likes?.some(like =>
-      (like._id || like).toString() === currentUserId.toString()
-    );
-    originalPostObj.hasLiked = originalHasLiked;
-    delete originalPostObj.likes;
-    postObj.originalPost = originalPostObj;
-  }
+  // REMOVED 2025-12-26: originalPost handling deleted (Phase 5 - share system removed)
 
   return postObj;
 };
@@ -65,81 +55,55 @@ router.get('/', auth, requireActiveUser, async (req, res) => {
 
     let query = {};
 
+    // REMOVED 2025-12-26: hiddenFrom, sharedWith, tagOnly filters deleted (Phase 5)
     if (filter === 'public') {
-      // Public feed: All public posts from everyone (not hidden from user, excluding blocked users)
+      // Public feed: All public posts from everyone (excluding blocked users)
       query = {
         visibility: 'public',
-        hiddenFrom: { $ne: userId },
-        author: { $nin: blockedUserIds },
-        tagOnly: { $ne: true } // Exclude tag-only posts from main feed
+        author: { $nin: blockedUserIds }
       };
     } else if (filter === 'followers') {
       // Followers feed: Posts from people you follow + your own posts (excluding blocked users)
       query = {
         $or: [
-          { author: userId, tagOnly: { $ne: true } }, // User's own posts (always visible, except tag-only)
+          { author: userId }, // User's own posts (always visible)
           {
             author: { $in: followingIds, $nin: blockedUserIds },
-            visibility: 'public',
-            hiddenFrom: { $ne: userId },
-            tagOnly: { $ne: true }
+            visibility: 'public'
           },
           {
             author: { $in: followingIds, $nin: blockedUserIds },
-            visibility: 'followers',
-            hiddenFrom: { $ne: userId },
-            tagOnly: { $ne: true }
-          },
-          {
-            visibility: 'custom',
-            sharedWith: userId,
-            hiddenFrom: { $ne: userId },
-            author: { $nin: blockedUserIds },
-            tagOnly: { $ne: true }
+            visibility: 'followers'
           }
         ]
       };
     } else {
       // Default: Followers feed (same as 'followers' filter)
+      // REMOVED 2025-12-26: hiddenFrom, sharedWith filters deleted (Phase 5)
       query = {
         $or: [
           { author: userId },
           {
             author: { $in: followingIds },
-            visibility: 'public',
-            hiddenFrom: { $ne: userId }
+            visibility: 'public'
           },
           {
             author: { $in: followingIds },
-            visibility: 'followers',
-            hiddenFrom: { $ne: userId }
-          },
-          {
-            visibility: 'custom',
-            sharedWith: userId,
-            hiddenFrom: { $ne: userId }
+            visibility: 'followers'
           }
         ]
       };
     }
 
     // PHASE 1 REFACTOR: Don't populate likes (keep private)
+    // REMOVED 2025-12-26: tags, originalPost population deleted (Phase 5)
     const posts = await Post.find(query)
       .populate('author', 'username displayName profilePhoto isVerified pronouns')
       .populate('comments.user', 'username displayName profilePhoto isVerified pronouns')
       // .populate('likes', 'username displayName profilePhoto') // REMOVED - private likes
       .populate('reactions.user', 'username displayName profilePhoto')
       .populate('comments.reactions.user', 'username displayName profilePhoto')
-      .populate('tags', 'slug label icon') // PHASE 4: Populate tags for display
       .populate('commentCount') // Populate virtual comment count from Comment collection
-      .populate({
-        path: 'originalPost',
-        populate: [
-          { path: 'author', select: 'username displayName profilePhoto' },
-          // { path: 'likes', select: 'username displayName profilePhoto' }, // REMOVED - private likes
-          { path: 'reactions.user', select: 'username displayName profilePhoto' }
-        ]
-      })
       .sort({ createdAt: -1 })
       .limit(limit * 1)
       .skip((page - 1) * limit);
@@ -187,22 +151,22 @@ router.get('/user/:identifier', auth, requireActiveUser, async (req, res) => {
     const isOwnProfile = currentUserId.toString() === profileUserId.toString();
 
     // Build query based on relationship
-    let query = { author: profileUserId, tagOnly: { $ne: true } }; // Exclude tag-only posts from profile
+    // REMOVED 2025-12-26: tagOnly, hiddenFrom, sharedWith filters deleted (Phase 5)
+    let query = { author: profileUserId };
 
     if (!isOwnProfile) {
       // Not viewing own profile - apply privacy filters
       query = {
         author: profileUserId,
-        tagOnly: { $ne: true }, // Exclude tag-only posts from profile
         $or: [
-          { visibility: 'public', hiddenFrom: { $ne: currentUserId } },
-          { visibility: 'followers', hiddenFrom: { $ne: currentUserId }, ...(isFollowing ? {} : { _id: null }) }, // Only if following
-          { visibility: 'custom', sharedWith: currentUserId, hiddenFrom: { $ne: currentUserId } }
+          { visibility: 'public' },
+          { visibility: 'followers', ...(isFollowing ? {} : { _id: null }) } // Only if following
         ]
       };
     }
 
     // PHASE 1 REFACTOR: Don't populate likes (keep private)
+    // REMOVED 2025-12-26: originalPost population deleted (Phase 5)
     const posts = await Post.find(query)
       .populate('author', 'username displayName profilePhoto isVerified pronouns')
       .populate('comments.user', 'username displayName profilePhoto isVerified pronouns')
@@ -210,14 +174,6 @@ router.get('/user/:identifier', auth, requireActiveUser, async (req, res) => {
       .populate('reactions.user', 'username displayName profilePhoto')
       .populate('comments.reactions.user', 'username displayName profilePhoto')
       .populate('commentCount') // Populate virtual comment count from Comment collection
-      .populate({
-        path: 'originalPost',
-        populate: [
-          { path: 'author', select: 'username displayName profilePhoto' },
-          // { path: 'likes', select: 'username displayName profilePhoto' }, // REMOVED - private likes
-          { path: 'reactions.user', select: 'username displayName profilePhoto' }
-        ]
-      })
       .sort({ createdAt: -1 });
 
     // PHASE 1 REFACTOR: Sanitize posts to hide like counts
@@ -270,7 +226,8 @@ router.post('/', auth, requireActiveUser, postLimiter, sanitizeFields(['content'
   res.setHeader('X-Mutation-Id', mutation.mutationId);
 
   try {
-    const { content, images, media, visibility, hiddenFrom, sharedWith, contentWarning, tags, hideMetrics, poll, tagOnly } = req.body;
+    // REMOVED 2025-12-26: hiddenFrom, sharedWith, tags, tagOnly deleted (Phase 5)
+    const { content, images, media, visibility, contentWarning, hideMetrics, poll } = req.body;
 
     // Require either content, media, or poll
     if ((!content || content.trim() === '') && (!media || media.length === 0) && !poll) {
@@ -280,23 +237,7 @@ router.post('/', auth, requireActiveUser, postLimiter, sanitizeFields(['content'
 
     mutation.addStep('VALIDATION_PASSED');
 
-    // PHASE 4: Handle tags
-    let tagIds = [];
-    if (tags && Array.isArray(tags) && tags.length > 0) {
-      const Tag = (await import('../models/Tag.js')).default;
-      tagIds = await Promise.all(tags.map(async (tagSlug) => {
-        const tag = await Tag.findOne({ slug: tagSlug.toLowerCase() });
-        if (tag) {
-          // Increment post count
-          tag.postCount += 1;
-          await tag.save();
-          return tag._id;
-        }
-        return null;
-      }));
-      tagIds = tagIds.filter(id => id !== null);
-      mutation.addStep('TAGS_RESOLVED', { tagCount: tagIds.length });
-    }
+    // REMOVED 2025-12-26: Tag handling deleted (Phase 5)
 
     // If poll is present, transform options and use post content as poll question
     let pollData = null;
@@ -331,13 +272,10 @@ router.post('/', auth, requireActiveUser, postLimiter, sanitizeFields(['content'
       images: images || [],
       media: media || [],
       visibility: visibility || 'public',
-      hiddenFrom: hiddenFrom || [],
-      sharedWith: sharedWith || [],
+      // REMOVED 2025-12-26: hiddenFrom, sharedWith, tags, tagOnly deleted (Phase 5)
       contentWarning: contentWarning || '',
-      tags: tagIds, // PHASE 4: Add tags
       hideMetrics: hideMetrics || false,
-      poll: pollData || null,
-      tagOnly: tagOnly || false // PHASE 4: Tag-only posts
+      poll: pollData || null
     });
 
     mutation.addStep('DOCUMENT_CREATED', { postId: post._id.toString() });
@@ -394,17 +332,8 @@ router.put('/:id', auth, requireActiveUser, sanitizeFields(['content', 'contentW
 
     const { content, images, media, visibility, hiddenFrom, sharedWith, deletedImages, deletedMedia } = req.body;
 
-    // Save to edit history if content changed
-    if (content !== undefined && content !== post.content) {
-      if (!post.editHistory) {
-        post.editHistory = [];
-      }
-      post.editHistory.push({
-        content: post.content,
-        editedAt: new Date(),
-        editedBy: userId
-      });
-    }
+    // DEPRECATED 2025-12-26: Edit history tracking removed (UI no longer exposed)
+    // Posts will still be marked as edited, but history is not tracked
 
     // Handle deleted images - remove from storage and post.images array
     if (deletedImages && Array.isArray(deletedImages) && deletedImages.length > 0) {
@@ -473,14 +402,7 @@ router.put('/:id', auth, requireActiveUser, sanitizeFields(['content', 'contentW
     await post.populate('author', 'username displayName profilePhoto isVerified pronouns');
     // await post.populate('likes', 'username displayName profilePhoto'); // REMOVED - private likes
     await post.populate('comments.user', 'username displayName profilePhoto isVerified pronouns');
-    await post.populate({
-      path: 'originalPost',
-      populate: [
-        { path: 'author', select: 'username displayName profilePhoto' },
-        // { path: 'likes', select: 'username displayName profilePhoto' }, // REMOVED - private likes
-        { path: 'comments.user', select: 'username displayName profilePhoto' }
-      ]
-    });
+    // REMOVED 2025-12-26: originalPost population deleted (Phase 5)
 
     // PHASE 1 REFACTOR: Sanitize post to hide like counts
     const sanitizedPost = sanitizePostForPrivateLikes(post, userId);
@@ -640,14 +562,7 @@ router.post('/:id/like', auth, requireActiveUser, reactionLimiter, async (req, r
     await post.populate('author', 'username displayName profilePhoto isVerified pronouns');
     // await post.populate('likes', 'username displayName profilePhoto'); // REMOVED - private likes
     await post.populate('comments.user', 'username displayName profilePhoto isVerified pronouns');
-    await post.populate({
-      path: 'originalPost',
-      populate: [
-        { path: 'author', select: 'username displayName profilePhoto' },
-        // { path: 'likes', select: 'username displayName profilePhoto' }, // REMOVED - private likes
-        { path: 'comments.user', select: 'username displayName profilePhoto' }
-      ]
-    });
+    // REMOVED 2025-12-26: originalPost population deleted (Phase 5)
 
     // PHASE 1 REFACTOR: Sanitize post to hide like counts
     const sanitizedPost = sanitizePostForPrivateLikes(post, userId);
@@ -742,14 +657,7 @@ router.post('/:id/react', auth, requireActiveUser, reactionLimiter, async (req, 
     // await post.populate('likes', 'username displayName profilePhoto'); // REMOVED - private likes
     await post.populate('reactions.user', 'username displayName profilePhoto');
     await post.populate('comments.user', 'username displayName profilePhoto isVerified pronouns');
-    await post.populate({
-      path: 'originalPost',
-      populate: [
-        { path: 'author', select: 'username displayName profilePhoto' },
-        // { path: 'likes', select: 'username displayName profilePhoto' }, // REMOVED - private likes
-        { path: 'comments.user', select: 'username displayName profilePhoto' }
-      ]
-    });
+    // REMOVED 2025-12-26: originalPost population deleted (Phase 5)
 
     // PHASE 1 REFACTOR: Sanitize post to hide like counts
     const sanitizedPost = sanitizePostForPrivateLikes(post, userId);
@@ -844,14 +752,7 @@ router.post('/:id/comment/:commentId/react', auth, requireActiveUser, reactionLi
     await post.populate('reactions.user', 'username displayName profilePhoto');
     await post.populate('comments.user', 'username displayName profilePhoto isVerified pronouns');
     await post.populate('comments.reactions.user', 'username displayName profilePhoto');
-    await post.populate({
-      path: 'originalPost',
-      populate: [
-        { path: 'author', select: 'username displayName profilePhoto' },
-        // { path: 'likes', select: 'username displayName profilePhoto' }, // REMOVED - private likes
-        { path: 'comments.user', select: 'username displayName profilePhoto' }
-      ]
-    });
+    // REMOVED 2025-12-26: originalPost population deleted (Phase 5)
 
     // PHASE 1 REFACTOR: Sanitize post to hide like counts
     const sanitizedPost = sanitizePostForPrivateLikes(post, userId);
@@ -873,123 +774,25 @@ router.post('/:id/comment/:commentId/react', auth, requireActiveUser, reactionLi
 });
 
 // @route   POST /api/posts/:id/share
-// @desc    Share/Repost a post
+// @desc    DEPRECATED - Share/Repost system removed 2025-12-26 (Phase 5)
 // @access  Private
-router.post('/:id/share', auth, requireActiveUser, postLimiter, checkMuted, async (req, res) => {
-  try {
-    const originalPost = await Post.findById(req.params.id);
-
-    if (!originalPost) {
-      return res.status(404).json({ message: 'Post not found' });
-    }
-
-    const userId = req.userId || req.user._id;
-    const { shareComment, shareToFriendProfile } = req.body;
-
-    // Check if user already shared this post (only for own profile shares)
-    if (!shareToFriendProfile) {
-      const existingShare = await Post.findOne({
-        author: userId,
-        isShared: true,
-        originalPost: originalPost._id
-      });
-
-      if (existingShare) {
-        return res.status(400).json({ message: 'You have already shared this post' });
-      }
-    }
-
-    // Determine the author of the shared post
-    const shareAuthor = shareToFriendProfile || userId;
-
-    // Create shared post
-    const sharedPost = new Post({
-      author: shareAuthor,
-      isShared: true,
-      originalPost: originalPost._id,
-      shareComment: shareComment || '',
-      visibility: 'public'
-    });
-
-    await sharedPost.save();
-
-    // Add to original post's shares
-    originalPost.shares.push({
-      user: userId,
-      sharedAt: new Date()
-    });
-    await originalPost.save();
-
-    // Create notification for original post author (don't notify yourself)
-    if (originalPost.author.toString() !== userId.toString()) {
-      const notification = new Notification({
-        recipient: originalPost.author,
-        sender: userId,
-        type: 'share',
-        message: 'shared your post',
-        postId: originalPost._id
-      });
-      await notification.save();
-
-      // Populate sender for Socket.IO emission
-      await notification.populate('sender', 'username displayName profilePhoto');
-
-      // ✅ Emit real-time notification
-      emitNotificationCreated(req.io, originalPost.author.toString(), notification);
-    }
-
-    // Populate the shared post
-    await sharedPost.populate('author', 'username displayName profilePhoto isVerified pronouns');
-    await sharedPost.populate({
-      path: 'originalPost',
-      populate: [
-        { path: 'author', select: 'username displayName profilePhoto' },
-        { path: 'likes', select: 'username displayName profilePhoto' }
-      ]
-    });
-
-    res.status(201).json(sharedPost);
-  } catch (error) {
-    logger.error('Share post error:', error);
-    res.status(500).json({ message: 'Server error' });
-  }
+router.post('/:id/share', auth, requireActiveUser, (req, res) => {
+  res.status(410).json({
+    message: 'Share/Repost feature has been removed.',
+    deprecated: true,
+    removedDate: '2025-12-26'
+  });
 });
 
 // @route   DELETE /api/posts/:id/share
-// @desc    Unshare/Remove repost
+// @desc    DEPRECATED - Share/Repost system removed 2025-12-26 (Phase 5)
 // @access  Private
-router.delete('/:id/share', auth, requireActiveUser, async (req, res) => {
-  try {
-    const userId = req.userId || req.user._id;
-
-    // Find the shared post
-    const sharedPost = await Post.findOne({
-      author: userId,
-      isShared: true,
-      originalPost: req.params.id
-    });
-
-    if (!sharedPost) {
-      return res.status(404).json({ message: 'Shared post not found' });
-    }
-
-    // Remove from original post's shares
-    const originalPost = await Post.findById(req.params.id);
-    if (originalPost) {
-      originalPost.shares = originalPost.shares.filter(
-        share => share.user.toString() !== userId.toString()
-      );
-      await originalPost.save();
-    }
-
-    // Delete the shared post
-    await sharedPost.deleteOne();
-
-    res.json({ message: 'Post unshared successfully' });
-  } catch (error) {
-    logger.error('Unshare post error:', error);
-    res.status(500).json({ message: 'Server error' });
-  }
+router.delete('/:id/share', auth, requireActiveUser, (req, res) => {
+  res.status(410).json({
+    message: 'Share/Repost feature has been removed.',
+    deprecated: true,
+    removedDate: '2025-12-26'
+  });
 });
 
 // @route   POST /api/posts/:id/comment
@@ -1062,14 +865,7 @@ router.post('/:id/comment', auth, requireActiveUser, commentLimiter, sanitizeFie
     await post.populate('author', 'username displayName profilePhoto isVerified pronouns');
     await post.populate('comments.user', 'username displayName profilePhoto isVerified pronouns');
     // await post.populate('likes', 'username displayName profilePhoto'); // REMOVED - private likes
-    await post.populate({
-      path: 'originalPost',
-      populate: [
-        { path: 'author', select: 'username displayName profilePhoto' },
-        // { path: 'likes', select: 'username displayName profilePhoto' }, // REMOVED - private likes
-        { path: 'comments.user', select: 'username displayName profilePhoto' }
-      ]
-    });
+    // REMOVED 2025-12-26: originalPost population deleted (Phase 5)
 
     // PHASE 1 REFACTOR: Sanitize post to hide like counts
     const sanitizedPost = sanitizePostForPrivateLikes(post, userId);
@@ -1137,14 +933,7 @@ router.post('/:id/comment/:commentId/reply', auth, requireActiveUser, commentLim
     await post.populate('author', 'username displayName profilePhoto isVerified pronouns');
     await post.populate('comments.user', 'username displayName profilePhoto isVerified pronouns');
     // await post.populate('likes', 'username displayName profilePhoto'); // REMOVED - private likes
-    await post.populate({
-      path: 'originalPost',
-      populate: [
-        { path: 'author', select: 'username displayName profilePhoto' },
-        // { path: 'likes', select: 'username displayName profilePhoto' }, // REMOVED - private likes
-        { path: 'comments.user', select: 'username displayName profilePhoto' }
-      ]
-    });
+    // REMOVED 2025-12-26: originalPost population deleted (Phase 5)
 
     // PHASE 1 REFACTOR: Sanitize post to hide like counts
     const sanitizedPost = sanitizePostForPrivateLikes(post, userId);
@@ -1195,14 +984,7 @@ router.put('/:id/comment/:commentId', auth, requireActiveUser, async (req, res) 
     await post.populate('author', 'username displayName profilePhoto isVerified pronouns');
     await post.populate('comments.user', 'username displayName profilePhoto isVerified pronouns');
     // await post.populate('likes', 'username displayName profilePhoto'); // REMOVED - private likes
-    await post.populate({
-      path: 'originalPost',
-      populate: [
-        { path: 'author', select: 'username displayName profilePhoto' },
-        // { path: 'likes', select: 'username displayName profilePhoto' }, // REMOVED - private likes
-        { path: 'comments.user', select: 'username displayName profilePhoto' }
-      ]
-    });
+    // REMOVED 2025-12-26: originalPost population deleted (Phase 5)
 
     // PHASE 1 REFACTOR: Sanitize post to hide like counts
     const sanitizedPost = sanitizePostForPrivateLikes(post, userId);
@@ -1245,14 +1027,7 @@ router.delete('/:id/comment/:commentId', auth, requireActiveUser, async (req, re
     await post.populate('author', 'username displayName profilePhoto isVerified pronouns');
     await post.populate('comments.user', 'username displayName profilePhoto isVerified pronouns');
     // await post.populate('likes', 'username displayName profilePhoto'); // REMOVED - private likes
-    await post.populate({
-      path: 'originalPost',
-      populate: [
-        { path: 'author', select: 'username displayName profilePhoto' },
-        // { path: 'likes', select: 'username displayName profilePhoto' }, // REMOVED - private likes
-        { path: 'comments.user', select: 'username displayName profilePhoto' }
-      ]
-    });
+    // REMOVED 2025-12-26: originalPost population deleted (Phase 5)
 
     // PHASE 1 REFACTOR: Sanitize post to hide like counts
     const sanitizedPost = sanitizePostForPrivateLikes(post, userId);
@@ -1353,22 +1128,14 @@ router.post('/:id/poll/vote', auth, requireActiveUser, async (req, res) => {
 });
 
 // @route   GET /api/posts/:id/edit-history
-// @desc    Get edit history for a post
+// @desc    DEPRECATED - Edit history UI removed 2025-12-26
 // @access  Private
-router.get('/:id/edit-history', auth, requireActiveUser, async (req, res) => {
-  try {
-    const post = await Post.findById(req.params.id)
-      .populate('editHistory.editedBy', 'username displayName profilePhoto');
-
-    if (!post) {
-      return res.status(404).json({ message: 'Post not found' });
-    }
-
-    res.json({ editHistory: post.editHistory || [] });
-  } catch (error) {
-    logger.error('Get edit history error:', error);
-    res.status(500).json({ message: 'Server error' });
-  }
+router.get('/:id/edit-history', auth, (req, res) => {
+  res.status(410).json({
+    message: 'Edit history viewing has been removed.',
+    deprecated: true,
+    removedDate: '2025-12-26'
+  });
 });
 
 export default router;

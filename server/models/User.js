@@ -66,11 +66,7 @@ const userSchema = new mongoose.Schema({
     default: '',
     trim: true
   },
-  relationshipStatus: {
-    type: String,
-    default: '',
-    trim: true
-  },
+  // REMOVED 2025-12-26: relationshipStatus field deleted (Phase 5)
   birthday: {
     type: Date,
     default: null
@@ -226,23 +222,7 @@ const userSchema = new mongoose.Schema({
     canViewAnalytics: { type: Boolean, default: false },
     canManageAdmins: { type: Boolean, default: false }
   },
-  isVerified: {
-    type: Boolean,
-    default: false
-  },
-  verificationRequested: {
-    type: Boolean,
-    default: false
-  },
-  verificationRequestDate: {
-    type: Date,
-    default: null
-  },
-  verificationRequestReason: {
-    type: String,
-    default: '',
-    maxlength: 500
-  },
+  // REMOVED 2025-12-26: isVerified, verificationRequested, verificationRequestDate, verificationRequestReason (Phase 5)
   // Email verification
   emailVerified: {
     type: Boolean,
@@ -578,13 +558,7 @@ const userSchema = new mongoose.Schema({
       type: Boolean,
       default: false
     },
-    // PHASE 1 REFACTOR: Deprecated (friends system removed)
-    whoCanSendFriendRequests: {
-      type: String,
-      enum: ['everyone', 'friends-of-friends', 'no-one'],
-      default: 'everyone',
-      select: false // Hide from queries by default
-    },
+    // REMOVED 2025-12-26: whoCanSendFriendRequests deleted (Phase 5)
     whoCanMessage: {
       type: String,
       enum: ['everyone', 'followers', 'no-one'], // REMOVED: 'friends'
@@ -656,11 +630,7 @@ const userSchema = new mongoose.Schema({
   // isCreator, creatorTagline, creatorBio, featuredPosts removed
   // Use regular posts and profile bio instead
 
-  // PHASE 6: Ally System (DEPRECATED - use identity field instead)
-  isAlly: {
-    type: Boolean,
-    default: false
-  },
+  // REMOVED 2025-12-26: isAlly deleted (Phase 5) - use identity field instead
   onboardingCompleted: {
     type: Boolean,
     default: false

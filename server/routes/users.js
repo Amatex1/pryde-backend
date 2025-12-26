@@ -234,67 +234,27 @@ router.get('/suggested', auth, async (req, res) => {
 });
 
 // @route   POST /api/users/verification-request
-// @desc    Request account verification
+// @desc    DEPRECATED - Verification system removed 2025-12-26
 // @access  Private
 // NOTE: This route MUST be before /:identifier route to avoid being caught by it
-router.post('/verification-request', auth, requireActiveUser, async (req, res) => {
-  try {
-    const { reason } = req.body;
-
-    if (!reason || reason.trim().length === 0) {
-      return res.status(400).json({ message: 'Please provide a reason for verification' });
-    }
-
-    const user = await User.findById(req.userId);
-
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-
-    if (user.isVerified) {
-      return res.status(400).json({ message: 'Your account is already verified' });
-    }
-
-    if (user.verificationRequested) {
-      return res.status(400).json({ message: 'You have already submitted a verification request. Please wait for admin review.' });
-    }
-
-    user.verificationRequested = true;
-    user.verificationRequestDate = new Date();
-    user.verificationRequestReason = reason.trim();
-    await user.save();
-
-    res.json({
-      message: 'Verification request submitted successfully. An admin will review your request.',
-      verificationRequested: true
-    });
-  } catch (error) {
-    console.error('Verification request error:', error);
-    res.status(500).json({ message: 'Server error' });
-  }
+router.post('/verification-request', auth, (req, res) => {
+  res.status(410).json({
+    message: 'Verification request system has been removed.',
+    deprecated: true,
+    removedDate: '2025-12-26'
+  });
 });
 
 // @route   GET /api/users/verification-status
-// @desc    Get verification status
+// @desc    DEPRECATED - Verification system removed 2025-12-26
 // @access  Private
 // NOTE: This route MUST be before /:identifier route to avoid being caught by it
-router.get('/verification-status', auth, async (req, res) => {
-  try {
-    const user = await User.findById(req.userId).select('isVerified verificationRequested verificationRequestDate');
-
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-
-    res.json({
-      isVerified: user.isVerified,
-      verificationRequested: user.verificationRequested,
-      verificationRequestDate: user.verificationRequestDate
-    });
-  } catch (error) {
-    console.error('Verification status error:', error);
-    res.status(500).json({ message: 'Server error' });
-  }
+router.get('/verification-status', auth, (req, res) => {
+  res.status(410).json({
+    message: 'Verification request system has been removed.',
+    deprecated: true,
+    removedDate: '2025-12-26'
+  });
 });
 
 // @route   GET /api/users/download-data
@@ -336,7 +296,7 @@ router.get('/download-data', auth, async (req, res) => {
           gender: user.gender || '',
           pronouns: user.pronouns || '',
           sexualOrientation: user.sexualOrientation || '',
-          relationshipStatus: user.relationshipStatus || '',
+          // REMOVED 2025-12-26: relationshipStatus deleted (Phase 5)
           interests: user.interests || '',
           lookingFor: user.lookingFor || '',
           profilePhoto: user.profilePhoto || '',
@@ -537,7 +497,8 @@ router.put('/profile', auth, requireActiveUser, sanitizeFields([
       pronouns,
       gender,
       sexualOrientation,
-      relationshipStatus,
+      // DEPRECATED 2025-12-26: relationshipStatus is ignored (UI removed)
+      // relationshipStatus,
       birthday,
       bio,
       postcode,
@@ -568,7 +529,7 @@ router.put('/profile', auth, requireActiveUser, sanitizeFields([
     if (pronouns !== undefined) user.pronouns = pronouns;
     if (gender !== undefined) user.gender = gender;
     if (sexualOrientation !== undefined) user.sexualOrientation = sexualOrientation;
-    if (relationshipStatus !== undefined) user.relationshipStatus = relationshipStatus;
+    // DEPRECATED 2025-12-26: relationshipStatus update removed (UI removed)
     if (birthday !== undefined) user.birthday = birthday;
     if (bio !== undefined) user.bio = bio;
     if (postcode !== undefined) user.postcode = postcode;
@@ -732,32 +693,14 @@ router.get('/me/stability', auth, async (req, res) => {
 });
 
 // @route   PATCH /api/users/me/ally
-// @desc    Update ally status (PHASE 6)
+// @desc    DEPRECATED - isAlly field removed 2025-12-26 (Phase 5)
 // @access  Private
-router.patch('/me/ally', auth, requireActiveUser, async (req, res) => {
-  try {
-    const { isAlly } = req.body;
-    const user = await User.findById(req.userId);
-
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-
-    if (typeof isAlly === 'boolean') {
-      user.isAlly = isAlly;
-      user.onboardingCompleted = true;
-    }
-
-    await user.save();
-
-    res.json({
-      message: 'Ally status updated successfully',
-      isAlly: user.isAlly
-    });
-  } catch (error) {
-    console.error('Update ally status error:', error);
-    res.status(500).json({ message: 'Server error' });
-  }
+router.patch('/me/ally', auth, requireActiveUser, (req, res) => {
+  res.status(410).json({
+    message: 'Ally status system has been removed. Use identity field instead.',
+    deprecated: true,
+    removedDate: '2025-12-26'
+  });
 });
 
 // @route   PUT /api/users/deactivate
@@ -940,7 +883,7 @@ router.post('/account/delete-confirm', async (req, res) => {
     user.customPronouns = '';
     user.gender = '';
     user.customGender = '';
-    user.relationshipStatus = '';
+    // REMOVED 2025-12-26: relationshipStatus deleted (Phase 5)
 
     // Clear all sessions (log out everywhere)
     user.activeSessions = [];
