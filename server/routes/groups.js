@@ -548,5 +548,116 @@ router.get('/:slug/posts', authenticateToken, async (req, res) => {
   }
 });
 
+/**
+ * @route   PATCH /api/groups/:slug/posts/:postId
+ * @desc    Edit a post in this group (author only)
+ * @access  Private (authenticated + author)
+ */
+router.patch('/:slug/posts/:postId', authenticateToken, async (req, res) => {
+  try {
+    const { slug, postId } = req.params;
+    const userId = req.user.id || req.user._id;
+    const { content, media, contentWarning } = req.body;
+
+    // Find group
+    const group = await Group.findOne({ slug: slug.toLowerCase() });
+    if (!group) {
+      return res.status(404).json({ message: 'Group not found' });
+    }
+
+    // Find post
+    const post = await Post.findById(postId);
+    if (!post) {
+      return res.status(404).json({ message: 'Post not found' });
+    }
+
+    // Verify post belongs to this group
+    if (!post.groupId || post.groupId.toString() !== group._id.toString()) {
+      return res.status(404).json({ message: 'Post not found in this group' });
+    }
+
+    // Only author can edit
+    if (post.author.toString() !== userId.toString()) {
+      return res.status(403).json({ message: 'Only the author can edit this post' });
+    }
+
+    // Update fields
+    if (content !== undefined) {
+      post.content = content;
+    }
+    if (media !== undefined) {
+      post.media = media;
+    }
+    if (contentWarning !== undefined) {
+      post.contentWarning = contentWarning;
+    }
+
+    // Validate: must have content or media
+    if ((!post.content || post.content.trim() === '') && (!post.media || post.media.length === 0)) {
+      return res.status(400).json({ message: 'Post must have content or media' });
+    }
+
+    await post.save();
+    await post.populate('author', 'username displayName profilePhoto isVerified');
+
+    res.json({
+      success: true,
+      message: 'Post updated successfully',
+      post: post.toObject()
+    });
+  } catch (error) {
+    console.error('Edit group post error:', error);
+    res.status(500).json({ message: 'Failed to update post' });
+  }
+});
+
+/**
+ * @route   DELETE /api/groups/:slug/posts/:postId
+ * @desc    Delete a post in this group (author or group owner)
+ * @access  Private (authenticated + author/owner)
+ */
+router.delete('/:slug/posts/:postId', authenticateToken, async (req, res) => {
+  try {
+    const { slug, postId } = req.params;
+    const userId = req.user.id || req.user._id;
+
+    // Find group
+    const group = await Group.findOne({ slug: slug.toLowerCase() });
+    if (!group) {
+      return res.status(404).json({ message: 'Group not found' });
+    }
+
+    // Find post
+    const post = await Post.findById(postId);
+    if (!post) {
+      return res.status(404).json({ message: 'Post not found' });
+    }
+
+    // Verify post belongs to this group
+    if (!post.groupId || post.groupId.toString() !== group._id.toString()) {
+      return res.status(404).json({ message: 'Post not found in this group' });
+    }
+
+    // Check permission: author or group owner can delete
+    const isAuthor = post.author.toString() === userId.toString();
+    const ownerId = group.owner?._id?.toString() || group.owner?.toString();
+    const isGroupOwner = ownerId === userId.toString();
+
+    if (!isAuthor && !isGroupOwner) {
+      return res.status(403).json({ message: 'Only the author or group owner can delete this post' });
+    }
+
+    await Post.deleteOne({ _id: post._id });
+
+    res.json({
+      success: true,
+      message: 'Post deleted successfully'
+    });
+  } catch (error) {
+    console.error('Delete group post error:', error);
+    res.status(500).json({ message: 'Failed to delete post' });
+  }
+});
+
 export default router;
 
