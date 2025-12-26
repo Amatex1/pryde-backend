@@ -29,17 +29,27 @@ const router = express.Router();
 /**
  * @route   GET /api/groups
  * @desc    List all groups (public listing)
- *          Shows all groups with basic metadata and membership status
+ *          Shows approved groups + user's own pending groups
  * @access  Private (authenticated)
  */
 router.get('/', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
 
-    // Get all groups (excluding hidden ones for non-admins)
-    const groups = await Group.find({ visibility: { $ne: 'hidden' } })
+    // Get approved groups (excluding hidden) OR user's own pending groups
+    const groups = await Group.find({
+      $and: [
+        { visibility: { $ne: 'hidden' } },
+        {
+          $or: [
+            { status: 'approved' },
+            { status: 'pending', owner: userId } // Show user's own pending groups
+          ]
+        }
+      ]
+    })
       .populate('owner', 'username displayName profilePhoto')
-      .sort({ name: 1 }); // Sort alphabetically
+      .sort({ name: 1 });
 
     // Map groups to include membership status and member count
     const groupsWithStatus = groups.map(group => ({
@@ -48,8 +58,9 @@ router.get('/', authenticateToken, async (req, res) => {
       name: group.name,
       description: group.description,
       visibility: group.visibility,
+      status: group.status,
       owner: group.owner,
-      memberCount: group.members.length + group.moderators.length + 1, // +1 for owner
+      memberCount: group.members.length + group.moderators.length + 1,
       isMember: group.isMember(userId),
       isOwner: group.owner._id.toString() === userId,
       createdAt: group.createdAt
@@ -58,6 +69,74 @@ router.get('/', authenticateToken, async (req, res) => {
     res.json({ groups: groupsWithStatus });
   } catch (error) {
     console.error('List groups error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+/**
+ * @route   POST /api/groups
+ * @desc    Create a new group (requires admin approval)
+ * @access  Private (authenticated)
+ */
+router.post('/', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { name, description } = req.body;
+
+    // Validate input
+    if (!name || !name.trim()) {
+      return res.status(400).json({ message: 'Group name is required' });
+    }
+
+    const trimmedName = name.trim();
+    if (trimmedName.length > 100) {
+      return res.status(400).json({ message: 'Group name must be 100 characters or less' });
+    }
+
+    // Generate slug from name
+    const slug = trimmedName
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '')
+      .substring(0, 50);
+
+    if (!slug) {
+      return res.status(400).json({ message: 'Invalid group name' });
+    }
+
+    // Check if slug already exists
+    const existing = await Group.findOne({ slug });
+    if (existing) {
+      return res.status(409).json({ message: 'A group with a similar name already exists' });
+    }
+
+    // Create group with pending status
+    const group = new Group({
+      slug,
+      name: trimmedName,
+      description: description?.trim().substring(0, 500) || '',
+      visibility: 'private',
+      status: 'pending', // Requires admin approval
+      owner: userId,
+      members: [],
+      moderators: []
+    });
+
+    await group.save();
+
+    res.status(201).json({
+      success: true,
+      message: 'Group submitted for approval',
+      group: {
+        _id: group._id,
+        slug: group.slug,
+        name: group.name,
+        description: group.description,
+        status: group.status
+      }
+    });
+
+  } catch (error) {
+    console.error('Create group error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });

@@ -35,6 +35,12 @@ const groupSchema = new mongoose.Schema({
     enum: ['private', 'public', 'hidden'],
     default: 'private'
   },
+  // Admin approval status for user-created groups
+  status: {
+    type: String,
+    enum: ['pending', 'approved', 'rejected'],
+    default: 'approved' // Existing groups default to approved
+  },
   owner: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
@@ -72,6 +78,7 @@ groupSchema.index({ slug: 1 }, { unique: true });
 groupSchema.index({ owner: 1 });
 groupSchema.index({ members: 1 });
 groupSchema.index({ visibility: 1 });
+groupSchema.index({ status: 1 });
 groupSchema.index({ createdFromTag: 1 });
 
 // Update the updatedAt timestamp before saving

@@ -921,5 +921,95 @@ router.put('/users/:id/email', checkPermission('canManageUsers'), async (req, re
   }
 });
 
+// ============================================
+// GROUP MANAGEMENT
+// ============================================
+
+import Group from '../models/Group.js';
+
+// @route   GET /api/admin/groups/pending
+// @desc    Get all pending group requests
+// @access  Admin
+router.get('/groups/pending', async (req, res) => {
+  try {
+    const pendingGroups = await Group.find({ status: 'pending' })
+      .populate('owner', 'username displayName profilePhoto email')
+      .sort({ createdAt: -1 });
+
+    res.json({ groups: pendingGroups });
+  } catch (error) {
+    console.error('Get pending groups error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   PATCH /api/admin/groups/:id/approve
+// @desc    Approve a pending group
+// @access  Admin
+router.patch('/groups/:id/approve', async (req, res) => {
+  try {
+    const group = await Group.findById(req.params.id);
+
+    if (!group) {
+      return res.status(404).json({ message: 'Group not found' });
+    }
+
+    if (group.status !== 'pending') {
+      return res.status(400).json({ message: 'Group is not pending approval' });
+    }
+
+    group.status = 'approved';
+    await group.save();
+
+    res.json({
+      success: true,
+      message: 'Group approved',
+      group: {
+        _id: group._id,
+        name: group.name,
+        slug: group.slug,
+        status: group.status
+      }
+    });
+  } catch (error) {
+    console.error('Approve group error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   PATCH /api/admin/groups/:id/reject
+// @desc    Reject a pending group
+// @access  Admin
+router.patch('/groups/:id/reject', async (req, res) => {
+  try {
+    const group = await Group.findById(req.params.id);
+
+    if (!group) {
+      return res.status(404).json({ message: 'Group not found' });
+    }
+
+    if (group.status !== 'pending') {
+      return res.status(400).json({ message: 'Group is not pending approval' });
+    }
+
+    group.status = 'rejected';
+    await group.save();
+
+    res.json({
+      success: true,
+      message: 'Group rejected',
+      group: {
+        _id: group._id,
+        name: group.name,
+        slug: group.slug,
+        status: group.status
+      }
+    });
+  } catch (error) {
+    console.error('Reject group error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 export default router;
 
