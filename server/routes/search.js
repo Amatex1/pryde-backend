@@ -21,8 +21,9 @@ const escapeRegex = (str) => {
 };
 
 // @route   GET /api/search
-// @desc    Global search for users, posts, and hashtags
+// @desc    Global search for users and posts
 // @access  Private
+// REMOVED 2025-12-26: Hashtag search removed (Phase 5)
 router.get('/', auth, searchLimiter, async (req, res) => {
   try {
     const { q, type } = req.query;
@@ -30,16 +31,16 @@ router.get('/', auth, searchLimiter, async (req, res) => {
     if (!q || q.trim().length === 0) {
       return res.json({
         users: [],
-        posts: [],
-        hashtags: []
+        posts: []
+        // REMOVED 2025-12-26: hashtags removed (Phase 5)
       });
     }
 
     const searchQuery = escapeRegex(q.trim()); // Escape regex special characters
     const results = {
       users: [],
-      posts: [],
-      hashtags: []
+      posts: []
+      // REMOVED 2025-12-26: hashtags removed (Phase 5)
     };
 
     // Get blocked user IDs to filter them out
@@ -80,32 +81,8 @@ router.get('/', auth, searchLimiter, async (req, res) => {
       .limit(20);
     }
 
-    // Search hashtags (if type is 'all' or 'hashtags')
-    if (!type || type === 'all' || type === 'hashtags') {
-      // Note: searchQuery is already escaped, but hashtags are exact matches so no additional escaping needed
-      const hashtagQuery = searchQuery.startsWith('#') ? searchQuery.toLowerCase() : `#${searchQuery.toLowerCase()}`;
-
-      // Build match query - super_admin can see all hashtags
-      const hashtagMatchQuery = {
-        hashtags: { $regex: hashtagQuery, $options: 'i' }
-      };
-
-      // Apply privacy filters only for non-admin users
-      if (req.user.role !== 'super_admin') {
-        hashtagMatchQuery.visibility = 'public';
-        hashtagMatchQuery.hiddenFrom = { $ne: req.userId };
-      }
-
-      results.hashtags = await Post.aggregate([
-        { $match: hashtagMatchQuery },
-        { $unwind: '$hashtags' },
-        { $match: { hashtags: { $regex: hashtagQuery, $options: 'i' } } },
-        { $group: { _id: '$hashtags', count: { $sum: 1 } } },
-        { $sort: { count: -1 } },
-        { $limit: 10 },
-        { $project: { hashtag: '$_id', count: 1, _id: 0 } }
-      ]);
-    }
+    // REMOVED 2025-12-26: Hashtag search removed (Phase 5)
+    // Hashtags field no longer exists in Post model
 
     res.json(results);
   } catch (error) {
@@ -115,69 +92,26 @@ router.get('/', auth, searchLimiter, async (req, res) => {
 });
 
 // @route   GET /api/search/hashtag/:tag
-// @desc    Get posts by hashtag
+// @desc    DEPRECATED - Hashtag search removed 2025-12-26 (Phase 5)
 // @access  Private
-router.get('/hashtag/:tag', auth, async (req, res) => {
-  try {
-    const hashtag = escapeRegex(req.params.tag.toLowerCase()); // Escape special characters
-    const hashtagQuery = hashtag.startsWith('#') ? hashtag : `#${hashtag}`;
-
-    // Build query - super_admin can see all posts
-    const query = {
-      hashtags: hashtagQuery
-    };
-
-    // Apply privacy filters only for non-admin users
-    if (req.user.role !== 'super_admin') {
-      query.visibility = 'public';
-      query.hiddenFrom = { $ne: req.userId };
-    }
-
-    const posts = await Post.find(query)
-    .populate('author', 'username displayName profilePhoto')
-    .populate('comments.user', 'username displayName profilePhoto')
-    .sort({ createdAt: -1 })
-    .limit(50);
-
-    res.json({ posts, hashtag: hashtagQuery });
-  } catch (error) {
-    logger.error('Hashtag search error:', error);
-    res.status(500).json({ message: 'Server error' });
-  }
+router.get('/hashtag/:tag', auth, (req, res) => {
+  res.status(410).json({
+    message: 'Hashtag search has been removed.',
+    deprecated: true,
+    removedDate: '2025-12-26',
+    posts: []
+  });
 });
 
 // @route   GET /api/search/trending
-// @desc    Get trending hashtags
+// @desc    DEPRECATED - Trending hashtags removed 2025-12-26 (Phase 5)
 // @access  Private
-router.get('/trending', auth, async (req, res) => {
-  try {
-    const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
-
-    // Build match query - super_admin can see all trending
-    const trendingMatchQuery = {
-      createdAt: { $gte: oneDayAgo }
-    };
-
-    // Apply privacy filters only for non-admin users
-    if (req.user.role !== 'super_admin') {
-      trendingMatchQuery.visibility = 'public';
-      trendingMatchQuery.hiddenFrom = { $ne: req.userId };
-    }
-
-    const trending = await Post.aggregate([
-      { $match: trendingMatchQuery },
-      { $unwind: '$hashtags' },
-      { $group: { _id: '$hashtags', count: { $sum: 1 } } },
-      { $sort: { count: -1 } },
-      { $limit: 10 },
-      { $project: { hashtag: '$_id', count: 1, _id: 0 } }
-    ]);
-
-    res.json(trending);
-  } catch (error) {
-    logger.error('Trending error:', error);
-    res.status(500).json({ message: 'Server error' });
-  }
+router.get('/trending', auth, (req, res) => {
+  res.status(410).json({
+    message: 'Trending hashtags feature has been removed.',
+    deprecated: true,
+    removedDate: '2025-12-26'
+  });
 });
 
 // @route   GET /api/search/messages
