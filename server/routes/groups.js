@@ -75,12 +75,15 @@ router.get('/', authenticateToken, async (req, res) => {
 
 /**
  * @route   POST /api/groups
- * @desc    Create a new group (requires admin approval)
+ * @desc    Create a new group
+ *          - super_admin: auto-approved
+ *          - everyone else: requires admin approval
  * @access  Private (authenticated)
  */
 router.post('/', authenticateToken, async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user.id || req.user._id;
+    const userRole = req.user.role;
     const { name, description } = req.body;
 
     // Validate input
@@ -109,13 +112,17 @@ router.post('/', authenticateToken, async (req, res) => {
       return res.status(409).json({ message: 'A group with a similar name already exists' });
     }
 
-    // Create group with pending status
+    // Super admins get auto-approved, everyone else needs approval
+    const isSuperAdmin = userRole === 'super_admin';
+    const status = isSuperAdmin ? 'approved' : 'pending';
+
+    // Create group
     const group = new Group({
       slug,
       name: trimmedName,
       description: description?.trim().substring(0, 500) || '',
       visibility: 'private',
-      status: 'pending', // Requires admin approval
+      status,
       owner: userId,
       members: [],
       moderators: []
@@ -123,9 +130,13 @@ router.post('/', authenticateToken, async (req, res) => {
 
     await group.save();
 
+    const message = isSuperAdmin
+      ? 'Group created successfully'
+      : 'Group submitted for approval';
+
     res.status(201).json({
       success: true,
-      message: 'Group submitted for approval',
+      message,
       group: {
         _id: group._id,
         slug: group.slug,
