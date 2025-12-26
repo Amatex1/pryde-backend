@@ -4,6 +4,7 @@
  * Group Routes - Private, join-gated community groups
  *
  * ENDPOINTS:
+ * - GET  /api/groups             - List all groups
  * - GET  /api/groups/:slug       - Get group (metadata for all, posts only for members)
  * - POST /api/groups/:slug/join  - Join a group (idempotent)
  * - POST /api/groups/:slug/leave - Leave a group
@@ -24,6 +25,42 @@ import Post from '../models/Post.js';
 import { authenticateToken } from '../middleware/auth.js';
 
 const router = express.Router();
+
+/**
+ * @route   GET /api/groups
+ * @desc    List all groups (public listing)
+ *          Shows all groups with basic metadata and membership status
+ * @access  Private (authenticated)
+ */
+router.get('/', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    // Get all groups (excluding hidden ones for non-admins)
+    const groups = await Group.find({ visibility: { $ne: 'hidden' } })
+      .populate('owner', 'username displayName profilePhoto')
+      .sort({ name: 1 }); // Sort alphabetically
+
+    // Map groups to include membership status and member count
+    const groupsWithStatus = groups.map(group => ({
+      _id: group._id,
+      slug: group.slug,
+      name: group.name,
+      description: group.description,
+      visibility: group.visibility,
+      owner: group.owner,
+      memberCount: group.members.length + group.moderators.length + 1, // +1 for owner
+      isMember: group.isMember(userId),
+      isOwner: group.owner._id.toString() === userId,
+      createdAt: group.createdAt
+    }));
+
+    res.json({ groups: groupsWithStatus });
+  } catch (error) {
+    console.error('List groups error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
 
 /**
  * @route   GET /api/groups/:slug
