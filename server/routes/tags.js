@@ -1,12 +1,17 @@
 /**
  * PHASE 4: Tag Routes
  * Community tags for discovery and browsing
+ *
+ * Migration Phase: TAGS → GROUPS (Phase 0 - Foundation)
+ * NOTE: Tags are still legacy-active. This file is NOT being modified for migration
+ * except to add a lookup endpoint for tag→group mapping detection.
  */
 
 import express from 'express';
 import Tag from '../models/Tag.js';
 import Post from '../models/Post.js';
 import User from '../models/User.js';
+import TagGroupMapping from '../models/TagGroupMapping.js'; // Migration Phase: TAGS → GROUPS
 import { authenticateToken } from '../middleware/auth.js';
 
 const router = express.Router();
@@ -81,6 +86,38 @@ router.get('/trending', authenticateToken, async (req, res) => {
   } catch (error) {
     console.error('Trending tags error:', error);
     res.status(500).json({ message: 'Failed to fetch trending tags' });
+  }
+});
+
+// @route   GET /api/tags/:slug/group-mapping
+// @desc    Check if this tag has been migrated to a group
+// @access  Private
+// Migration Phase: TAGS → GROUPS (Phase 0 - Foundation)
+router.get('/:slug/group-mapping', authenticateToken, async (req, res) => {
+  try {
+    const { slug } = req.params;
+
+    // Check if mapping exists
+    const mapping = await TagGroupMapping.findOne({ legacyTag: slug })
+      .populate('groupId', 'slug name');
+
+    if (!mapping) {
+      return res.json({
+        hasMigrated: false,
+        group: null
+      });
+    }
+
+    return res.json({
+      hasMigrated: true,
+      group: {
+        slug: mapping.groupId.slug,
+        name: mapping.groupId.name
+      }
+    });
+  } catch (error) {
+    console.error('Check tag mapping error:', error);
+    res.status(500).json({ message: 'Failed to check tag mapping' });
   }
 });
 

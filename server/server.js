@@ -30,6 +30,7 @@ import feedRoutes from './routes/feed.js'; // PHASE 2: Global and Following feed
 import journalsRoutes from './routes/journals.js'; // PHASE 3: Journaling
 import longformRoutes from './routes/longform.js'; // PHASE 3: Longform posts
 import tagsRoutes, { initializeTags } from './routes/tags.js'; // PHASE 4: Community tags
+import groupsRoutes from './routes/groups.js'; // Migration Phase: TAGS → GROUPS (Phase 0)
 import photoEssaysRoutes from './routes/photoEssays.js'; // PHASE 5: Photo essays
 import uploadRoutes from './routes/upload.js';
 import notificationsRoutes from './routes/notifications.js';
@@ -315,7 +316,8 @@ app.use('/api/posts', postsRoutes);
 app.use('/api/feed', feedRoutes); // PHASE 2: Global and Following feeds
 app.use('/api/journals', journalsRoutes); // PHASE 3: Journaling
 app.use('/api/longform', longformRoutes); // PHASE 3: Longform posts
-app.use('/api/tags', tagsRoutes); // PHASE 4: Community tags
+app.use('/api/tags', tagsRoutes); // PHASE 4: Community tags (legacy-active)
+app.use('/api/groups', groupsRoutes); // Migration Phase: TAGS → GROUPS (Phase 0 - Foundation)
 app.use('/api/photo-essays', photoEssaysRoutes); // PHASE 5: Photo essays
 app.use('/api/upload', uploadRoutes);
 app.use('/api/notifications', notificationsRoutes);
