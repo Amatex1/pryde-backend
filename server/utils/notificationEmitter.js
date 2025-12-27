@@ -31,6 +31,10 @@ export function emitNotificationCreated(io, recipientId, notification) {
     link: notification.link,
     postId: notification.postId,
     commentId: notification.commentId,
+    // PHASE 4B: Group notification fields
+    groupId: notification.groupId,
+    groupSlug: notification.groupSlug,
+    groupName: notification.groupName,
     loginApprovalId: notification.loginApprovalId,
     loginApprovalData: notification.loginApprovalData,
     createdAt: notification.createdAt

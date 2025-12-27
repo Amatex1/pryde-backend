@@ -1,6 +1,7 @@
 /**
  * Phase 2: Group-only posting
  * Phase 4A: Group Ownership & Moderation
+ * Phase 4B: Group Notifications (Quiet, Opt-in)
  *
  * Group Routes - Private, join-gated community groups
  *
@@ -17,6 +18,10 @@
  * - POST /api/groups/:slug/promote-moderator - Promote to moderator (owner only)
  * - POST /api/groups/:slug/demote-moderator  - Demote from moderator (owner only)
  * - GET  /api/groups/:slug/members           - Get member list (members only)
+ *
+ * NOTIFICATION ENDPOINTS (Phase 4B):
+ * - GET  /api/groups/:slug/notification-settings - Get user's notification prefs
+ * - PUT  /api/groups/:slug/notification-settings - Update notification prefs
  *
  * ISOLATION:
  * - Group posts are intentionally isolated from global feeds
@@ -35,8 +40,10 @@
 import express from 'express';
 import Group from '../models/Group.js';
 import Post from '../models/Post.js';
+import User from '../models/User.js';
 import { authenticateToken } from '../middleware/auth.js';
 import { isGroupOwner, isGroupModerator, isGroupMember, canModerateGroup, getGroupMemberCount } from '../utils/groupPermissions.js';
+import { processGroupPostNotifications, updateGroupNotificationSettings, getGroupNotificationSettings } from '../services/groupNotificationService.js';
 import logger from '../utils/logger.js';
 
 const router = express.Router();
@@ -556,6 +563,16 @@ router.post('/:slug/posts', authenticateToken, async (req, res) => {
     // Populate author for response
     await post.populate('author', 'username displayName profilePhoto isVerified');
 
+    // PHASE 4B: Trigger group notifications (async, non-blocking)
+    // Notifications are opt-in and respect Quiet Mode
+    processGroupPostNotifications({
+      post,
+      group,
+      author: post.author
+    }).catch(err => {
+      logger.error('Failed to process group post notifications', { error: err.message });
+    });
+
     res.status(201).json({
       success: true,
       message: 'Post created successfully',
@@ -1022,6 +1039,90 @@ router.post('/:slug/demote-moderator', authenticateToken, async (req, res) => {
   } catch (error) {
     logger.error('Demote moderator error:', error);
     res.status(500).json({ message: 'Failed to demote moderator' });
+  }
+});
+
+/**
+ * PHASE 4B: Group Notifications (Quiet, Opt-in)
+ *
+ * @route   GET /api/groups/:slug/notification-settings
+ * @desc    Get user's notification settings for this group
+ * @access  Private (members only)
+ */
+router.get('/:slug/notification-settings', authenticateToken, async (req, res) => {
+  try {
+    const { slug } = req.params;
+    const userId = req.user.id || req.user._id;
+
+    const group = await Group.findOne({ slug: slug.toLowerCase() });
+    if (!group) {
+      return res.status(404).json({ message: 'Group not found' });
+    }
+
+    // Must be a member to see notification settings
+    if (!isGroupMember(userId, group) && !isGroupOwner(userId, group) && !isGroupModerator(userId, group)) {
+      return res.status(403).json({ message: 'You must be a member to manage notification settings' });
+    }
+
+    // Get user with their notification settings
+    const user = await User.findById(userId).select('groupNotificationSettings');
+    const settings = getGroupNotificationSettings(user, group._id.toString());
+
+    res.json({
+      success: true,
+      settings: {
+        notifyOnNewPost: settings.notifyOnNewPost,
+        notifyOnMention: settings.notifyOnMention
+      }
+    });
+  } catch (error) {
+    logger.error('Get notification settings error:', error);
+    res.status(500).json({ message: 'Failed to get notification settings' });
+  }
+});
+
+/**
+ * PHASE 4B: Group Notifications (Quiet, Opt-in)
+ *
+ * @route   PUT /api/groups/:slug/notification-settings
+ * @desc    Update user's notification settings for this group
+ * @access  Private (members only)
+ *
+ * Body: { notifyOnNewPost: boolean, notifyOnMention: boolean }
+ */
+router.put('/:slug/notification-settings', authenticateToken, async (req, res) => {
+  try {
+    const { slug } = req.params;
+    const userId = req.user.id || req.user._id;
+    const { notifyOnNewPost, notifyOnMention } = req.body;
+
+    const group = await Group.findOne({ slug: slug.toLowerCase() });
+    if (!group) {
+      return res.status(404).json({ message: 'Group not found' });
+    }
+
+    // Must be a member to update notification settings
+    if (!isGroupMember(userId, group) && !isGroupOwner(userId, group) && !isGroupModerator(userId, group)) {
+      return res.status(403).json({ message: 'You must be a member to manage notification settings' });
+    }
+
+    // Update settings
+    const updatedSettings = await updateGroupNotificationSettings(userId, group._id.toString(), {
+      notifyOnNewPost,
+      notifyOnMention
+    });
+
+    res.json({
+      success: true,
+      message: 'Notification settings updated',
+      settings: {
+        notifyOnNewPost: updatedSettings.notifyOnNewPost,
+        notifyOnMention: updatedSettings.notifyOnMention
+      }
+    });
+  } catch (error) {
+    logger.error('Update notification settings error:', error);
+    res.status(500).json({ message: 'Failed to update notification settings' });
   }
 });
 

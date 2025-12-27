@@ -729,7 +729,27 @@ const userSchema = new mongoose.Schema({
   deletionConfirmationExpires: {
     type: Date,
     default: null
-  }
+  },
+
+  // PHASE 4B: Group Notification Preferences (per-user, per-group)
+  // Quiet, opt-in notifications - nothing is on by default
+  groupNotificationSettings: [{
+    groupId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Group',
+      required: true
+    },
+    // Notify me about new posts in this group (OFF by default - opt-in)
+    notifyOnNewPost: {
+      type: Boolean,
+      default: false
+    },
+    // Notify me when I'm mentioned in this group (ON by default)
+    notifyOnMention: {
+      type: Boolean,
+      default: true
+    }
+  }]
 });
 
 // Indexes for efficient queries
@@ -743,6 +763,7 @@ userSchema.index({ 'following': 1 });
 userSchema.index({ 'passkeys.credentialId': 1 });
 userSchema.index({ resetPasswordToken: 1 });
 userSchema.index({ lastSeen: -1 });
+userSchema.index({ 'groupNotificationSettings.groupId': 1 });
 
 // Hash password before saving
 // SECURITY: Using 12 rounds for stronger protection (OWASP recommended minimum)

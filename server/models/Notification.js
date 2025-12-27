@@ -14,7 +14,13 @@ const notificationSchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    enum: ['friend_request', 'friend_accept', 'message', 'mention', 'like', 'comment', 'share', 'login_approval'],
+    enum: [
+      'friend_request', 'friend_accept', 'message', 'mention',
+      'like', 'comment', 'share', 'login_approval',
+      // PHASE 4B: Group notification types
+      'group_post',    // New post in a group you've opted into
+      'group_mention'  // Someone @mentioned you in a group
+    ],
     required: true
   },
   message: {
@@ -34,6 +40,24 @@ const notificationSchema = new mongoose.Schema({
   },
   commentId: {
     type: mongoose.Schema.Types.ObjectId
+  },
+  // PHASE 4B: Group reference for group notifications
+  groupId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Group'
+  },
+  // Group slug for client-side navigation (avoids needing to populate)
+  groupSlug: {
+    type: String
+  },
+  // Group name for display purposes
+  groupName: {
+    type: String
+  },
+  // For batched notifications (e.g., "3 new posts in Book Club")
+  batchCount: {
+    type: Number,
+    default: 1
   },
   // For login approval notifications
   loginApprovalId: {
