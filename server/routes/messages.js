@@ -109,18 +109,19 @@ router.get('/unread/counts', auth, requireActiveUser, async (req, res) => {
   }
 });
 
-// Get all conversations
+// Get all conversations (OPTIMIZED - batch queries instead of N+1)
 router.get('/', auth, requireActiveUser, async (req, res) => {
   try {
     const currentUserId = req.userId;
+    const currentUserObjId = new mongoose.Types.ObjectId(currentUserId);
 
-    // Get unique conversation partners
-    const messages = await Message.aggregate([
+    // Get unique conversation partners with last message and unread count in ONE aggregation
+    const conversations = await Message.aggregate([
       {
         $match: {
           $or: [
-            { sender: new mongoose.Types.ObjectId(currentUserId) },
-            { recipient: new mongoose.Types.ObjectId(currentUserId) }
+            { sender: currentUserObjId },
+            { recipient: currentUserObjId }
           ]
         }
       },
@@ -131,73 +132,84 @@ router.get('/', auth, requireActiveUser, async (req, res) => {
         $group: {
           _id: {
             $cond: [
-              { $eq: ['$sender', new mongoose.Types.ObjectId(currentUserId)] },
+              { $eq: ['$sender', currentUserObjId] },
               '$recipient',
               '$sender'
             ]
           },
-          lastMessage: { $first: '$$ROOT' }
-        }
-      }
-    ]);
-
-    // Populate user details
-    await Message.populate(messages, {
-      path: 'lastMessage.sender lastMessage.recipient',
-      select: 'username profilePhoto displayName'
-    });
-
-    // Also populate the _id field which contains the other user's ID
-    // and check for manual unread status and unread count
-    const populatedConversations = await Promise.all(
-      messages.map(async (conv) => {
-        const otherUser = await User.findById(conv._id).select('username profilePhoto displayName');
-
-        // Check if conversation is manually marked as unread
-        const conversation = await Conversation.findOne({
-          participants: { $all: [currentUserId, conv._id] }
-        });
-
-        const isManuallyUnread = conversation?.unreadFor?.some(
-          u => u.user.toString() === currentUserId
-        );
-
-        // Count unread messages from this user
-        const unreadCount = await Message.countDocuments({
-          sender: conv._id,
-          recipient: currentUserId,
-          read: false
-        });
-
-        // IMPORTANT: Decrypt the lastMessage content
-        // Aggregation returns plain objects, not Mongoose documents,
-        // so toJSON() is not called automatically
-        if (conv.lastMessage?.content) {
-          const { decryptMessage, isEncrypted } = await import('../utils/encryption.js');
-          if (isEncrypted(conv.lastMessage.content)) {
-            try {
-              conv.lastMessage.content = decryptMessage(conv.lastMessage.content);
-            } catch (error) {
-              logger.error('❌ Error decrypting last message:', error);
-              conv.lastMessage.content = '[Encrypted message]';
+          lastMessage: { $first: '$$ROOT' },
+          // Count unread messages (from other user to current user, not read)
+          unreadCount: {
+            $sum: {
+              $cond: [
+                {
+                  $and: [
+                    { $ne: ['$sender', currentUserObjId] },
+                    { $eq: ['$read', false] }
+                  ]
+                },
+                1,
+                0
+              ]
             }
           }
         }
+      },
+      {
+        $sort: { 'lastMessage.createdAt': -1 }
+      }
+    ]);
 
-        return {
-          ...conv,
-          otherUser,
-          manuallyUnread: isManuallyUnread || false,
-          unread: unreadCount
-        };
-      })
-    );
+    // Get all other user IDs for batch lookup
+    const otherUserIds = conversations.map(c => c._id);
 
-    // Sort conversations by lastMessage timestamp (most recent first)
-    populatedConversations.sort((a, b) => {
-      const timeA = a.lastMessage?.createdAt ? new Date(a.lastMessage.createdAt).getTime() : 0;
-      const timeB = b.lastMessage?.createdAt ? new Date(b.lastMessage.createdAt).getTime() : 0;
-      return timeB - timeA;
+    // Batch fetch all users at once
+    const [users, conversationDocs] = await Promise.all([
+      User.find({ _id: { $in: otherUserIds } }).select('username profilePhoto displayName').lean(),
+      Conversation.find({
+        participants: { $all: [currentUserId] },
+        $or: otherUserIds.map(id => ({ participants: id }))
+      }).select('participants unreadFor').lean()
+    ]);
+
+    // Create lookup maps for O(1) access
+    const userMap = new Map(users.map(u => [u._id.toString(), u]));
+    const conversationMap = new Map();
+    conversationDocs.forEach(c => {
+      const otherParticipant = c.participants.find(p => p.toString() !== currentUserId);
+      if (otherParticipant) {
+        conversationMap.set(otherParticipant.toString(), c);
+      }
+    });
+
+    // Import encryption utilities once
+    const { decryptMessage, isEncrypted } = await import('../utils/encryption.js');
+
+    // Build response using maps (no additional DB queries)
+    const populatedConversations = conversations.map(conv => {
+      const otherUserId = conv._id.toString();
+      const otherUser = userMap.get(otherUserId) || null;
+      const conversationDoc = conversationMap.get(otherUserId);
+
+      const isManuallyUnread = conversationDoc?.unreadFor?.some(
+        u => u.user.toString() === currentUserId
+      ) || false;
+
+      // Decrypt last message if needed
+      if (conv.lastMessage?.content && isEncrypted(conv.lastMessage.content)) {
+        try {
+          conv.lastMessage.content = decryptMessage(conv.lastMessage.content);
+        } catch (error) {
+          conv.lastMessage.content = '[Encrypted message]';
+        }
+      }
+
+      return {
+        ...conv,
+        otherUser,
+        manuallyUnread: isManuallyUnread,
+        unread: conv.unreadCount
+      };
     });
 
     res.json(populatedConversations);
