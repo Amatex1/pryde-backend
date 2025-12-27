@@ -1,5 +1,6 @@
 /**
  * Phase 2: Group-only posting
+ * Phase 4A: Group Ownership & Moderation
  *
  * Group Routes - Private, join-gated community groups
  *
@@ -11,10 +12,22 @@
  * - POST /api/groups/:slug/posts - Create a post in this group (members only)
  * - GET  /api/groups/:slug/posts - Get posts in this group (members only)
  *
+ * MODERATION ENDPOINTS (Phase 4A):
+ * - POST /api/groups/:slug/remove-member     - Remove a member (owner/moderator only)
+ * - POST /api/groups/:slug/promote-moderator - Promote to moderator (owner only)
+ * - POST /api/groups/:slug/demote-moderator  - Demote from moderator (owner only)
+ * - GET  /api/groups/:slug/members           - Get member list (members only)
+ *
  * ISOLATION:
  * - Group posts are intentionally isolated from global feeds
  * - Group posts NEVER appear in /feed, /profile, bookmarks, search, or notifications
  * - All read/write operations verify membership on backend
+ *
+ * MODERATION PRINCIPLES:
+ * - Groups moderate themselves
+ * - Platform admins do NOT interfere unless reported
+ * - Owner is immutable (cannot be removed)
+ * - Moderator permissions are scoped to their group only
  *
  * Tags are legacy entry points only.
  */
@@ -23,6 +36,8 @@ import express from 'express';
 import Group from '../models/Group.js';
 import Post from '../models/Post.js';
 import { authenticateToken } from '../middleware/auth.js';
+import { isGroupOwner, isGroupModerator, isGroupMember, canModerateGroup, getGroupMemberCount } from '../utils/groupPermissions.js';
+import logger from '../utils/logger.js';
 
 const router = express.Router();
 
@@ -687,8 +702,10 @@ router.patch('/:slug/posts/:postId', authenticateToken, async (req, res) => {
 
 /**
  * @route   DELETE /api/groups/:slug/posts/:postId
- * @desc    Delete a post in this group (author or group owner)
- * @access  Private (authenticated + member/owner)
+ * @desc    Delete a post in this group (author, owner, or moderator)
+ * @access  Private (authenticated + member/owner/moderator)
+ *
+ * Phase 4A: Moderators can now delete posts within their group
  */
 router.delete('/:slug/posts/:postId', authenticateToken, async (req, res) => {
   try {
@@ -701,13 +718,13 @@ router.delete('/:slug/posts/:postId', authenticateToken, async (req, res) => {
       return res.status(404).json({ message: 'Group not found' });
     }
 
-    // Check if user is group owner (can delete any post even if not member)
-    const ownerId = group.owner?._id?.toString() || group.owner?.toString();
-    const isGroupOwner = ownerId === userId.toString();
+    // Phase 4A: Use permission helpers for consistent checks
+    const userIsOwner = isGroupOwner(userId, group);
+    const userCanModerate = canModerateGroup(userId, group);
 
     // CRITICAL: Verify membership on backend (Phase 2A security assertion)
-    // Non-owners must be members to delete their own posts
-    if (!isGroupOwner && !group.isMember(userId)) {
+    // Non-moderators must be members to delete their own posts
+    if (!userCanModerate && !isGroupMember(userId, group)) {
       return res.status(403).json({
         message: 'You must be a member to delete posts in this group'
       });
@@ -724,22 +741,287 @@ router.delete('/:slug/posts/:postId', authenticateToken, async (req, res) => {
       return res.status(404).json({ message: 'Post not found in this group' });
     }
 
-    // Check permission: author or group owner can delete
+    // Phase 4A: Check permission - author, owner, OR moderator can delete
     const isAuthor = post.author.toString() === userId.toString();
 
-    if (!isAuthor && !isGroupOwner) {
-      return res.status(403).json({ message: 'Only the author or group owner can delete this post' });
+    if (!isAuthor && !userCanModerate) {
+      return res.status(403).json({ message: 'Only the author, owner, or moderator can delete this post' });
     }
 
     await Post.deleteOne({ _id: post._id });
+
+    // Audit log for moderator deletions
+    if (!isAuthor && userCanModerate) {
+      logger.info('Group post deleted by moderator', {
+        groupId: group._id,
+        groupSlug: group.slug,
+        postId: postId,
+        actorId: userId.toString(),
+        actorRole: userIsOwner ? 'owner' : 'moderator',
+        action: 'delete-post'
+      });
+    }
 
     res.json({
       success: true,
       message: 'Post deleted successfully'
     });
   } catch (error) {
-    console.error('Delete group post error:', error);
+    logger.error('Delete group post error:', error);
     res.status(500).json({ message: 'Failed to delete post' });
+  }
+});
+
+// ============================================================================
+// PHASE 4A: GROUP MODERATION ENDPOINTS
+// ============================================================================
+
+/**
+ * @route   GET /api/groups/:slug/members
+ * @desc    Get member list for a group (members only)
+ * @access  Private (authenticated + member)
+ */
+router.get('/:slug/members', authenticateToken, async (req, res) => {
+  try {
+    const { slug } = req.params;
+    const userId = req.user.id || req.user._id;
+
+    const group = await Group.findOne({ slug: slug.toLowerCase() })
+      .populate('owner', 'username displayName profilePhoto')
+      .populate('moderators', 'username displayName profilePhoto')
+      .populate('members', 'username displayName profilePhoto');
+
+    if (!group) {
+      return res.status(404).json({ message: 'Group not found' });
+    }
+
+    // Only members can see the member list
+    if (!isGroupMember(userId, group)) {
+      return res.status(403).json({ message: 'You must be a member to view the member list' });
+    }
+
+    res.json({
+      success: true,
+      owner: group.owner,
+      moderators: group.moderators || [],
+      members: group.members || [],
+      memberCount: getGroupMemberCount(group)
+    });
+  } catch (error) {
+    logger.error('Get group members error:', error);
+    res.status(500).json({ message: 'Failed to fetch members' });
+  }
+});
+
+/**
+ * @route   POST /api/groups/:slug/remove-member
+ * @desc    Remove a member from the group (owner or moderator only)
+ * @access  Private (owner or moderator)
+ *
+ * RULES:
+ * - Owner can remove anyone (except self)
+ * - Moderator can remove regular members only (not other moderators or owner)
+ * - Cannot remove owner
+ */
+router.post('/:slug/remove-member', authenticateToken, async (req, res) => {
+  try {
+    const { slug } = req.params;
+    const actorId = req.user.id || req.user._id;
+    const { userId: targetUserId } = req.body;
+
+    if (!targetUserId) {
+      return res.status(400).json({ message: 'User ID is required' });
+    }
+
+    const group = await Group.findOne({ slug: slug.toLowerCase() });
+    if (!group) {
+      return res.status(404).json({ message: 'Group not found' });
+    }
+
+    // Check actor has moderation privileges
+    if (!canModerateGroup(actorId, group)) {
+      return res.status(403).json({ message: 'You do not have permission to remove members' });
+    }
+
+    // CRITICAL: Cannot remove owner
+    if (isGroupOwner(targetUserId, group)) {
+      return res.status(400).json({ message: 'Cannot remove the group owner' });
+    }
+
+    // Moderators cannot remove other moderators (only owner can)
+    if (!isGroupOwner(actorId, group) && isGroupModerator(targetUserId, group)) {
+      return res.status(403).json({ message: 'Only the owner can remove moderators' });
+    }
+
+    // Remove from both members and moderators arrays
+    const updatedGroup = await Group.findOneAndUpdate(
+      { slug: slug.toLowerCase() },
+      {
+        $pull: {
+          members: targetUserId,
+          moderators: targetUserId
+        }
+      },
+      { new: true }
+    );
+
+    // Audit log
+    logger.info('Group member removed', {
+      groupId: group._id,
+      groupSlug: group.slug,
+      actorId: actorId.toString(),
+      targetUserId: targetUserId,
+      action: 'remove-member'
+    });
+
+    res.json({
+      success: true,
+      message: 'Member removed successfully',
+      memberCount: getGroupMemberCount(updatedGroup)
+    });
+  } catch (error) {
+    logger.error('Remove member error:', error);
+    res.status(500).json({ message: 'Failed to remove member' });
+  }
+});
+
+/**
+ * @route   POST /api/groups/:slug/promote-moderator
+ * @desc    Promote a member to moderator (owner only)
+ * @access  Private (owner only)
+ *
+ * RULES:
+ * - Only owner can promote
+ * - Target must already be a member
+ * - Cannot promote self (owner already has all privileges)
+ */
+router.post('/:slug/promote-moderator', authenticateToken, async (req, res) => {
+  try {
+    const { slug } = req.params;
+    const actorId = req.user.id || req.user._id;
+    const { userId: targetUserId } = req.body;
+
+    if (!targetUserId) {
+      return res.status(400).json({ message: 'User ID is required' });
+    }
+
+    const group = await Group.findOne({ slug: slug.toLowerCase() });
+    if (!group) {
+      return res.status(404).json({ message: 'Group not found' });
+    }
+
+    // Only owner can promote
+    if (!isGroupOwner(actorId, group)) {
+      return res.status(403).json({ message: 'Only the owner can promote moderators' });
+    }
+
+    // Cannot promote owner (already has all privileges)
+    if (isGroupOwner(targetUserId, group)) {
+      return res.status(400).json({ message: 'Owner already has all moderator privileges' });
+    }
+
+    // Target must be a member
+    if (!isGroupMember(targetUserId, group)) {
+      return res.status(400).json({ message: 'User must be a member before becoming a moderator' });
+    }
+
+    // Already a moderator?
+    if (isGroupModerator(targetUserId, group)) {
+      return res.status(400).json({ message: 'User is already a moderator' });
+    }
+
+    // Add to moderators, remove from regular members
+    await Group.findOneAndUpdate(
+      { slug: slug.toLowerCase() },
+      {
+        $addToSet: { moderators: targetUserId },
+        $pull: { members: targetUserId }
+      }
+    );
+
+    // Audit log
+    logger.info('Member promoted to moderator', {
+      groupId: group._id,
+      groupSlug: group.slug,
+      actorId: actorId.toString(),
+      targetUserId: targetUserId,
+      action: 'promote-moderator'
+    });
+
+    res.json({
+      success: true,
+      message: 'Member promoted to moderator'
+    });
+  } catch (error) {
+    logger.error('Promote moderator error:', error);
+    res.status(500).json({ message: 'Failed to promote moderator' });
+  }
+});
+
+/**
+ * @route   POST /api/groups/:slug/demote-moderator
+ * @desc    Demote a moderator to regular member (owner only)
+ * @access  Private (owner only)
+ *
+ * RULES:
+ * - Only owner can demote
+ * - Cannot demote owner
+ */
+router.post('/:slug/demote-moderator', authenticateToken, async (req, res) => {
+  try {
+    const { slug } = req.params;
+    const actorId = req.user.id || req.user._id;
+    const { userId: targetUserId } = req.body;
+
+    if (!targetUserId) {
+      return res.status(400).json({ message: 'User ID is required' });
+    }
+
+    const group = await Group.findOne({ slug: slug.toLowerCase() });
+    if (!group) {
+      return res.status(404).json({ message: 'Group not found' });
+    }
+
+    // Only owner can demote
+    if (!isGroupOwner(actorId, group)) {
+      return res.status(403).json({ message: 'Only the owner can demote moderators' });
+    }
+
+    // Cannot demote owner
+    if (isGroupOwner(targetUserId, group)) {
+      return res.status(400).json({ message: 'Cannot demote the group owner' });
+    }
+
+    // Target must be a moderator
+    if (!isGroupModerator(targetUserId, group)) {
+      return res.status(400).json({ message: 'User is not a moderator' });
+    }
+
+    // Remove from moderators, add back to members
+    await Group.findOneAndUpdate(
+      { slug: slug.toLowerCase() },
+      {
+        $pull: { moderators: targetUserId },
+        $addToSet: { members: targetUserId }
+      }
+    );
+
+    // Audit log
+    logger.info('Moderator demoted to member', {
+      groupId: group._id,
+      groupSlug: group.slug,
+      actorId: actorId.toString(),
+      targetUserId: targetUserId,
+      action: 'demote-moderator'
+    });
+
+    res.json({
+      success: true,
+      message: 'Moderator demoted to member'
+    });
+  } catch (error) {
+    logger.error('Demote moderator error:', error);
+    res.status(500).json({ message: 'Failed to demote moderator' });
   }
 });
 
