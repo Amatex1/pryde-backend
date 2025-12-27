@@ -2,6 +2,7 @@
  * Phase 2: Group-only posting
  * Phase 4A: Group Ownership & Moderation
  * Phase 4B: Group Notifications (Quiet, Opt-in)
+ * Phase 6A: Group Moderation (Calm Owner Controls)
  *
  * Group Routes - Private, join-gated community groups
  *
@@ -13,11 +14,18 @@
  * - POST /api/groups/:slug/posts - Create a post in this group (members only)
  * - GET  /api/groups/:slug/posts - Get posts in this group (members only)
  *
- * MODERATION ENDPOINTS (Phase 4A):
+ * MODERATION ENDPOINTS (Phase 4A + 6A):
  * - POST /api/groups/:slug/remove-member     - Remove a member (owner/moderator only)
  * - POST /api/groups/:slug/promote-moderator - Promote to moderator (owner only)
  * - POST /api/groups/:slug/demote-moderator  - Demote from moderator (owner only)
  * - GET  /api/groups/:slug/members           - Get member list (members only)
+ * - POST /api/groups/:slug/mute-member       - Mute a member (owner/moderator only)
+ * - POST /api/groups/:slug/unmute-member     - Unmute a member (owner/moderator only)
+ * - POST /api/groups/:slug/block-user        - Block a user (owner/moderator only)
+ * - POST /api/groups/:slug/unblock-user      - Unblock a user (owner/moderator only)
+ * - POST /api/groups/:slug/posts/:postId/lock   - Lock a post (owner/moderator only)
+ * - POST /api/groups/:slug/posts/:postId/unlock - Unlock a post (owner/moderator only)
+ * - GET  /api/groups/:slug/moderation-log    - Get moderation log (owner/moderator only)
  *
  * NOTIFICATION ENDPOINTS (Phase 4B):
  * - GET  /api/groups/:slug/notification-settings - Get user's notification prefs
@@ -33,6 +41,8 @@
  * - Platform admins do NOT interfere unless reported
  * - Owner is immutable (cannot be removed)
  * - Moderator permissions are scoped to their group only
+ * - Muted members can view but not post/comment
+ * - Blocked users cannot request to join
  *
  * Tags are legacy entry points only.
  */
@@ -41,8 +51,9 @@ import express from 'express';
 import Group from '../models/Group.js';
 import Post from '../models/Post.js';
 import User from '../models/User.js';
+import GroupModerationLog from '../models/GroupModerationLog.js';
 import { authenticateToken } from '../middleware/auth.js';
-import { isGroupOwner, isGroupModerator, isGroupMember, canModerateGroup, getGroupMemberCount } from '../utils/groupPermissions.js';
+import { isGroupOwner, isGroupModerator, isGroupMember, canModerateGroup, getGroupMemberCount, isGroupMuted, isGroupBlocked, canPostInGroup } from '../utils/groupPermissions.js';
 import { processGroupPostNotifications, updateGroupNotificationSettings, getGroupNotificationSettings } from '../services/groupNotificationService.js';
 import logger from '../utils/logger.js';
 
@@ -483,6 +494,14 @@ router.post('/:slug/join', authenticateToken, async (req, res) => {
       return res.status(404).json({ message: 'Group not found' });
     }
 
+    // Phase 6A: Check if user is blocked from this group
+    if (isGroupBlocked(userId, group)) {
+      return res.status(403).json({
+        message: 'You are not able to join this group',
+        isBlocked: true
+      });
+    }
+
     const isOwner = group.owner.toString() === userId.toString();
     const isModerator = group.moderators?.some(m => m.toString() === userId.toString());
     const isMember = group.isMember(userId);
@@ -649,6 +668,14 @@ router.post('/:slug/requests/:requestUserId/approve', authenticateToken, async (
       }
     );
 
+    // Phase 6A: Log moderation action
+    await GroupModerationLog.create({
+      groupId: group._id,
+      actorId: userId,
+      action: 'join_approved',
+      targetUserId: requestUserId
+    });
+
     res.json({
       success: true,
       message: 'User approved and added to group'
@@ -687,6 +714,14 @@ router.post('/:slug/requests/:requestUserId/reject', authenticateToken, async (r
       { slug: slug.toLowerCase() },
       { $pull: { joinRequests: requestUserId } }
     );
+
+    // Phase 6A: Log moderation action
+    await GroupModerationLog.create({
+      groupId: group._id,
+      actorId: userId,
+      action: 'join_declined',
+      targetUserId: requestUserId
+    });
 
     res.json({
       success: true,
@@ -785,6 +820,16 @@ router.post('/:slug/posts', authenticateToken, async (req, res) => {
     if (!group.isMember(userId)) {
       return res.status(403).json({
         message: 'You must be a member to post in this group'
+      });
+    }
+
+    // Phase 6A: Check if user is muted
+    const muteRecord = isGroupMuted(userId, group);
+    if (muteRecord) {
+      return res.status(403).json({
+        message: 'You are currently unable to post in this group',
+        isMuted: true,
+        mutedUntil: muteRecord.mutedUntil
       });
     }
 
@@ -1012,8 +1057,16 @@ router.delete('/:slug/posts/:postId', authenticateToken, async (req, res) => {
 
     await Post.deleteOne({ _id: post._id });
 
-    // Audit log for moderator deletions
+    // Phase 6A: Log moderation action for moderator deletions
     if (!isAuthor && userCanModerate) {
+      await GroupModerationLog.create({
+        groupId: group._id,
+        actorId: userId,
+        action: 'post_deleted',
+        targetPostId: postId,
+        metadata: { authorId: post.author.toString() }
+      });
+
       logger.info('Group post deleted by moderator', {
         groupId: group._id,
         groupSlug: group.slug,
@@ -1115,17 +1168,26 @@ router.post('/:slug/remove-member', authenticateToken, async (req, res) => {
       return res.status(403).json({ message: 'Only the owner can remove moderators' });
     }
 
-    // Remove from both members and moderators arrays
+    // Remove from both members and moderators arrays (also remove any mutes)
     const updatedGroup = await Group.findOneAndUpdate(
       { slug: slug.toLowerCase() },
       {
         $pull: {
           members: targetUserId,
-          moderators: targetUserId
+          moderators: targetUserId,
+          mutedMembers: { user: targetUserId }
         }
       },
       { new: true }
     );
+
+    // Phase 6A: Log moderation action
+    await GroupModerationLog.create({
+      groupId: group._id,
+      actorId,
+      action: 'member_removed',
+      targetUserId
+    });
 
     // Audit log
     logger.info('Group member removed', {
@@ -1201,6 +1263,14 @@ router.post('/:slug/promote-moderator', authenticateToken, async (req, res) => {
       }
     );
 
+    // Phase 6A: Log moderation action
+    await GroupModerationLog.create({
+      groupId: group._id,
+      actorId,
+      action: 'moderator_promoted',
+      targetUserId
+    });
+
     // Audit log
     logger.info('Member promoted to moderator', {
       groupId: group._id,
@@ -1267,6 +1337,14 @@ router.post('/:slug/demote-moderator', authenticateToken, async (req, res) => {
         $addToSet: { members: targetUserId }
       }
     );
+
+    // Phase 6A: Log moderation action
+    await GroupModerationLog.create({
+      groupId: group._id,
+      actorId,
+      action: 'moderator_demoted',
+      targetUserId
+    });
 
     // Audit log
     logger.info('Moderator demoted to member', {
@@ -1368,6 +1446,502 @@ router.put('/:slug/notification-settings', authenticateToken, async (req, res) =
   } catch (error) {
     logger.error('Update notification settings error:', error);
     res.status(500).json({ message: 'Failed to update notification settings' });
+  }
+});
+
+// ============================================================================
+// PHASE 6A: CALM GROUP MODERATION ENDPOINTS
+// ============================================================================
+
+/**
+ * @route   POST /api/groups/:slug/mute-member
+ * @desc    Mute a member (can view but not post/comment)
+ * @access  Private (owner or moderator)
+ *
+ * Body: { userId, duration? } - duration in hours (null = permanent)
+ */
+router.post('/:slug/mute-member', authenticateToken, async (req, res) => {
+  try {
+    const { slug } = req.params;
+    const actorId = req.user.id || req.user._id;
+    const { userId: targetUserId, duration } = req.body;
+
+    if (!targetUserId) {
+      return res.status(400).json({ message: 'User ID is required' });
+    }
+
+    const group = await Group.findOne({ slug: slug.toLowerCase() });
+    if (!group) {
+      return res.status(404).json({ message: 'Group not found' });
+    }
+
+    // Check actor has moderation privileges
+    if (!canModerateGroup(actorId, group)) {
+      return res.status(403).json({ message: 'You do not have permission to mute members' });
+    }
+
+    // Cannot mute owner
+    if (isGroupOwner(targetUserId, group)) {
+      return res.status(400).json({ message: 'Cannot mute the group owner' });
+    }
+
+    // Moderators cannot mute other moderators (only owner can)
+    if (!isGroupOwner(actorId, group) && isGroupModerator(targetUserId, group)) {
+      return res.status(403).json({ message: 'Only the owner can mute moderators' });
+    }
+
+    // Target must be a member
+    if (!isGroupMember(targetUserId, group)) {
+      return res.status(400).json({ message: 'User is not a member of this group' });
+    }
+
+    // Calculate mute duration
+    let mutedUntil = null;
+    if (duration && typeof duration === 'number' && duration > 0) {
+      mutedUntil = new Date(Date.now() + duration * 60 * 60 * 1000);
+    }
+
+    // Remove existing mute if any, then add new one
+    await Group.findOneAndUpdate(
+      { slug: slug.toLowerCase() },
+      {
+        $pull: { mutedMembers: { user: targetUserId } }
+      }
+    );
+
+    await Group.findOneAndUpdate(
+      { slug: slug.toLowerCase() },
+      {
+        $push: {
+          mutedMembers: {
+            user: targetUserId,
+            mutedAt: new Date(),
+            mutedUntil,
+            mutedBy: actorId
+          }
+        }
+      }
+    );
+
+    // Log moderation action
+    await GroupModerationLog.create({
+      groupId: group._id,
+      actorId,
+      action: 'member_muted',
+      targetUserId,
+      metadata: { duration, mutedUntil }
+    });
+
+    logger.info('Member muted', {
+      groupId: group._id,
+      groupSlug: group.slug,
+      actorId: actorId.toString(),
+      targetUserId,
+      duration,
+      action: 'mute-member'
+    });
+
+    res.json({
+      success: true,
+      message: mutedUntil
+        ? `Member muted until ${mutedUntil.toISOString()}`
+        : 'Member muted indefinitely'
+    });
+  } catch (error) {
+    logger.error('Mute member error:', error);
+    res.status(500).json({ message: 'Failed to mute member' });
+  }
+});
+
+/**
+ * @route   POST /api/groups/:slug/unmute-member
+ * @desc    Unmute a member
+ * @access  Private (owner or moderator)
+ */
+router.post('/:slug/unmute-member', authenticateToken, async (req, res) => {
+  try {
+    const { slug } = req.params;
+    const actorId = req.user.id || req.user._id;
+    const { userId: targetUserId } = req.body;
+
+    if (!targetUserId) {
+      return res.status(400).json({ message: 'User ID is required' });
+    }
+
+    const group = await Group.findOne({ slug: slug.toLowerCase() });
+    if (!group) {
+      return res.status(404).json({ message: 'Group not found' });
+    }
+
+    // Check actor has moderation privileges
+    if (!canModerateGroup(actorId, group)) {
+      return res.status(403).json({ message: 'You do not have permission to unmute members' });
+    }
+
+    // Remove from muted list
+    await Group.findOneAndUpdate(
+      { slug: slug.toLowerCase() },
+      { $pull: { mutedMembers: { user: targetUserId } } }
+    );
+
+    // Log moderation action
+    await GroupModerationLog.create({
+      groupId: group._id,
+      actorId,
+      action: 'member_unmuted',
+      targetUserId
+    });
+
+    res.json({
+      success: true,
+      message: 'Member unmuted'
+    });
+  } catch (error) {
+    logger.error('Unmute member error:', error);
+    res.status(500).json({ message: 'Failed to unmute member' });
+  }
+});
+
+/**
+ * @route   POST /api/groups/:slug/block-user
+ * @desc    Block a user from joining the group
+ * @access  Private (owner or moderator)
+ */
+router.post('/:slug/block-user', authenticateToken, async (req, res) => {
+  try {
+    const { slug } = req.params;
+    const actorId = req.user.id || req.user._id;
+    const { userId: targetUserId } = req.body;
+
+    if (!targetUserId) {
+      return res.status(400).json({ message: 'User ID is required' });
+    }
+
+    const group = await Group.findOne({ slug: slug.toLowerCase() });
+    if (!group) {
+      return res.status(404).json({ message: 'Group not found' });
+    }
+
+    // Check actor has moderation privileges
+    if (!canModerateGroup(actorId, group)) {
+      return res.status(403).json({ message: 'You do not have permission to block users' });
+    }
+
+    // Cannot block owner
+    if (isGroupOwner(targetUserId, group)) {
+      return res.status(400).json({ message: 'Cannot block the group owner' });
+    }
+
+    // Add to blocked list (also remove from members/moderators/joinRequests)
+    await Group.findOneAndUpdate(
+      { slug: slug.toLowerCase() },
+      {
+        $addToSet: { blockedUsers: targetUserId },
+        $pull: {
+          members: targetUserId,
+          moderators: targetUserId,
+          joinRequests: targetUserId
+        }
+      }
+    );
+
+    // Log moderation action
+    await GroupModerationLog.create({
+      groupId: group._id,
+      actorId,
+      action: 'member_blocked',
+      targetUserId
+    });
+
+    res.json({
+      success: true,
+      message: 'User blocked from this group'
+    });
+  } catch (error) {
+    logger.error('Block user error:', error);
+    res.status(500).json({ message: 'Failed to block user' });
+  }
+});
+
+/**
+ * @route   POST /api/groups/:slug/unblock-user
+ * @desc    Unblock a user (allow them to request to join again)
+ * @access  Private (owner or moderator)
+ */
+router.post('/:slug/unblock-user', authenticateToken, async (req, res) => {
+  try {
+    const { slug } = req.params;
+    const actorId = req.user.id || req.user._id;
+    const { userId: targetUserId } = req.body;
+
+    if (!targetUserId) {
+      return res.status(400).json({ message: 'User ID is required' });
+    }
+
+    const group = await Group.findOne({ slug: slug.toLowerCase() });
+    if (!group) {
+      return res.status(404).json({ message: 'Group not found' });
+    }
+
+    // Check actor has moderation privileges
+    if (!canModerateGroup(actorId, group)) {
+      return res.status(403).json({ message: 'You do not have permission to unblock users' });
+    }
+
+    // Remove from blocked list
+    await Group.findOneAndUpdate(
+      { slug: slug.toLowerCase() },
+      { $pull: { blockedUsers: targetUserId } }
+    );
+
+    // Log moderation action
+    await GroupModerationLog.create({
+      groupId: group._id,
+      actorId,
+      action: 'member_unblocked',
+      targetUserId
+    });
+
+    res.json({
+      success: true,
+      message: 'User unblocked'
+    });
+  } catch (error) {
+    logger.error('Unblock user error:', error);
+    res.status(500).json({ message: 'Failed to unblock user' });
+  }
+});
+
+/**
+ * @route   POST /api/groups/:slug/posts/:postId/lock
+ * @desc    Lock a post (disable replies)
+ * @access  Private (owner or moderator)
+ */
+router.post('/:slug/posts/:postId/lock', authenticateToken, async (req, res) => {
+  try {
+    const { slug, postId } = req.params;
+    const actorId = req.user.id || req.user._id;
+
+    const group = await Group.findOne({ slug: slug.toLowerCase() });
+    if (!group) {
+      return res.status(404).json({ message: 'Group not found' });
+    }
+
+    // Check actor has moderation privileges
+    if (!canModerateGroup(actorId, group)) {
+      return res.status(403).json({ message: 'You do not have permission to lock posts' });
+    }
+
+    // Find and verify post belongs to this group
+    const post = await Post.findById(postId);
+    if (!post) {
+      return res.status(404).json({ message: 'Post not found' });
+    }
+
+    if (!post.groupId || post.groupId.toString() !== group._id.toString()) {
+      return res.status(404).json({ message: 'Post not found in this group' });
+    }
+
+    // Lock the post
+    post.isLocked = true;
+    post.lockedAt = new Date();
+    post.lockedBy = actorId;
+    await post.save();
+
+    // Log moderation action
+    await GroupModerationLog.create({
+      groupId: group._id,
+      actorId,
+      action: 'post_locked',
+      targetPostId: postId
+    });
+
+    res.json({
+      success: true,
+      message: 'Post locked'
+    });
+  } catch (error) {
+    logger.error('Lock post error:', error);
+    res.status(500).json({ message: 'Failed to lock post' });
+  }
+});
+
+/**
+ * @route   POST /api/groups/:slug/posts/:postId/unlock
+ * @desc    Unlock a post (enable replies)
+ * @access  Private (owner or moderator)
+ */
+router.post('/:slug/posts/:postId/unlock', authenticateToken, async (req, res) => {
+  try {
+    const { slug, postId } = req.params;
+    const actorId = req.user.id || req.user._id;
+
+    const group = await Group.findOne({ slug: slug.toLowerCase() });
+    if (!group) {
+      return res.status(404).json({ message: 'Group not found' });
+    }
+
+    // Check actor has moderation privileges
+    if (!canModerateGroup(actorId, group)) {
+      return res.status(403).json({ message: 'You do not have permission to unlock posts' });
+    }
+
+    // Find and verify post belongs to this group
+    const post = await Post.findById(postId);
+    if (!post) {
+      return res.status(404).json({ message: 'Post not found' });
+    }
+
+    if (!post.groupId || post.groupId.toString() !== group._id.toString()) {
+      return res.status(404).json({ message: 'Post not found in this group' });
+    }
+
+    // Unlock the post
+    post.isLocked = false;
+    post.lockedAt = null;
+    post.lockedBy = null;
+    await post.save();
+
+    // Log moderation action
+    await GroupModerationLog.create({
+      groupId: group._id,
+      actorId,
+      action: 'post_unlocked',
+      targetPostId: postId
+    });
+
+    res.json({
+      success: true,
+      message: 'Post unlocked'
+    });
+  } catch (error) {
+    logger.error('Unlock post error:', error);
+    res.status(500).json({ message: 'Failed to unlock post' });
+  }
+});
+
+/**
+ * @route   GET /api/groups/:slug/moderation-log
+ * @desc    Get moderation log for a group (owner/moderator only)
+ * @access  Private (owner or moderator)
+ *
+ * Query params:
+ * - limit: Number of entries (default 50, max 100)
+ * - before: Cursor for pagination (ISO date string)
+ */
+router.get('/:slug/moderation-log', authenticateToken, async (req, res) => {
+  try {
+    const { slug } = req.params;
+    const userId = req.user.id || req.user._id;
+    const { limit = 50, before } = req.query;
+
+    const group = await Group.findOne({ slug: slug.toLowerCase() });
+    if (!group) {
+      return res.status(404).json({ message: 'Group not found' });
+    }
+
+    // Only owner/moderators can view moderation log
+    if (!canModerateGroup(userId, group)) {
+      return res.status(403).json({ message: 'Only owners and moderators can view the moderation log' });
+    }
+
+    // Build query
+    const query = { groupId: group._id };
+    if (before) {
+      const beforeDate = new Date(before);
+      if (!isNaN(beforeDate.getTime())) {
+        query.createdAt = { $lt: beforeDate };
+      }
+    }
+
+    // Fetch logs
+    const limitNum = Math.min(100, Math.max(1, parseInt(limit) || 50));
+    const logs = await GroupModerationLog.find(query)
+      .populate('actorId', 'username displayName profilePhoto')
+      .populate('targetUserId', 'username displayName profilePhoto')
+      .sort({ createdAt: -1 })
+      .limit(limitNum)
+      .lean();
+
+    res.json({
+      success: true,
+      logs,
+      hasMore: logs.length === limitNum
+    });
+  } catch (error) {
+    logger.error('Get moderation log error:', error);
+    res.status(500).json({ message: 'Failed to fetch moderation log' });
+  }
+});
+
+/**
+ * @route   GET /api/groups/:slug/blocked-users
+ * @desc    Get list of blocked users (owner/moderator only)
+ * @access  Private (owner or moderator)
+ */
+router.get('/:slug/blocked-users', authenticateToken, async (req, res) => {
+  try {
+    const { slug } = req.params;
+    const userId = req.user.id || req.user._id;
+
+    const group = await Group.findOne({ slug: slug.toLowerCase() })
+      .populate('blockedUsers', 'username displayName profilePhoto');
+
+    if (!group) {
+      return res.status(404).json({ message: 'Group not found' });
+    }
+
+    // Only owner/moderators can view blocked users
+    if (!canModerateGroup(userId, group)) {
+      return res.status(403).json({ message: 'Only owners and moderators can view blocked users' });
+    }
+
+    res.json({
+      success: true,
+      blockedUsers: group.blockedUsers || []
+    });
+  } catch (error) {
+    logger.error('Get blocked users error:', error);
+    res.status(500).json({ message: 'Failed to fetch blocked users' });
+  }
+});
+
+/**
+ * @route   GET /api/groups/:slug/muted-members
+ * @desc    Get list of muted members (owner/moderator only)
+ * @access  Private (owner or moderator)
+ */
+router.get('/:slug/muted-members', authenticateToken, async (req, res) => {
+  try {
+    const { slug } = req.params;
+    const userId = req.user.id || req.user._id;
+
+    const group = await Group.findOne({ slug: slug.toLowerCase() })
+      .populate('mutedMembers.user', 'username displayName profilePhoto')
+      .populate('mutedMembers.mutedBy', 'username displayName');
+
+    if (!group) {
+      return res.status(404).json({ message: 'Group not found' });
+    }
+
+    // Only owner/moderators can view muted members
+    if (!canModerateGroup(userId, group)) {
+      return res.status(403).json({ message: 'Only owners and moderators can view muted members' });
+    }
+
+    // Filter out expired mutes
+    const activeMutes = (group.mutedMembers || []).filter(m => {
+      if (!m.mutedUntil) return true; // Permanent mute
+      return new Date(m.mutedUntil) > new Date(); // Not expired
+    });
+
+    res.json({
+      success: true,
+      mutedMembers: activeMutes
+    });
+  } catch (error) {
+    logger.error('Get muted members error:', error);
+    res.status(500).json({ message: 'Failed to fetch muted members' });
   }
 });
 

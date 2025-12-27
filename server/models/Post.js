@@ -158,6 +158,24 @@ const postSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
+  /**
+   * Phase 6A: Post locking (disable replies)
+   * Locked posts can be viewed but not replied to
+   * Owner/moderators can lock/unlock
+   */
+  isLocked: {
+    type: Boolean,
+    default: false
+  },
+  lockedAt: {
+    type: Date,
+    default: null
+  },
+  lockedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    default: null
+  },
   // REMOVED 2025-12-26: editHistory deleted (Phase 5)
   // Poll feature
   poll: {

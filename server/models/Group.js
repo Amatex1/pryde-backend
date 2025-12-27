@@ -1,5 +1,6 @@
 /**
  * Phase 5A: Manual, Calm Group Discovery
+ * Phase 6A: Group Moderation (Calm Owner Controls)
  *
  * Group Model - Private, join-gated community groups
  *
@@ -10,6 +11,10 @@
  * Join Mode:
  * - auto: Anyone can join immediately
  * - approval: Requires owner/moderator approval
+ *
+ * Moderation (Phase 6A):
+ * - mutedMembers: Users who can view but not post/comment
+ * - blockedUsers: Users who cannot re-request to join
  */
 
 import mongoose from 'mongoose';
@@ -87,6 +92,40 @@ const groupSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
   }],
+  /**
+   * Phase 6A: Muted members
+   * Users who can view group content but cannot post or comment
+   * Mute can be permanent (mutedUntil = null) or temporary
+   */
+  mutedMembers: [{
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: true
+    },
+    mutedAt: {
+      type: Date,
+      default: Date.now
+    },
+    mutedUntil: {
+      type: Date,
+      default: null // null = permanent, Date = temporary
+    },
+    mutedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: true
+    }
+  }],
+  /**
+   * Phase 6A: Blocked users
+   * Users who cannot request to join this group
+   * Removed members are NOT automatically blocked - they can re-request
+   */
+  blockedUsers: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  }],
   // Migration Phase: TAGS → GROUPS
   // This field records which legacy tag this group was created from
   // Used ONLY for backward compatibility and migration tracking
@@ -114,6 +153,9 @@ groupSchema.index({ status: 1 });
 groupSchema.index({ createdFromTag: 1 });
 groupSchema.index({ joinMode: 1 });
 groupSchema.index({ joinRequests: 1 });
+// Phase 6A: Indexes for moderation
+groupSchema.index({ 'mutedMembers.user': 1 });
+groupSchema.index({ blockedUsers: 1 });
 
 // Update the updatedAt timestamp before saving
 groupSchema.pre('save', function(next) {
@@ -149,6 +191,43 @@ groupSchema.methods.canModerate = function(userId) {
 groupSchema.methods.hasPendingRequest = function(userId) {
   const userIdStr = userId.toString();
   return this.joinRequests?.some(r => r.toString() === userIdStr) || false;
+};
+
+/**
+ * Phase 6A: Check if a user is muted (cannot post/comment)
+ * Returns the mute record if muted, null otherwise
+ */
+groupSchema.methods.isMuted = function(userId) {
+  const userIdStr = userId.toString();
+  const mute = this.mutedMembers?.find(m =>
+    m.user.toString() === userIdStr
+  );
+
+  if (!mute) return null;
+
+  // Check if mute has expired
+  if (mute.mutedUntil && new Date(mute.mutedUntil) < new Date()) {
+    return null; // Mute expired
+  }
+
+  return mute;
+};
+
+/**
+ * Phase 6A: Check if a user is blocked (cannot join)
+ */
+groupSchema.methods.isBlocked = function(userId) {
+  const userIdStr = userId.toString();
+  return this.blockedUsers?.some(b => b.toString() === userIdStr) || false;
+};
+
+/**
+ * Phase 6A: Check if user can post/comment in the group
+ * Members can post unless muted
+ */
+groupSchema.methods.canPost = function(userId) {
+  if (!this.isMember(userId)) return false;
+  return !this.isMuted(userId);
 };
 
 const Group = mongoose.model('Group', groupSchema);
