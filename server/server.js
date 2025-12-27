@@ -1,6 +1,7 @@
 import dotenv from "dotenv";
 dotenv.config();
 
+// Build: 2025-12-27-v1 (GitHub Action deploy test)
 // Only log in development
 if (process.env.NODE_ENV === 'development') {
   console.log('🔐 JWT_SECRET from env:', process.env.JWT_SECRET ? 'Set' : 'Not set');
