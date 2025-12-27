@@ -3,8 +3,8 @@ import mongoose from "mongoose";
 
 const connectDB = async () => {
   try {
-    // Support both MONGO_URL and MONGODB_URI for flexibility
-    const mongoURL = process.env.MONGO_URL || process.env.MONGODB_URI;
+    // Support MONGO_URI, MONGO_URL and MONGODB_URI for flexibility
+    const mongoURL = process.env.MONGO_URI || process.env.MONGO_URL || process.env.MONGODB_URI;
 
     if (!mongoURL) {
       console.error("❌ MONGO_URL or MONGODB_URI is missing in environment variables");
