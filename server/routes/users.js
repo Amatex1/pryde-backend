@@ -423,7 +423,7 @@ router.get('/download-data', auth, async (req, res) => {
 });
 
 // @route   GET /api/users/:identifier
-// @desc    Get user by ID or username
+// @desc    Get user by ID, username, or profileSlug
 // @access  Private
 router.get('/:identifier', auth, checkProfileVisibility, async (req, res) => {
   try {
@@ -445,6 +445,15 @@ router.get('/:identifier', auth, checkProfileVisibility, async (req, res) => {
     if (!user) {
       // PHASE 1 REFACTOR: Still populate to check relationships, but will sanitize before sending
       user = await User.findOne({ username: identifier })
+        .select('-password')
+        .populate('friends', 'username displayName profilePhoto coverPhoto bio')
+        .populate('followers', 'username displayName profilePhoto coverPhoto bio')
+        .populate('following', 'username displayName profilePhoto coverPhoto bio');
+    }
+
+    // If still not found, try profileSlug (custom profile URL)
+    if (!user) {
+      user = await User.findOne({ profileSlug: identifier.toLowerCase() })
         .select('-password')
         .populate('friends', 'username displayName profilePhoto coverPhoto bio')
         .populate('followers', 'username displayName profilePhoto coverPhoto bio')

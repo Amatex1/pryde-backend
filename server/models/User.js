@@ -9,6 +9,13 @@ const userSchema = new mongoose.Schema({
     trim: true,
     minlength: 3
   },
+  profileSlug: {
+    type: String,
+    unique: true,
+    sparse: true,
+    lowercase: true,
+    trim: true
+  },
   email: {
     type: String,
     required: true,
