@@ -230,43 +230,39 @@ router.delete('/:friendId', auth, async (req, res) => {
 
 // @route   GET /api/friends
 // @desc    Get user's friends list (includes deactivated users, excludes blocked users)
-// @access  Private (OPTIMIZED - batch query instead of N+1)
+// @access  Private
 router.get('/', auth, async (req, res) => {
   try {
     const currentUser = await User.findById(req.userId)
       .populate({
         path: 'friends',
         match: { isBanned: { $ne: true } }, // Exclude banned users, but include deactivated
-        select: 'username displayName profilePhoto bio lastSeen isActive blockedUsers'
+        select: 'username displayName profilePhoto bio lastSeen isActive'
       })
       .select('blockedUsers');
 
-    // Filter out null values (banned friends)
+    // Filter out null values (banned friends) and users who have blocked the current user
     let friends = currentUser.friends.filter(friend => friend !== null);
 
     // Filter out users who are in the current user's blocked list
-    // AND filter out users who have blocked the current user (no extra DB query needed!)
-    const currentUserBlockedSet = new Set(currentUser.blockedUsers.map(id => id.toString()));
+    friends = friends.filter(friend =>
+      !currentUser.blockedUsers.some(blockedId => blockedId.toString() === friend._id.toString())
+    );
 
-    friends = friends.filter(friend => {
-      // Check if current user blocked this friend
-      if (currentUserBlockedSet.has(friend._id.toString())) {
-        return false;
-      }
-      // Check if this friend blocked current user (data already populated!)
-      if (friend.blockedUsers?.some(blockedId => blockedId.toString() === req.userId)) {
-        return false;
-      }
-      return true;
-    });
+    // Filter out users who have blocked the current user
+    const friendsWithBlockCheck = await Promise.all(
+      friends.map(async (friend) => {
+        const friendUser = await User.findById(friend._id).select('blockedUsers');
+        const isBlockedByFriend = friendUser.blockedUsers.some(
+          blockedId => blockedId.toString() === req.userId
+        );
+        return isBlockedByFriend ? null : friend;
+      })
+    );
 
-    // Remove blockedUsers from response (don't expose to client)
-    const sanitizedFriends = friends.map(friend => {
-      const { blockedUsers, ...friendData } = friend.toObject ? friend.toObject() : friend;
-      return friendData;
-    });
+    const filteredFriends = friendsWithBlockCheck.filter(friend => friend !== null);
 
-    res.json(sanitizedFriends);
+    res.json(filteredFriends);
   } catch (error) {
     console.error('Get friends error:', error);
     res.status(500).json({ message: 'Server error' });
