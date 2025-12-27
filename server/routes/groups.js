@@ -51,11 +51,22 @@ router.get('/', authenticateToken, async (req, res) => {
       .populate('owner', 'username displayName profilePhoto')
       .sort({ name: 1 });
 
-    // Map groups to include membership status and member count
+    // Phase 2C: Map groups with accurate membership status and role info
+    const userIdStr = userId.toString();
     const groupsWithStatus = groups.map(group => {
       // Handle owner ID comparison safely (owner could be populated or just ObjectId)
       const ownerId = group.owner?._id?.toString() || group.owner?.toString();
-      const isOwner = ownerId === userId.toString();
+      const isOwner = ownerId === userIdStr;
+      const isModerator = group.moderators?.some(m =>
+        (m._id?.toString() || m.toString()) === userIdStr
+      );
+      const isMember = group.isMember(userId);
+
+      // Determine user's role
+      let role = null;
+      if (isOwner) role = 'owner';
+      else if (isModerator) role = 'moderator';
+      else if (isMember) role = 'member';
 
       return {
         _id: group._id,
@@ -66,8 +77,10 @@ router.get('/', authenticateToken, async (req, res) => {
         status: group.status,
         owner: group.owner,
         memberCount: group.members.length + group.moderators.length + 1,
-        isMember: group.isMember(userId),
+        isMember,
         isOwner,
+        isModerator,
+        role,
         createdAt: group.createdAt
       };
     });
@@ -281,9 +294,23 @@ router.get('/:slug', authenticateToken, async (req, res) => {
       return res.status(404).json({ message: 'Group not found' });
     }
 
-    // Check membership
+    // Phase 2C: Accurate membership and role detection
+    const ownerId = group.owner?._id?.toString() || group.owner?.toString();
+    const userIdStr = userId.toString();
+    const isOwner = ownerId === userIdStr;
+    const isModerator = group.moderators?.some(m =>
+      (m._id?.toString() || m.toString()) === userIdStr
+    );
     const isMember = group.isMember(userId);
+
+    // Phase 2C: Accurate member count (owner counted separately, not in members array)
     const memberCount = group.members.length + group.moderators.length + 1; // +1 for owner
+
+    // Determine user's role in the group
+    let role = null;
+    if (isOwner) role = 'owner';
+    else if (isModerator) role = 'moderator';
+    else if (isMember) role = 'member';
 
     // Base response (visible to everyone)
     const response = {
@@ -296,6 +323,9 @@ router.get('/:slug', authenticateToken, async (req, res) => {
       moderators: group.moderators,
       memberCount,
       isMember,
+      isOwner,
+      isModerator,
+      role,
       createdAt: group.createdAt
     };
 
@@ -333,11 +363,37 @@ router.get('/:slug', authenticateToken, async (req, res) => {
  * @route   POST /api/groups/:slug/join
  * @desc    Join a group (idempotent - safe to click twice)
  * @access  Private (authenticated)
+ *
+ * Phase 2C: Fixed member count logic
+ * - Owner is NOT added to members array (they're already the owner)
+ * - Uses $addToSet for idempotent, deduplicated membership
  */
 router.post('/:slug/join', authenticateToken, async (req, res) => {
   try {
     const { slug } = req.params;
     const userId = req.user.id;
+
+    // First check if user is the owner (owners don't need to join)
+    const existingGroup = await Group.findOne({ slug: slug.toLowerCase() });
+    if (!existingGroup) {
+      return res.status(404).json({ message: 'Group not found' });
+    }
+
+    const isOwner = existingGroup.owner.toString() === userId.toString();
+
+    // If owner, just return success without modifying members array
+    if (isOwner) {
+      const memberCount = existingGroup.members.length + existingGroup.moderators.length + 1;
+      return res.json({
+        success: true,
+        message: 'You are the owner of this group',
+        isMember: true,
+        isOwner: true,
+        memberCount,
+        slug: existingGroup.slug,
+        name: existingGroup.name
+      });
+    }
 
     // Use $addToSet for idempotent membership addition (no duplicates)
     // findOneAndUpdate is atomic and returns the updated document
@@ -349,17 +405,15 @@ router.post('/:slug/join', authenticateToken, async (req, res) => {
       .populate('owner', 'username displayName profilePhoto')
       .populate('moderators', 'username displayName profilePhoto');
 
-    if (!group) {
-      return res.status(404).json({ message: 'Group not found' });
-    }
-
-    // Return full response with isMember flag for UI update
-    const memberCount = group.members.length + group.moderators.length + 1; // +1 for owner
+    // Calculate member count: unique members + moderators + 1 (owner)
+    // Owner is separate, never in members array
+    const memberCount = group.members.length + group.moderators.length + 1;
 
     res.json({
       success: true,
-      message: 'Successfully joined group',
+      message: `You joined ${group.name}`,
       isMember: true,
+      isOwner: false,
       groupId: group._id,
       slug: group.slug,
       name: group.name,
@@ -369,7 +423,7 @@ router.post('/:slug/join', authenticateToken, async (req, res) => {
       moderators: group.moderators,
       memberCount,
       createdAt: group.createdAt,
-      posts: [] // Posts will be fetched separately or in Phase 1+
+      posts: [] // Posts will be fetched separately
     });
   } catch (error) {
     console.error('Join group error:', error);
@@ -381,6 +435,10 @@ router.post('/:slug/join', authenticateToken, async (req, res) => {
  * @route   POST /api/groups/:slug/leave
  * @desc    Leave a group
  * @access  Private (authenticated)
+ *
+ * Phase 2C: Enhanced feedback
+ * - Returns updated memberCount for accurate UI
+ * - Owner cannot leave (shown clear message)
  */
 router.post('/:slug/leave', authenticateToken, async (req, res) => {
   try {
@@ -395,28 +453,37 @@ router.post('/:slug/leave', authenticateToken, async (req, res) => {
     }
 
     // Owner cannot leave (must transfer ownership first)
-    if (group.owner.toString() === userId) {
+    if (group.owner.toString() === userId.toString()) {
       return res.status(400).json({
-        message: 'Owner cannot leave group. Transfer ownership first.'
+        success: false,
+        message: 'As the owner, you cannot leave this group. Transfer ownership or delete the group instead.',
+        isOwner: true
       });
     }
 
     // Use $pull for atomic removal from both arrays
-    await Group.findOneAndUpdate(
+    // Return the updated document to get accurate member count
+    const updatedGroup = await Group.findOneAndUpdate(
       { slug: slug.toLowerCase() },
       {
         $pull: {
           members: userId,
           moderators: userId
         }
-      }
+      },
+      { new: true }
     );
+
+    // Calculate updated member count
+    const memberCount = updatedGroup.members.length + updatedGroup.moderators.length + 1;
 
     res.json({
       success: true,
-      message: 'Left group successfully',
+      message: `You left ${group.name}`,
       isMember: false,
-      slug: group.slug
+      slug: group.slug,
+      name: group.name,
+      memberCount
     });
   } catch (error) {
     console.error('Leave group error:', error);
