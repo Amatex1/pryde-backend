@@ -565,6 +565,13 @@ router.patch('/:slug/posts/:postId', authenticateToken, async (req, res) => {
       return res.status(404).json({ message: 'Group not found' });
     }
 
+    // CRITICAL: Verify membership on backend (Phase 2A security assertion)
+    if (!group.isMember(userId)) {
+      return res.status(403).json({
+        message: 'You must be a member to edit posts in this group'
+      });
+    }
+
     // Find post
     const post = await Post.findById(postId);
     if (!post) {
@@ -614,7 +621,7 @@ router.patch('/:slug/posts/:postId', authenticateToken, async (req, res) => {
 /**
  * @route   DELETE /api/groups/:slug/posts/:postId
  * @desc    Delete a post in this group (author or group owner)
- * @access  Private (authenticated + author/owner)
+ * @access  Private (authenticated + member/owner)
  */
 router.delete('/:slug/posts/:postId', authenticateToken, async (req, res) => {
   try {
@@ -625,6 +632,18 @@ router.delete('/:slug/posts/:postId', authenticateToken, async (req, res) => {
     const group = await Group.findOne({ slug: slug.toLowerCase() });
     if (!group) {
       return res.status(404).json({ message: 'Group not found' });
+    }
+
+    // Check if user is group owner (can delete any post even if not member)
+    const ownerId = group.owner?._id?.toString() || group.owner?.toString();
+    const isGroupOwner = ownerId === userId.toString();
+
+    // CRITICAL: Verify membership on backend (Phase 2A security assertion)
+    // Non-owners must be members to delete their own posts
+    if (!isGroupOwner && !group.isMember(userId)) {
+      return res.status(403).json({
+        message: 'You must be a member to delete posts in this group'
+      });
     }
 
     // Find post
@@ -640,8 +659,6 @@ router.delete('/:slug/posts/:postId', authenticateToken, async (req, res) => {
 
     // Check permission: author or group owner can delete
     const isAuthor = post.author.toString() === userId.toString();
-    const ownerId = group.owner?._id?.toString() || group.owner?.toString();
-    const isGroupOwner = ownerId === userId.toString();
 
     if (!isAuthor && !isGroupOwner) {
       return res.status(403).json({ message: 'Only the author or group owner can delete this post' });

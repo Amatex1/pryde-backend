@@ -64,8 +64,10 @@ router.get('/', auth, searchLimiter, async (req, res) => {
     // Search posts by content (if type is 'all' or 'posts')
     if (!type || type === 'all' || type === 'posts') {
       // Build query - super_admin can see all posts
+      // Phase 2: Always exclude group posts from search
       const postQuery = {
-        content: { $regex: searchQuery, $options: 'i' }
+        content: { $regex: searchQuery, $options: 'i' },
+        groupId: null // Phase 2: Exclude group posts from search
       };
 
       // Apply privacy filters only for non-admin users
@@ -182,10 +184,12 @@ router.get('/my-posts', auth, searchLimiter, async (req, res) => {
     };
 
     // Search posts
+    // Phase 2: Exclude group posts from my-posts search (they have their own context)
     if (type === 'all' || type === 'posts') {
       results.posts = await Post.find({
         author: req.userId,
-        content: searchRegex
+        content: searchRegex,
+        groupId: null // Phase 2: Exclude group posts
       })
         .populate('author', 'username displayName profilePhoto isVerified pronouns')
         .sort({ createdAt: -1 })
