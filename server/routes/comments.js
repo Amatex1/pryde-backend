@@ -42,32 +42,47 @@ router.get('/posts/:postId/comments', auth, requireActiveUser, asyncHandler(asyn
     return sendError(res, HttpStatus.NOT_FOUND, 'Post not found');
   }
 
-  // Get top-level comments (parentCommentId === null)
-  const comments = await Comment.find({
-    postId,
-    parentCommentId: null,
-    isDeleted: false // Don't show deleted comments
-  })
-    .populate('authorId', 'username displayName profilePhoto isVerified pronouns')
-    .sort({ isPinned: -1, createdAt: 1 }) // Pinned first, then oldest first
-    .lean();
+  // Get top-level comments with reply counts in ONE aggregation (OPTIMIZED)
+  const comments = await Comment.aggregate([
+    {
+      $match: {
+        postId: post._id,
+        parentCommentId: null,
+        isDeleted: false
+      }
+    },
+    {
+      $lookup: {
+        from: 'comments',
+        localField: '_id',
+        foreignField: 'parentCommentId',
+        as: 'replies'
+      }
+    },
+    {
+      $addFields: {
+        replyCount: { $size: '$replies' }
+      }
+    },
+    {
+      $project: {
+        replies: 0 // Don't include the actual replies array
+      }
+    },
+    {
+      $sort: { isPinned: -1, createdAt: 1 }
+    }
+  ]);
+
+  // Populate author info
+  await Comment.populate(comments, {
+    path: 'authorId',
+    select: 'username displayName profilePhoto isVerified pronouns'
+  });
 
   logger.debug(`✅ Found ${comments.length} comments for post ${postId}`);
 
-  // For each top-level comment, get reply count
-  const commentsWithReplyCounts = await Promise.all(
-    comments.map(async (comment) => {
-      const replyCount = await Comment.countDocuments({
-        parentCommentId: comment._id
-      });
-      return {
-        ...comment,
-        replyCount
-      };
-    })
-  );
-
-  res.json(commentsWithReplyCounts);
+  res.json(comments);
 }));
 
 // @route   GET /api/comments/:commentId/replies
