@@ -7,6 +7,25 @@ import adminAuth from '../middleware/adminAuth.js';
 import { messageLimiter } from '../middleware/rateLimiter.js';
 import { moderateContent } from '../middleware/moderation.js';
 
+// GET /api/global-chat/online-count - Get current online count (fast REST endpoint)
+router.get('/online-count', authMiddleware, async (req, res) => {
+  try {
+    const io = req.app.get('io');
+    if (!io) {
+      return res.json({ count: 0 });
+    }
+
+    // Get the global_chat room size
+    const globalChatRoom = io.sockets.adapter.rooms.get('global_chat');
+    const count = globalChatRoom?.size || 0;
+
+    res.json({ count });
+  } catch (error) {
+    console.error('❌ Error fetching online count:', error);
+    res.json({ count: 0 }); // Return 0 on error, don't fail
+  }
+});
+
 // GET /api/global-chat/messages - Fetch paginated global chat history
 router.get('/messages', authMiddleware, async (req, res) => {
   try {
