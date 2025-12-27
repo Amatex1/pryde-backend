@@ -1,6 +1,12 @@
 /**
- * PHASE 4: Tag Model
- * Community tags for discovery and browsing
+ * PHASE 4: Tag Model (DEPRECATED - Phase 4C)
+ *
+ * Tags have been migrated to Groups.
+ * This model is kept for data preservation only.
+ * All tag endpoints return 410 Gone.
+ *
+ * DO NOT USE FOR NEW FEATURES.
+ * DO NOT DELETE - preserves historical data.
  */
 
 import mongoose from 'mongoose';
