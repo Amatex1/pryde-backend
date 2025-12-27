@@ -49,40 +49,76 @@ import logger from '../utils/logger.js';
 const router = express.Router();
 
 /**
+ * Phase 5A: Manual, Calm Group Discovery
+ *
  * @route   GET /api/groups
  * @desc    List all groups (public listing)
- *          Shows approved groups + user's own pending groups
+ *          - Shows ONLY listed groups (visibility = 'listed' or 'public')
+ *          - Plus user's own groups (any visibility)
+ *          - Plus user's pending groups
  * @access  Private (authenticated)
+ *
+ * Query params:
+ * - sort: 'alphabetical' (default), 'recent', 'active'
+ *   NO trending/popular/recommended - intentionally excluded
  */
 router.get('/', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id || req.user._id;
+    const { sort = 'alphabetical' } = req.query;
 
-    // Get approved groups (excluding hidden) OR user's own pending groups
+    // Phase 5A: Only show LISTED groups (visibility = 'listed' or 'public')
+    // Plus user's own groups regardless of visibility
+    // Plus user's pending groups
     const groups = await Group.find({
       $and: [
-        { visibility: { $ne: 'hidden' } },
+        { status: { $ne: 'rejected' } },
         {
           $or: [
-            { status: 'approved' },
-            { status: 'pending', owner: userId } // Show user's own pending groups
+            // Listed groups (approved)
+            {
+              visibility: { $in: ['listed', 'public'] },
+              status: 'approved'
+            },
+            // User's own groups (any visibility/status)
+            { owner: userId },
+            // Groups user is a member of (any visibility)
+            { members: userId },
+            { moderators: userId }
           ]
         }
       ]
     })
-      .populate('owner', 'username displayName profilePhoto')
-      .sort({ name: 1 });
+      .populate('owner', 'username displayName profilePhoto');
 
-    // Phase 2C: Map groups with accurate membership status and role info
+    // Phase 5A: Apply sorting (NO trending/popular/recommended)
+    let sortedGroups = [...groups];
+    switch (sort) {
+      case 'recent':
+        // Recently created
+        sortedGroups.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        break;
+      case 'active':
+        // Recently active (updatedAt timestamp)
+        sortedGroups.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+        break;
+      case 'alphabetical':
+      default:
+        // Alphabetical A-Z (default)
+        sortedGroups.sort((a, b) => a.name.localeCompare(b.name));
+        break;
+    }
+
+    // Map groups with accurate membership status and role info
     const userIdStr = userId.toString();
-    const groupsWithStatus = groups.map(group => {
-      // Handle owner ID comparison safely (owner could be populated or just ObjectId)
+    const groupsWithStatus = sortedGroups.map(group => {
       const ownerId = group.owner?._id?.toString() || group.owner?.toString();
       const isOwner = ownerId === userIdStr;
       const isModerator = group.moderators?.some(m =>
         (m._id?.toString() || m.toString()) === userIdStr
       );
       const isMember = group.isMember(userId);
+      const hasPendingRequest = group.hasPendingRequest(userId);
 
       // Determine user's role
       let role = null;
@@ -90,20 +126,26 @@ router.get('/', authenticateToken, async (req, res) => {
       else if (isModerator) role = 'moderator';
       else if (isMember) role = 'member';
 
+      // Phase 5A: Normalize visibility for frontend
+      const isListed = group.visibility === 'listed' || group.visibility === 'public';
+
       return {
         _id: group._id,
         slug: group.slug,
         name: group.name,
         description: group.description,
-        visibility: group.visibility,
+        visibility: isListed ? 'listed' : 'unlisted',
+        joinMode: group.joinMode || 'approval',
         status: group.status,
         owner: group.owner,
         memberCount: group.members.length + group.moderators.length + 1,
         isMember,
         isOwner,
         isModerator,
+        hasPendingRequest,
         role,
-        createdAt: group.createdAt
+        createdAt: group.createdAt,
+        updatedAt: group.updatedAt
       };
     });
 
@@ -157,16 +199,20 @@ router.post('/', authenticateToken, async (req, res) => {
     const isSuperAdmin = userRole === 'super_admin';
     const status = isSuperAdmin ? 'approved' : 'pending';
 
-    // Create group
+    // Phase 5A: Create group with new defaults
+    // - visibility: 'listed' (appears in /groups index)
+    // - joinMode: 'approval' (requires owner approval to join)
     const group = new Group({
       slug,
       name: trimmedName,
       description: description?.trim().substring(0, 500) || '',
-      visibility: 'private',
+      visibility: 'listed',  // Phase 5A default
+      joinMode: 'approval',  // Phase 5A default
       status,
       owner: userId,
       members: [],
-      moderators: []
+      moderators: [],
+      joinRequests: []
     });
 
     await group.save();
@@ -194,15 +240,23 @@ router.post('/', authenticateToken, async (req, res) => {
 });
 
 /**
+ * Phase 5A: Edit group settings
+ *
  * @route   PATCH /api/groups/:slug
  * @desc    Edit a group (owner only)
  * @access  Private (owner only)
+ *
+ * Supported fields:
+ * - name: Group name
+ * - description: Group description
+ * - visibility: 'listed' or 'unlisted'
+ * - joinMode: 'auto' or 'approval'
  */
 router.patch('/:slug', authenticateToken, async (req, res) => {
   try {
     const { slug } = req.params;
     const userId = req.user.id || req.user._id;
-    const { name, description, visibility } = req.body;
+    const { name, description, visibility, joinMode } = req.body;
 
     const group = await Group.findOne({ slug });
     if (!group) {
@@ -230,14 +284,26 @@ router.patch('/:slug', authenticateToken, async (req, res) => {
       group.description = description.trim().substring(0, 500);
     }
 
+    // Phase 5A: New visibility options (listed/unlisted)
     if (visibility !== undefined) {
-      if (!['private', 'public', 'hidden'].includes(visibility)) {
-        return res.status(400).json({ message: 'Invalid visibility option' });
+      if (!['listed', 'unlisted'].includes(visibility)) {
+        return res.status(400).json({ message: 'Visibility must be "listed" or "unlisted"' });
       }
       group.visibility = visibility;
     }
 
+    // Phase 5A: Join mode (auto/approval)
+    if (joinMode !== undefined) {
+      if (!['auto', 'approval'].includes(joinMode)) {
+        return res.status(400).json({ message: 'Join mode must be "auto" or "approval"' });
+      }
+      group.joinMode = joinMode;
+    }
+
     await group.save();
+
+    // Normalize visibility for response
+    const isListed = group.visibility === 'listed' || group.visibility === 'public';
 
     res.json({
       success: true,
@@ -247,7 +313,8 @@ router.patch('/:slug', authenticateToken, async (req, res) => {
         slug: group.slug,
         name: group.name,
         description: group.description,
-        visibility: group.visibility,
+        visibility: isListed ? 'listed' : 'unlisted',
+        joinMode: group.joinMode || 'approval',
         status: group.status
       }
     });
@@ -296,11 +363,17 @@ router.delete('/:slug', authenticateToken, async (req, res) => {
 });
 
 /**
+ * Phase 5A: Get group by slug
+ *
  * @route   GET /api/groups/:slug
  * @desc    Get group by slug
- *          - Non-members: metadata only (name, description)
+ *          - Non-members: metadata only (name, description, join button)
  *          - Members: metadata + posts scoped to group
  * @access  Private (authenticated)
+ *
+ * Visibility rules (Phase 5A):
+ * - Non-members CANNOT see: posts, member list, activity
+ * - Non-members CAN see: name, description, privacy badge, join button
  */
 router.get('/:slug', authenticateToken, async (req, res) => {
   try {
@@ -316,7 +389,7 @@ router.get('/:slug', authenticateToken, async (req, res) => {
       return res.status(404).json({ message: 'Group not found' });
     }
 
-    // Phase 2C: Accurate membership and role detection
+    // Accurate membership and role detection
     const ownerId = group.owner?._id?.toString() || group.owner?.toString();
     const userIdStr = userId.toString();
     const isOwner = ownerId === userIdStr;
@@ -324,9 +397,10 @@ router.get('/:slug', authenticateToken, async (req, res) => {
       (m._id?.toString() || m.toString()) === userIdStr
     );
     const isMember = group.isMember(userId);
+    const hasPendingRequest = group.hasPendingRequest(userId);
 
-    // Phase 2C: Accurate member count (owner counted separately, not in members array)
-    const memberCount = group.members.length + group.moderators.length + 1; // +1 for owner
+    // Accurate member count (owner counted separately, not in members array)
+    const memberCount = group.members.length + group.moderators.length + 1;
 
     // Determine user's role in the group
     let role = null;
@@ -334,34 +408,43 @@ router.get('/:slug', authenticateToken, async (req, res) => {
     else if (isModerator) role = 'moderator';
     else if (isMember) role = 'member';
 
-    // Base response (visible to everyone)
+    // Phase 5A: Normalize visibility for frontend
+    const isListed = group.visibility === 'listed' || group.visibility === 'public';
+
+    // Base response (visible to everyone - Phase 5A compliant)
     const response = {
       _id: group._id,
       slug: group.slug,
       name: group.name,
       description: group.description,
-      visibility: group.visibility,
-      owner: group.owner,
-      moderators: group.moderators,
+      visibility: isListed ? 'listed' : 'unlisted',
+      joinMode: group.joinMode || 'approval',
+      // Phase 5A: Only show owner name to non-members (no profile link)
+      owner: isMember ? group.owner : { displayName: group.owner.displayName },
+      // Phase 5A: Non-members don't see moderators list
+      moderators: isMember ? group.moderators : [],
       memberCount,
       isMember,
       isOwner,
       isModerator,
+      hasPendingRequest,
       role,
-      createdAt: group.createdAt
+      createdAt: group.createdAt,
+      // Phase 5A: Include pending request count for owners/mods
+      pendingRequestCount: (isOwner || isModerator) ? (group.joinRequests?.length || 0) : undefined
     };
 
-    // If NOT a member, return metadata only - NO posts
+    // Phase 5A: If NOT a member, return metadata only - NO posts, NO member list
     if (!isMember) {
       return res.json({
         ...response,
         posts: null, // Explicitly null to indicate access denied
+        members: null, // Phase 5A: Non-members cannot see member list
         message: 'Join this group to see posts'
       });
     }
 
-    // Phase 2: Member - fetch posts scoped to this group
-    // Group posts are intentionally isolated from global feeds
+    // Member - fetch posts scoped to this group
     const posts = await Post.find({
       groupId: group._id,
       visibility: 'group'
@@ -386,40 +469,82 @@ router.get('/:slug', authenticateToken, async (req, res) => {
  * @desc    Join a group (idempotent - safe to click twice)
  * @access  Private (authenticated)
  *
- * Phase 2C: Fixed member count logic
- * - Owner is NOT added to members array (they're already the owner)
- * - Uses $addToSet for idempotent, deduplicated membership
+ * Phase 5A: Boundary-first join flow
+ * - joinMode = 'auto': Immediate join
+ * - joinMode = 'approval': Request sent, awaiting approval
  */
 router.post('/:slug/join', authenticateToken, async (req, res) => {
   try {
     const { slug } = req.params;
     const userId = req.user.id;
 
-    // First check if user is the owner (owners don't need to join)
-    const existingGroup = await Group.findOne({ slug: slug.toLowerCase() });
-    if (!existingGroup) {
+    const group = await Group.findOne({ slug: slug.toLowerCase() });
+    if (!group) {
       return res.status(404).json({ message: 'Group not found' });
     }
 
-    const isOwner = existingGroup.owner.toString() === userId.toString();
+    const isOwner = group.owner.toString() === userId.toString();
+    const isModerator = group.moderators?.some(m => m.toString() === userId.toString());
+    const isMember = group.isMember(userId);
+    const hasPendingRequest = group.hasPendingRequest(userId);
 
-    // If owner, just return success without modifying members array
-    if (isOwner) {
-      const memberCount = existingGroup.members.length + existingGroup.moderators.length + 1;
+    // Already a member
+    if (isMember) {
+      const memberCount = group.members.length + group.moderators.length + 1;
       return res.json({
         success: true,
-        message: 'You are the owner of this group',
+        message: isOwner ? 'You are the owner of this group' : 'You are already a member',
         isMember: true,
-        isOwner: true,
+        isOwner,
+        isModerator,
+        hasPendingRequest: false,
         memberCount,
-        slug: existingGroup.slug,
-        name: existingGroup.name
+        slug: group.slug,
+        name: group.name
       });
     }
 
-    // Use $addToSet for idempotent membership addition (no duplicates)
-    // findOneAndUpdate is atomic and returns the updated document
-    const group = await Group.findOneAndUpdate(
+    // Already has pending request
+    if (hasPendingRequest) {
+      const memberCount = group.members.length + group.moderators.length + 1;
+      return res.json({
+        success: true,
+        message: 'Your request to join is pending approval',
+        isMember: false,
+        isOwner: false,
+        hasPendingRequest: true,
+        memberCount,
+        slug: group.slug,
+        name: group.name
+      });
+    }
+
+    // Phase 5A: Check join mode
+    const joinMode = group.joinMode || 'approval';
+
+    if (joinMode === 'approval') {
+      // Add to join requests (not members)
+      await Group.findOneAndUpdate(
+        { slug: slug.toLowerCase() },
+        { $addToSet: { joinRequests: userId } }
+      );
+
+      const memberCount = group.members.length + group.moderators.length + 1;
+      return res.json({
+        success: true,
+        message: 'Request sent! You\'ll be notified when approved.',
+        isMember: false,
+        isOwner: false,
+        hasPendingRequest: true,
+        memberCount,
+        slug: group.slug,
+        name: group.name,
+        joinMode: 'approval'
+      });
+    }
+
+    // Auto-join: Add to members immediately
+    const updatedGroup = await Group.findOneAndUpdate(
       { slug: slug.toLowerCase() },
       { $addToSet: { members: userId } },
       { new: true }
@@ -427,29 +552,149 @@ router.post('/:slug/join', authenticateToken, async (req, res) => {
       .populate('owner', 'username displayName profilePhoto')
       .populate('moderators', 'username displayName profilePhoto');
 
-    // Calculate member count: unique members + moderators + 1 (owner)
-    // Owner is separate, never in members array
-    const memberCount = group.members.length + group.moderators.length + 1;
+    const memberCount = updatedGroup.members.length + updatedGroup.moderators.length + 1;
 
     res.json({
       success: true,
-      message: `You joined ${group.name}`,
+      message: `You joined ${updatedGroup.name}`,
       isMember: true,
       isOwner: false,
-      groupId: group._id,
-      slug: group.slug,
-      name: group.name,
-      description: group.description,
-      visibility: group.visibility,
-      owner: group.owner,
-      moderators: group.moderators,
+      hasPendingRequest: false,
+      groupId: updatedGroup._id,
+      slug: updatedGroup.slug,
+      name: updatedGroup.name,
+      description: updatedGroup.description,
+      visibility: updatedGroup.visibility,
+      joinMode: updatedGroup.joinMode || 'approval',
+      owner: updatedGroup.owner,
+      moderators: updatedGroup.moderators,
       memberCount,
-      createdAt: group.createdAt,
-      posts: [] // Posts will be fetched separately
+      createdAt: updatedGroup.createdAt,
+      posts: []
     });
   } catch (error) {
     console.error('Join group error:', error);
     res.status(500).json({ message: 'Failed to join group' });
+  }
+});
+
+/**
+ * Phase 5A: Get join requests for a group
+ *
+ * @route   GET /api/groups/:slug/requests
+ * @desc    Get pending join requests (owner/moderator only)
+ * @access  Private (owner/moderator)
+ */
+router.get('/:slug/requests', authenticateToken, async (req, res) => {
+  try {
+    const { slug } = req.params;
+    const userId = req.user.id;
+
+    const group = await Group.findOne({ slug: slug.toLowerCase() })
+      .populate('joinRequests', 'username displayName profilePhoto');
+
+    if (!group) {
+      return res.status(404).json({ message: 'Group not found' });
+    }
+
+    // Only owner/moderators can view requests
+    if (!group.canModerate(userId)) {
+      return res.status(403).json({ message: 'Only owners and moderators can view join requests' });
+    }
+
+    res.json({
+      requests: group.joinRequests || [],
+      count: group.joinRequests?.length || 0
+    });
+  } catch (error) {
+    console.error('Get join requests error:', error);
+    res.status(500).json({ message: 'Failed to get join requests' });
+  }
+});
+
+/**
+ * Phase 5A: Approve a join request
+ *
+ * @route   POST /api/groups/:slug/requests/:userId/approve
+ * @desc    Approve a user's join request
+ * @access  Private (owner/moderator)
+ */
+router.post('/:slug/requests/:requestUserId/approve', authenticateToken, async (req, res) => {
+  try {
+    const { slug, requestUserId } = req.params;
+    const userId = req.user.id;
+
+    const group = await Group.findOne({ slug: slug.toLowerCase() });
+
+    if (!group) {
+      return res.status(404).json({ message: 'Group not found' });
+    }
+
+    // Only owner/moderators can approve
+    if (!group.canModerate(userId)) {
+      return res.status(403).json({ message: 'Only owners and moderators can approve requests' });
+    }
+
+    // Check if request exists
+    if (!group.hasPendingRequest(requestUserId)) {
+      return res.status(400).json({ message: 'No pending request from this user' });
+    }
+
+    // Move from joinRequests to members
+    await Group.findOneAndUpdate(
+      { slug: slug.toLowerCase() },
+      {
+        $pull: { joinRequests: requestUserId },
+        $addToSet: { members: requestUserId }
+      }
+    );
+
+    res.json({
+      success: true,
+      message: 'User approved and added to group'
+    });
+  } catch (error) {
+    console.error('Approve request error:', error);
+    res.status(500).json({ message: 'Failed to approve request' });
+  }
+});
+
+/**
+ * Phase 5A: Reject a join request
+ *
+ * @route   POST /api/groups/:slug/requests/:userId/reject
+ * @desc    Reject a user's join request
+ * @access  Private (owner/moderator)
+ */
+router.post('/:slug/requests/:requestUserId/reject', authenticateToken, async (req, res) => {
+  try {
+    const { slug, requestUserId } = req.params;
+    const userId = req.user.id;
+
+    const group = await Group.findOne({ slug: slug.toLowerCase() });
+
+    if (!group) {
+      return res.status(404).json({ message: 'Group not found' });
+    }
+
+    // Only owner/moderators can reject
+    if (!group.canModerate(userId)) {
+      return res.status(403).json({ message: 'Only owners and moderators can reject requests' });
+    }
+
+    // Remove from joinRequests
+    await Group.findOneAndUpdate(
+      { slug: slug.toLowerCase() },
+      { $pull: { joinRequests: requestUserId } }
+    );
+
+    res.json({
+      success: true,
+      message: 'Request rejected'
+    });
+  } catch (error) {
+    console.error('Reject request error:', error);
+    res.status(500).json({ message: 'Failed to reject request' });
   }
 });
 
