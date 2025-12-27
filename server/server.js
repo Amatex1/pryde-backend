@@ -63,6 +63,7 @@ import stabilityControlsRoutes from './routes/stabilityControls.js';
 import safeModeRoutes from './routes/safeMode.js';
 import sessionInspectorRoutes from './routes/sessionInspector.js';
 import bugReportsRoutes from './routes/bugReports.js';
+import invitesRoutes from './routes/invites.js'; // Phase 7B: Invite-only growth
 
 // Import middleware
 import auth from './middleware/auth.js';
@@ -352,6 +353,7 @@ app.use('/api/safe-mode', safeModeRoutes); // User-controlled Safe Mode
 app.use('/api/session-inspector', sessionInspectorRoutes); // Session state inspector
 app.use('/api/stability', stabilityControlsRoutes); // User-visible stability controls
 app.use('/api/bug-reports', bugReportsRoutes); // Bug reporting with state snapshots
+app.use('/api/invites', invitesRoutes); // Phase 7B: Invite-only growth
 
 // Debug: Log the passkey router before registering
 console.log('🔍 Passkey router type:', typeof passkeyRoutes);

@@ -4,6 +4,7 @@ import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import User from '../models/User.js';
 import SecurityLog from '../models/SecurityLog.js';
+import Invite from '../models/Invite.js'; // Phase 7B: Invite-only growth
 import auth from '../middleware/auth.js';
 import config from '../config/config.js';
 import { sendPasswordResetEmail, sendLoginAlertEmail, sendSuspiciousLoginEmail, sendVerificationEmail, sendPasswordChangedEmail } from '../utils/emailService.js';
@@ -229,6 +230,7 @@ router.post('/signup', validateAgeBeforeRateLimit, signupLimiter, validateSignup
       birthday,
       termsAccepted,
       captchaToken,
+      inviteCode, // Phase 7B: Required when invite-only mode is enabled
       // Optional fields
       displayName,
       identity, // 'LGBTQ+' or 'Ally'
@@ -241,6 +243,61 @@ router.post('/signup', validateAgeBeforeRateLimit, signupLimiter, validateSignup
       customGender
       // REMOVED 2025-12-26: relationshipStatus, isAlly (Phase 5)
     } = req.body;
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // PHASE 7B: INVITE-ONLY MODE CHECK (runs before all other validations)
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    let validatedInvite = null;
+
+    if (config.platform.inviteOnlyMode) {
+      // Require invite code in invite-only mode
+      if (!inviteCode) {
+        return res.status(403).json({
+          error: 'invite_required',
+          message: 'Pryde is currently invite-only. You need an invite code to register.'
+        });
+      }
+
+      // Validate the invite code
+      const normalizedCode = inviteCode.toUpperCase().trim();
+      const invite = await Invite.findOne({ code: normalizedCode });
+
+      if (!invite) {
+        // Log failed attempt
+        await SecurityLog.create({
+          type: 'invite_registration_failed',
+          severity: 'medium',
+          details: `Registration attempted with invalid invite: ${normalizedCode.substring(0, 10)}...`,
+          ipAddress: getClientIp(req),
+          userAgent: req.headers['user-agent'],
+          action: 'blocked'
+        });
+
+        return res.status(403).json({
+          error: 'invalid_invite',
+          message: 'This invite code is not valid.'
+        });
+      }
+
+      const validation = invite.isValid();
+
+      if (!validation.valid) {
+        const messages = {
+          already_used: 'This invite has already been used.',
+          expired: 'This invite has expired.',
+          revoked: 'This invite is no longer valid.'
+        };
+
+        return res.status(403).json({
+          error: validation.reason,
+          message: messages[validation.reason] || 'This invite is not valid.'
+        });
+      }
+
+      // Store for later (we'll mark it used after successful registration)
+      validatedInvite = invite;
+    }
 
     // ═══════════════════════════════════════════════════════════════════════════
     // VALIDATION ORDER: Per business rules, age check MUST run before CAPTCHA
@@ -426,6 +483,31 @@ router.post('/signup', validateAgeBeforeRateLimit, signupLimiter, validateSignup
     enforceMaxSessions(user);
 
     await user.save();
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // PHASE 7B: Mark invite as used (atomically) after successful registration
+    // ═══════════════════════════════════════════════════════════════════════════
+    if (validatedInvite) {
+      try {
+        await validatedInvite.markUsed(user._id);
+        logger.info(`Invite ${validatedInvite.code.substring(0, 10)}... used by ${username}`);
+
+        // Log invite usage for security
+        await SecurityLog.create({
+          type: 'invite_used',
+          severity: 'info',
+          userId: user._id,
+          username: user.username,
+          details: `User registered using invite: ${validatedInvite.code.substring(0, 10)}...`,
+          ipAddress: getClientIp(req),
+          userAgent: req.headers['user-agent'],
+          action: 'completed'
+        });
+      } catch (inviteError) {
+        // Don't fail registration if invite marking fails
+        logger.error('Failed to mark invite as used:', inviteError);
+      }
+    }
 
     logger.debug(`New user registered: ${username} (${email})`);
 

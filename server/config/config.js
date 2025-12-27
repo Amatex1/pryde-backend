@@ -76,6 +76,18 @@ export default {
   termsVersion: process.env.TERMS_VERSION || '1.0',
   privacyVersion: process.env.PRIVACY_VERSION || '1.0',
 
+  // Platform Mode Configuration (Phase 7B)
+  platform: {
+    // When true, only users with valid invite codes can register
+    inviteOnlyMode: process.env.INVITE_ONLY_MODE === 'true' || true, // Default: true for safety
+    // Cooldown between invite generations (in milliseconds) - 7 days default
+    inviteCooldownMs: parseInt(process.env.INVITE_COOLDOWN_MS || '604800000', 10),
+    // Default invite expiry (in milliseconds) - 30 days default
+    inviteExpiryMs: parseInt(process.env.INVITE_EXPIRY_MS || '2592000000', 10),
+    // Maximum active (unused) invites per user
+    maxActiveInvitesPerUser: parseInt(process.env.MAX_ACTIVE_INVITES_PER_USER || '1', 10),
+  },
+
   // Server Configuration
   port: process.env.PORT || 9000,
   baseURL: process.env.BASE_URL || 'https://pryde-social.onrender.com',
