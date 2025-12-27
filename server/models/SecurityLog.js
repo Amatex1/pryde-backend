@@ -21,13 +21,16 @@ const securityLogSchema = new mongoose.Schema({
       'privacy_settings_changed',
       'account_recovery_2fa_reset',
       'recovery_contact_notified',
-      'login_after_inactivity'
+      'login_after_inactivity',
+      'invite_created',
+      'invite_used',
+      'invite_revoked'
     ],
     required: true
   },
   severity: {
     type: String,
-    enum: ['low', 'medium', 'high', 'critical'],
+    enum: ['info', 'low', 'medium', 'high', 'critical'],
     default: 'medium'
   },
   username: {
@@ -65,7 +68,7 @@ const securityLogSchema = new mongoose.Schema({
   },
   action: {
     type: String,
-    enum: ['blocked', 'banned', 'logged', 'flagged'],
+    enum: ['blocked', 'banned', 'logged', 'flagged', 'created', 'used', 'revoked'],
     default: 'logged'
   },
   resolved: {
