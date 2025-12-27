@@ -136,6 +136,12 @@ router.post('/posts/:postId/comments', auth, requireActiveUser, asyncHandler(asy
       return sendError(res, HttpStatus.NOT_FOUND, 'Post not found');
     }
 
+    // Phase 6A: Check if post is locked (replies disabled)
+    if (post.isLocked) {
+      failMutation(mutationId, new Error('Post is locked'));
+      return sendError(res, HttpStatus.FORBIDDEN, 'This post is locked and cannot receive new comments');
+    }
+
     // If replying to a comment, verify it exists and is a top-level comment
     if (parentCommentId) {
       // SAFETY: Validate parent comment ID

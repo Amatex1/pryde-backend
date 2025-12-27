@@ -1115,11 +1115,21 @@ router.get('/:slug/members', authenticateToken, async (req, res) => {
       return res.status(403).json({ message: 'You must be a member to view the member list' });
     }
 
+    // Phase 6A: Include muted member IDs for moderators
+    let mutedMembers = [];
+    if (canModerateGroup(userId, group)) {
+      // Filter to active mutes only
+      mutedMembers = (group.mutedMembers || [])
+        .filter(m => !m.mutedUntil || new Date(m.mutedUntil) > new Date())
+        .map(m => m.user.toString());
+    }
+
     res.json({
       success: true,
       owner: group.owner,
       moderators: group.moderators || [],
       members: group.members || [],
+      mutedMembers, // Phase 6A: Only for moderators
       memberCount: getGroupMemberCount(group)
     });
   } catch (error) {
