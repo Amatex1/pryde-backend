@@ -1,10 +1,14 @@
 /**
  * Badge Model
- * 
+ *
  * Non-hierarchical badge system for user recognition.
- * Badges are assigned via admin tools or automated systems.
- * 
- * Types:
+ * Badges are either automatic (system-assigned) or manual (admin-assigned).
+ *
+ * Assignment Types:
+ * - automatic: System-assigned based on rules (view-only in admin)
+ * - manual: Admin-assigned with required reason
+ *
+ * Badge Types:
  * - platform: Official Pryde team/staff badges
  * - community: Community recognition badges
  * - activity: Earned through platform activity
@@ -34,6 +38,18 @@ const badgeSchema = new mongoose.Schema({
     enum: ['platform', 'community', 'activity'],
     required: true
   },
+  // Assignment type: automatic (system) or manual (admin)
+  assignmentType: {
+    type: String,
+    enum: ['automatic', 'manual'],
+    default: 'manual'
+  },
+  // For automatic badges: the rule that triggers assignment
+  // e.g., 'early_member', 'founding_member', 'profile_complete', 'active_this_month', 'group_organizer'
+  automaticRule: {
+    type: String,
+    default: null
+  },
   // Emoji or icon identifier
   icon: {
     type: String,
@@ -45,6 +61,12 @@ const badgeSchema = new mongoose.Schema({
     type: String,
     required: true,
     maxlength: 200
+  },
+  // User-facing description explaining what this badge means
+  description: {
+    type: String,
+    default: '',
+    maxlength: 500
   },
   // Display priority (lower = shown first, max 2 shown inline)
   priority: {
@@ -68,6 +90,8 @@ const badgeSchema = new mongoose.Schema({
 // Index for efficient lookup
 badgeSchema.index({ id: 1 });
 badgeSchema.index({ type: 1, priority: 1 });
+badgeSchema.index({ assignmentType: 1 });
+badgeSchema.index({ automaticRule: 1 });
 
 const Badge = mongoose.model('Badge', badgeSchema);
 

@@ -619,6 +619,12 @@ const userSchema = new mongoose.Schema({
       type: Boolean,
       default: false
     },
+    // BADGE SYSTEM V1: Hide badges option (CSS-only, no data removal)
+    // When enabled, badges are not rendered on profiles and posts
+    hideBadges: {
+      type: Boolean,
+      default: false
+    },
     whoCanSeeMyPosts: {
       type: String,
       enum: ['public', 'followers', 'only-me'], // REMOVED: 'friends'

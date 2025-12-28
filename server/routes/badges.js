@@ -1,15 +1,28 @@
 /**
  * Badge Routes
  *
- * Public: Get available badges
- * Admin: Assign/revoke badges, manage badge definitions
+ * Public: Get available badges, badge explanations
+ * Admin: Assign/revoke badges, manage badge definitions, view audit log
+ *
+ * Badge System v1 Principles:
+ * - Badges communicate context, not status
+ * - No popularity or ranking badges
+ * - Automatic badges are system-owned
+ * - Manual badges require intent and accountability (reason required)
+ * - Badges must never undermine Quiet Mode
  */
 
 import express from 'express';
 import auth from '../middleware/auth.js';
 import adminAuth from '../middleware/adminAuth.js';
 import Badge from '../models/Badge.js';
+import BadgeAssignmentLog from '../models/BadgeAssignmentLog.js';
 import User from '../models/User.js';
+import {
+  processUserBadgesById,
+  runBatchBadgeProcessing,
+  seedAutomaticBadges
+} from '../services/autoBadgeService.js';
 
 const router = express.Router();
 
@@ -18,16 +31,149 @@ const router = express.Router();
 // ============================================================
 
 // @route   GET /api/badges
-// @desc    Get all active badges
+// @desc    Get all active badges with optional filtering
 // @access  Public
 router.get('/', async (req, res) => {
   try {
-    const badges = await Badge.find({ isActive: true })
+    const { type, assignmentType } = req.query;
+    const query = { isActive: true };
+
+    if (type) query.type = type;
+    if (assignmentType) query.assignmentType = assignmentType;
+
+    const badges = await Badge.find(query)
       .sort({ priority: 1, label: 1 })
       .lean();
     res.json(badges);
   } catch (error) {
     console.error('Get badges error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   GET /api/badges/explain
+// @desc    Get user-facing explanation of the badge system
+// @access  Public
+router.get('/explain', async (req, res) => {
+  try {
+    res.json({
+      title: 'About Badges',
+      description: 'Badges on Pryde are contextual signals that help you understand a bit more about other members. They are not rankings or popularity markers.',
+      principles: [
+        'Badges communicate context, not status',
+        'Some badges are automatically assigned based on facts (like when you joined)',
+        'Some badges are manually assigned by our team for recognition',
+        'Badges never indicate popularity or ranking'
+      ],
+      quietModeNote: 'Badges can be hidden if you prefer a calmer experience. Enable "Hide badges" in your Quiet Mode settings.',
+      categories: {
+        automatic: {
+          label: 'Automatic Badges',
+          description: 'These are assigned by the system based on facts about your account.',
+          examples: ['Early Member', 'Founding Member', 'Profile Complete']
+        },
+        manual: {
+          label: 'Recognition Badges',
+          description: 'These are assigned by our team to recognize contributions.',
+          examples: ['Community Champion', 'Pryde Team']
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Get badge explanation error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   GET /api/badges/catalog
+// @desc    Get badge catalog with categories
+// @access  Public
+router.get('/catalog', async (req, res) => {
+  try {
+    const badges = await Badge.find({ isActive: true })
+      .sort({ priority: 1, label: 1 })
+      .lean();
+
+    // Group by assignment type
+    const automatic = badges.filter(b => b.assignmentType === 'automatic');
+    const manual = badges.filter(b => b.assignmentType === 'manual');
+
+    res.json({
+      automatic: {
+        label: 'Automatic Badges',
+        description: 'Assigned by the system based on account activity and facts',
+        badges: automatic
+      },
+      manual: {
+        label: 'Recognition Badges',
+        description: 'Assigned by admins for community contributions',
+        badges: manual
+      },
+      total: badges.length
+    });
+  } catch (error) {
+    console.error('Get badge catalog error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   GET /api/badges/me
+// @desc    Get current user's badges and badge settings
+// @access  Authenticated
+router.get('/me', auth, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id)
+      .select('badges privacySettings.hideBadges')
+      .lean();
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Get full badge details
+    const badges = await Badge.find({
+      id: { $in: user.badges || [] },
+      isActive: true
+    }).sort({ priority: 1 }).lean();
+
+    res.json({
+      badges,
+      hideBadges: user.privacySettings?.hideBadges || false,
+      count: badges.length
+    });
+  } catch (error) {
+    console.error('Get my badges error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   GET /api/badges/user/:userId
+// @desc    Get badges for a specific user (with full badge details)
+// @access  Public
+router.get('/user/:userId', async (req, res) => {
+  try {
+    const user = await User.findById(req.params.userId)
+      .select('badges privacySettings.hideBadges')
+      .lean();
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // If user has hidden badges, return empty array (respect Quiet Mode)
+    if (user.privacySettings?.hideBadges) {
+      return res.json([]);
+    }
+
+    // Get full badge details for user's badges
+    const badges = await Badge.find({
+      id: { $in: user.badges || [] },
+      isActive: true
+    }).sort({ priority: 1 }).lean();
+
+    res.json(badges);
+  } catch (error) {
+    console.error('Get user badges error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -48,39 +194,87 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// @route   GET /api/badges/user/:userId
-// @desc    Get badges for a specific user (with full badge details)
-// @access  Public
-router.get('/user/:userId', async (req, res) => {
+// ============================================================
+// ADMIN ROUTES
+// ============================================================
+
+// @route   GET /api/badges/admin/catalog
+// @desc    Get full badge catalog for admin panel (includes inactive)
+// @access  Admin
+router.get('/admin/catalog', auth, adminAuth(['admin', 'super_admin']), async (req, res) => {
   try {
-    const user = await User.findById(req.params.userId).select('badges').lean();
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
+    const badges = await Badge.find({})
+      .sort({ assignmentType: 1, priority: 1, label: 1 })
+      .lean();
 
-    // Get full badge details for user's badges
-    const badges = await Badge.find({
-      id: { $in: user.badges || [] },
-      isActive: true
-    }).sort({ priority: 1 }).lean();
+    // Group by assignment type
+    const automatic = badges.filter(b => b.assignmentType === 'automatic');
+    const manual = badges.filter(b => b.assignmentType === 'manual');
 
-    res.json(badges);
+    res.json({
+      automatic: {
+        label: 'Automatic Badges (View Only)',
+        description: 'System-assigned badges based on rules. Cannot be manually assigned.',
+        badges: automatic
+      },
+      manual: {
+        label: 'Manual Badges',
+        description: 'Admin-assigned badges. Require a reason for accountability.',
+        badges: manual
+      },
+      total: badges.length
+    });
   } catch (error) {
-    console.error('Get user badges error:', error);
+    console.error('Get admin badge catalog error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
 
-// ============================================================
-// ADMIN ROUTES
-// ============================================================
+// @route   GET /api/badges/admin/audit-log
+// @desc    Get badge assignment audit log
+// @access  Admin
+router.get('/admin/audit-log', auth, adminAuth(['admin', 'super_admin']), async (req, res) => {
+  try {
+    const { limit = 50, page = 1, userId, badgeId, action, isAutomatic } = req.query;
+    const query = {};
+
+    if (userId) query.userId = userId;
+    if (badgeId) query.badgeId = badgeId;
+    if (action) query.action = action;
+    if (isAutomatic !== undefined) query.isAutomatic = isAutomatic === 'true';
+
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+
+    const [logs, total] = await Promise.all([
+      BadgeAssignmentLog.find(query)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(parseInt(limit))
+        .lean(),
+      BadgeAssignmentLog.countDocuments(query)
+    ]);
+
+    res.json({
+      logs,
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total,
+        totalPages: Math.ceil(total / parseInt(limit))
+      }
+    });
+  } catch (error) {
+    console.error('Get badge audit log error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
 
 // @route   POST /api/badges
 // @desc    Create a new badge (admin only)
 // @access  Admin
 router.post('/', auth, adminAuth(['admin', 'super_admin']), async (req, res) => {
   try {
-    const { id, label, type, icon, tooltip, priority, color } = req.body;
+    const { id, label, type, icon, tooltip, priority, color, assignmentType, automaticRule, description } = req.body;
 
     // Validate required fields
     if (!id || !label || !type || !tooltip) {
@@ -99,8 +293,11 @@ router.post('/', auth, adminAuth(['admin', 'super_admin']), async (req, res) => 
       type,
       icon: icon || '⭐',
       tooltip,
+      description: description || '',
       priority: priority || 100,
-      color: color || 'default'
+      color: color || 'default',
+      assignmentType: assignmentType || 'manual',
+      automaticRule: automaticRule || null
     });
 
     await badge.save();
@@ -116,7 +313,7 @@ router.post('/', auth, adminAuth(['admin', 'super_admin']), async (req, res) => 
 // @access  Admin
 router.put('/:id', auth, adminAuth(['admin', 'super_admin']), async (req, res) => {
   try {
-    const { label, type, icon, tooltip, priority, color, isActive } = req.body;
+    const { label, type, icon, tooltip, priority, color, isActive, description, assignmentType, automaticRule } = req.body;
 
     const badge = await Badge.findOne({ id: req.params.id });
     if (!badge) {
@@ -128,9 +325,12 @@ router.put('/:id', auth, adminAuth(['admin', 'super_admin']), async (req, res) =
     if (type) badge.type = type;
     if (icon) badge.icon = icon;
     if (tooltip) badge.tooltip = tooltip;
+    if (description !== undefined) badge.description = description;
     if (priority !== undefined) badge.priority = priority;
     if (color) badge.color = color;
     if (isActive !== undefined) badge.isActive = isActive;
+    if (assignmentType) badge.assignmentType = assignmentType;
+    if (automaticRule !== undefined) badge.automaticRule = automaticRule;
 
     await badge.save();
     res.json(badge);
@@ -143,9 +343,10 @@ router.put('/:id', auth, adminAuth(['admin', 'super_admin']), async (req, res) =
 // @route   POST /api/badges/assign
 // @desc    Assign a badge to a user (admin only)
 // @access  Admin
+// Manual badges REQUIRE a reason for accountability
 router.post('/assign', auth, adminAuth(['admin', 'super_admin']), async (req, res) => {
   try {
-    const { userId, badgeId } = req.body;
+    const { userId, badgeId, reason } = req.body;
 
     if (!userId || !badgeId) {
       return res.status(400).json({ message: 'Missing userId or badgeId' });
@@ -157,16 +358,42 @@ router.post('/assign', auth, adminAuth(['admin', 'super_admin']), async (req, re
       return res.status(404).json({ message: 'Badge not found or inactive' });
     }
 
-    // Add badge to user (using $addToSet to prevent duplicates)
+    // Manual badges require a reason
+    if (badge.assignmentType === 'manual' && (!reason || reason.trim().length < 10)) {
+      return res.status(400).json({
+        message: 'Manual badge assignments require a reason (minimum 10 characters)'
+      });
+    }
+
+    // Check if user already has this badge
+    const existingUser = await User.findById(userId).select('badges username');
+    if (!existingUser) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    if (existingUser.badges.includes(badgeId)) {
+      return res.status(400).json({ message: 'User already has this badge' });
+    }
+
+    // Add badge to user
     const user = await User.findByIdAndUpdate(
       userId,
       { $addToSet: { badges: badgeId } },
       { new: true }
     ).select('badges username displayName');
 
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
+    // Create audit log entry
+    await BadgeAssignmentLog.create({
+      userId: user._id,
+      username: user.username,
+      badgeId: badge.id,
+      badgeLabel: badge.label,
+      action: 'assigned',
+      performedBy: req.user.id,
+      performedByUsername: req.user.username,
+      isAutomatic: false,
+      reason: reason || ''
+    });
 
     res.json({
       message: 'Badge assigned successfully',
@@ -183,10 +410,23 @@ router.post('/assign', auth, adminAuth(['admin', 'super_admin']), async (req, re
 // @access  Admin
 router.post('/revoke', auth, adminAuth(['admin', 'super_admin']), async (req, res) => {
   try {
-    const { userId, badgeId } = req.body;
+    const { userId, badgeId, reason } = req.body;
 
     if (!userId || !badgeId) {
       return res.status(400).json({ message: 'Missing userId or badgeId' });
+    }
+
+    // Get badge info for audit log
+    const badge = await Badge.findOne({ id: badgeId });
+
+    // Get user info before update
+    const existingUser = await User.findById(userId).select('badges username');
+    if (!existingUser) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    if (!existingUser.badges.includes(badgeId)) {
+      return res.status(400).json({ message: 'User does not have this badge' });
     }
 
     // Remove badge from user
@@ -196,9 +436,18 @@ router.post('/revoke', auth, adminAuth(['admin', 'super_admin']), async (req, re
       { new: true }
     ).select('badges username displayName');
 
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
+    // Create audit log entry
+    await BadgeAssignmentLog.create({
+      userId: user._id,
+      username: user.username,
+      badgeId: badgeId,
+      badgeLabel: badge?.label || badgeId,
+      action: 'revoked',
+      performedBy: req.user.id,
+      performedByUsername: req.user.username,
+      isAutomatic: false,
+      reason: reason || ''
+    });
 
     res.json({
       message: 'Badge revoked successfully',
@@ -206,6 +455,68 @@ router.post('/revoke', auth, adminAuth(['admin', 'super_admin']), async (req, re
     });
   } catch (error) {
     console.error('Revoke badge error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   POST /api/badges/admin/process-user/:userId
+// @desc    Process automatic badges for a specific user
+// @access  Admin
+router.post('/admin/process-user/:userId', auth, adminAuth(['admin', 'super_admin']), async (req, res) => {
+  try {
+    const results = await processUserBadgesById(req.params.userId);
+
+    if (results.error) {
+      return res.status(400).json({ message: results.error });
+    }
+
+    res.json({
+      message: 'User badges processed',
+      results
+    });
+  } catch (error) {
+    console.error('Process user badges error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   POST /api/badges/admin/run-batch
+// @desc    Run batch processing for all users (super_admin only)
+// @access  Super Admin
+router.post('/admin/run-batch', auth, adminAuth(['super_admin']), async (req, res) => {
+  try {
+    const { dryRun = false } = req.body;
+
+    // Run in background (don't block the response)
+    res.json({
+      message: 'Batch processing started',
+      dryRun,
+      note: 'Check server logs for progress'
+    });
+
+    // Process after response
+    setImmediate(async () => {
+      const summary = await runBatchBadgeProcessing({ dryRun });
+      console.log('Batch processing complete:', summary);
+    });
+  } catch (error) {
+    console.error('Run batch processing error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   POST /api/badges/admin/seed
+// @desc    Seed default automatic badges (super_admin only)
+// @access  Super Admin
+router.post('/admin/seed', auth, adminAuth(['super_admin']), async (req, res) => {
+  try {
+    const results = await seedAutomaticBadges();
+    res.json({
+      message: 'Automatic badges seeded',
+      results
+    });
+  } catch (error) {
+    console.error('Seed badges error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });

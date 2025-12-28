@@ -19,7 +19,9 @@ router.get('/settings', auth, async (req, res) => {
     const settings = {
       profileVisibility: user.privacySettings?.profileVisibility || 'public',
       whoCanMessage: user.privacySettings?.whoCanMessage || 'followers',
-      quietModeEnabled: user.privacySettings?.quietModeEnabled || false
+      quietModeEnabled: user.privacySettings?.quietModeEnabled || false,
+      // BADGE SYSTEM V1: Hide badges setting
+      hideBadges: user.privacySettings?.hideBadges || false
     };
 
     res.json(settings);
@@ -46,7 +48,9 @@ router.patch('/settings', auth, async (req, res) => {
       // Quiet Mode V2 sub-toggles
       'quietVisuals',
       'quietWriting',
-      'quietMetrics'
+      'quietMetrics',
+      // BADGE SYSTEM V1: Hide badges option
+      'hideBadges'
     ];
 
     // Update only allowed fields
@@ -70,7 +74,8 @@ router.patch('/settings', auth, async (req, res) => {
         quietModeEnabled: user.privacySettings?.quietModeEnabled,
         quietVisuals: user.privacySettings?.quietVisuals ?? true,
         quietWriting: user.privacySettings?.quietWriting ?? true,
-        quietMetrics: user.privacySettings?.quietMetrics ?? false
+        quietMetrics: user.privacySettings?.quietMetrics ?? false,
+        hideBadges: user.privacySettings?.hideBadges ?? false
       }
     });
   } catch (error) {

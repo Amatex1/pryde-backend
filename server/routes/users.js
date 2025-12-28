@@ -641,7 +641,7 @@ router.put('/photo-position', auth, requireActiveUser, async (req, res) => {
 });
 
 // @route   PATCH /api/users/me/settings
-// @desc    Update user settings (PHASE 2: Quiet Mode, V2 sub-toggles)
+// @desc    Update user settings (PHASE 2: Quiet Mode, V2 sub-toggles, Badge System V1)
 // @access  Private
 router.patch('/me/settings', auth, requireActiveUser, async (req, res) => {
   try {
@@ -650,7 +650,9 @@ router.patch('/me/settings', auth, requireActiveUser, async (req, res) => {
       // Quiet Mode V2 sub-toggles
       quietVisuals,
       quietWriting,
-      quietMetrics
+      quietMetrics,
+      // BADGE SYSTEM V1: Hide badges option
+      hideBadges
     } = req.body;
     const user = await User.findById(req.userId);
 
@@ -679,6 +681,11 @@ router.patch('/me/settings', auth, requireActiveUser, async (req, res) => {
       user.privacySettings.quietMetrics = quietMetrics;
     }
 
+    // BADGE SYSTEM V1: Update hide badges setting
+    if (typeof hideBadges === 'boolean') {
+      user.privacySettings.hideBadges = hideBadges;
+    }
+
     user.markModified('privacySettings');
     await user.save();
 
@@ -687,7 +694,8 @@ router.patch('/me/settings', auth, requireActiveUser, async (req, res) => {
       quietModeEnabled: user.privacySettings.quietModeEnabled,
       quietVisuals: user.privacySettings.quietVisuals ?? true,
       quietWriting: user.privacySettings.quietWriting ?? true,
-      quietMetrics: user.privacySettings.quietMetrics ?? false
+      quietMetrics: user.privacySettings.quietMetrics ?? false,
+      hideBadges: user.privacySettings.hideBadges ?? false
     });
   } catch (error) {
     console.error('Update settings error:', error);
