@@ -21,6 +21,7 @@ import { emitNotificationCreated } from '../utils/notificationEmitter.js'; // âœ
 import { deleteFromGridFS } from './upload.js'; // For deleting images from storage
 import { MutationTrace, verifyWrite } from '../utils/mutationTrace.js';
 import { asyncHandler, requireAuth, requireValidId, sendError, HttpStatus } from '../utils/errorHandler.js';
+import { processUserBadgesById } from '../services/autoBadgeService.js';
 
 // PHASE 1 REFACTOR: Helper function to sanitize post for private likes
 // Removes like count and list of who liked, only shows if current user liked
@@ -317,6 +318,17 @@ router.post('/', auth, requireActiveUser, postLimiter, sanitizeFields(['content'
     }
 
     mutation.success({ postId: post._id.toString() });
+
+    // BADGE SYSTEM: Process automatic badges after post creation (non-blocking)
+    // This checks for active_this_month badge
+    setImmediate(async () => {
+      try {
+        await processUserBadgesById(userId.toString());
+      } catch (err) {
+        logger.warn('Failed to process badges on post creation:', err.message);
+      }
+    });
+
     res.status(201).json({ ...post.toObject(), _mutationId: mutation.mutationId });
   } catch (error) {
     mutation.fail(error.message, 500);

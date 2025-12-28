@@ -56,6 +56,7 @@ import { authenticateToken } from '../middleware/auth.js';
 import { isGroupOwner, isGroupModerator, isGroupMember, canModerateGroup, getGroupMemberCount, isGroupMuted, isGroupBlocked, canPostInGroup } from '../utils/groupPermissions.js';
 import { processGroupPostNotifications, updateGroupNotificationSettings, getGroupNotificationSettings } from '../services/groupNotificationService.js';
 import logger from '../utils/logger.js';
+import { processUserBadgesById } from '../services/autoBadgeService.js';
 
 const router = express.Router();
 
@@ -227,6 +228,16 @@ router.post('/', authenticateToken, async (req, res) => {
     });
 
     await group.save();
+
+    // BADGE SYSTEM: Process automatic badges after group creation (non-blocking)
+    // This checks for group_organizer badge
+    setImmediate(async () => {
+      try {
+        await processUserBadgesById(userId.toString());
+      } catch (err) {
+        logger.warn('Failed to process badges on group creation:', err.message);
+      }
+    });
 
     const message = isSuperAdmin
       ? 'Group created successfully'

@@ -27,6 +27,7 @@ import logger from '../utils/logger.js';
 import { generateTokenPair, getRefreshTokenExpiry } from '../utils/tokenUtils.js';
 import { getRefreshTokenCookieOptions } from '../utils/cookieUtils.js';
 import { decryptString, isEncrypted } from '../utils/encryption.js';
+import { processUserBadgesById } from '../services/autoBadgeService.js';
 
 /**
  * Helper to get the decrypted 2FA secret
@@ -908,6 +909,15 @@ router.post('/login', loginLimiter, validateLogin, async (req, res) => {
     logger.debug('Setting access token cookie (login) with options:', accessTokenCookieOptions);
     res.cookie('token', accessToken, accessTokenCookieOptions);
 
+    // BADGE SYSTEM: Process automatic badges on login (non-blocking)
+    setImmediate(async () => {
+      try {
+        await processUserBadgesById(user._id.toString());
+      } catch (err) {
+        logger.warn('Failed to process badges on login:', err.message);
+      }
+    });
+
     res.json({
       success: true,
       message: 'Login successful',
@@ -1151,6 +1161,15 @@ router.post('/verify-2fa-login', loginLimiter, async (req, res) => {
     res.cookie('token', accessToken, accessTokenCookieOptions);
 
     logger.debug(`User logged in with 2FA: ${user.email} from ${ipAddress}`);
+
+    // BADGE SYSTEM: Process automatic badges on login (non-blocking)
+    setImmediate(async () => {
+      try {
+        await processUserBadgesById(user._id.toString());
+      } catch (err) {
+        logger.warn('Failed to process badges on 2FA login:', err.message);
+      }
+    });
 
     res.json({
       success: true,

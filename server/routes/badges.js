@@ -459,6 +459,166 @@ router.post('/revoke', auth, adminAuth(['admin', 'super_admin']), async (req, re
   }
 });
 
+// ============================================================
+// ADMIN ROUTE ALIASES (for frontend compatibility)
+// These routes alias to the main routes above
+// ============================================================
+
+// @route   POST /api/badges/admin/create
+// @desc    Create a new badge (alias for POST /api/badges)
+// @access  Admin
+router.post('/admin/create', auth, adminAuth(['admin', 'super_admin']), async (req, res) => {
+  try {
+    const { id, label, type, icon, tooltip, priority, color, assignmentType, automaticRule, description } = req.body;
+
+    // Validate required fields
+    if (!id || !label || !type || !tooltip) {
+      return res.status(400).json({ message: 'Missing required fields: id, label, type, tooltip' });
+    }
+
+    // Check if badge already exists
+    const existing = await Badge.findOne({ id: id.toLowerCase() });
+    if (existing) {
+      return res.status(400).json({ message: 'Badge with this ID already exists' });
+    }
+
+    const badge = new Badge({
+      id: id.toLowerCase(),
+      label,
+      type,
+      icon: icon || '⭐',
+      tooltip,
+      description: description || '',
+      priority: priority || 100,
+      color: color || 'default',
+      assignmentType: assignmentType || 'manual',
+      automaticRule: automaticRule || null
+    });
+
+    await badge.save();
+    res.status(201).json(badge);
+  } catch (error) {
+    console.error('Create badge error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   POST /api/badges/admin/assign
+// @desc    Assign a badge to a user (alias for POST /api/badges/assign)
+// @access  Admin
+router.post('/admin/assign', auth, adminAuth(['admin', 'super_admin']), async (req, res) => {
+  try {
+    const { userId, badgeId, reason } = req.body;
+
+    if (!userId || !badgeId) {
+      return res.status(400).json({ message: 'Missing userId or badgeId' });
+    }
+
+    // Verify badge exists
+    const badge = await Badge.findOne({ id: badgeId, isActive: true });
+    if (!badge) {
+      return res.status(404).json({ message: 'Badge not found or inactive' });
+    }
+
+    // For manual badges, reason is required (accountability)
+    if (badge.assignmentType === 'manual' && !reason) {
+      return res.status(400).json({ message: 'Reason required for manual badge assignment' });
+    }
+
+    // Check if user already has badge
+    const existingUser = await User.findById(userId).select('badges username');
+    if (!existingUser) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    if (existingUser.badges.includes(badgeId)) {
+      return res.status(400).json({ message: 'User already has this badge' });
+    }
+
+    // Assign badge
+    const user = await User.findByIdAndUpdate(
+      userId,
+      { $addToSet: { badges: badgeId } },
+      { new: true }
+    ).select('badges username displayName');
+
+    // Create audit log entry
+    await BadgeAssignmentLog.create({
+      userId: user._id,
+      username: user.username,
+      badgeId: badgeId,
+      badgeLabel: badge.label,
+      action: 'assigned',
+      performedBy: req.user.id,
+      performedByUsername: req.user.username,
+      isAutomatic: false,
+      reason: reason || ''
+    });
+
+    res.json({
+      message: 'Badge assigned successfully',
+      user: { id: user._id, username: user.username, badges: user.badges }
+    });
+  } catch (error) {
+    console.error('Assign badge error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   POST /api/badges/admin/revoke
+// @desc    Revoke a badge from a user (alias for POST /api/badges/revoke)
+// @access  Admin
+router.post('/admin/revoke', auth, adminAuth(['admin', 'super_admin']), async (req, res) => {
+  try {
+    const { userId, badgeId, reason } = req.body;
+
+    if (!userId || !badgeId) {
+      return res.status(400).json({ message: 'Missing userId or badgeId' });
+    }
+
+    // Get badge info for audit log
+    const badge = await Badge.findOne({ id: badgeId });
+
+    // Get user info before update
+    const existingUser = await User.findById(userId).select('badges username');
+    if (!existingUser) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    if (!existingUser.badges.includes(badgeId)) {
+      return res.status(400).json({ message: 'User does not have this badge' });
+    }
+
+    // Remove badge from user
+    const user = await User.findByIdAndUpdate(
+      userId,
+      { $pull: { badges: badgeId } },
+      { new: true }
+    ).select('badges username displayName');
+
+    // Create audit log entry
+    await BadgeAssignmentLog.create({
+      userId: user._id,
+      username: user.username,
+      badgeId: badgeId,
+      badgeLabel: badge?.label || badgeId,
+      action: 'revoked',
+      performedBy: req.user.id,
+      performedByUsername: req.user.username,
+      isAutomatic: false,
+      reason: reason || ''
+    });
+
+    res.json({
+      message: 'Badge revoked successfully',
+      user: { id: user._id, username: user.username, badges: user.badges }
+    });
+  } catch (error) {
+    console.error('Revoke badge error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // @route   POST /api/badges/admin/process-user/:userId
 // @desc    Process automatic badges for a specific user
 // @access  Admin

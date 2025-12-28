@@ -12,6 +12,8 @@ import { checkProfileVisibility, checkBlocked } from '../middleware/privacy.js';
 import { sanitizeFields } from '../middleware/sanitize.js';
 import mongoose from 'mongoose';
 import { getUserStabilityReport } from '../utils/stabilityScore.js';
+import { processUserBadgesById } from '../services/autoBadgeService.js';
+import logger from '../utils/logger.js';
 
 // PHASE 1 REFACTOR: Helper function to sanitize user data for private follower counts
 // Keeps counts but removes detailed arrays, only shows if current user follows them
@@ -582,6 +584,16 @@ router.put('/profile', auth, requireActiveUser, sanitizeFields([
     }
 
     await user.save();
+
+    // BADGE SYSTEM: Process automatic badges after profile update (non-blocking)
+    // This checks for profile_complete badge
+    setImmediate(async () => {
+      try {
+        await processUserBadgesById(user._id.toString());
+      } catch (err) {
+        logger.warn('Failed to process badges on profile update:', err.message);
+      }
+    });
 
     res.json({ user });
   } catch (error) {
