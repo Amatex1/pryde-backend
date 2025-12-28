@@ -15,13 +15,22 @@ router.get('/settings', auth, async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
+    const profileVisibility = user.privacySettings?.profileVisibility || 'public';
+
+    // Derive default post visibility from profile visibility
+    // public profile → public posts by default
+    // followers profile → followers posts by default
+    const defaultPostVisibility = profileVisibility === 'public' ? 'public' : 'followers';
+
     // Normalize settings to match frontend expectations
     const settings = {
-      profileVisibility: user.privacySettings?.profileVisibility || 'public',
+      profileVisibility,
       whoCanMessage: user.privacySettings?.whoCanMessage || 'followers',
       quietModeEnabled: user.privacySettings?.quietModeEnabled || false,
       // BADGE SYSTEM V1: Hide badges setting
-      hideBadges: user.privacySettings?.hideBadges || false
+      hideBadges: user.privacySettings?.hideBadges || false,
+      // Default post visibility derived from profile visibility
+      defaultPostVisibility
     };
 
     res.json(settings);
