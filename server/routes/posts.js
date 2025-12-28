@@ -41,6 +41,28 @@ const sanitizePostForPrivateLikes = (post, currentUserId) => {
   // Do the same for reactions - keep them but remove counts from UI later
   // For now, keep reactions as they show different emotions, not just counts
 
+  // Poll results visibility: hide vote counts from non-authors when resultsVisibility is 'author'
+  if (postObj.poll && postObj.poll.resultsVisibility === 'author') {
+    const authorId = postObj.author?._id || postObj.author;
+    const isAuthor = authorId && authorId.toString() === currentUserId.toString();
+
+    if (!isAuthor) {
+      // For non-authors, only show if they voted and what they voted for
+      // Hide all vote counts by replacing votes arrays with boolean flags
+      postObj.poll.options = postObj.poll.options.map(option => {
+        const userVoted = option.votes?.some(vote =>
+          (vote._id || vote).toString() === currentUserId.toString()
+        );
+        return {
+          text: option.text,
+          votes: userVoted ? [currentUserId] : [], // Only show user's own vote
+          _hiddenResults: true // Flag for frontend to know results are hidden
+        };
+      });
+      postObj.poll._resultsHidden = true;
+    }
+  }
+
   // REMOVED 2025-12-26: originalPost handling deleted (Phase 5 - share system removed)
 
   return postObj;
@@ -279,7 +301,8 @@ router.post('/', auth, requireActiveUser, postLimiter, sanitizeFields(['content'
         options: transformedOptions,
         endsAt: poll.endsAt || null,
         allowMultipleVotes: poll.allowMultipleVotes || false,
-        showResultsBeforeVoting: poll.showResultsBeforeVoting || false
+        showResultsBeforeVoting: poll.showResultsBeforeVoting || false,
+        resultsVisibility: poll.resultsVisibility || 'public'
       };
       mutation.addStep('POLL_PREPARED', { optionCount: transformedOptions.length });
     }
@@ -1152,6 +1175,53 @@ router.post('/:id/poll/vote', auth, requireActiveUser, async (req, res) => {
     res.json(sanitizedPost);
   } catch (error) {
     logger.error('Poll vote error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   DELETE /api/posts/:id/poll/vote
+// @desc    Remove user's vote from a poll
+// @access  Private
+router.delete('/:id/poll/vote', auth, requireActiveUser, async (req, res) => {
+  try {
+    const userId = req.userId;
+
+    const post = await Post.findById(req.params.id);
+
+    if (!post) {
+      return res.status(404).json({ message: 'Post not found' });
+    }
+
+    if (!post.poll || !post.poll.question) {
+      return res.status(400).json({ message: 'This post does not have a poll' });
+    }
+
+    // Check if poll has ended
+    if (post.poll.endsAt && new Date() > post.poll.endsAt) {
+      return res.status(400).json({ message: 'This poll has ended' });
+    }
+
+    // Check if user has voted
+    const hasVoted = post.poll.options.some(option =>
+      option.votes.some(vote => vote.toString() === userId.toString())
+    );
+
+    if (!hasVoted) {
+      return res.status(400).json({ message: 'You have not voted on this poll' });
+    }
+
+    // Remove user's vote from all options
+    post.poll.options.forEach(option => {
+      option.votes = option.votes.filter(vote => vote.toString() !== userId.toString());
+    });
+
+    await post.save();
+    await post.populate('author', 'username displayName profilePhoto isVerified pronouns');
+
+    const sanitizedPost = sanitizePostForPrivateLikes(post, userId);
+    res.json(sanitizedPost);
+  } catch (error) {
+    logger.error('Poll remove vote error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });

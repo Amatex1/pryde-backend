@@ -205,6 +205,12 @@ const postSchema = new mongoose.Schema({
     showResultsBeforeVoting: {
       type: Boolean,
       default: false
+    },
+    // Who can see poll results: 'public' (everyone) or 'author' (poster only)
+    resultsVisibility: {
+      type: String,
+      enum: ['public', 'author'],
+      default: 'public'
     }
   }
 });
