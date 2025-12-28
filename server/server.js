@@ -72,6 +72,7 @@ import badgesRoutes from './routes/badges.js'; // Badge system (added 2025-12-28
 import auth from './middleware/auth.js';
 import requireActiveUser from './middleware/requireActiveUser.js';
 import { setCsrfToken, enforceCsrf } from './middleware/csrf.js';
+import { requestId, requestTimeout, apiSecurityHeaders, safeJsonResponse } from './middleware/hardening.js';
 
 // Import global error handler (Phase 2 - Backend Failure Safety)
 import { globalErrorHandler, sendError, HttpStatus } from './utils/errorHandler.js';
@@ -200,14 +201,24 @@ const corsOptions = {
     'X-Frontend-Version',  // Version pinning for auto-refresh detection
     'X-Session-Id',        // Session tracking
     'X-Mutation-Id',       // Mutation tracking for consistency
+    'X-Request-Id',        // Request tracing
     'Cache-Control'        // Allow cache-control header
   ],
-  exposedHeaders: ['Authorization', 'X-CSRF-Token', 'X-Mutation-Id'], // Expose headers for cross-origin requests
+  exposedHeaders: ['Authorization', 'X-CSRF-Token', 'X-Mutation-Id', 'X-Request-Id'], // Expose headers for cross-origin requests
   optionsSuccessStatus: 200
 };
 
 // Trust proxy - required for Render and rate limiting
 app.set('trust proxy', 1);
+
+// ============================================================================
+// HARDENING MIDDLEWARE (Phase 2 - Backend Failure Safety)
+// Must be early in the chain for request tracing
+// ============================================================================
+app.use(requestId);           // Add unique request ID to every request
+app.use(requestTimeout(30000)); // 30 second timeout for all requests
+app.use(apiSecurityHeaders);  // Add security headers for API responses
+app.use(safeJsonResponse);    // Ensure safe JSON responses (no stack traces)
 
 // HTTPS enforcement in production
 if (config.nodeEnv === 'production') {
