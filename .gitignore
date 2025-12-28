@@ -1,4 +1,4 @@
-﻿# Dependencies
+# Dependencies
 node_modules/
 server/node_modules/
 
@@ -59,7 +59,6 @@ cloudflare-*.js
 cloudflare-*.py
 
 # Frontend files (not needed in backend repo)
-/src/
 /public/
 /scripts/
 vite.config.js
