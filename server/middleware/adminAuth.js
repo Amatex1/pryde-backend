@@ -70,7 +70,7 @@ const checkPermission = (permission) => {
   return async (req, res, next) => {
     try {
       const user = req.adminUser;
-      
+
       if (!user) {
         return res.status(401).json({ message: 'Not authenticated' });
       }
@@ -80,8 +80,15 @@ const checkPermission = (permission) => {
         return next();
       }
 
+      // Admins also have all permissions (like super_admin)
+      if (user.role === 'admin') {
+        return next();
+      }
+
       // Check if user has the specific permission
-      if (!user.permissions[permission]) {
+      // Safely access permissions object (may be undefined for older users)
+      const hasPermission = user.permissions && user.permissions[permission];
+      if (!hasPermission) {
         return res.status(403).json({ message: `Access denied. ${permission} permission required.` });
       }
 
