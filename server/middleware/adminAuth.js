@@ -14,22 +14,21 @@ const DEFAULT_ADMIN_ROLES = ['moderator', 'admin', 'super_admin'];
  * @param {string[]} [allowedRoles] - Array of allowed roles (defaults to all admin roles)
  * @returns {Function} Express middleware function
  */
-const adminAuth = (allowedRoles) => {
+// Using regular function (not arrow) to access `arguments` object for legacy support
+function adminAuth(allowedRoles, res, next) {
   // Handle both factory call adminAuth(['roles']) and direct use as middleware adminAuth
   // If called with (req, res, next), it's being used directly as middleware
   if (allowedRoles && typeof allowedRoles === 'object' && allowedRoles.headers) {
     // Being used directly as middleware: adminAuth (not adminAuth())
     // allowedRoles is actually 'req', use default roles
     const req = allowedRoles;
-    const res = arguments[1];
-    const next = arguments[2];
     return adminAuthMiddleware(DEFAULT_ADMIN_ROLES)(req, res, next);
   }
 
   // Factory mode: return middleware with specified roles
   const roles = Array.isArray(allowedRoles) ? allowedRoles : DEFAULT_ADMIN_ROLES;
   return adminAuthMiddleware(roles);
-};
+}
 
 /**
  * Internal middleware creator
