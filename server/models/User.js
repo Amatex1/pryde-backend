@@ -229,6 +229,15 @@ const userSchema = new mongoose.Schema({
     canViewAnalytics: { type: Boolean, default: false },
     canManageAdmins: { type: Boolean, default: false }
   },
+  // Badges: Non-hierarchical recognition system (added 2025-12-28)
+  // Stores badge IDs that reference the Badge model
+  badges: {
+    type: [{
+      type: String,
+      ref: 'Badge'
+    }],
+    default: []
+  },
   // REMOVED 2025-12-26: isVerified, verificationRequested, verificationRequestDate, verificationRequestReason (Phase 5)
   // Email verification
   emailVerified: {
