@@ -1,6 +1,7 @@
 import express from 'express';
 const router = express.Router();
 import User from '../models/User.js';
+import Badge from '../models/Badge.js';
 import Post from '../models/Post.js';
 import Message from '../models/Message.js';
 import FriendRequest from '../models/FriendRequest.js';
@@ -14,6 +15,29 @@ import mongoose from 'mongoose';
 import { getUserStabilityReport } from '../utils/stabilityScore.js';
 import { processUserBadgesById } from '../services/autoBadgeService.js';
 import logger from '../utils/logger.js';
+
+/**
+ * Helper to resolve badge IDs to full badge objects
+ * @param {string[]} badgeIds - Array of badge IDs
+ * @returns {Promise<Object[]>} Array of badge objects with id, label, icon, tooltip, etc.
+ */
+async function resolveBadges(badgeIds) {
+  if (!badgeIds || !Array.isArray(badgeIds) || badgeIds.length === 0) {
+    return [];
+  }
+
+  try {
+    const badges = await Badge.find({ id: { $in: badgeIds }, isActive: true })
+      .select('id label icon tooltip type priority color')
+      .lean();
+
+    // Sort by priority (lower = higher priority)
+    return badges.sort((a, b) => (a.priority || 100) - (b.priority || 100));
+  } catch (error) {
+    logger.error('Failed to resolve badges:', error);
+    return [];
+  }
+}
 
 // PHASE 1 REFACTOR: Helper function to sanitize user data for private follower counts
 // Keeps counts but removes detailed arrays, only shows if current user follows them
@@ -479,6 +503,17 @@ router.get('/:identifier', auth, checkProfileVisibility, async (req, res) => {
 
     // PHASE 1 REFACTOR: Sanitize user to hide follower/following counts
     const sanitizedUser = sanitizeUserForPrivateFollowers(user, currentUserId);
+
+    // BADGE SYSTEM: Resolve badge IDs to full badge objects
+    if (sanitizedUser.badges && sanitizedUser.badges.length > 0) {
+      // Check if user has hideBadges enabled in privacy settings
+      const hideBadges = user.privacySettings?.hideBadges;
+      if (hideBadges) {
+        sanitizedUser.badges = [];
+      } else {
+        sanitizedUser.badges = await resolveBadges(sanitizedUser.badges);
+      }
+    }
 
     // Check if this user has blocked the current user (for messaging availability)
     const { hasBlocked } = await import('../utils/blockHelper.js');

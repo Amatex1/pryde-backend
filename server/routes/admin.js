@@ -1,6 +1,7 @@
 import express from 'express';
 const router = express.Router();
 import User from '../models/User.js';
+import Badge from '../models/Badge.js';
 import Report from '../models/Report.js';
 import Block from '../models/Block.js';
 import Post from '../models/Post.js';
@@ -11,6 +12,29 @@ import adminAuth, { checkPermission } from '../middleware/adminAuth.js';
 import crypto from 'crypto';
 import { sendPasswordResetEmail, sendPasswordChangedEmail } from '../utils/emailService.js';
 import config from '../config/config.js';
+import logger from '../utils/logger.js';
+
+/**
+ * Helper to resolve badge IDs to full badge objects for admin user listing
+ * @param {string[]} badgeIds - Array of badge IDs
+ * @returns {Promise<Object[]>} Array of badge objects
+ */
+async function resolveBadges(badgeIds) {
+  if (!badgeIds || !Array.isArray(badgeIds) || badgeIds.length === 0) {
+    return [];
+  }
+
+  try {
+    const badges = await Badge.find({ id: { $in: badgeIds } })
+      .select('id label icon tooltip type priority color')
+      .lean();
+
+    return badges.sort((a, b) => (a.priority || 100) - (b.priority || 100));
+  } catch (error) {
+    logger.error('Failed to resolve badges:', error);
+    return [];
+  }
+}
 
 // All admin routes require authentication + admin role
 router.use(auth);
@@ -171,12 +195,23 @@ router.get('/users', checkPermission('canManageUsers'), async (req, res) => {
     // Get all users without pagination
     const users = await User.find(query)
       .select('-password')
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .lean();
 
     const total = users.length;
 
+    // BADGE SYSTEM: Resolve badge IDs to full badge objects for each user
+    const usersWithBadges = await Promise.all(
+      users.map(async (user) => {
+        if (user.badges && user.badges.length > 0) {
+          user.badges = await resolveBadges(user.badges);
+        }
+        return user;
+      })
+    );
+
     res.json({
-      users,
+      users: usersWithBadges,
       pagination: {
         page: 1,
         limit: total,

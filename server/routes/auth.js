@@ -3,6 +3,7 @@ const router = express.Router();
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import User from '../models/User.js';
+import Badge from '../models/Badge.js';
 import SecurityLog from '../models/SecurityLog.js';
 import Invite from '../models/Invite.js'; // Phase 7B: Invite-only growth
 import auth from '../middleware/auth.js';
@@ -1212,7 +1213,27 @@ router.get('/me', auth, async (req, res) => {
   try {
     const user = await User.findById(req.userId)
       .select('-password')
-      .populate('friends', 'username displayName profilePhoto');
+      .populate('friends', 'username displayName profilePhoto')
+      .lean();
+
+    // BADGE SYSTEM: Resolve badge IDs to full badge objects
+    if (user && user.badges && user.badges.length > 0) {
+      // Check if user has hideBadges enabled
+      const hideBadges = user.privacySettings?.hideBadges;
+      if (hideBadges) {
+        user.badges = [];
+      } else {
+        try {
+          const badges = await Badge.find({ id: { $in: user.badges }, isActive: true })
+            .select('id label icon tooltip type priority color')
+            .lean();
+          user.badges = badges.sort((a, b) => (a.priority || 100) - (b.priority || 100));
+        } catch (badgeError) {
+          logger.error('Failed to resolve badges in /me:', badgeError);
+          user.badges = [];
+        }
+      }
+    }
 
     res.json(user);
   } catch (error) {
