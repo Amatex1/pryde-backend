@@ -304,7 +304,7 @@ router.post('/', auth, requireActiveUser, postLimiter, sanitizeFields(['content'
     await verifyWrite(Post, post._id, mutation, { author: userId });
 
     await post.populate('author', 'username displayName profilePhoto isVerified pronouns');
-    await post.populate('tags', 'slug label icon'); // PHASE 4: Populate tags
+    // REMOVED 2025-12-28: tags populate deleted (Phase 5 - tags removed from Post schema)
 
     // ✅ Emit real-time event for new post
     if (req.io) {

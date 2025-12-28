@@ -451,15 +451,8 @@ router.get('/posts', checkPermission('canViewAnalytics'), async (req, res) => {
         .populate('author', 'username displayName profilePhoto isVerified pronouns')
         .populate('comments.user', 'username displayName profilePhoto isVerified pronouns')
         .populate('reactions.user', 'username displayName profilePhoto')
-        .populate('comments.reactions.user', 'username displayName profilePhoto')
-        .populate('tags', 'slug label icon')
-        .populate({
-          path: 'originalPost',
-          populate: [
-            { path: 'author', select: 'username displayName profilePhoto' },
-            { path: 'reactions.user', select: 'username displayName profilePhoto' }
-          ]
-        });
+        .populate('comments.reactions.user', 'username displayName profilePhoto');
+        // REMOVED 2025-12-28: tags and originalPost populates deleted (Phase 5)
 
       if (!post) {
         return res.status(404).json({ message: 'Post not found' });
@@ -474,14 +467,7 @@ router.get('/posts', checkPermission('canViewAnalytics'), async (req, res) => {
       .populate('comments.user', 'username displayName profilePhoto isVerified pronouns')
       .populate('reactions.user', 'username displayName profilePhoto')
       .populate('comments.reactions.user', 'username displayName profilePhoto')
-      .populate('tags', 'slug label icon')
-      .populate({
-        path: 'originalPost',
-        populate: [
-          { path: 'author', select: 'username displayName profilePhoto' },
-          { path: 'reactions.user', select: 'username displayName profilePhoto' }
-        ]
-      })
+      // REMOVED 2025-12-28: tags and originalPost populates deleted (Phase 5)
       .sort({ createdAt: -1 })
       .limit(parseInt(limit))
       .skip((parseInt(page) - 1) * parseInt(limit));

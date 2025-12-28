@@ -119,7 +119,7 @@ router.get('/verify/:entity/:id', devOnlyGuard, auth, async (req, res) => {
     let populatedDoc = await Model.findById(id);
     if (entity === 'post') {
       await populatedDoc.populate('author', 'username displayName profilePhoto isVerified pronouns');
-      await populatedDoc.populate('tags', 'slug label icon');
+      // REMOVED 2025-12-28: tags populate deleted (Phase 5 - tags removed from Post schema)
     }
 
     // Frontend shape
