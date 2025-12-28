@@ -23,6 +23,17 @@ const connectDB = async () => {
     // PHASE 4: Initialize core tags after DB connection
     const { initializeTags } = await import('./routes/tags.js');
     await initializeTags();
+
+    // Seed badges on startup (idempotent - skips existing)
+    try {
+      const { seedAutomaticBadges } = await import('./services/autoBadgeService.js');
+      const badgeResult = await seedAutomaticBadges();
+      if (badgeResult.created > 0) {
+        console.log(`🏅 Badges seeded: ${badgeResult.created} created, ${badgeResult.existing} existing`);
+      }
+    } catch (badgeError) {
+      console.warn("⚠️ Badge seeding skipped:", badgeError.message);
+    }
   } catch (error) {
     console.error("❌ MongoDB connection error:", error);
     process.exit(1);
