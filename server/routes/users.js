@@ -641,11 +641,17 @@ router.put('/photo-position', auth, requireActiveUser, async (req, res) => {
 });
 
 // @route   PATCH /api/users/me/settings
-// @desc    Update user settings (PHASE 2: Quiet Mode)
+// @desc    Update user settings (PHASE 2: Quiet Mode, V2 sub-toggles)
 // @access  Private
 router.patch('/me/settings', auth, requireActiveUser, async (req, res) => {
   try {
-    const { quietModeEnabled } = req.body;
+    const {
+      quietModeEnabled,
+      // Quiet Mode V2 sub-toggles
+      quietVisuals,
+      quietWriting,
+      quietMetrics
+    } = req.body;
     const user = await User.findById(req.userId);
 
     if (!user) {
@@ -657,17 +663,31 @@ router.patch('/me/settings', auth, requireActiveUser, async (req, res) => {
       user.privacySettings = {};
     }
 
-    // Update quiet mode setting
+    // Update quiet mode main toggle
     if (typeof quietModeEnabled === 'boolean') {
       user.privacySettings.quietModeEnabled = quietModeEnabled;
-      user.markModified('privacySettings');
     }
 
+    // Quiet Mode V2: Update sub-toggles
+    if (typeof quietVisuals === 'boolean') {
+      user.privacySettings.quietVisuals = quietVisuals;
+    }
+    if (typeof quietWriting === 'boolean') {
+      user.privacySettings.quietWriting = quietWriting;
+    }
+    if (typeof quietMetrics === 'boolean') {
+      user.privacySettings.quietMetrics = quietMetrics;
+    }
+
+    user.markModified('privacySettings');
     await user.save();
 
     res.json({
       message: 'Settings updated successfully',
-      quietModeEnabled: user.privacySettings.quietModeEnabled
+      quietModeEnabled: user.privacySettings.quietModeEnabled,
+      quietVisuals: user.privacySettings.quietVisuals ?? true,
+      quietWriting: user.privacySettings.quietWriting ?? true,
+      quietMetrics: user.privacySettings.quietMetrics ?? false
     });
   } catch (error) {
     console.error('Update settings error:', error);

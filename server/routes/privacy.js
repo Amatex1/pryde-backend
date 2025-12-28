@@ -40,9 +40,13 @@ router.patch('/settings', auth, async (req, res) => {
 
     // Allowed fields for update
     const allowedFields = [
-      'profileVisibility', 
-      'whoCanMessage', 
-      'quietModeEnabled'
+      'profileVisibility',
+      'whoCanMessage',
+      'quietModeEnabled',
+      // Quiet Mode V2 sub-toggles
+      'quietVisuals',
+      'quietWriting',
+      'quietMetrics'
     ];
 
     // Update only allowed fields
@@ -55,6 +59,7 @@ router.patch('/settings', auth, async (req, res) => {
       }
     });
 
+    user.markModified('privacySettings');
     await user.save();
 
     res.json({
@@ -62,7 +67,10 @@ router.patch('/settings', auth, async (req, res) => {
       settings: {
         profileVisibility: user.privacySettings?.profileVisibility,
         whoCanMessage: user.privacySettings?.whoCanMessage,
-        quietModeEnabled: user.privacySettings?.quietModeEnabled
+        quietModeEnabled: user.privacySettings?.quietModeEnabled,
+        quietVisuals: user.privacySettings?.quietVisuals ?? true,
+        quietWriting: user.privacySettings?.quietWriting ?? true,
+        quietMetrics: user.privacySettings?.quietMetrics ?? false
       }
     });
   } catch (error) {

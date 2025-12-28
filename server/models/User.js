@@ -593,6 +593,22 @@ const userSchema = new mongoose.Schema({
       type: Boolean,
       default: false
     },
+    // QUIET MODE V2: Sub-toggles for granular control
+    // Calm visuals: Reduces motion, visual noise, and urgency
+    quietVisuals: {
+      type: Boolean,
+      default: true // Enabled by default when quiet mode is on
+    },
+    // Writing focus: Distraction-free space for journaling and posts
+    quietWriting: {
+      type: Boolean,
+      default: true // Enabled by default when quiet mode is on
+    },
+    // Hide engagement metrics: Hide likes and counts to reduce comparison
+    quietMetrics: {
+      type: Boolean,
+      default: false // Opt-in, not on by default
+    },
     // Automatic Quiet Hours (21:00-06:00 local time)
     autoQuietHoursEnabled: {
       type: Boolean,
