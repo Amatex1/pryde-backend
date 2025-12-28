@@ -18,13 +18,18 @@ const inviteValidationLimiter = rateLimit({
   legacyHeaders: false
 });
 
-// Rate limiter for invite creation
+// Rate limiter for invite creation (skipped for admins/super_admins)
 const inviteCreationLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
   max: 3, // 3 attempts per hour
   message: { error: 'Too many invite creation attempts. Please try again later.' },
   standardHeaders: true,
-  legacyHeaders: false
+  legacyHeaders: false,
+  skip: (req) => {
+    // Admins and super_admins have no rate limit on invite creation
+    const userRole = req.user?.role;
+    return ['admin', 'super_admin'].includes(userRole);
+  }
 });
 
 /**
@@ -138,37 +143,42 @@ router.post('/create', authenticateToken, inviteCreationLimiter, async (req, res
     
     // Check eligibility
     if (!canCreateInvite(user)) {
-      return res.status(403).json({ 
-        error: 'You do not have permission to create invites.' 
+      return res.status(403).json({
+        error: 'You do not have permission to create invites.'
       });
     }
-    
-    // Check cooldown (when was last invite created?)
-    const lastInvite = await Invite.findOne({ createdBy: user._id })
-      .sort({ createdAt: -1 });
-    
-    if (lastInvite) {
-      const cooldownEnd = new Date(lastInvite.createdAt.getTime() + config.platform.inviteCooldownMs);
-      if (new Date() < cooldownEnd) {
-        const remainingMs = cooldownEnd - new Date();
-        const remainingDays = Math.ceil(remainingMs / (1000 * 60 * 60 * 24));
-        return res.status(429).json({
-          error: `Please wait ${remainingDays} day(s) before creating another invite.`,
-          cooldownEndsAt: cooldownEnd
+
+    // Admins and super_admins have no restrictions on invite generation
+    const isUnlimited = ['admin', 'super_admin'].includes(user.role);
+
+    if (!isUnlimited) {
+      // Check cooldown (when was last invite created?) - only for regular users
+      const lastInvite = await Invite.findOne({ createdBy: user._id })
+        .sort({ createdAt: -1 });
+
+      if (lastInvite) {
+        const cooldownEnd = new Date(lastInvite.createdAt.getTime() + config.platform.inviteCooldownMs);
+        if (new Date() < cooldownEnd) {
+          const remainingMs = cooldownEnd - new Date();
+          const remainingDays = Math.ceil(remainingMs / (1000 * 60 * 60 * 24));
+          return res.status(429).json({
+            error: `Please wait ${remainingDays} day(s) before creating another invite.`,
+            cooldownEndsAt: cooldownEnd
+          });
+        }
+      }
+
+      // Check active invites limit (one at a time) - only for regular users
+      const activeInvites = await Invite.countDocuments({
+        createdBy: user._id,
+        status: 'active'
+      });
+
+      if (activeInvites >= config.platform.maxActiveInvitesPerUser) {
+        return res.status(400).json({
+          error: 'You already have an active invite. Please wait for it to be used or expire.'
         });
       }
-    }
-
-    // Check active invites limit (one at a time)
-    const activeInvites = await Invite.countDocuments({
-      createdBy: user._id,
-      status: 'active'
-    });
-
-    if (activeInvites >= config.platform.maxActiveInvitesPerUser) {
-      return res.status(400).json({
-        error: 'You already have an active invite. Please wait for it to be used or expire.'
-      });
     }
 
     // Generate unique invite code
@@ -282,11 +292,18 @@ router.get('/my-invites', authenticateToken, async (req, res) => {
 
 /**
  * Helper: Check if user can create a new invite (considering cooldown and limits)
+ * Note: Admins and super_admins have no restrictions
  */
 async function canCreateNewInvite(user) {
   if (!canCreateInvite(user)) return { allowed: false, reason: 'not_eligible' };
 
-  // Check active invites
+  // Admins and super_admins have unlimited invite generation
+  const isUnlimited = ['admin', 'super_admin'].includes(user.role);
+  if (isUnlimited) {
+    return { allowed: true };
+  }
+
+  // Check active invites - only for regular users
   const activeInvites = await Invite.countDocuments({
     createdBy: user._id,
     status: 'active'
@@ -296,7 +313,7 @@ async function canCreateNewInvite(user) {
     return { allowed: false, reason: 'active_invite_exists' };
   }
 
-  // Check cooldown
+  // Check cooldown - only for regular users
   const lastInvite = await Invite.findOne({ createdBy: user._id })
     .sort({ createdAt: -1 });
 
