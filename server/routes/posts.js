@@ -1226,6 +1226,50 @@ router.delete('/:id/poll/vote', auth, requireActiveUser, async (req, res) => {
   }
 });
 
+// @route   GET /api/posts/:id/poll/voters
+// @desc    Get list of voters for a poll with user details
+// @access  Private
+router.get('/:id/poll/voters', auth, requireActiveUser, async (req, res) => {
+  try {
+    const post = await Post.findById(req.params.id)
+      .populate('poll.options.votes', 'username displayName profilePhoto');
+
+    if (!post) {
+      return res.status(404).json({ message: 'Post not found' });
+    }
+
+    if (!post.poll || !post.poll.question) {
+      return res.status(400).json({ message: 'This post does not have a poll' });
+    }
+
+    // Check if results are hidden (author-only visibility)
+    if (post.poll.resultsVisibility === 'author' && post.author.toString() !== req.userId.toString()) {
+      return res.status(403).json({ message: 'Poll results are hidden by the author' });
+    }
+
+    // Build voter list grouped by option
+    const votersByOption = post.poll.options.map((option, index) => ({
+      optionIndex: index,
+      optionText: option.text,
+      voters: option.votes.map(voter => ({
+        _id: voter._id,
+        username: voter.username,
+        displayName: voter.displayName,
+        profilePhoto: voter.profilePhoto
+      }))
+    }));
+
+    res.json({
+      question: post.poll.question,
+      totalVotes: post.poll.options.reduce((sum, opt) => sum + opt.votes.length, 0),
+      options: votersByOption
+    });
+  } catch (error) {
+    logger.error('Get poll voters error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // @route   GET /api/posts/:id/edit-history
 // @desc    DEPRECATED - Edit history UI removed 2025-12-26
 // @access  Private
