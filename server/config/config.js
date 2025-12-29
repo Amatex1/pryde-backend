@@ -79,7 +79,8 @@ export default {
   // Platform Mode Configuration (Phase 7B)
   platform: {
     // When true, only users with valid invite codes can register
-    inviteOnlyMode: process.env.INVITE_ONLY_MODE === 'true' || true, // Default: true for safety
+    // When false, invites are optional (just for user-to-user referrals)
+    inviteOnlyMode: process.env.INVITE_ONLY_MODE === 'true', // Default: false (open registration)
     // Cooldown between invite generations (in milliseconds) - 7 days default
     inviteCooldownMs: parseInt(process.env.INVITE_COOLDOWN_MS || '604800000', 10),
     // Default invite expiry (in milliseconds) - 30 days default

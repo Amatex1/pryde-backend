@@ -247,58 +247,68 @@ router.post('/signup', validateAgeBeforeRateLimit, signupLimiter, validateSignup
     } = req.body;
 
     // ═══════════════════════════════════════════════════════════════════════════
-    // PHASE 7B: INVITE-ONLY MODE CHECK (runs before all other validations)
+    // PHASE 7B: INVITE CODE HANDLING
+    // - If inviteOnlyMode is true: invite code is REQUIRED
+    // - If inviteOnlyMode is false: invite code is OPTIONAL (for referral tracking)
     // ═══════════════════════════════════════════════════════════════════════════
 
     let validatedInvite = null;
 
     if (config.platform.inviteOnlyMode) {
-      // Require invite code in invite-only mode
+      // MANDATORY: Require invite code in invite-only mode
       if (!inviteCode) {
         return res.status(403).json({
           error: 'invite_required',
           message: 'Pryde is currently invite-only. You need an invite code to register.'
         });
       }
+    }
 
-      // Validate the invite code
+    // Validate invite code if provided (works in both modes)
+    if (inviteCode) {
       const normalizedCode = inviteCode.toUpperCase().trim();
       const invite = await Invite.findOne({ code: normalizedCode });
 
       if (!invite) {
-        // Log failed attempt
-        await SecurityLog.create({
-          type: 'invite_registration_failed',
-          severity: 'medium',
-          details: `Registration attempted with invalid invite: ${normalizedCode.substring(0, 10)}...`,
-          ipAddress: getClientIp(req),
-          userAgent: req.headers['user-agent'],
-          action: 'blocked'
-        });
+        if (config.platform.inviteOnlyMode) {
+          // Log failed attempt only in invite-only mode
+          await SecurityLog.create({
+            type: 'invite_registration_failed',
+            severity: 'medium',
+            details: `Registration attempted with invalid invite: ${normalizedCode.substring(0, 10)}...`,
+            ipAddress: getClientIp(req),
+            userAgent: req.headers['user-agent'],
+            action: 'blocked'
+          });
 
-        return res.status(403).json({
-          error: 'invalid_invite',
-          message: 'This invite code is not valid.'
-        });
+          return res.status(403).json({
+            error: 'invalid_invite',
+            message: 'This invite code is not valid.'
+          });
+        }
+        // In open registration mode, just ignore invalid invite codes
+      } else {
+        const validation = invite.isValid();
+
+        if (!validation.valid) {
+          if (config.platform.inviteOnlyMode) {
+            const messages = {
+              already_used: 'This invite has already been used.',
+              expired: 'This invite has expired.',
+              revoked: 'This invite is no longer valid.'
+            };
+
+            return res.status(403).json({
+              error: validation.reason,
+              message: messages[validation.reason] || 'This invite is not valid.'
+            });
+          }
+          // In open registration mode, just ignore invalid invite codes
+        } else {
+          // Store for later (we'll mark it used after successful registration)
+          validatedInvite = invite;
+        }
       }
-
-      const validation = invite.isValid();
-
-      if (!validation.valid) {
-        const messages = {
-          already_used: 'This invite has already been used.',
-          expired: 'This invite has expired.',
-          revoked: 'This invite is no longer valid.'
-        };
-
-        return res.status(403).json({
-          error: validation.reason,
-          message: messages[validation.reason] || 'This invite is not valid.'
-        });
-      }
-
-      // Store for later (we'll mark it used after successful registration)
-      validatedInvite = invite;
     }
 
     // ═══════════════════════════════════════════════════════════════════════════

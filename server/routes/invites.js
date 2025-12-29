@@ -34,10 +34,11 @@ const inviteCreationLimiter = rateLimit({
 
 /**
  * Helper: Check if user can create invites
+ * All verified users can now create invites to share with friends
  */
 const canCreateInvite = (user) => {
-  // Only admin and super_admin can create invites
-  return ['admin', 'super_admin'].includes(user.role);
+  // Any active, verified user can create invites
+  return user.status === 'active' && user.isEmailVerified;
 };
 
 /**
@@ -134,8 +135,8 @@ router.post('/validate', inviteValidationLimiter, async (req, res) => {
 
 /**
  * @route   POST /api/invites/create
- * @desc    Create a new invite (admin/super_admin only)
- * @access  Private (Admin)
+ * @desc    Create a new invite link to share with friends
+ * @access  Private (All verified users)
  */
 router.post('/create', authenticateToken, inviteCreationLimiter, async (req, res) => {
   try {

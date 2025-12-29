@@ -3,8 +3,9 @@ import crypto from 'crypto';
 
 /**
  * Invite Model (Phase 7B)
- * 
- * Controls platform growth through deliberate invitations.
+ *
+ * Optional invite system for user-to-user referrals.
+ * When inviteOnlyMode is false, invites are optional but still tracked.
  * Invite codes are non-sequential, cryptographically secure,
  * and cannot be guessed or enumerated.
  */
@@ -16,8 +17,8 @@ const inviteSchema = new mongoose.Schema({
     unique: true,
     index: true
   },
-  
-  // Who created this invite (must be admin/super_admin)
+
+  // Who created this invite (any verified user)
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',

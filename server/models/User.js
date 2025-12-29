@@ -172,6 +172,12 @@ const userSchema = new mongoose.Schema({
     }],
     default: []
   },
+  // Optional: Who invited this user (for referral tracking)
+  invitedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    default: null
+  },
   bookmarkedPosts: {
     type: [{
       type: mongoose.Schema.Types.ObjectId,
