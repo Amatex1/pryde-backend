@@ -21,6 +21,7 @@
     "audit:paths": "node server/scripts/userImpactAudit.js",
     "audit:health": "node server/scripts/codeHealthAudit.js",
     "audit:final": "node server/scripts/prydeAudit.js && node server/scripts/themeLeakAudit.js && node server/scripts/userImpactAudit.js && node server/scripts/codeHealthAudit.js && node server/scripts/generateAuditReport.js",
+    "audit:auth": "node server/scripts/runtimeAuthAudit.js",
     "release:check": "node server/scripts/releaseGuard.js",
     "polish:theme": "node server/scripts/themeLeakFixer.js",
     "polish:theme:dry": "node server/scripts/themeLeakFixer.js --dry-run",
