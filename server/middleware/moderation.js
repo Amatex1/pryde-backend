@@ -68,17 +68,17 @@ export const moderateContent = async (req, res, next) => {
 
     // SAFETY: Ensure moderation object exists (older users may not have it)
     if (!user.moderation) {
-      user.moderation = {
+      user.set('moderation', {
         isMuted: false,
         muteExpires: null,
         muteReason: '',
         violationCount: 0,
         lastViolation: null,
         autoMuteEnabled: true
-      };
+      });
     }
     if (!user.moderationHistory) {
-      user.moderationHistory = [];
+      user.set('moderationHistory', []);
     }
 
     // Check for blocked words
