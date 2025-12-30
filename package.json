@@ -1,7 +1,7 @@
 {
   "name": "pryde-social-client",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.0.0-rc.1",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -23,6 +23,7 @@
     "audit:final": "node server/scripts/prydeAudit.js && node server/scripts/themeLeakAudit.js && node server/scripts/userImpactAudit.js && node server/scripts/codeHealthAudit.js && node server/scripts/generateAuditReport.js",
     "audit:auth": "node server/scripts/runtimeAuthAudit.js",
     "release:check": "node server/scripts/releaseGuard.js",
+    "freeze:check": "node server/scripts/freezeGuard.js",
     "polish:theme": "node server/scripts/themeLeakFixer.js",
     "polish:theme:dry": "node server/scripts/themeLeakFixer.js --dry-run",
     "test:mongo": "node server/scripts/testMongoConnection.js",

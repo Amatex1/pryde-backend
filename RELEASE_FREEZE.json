@@ -1,0 +1,76 @@
+{
+  "$schema": "Release Freeze Configuration",
+  "version": "1.0.0-rc.1",
+  "status": "RELEASE_CANDIDATE",
+  "freezeDate": "2025-12-30",
+  "targetRelease": "2025-01-02",
+  
+  "featureFreeze": {
+    "enabled": true,
+    "allowedChanges": [
+      "bug-fix",
+      "audit-alignment", 
+      "logging-cleanup",
+      "documentation",
+      "test-fixes"
+    ],
+    "blockedChanges": [
+      "new-feature",
+      "new-ui-component",
+      "schema-change",
+      "dependency-upgrade",
+      "api-change"
+    ]
+  },
+
+  "themePolicy": {
+    "enforceNewFilesOnly": true,
+    "massReplace": false,
+    "requiredVariables": [
+      "--bg-main",
+      "--bg-card", 
+      "--text-main",
+      "--text-muted",
+      "--accent",
+      "--border"
+    ],
+    "knownExceptions": [
+      "src/styles/design-system.css",
+      "src/styles/variables.css",
+      "src/components/LoadingSpinner.css"
+    ]
+  },
+
+  "loggingPolicy": {
+    "productionConsole": "silent",
+    "preserveLogsIn": [
+      "server/scripts/*",
+      "server/migrations/*",
+      "server/utils/emergencyRecovery.js"
+    ]
+  },
+
+  "releaseGates": {
+    "required": [
+      "auth-flow",
+      "feed-load",
+      "message-send",
+      "logout-restore",
+      "zero-critical-audit"
+    ],
+    "status": {
+      "auth-flow": "pending",
+      "feed-load": "pending",
+      "message-send": "pending",
+      "logout-restore": "pending",
+      "zero-critical-audit": "pending"
+    }
+  },
+
+  "approval": {
+    "autoDeployEnabled": false,
+    "requiresManualApproval": true,
+    "approvers": ["lead-developer"]
+  }
+}
+

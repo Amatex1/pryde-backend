@@ -26,15 +26,16 @@ const backendPaths = [
   "server/models/Post.js",
 ];
 
-// Frontend critical paths
+// Frontend critical paths (aligned with actual structure)
 const frontendPaths = [
   "src/pages/Login.jsx",
   "src/pages/Register.jsx",
   "src/pages/Profile.jsx",
   "src/pages/Feed.jsx",
   "src/pages/Messages.jsx",
-  "src/api/auth.js",
-  "src/api/posts.js",
+  "src/utils/auth.js",         // Auth utilities
+  "src/utils/apiClient.js",    // API client
+  "src/context/AuthContext.jsx", // Auth state
 ];
 
 let failed = false;

@@ -20,15 +20,19 @@ const flags = [
   { regex: /console\.log\(/g, name: "console.log" },
 ];
 
-// Files/directories to skip
+// Files/directories to skip (console.logs allowed in these)
 const skipList = [
   "node_modules",
   ".git",
   "build",
   "dist",
   ".min.js",
-  "logger.js", // Logger is allowed to have console
-  "devConsole.js",
+  "logger.js",       // Logger is allowed to have console
+  "devConsole.js",   // Console guard itself
+  "/scripts/",       // CLI scripts need console output
+  "/migrations/",    // Migration scripts need logging
+  "emergencyRecovery", // Recovery tools need logging
+  "testMongo",       // Test utilities
 ];
 
 function walkDir(dir, callback) {
