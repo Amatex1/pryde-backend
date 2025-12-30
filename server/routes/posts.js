@@ -1206,8 +1206,11 @@ router.delete('/:id/poll/vote', auth, requireActiveUser, async (req, res) => {
       option.votes.some(vote => vote.toString() === userId.toString())
     );
 
+    // Make DELETE idempotent - if already no vote, just return success
     if (!hasVoted) {
-      return res.status(400).json({ message: 'You have not voted on this poll' });
+      await post.populate('author', 'username displayName profilePhoto isVerified pronouns');
+      const sanitizedPost = sanitizePostForPrivateLikes(post, userId);
+      return res.json(sanitizedPost);
     }
 
     // Remove user's vote from all options
