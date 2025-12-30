@@ -149,32 +149,22 @@ const saveToGridFS = async (file, generateSizes = false) => {
               return variantFilename;
             };
 
-            // Save avatar size (only for profile photos)
-            if (sizes.avatar) {
-              sizeIds.avatar = {
-                webp: await saveSizeVariant(sizes.avatar.webp, 'avatar', 'webp'),
-                avif: await saveSizeVariant(sizes.avatar.avif, 'avatar', 'avif')
+            // Save small size (thumbnail)
+            if (sizes.small?.webp) {
+              sizeIds.small = {
+                webp: await saveSizeVariant(sizes.small.webp, 'small', 'webp')
               };
             }
 
-            // Save feed size
-            if (sizes.feed) {
-              sizeIds.feed = {
-                webp: await saveSizeVariant(sizes.feed.webp, 'feed', 'webp'),
-                avif: await saveSizeVariant(sizes.feed.avif, 'feed', 'avif')
-              };
-            }
-
-            // Save full size
-            if (sizes.full) {
-              sizeIds.full = {
-                webp: await saveSizeVariant(sizes.full.webp, 'full', 'webp'),
-                avif: await saveSizeVariant(sizes.full.avif, 'full', 'avif')
+            // Save medium size (full view)
+            if (sizes.medium?.webp) {
+              sizeIds.medium = {
+                webp: await saveSizeVariant(sizes.medium.webp, 'medium', 'webp')
               };
             }
 
             result.sizes = sizeIds;
-            console.log('✅ Saved responsive sizes with WebP + AVIF:', Object.keys(sizeIds));
+            console.log('✅ Saved responsive sizes:', Object.keys(sizeIds));
           } catch (sizeError) {
             console.error('❌ Error saving responsive sizes:', sizeError);
             // Continue without sizes
