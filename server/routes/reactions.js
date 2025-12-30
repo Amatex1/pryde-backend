@@ -177,11 +177,8 @@ router.delete('/', auth, requireActiveUser, async (req, res) => {
       userId
     });
 
-    if (result.deletedCount === 0) {
-      return res.status(404).json({ message: 'Reaction not found' });
-    }
-
-    logger.debug('🗑️ Reaction deleted:', { targetType, targetId, userId });
+    // Make DELETE idempotent - don't error if reaction doesn't exist
+    logger.debug('🗑️ Reaction deleted:', { targetType, targetId, userId, deletedCount: result.deletedCount });
 
     // Get updated aggregated reactions
     const reactions = await getAggregatedReactions(targetType, targetId);

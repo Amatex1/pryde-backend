@@ -56,9 +56,12 @@ router.post('/:postId', auth, requireActiveUser, async (req, res) => {
 
     const user = await User.findById(req.userId);
 
-    // Check if already bookmarked
+    // Make POST idempotent - if already bookmarked, return success
     if (user.bookmarkedPosts.includes(postId)) {
-      return res.status(400).json({ message: 'Post already bookmarked' });
+      return res.json({
+        message: 'Post bookmarked successfully',
+        bookmarkedPosts: user.bookmarkedPosts
+      });
     }
 
     // Add to bookmarks
@@ -87,8 +90,12 @@ router.delete('/:postId', auth, requireActiveUser, async (req, res) => {
     // Check if bookmarked (convert ObjectIds to strings for comparison)
     const isBookmarked = user.bookmarkedPosts.some(id => id.toString() === postId);
 
+    // Make DELETE idempotent - if not bookmarked, return success
     if (!isBookmarked) {
-      return res.status(400).json({ message: 'Post not bookmarked' });
+      return res.json({
+        message: 'Bookmark removed successfully',
+        bookmarkedPosts: user.bookmarkedPosts
+      });
     }
 
     // Remove from bookmarks

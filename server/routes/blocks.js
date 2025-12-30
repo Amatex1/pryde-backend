@@ -28,14 +28,17 @@ router.post('/', auth, async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // Check if already blocked
+    // Check if already blocked - make POST idempotent
     const existingBlock = await Block.findOne({
       blocker: userId,
       blocked: blockedUserId
     });
 
     if (existingBlock) {
-      return res.status(400).json({ message: 'User is already blocked' });
+      return res.json({
+        message: 'User blocked successfully',
+        block: existingBlock
+      });
     }
 
     const block = new Block({
@@ -46,9 +49,9 @@ router.post('/', auth, async (req, res) => {
 
     await block.save();
 
-    res.status(201).json({ 
+    res.status(201).json({
       message: 'User blocked successfully',
-      block 
+      block
     });
   } catch (error) {
     console.error('Block user error:', error);

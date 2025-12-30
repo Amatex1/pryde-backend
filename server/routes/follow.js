@@ -25,9 +25,12 @@ router.post('/:userId', auth, requireActiveUser, checkBlocked, async (req, res) 
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // Check if already following
+    // Make POST idempotent - if already following, return success
     if (currentUser.following.includes(targetUserId)) {
-      return res.status(400).json({ message: 'Already following this user' });
+      return res.json({
+        message: 'Now following user',
+        following: currentUser.following
+      });
     }
 
     // Check if account is private
@@ -41,8 +44,13 @@ router.post('/:userId', auth, requireActiveUser, checkBlocked, async (req, res) 
         status: 'pending'
       });
 
+      // Make idempotent - if request exists, return success
       if (followRequest) {
-        return res.status(400).json({ message: 'Follow request already sent' });
+        return res.json({
+          message: 'Follow request sent',
+          requiresApproval: true,
+          followRequest
+        });
       }
 
       // Create follow request

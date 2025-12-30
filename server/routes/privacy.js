@@ -135,10 +135,18 @@ router.post('/block', auth, async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // Check if already blocked
+    // Make POST idempotent - if already blocked, return success
     const alreadyBlocked = await hasBlocked(req.userId, userId);
     if (alreadyBlocked) {
-      return res.status(400).json({ message: 'User is already blocked' });
+      return res.json({
+        message: 'User blocked successfully',
+        blockedUser: {
+          _id: targetUser._id,
+          username: targetUser.username,
+          displayName: targetUser.displayName,
+          profilePhoto: targetUser.profilePhoto
+        }
+      });
     }
 
     // Create block record
@@ -181,11 +189,8 @@ router.delete('/block/:userId', auth, async (req, res) => {
       blocked: userId
     });
 
-    if (!result) {
-      return res.status(404).json({ message: 'Block record not found' });
-    }
-
-    res.json({ 
+    // Make DELETE idempotent - if not blocked, return success anyway
+    res.json({
       message: 'User unblocked successfully',
       unblockedUserId: userId
     });

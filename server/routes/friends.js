@@ -27,13 +27,16 @@ router.post('/request/:userId', auth, friendRequestLimiter, checkFriendRequestPe
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // Check if already friends
+    // Check if already friends - make idempotent
     const sender = await User.findById(senderId);
     if (sender.friends.includes(receiverId)) {
-      return res.status(400).json({ message: 'Already friends' });
+      return res.json({
+        message: 'Already friends',
+        friendRequest: null
+      });
     }
 
-    // Check if request already exists
+    // Check if request already exists - make idempotent
     let friendRequest = await FriendRequest.findOne({
       $or: [
         { sender: senderId, receiver: receiverId },
@@ -43,7 +46,10 @@ router.post('/request/:userId', auth, friendRequestLimiter, checkFriendRequestPe
     });
 
     if (friendRequest) {
-      return res.status(400).json({ message: 'Friend request already exists' });
+      return res.json({
+        message: 'Friend request sent',
+        friendRequest
+      });
     }
 
     // Create friend request

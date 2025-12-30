@@ -438,13 +438,15 @@ router.post('/:id/react', auth, requireActiveUser, async (req, res) => {
       return res.status(404).json({ message: 'Message not found' });
     }
 
-    // Check if user already reacted with this emoji
+    // Check if user already reacted with this emoji - make idempotent
     const existingReaction = message.reactions.find(
       r => r.user.toString() === req.userId && r.emoji === emoji
     );
 
     if (existingReaction) {
-      return res.status(400).json({ message: 'You already reacted with this emoji' });
+      // Already reacted - just return success with current state
+      await message.populate('reactions.user', 'username displayName profilePhoto');
+      return res.json(message);
     }
 
     // Add reaction
