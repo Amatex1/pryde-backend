@@ -404,16 +404,20 @@ router.post('/:slug/cover-photo', authenticateToken, coverPhotoUpload.single('co
 
     // Process image (strip EXIF data for privacy)
     let processedBuffer = req.file.buffer;
+    let processedMimetype = req.file.mimetype;
     if (req.file.mimetype.startsWith('image/')) {
       try {
-        processedBuffer = await stripExifData(req.file.buffer, req.file.mimetype);
+        const result = await stripExifData(req.file.buffer, req.file.mimetype);
+        processedBuffer = result.buffer;
+        processedMimetype = result.mimetype;
       } catch (err) {
         console.error('EXIF stripping failed, using original:', err.message);
       }
     }
 
-    // Generate unique filename
-    const filename = `group-cover-${group._id}-${Date.now()}.${req.file.mimetype.split('/')[1]}`;
+    // Generate unique filename with correct extension based on processed mimetype
+    const extension = processedMimetype.split('/')[1] || 'webp';
+    const filename = `group-cover-${group._id}-${Date.now()}.${extension}`;
 
     // Delete old cover photo from GridFS if exists
     if (group.coverPhoto && gridfsBucket) {
@@ -434,7 +438,7 @@ router.post('/:slug/cover-photo', authenticateToken, coverPhotoUpload.single('co
     }
 
     const uploadStream = gridfsBucket.openUploadStream(filename, {
-      contentType: req.file.mimetype,
+      contentType: processedMimetype,
       metadata: {
         uploadedBy: userId,
         groupId: group._id.toString(),
@@ -452,7 +456,8 @@ router.post('/:slug/cover-photo', authenticateToken, coverPhotoUpload.single('co
 
     uploadStream.on('finish', async () => {
       // Update group with new cover photo URL
-      const coverPhotoUrl = `/api/files/${filename}`;
+      // Use the correct upload route: /api/upload/file/:filename
+      const coverPhotoUrl = `/upload/file/${filename}`;
       group.coverPhoto = coverPhotoUrl;
       await group.save();
 
