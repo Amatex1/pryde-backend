@@ -158,6 +158,7 @@ async function run() {
     process.exit(1);
   } else {
     console.log("✅ Runtime Auth Audit PASSED\n");
+    process.exit(0);
   }
 }
 
