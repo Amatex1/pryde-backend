@@ -175,16 +175,44 @@ groupSchema.methods.isListed = function() {
 // Helper method to check if a user is a member
 groupSchema.methods.isMember = function(userId) {
   const userIdStr = userId.toString();
-  return this.members.some(m => m.toString() === userIdStr) ||
-         this.moderators.some(m => m.toString() === userIdStr) ||
-         this.owner.toString() === userIdStr;
+
+  // Handle both populated and unpopulated arrays
+  const getMemberId = (m) => {
+    if (!m) return null;
+    if (m._id) return m._id.toString();
+    return m.toString();
+  };
+
+  const getOwnerId = () => {
+    if (!this.owner) return null;
+    if (this.owner._id) return this.owner._id.toString();
+    return this.owner.toString();
+  };
+
+  return this.members.some(m => getMemberId(m) === userIdStr) ||
+         this.moderators.some(m => getMemberId(m) === userIdStr) ||
+         getOwnerId() === userIdStr;
 };
 
 // Helper method to check if a user is a moderator or owner
 groupSchema.methods.canModerate = function(userId) {
   const userIdStr = userId.toString();
-  return this.moderators.some(m => m.toString() === userIdStr) ||
-         this.owner.toString() === userIdStr;
+
+  // Handle both populated and unpopulated arrays
+  const getId = (m) => {
+    if (!m) return null;
+    if (m._id) return m._id.toString();
+    return m.toString();
+  };
+
+  const getOwnerId = () => {
+    if (!this.owner) return null;
+    if (this.owner._id) return this.owner._id.toString();
+    return this.owner.toString();
+  };
+
+  return this.moderators.some(m => getId(m) === userIdStr) ||
+         getOwnerId() === userIdStr;
 };
 
 // Phase 5A: Check if user has a pending join request
