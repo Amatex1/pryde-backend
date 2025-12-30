@@ -11,6 +11,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 This is the first release candidate for Pryde Social v1.0.0. Feature freeze is in effect.
 
+### API Semantics Policy
+- **Standardized idempotent behavior for user state-setting actions**: follow/unfollow, block/unblock, bookmark/unbookmark, reactions, poll votes now return success (200/204) when desired end-state already exists
+- **Preserved strict errors for true client faults**: Malformed payloads, missing fields, invalid IDs, permission violations still return 400/403/422
+- **Internal noop logging**: Duplicate/no-op requests logged as structured debug events (e.g., `noop.follow.already_following`) for signal preservation without surfacing to users
+- **DELETE semantics**: All DELETE endpoints are idempotent - deleting non-existent resources returns success
+
 ### Added
 - **Authentication System**: Passkey support, 2FA, session management
 - **Social Features**: Posts, comments, reactions, bookmarks

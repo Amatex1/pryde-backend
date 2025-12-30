@@ -4,6 +4,7 @@ import User from '../models/User.js';
 import Post from '../models/Post.js';
 import auth from '../middleware/auth.js';
 import requireActiveUser from '../middleware/requireActiveUser.js';
+import logger from '../utils/logger.js';
 
 // @route   GET /api/bookmarks
 // @desc    Get all bookmarked posts
@@ -56,8 +57,13 @@ router.post('/:postId', auth, requireActiveUser, async (req, res) => {
 
     const user = await User.findById(req.userId);
 
-    // Make POST idempotent - if already bookmarked, return success
+    // Idempotent: if already bookmarked, return success (no-op)
     if (user.bookmarkedPosts.includes(postId)) {
+      logger.debug('noop.bookmark.already_present', {
+        userId: req.userId,
+        targetId: postId,
+        endpoint: 'POST /bookmarks/:postId'
+      });
       return res.json({
         message: 'Post bookmarked successfully',
         bookmarkedPosts: user.bookmarkedPosts
@@ -90,8 +96,13 @@ router.delete('/:postId', auth, requireActiveUser, async (req, res) => {
     // Check if bookmarked (convert ObjectIds to strings for comparison)
     const isBookmarked = user.bookmarkedPosts.some(id => id.toString() === postId);
 
-    // Make DELETE idempotent - if not bookmarked, return success
+    // Idempotent: if not bookmarked, return success (no-op)
     if (!isBookmarked) {
+      logger.debug('noop.bookmark.not_present', {
+        userId: req.userId,
+        targetId: postId,
+        endpoint: 'DELETE /bookmarks/:postId'
+      });
       return res.json({
         message: 'Bookmark removed successfully',
         bookmarkedPosts: user.bookmarkedPosts

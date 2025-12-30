@@ -1206,8 +1206,13 @@ router.delete('/:id/poll/vote', auth, requireActiveUser, async (req, res) => {
       option.votes.some(vote => vote.toString() === userId.toString())
     );
 
-    // Make DELETE idempotent - if already no vote, just return success
+    // Idempotent: if no vote exists, return success (no-op)
     if (!hasVoted) {
+      logger.debug('noop.poll_vote.not_voted', {
+        userId: userId,
+        targetId: req.params.id,
+        endpoint: 'DELETE /posts/:id/poll/vote'
+      });
       await post.populate('author', 'username displayName profilePhoto isVerified pronouns');
       const sanitizedPost = sanitizePostForPrivateLikes(post, userId);
       return res.json(sanitizedPost);

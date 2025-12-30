@@ -4,6 +4,7 @@ import mongoose from 'mongoose';
 import Block from '../models/Block.js';
 import User from '../models/User.js';
 import auth from '../middleware/auth.js';
+import logger from '../utils/logger.js';
 
 // @route   POST /api/blocks
 // @desc    Block a user
@@ -28,13 +29,18 @@ router.post('/', auth, async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // Check if already blocked - make POST idempotent
+    // Idempotent: if already blocked, return success (no-op)
     const existingBlock = await Block.findOne({
       blocker: userId,
       blocked: blockedUserId
     });
 
     if (existingBlock) {
+      logger.debug('noop.block.already_exists', {
+        userId: userId,
+        targetId: blockedUserId,
+        endpoint: 'POST /blocks'
+      });
       return res.json({
         message: 'User blocked successfully',
         block: existingBlock

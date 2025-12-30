@@ -443,8 +443,14 @@ router.post('/:id/react', auth, requireActiveUser, async (req, res) => {
       r => r.user.toString() === req.userId && r.emoji === emoji
     );
 
+    // Idempotent: if already reacted with this emoji, return success (no-op)
     if (existingReaction) {
-      // Already reacted - just return success with current state
+      logger.debug('noop.message_reaction.already_exists', {
+        userId: req.userId,
+        targetId: req.params.id,
+        emoji: emoji,
+        endpoint: 'POST /messages/:id/react'
+      });
       await message.populate('reactions.user', 'username displayName profilePhoto');
       return res.json(message);
     }

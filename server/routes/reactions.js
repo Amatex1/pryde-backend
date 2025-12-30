@@ -177,8 +177,17 @@ router.delete('/', auth, requireActiveUser, async (req, res) => {
       userId
     });
 
-    // Make DELETE idempotent - don't error if reaction doesn't exist
-    logger.debug('🗑️ Reaction deleted:', { targetType, targetId, userId, deletedCount: result.deletedCount });
+    // Idempotent: if reaction doesn't exist, still return success (no-op)
+    if (result.deletedCount === 0) {
+      logger.debug('noop.reaction.not_found', {
+        userId: userId,
+        targetType: targetType,
+        targetId: targetId,
+        endpoint: 'DELETE /reactions'
+      });
+    } else {
+      logger.debug('reaction.deleted', { targetType, targetId, userId });
+    }
 
     // Get updated aggregated reactions
     const reactions = await getAggregatedReactions(targetType, targetId);

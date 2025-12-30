@@ -5,6 +5,7 @@ import FollowRequest from '../models/FollowRequest.js';
 import auth from '../middleware/auth.js';
 import requireActiveUser from '../middleware/requireActiveUser.js';
 import { checkBlocked } from '../middleware/privacy.js';
+import logger from '../utils/logger.js';
 
 // @route   POST /api/follow/:userId
 // @desc    Follow a user (instant for public accounts, request for private)
@@ -25,8 +26,13 @@ router.post('/:userId', auth, requireActiveUser, checkBlocked, async (req, res) 
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // Make POST idempotent - if already following, return success
+    // Idempotent: if already following, return success (no-op)
     if (currentUser.following.includes(targetUserId)) {
+      logger.debug('noop.follow.already_following', {
+        userId: currentUserId,
+        targetId: targetUserId,
+        endpoint: 'POST /follow/:userId'
+      });
       return res.json({
         message: 'Now following user',
         following: currentUser.following
@@ -44,8 +50,13 @@ router.post('/:userId', auth, requireActiveUser, checkBlocked, async (req, res) 
         status: 'pending'
       });
 
-      // Make idempotent - if request exists, return success
+      // Idempotent: if request exists, return success (no-op)
       if (followRequest) {
+        logger.debug('noop.follow.request_exists', {
+          userId: currentUserId,
+          targetId: targetUserId,
+          endpoint: 'POST /follow/:userId'
+        });
         return res.json({
           message: 'Follow request sent',
           requiresApproval: true,

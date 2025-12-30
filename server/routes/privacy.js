@@ -135,9 +135,14 @@ router.post('/block', auth, async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // Make POST idempotent - if already blocked, return success
+    // Idempotent: if already blocked, return success (no-op)
     const alreadyBlocked = await hasBlocked(req.userId, userId);
     if (alreadyBlocked) {
+      logger.debug('noop.block.already_exists', {
+        userId: req.userId,
+        targetId: userId,
+        endpoint: 'POST /privacy/block'
+      });
       return res.json({
         message: 'User blocked successfully',
         blockedUser: {
@@ -189,7 +194,15 @@ router.delete('/block/:userId', auth, async (req, res) => {
       blocked: userId
     });
 
-    // Make DELETE idempotent - if not blocked, return success anyway
+    // Idempotent: if not blocked, return success anyway (no-op)
+    if (!result) {
+      logger.debug('noop.unblock.not_blocked', {
+        userId: req.userId,
+        targetId: userId,
+        endpoint: 'DELETE /privacy/block/:userId'
+      });
+    }
+
     res.json({
       message: 'User unblocked successfully',
       unblockedUserId: userId

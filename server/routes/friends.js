@@ -8,6 +8,7 @@ import { friendRequestLimiter } from '../middleware/rateLimiter.js';
 import { checkFriendRequestPermission, checkBlocked } from '../middleware/privacy.js';
 import { sendPushNotification } from './pushNotifications.js';
 import { emitNotificationCreated } from '../utils/notificationEmitter.js';
+import logger from '../utils/logger.js';
 
 // @route   POST /api/friends/request/:userId
 // @desc    Send friend request
@@ -27,16 +28,21 @@ router.post('/request/:userId', auth, friendRequestLimiter, checkFriendRequestPe
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // Check if already friends - make idempotent
+    // Idempotent: if already friends, return success (no-op)
     const sender = await User.findById(senderId);
     if (sender.friends.includes(receiverId)) {
+      logger.debug('noop.friend_request.already_friends', {
+        userId: senderId,
+        targetId: receiverId,
+        endpoint: 'POST /friends/request/:userId'
+      });
       return res.json({
         message: 'Already friends',
         friendRequest: null
       });
     }
 
-    // Check if request already exists - make idempotent
+    // Idempotent: if request exists, return success (no-op)
     let friendRequest = await FriendRequest.findOne({
       $or: [
         { sender: senderId, receiver: receiverId },
@@ -46,6 +52,11 @@ router.post('/request/:userId', auth, friendRequestLimiter, checkFriendRequestPe
     });
 
     if (friendRequest) {
+      logger.debug('noop.friend_request.request_exists', {
+        userId: senderId,
+        targetId: receiverId,
+        endpoint: 'POST /friends/request/:userId'
+      });
       return res.json({
         message: 'Friend request sent',
         friendRequest
