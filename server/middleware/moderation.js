@@ -13,6 +13,11 @@ export const checkMuted = async (req, res, next) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
+    // SAFETY: Ensure moderation object exists (older users may not have it)
+    if (!user.moderation) {
+      return next();
+    }
+
     // Check if user is muted
     if (user.moderation.isMuted) {
       // Check if mute has expired
@@ -59,6 +64,21 @@ export const moderateContent = async (req, res, next) => {
 
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
+    }
+
+    // SAFETY: Ensure moderation object exists (older users may not have it)
+    if (!user.moderation) {
+      user.moderation = {
+        isMuted: false,
+        muteExpires: null,
+        muteReason: '',
+        violationCount: 0,
+        lastViolation: null,
+        autoMuteEnabled: true
+      };
+    }
+    if (!user.moderationHistory) {
+      user.moderationHistory = [];
     }
 
     // Check for blocked words
