@@ -207,9 +207,10 @@ const postSchema = new mongoose.Schema({
       default: false
     },
     // Who can see poll results: 'public' (everyone) or 'author' (poster only)
+    // Note: null is allowed for backward compatibility with existing posts that have poll: null
     resultsVisibility: {
       type: String,
-      enum: ['public', 'author'],
+      enum: ['public', 'author', null],
       default: 'public'
     }
   }
