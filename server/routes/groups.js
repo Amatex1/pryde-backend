@@ -129,7 +129,9 @@ router.get('/', authenticateToken, async (req, res) => {
       const isModerator = group.moderators?.some(m =>
         (m._id?.toString() || m.toString()) === userIdStr
       );
-      const isMember = group.isMember(userId);
+      // CRITICAL FIX: Owner/moderator should ALWAYS be considered a member
+      const isMemberFromMethod = group.isMember(userId);
+      const isMember = isMemberFromMethod || isOwner || isModerator;
       const hasPendingRequest = group.hasPendingRequest(userId);
 
       // Determine user's role
@@ -418,7 +420,11 @@ router.get('/:slug', authenticateToken, async (req, res) => {
     const isModerator = group.moderators?.some(m =>
       (m._id?.toString() || m.toString()) === userIdStr
     );
-    const isMember = group.isMember(userId);
+
+    // Check membership - owners and moderators are always considered members
+    const isMemberFromMethod = group.isMember(userId);
+    // CRITICAL FIX: Owner/moderator should ALWAYS be considered a member
+    const isMember = isMemberFromMethod || isOwner || isModerator;
     const hasPendingRequest = group.hasPendingRequest(userId);
 
     // Accurate member count (owner counted separately, not in members array)
