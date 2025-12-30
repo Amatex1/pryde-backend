@@ -562,6 +562,7 @@ router.post('/:slug/join', authenticateToken, async (req, res) => {
       const memberCount = group.members.length + group.moderators.length + 1;
       return res.json({
         success: true,
+        status: 'pending', // For frontend compatibility
         message: 'Request sent! You\'ll be notified when approved.',
         isMember: false,
         isOwner: false,
