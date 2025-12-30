@@ -13,7 +13,7 @@
  *        AUDIT_BASE_URL=https://api.example.com npm run audit:auth
  */
 
-const BASE = process.env.AUDIT_BASE_URL || "http://localhost:3001";
+const BASE = process.env.AUDIT_BASE_URL || "http://localhost:9000";
 
 console.log("\n🔐 Runtime Auth & API Audit");
 console.log(`   Target: ${BASE}\n`);
@@ -60,22 +60,25 @@ async function run() {
     process.exit(1);
   }
 
-  // 1. Check refresh endpoint exists and sets cookie
+  // 1. Check refresh endpoint exists and returns proper response
   console.log("Testing refresh endpoint...");
   try {
-    const refreshRes = await fetchWithCookies(`${BASE}/api/auth/refresh`, {
+    const refreshRes = await fetchWithCookies(`${BASE}/api/refresh`, {
       method: "POST",
       credentials: "include",
     });
 
     const setCookie = refreshRes.headers.get("set-cookie");
 
-    // Note: Without valid session, refresh will fail - that's expected
-    // We're checking the endpoint exists and cookie mechanics work
+    // Without valid session, refresh will return 401 - that's expected
+    // We're checking the endpoint exists and responds correctly
     if (refreshRes.status === 401 || refreshRes.status === 403) {
       console.log("✔ Refresh endpoint exists (returns 401 without session - expected)");
       passed++;
+
+      // Can't check cookie on 401, but that's OK - the cookie config is verified in code
     } else if (setCookie) {
+      // If we got a cookie back, verify it's HttpOnly
       if (!setCookie.toLowerCase().includes("httponly")) {
         console.error("❌ Refresh cookie is not HttpOnly");
         failed++;
@@ -83,9 +86,12 @@ async function run() {
         console.log("✔ Refresh cookie set & HttpOnly");
         passed++;
       }
-    } else {
+    } else if (refreshRes.status < 500) {
       console.log("✔ Refresh endpoint exists");
       passed++;
+    } else {
+      console.error("❌ Refresh endpoint returned server error");
+      failed++;
     }
   } catch (e) {
     console.error("❌ Refresh endpoint error:", e.message);
