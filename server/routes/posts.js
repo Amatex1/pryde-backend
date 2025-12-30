@@ -307,7 +307,7 @@ router.post('/', auth, requireActiveUser, postLimiter, sanitizeFields(['content'
       mutation.addStep('POLL_PREPARED', { optionCount: transformedOptions.length });
     }
 
-    const post = new Post({
+    const postData = {
       author: userId,
       content: content || '',
       images: images || [],
@@ -315,9 +315,15 @@ router.post('/', auth, requireActiveUser, postLimiter, sanitizeFields(['content'
       visibility: visibility || 'public',
       // REMOVED 2025-12-26: hiddenFrom, sharedWith, tags, tagOnly deleted (Phase 5)
       contentWarning: contentWarning || '',
-      hideMetrics: hideMetrics || false,
-      poll: pollData || null
-    });
+      hideMetrics: hideMetrics || false
+    };
+
+    // Only add poll field if there's actual poll data (avoids validation error for null poll)
+    if (pollData) {
+      postData.poll = pollData;
+    }
+
+    const post = new Post(postData);
 
     mutation.addStep('DOCUMENT_CREATED', { postId: post._id.toString() });
 
