@@ -70,17 +70,33 @@ router.post('/', async (req, res) => {
       return res.status(403).json({ message: 'Your account is suspended' });
     }
 
-    // Find the session with this refresh token
-    const sessionIndex = user.activeSessions.findIndex(
+    // Find the session with this refresh token (check current token OR previous token for grace period)
+    let sessionIndex = user.activeSessions.findIndex(
       s => s.sessionId === decoded.sessionId && s.refreshToken === refreshToken
     );
+
+    // 🔥 GRACE PERIOD: If current token doesn't match, check if it matches the previous token
+    // This handles cases where the frontend didn't save the new token after rotation
+    let usingPreviousToken = false;
+    if (sessionIndex === -1) {
+      sessionIndex = user.activeSessions.findIndex(
+        s => s.sessionId === decoded.sessionId &&
+             s.previousRefreshToken === refreshToken &&
+             s.previousTokenExpiry && new Date() < s.previousTokenExpiry
+      );
+      if (sessionIndex !== -1) {
+        usingPreviousToken = true;
+        logger.info(`🔄 Using previous refresh token for user (within grace period)`);
+      }
+    }
 
     if (sessionIndex === -1) {
       // Enhanced debugging for session mismatch
       const sessionById = user.activeSessions.find(s => s.sessionId === decoded.sessionId);
       if (sessionById) {
         logger.warn(`❌ Refresh token mismatch for user ${user.username} - session exists but token differs`);
-        logger.debug(`   Expected token (first 20): ${sessionById.refreshToken?.substring(0, 20)}...`);
+        logger.debug(`   Current token (first 20): ${sessionById.refreshToken?.substring(0, 20)}...`);
+        logger.debug(`   Previous token (first 20): ${sessionById.previousRefreshToken?.substring(0, 20) || 'none'}...`);
         logger.debug(`   Received token (first 20): ${refreshToken?.substring(0, 20)}...`);
       } else {
         logger.warn(`❌ Session ${decoded.sessionId} not found for user ${user.username}`);
@@ -110,11 +126,16 @@ router.post('/', async (req, res) => {
     let newRefreshToken;
     let accessToken;
 
-    if (shouldRotateToken) {
+    if (shouldRotateToken && !usingPreviousToken) {
       // Full rotation - new access token AND new refresh token
       const tokens = generateTokenPair(user._id, decoded.sessionId);
       accessToken = tokens.accessToken;
       newRefreshToken = tokens.refreshToken;
+
+      // 🔥 GRACE PERIOD: Save the old token so it still works for 30 minutes
+      // This handles cases where the frontend fails to save the new token
+      user.activeSessions[sessionIndex].previousRefreshToken = session.refreshToken;
+      user.activeSessions[sessionIndex].previousTokenExpiry = new Date(Date.now() + 30 * 60 * 1000); // 30 min grace
 
       // Update session with new refresh token
       user.activeSessions[sessionIndex].refreshToken = newRefreshToken;
@@ -125,7 +146,7 @@ router.post('/', async (req, res) => {
     } else {
       // Just issue new access token, keep existing refresh token
       accessToken = generateAccessToken(user._id, decoded.sessionId);
-      newRefreshToken = refreshToken; // Keep the same refresh token
+      newRefreshToken = session.refreshToken; // Return the CURRENT token from DB (not the one sent)
 
       logger.debug(`🔑 Issued new access token for user ${user.username} (no rotation, ${hoursSinceRotation.toFixed(1)}h since last)`);
     }

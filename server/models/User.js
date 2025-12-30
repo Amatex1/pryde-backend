@@ -399,6 +399,19 @@ const userSchema = new mongoose.Schema({
         type: Date,
         default: null
       },
+      // Grace period: previous token still valid for 30 mins after rotation
+      previousRefreshToken: {
+        type: String,
+        default: null
+      },
+      previousTokenExpiry: {
+        type: Date,
+        default: null
+      },
+      lastTokenRotation: {
+        type: Date,
+        default: null
+      },
       deviceInfo: {
         type: String,
         default: ''
