@@ -1,7 +1,7 @@
 import express from 'express';
 const router = express.Router();
 import User from '../models/User.js';
-import { verifyRefreshToken, generateTokenPair, getRefreshTokenExpiry } from '../utils/tokenUtils.js';
+import { verifyRefreshToken, generateTokenPair, getRefreshTokenExpiry, generateAccessToken } from '../utils/tokenUtils.js';
 import { getClientIp, parseUserAgent } from '../utils/sessionUtils.js';
 import { getRefreshTokenCookieOptions } from '../utils/cookieUtils.js';
 import logger from '../utils/logger.js';
@@ -76,6 +76,16 @@ router.post('/', async (req, res) => {
     );
 
     if (sessionIndex === -1) {
+      // Enhanced debugging for session mismatch
+      const sessionById = user.activeSessions.find(s => s.sessionId === decoded.sessionId);
+      if (sessionById) {
+        logger.warn(`❌ Refresh token mismatch for user ${user.username} - session exists but token differs`);
+        logger.debug(`   Expected token (first 20): ${sessionById.refreshToken?.substring(0, 20)}...`);
+        logger.debug(`   Received token (first 20): ${refreshToken?.substring(0, 20)}...`);
+      } else {
+        logger.warn(`❌ Session ${decoded.sessionId} not found for user ${user.username}`);
+        logger.debug(`   Active sessions: ${user.activeSessions.length}`);
+      }
       return res.status(401).json({ message: 'Invalid session or refresh token has been revoked' });
     }
 
@@ -89,12 +99,38 @@ router.post('/', async (req, res) => {
       return res.status(401).json({ message: 'Refresh token has expired. Please log in again.' });
     }
 
-    // Generate new token pair (rotate refresh token)
-    const { accessToken, refreshToken: newRefreshToken, sessionId } = generateTokenPair(user._id, decoded.sessionId);
+    // 🔥 STABILITY FIX: Only rotate refresh token every 4 hours
+    // This prevents issues where the frontend doesn't save the new token
+    // (e.g., network issues, race conditions, page refresh during save)
+    const lastRotation = session.lastTokenRotation || session.createdAt || new Date(0);
+    const hoursSinceRotation = (Date.now() - new Date(lastRotation).getTime()) / (1000 * 60 * 60);
+    const shouldRotateToken = hoursSinceRotation >= 4;
 
-    // Update session with new refresh token (rotation)
-    user.activeSessions[sessionIndex].refreshToken = newRefreshToken;
-    user.activeSessions[sessionIndex].refreshTokenExpiry = getRefreshTokenExpiry();
+    // Generate new access token (always) and optionally rotate refresh token
+    let newRefreshToken;
+    let accessToken;
+
+    if (shouldRotateToken) {
+      // Full rotation - new access token AND new refresh token
+      const tokens = generateTokenPair(user._id, decoded.sessionId);
+      accessToken = tokens.accessToken;
+      newRefreshToken = tokens.refreshToken;
+
+      // Update session with new refresh token
+      user.activeSessions[sessionIndex].refreshToken = newRefreshToken;
+      user.activeSessions[sessionIndex].refreshTokenExpiry = getRefreshTokenExpiry();
+      user.activeSessions[sessionIndex].lastTokenRotation = new Date();
+
+      logger.debug(`🔄 Rotated refresh token for user ${user.username} (${hoursSinceRotation.toFixed(1)}h since last rotation)`);
+    } else {
+      // Just issue new access token, keep existing refresh token
+      accessToken = generateAccessToken(user._id, decoded.sessionId);
+      newRefreshToken = refreshToken; // Keep the same refresh token
+
+      logger.debug(`🔑 Issued new access token for user ${user.username} (no rotation, ${hoursSinceRotation.toFixed(1)}h since last)`);
+    }
+
+    // Always update lastActive
     user.activeSessions[sessionIndex].lastActive = new Date();
 
     // Update device info if changed
