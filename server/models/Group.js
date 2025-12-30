@@ -41,6 +41,14 @@ const groupSchema = new mongoose.Schema({
     maxlength: 500
   },
   /**
+   * Cover photo for the group header
+   * Stored as URL to GridFS or external storage
+   */
+  coverPhoto: {
+    type: String,
+    default: null
+  },
+  /**
    * Phase 5A: Discovery visibility
    * - listed: Appears in /groups index (default)
    * - unlisted: Direct link only

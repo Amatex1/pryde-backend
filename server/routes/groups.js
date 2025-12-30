@@ -48,6 +48,8 @@
  */
 
 import express from 'express';
+import multer from 'multer';
+import mongoose from 'mongoose';
 import Group from '../models/Group.js';
 import Post from '../models/Post.js';
 import User from '../models/User.js';
@@ -57,6 +59,31 @@ import { isGroupOwner, isGroupModerator, isGroupMember, canModerateGroup, getGro
 import { processGroupPostNotifications, updateGroupNotificationSettings, getGroupNotificationSettings } from '../services/groupNotificationService.js';
 import logger from '../utils/logger.js';
 import { processUserBadgesById } from '../services/autoBadgeService.js';
+import { stripExifData } from '../middleware/imageProcessing.js';
+import { Readable } from 'stream';
+
+// Multer configuration for cover photo uploads
+const storage = multer.memoryStorage();
+const coverPhotoUpload = multer({
+  storage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit for cover photos
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    if (allowedTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only JPEG, PNG, and WebP images are allowed'), false);
+    }
+  }
+});
+
+// GridFS bucket reference (initialized after connection)
+let gridfsBucket;
+mongoose.connection.once('open', () => {
+  gridfsBucket = new mongoose.mongo.GridFSBucket(mongoose.connection.db, {
+    bucketName: 'uploads'
+  });
+});
 
 const router = express.Router();
 
@@ -148,6 +175,7 @@ router.get('/', authenticateToken, async (req, res) => {
         slug: group.slug,
         name: group.name,
         description: group.description,
+        coverPhoto: group.coverPhoto || null,
         visibility: isListed ? 'listed' : 'unlisted',
         joinMode: group.joinMode || 'approval',
         status: group.status,
@@ -339,13 +367,152 @@ router.patch('/:slug', authenticateToken, async (req, res) => {
         description: group.description,
         visibility: isListed ? 'listed' : 'unlisted',
         joinMode: group.joinMode || 'approval',
-        status: group.status
+        status: group.status,
+        coverPhoto: group.coverPhoto
       }
     });
 
   } catch (error) {
     console.error('Edit group error:', error);
     res.status(500).json({ message: 'Server error' });
+  }
+});
+
+/**
+ * @route   POST /api/groups/:slug/cover-photo
+ * @desc    Upload or update group cover photo (owner only)
+ * @access  Private (owner only)
+ */
+router.post('/:slug/cover-photo', authenticateToken, coverPhotoUpload.single('coverPhoto'), async (req, res) => {
+  try {
+    const { slug } = req.params;
+    const userId = req.user.id || req.user._id;
+
+    if (!req.file) {
+      return res.status(400).json({ message: 'No image file provided' });
+    }
+
+    const group = await Group.findOne({ slug: slug.toLowerCase() });
+    if (!group) {
+      return res.status(404).json({ message: 'Group not found' });
+    }
+
+    // Only owner can update cover photo
+    if (group.owner.toString() !== userId.toString()) {
+      return res.status(403).json({ message: 'Only the group owner can update the cover photo' });
+    }
+
+    // Process image (strip EXIF data for privacy)
+    let processedBuffer = req.file.buffer;
+    if (req.file.mimetype.startsWith('image/')) {
+      try {
+        processedBuffer = await stripExifData(req.file.buffer, req.file.mimetype);
+      } catch (err) {
+        console.error('EXIF stripping failed, using original:', err.message);
+      }
+    }
+
+    // Generate unique filename
+    const filename = `group-cover-${group._id}-${Date.now()}.${req.file.mimetype.split('/')[1]}`;
+
+    // Delete old cover photo from GridFS if exists
+    if (group.coverPhoto && gridfsBucket) {
+      try {
+        const oldFilename = group.coverPhoto.split('/').pop();
+        const files = await gridfsBucket.find({ filename: oldFilename }).toArray();
+        if (files.length > 0) {
+          await gridfsBucket.delete(files[0]._id);
+        }
+      } catch (err) {
+        console.error('Failed to delete old cover photo:', err.message);
+      }
+    }
+
+    // Upload to GridFS
+    if (!gridfsBucket) {
+      return res.status(500).json({ message: 'Storage not available' });
+    }
+
+    const uploadStream = gridfsBucket.openUploadStream(filename, {
+      contentType: req.file.mimetype,
+      metadata: {
+        uploadedBy: userId,
+        groupId: group._id.toString(),
+        type: 'group-cover'
+      }
+    });
+
+    const readableStream = Readable.from(processedBuffer);
+    readableStream.pipe(uploadStream);
+
+    uploadStream.on('error', (error) => {
+      console.error('GridFS upload error:', error);
+      res.status(500).json({ message: 'Failed to upload cover photo' });
+    });
+
+    uploadStream.on('finish', async () => {
+      // Update group with new cover photo URL
+      const coverPhotoUrl = `/api/files/${filename}`;
+      group.coverPhoto = coverPhotoUrl;
+      await group.save();
+
+      res.json({
+        success: true,
+        message: 'Cover photo updated successfully',
+        coverPhoto: coverPhotoUrl
+      });
+    });
+
+  } catch (error) {
+    console.error('Cover photo upload error:', error);
+    res.status(500).json({ message: 'Failed to upload cover photo' });
+  }
+});
+
+/**
+ * @route   DELETE /api/groups/:slug/cover-photo
+ * @desc    Remove group cover photo (owner only)
+ * @access  Private (owner only)
+ */
+router.delete('/:slug/cover-photo', authenticateToken, async (req, res) => {
+  try {
+    const { slug } = req.params;
+    const userId = req.user.id || req.user._id;
+
+    const group = await Group.findOne({ slug: slug.toLowerCase() });
+    if (!group) {
+      return res.status(404).json({ message: 'Group not found' });
+    }
+
+    // Only owner can remove cover photo
+    if (group.owner.toString() !== userId.toString()) {
+      return res.status(403).json({ message: 'Only the group owner can remove the cover photo' });
+    }
+
+    // Delete from GridFS if exists
+    if (group.coverPhoto && gridfsBucket) {
+      try {
+        const filename = group.coverPhoto.split('/').pop();
+        const files = await gridfsBucket.find({ filename }).toArray();
+        if (files.length > 0) {
+          await gridfsBucket.delete(files[0]._id);
+        }
+      } catch (err) {
+        console.error('Failed to delete cover photo from GridFS:', err.message);
+      }
+    }
+
+    group.coverPhoto = null;
+    await group.save();
+
+    res.json({
+      success: true,
+      message: 'Cover photo removed successfully'
+    });
+
+  } catch (error) {
+    console.error('Cover photo delete error:', error);
+    res.status(500).json({ message: 'Failed to remove cover photo' });
   }
 });
 
@@ -445,6 +612,7 @@ router.get('/:slug', authenticateToken, async (req, res) => {
       slug: group.slug,
       name: group.name,
       description: group.description,
+      coverPhoto: group.coverPhoto || null,
       visibility: isListed ? 'listed' : 'unlisted',
       joinMode: group.joinMode || 'approval',
       // Phase 5A: Only show owner name to non-members (no profile link)
