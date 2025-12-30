@@ -49,11 +49,15 @@ router.get('/status', async (req, res) => {
 router.post('/enable', async (req, res) => {
   try {
     const user = await User.findById(req.userId);
-    
+
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
-    
+
+    // SAFETY: Ensure privacySettings exists for older users
+    if (!user.privacySettings) {
+      user.privacySettings = {};
+    }
     user.privacySettings.safeModeEnabled = true;
     await user.save();
     
@@ -76,11 +80,15 @@ router.post('/enable', async (req, res) => {
 router.post('/disable', async (req, res) => {
   try {
     const user = await User.findById(req.userId);
-    
+
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
-    
+
+    // SAFETY: Ensure privacySettings exists for older users
+    if (!user.privacySettings) {
+      user.privacySettings = {};
+    }
     user.privacySettings.safeModeEnabled = false;
     await user.save();
     
@@ -103,11 +111,15 @@ router.post('/disable', async (req, res) => {
 router.put('/toggle', async (req, res) => {
   try {
     const user = await User.findById(req.userId);
-    
+
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
-    
+
+    // SAFETY: Ensure privacySettings exists for older users
+    if (!user.privacySettings) {
+      user.privacySettings = {};
+    }
     const newState = !user.privacySettings.safeModeEnabled;
     user.privacySettings.safeModeEnabled = newState;
     await user.save();

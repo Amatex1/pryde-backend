@@ -76,7 +76,8 @@ const auth = async (req, res, next) => {
     // This allows deactivated users to access /reactivate and /logout
 
     // Check if session still exists (session logout validation)
-    if (decoded.sessionId) {
+    // SAFETY: Older users may not have activeSessions array
+    if (decoded.sessionId && user.activeSessions) {
       const sessionExists = user.activeSessions.some(
         s => s.sessionId === decoded.sessionId
       );

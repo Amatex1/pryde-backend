@@ -259,18 +259,22 @@ router.get('/', auth, async (req, res) => {
       .select('blockedUsers');
 
     // Filter out null values (banned friends) and users who have blocked the current user
-    let friends = currentUser.friends.filter(friend => friend !== null);
+    let friends = (currentUser.friends || []).filter(friend => friend !== null);
 
     // Filter out users who are in the current user's blocked list
+    // SAFETY: blockedUsers may be undefined for older users
+    const blockedUsers = currentUser.blockedUsers || [];
     friends = friends.filter(friend =>
-      !currentUser.blockedUsers.some(blockedId => blockedId.toString() === friend._id.toString())
+      !blockedUsers.some(blockedId => blockedId.toString() === friend._id.toString())
     );
 
     // Filter out users who have blocked the current user
     const friendsWithBlockCheck = await Promise.all(
       friends.map(async (friend) => {
         const friendUser = await User.findById(friend._id).select('blockedUsers');
-        const isBlockedByFriend = friendUser.blockedUsers.some(
+        if (!friendUser) return null;
+        const friendBlockedUsers = friendUser.blockedUsers || [];
+        const isBlockedByFriend = friendBlockedUsers.some(
           blockedId => blockedId.toString() === req.userId
         );
         return isBlockedByFriend ? null : friend;

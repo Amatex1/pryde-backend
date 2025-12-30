@@ -593,18 +593,22 @@ router.put('/profile', auth, requireActiveUser, sanitizeFields([
 
     // Update photo positions (includes x, y, scale)
     if (coverPhotoPosition !== undefined) {
+      // SAFETY: Ensure coverPhotoPosition exists for older users
+      const currentCover = user.coverPhotoPosition || { x: 50, y: 50, scale: 1 };
       user.coverPhotoPosition = {
-        x: coverPhotoPosition.x ?? user.coverPhotoPosition.x ?? 50,
-        y: coverPhotoPosition.y ?? user.coverPhotoPosition.y ?? 50,
-        scale: coverPhotoPosition.scale ?? user.coverPhotoPosition.scale ?? 1
+        x: coverPhotoPosition.x ?? currentCover.x ?? 50,
+        y: coverPhotoPosition.y ?? currentCover.y ?? 50,
+        scale: coverPhotoPosition.scale ?? currentCover.scale ?? 1
       };
       user.markModified('coverPhotoPosition');
     }
     if (profilePhotoPosition !== undefined) {
+      // SAFETY: Ensure profilePhotoPosition exists for older users
+      const currentProfile = user.profilePhotoPosition || { x: 50, y: 50, scale: 1 };
       user.profilePhotoPosition = {
-        x: profilePhotoPosition.x ?? user.profilePhotoPosition.x ?? 50,
-        y: profilePhotoPosition.y ?? user.profilePhotoPosition.y ?? 50,
-        scale: profilePhotoPosition.scale ?? user.profilePhotoPosition.scale ?? 1
+        x: profilePhotoPosition.x ?? currentProfile.x ?? 50,
+        y: profilePhotoPosition.y ?? currentProfile.y ?? 50,
+        scale: profilePhotoPosition.scale ?? currentProfile.scale ?? 1
       };
       user.markModified('profilePhotoPosition');
     }
@@ -659,18 +663,21 @@ router.put('/photo-position', auth, requireActiveUser, async (req, res) => {
     }
 
     // Update position (with optional scale parameter)
+    // SAFETY: Ensure position objects exist for older users
     if (type === 'profile') {
+      const currentScale = user.profilePhotoPosition?.scale ?? 1;
       user.profilePhotoPosition = {
         x,
         y,
-        scale: typeof scale === 'number' ? scale : user.profilePhotoPosition.scale ?? 1
+        scale: typeof scale === 'number' ? scale : currentScale
       };
       user.markModified('profilePhotoPosition');
     } else {
+      const currentScale = user.coverPhotoPosition?.scale ?? 1;
       user.coverPhotoPosition = {
         x,
         y,
-        scale: typeof scale === 'number' ? scale : user.coverPhotoPosition.scale ?? 1
+        scale: typeof scale === 'number' ? scale : currentScale
       };
       user.markModified('coverPhotoPosition');
     }
