@@ -28,6 +28,22 @@ const postSchema = new mongoose.Schema({
     default: null,
     index: true
   },
+
+  /**
+   * Life-Signal Feature 4: Circle-only posting
+   *
+   * circleId links a post to a specific Circle (micro-community).
+   * - null = normal post
+   * - ObjectId = circle post (ONLY visible within that circle)
+   *
+   * Circle posts are intentionally isolated from global feeds.
+   */
+  circleId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Circle',
+    default: null,
+    index: true
+  },
   // REMOVED 2025-12-26: hashtags, tags, tagOnly deleted (Phase 5)
   images: [{
     type: String
@@ -222,6 +238,8 @@ postSchema.index({ createdAt: -1 });
 postSchema.index({ visibility: 1, createdAt: -1 }); // For filtering by visibility
 // Phase 2: Index for group posts - efficient group feed queries
 postSchema.index({ groupId: 1, createdAt: -1 });
+// Life-Signal Feature 4: Index for circle posts
+postSchema.index({ circleId: 1, createdAt: -1 });
 // REMOVED 2025-12-26: hashtags and tags indexes deleted (Phase 5)
 
 // Virtual for comment count from Comment collection

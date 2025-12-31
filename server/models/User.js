@@ -806,6 +806,52 @@ const userSchema = new mongoose.Schema({
       type: Boolean,
       default: true
     }
+  }],
+
+  // ============================================================================
+  // Life-Signal Feature 5: Soft Presence States
+  // Optional, non-performative presence indicators
+  // ============================================================================
+
+  // Current presence state
+  presenceState: {
+    type: String,
+    enum: ['listening', 'low_energy', 'open', 'lurking', null],
+    default: null
+  },
+
+  // Whether presence is visible to others (opt-in)
+  presenceVisible: {
+    type: Boolean,
+    default: false
+  },
+
+  // When presence was last updated (no timestamps shown to others)
+  presenceUpdatedAt: {
+    type: Date,
+    default: null
+  },
+
+  // ============================================================================
+  // Life-Signal Feature 1: Reflection Prompt Preferences
+  // ============================================================================
+
+  // Whether user wants to see reflection prompts
+  reflectionPromptsEnabled: {
+    type: Boolean,
+    default: true
+  },
+
+  // Track dismissed prompts to avoid re-showing
+  dismissedPrompts: [{
+    promptId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'ReflectionPrompt'
+    },
+    dismissedAt: {
+      type: Date,
+      default: Date.now
+    }
   }]
 });
 

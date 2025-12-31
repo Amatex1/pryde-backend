@@ -68,6 +68,13 @@ import invitesRoutes from './routes/invites.js'; // Phase 7B: Invite-only growth
 import profileSlugRoutes from './routes/profileSlug.js'; // Custom profile URLs
 import badgesRoutes from './routes/badges.js'; // Badge system (added 2025-12-28)
 
+// Life-Signal Features (added 2025-12-31)
+import promptsRoutes from './routes/prompts.js'; // Feature 1: Reflection Prompts
+import collectionsRoutes from './routes/collections.js'; // Feature 2: Personal Collections
+import resonanceRoutes from './routes/resonance.js'; // Feature 3: Resonance Signals
+import circlesRoutes from './routes/circles.js'; // Feature 4: Small Circles
+import presenceRoutes from './routes/presence.js'; // Feature 5: Soft Presence States
+
 // Import middleware
 import auth from './middleware/auth.js';
 import requireActiveUser from './middleware/requireActiveUser.js';
@@ -370,6 +377,13 @@ app.use('/api/bug-reports', bugReportsRoutes); // Bug reporting with state snaps
 app.use('/api/invites', invitesRoutes); // Phase 7B: Invite-only growth
 app.use('/api/profile-slug', profileSlugRoutes); // Custom profile URLs
 app.use('/api/badges', badgesRoutes); // Badge system (added 2025-12-28)
+
+// Life-Signal Features (added 2025-12-31)
+app.use('/api/prompts', promptsRoutes); // Feature 1: Reflection Prompts
+app.use('/api/collections', collectionsRoutes); // Feature 2: Personal Collections
+app.use('/api/resonance', resonanceRoutes); // Feature 3: Resonance Signals
+app.use('/api/circles', circlesRoutes); // Feature 4: Small Circles
+app.use('/api/presence', presenceRoutes); // Feature 5: Soft Presence States
 
 // Debug: Log the passkey router before registering
 console.log('🔍 Passkey router type:', typeof passkeyRoutes);

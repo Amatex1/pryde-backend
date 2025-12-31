@@ -19,7 +19,12 @@ const notificationSchema = new mongoose.Schema({
       'like', 'comment', 'share', 'login_approval',
       // PHASE 4B: Group notification types
       'group_post',    // New post in a group you've opted into
-      'group_mention'  // Someone @mentioned you in a group
+      'group_mention', // Someone @mentioned you in a group
+      // Life-Signal Feature 3: Resonance signals
+      'resonance',     // "Someone quietly resonated with something you shared"
+      // Life-Signal Feature 4: Circle notifications
+      'circle_invite', // Invited to join a circle
+      'circle_post'    // New post in a circle (minimal)
     ],
     required: true
   },
@@ -77,6 +82,16 @@ const notificationSchema = new mongoose.Schema({
       country: String
     }
   },
+
+  // Life-Signal Feature 4: Circle reference
+  circleId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Circle'
+  },
+  circleName: {
+    type: String
+  },
+
   createdAt: {
     type: Date,
     default: Date.now
