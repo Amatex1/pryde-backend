@@ -164,6 +164,16 @@ export const enforceCsrf = (req, res, next) => {
     return next();
   }
 
+  // ✅ Skip CSRF for JWT-authenticated requests
+  // JWT tokens provide equivalent CSRF protection because:
+  // 1. They are stored in localStorage/memory, not cookies
+  // 2. They must be explicitly added to request headers
+  // 3. Attackers cannot access them cross-origin
+  // This fixes Samsung Internet browser which has issues with SameSite cookies
+  if (req.headers.authorization?.startsWith('Bearer ')) {
+    return next();
+  }
+
   // Skip CSRF for authentication endpoints (login, register, refresh)
   // These endpoints don't have a CSRF token yet since the user hasn't made any requests
   const authPaths = [
