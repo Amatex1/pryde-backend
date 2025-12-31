@@ -671,7 +671,7 @@ io.on('connection', (socket) => {
   socket.on('global_chat:get_online_users', async () => {
     try {
       // Get current user to check role
-      const user = await User.findById(userId).select('role');
+      const user = await User.findById(userId).select('role').lean();
 
       if (!user) {
         socket.emit('error', { message: 'User not found' });
@@ -691,21 +691,21 @@ io.on('connection', (socket) => {
         return;
       }
 
-      // Get socket IDs from the room
-      const socketIds = Array.from(globalChatRoom);
+      // Get socket IDs from the room - use Set for O(1) lookup
+      const socketIdsSet = new Set(globalChatRoom);
 
-      // Map socket IDs to user IDs
+      // Map socket IDs to user IDs - O(n) instead of O(n*m)
       const onlineUserIds = [];
       for (const [uid, sid] of onlineUsers.entries()) {
-        if (socketIds.includes(sid)) {
+        if (socketIdsSet.has(sid)) {
           onlineUserIds.push(uid);
         }
       }
 
-      // Fetch user details for online users
+      // Fetch user details for online users with lean() for faster queries
       const onlineUsersDetails = await User.find({
         _id: { $in: onlineUserIds }
-      }).select('username displayName profilePhoto avatar role');
+      }).select('username displayName profilePhoto avatar role').lean();
 
       // Format response
       const formattedUsers = onlineUsersDetails.map(u => ({
@@ -717,7 +717,7 @@ io.on('connection', (socket) => {
       }));
 
       socket.emit('global_chat:online_users_list', { users: formattedUsers });
-      console.log(`📡 Sent online users list to ${user.role} ${userId}`);
+      console.log(`📡 Sent online users list to ${user.role} ${userId} (${formattedUsers.length} users)`);
 
     } catch (error) {
       console.error('❌ Error fetching online users:', error);
