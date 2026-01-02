@@ -69,47 +69,36 @@ const SYSTEM_ACCOUNTS = [
   }
 ];
 
-// Initial prompts - calm, open-ended, non-triggering
+// ============================================================================
+// APPROVED PROMPT LIST - These exact prompts are seeded
+// Each prompt is calm, open-ended, and non-pressuring
+// ============================================================================
 const INITIAL_PROMPTS = [
-  // Reflection category
   { text: "What's something that's been quietly on your mind lately?", category: 'reflection' },
-  { text: "When do you feel most like yourself?", category: 'reflection' },
-  { text: "What's a small thing that made you smile recently?", category: 'reflection' },
-  { text: "Is there something you're learning to be gentler with?", category: 'reflection' },
-  { text: "What's something you've been meaning to tell someone?", category: 'reflection' },
-  
-  // Grounding category
-  { text: "What helps you feel grounded when things feel heavy?", category: 'grounding' },
+  { text: "When do you feel most like yourself?", category: 'identity' },
+  { text: "What helps you feel grounded on difficult days?", category: 'grounding' },
   { text: "What does rest look like for you right now?", category: 'grounding' },
-  { text: "What's your favorite way to decompress after a long day?", category: 'grounding' },
-  { text: "What's a place (real or imagined) where you feel safe?", category: 'grounding' },
-  { text: "What sounds help you feel calm?", category: 'grounding' },
-  
-  // Identity category
-  { text: "What part of yourself are you still getting to know?", category: 'identity' },
-  { text: "What's something about yourself you've come to appreciate?", category: 'identity' },
-  { text: "When did you first feel like you belonged somewhere?", category: 'identity' },
-  { text: "What does community mean to you?", category: 'identity' },
-  { text: "What's a small way you express yourself that feels true?", category: 'identity' },
-  
-  // Connection category
-  { text: "Who's someone you'd like to reach out to this week?", category: 'connection' },
-  { text: "What's a quality you admire in the people around you?", category: 'connection' },
-  { text: "What's the kindest thing someone has said to you recently?", category: 'connection' },
-  { text: "How do you like to show people you care about them?", category: 'connection' },
-  { text: "What makes a friendship feel easy to you?", category: 'connection' },
-  
-  // General category
-  { text: "What are you looking forward to, even if it's small?", category: 'general' },
-  { text: "What's something you're proud of that others might not know about?", category: 'general' },
-  { text: "If you could give yourself permission to do one thing, what would it be?", category: 'general' },
-  { text: "What's a comfort object or ritual that helps you?", category: 'general' },
-  { text: "What's something beautiful you noticed today?", category: 'general' },
-  { text: "What season feels most like home to you?", category: 'general' },
-  { text: "What's a song that always makes you feel something?", category: 'general' },
-  { text: "What's a memory that still makes you feel warm?", category: 'general' },
-  { text: "What would you tell your younger self if you could?", category: 'general' },
-  { text: "What's something you're curious about right now?", category: 'general' }
+  { text: "Is there something you're learning to be gentler with?", category: 'reflection' },
+  { text: "What brings you a sense of calm, even briefly?", category: 'grounding' },
+  { text: "What does 'home' mean to you?", category: 'identity' },
+  { text: "What's something you don't say out loud very often?", category: 'reflection' },
+  { text: "When do you feel least pressured to be someone else?", category: 'identity' },
+  { text: "What helps you feel safe being yourself?", category: 'identity' },
+  { text: "What's something you're proud of, quietly?", category: 'reflection' },
+  { text: "What does a good day look like right now?", category: 'general' },
+  { text: "What helps you reset when things feel overwhelming?", category: 'grounding' },
+  { text: "Is there something you wish people understood about you?", category: 'identity' },
+  { text: "What feels steady in your life at the moment?", category: 'grounding' },
+  { text: "What kind of support feels most helpful to you?", category: 'connection' },
+  { text: "What does taking care of yourself mean these days?", category: 'grounding' },
+  { text: "What makes you feel seen without needing to explain?", category: 'connection' },
+  { text: "What helps you slow down?", category: 'grounding' },
+  { text: "What's something you want more of this year?", category: 'general' },
+  { text: "What helps you feel connected?", category: 'connection' },
+  { text: "What feels heavy lately — and what feels light?", category: 'reflection' },
+  { text: "What are you giving yourself permission to do?", category: 'reflection' },
+  { text: "What does 'enough' look like for you right now?", category: 'reflection' },
+  { text: "What helps you feel at ease in your own company?", category: 'identity' }
 ];
 
 /**
@@ -198,30 +187,38 @@ export async function ensureSystemAccount() {
 }
 
 /**
- * Seed initial prompts (skip if already exist)
+ * Seed initial prompts
+ * - If no prompts exist: seeds all approved prompts
+ * - If prompts exist: adds any missing prompts from the approved list
+ *
+ * This ensures the approved prompt list stays in sync without deleting user data
  */
 export async function seedPrompts() {
-  const existingCount = await SystemPrompt.countDocuments();
-  
-  if (existingCount > 0) {
-    console.log(`ℹ️  ${existingCount} prompts already exist, skipping seed`);
-    return { seeded: 0, existing: existingCount };
+  const existingPrompts = await SystemPrompt.find({}).select('text');
+  const existingTexts = new Set(existingPrompts.map(p => p.text));
+
+  // Find prompts that need to be added
+  const promptsToAdd = INITIAL_PROMPTS.filter(p => !existingTexts.has(p.text));
+
+  if (promptsToAdd.length === 0) {
+    console.log(`ℹ️  All ${INITIAL_PROMPTS.length} approved prompts already exist`);
+    return { seeded: 0, existing: existingPrompts.length };
   }
-  
-  console.log('📝 Seeding initial system prompts...');
-  
-  const prompts = INITIAL_PROMPTS.map(p => ({
+
+  console.log(`📝 Seeding ${promptsToAdd.length} new system prompts...`);
+
+  const prompts = promptsToAdd.map(p => ({
     text: p.text,
     category: p.category,
     isActive: true,
     lastPostedAt: null,
     createdBy: null // System-seeded
   }));
-  
+
   await SystemPrompt.insertMany(prompts);
-  console.log(`✅ Seeded ${prompts.length} system prompts`);
-  
-  return { seeded: prompts.length, existing: 0 };
+  console.log(`✅ Seeded ${prompts.length} new system prompts (total: ${existingPrompts.length + prompts.length})`);
+
+  return { seeded: prompts.length, existing: existingPrompts.length };
 }
 
 /**

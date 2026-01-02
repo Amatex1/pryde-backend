@@ -146,19 +146,25 @@ export async function postNextPrompt() {
 
 /**
  * Start the scheduler
- * Runs at 10:00 AM UTC daily (gentle time for most timezones)
+ *
+ * Default: 09:00 server time daily
+ * Configurable via SYSTEM_PROMPT_HOUR env var (0-23)
  */
 export function startScheduler() {
+  // Get configured hour (default: 9 AM)
+  const postHour = parseInt(process.env.SYSTEM_PROMPT_HOUR || '9', 10);
+  const validHour = (postHour >= 0 && postHour <= 23) ? postHour : 9;
+
   console.log('[SystemPrompts] 🕐 Starting scheduler...');
-  console.log('[SystemPrompts] 📅 Posts will run daily at 10:00 AM UTC');
-  
-  // Schedule: 10:00 AM UTC daily
+  console.log(`[SystemPrompts] 📅 Posts will run daily at ${validHour.toString().padStart(2, '0')}:00 server time`);
+
+  // Schedule: specified hour, daily
   // Cron format: minute hour day month weekday
-  cron.schedule('0 10 * * *', async () => {
+  cron.schedule(`0 ${validHour} * * *`, async () => {
     console.log('\n[SystemPrompts] ⏰ Scheduled job triggered');
     await postNextPrompt();
   });
-  
+
   console.log('[SystemPrompts] ✅ Scheduler started');
 }
 
