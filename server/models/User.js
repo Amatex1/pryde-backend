@@ -684,6 +684,17 @@ const userSchema = new mongoose.Schema({
       type: Boolean,
       default: false
     },
+    // CURSOR CUSTOMIZATION: Optional, accessibility-safe cursor styles
+    // system = OS/browser default (no overrides)
+    // soft-rounded = Softer edges for long reading sessions
+    // calm-dot = Small circular cursor for content areas
+    // high-contrast = Larger, high-contrast for accessibility
+    // reduced-motion = System cursor with no hover/transition effects
+    cursorStyle: {
+      type: String,
+      enum: ['system', 'soft-rounded', 'calm-dot', 'high-contrast', 'reduced-motion'],
+      default: 'system'
+    },
     whoCanSeeMyPosts: {
       type: String,
       enum: ['public', 'followers', 'only-me'], // REMOVED: 'friends'

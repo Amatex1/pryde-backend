@@ -575,6 +575,8 @@ router.post('/signup', validateAgeBeforeRateLimit, signupLimiter, validateSignup
         coverPhoto: user.coverPhoto,
         bio: user.bio,
         socialLinks: user.socialLinks,
+        role: user.role, // Include role for consistency with login/me endpoints
+        permissions: user.permissions,
         // Onboarding tour flags (new user = show tour)
         hasCompletedTour: user.hasCompletedTour,
         hasSkippedTour: user.hasSkippedTour,

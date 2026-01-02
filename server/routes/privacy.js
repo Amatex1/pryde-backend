@@ -59,8 +59,16 @@ router.patch('/settings', auth, async (req, res) => {
       'quietWriting',
       'quietMetrics',
       // BADGE SYSTEM V1: Hide badges option
-      'hideBadges'
+      'hideBadges',
+      // CURSOR CUSTOMIZATION: Optional cursor styles
+      'cursorStyle'
     ];
+
+    // Validate cursorStyle if provided
+    const validCursorStyles = ['system', 'soft-rounded', 'calm-dot', 'high-contrast', 'reduced-motion'];
+    if (req.body.cursorStyle && !validCursorStyles.includes(req.body.cursorStyle)) {
+      return res.status(400).json({ message: 'Invalid cursor style' });
+    }
 
     // Update only allowed fields
     allowedFields.forEach(field => {
@@ -84,7 +92,8 @@ router.patch('/settings', auth, async (req, res) => {
         quietVisuals: user.privacySettings?.quietVisuals ?? true,
         quietWriting: user.privacySettings?.quietWriting ?? true,
         quietMetrics: user.privacySettings?.quietMetrics ?? false,
-        hideBadges: user.privacySettings?.hideBadges ?? false
+        hideBadges: user.privacySettings?.hideBadges ?? false,
+        cursorStyle: user.privacySettings?.cursorStyle ?? 'system'
       }
     });
   } catch (error) {

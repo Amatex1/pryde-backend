@@ -695,7 +695,7 @@ router.put('/photo-position', auth, requireActiveUser, async (req, res) => {
 });
 
 // @route   PATCH /api/users/me/settings
-// @desc    Update user settings (PHASE 2: Quiet Mode, V2 sub-toggles, Badge System V1)
+// @desc    Update user settings (PHASE 2: Quiet Mode, V2 sub-toggles, Badge System V1, Cursor Styles)
 // @access  Private
 router.patch('/me/settings', auth, requireActiveUser, async (req, res) => {
   try {
@@ -706,7 +706,9 @@ router.patch('/me/settings', auth, requireActiveUser, async (req, res) => {
       quietWriting,
       quietMetrics,
       // BADGE SYSTEM V1: Hide badges option
-      hideBadges
+      hideBadges,
+      // CURSOR CUSTOMIZATION: Optional cursor styles
+      cursorStyle
     } = req.body;
     const user = await User.findById(req.userId);
 
@@ -740,6 +742,12 @@ router.patch('/me/settings', auth, requireActiveUser, async (req, res) => {
       user.privacySettings.hideBadges = hideBadges;
     }
 
+    // CURSOR CUSTOMIZATION: Update cursor style
+    const validCursorStyles = ['system', 'soft-rounded', 'calm-dot', 'high-contrast', 'reduced-motion'];
+    if (cursorStyle && validCursorStyles.includes(cursorStyle)) {
+      user.privacySettings.cursorStyle = cursorStyle;
+    }
+
     user.markModified('privacySettings');
     await user.save();
 
@@ -749,7 +757,8 @@ router.patch('/me/settings', auth, requireActiveUser, async (req, res) => {
       quietVisuals: user.privacySettings.quietVisuals ?? true,
       quietWriting: user.privacySettings.quietWriting ?? true,
       quietMetrics: user.privacySettings.quietMetrics ?? false,
-      hideBadges: user.privacySettings.hideBadges ?? false
+      hideBadges: user.privacySettings.hideBadges ?? false,
+      cursorStyle: user.privacySettings.cursorStyle ?? 'system'
     });
   } catch (error) {
     console.error('Update settings error:', error);
