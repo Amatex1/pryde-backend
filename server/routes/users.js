@@ -543,6 +543,7 @@ router.put('/profile', auth, requireActiveUser, sanitizeFields([
       pronouns,
       gender,
       sexualOrientation,
+      identity, // LGBTQ+ or Ally - can be updated after registration
       // DEPRECATED 2025-12-26: relationshipStatus is ignored (UI removed)
       // relationshipStatus,
       birthday,
@@ -575,6 +576,13 @@ router.put('/profile', auth, requireActiveUser, sanitizeFields([
     if (pronouns !== undefined) user.pronouns = pronouns;
     if (gender !== undefined) user.gender = gender;
     if (sexualOrientation !== undefined) user.sexualOrientation = sexualOrientation;
+    // Identity can be updated after registration (LGBTQ+ or Ally)
+    if (identity !== undefined) {
+      // Validate identity value
+      if (identity === null || identity === 'LGBTQ+' || identity === 'Ally') {
+        user.identity = identity;
+      }
+    }
     // DEPRECATED 2025-12-26: relationshipStatus update removed (UI removed)
     if (birthday !== undefined) user.birthday = birthday;
     if (bio !== undefined) user.bio = bio;
