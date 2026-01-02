@@ -1582,7 +1582,8 @@ router.post('/logout', auth, async (req, res) => {
 // @access  Private
 router.post('/tour/complete', auth, async (req, res) => {
   try {
-    const user = await User.findById(req.user.userId);
+    // auth middleware sets req.userId (from token) and req.user (full user doc)
+    const user = await User.findById(req.userId);
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
@@ -1614,7 +1615,8 @@ router.post('/tour/complete', auth, async (req, res) => {
 // @access  Private
 router.post('/tour/skip', auth, async (req, res) => {
   try {
-    const user = await User.findById(req.user.userId);
+    // auth middleware sets req.userId (from token) and req.user (full user doc)
+    const user = await User.findById(req.userId);
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
