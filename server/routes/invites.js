@@ -34,11 +34,11 @@ const inviteCreationLimiter = rateLimit({
 
 /**
  * Helper: Check if user can create invites
- * All verified users can now create invites to share with friends
+ * Only admin and super_admin can create invites
  */
 const canCreateInvite = (user) => {
-  // Any active, verified user can create invites
-  return user.status === 'active' && user.isEmailVerified;
+  // Only admin and super_admin can create invites
+  return ['admin', 'super_admin'].includes(user.role);
 };
 
 /**
