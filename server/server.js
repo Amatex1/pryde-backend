@@ -74,6 +74,7 @@ import collectionsRoutes from './routes/collections.js'; // Feature 2: Personal 
 import resonanceRoutes from './routes/resonance.js'; // Feature 3: Resonance Signals
 import circlesRoutes from './routes/circles.js'; // Feature 4: Small Circles
 import presenceRoutes from './routes/presence.js'; // Feature 5: Soft Presence States
+import systemPromptsRoutes from './routes/systemPrompts.js'; // Rotating system prompt posts
 
 // Import middleware
 import auth from './middleware/auth.js';
@@ -384,6 +385,7 @@ app.use('/api/collections', collectionsRoutes); // Feature 2: Personal Collectio
 app.use('/api/resonance', resonanceRoutes); // Feature 3: Resonance Signals
 app.use('/api/circles', circlesRoutes); // Feature 4: Small Circles
 app.use('/api/presence', presenceRoutes); // Feature 5: Soft Presence States
+app.use('/api/system-prompts', systemPromptsRoutes); // Rotating system prompt posts (admin)
 
 // Debug: Log the passkey router before registering
 console.log('🔍 Passkey router type:', typeof passkeyRoutes);
@@ -916,6 +918,39 @@ server.listen(PORT, () => {
         console.log('🧹 Temp media cleanup scheduled (hourly, cleans uploads older than 60 min)');
       })
       .catch(err => console.error('❌ Failed to start temp media cleanup:', err));
+  }
+
+  // ========================================
+  // SYSTEM PROMPT SCHEDULER
+  // ========================================
+  // Posts one rotating prompt per day from pryde_prompts account
+  // Creates a gentle "heartbeat" for the platform
+  //
+  // GUARDS:
+  // - Disabled in test environment
+  // - Seeds system account and prompts on first run
+  // - Idempotent (safe to restart)
+  //
+  if (process.env.NODE_ENV === 'test') {
+    console.log('[SystemPrompts] Disabled in test environment');
+  } else {
+    import('./scripts/seedSystemPrompts.js')
+      .then(({ seedSystemPrompts }) => {
+        // Seed system account and prompts (idempotent)
+        seedSystemPrompts()
+          .then(result => {
+            console.log('[SystemPrompts] ✅ System setup complete:', result);
+          })
+          .catch(err => console.error('[SystemPrompts] ❌ Seed failed:', err));
+      })
+      .catch(err => console.error('[SystemPrompts] ❌ Failed to import seed script:', err));
+
+    import('./scripts/systemPromptScheduler.js')
+      .then(({ startScheduler }) => {
+        startScheduler();
+        console.log('[SystemPrompts] 🕐 Scheduler started (posts daily at 10:00 AM UTC)');
+      })
+      .catch(err => console.error('[SystemPrompts] ❌ Failed to start scheduler:', err));
   }
 });
 

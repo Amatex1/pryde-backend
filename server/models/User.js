@@ -228,6 +228,13 @@ const userSchema = new mongoose.Schema({
     enum: ['user', 'moderator', 'admin', 'super_admin'],
     default: 'user'
   },
+  // System accounts are platform-owned accounts (e.g., pryde_prompts)
+  // They bypass rate limits, can post automatically, and are visually marked
+  isSystemAccount: {
+    type: Boolean,
+    default: false,
+    index: true
+  },
   permissions: {
     canViewReports: { type: Boolean, default: false },
     canResolveReports: { type: Boolean, default: false },

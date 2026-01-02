@@ -169,6 +169,13 @@ const postSchema = new mongoose.Schema({
     type: Date,
     default: null
   },
+  // System posts are created by the pryde_prompts account automatically
+  // They have special styling and bypass rate limits
+  isSystemPost: {
+    type: Boolean,
+    default: false,
+    index: true
+  },
   // Per-post hide metrics
   hideMetrics: {
     type: Boolean,
