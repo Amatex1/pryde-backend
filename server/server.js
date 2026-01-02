@@ -951,6 +951,25 @@ server.listen(PORT, () => {
         console.log('[SystemPrompts] 🕐 Scheduler started (posts daily at 10:00 AM UTC)');
       })
       .catch(err => console.error('[SystemPrompts] ❌ Failed to start scheduler:', err));
+
+    // ========================================
+    // FOUNDING MEMBER BADGE
+    // ========================================
+    // Assigns badge to first 100 members (idempotent)
+    // Excludes system accounts, test accounts, and Pryde bots
+    import('./scripts/seedFoundingMemberBadge.js')
+      .then(({ seedFoundingMemberBadge }) => {
+        seedFoundingMemberBadge()
+          .then(result => {
+            if (result.assigned > 0) {
+              console.log(`[FoundingMember] 🌟 Assigned badge to ${result.assigned} new founding members`);
+            } else {
+              console.log('[FoundingMember] ✅ All founding members already have badge');
+            }
+          })
+          .catch(err => console.error('[FoundingMember] ❌ Seed failed:', err));
+      })
+      .catch(err => console.error('[FoundingMember] ❌ Failed to import seed script:', err));
   }
 });
 
