@@ -739,9 +739,14 @@ router.get('/image/:filename', async (req, res) => {
       return res.status(500).json({ message: 'GridFS not initialized' });
     }
 
-    const files = await gridfsBucket.find({ filename: req.params.filename }).toArray();
+    // URL-decode the filename for GridFS lookup (browser encodes spaces as %20)
+    const filename = decodeURIComponent(req.params.filename);
+    console.log(`📷 Image request - raw: "${req.params.filename}", decoded: "${filename}"`);
+
+    const files = await gridfsBucket.find({ filename }).toArray();
 
     if (!files || files.length === 0) {
+      console.log(`❌ Image not found: "${filename}"`);
       return res.status(404).json({ message: 'File not found' });
     }
 
@@ -761,7 +766,7 @@ router.get('/image/:filename', async (req, res) => {
       res.set('Content-Type', file.contentType);
       res.set('Cache-Control', 'public, max-age=31536000');
 
-      const downloadStream = gridfsBucket.openDownloadStreamByName(req.params.filename);
+      const downloadStream = gridfsBucket.openDownloadStreamByName(filename);
       downloadStream.pipe(res);
     } else {
       res.status(404).json({ message: 'Not an image' });
@@ -781,7 +786,10 @@ router.get('/file/:filename', async (req, res) => {
       return res.status(500).json({ message: 'GridFS not initialized' });
     }
 
-    const files = await gridfsBucket.find({ filename: req.params.filename }).toArray();
+    // URL-decode the filename for GridFS lookup (browser encodes spaces as %20)
+    const filename = decodeURIComponent(req.params.filename);
+
+    const files = await gridfsBucket.find({ filename }).toArray();
 
     if (!files || files.length === 0) {
       return res.status(404).json({ message: 'File not found' });
@@ -797,7 +805,7 @@ router.get('/file/:filename', async (req, res) => {
     res.set('Cache-Control', 'public, max-age=31536000');
 
     // Stream the file
-    const downloadStream = gridfsBucket.openDownloadStreamByName(req.params.filename);
+    const downloadStream = gridfsBucket.openDownloadStreamByName(filename);
     downloadStream.pipe(res);
   } catch (error) {
     console.error('Get file error:', error);
