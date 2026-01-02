@@ -574,7 +574,11 @@ router.post('/signup', validateAgeBeforeRateLimit, signupLimiter, validateSignup
         profilePhoto: user.profilePhoto,
         coverPhoto: user.coverPhoto,
         bio: user.bio,
-        socialLinks: user.socialLinks
+        socialLinks: user.socialLinks,
+        // Onboarding tour flags (new user = show tour)
+        hasCompletedTour: user.hasCompletedTour,
+        hasSkippedTour: user.hasSkippedTour,
+        showTour: true // New signup always shows tour
       }
     });
   } catch (error) {
@@ -929,6 +933,9 @@ router.post('/login', loginLimiter, validateLogin, async (req, res) => {
       }
     });
 
+    // Determine if tour should be shown (first login with tour not completed/skipped)
+    const showTour = !user.hasCompletedTour && !user.hasSkippedTour;
+
     res.json({
       success: true,
       message: 'Login successful',
@@ -956,7 +963,11 @@ router.post('/login', loginLimiter, validateLogin, async (req, res) => {
         website: user.website,
         socialLinks: user.socialLinks,
         role: user.role,
-        permissions: user.permissions
+        permissions: user.permissions,
+        // Onboarding tour flags
+        hasCompletedTour: user.hasCompletedTour,
+        hasSkippedTour: user.hasSkippedTour,
+        showTour
       }
     });
   } catch (error) {
@@ -1182,6 +1193,9 @@ router.post('/verify-2fa-login', loginLimiter, async (req, res) => {
       }
     });
 
+    // Determine if tour should be shown (first login with tour not completed/skipped)
+    const showTour = !user.hasCompletedTour && !user.hasSkippedTour;
+
     res.json({
       success: true,
       message: 'Login successful',
@@ -1207,7 +1221,11 @@ router.post('/verify-2fa-login', loginLimiter, async (req, res) => {
         website: user.website,
         socialLinks: user.socialLinks,
         role: user.role,
-        permissions: user.permissions
+        permissions: user.permissions,
+        // Onboarding tour flags
+        hasCompletedTour: user.hasCompletedTour,
+        hasSkippedTour: user.hasSkippedTour,
+        showTour
       }
     });
   } catch (error) {
@@ -1243,6 +1261,11 @@ router.get('/me', auth, async (req, res) => {
           user.badges = [];
         }
       }
+    }
+
+    // Add showTour flag for frontend (determines if tour modal should appear)
+    if (user) {
+      user.showTour = !user.hasCompletedTour && !user.hasSkippedTour;
     }
 
     res.json(user);
@@ -1545,6 +1568,72 @@ router.post('/logout', auth, async (req, res) => {
     logger.error('Logout error:', error);
     return res.status(500).json({
       message: 'Logout failed',
+      success: false
+    });
+  }
+});
+
+// ============================================
+// ONBOARDING TOUR ENDPOINTS
+// ============================================
+
+// @route   POST /api/auth/tour/complete
+// @desc    Mark onboarding tour as completed
+// @access  Private
+router.post('/tour/complete', auth, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Update tour status
+    user.hasCompletedTour = true;
+    user.tourCompletedAt = new Date();
+    await user.save();
+
+    logger.info(`User ${user.username} completed onboarding tour`);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Tour completed',
+      hasCompletedTour: true,
+      tourCompletedAt: user.tourCompletedAt
+    });
+  } catch (error) {
+    logger.error('Tour complete error:', error);
+    return res.status(500).json({
+      message: 'Failed to update tour status',
+      success: false
+    });
+  }
+});
+
+// @route   POST /api/auth/tour/skip
+// @desc    Mark onboarding tour as skipped (never show again)
+// @access  Private
+router.post('/tour/skip', auth, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Update tour status (skipped)
+    user.hasSkippedTour = true;
+    await user.save();
+
+    logger.info(`User ${user.username} skipped onboarding tour`);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Tour skipped',
+      hasSkippedTour: true
+    });
+  } catch (error) {
+    logger.error('Tour skip error:', error);
+    return res.status(500).json({
+      message: 'Failed to update tour status',
       success: false
     });
   }

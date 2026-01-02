@@ -700,6 +700,20 @@ const userSchema = new mongoose.Schema({
     type: String,
     default: 'registered'
   },
+  // Post-signup welcome tour (added 2025-01-02)
+  // Controls the optional onboarding tour shown to new users
+  hasCompletedTour: {
+    type: Boolean,
+    default: false
+  },
+  hasSkippedTour: {
+    type: Boolean,
+    default: false
+  },
+  tourCompletedAt: {
+    type: Date,
+    default: null
+  },
   // Blocked Users
   blockedUsers: {
     type: [{
