@@ -5,12 +5,13 @@ import FollowRequest from '../models/FollowRequest.js';
 import auth from '../middleware/auth.js';
 import requireActiveUser from '../middleware/requireActiveUser.js';
 import { checkBlocked } from '../middleware/privacy.js';
+import { guardFollow } from '../middleware/systemAccountGuard.js';
 import logger from '../utils/logger.js';
 
 // @route   POST /api/follow/:userId
 // @desc    Follow a user (instant for public accounts, request for private)
-// @access  Private
-router.post('/:userId', auth, requireActiveUser, checkBlocked, async (req, res) => {
+// @access  Private (System accounts cannot follow users)
+router.post('/:userId', auth, requireActiveUser, guardFollow, checkBlocked, async (req, res) => {
   try {
     const targetUserId = req.params.userId;
     const currentUserId = req.userId;

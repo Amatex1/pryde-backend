@@ -1,9 +1,15 @@
 /**
- * Seed System Prompts
- * 
- * Creates the pryde_prompts system account and seeds initial prompts.
+ * Seed System Accounts and Prompts
+ *
+ * Creates all platform system accounts with proper roles and seeds initial prompts.
  * Safe to run multiple times (idempotent).
- * 
+ *
+ * System Accounts:
+ * - pryde_prompts: Shares optional reflection prompts (PROMPTS role)
+ * - pryde_guide: Explains how Pryde works (GUIDE role)
+ * - pryde_moderation: Communicates moderation actions (MODERATION role)
+ * - pryde_announcements: Rare platform updates (ANNOUNCEMENTS role) - disabled by default
+ *
  * Usage: node scripts/seedSystemPrompts.js
  * Or imported and called during server startup
  */
@@ -15,18 +21,53 @@ import SystemPrompt from '../models/SystemPrompt.js';
 import SystemConfig from '../models/SystemConfig.js';
 import crypto from 'crypto';
 
-// System account configuration
-const SYSTEM_ACCOUNT = {
-  username: 'pryde_prompts',
-  email: 'system@prydesocial.com',
-  fullName: 'Pryde Prompts',
-  displayName: 'Pryde Prompts',
-  isSystemAccount: true,
-  role: 'user', // Not admin - just a special user
-  emailVerified: true,
-  isActive: true,
-  ageVerified: true
-};
+// ============================================================================
+// SYSTEM ACCOUNT DEFINITIONS
+// Each account has a specific role with strict behavioral limits
+// ============================================================================
+
+const SYSTEM_ACCOUNTS = [
+  {
+    username: 'pryde_prompts',
+    email: 'prompts@prydesocial.com',
+    fullName: 'Pryde Prompts',
+    displayName: 'Pryde Prompts',
+    systemRole: 'PROMPTS',
+    systemCreatedBy: 'platform',
+    systemDescription: 'This is an automated system account operated by Pryde Social. It shares optional reflection prompts for the community.',
+    isActive: true
+  },
+  {
+    username: 'pryde_guide',
+    email: 'guide@prydesocial.com',
+    fullName: 'Pryde Guide',
+    displayName: 'Pryde Guide',
+    systemRole: 'GUIDE',
+    systemCreatedBy: 'platform',
+    systemDescription: 'This is a system account that helps explain how Pryde works. It does not represent a person.',
+    isActive: true
+  },
+  {
+    username: 'pryde_moderation',
+    email: 'moderation@prydesocial.com',
+    fullName: 'Pryde Moderation',
+    displayName: 'Pryde Moderation',
+    systemRole: 'MODERATION',
+    systemCreatedBy: 'platform',
+    systemDescription: 'This account communicates moderation actions and policy updates on behalf of Pryde Social.',
+    isActive: true
+  },
+  {
+    username: 'pryde_announcements',
+    email: 'announcements@prydesocial.com',
+    fullName: 'Pryde Announcements',
+    displayName: 'Pryde Announcements',
+    systemRole: 'ANNOUNCEMENTS',
+    systemCreatedBy: 'platform',
+    systemDescription: 'This account shares rare platform updates. Used only for important announcements (max 1-2 per month).',
+    isActive: false // Disabled by default - activate when needed
+  }
+];
 
 // Initial prompts - calm, open-ended, non-triggering
 const INITIAL_PROMPTS = [
@@ -72,35 +113,88 @@ const INITIAL_PROMPTS = [
 ];
 
 /**
- * Create or retrieve the pryde_prompts system account
+ * Create or update a single system account
+ * @param {Object} accountConfig - The account configuration
+ * @returns {Object} The created/updated user document
  */
-export async function ensureSystemAccount() {
-  let systemUser = await User.findOne({ username: SYSTEM_ACCOUNT.username });
-  
+async function ensureSingleSystemAccount(accountConfig) {
+  let systemUser = await User.findOne({ username: accountConfig.username });
+
   if (!systemUser) {
-    console.log('🤖 Creating pryde_prompts system account...');
-    
+    console.log(`🤖 Creating ${accountConfig.username} system account...`);
+
     // Generate a secure random password (never used for login)
     const randomPassword = crypto.randomBytes(32).toString('hex');
     const hashedPassword = await bcrypt.hash(randomPassword, 12);
-    
+
     systemUser = new User({
-      ...SYSTEM_ACCOUNT,
-      password: hashedPassword
+      ...accountConfig,
+      password: hashedPassword,
+      isSystemAccount: true,
+      role: 'user', // Not admin - just a special user
+      emailVerified: true,
+      ageVerified: true,
+      termsAccepted: true,
+      termsAcceptedAt: new Date()
     });
-    
+
     await systemUser.save();
-    console.log('✅ System account created:', systemUser.username);
+    console.log(`✅ System account created: ${systemUser.username} (${accountConfig.systemRole})`);
   } else {
-    // Ensure existing account has correct flags
+    // Update existing account with new system fields if needed
+    let needsUpdate = false;
+
     if (!systemUser.isSystemAccount) {
       systemUser.isSystemAccount = true;
+      needsUpdate = true;
+    }
+    if (systemUser.systemRole !== accountConfig.systemRole) {
+      systemUser.systemRole = accountConfig.systemRole;
+      needsUpdate = true;
+    }
+    if (systemUser.systemCreatedBy !== accountConfig.systemCreatedBy) {
+      systemUser.systemCreatedBy = accountConfig.systemCreatedBy;
+      needsUpdate = true;
+    }
+    if (systemUser.systemDescription !== accountConfig.systemDescription) {
+      systemUser.systemDescription = accountConfig.systemDescription;
+      needsUpdate = true;
+    }
+
+    if (needsUpdate) {
       await systemUser.save();
-      console.log('✅ Updated existing account with isSystemAccount flag');
+      console.log(`✅ Updated ${accountConfig.username} with system account fields`);
     }
   }
-  
+
   return systemUser;
+}
+
+/**
+ * Create or retrieve all system accounts
+ * @returns {Object} Map of usernames to user documents
+ */
+export async function ensureSystemAccounts() {
+  console.log('🤖 Ensuring all system accounts exist...');
+
+  const accounts = {};
+
+  for (const accountConfig of SYSTEM_ACCOUNTS) {
+    const user = await ensureSingleSystemAccount(accountConfig);
+    accounts[accountConfig.username] = user;
+  }
+
+  console.log(`✅ All ${Object.keys(accounts).length} system accounts ready`);
+  return accounts;
+}
+
+/**
+ * Legacy function - kept for backward compatibility
+ * Returns the pryde_prompts account specifically
+ */
+export async function ensureSystemAccount() {
+  const accounts = await ensureSystemAccounts();
+  return accounts['pryde_prompts'];
 }
 
 /**

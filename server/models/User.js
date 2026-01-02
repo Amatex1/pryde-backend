@@ -228,12 +228,45 @@ const userSchema = new mongoose.Schema({
     enum: ['user', 'moderator', 'admin', 'super_admin'],
     default: 'user'
   },
-  // System accounts are platform-owned accounts (e.g., pryde_prompts)
-  // They bypass rate limits, can post automatically, and are visually marked
+  // ============================================================================
+  // SYSTEM ACCOUNTS (First-Class Implementation)
+  //
+  // Platform-owned accounts that support onboarding, clarity, and platform rhythm.
+  // System accounts must be visibly non-human, limited in scope, and never imitate
+  // community members.
+  // ============================================================================
+
+  // Whether this account is operated by the platform (not a human user)
   isSystemAccount: {
     type: Boolean,
     default: false,
     index: true
+  },
+
+  // System account role - determines permissions and behavioral limits
+  // PROMPTS: Can create scheduled prompt posts, cannot reply/react/DM
+  // GUIDE: Can post onboarding guidance, reply with predefined info only
+  // MODERATION: Can post notices, lock threads, cannot argue
+  // ANNOUNCEMENTS: Rare platform updates only (max 1-2 per month)
+  systemRole: {
+    type: String,
+    enum: ['PROMPTS', 'GUIDE', 'MODERATION', 'ANNOUNCEMENTS', null],
+    default: null
+  },
+
+  // Who created this system account (for audit trail)
+  systemCreatedBy: {
+    type: String,
+    default: null,
+    trim: true
+  },
+
+  // Public-facing explanation of what this system account does
+  // Shown on profile and when users hover over the system badge
+  systemDescription: {
+    type: String,
+    default: null,
+    maxlength: 500
   },
   permissions: {
     canViewReports: { type: Boolean, default: false },

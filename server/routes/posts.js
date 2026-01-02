@@ -13,6 +13,7 @@ import auth from '../middleware/auth.js';
 import requireActiveUser from '../middleware/requireActiveUser.js';
 import { postLimiter, commentLimiter, reactionLimiter } from '../middleware/rateLimiter.js';
 import { checkMuted, moderateContent } from '../middleware/moderation.js';
+import { guardComment, guardReply, guardReact } from '../middleware/systemAccountGuard.js';
 import { sanitizeFields } from '../utils/sanitize.js';
 import { sendPushNotification } from './pushNotifications.js';
 import logger from '../utils/logger.js';
@@ -561,8 +562,8 @@ router.delete('/:id', auth, requireActiveUser, async (req, res) => {
 
 // @route   POST /api/posts/:id/like
 // @desc    Like/Unlike a post
-// @access  Private
-router.post('/:id/like', auth, requireActiveUser, reactionLimiter, async (req, res) => {
+// @access  Private (System accounts with PROMPTS/ANNOUNCEMENTS roles cannot react)
+router.post('/:id/like', auth, requireActiveUser, reactionLimiter, guardReact, async (req, res) => {
   try {
     const post = await Post.findById(req.params.id);
 
@@ -855,8 +856,8 @@ router.delete('/:id/share', auth, requireActiveUser, (req, res) => {
 
 // @route   POST /api/posts/:id/comment
 // @desc    Add a comment to a post
-// @access  Private
-router.post('/:id/comment', auth, requireActiveUser, commentLimiter, sanitizeFields(['content']), checkMuted, moderateContent, async (req, res) => {
+// @access  Private (System accounts with PROMPTS/ANNOUNCEMENTS roles cannot comment)
+router.post('/:id/comment', auth, requireActiveUser, commentLimiter, guardComment, sanitizeFields(['content']), checkMuted, moderateContent, async (req, res) => {
   try {
     const { content, gifUrl } = req.body;
 
@@ -946,8 +947,8 @@ router.post('/:id/comment', auth, requireActiveUser, commentLimiter, sanitizeFie
 
 // @route   POST /api/posts/:id/comment/:commentId/reply
 // @desc    Reply to a comment
-// @access  Private
-router.post('/:id/comment/:commentId/reply', auth, requireActiveUser, commentLimiter, sanitizeFields(['content']), checkMuted, moderateContent, async (req, res) => {
+// @access  Private (System accounts with PROMPTS/MODERATION/ANNOUNCEMENTS roles cannot reply)
+router.post('/:id/comment/:commentId/reply', auth, requireActiveUser, commentLimiter, guardReply, sanitizeFields(['content']), checkMuted, moderateContent, async (req, res) => {
   try {
     const { content, gifUrl } = req.body;
 

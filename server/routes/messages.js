@@ -9,6 +9,7 @@ import requireActiveUser from '../middleware/requireActiveUser.js';
 import { messageLimiter } from '../middleware/rateLimiter.js';
 import { checkMessagingPermission, checkBlocked } from '../middleware/privacy.js';
 import { checkMuted, moderateContent } from '../middleware/moderation.js';
+import { guardSendDM } from '../middleware/systemAccountGuard.js';
 import { sanitizeFields } from '../utils/sanitize.js';
 import logger from '../utils/logger.js';
 
@@ -220,7 +221,8 @@ router.get('/', auth, requireActiveUser, async (req, res) => {
 });
 
 // Send a message
-router.post('/', auth, requireActiveUser, messageLimiter, sanitizeFields(['content']), checkMessagingPermission, checkMuted, moderateContent, async (req, res) => {
+// System accounts cannot send DMs (all roles blocked)
+router.post('/', auth, requireActiveUser, messageLimiter, guardSendDM, sanitizeFields(['content']), checkMessagingPermission, checkMuted, moderateContent, async (req, res) => {
   try {
     // REMOVED 2025-12-26: voiceNote no longer accepted (Phase 5)
     const { recipient, content, attachment, groupChatId } = req.body;
