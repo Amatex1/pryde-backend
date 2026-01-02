@@ -32,11 +32,11 @@ const reflectionPromptSchema = new mongoose.Schema({
     index: true
   },
   
-  // Admin who created the prompt
+  // Admin who created the prompt (null for seeded prompts)
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
-    required: true
+    default: null
   },
   
   // When the prompt was created

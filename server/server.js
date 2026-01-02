@@ -953,6 +953,21 @@ server.listen(PORT, () => {
       .catch(err => console.error('[SystemPrompts] ❌ Failed to start scheduler:', err));
 
     // ========================================
+    // REFLECTION PROMPTS (Private per-user)
+    // ========================================
+    // Seeds private reflection prompts shown to users
+    // Different from System Prompts (which are public feed posts)
+    import('./scripts/seedReflectionPrompts.js')
+      .then(({ seedReflectionPrompts }) => {
+        seedReflectionPrompts()
+          .then(result => {
+            console.log('[ReflectionPrompts] ✅ Seed complete:', result);
+          })
+          .catch(err => console.error('[ReflectionPrompts] ❌ Seed failed:', err));
+      })
+      .catch(err => console.error('[ReflectionPrompts] ❌ Failed to import seed script:', err));
+
+    // ========================================
     // FOUNDING MEMBER BADGE
     // ========================================
     // Assigns badge to first 100 members (idempotent)
