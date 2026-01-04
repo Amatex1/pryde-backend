@@ -1195,16 +1195,21 @@ router.get('/moderation/history', checkPermission('canViewReports'), async (req,
       pipeline.push({ $match: { 'moderationHistory.automated': automated === 'true' } });
     }
 
-    // Project the fields we need
+    // Project the fields we need (including new detail fields)
     pipeline.push({
       $project: {
         _id: 0,
-        userId: '$_id',
+        oderId: '$_id',
         username: 1,
         displayName: 1,
+        profilePicture: 1,
         action: '$moderationHistory.action',
         reason: '$moderationHistory.reason',
         contentType: '$moderationHistory.contentType',
+        contentId: '$moderationHistory.contentId',
+        contentPreview: '$moderationHistory.contentPreview',
+        detectedViolations: '$moderationHistory.detectedViolations',
+        moderatorId: '$moderationHistory.moderatorId',
         timestamp: '$moderationHistory.timestamp',
         automated: '$moderationHistory.automated'
       }
@@ -1282,6 +1287,8 @@ router.post('/moderation/user/:userId/unmute', checkPermission('canManageUsers')
     user.moderationHistory.push({
       action: 'unmute',
       reason: `Manually unmuted by admin`,
+      contentType: 'other',
+      moderatorId: req.userId,
       automated: false,
       timestamp: new Date()
     });
@@ -1321,6 +1328,8 @@ router.post('/moderation/user/:userId/mute', checkPermission('canManageUsers'), 
     user.moderationHistory.push({
       action: 'mute',
       reason: reason || 'Muted by admin',
+      contentType: 'other',
+      moderatorId: req.userId,
       automated: false,
       timestamp: new Date()
     });

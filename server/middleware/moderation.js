@@ -85,6 +85,17 @@ export const moderateContent = async (req, res, next) => {
       user.set('moderationHistory', []);
     }
 
+    // Helper to create a truncated content preview (max 200 chars)
+    const createContentPreview = (text) => {
+      if (!text) return '';
+      const cleaned = text.replace(/\s+/g, ' ').trim();
+      return cleaned.length > 200 ? cleaned.substring(0, 197) + '...' : cleaned;
+    };
+
+    // Determine content type and ID
+    const contentType = req.body.postId ? 'comment' : 'post';
+    const contentId = req.body.postId || null; // postId for comments, null for new posts
+
     // Check for blocked words (now async - uses database settings)
     const { isBlocked, blockedWords } = await checkBlockedWords(content);
     if (isBlocked) {
@@ -94,7 +105,10 @@ export const moderateContent = async (req, res, next) => {
       user.moderationHistory.push({
         action: 'warning',
         reason: `Blocked words detected: ${blockedWords.join(', ')}`,
-        contentType: req.body.postId ? 'comment' : 'post',
+        contentType,
+        contentId,
+        contentPreview: createContentPreview(content),
+        detectedViolations: blockedWords,
         automated: true
       });
 
@@ -114,7 +128,9 @@ export const moderateContent = async (req, res, next) => {
         user.moderation.muteReason = 'Repeated violations of community guidelines';
         user.moderationHistory.push({
           action: 'mute',
-          reason: `Auto-muted for ${muteDuration} minutes due to repeated violations`,
+          reason: `Auto-muted for ${muteDuration} minutes due to repeated violations (${user.moderation.violationCount} violations)`,
+          contentType: 'other',
+          detectedViolations: [`Total violations: ${user.moderation.violationCount}`],
           automated: true
         });
       }
@@ -140,7 +156,10 @@ export const moderateContent = async (req, res, next) => {
       user.moderationHistory.push({
         action: 'spam-detected',
         reason: reason,
-        contentType: req.body.postId ? 'comment' : 'post',
+        contentType,
+        contentId,
+        contentPreview: createContentPreview(content),
+        detectedViolations: [reason],
         automated: true
       });
 
@@ -153,6 +172,8 @@ export const moderateContent = async (req, res, next) => {
         user.moderationHistory.push({
           action: 'mute',
           reason: `Auto-muted for ${muteDuration} minutes due to spam`,
+          contentType: 'other',
+          detectedViolations: ['Spam detected'],
           automated: true
         });
       }
@@ -173,7 +194,10 @@ export const moderateContent = async (req, res, next) => {
       user.moderationHistory.push({
         action: 'warning',
         reason: `High toxicity score: ${toxicityScore}`,
-        contentType: req.body.postId ? 'comment' : 'post',
+        contentType,
+        contentId,
+        contentPreview: createContentPreview(content),
+        detectedViolations: [`Toxicity score: ${toxicityScore}`],
         automated: true
       });
       await user.save();

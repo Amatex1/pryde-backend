@@ -813,11 +813,28 @@ const userSchema = new mongoose.Schema({
       },
       contentType: {
         type: String,
-        enum: ['post', 'comment', 'message', 'profile'],
+        enum: ['post', 'comment', 'message', 'profile', 'other'],
         default: 'post'
       },
       contentId: {
         type: mongoose.Schema.Types.ObjectId,
+        default: null
+      },
+      // Store a preview of the offending content for admin review
+      contentPreview: {
+        type: String,
+        default: '',
+        maxlength: 500
+      },
+      // Store the detected violations (blocked words, spam indicators, etc.)
+      detectedViolations: {
+        type: [String],
+        default: []
+      },
+      // Admin who took action (for manual actions)
+      moderatorId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
         default: null
       },
       timestamp: {
