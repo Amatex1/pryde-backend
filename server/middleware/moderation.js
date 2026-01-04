@@ -1,5 +1,5 @@
 import User from '../models/User.js';
-import { checkBlockedWords, checkSpam, calculateToxicityScore } from '../utils/moderation.js';
+import { checkBlockedWords, checkSpam, calculateToxicityScore, getAutoMuteSettings } from '../utils/moderation.js';
 import logger from '../utils/logger.js';
 
 /**
@@ -31,8 +31,8 @@ export const checkMuted = async (req, res, next) => {
       }
 
       // User is still muted
-      const expiresIn = user.moderation.muteExpires 
-        ? Math.ceil((user.moderation.muteExpires - new Date()) / (1000 * 60)) 
+      const expiresIn = user.moderation.muteExpires
+        ? Math.ceil((user.moderation.muteExpires - new Date()) / (1000 * 60))
         : 'indefinitely';
 
       return res.status(403).json({
@@ -51,6 +51,7 @@ export const checkMuted = async (req, res, next) => {
 
 /**
  * Moderate content for blocked words and spam
+ * Uses configurable settings from database
  */
 export const moderateContent = async (req, res, next) => {
   try {
@@ -65,6 +66,9 @@ export const moderateContent = async (req, res, next) => {
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
+
+    // Get configurable auto-mute settings from database
+    const autoMuteSettings = await getAutoMuteSettings();
 
     // SAFETY: Ensure moderation object exists (older users may not have it)
     if (!user.moderation) {
@@ -81,8 +85,8 @@ export const moderateContent = async (req, res, next) => {
       user.set('moderationHistory', []);
     }
 
-    // Check for blocked words
-    const { isBlocked, blockedWords } = checkBlockedWords(content);
+    // Check for blocked words (now async - uses database settings)
+    const { isBlocked, blockedWords } = await checkBlockedWords(content);
     if (isBlocked) {
       // Log violation
       user.moderation.violationCount += 1;
@@ -94,9 +98,17 @@ export const moderateContent = async (req, res, next) => {
         automated: true
       });
 
-      // Auto-mute if enabled and violations exceed threshold
-      if (user.moderation.autoMuteEnabled && user.moderation.violationCount >= 3) {
-        const muteDuration = Math.min(user.moderation.violationCount * 30, 1440); // Max 24 hours
+      // Auto-mute if enabled globally AND for user, AND violations exceed configurable threshold
+      const shouldAutoMute = autoMuteSettings.enabled &&
+                             user.moderation.autoMuteEnabled &&
+                             user.moderation.violationCount >= autoMuteSettings.violationThreshold;
+
+      if (shouldAutoMute) {
+        // Calculate mute duration using configurable settings
+        const muteDuration = Math.min(
+          user.moderation.violationCount * autoMuteSettings.minutesPerViolation,
+          autoMuteSettings.maxMuteDuration
+        );
         user.moderation.isMuted = true;
         user.moderation.muteExpires = new Date(Date.now() + muteDuration * 60 * 1000);
         user.moderation.muteReason = 'Repeated violations of community guidelines';
@@ -113,7 +125,9 @@ export const moderateContent = async (req, res, next) => {
         message: 'Content contains inappropriate language',
         blockedWords: blockedWords,
         violationCount: user.moderation.violationCount,
-        warning: user.moderation.violationCount >= 2 ? 'Further violations may result in temporary mute' : null
+        warning: user.moderation.violationCount >= (autoMuteSettings.violationThreshold - 1)
+          ? 'Further violations may result in temporary mute'
+          : null
       });
     }
 
@@ -130,9 +144,9 @@ export const moderateContent = async (req, res, next) => {
         automated: true
       });
 
-      // Auto-mute for spam
-      if (user.moderation.autoMuteEnabled) {
-        const muteDuration = 60; // 1 hour for spam
+      // Auto-mute for spam using configurable duration
+      if (autoMuteSettings.enabled && user.moderation.autoMuteEnabled) {
+        const muteDuration = autoMuteSettings.spamMuteDuration;
         user.moderation.isMuted = true;
         user.moderation.muteExpires = new Date(Date.now() + muteDuration * 60 * 1000);
         user.moderation.muteReason = 'Spam content detected';
@@ -152,8 +166,8 @@ export const moderateContent = async (req, res, next) => {
       });
     }
 
-    // Calculate toxicity score
-    const toxicityScore = calculateToxicityScore(content);
+    // Calculate toxicity score (now async - uses database settings)
+    const toxicityScore = await calculateToxicityScore(content);
     if (toxicityScore > 50) {
       // Log high toxicity
       user.moderationHistory.push({

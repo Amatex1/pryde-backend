@@ -1,41 +1,106 @@
-// Blocked words list (can be expanded)
-const blockedWords = [
-  // Profanity
-  'fuck', 'shit', 'bitch', 'asshole', 'bastard', 'damn', 'crap',
-  // Slurs and hate speech (partial list for demonstration)
-  'nigger', 'nigga', 'faggot', 'retard', 'tranny',
-  // Sexual content
-  'porn', 'xxx', 'sex', 'nude', 'naked',
-  // Spam indicators
-  'click here', 'buy now', 'limited time', 'act now', 'free money',
-  'make money fast', 'work from home', 'lose weight fast'
-];
+import ModerationSettings from '../models/ModerationSettings.js';
 
-// Spam patterns
+// ═══════════════════════════════════════════════════════════════════════════
+// SETTINGS CACHE
+// ═══════════════════════════════════════════════════════════════════════════
+// Cache settings in memory for performance (refreshed every 5 minutes)
+let cachedSettings = null;
+let cacheTimestamp = 0;
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+/**
+ * Get moderation settings (from cache or database)
+ */
+async function getSettings() {
+  const now = Date.now();
+  if (cachedSettings && (now - cacheTimestamp) < CACHE_TTL) {
+    return cachedSettings;
+  }
+
+  try {
+    cachedSettings = await ModerationSettings.getSettings();
+    cacheTimestamp = now;
+    return cachedSettings;
+  } catch (error) {
+    console.error('Failed to load moderation settings:', error);
+    // Return defaults if database fails
+    return {
+      blockedWords: {
+        profanity: ['fuck', 'shit', 'bitch', 'asshole', 'bastard', 'damn', 'crap'],
+        slurs: [],
+        sexual: ['porn', 'xxx', 'nude', 'naked'],
+        spam: ['click here', 'buy now', 'limited time', 'act now', 'free money'],
+        custom: []
+      },
+      autoMute: {
+        enabled: true,
+        violationThreshold: 3,
+        minutesPerViolation: 30,
+        maxMuteDuration: 1440,
+        spamMuteDuration: 60
+      },
+      toxicity: {
+        warningThreshold: 50,
+        pointsPerBlockedWord: 10,
+        pointsForSpam: 20
+      },
+      getAllBlockedWords() {
+        const { profanity, slurs, sexual, spam, custom } = this.blockedWords;
+        return [...profanity, ...slurs, ...sexual, ...spam, ...custom];
+      }
+    };
+  }
+}
+
+/**
+ * Force refresh the settings cache
+ */
+export async function refreshSettingsCache() {
+  cachedSettings = await ModerationSettings.getSettings();
+  cacheTimestamp = Date.now();
+  return cachedSettings;
+}
+
+/**
+ * Get the current auto-mute settings
+ */
+export async function getAutoMuteSettings() {
+  const settings = await getSettings();
+  return settings.autoMute;
+}
+
+// Spam patterns (these are not configurable via admin UI for security)
 const spamPatterns = [
   /\b(viagra|cialis|pharmacy)\b/i,
   /\b(casino|poker|gambling)\b/i,
   /\b(lottery|winner|prize)\b/i,
   /\b(click\s+here|buy\s+now)\b/i,
-  /(http|https):\/\/[^\s]+/gi, // Multiple URLs
   /(.)\1{10,}/, // Repeated characters (10+ times)
   /[A-Z]{20,}/, // Excessive caps
 ];
 
 /**
- * Check if content contains blocked words
+ * Check if content contains blocked words (async - uses database settings)
  * @param {string} content - The content to check
- * @returns {object} - { isBlocked: boolean, blockedWords: array }
+ * @param {array} blockedWordsList - Optional pre-fetched list of blocked words
+ * @returns {Promise<object>} - { isBlocked: boolean, blockedWords: array }
  */
-export const checkBlockedWords = (content) => {
+export const checkBlockedWords = async (content, blockedWordsList = null) => {
   if (!content || typeof content !== 'string') {
     return { isBlocked: false, blockedWords: [] };
+  }
+
+  // Get blocked words from database or use provided list
+  let wordsList = blockedWordsList;
+  if (!wordsList) {
+    const settings = await getSettings();
+    wordsList = settings.getAllBlockedWords ? settings.getAllBlockedWords() : [];
   }
 
   const lowerContent = content.toLowerCase();
   const foundWords = [];
 
-  for (const word of blockedWords) {
+  for (const word of wordsList) {
     const regex = new RegExp(`\\b${word}\\b`, 'i');
     if (regex.test(lowerContent)) {
       foundWords.push(word);
@@ -123,18 +188,26 @@ export const checkPostingFrequency = (recentPosts, timeWindow = 5, maxPosts = 10
 };
 
 /**
- * Sanitize content by removing blocked words
+ * Sanitize content by removing blocked words (async - uses database settings)
  * @param {string} content - The content to sanitize
- * @returns {string} - Sanitized content with blocked words replaced
+ * @param {array} blockedWordsList - Optional pre-fetched list of blocked words
+ * @returns {Promise<string>} - Sanitized content with blocked words replaced
  */
-export const sanitizeContent = (content) => {
+export const sanitizeContent = async (content, blockedWordsList = null) => {
   if (!content || typeof content !== 'string') {
     return content;
   }
 
+  // Get blocked words from database or use provided list
+  let wordsList = blockedWordsList;
+  if (!wordsList) {
+    const settings = await getSettings();
+    wordsList = settings.getAllBlockedWords ? settings.getAllBlockedWords() : [];
+  }
+
   let sanitized = content;
 
-  for (const word of blockedWords) {
+  for (const word of wordsList) {
     const regex = new RegExp(`\\b${word}\\b`, 'gi');
     sanitized = sanitized.replace(regex, (match) => {
       return '*'.repeat(match.length);
@@ -145,25 +218,28 @@ export const sanitizeContent = (content) => {
 };
 
 /**
- * Calculate content toxicity score (0-100)
+ * Calculate content toxicity score (0-100) (async - uses database settings)
  * @param {string} content - The content to analyze
- * @returns {number} - Toxicity score (0 = clean, 100 = very toxic)
+ * @returns {Promise<number>} - Toxicity score (0 = clean, 100 = very toxic)
  */
-export const calculateToxicityScore = (content) => {
+export const calculateToxicityScore = async (content) => {
   if (!content || typeof content !== 'string') {
     return 0;
   }
 
+  const settings = await getSettings();
+  const toxicityConfig = settings.toxicity || { pointsPerBlockedWord: 10, pointsForSpam: 20 };
+
   let score = 0;
 
-  // Check blocked words (10 points each)
-  const { blockedWords: foundWords } = checkBlockedWords(content);
-  score += foundWords.length * 10;
+  // Check blocked words (configurable points each)
+  const { blockedWords: foundWords } = await checkBlockedWords(content);
+  score += foundWords.length * toxicityConfig.pointsPerBlockedWord;
 
-  // Check spam (20 points)
+  // Check spam (configurable points)
   const { isSpam } = checkSpam(content);
   if (isSpam) {
-    score += 20;
+    score += toxicityConfig.pointsForSpam;
   }
 
   // Cap at 100

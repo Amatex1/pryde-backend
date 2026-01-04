@@ -7,6 +7,7 @@ import Block from '../models/Block.js';
 import Post from '../models/Post.js';
 import Message from '../models/Message.js';
 import SecurityLog from '../models/SecurityLog.js';
+import ModerationSettings from '../models/ModerationSettings.js';
 import auth from '../middleware/auth.js';
 import adminAuth, { checkPermission } from '../middleware/adminAuth.js';
 import crypto from 'crypto';
@@ -1028,6 +1029,356 @@ router.patch('/groups/:id/reject', async (req, res) => {
     });
   } catch (error) {
     console.error('Reject group error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// MODERATION SETTINGS ENDPOINTS
+// ═══════════════════════════════════════════════════════════════════════════
+
+// @route   GET /api/admin/moderation/settings
+// @desc    Get current moderation settings
+// @access  Admin (canManageUsers)
+router.get('/moderation/settings', checkPermission('canManageUsers'), async (req, res) => {
+  try {
+    const settings = await ModerationSettings.getSettings();
+    res.json(settings);
+  } catch (error) {
+    logger.error('Get moderation settings error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   PUT /api/admin/moderation/settings
+// @desc    Update moderation settings
+// @access  Admin (canManageUsers)
+router.put('/moderation/settings', checkPermission('canManageUsers'), async (req, res) => {
+  try {
+    const { autoMute, toxicity } = req.body;
+
+    const updates = {};
+    if (autoMute) updates.autoMute = autoMute;
+    if (toxicity) updates.toxicity = toxicity;
+
+    const settings = await ModerationSettings.updateSettings(updates, req.userId);
+
+    logger.info(`Moderation settings updated by admin ${req.userId}`);
+    res.json({ message: 'Settings updated', settings });
+  } catch (error) {
+    logger.error('Update moderation settings error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   GET /api/admin/moderation/blocked-words
+// @desc    Get all blocked words by category
+// @access  Admin (canManageUsers)
+router.get('/moderation/blocked-words', checkPermission('canManageUsers'), async (req, res) => {
+  try {
+    const settings = await ModerationSettings.getSettings();
+    res.json({
+      blockedWords: settings.blockedWords,
+      totalCount: settings.getAllBlockedWords().length
+    });
+  } catch (error) {
+    logger.error('Get blocked words error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   POST /api/admin/moderation/blocked-words
+// @desc    Add a blocked word to a category
+// @access  Admin (canManageUsers)
+router.post('/moderation/blocked-words', checkPermission('canManageUsers'), async (req, res) => {
+  try {
+    const { word, category } = req.body;
+
+    if (!word || !category) {
+      return res.status(400).json({ message: 'Word and category are required' });
+    }
+
+    const validCategories = ['profanity', 'slurs', 'sexual', 'spam', 'custom'];
+    if (!validCategories.includes(category)) {
+      return res.status(400).json({ message: `Invalid category. Must be one of: ${validCategories.join(', ')}` });
+    }
+
+    const settings = await ModerationSettings.getSettings();
+    const normalizedWord = word.toLowerCase().trim();
+
+    // Check if word already exists in any category
+    const allWords = settings.getAllBlockedWords();
+    if (allWords.includes(normalizedWord)) {
+      return res.status(400).json({ message: 'Word already exists in blocked list' });
+    }
+
+    // Add word to the specified category
+    settings.blockedWords[category].push(normalizedWord);
+    settings.updatedBy = req.userId;
+    await settings.save();
+
+    logger.info(`Blocked word "${normalizedWord}" added to ${category} by admin ${req.userId}`);
+    res.json({
+      message: 'Word added',
+      word: normalizedWord,
+      category,
+      blockedWords: settings.blockedWords
+    });
+  } catch (error) {
+    logger.error('Add blocked word error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   DELETE /api/admin/moderation/blocked-words
+// @desc    Remove a blocked word from a category
+// @access  Admin (canManageUsers)
+router.delete('/moderation/blocked-words', checkPermission('canManageUsers'), async (req, res) => {
+  try {
+    const { word, category } = req.body;
+
+    if (!word || !category) {
+      return res.status(400).json({ message: 'Word and category are required' });
+    }
+
+    const validCategories = ['profanity', 'slurs', 'sexual', 'spam', 'custom'];
+    if (!validCategories.includes(category)) {
+      return res.status(400).json({ message: `Invalid category. Must be one of: ${validCategories.join(', ')}` });
+    }
+
+    const settings = await ModerationSettings.getSettings();
+    const normalizedWord = word.toLowerCase().trim();
+
+    const index = settings.blockedWords[category].indexOf(normalizedWord);
+    if (index === -1) {
+      return res.status(404).json({ message: 'Word not found in specified category' });
+    }
+
+    settings.blockedWords[category].splice(index, 1);
+    settings.updatedBy = req.userId;
+    await settings.save();
+
+    logger.info(`Blocked word "${normalizedWord}" removed from ${category} by admin ${req.userId}`);
+    res.json({
+      message: 'Word removed',
+      word: normalizedWord,
+      category,
+      blockedWords: settings.blockedWords
+    });
+  } catch (error) {
+    logger.error('Remove blocked word error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   GET /api/admin/moderation/history
+// @desc    Get moderation history across all users
+// @access  Admin (canViewReports)
+router.get('/moderation/history', checkPermission('canViewReports'), async (req, res) => {
+  try {
+    const { limit = 50, offset = 0, action, automated } = req.query;
+
+    // Build aggregation pipeline to get moderation history from all users
+    const pipeline = [
+      { $match: { 'moderationHistory.0': { $exists: true } } },
+      { $unwind: '$moderationHistory' },
+      { $sort: { 'moderationHistory.timestamp': -1 } }
+    ];
+
+    // Filter by action type if specified
+    if (action) {
+      pipeline.push({ $match: { 'moderationHistory.action': action } });
+    }
+
+    // Filter by automated if specified
+    if (automated !== undefined) {
+      pipeline.push({ $match: { 'moderationHistory.automated': automated === 'true' } });
+    }
+
+    // Project the fields we need
+    pipeline.push({
+      $project: {
+        _id: 0,
+        userId: '$_id',
+        username: 1,
+        displayName: 1,
+        action: '$moderationHistory.action',
+        reason: '$moderationHistory.reason',
+        contentType: '$moderationHistory.contentType',
+        timestamp: '$moderationHistory.timestamp',
+        automated: '$moderationHistory.automated'
+      }
+    });
+
+    // Get total count
+    const countPipeline = [...pipeline, { $count: 'total' }];
+    const countResult = await User.aggregate(countPipeline);
+    const total = countResult[0]?.total || 0;
+
+    // Apply pagination
+    pipeline.push({ $skip: parseInt(offset) });
+    pipeline.push({ $limit: parseInt(limit) });
+
+    const history = await User.aggregate(pipeline);
+
+    res.json({
+      history,
+      pagination: {
+        total,
+        limit: parseInt(limit),
+        offset: parseInt(offset),
+        hasMore: parseInt(offset) + history.length < total
+      }
+    });
+  } catch (error) {
+    logger.error('Get moderation history error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   GET /api/admin/moderation/user/:userId
+// @desc    Get moderation details for a specific user
+// @access  Admin (canManageUsers)
+router.get('/moderation/user/:userId', checkPermission('canManageUsers'), async (req, res) => {
+  try {
+    const user = await User.findById(req.params.userId)
+      .select('username displayName moderation moderationHistory');
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    res.json({
+      userId: user._id,
+      username: user.username,
+      displayName: user.displayName,
+      moderation: user.moderation || {},
+      history: user.moderationHistory || []
+    });
+  } catch (error) {
+    logger.error('Get user moderation error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   POST /api/admin/moderation/user/:userId/unmute
+// @desc    Manually unmute a user
+// @access  Admin (canManageUsers)
+router.post('/moderation/user/:userId/unmute', checkPermission('canManageUsers'), async (req, res) => {
+  try {
+    const user = await User.findById(req.params.userId);
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    if (!user.moderation?.isMuted) {
+      return res.status(400).json({ message: 'User is not muted' });
+    }
+
+    user.moderation.isMuted = false;
+    user.moderation.muteExpires = null;
+    user.moderation.muteReason = '';
+    user.moderationHistory.push({
+      action: 'unmute',
+      reason: `Manually unmuted by admin`,
+      automated: false,
+      timestamp: new Date()
+    });
+
+    await user.save();
+
+    logger.info(`User ${user.username} unmuted by admin ${req.userId}`);
+    res.json({ message: 'User unmuted', user: { username: user.username, moderation: user.moderation } });
+  } catch (error) {
+    logger.error('Unmute user error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   POST /api/admin/moderation/user/:userId/mute
+// @desc    Manually mute a user
+// @access  Admin (canManageUsers)
+router.post('/moderation/user/:userId/mute', checkPermission('canManageUsers'), async (req, res) => {
+  try {
+    const { duration, reason } = req.body; // duration in minutes
+
+    const user = await User.findById(req.params.userId);
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Initialize moderation if it doesn't exist
+    if (!user.moderation) {
+      user.moderation = {};
+    }
+
+    user.moderation.isMuted = true;
+    user.moderation.muteExpires = duration ? new Date(Date.now() + duration * 60 * 1000) : null;
+    user.moderation.muteReason = reason || 'Muted by admin';
+    user.moderationHistory = user.moderationHistory || [];
+    user.moderationHistory.push({
+      action: 'mute',
+      reason: reason || 'Muted by admin',
+      automated: false,
+      timestamp: new Date()
+    });
+
+    await user.save();
+
+    logger.info(`User ${user.username} muted for ${duration || 'indefinite'} minutes by admin ${req.userId}`);
+    res.json({
+      message: 'User muted',
+      user: {
+        username: user.username,
+        moderation: user.moderation
+      }
+    });
+  } catch (error) {
+    logger.error('Mute user error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   POST /api/admin/moderation/user/:userId/reset-violations
+// @desc    Reset a user's violation count
+// @access  Admin (canManageUsers)
+router.post('/moderation/user/:userId/reset-violations', checkPermission('canManageUsers'), async (req, res) => {
+  try {
+    const user = await User.findById(req.params.userId);
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    if (!user.moderation) {
+      user.moderation = {};
+    }
+
+    const previousCount = user.moderation.violationCount || 0;
+    user.moderation.violationCount = 0;
+    user.moderation.lastViolation = null;
+    user.moderationHistory = user.moderationHistory || [];
+    user.moderationHistory.push({
+      action: 'warning',
+      reason: `Violation count reset from ${previousCount} to 0 by admin`,
+      automated: false,
+      timestamp: new Date()
+    });
+
+    await user.save();
+
+    logger.info(`User ${user.username} violation count reset by admin ${req.userId}`);
+    res.json({
+      message: 'Violations reset',
+      user: {
+        username: user.username,
+        moderation: user.moderation
+      }
+    });
+  } catch (error) {
+    logger.error('Reset violations error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
