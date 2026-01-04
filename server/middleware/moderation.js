@@ -147,19 +147,26 @@ export const moderateContent = async (req, res, next) => {
       });
     }
 
-    // Check for spam
-    const { isSpam, reason } = checkSpam(content);
+    // Check for spam (now returns detailed info including matched text)
+    const { isSpam, reason, matchedText, details } = checkSpam(content);
     if (isSpam) {
-      // Log spam detection
+      // Log spam detection with detailed info
       user.moderation.violationCount += 1;
       user.moderation.lastViolation = new Date();
+
+      // Build detailed violations array
+      const spamViolations = details.length > 0 ? details : [reason];
+      if (matchedText && !spamViolations.some(v => v.includes(matchedText))) {
+        spamViolations.push(`Matched: "${matchedText}"`);
+      }
+
       user.moderationHistory.push({
         action: 'spam-detected',
         reason: reason,
         contentType,
         contentId,
         contentPreview: createContentPreview(content),
-        detectedViolations: [reason],
+        detectedViolations: spamViolations,
         automated: true
       });
 
@@ -171,9 +178,9 @@ export const moderateContent = async (req, res, next) => {
         user.moderation.muteReason = 'Spam content detected';
         user.moderationHistory.push({
           action: 'mute',
-          reason: `Auto-muted for ${muteDuration} minutes due to spam`,
+          reason: `Auto-muted for ${muteDuration} minutes due to spam: ${reason}`,
           contentType: 'other',
-          detectedViolations: ['Spam detected'],
+          detectedViolations: [`Spam trigger: ${reason}`],
           automated: true
         });
       }
@@ -183,6 +190,7 @@ export const moderateContent = async (req, res, next) => {
       return res.status(400).json({
         message: 'Content flagged as spam',
         reason: reason,
+        matchedText: matchedText,
         violationCount: user.moderation.violationCount
       });
     }

@@ -69,14 +69,14 @@ export async function getAutoMuteSettings() {
   return settings.autoMute;
 }
 
-// Spam patterns (these are not configurable via admin UI for security)
+// Spam patterns with descriptions (these are not configurable via admin UI for security)
 const spamPatterns = [
-  /\b(viagra|cialis|pharmacy)\b/i,
-  /\b(casino|poker|gambling)\b/i,
-  /\b(lottery|winner|prize)\b/i,
-  /\b(click\s+here|buy\s+now)\b/i,
-  /(.)\1{10,}/, // Repeated characters (10+ times)
-  /[A-Z]{20,}/, // Excessive caps
+  { pattern: /\b(viagra|cialis|pharmacy)\b/i, description: 'Pharmacy spam' },
+  { pattern: /\b(casino|poker|gambling)\b/i, description: 'Gambling spam' },
+  { pattern: /\b(lottery|winner|prize)\b/i, description: 'Lottery/prize scam' },
+  { pattern: /\b(click\s+here|buy\s+now)\b/i, description: 'Marketing spam' },
+  { pattern: /(.)\1{10,}/, description: 'Repeated characters' },
+  { pattern: /[A-Z]{20,}/, description: 'Excessive caps block' },
 ];
 
 /**
@@ -116,19 +116,26 @@ export const checkBlockedWords = async (content, blockedWordsList = null) => {
 /**
  * Check if content is spam
  * @param {string} content - The content to check
- * @returns {object} - { isSpam: boolean, reason: string }
+ * @returns {object} - { isSpam: boolean, reason: string, matchedText: string, details: array }
  */
 export const checkSpam = (content) => {
   if (!content || typeof content !== 'string') {
-    return { isSpam: false, reason: '' };
+    return { isSpam: false, reason: '', matchedText: '', details: [] };
   }
 
+  const details = [];
+
   // Check for spam patterns
-  for (const pattern of spamPatterns) {
-    if (pattern.test(content)) {
+  for (const { pattern, description } of spamPatterns) {
+    const match = content.match(pattern);
+    if (match) {
+      const matchedText = match[0].substring(0, 50); // Limit matched text length
+      details.push(`${description}: "${matchedText}"`);
       return {
         isSpam: true,
-        reason: 'Content matches spam pattern'
+        reason: description,
+        matchedText: matchedText,
+        details: details
       };
     }
   }
@@ -136,9 +143,13 @@ export const checkSpam = (content) => {
   // Check for excessive URLs (more than 3)
   const urlMatches = content.match(/(http|https):\/\/[^\s]+/gi);
   if (urlMatches && urlMatches.length > 3) {
+    const urlPreview = urlMatches.slice(0, 3).map(u => u.substring(0, 30)).join(', ');
+    details.push(`Found ${urlMatches.length} URLs: ${urlPreview}...`);
     return {
       isSpam: true,
-      reason: 'Excessive URLs detected'
+      reason: `Excessive URLs detected (${urlMatches.length} links)`,
+      matchedText: urlPreview,
+      details: details
     };
   }
 
@@ -146,9 +157,13 @@ export const checkSpam = (content) => {
   const emojiRegex = /[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F1E0}-\u{1F1FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu;
   const emojiMatches = content.match(emojiRegex);
   if (emojiMatches && emojiMatches.length > 20) {
+    const emojiPreview = emojiMatches.slice(0, 10).join('');
+    details.push(`Found ${emojiMatches.length} emojis`);
     return {
       isSpam: true,
-      reason: 'Excessive emojis detected'
+      reason: `Excessive emojis detected (${emojiMatches.length} emojis)`,
+      matchedText: emojiPreview + '...',
+      details: details
     };
   }
 
@@ -156,13 +171,18 @@ export const checkSpam = (content) => {
   const capsCount = (content.match(/[A-Z]/g) || []).length;
   const letterCount = (content.match(/[A-Za-z]/g) || []).length;
   if (letterCount > 10 && capsCount / letterCount > 0.7) {
+    const capsPercent = Math.round((capsCount / letterCount) * 100);
+    const capsPreview = content.substring(0, 50);
+    details.push(`${capsPercent}% capitalization`);
     return {
       isSpam: true,
-      reason: 'Excessive capitalization detected'
+      reason: `Excessive capitalization (${capsPercent}% caps)`,
+      matchedText: capsPreview,
+      details: details
     };
   }
 
-  return { isSpam: false, reason: '' };
+  return { isSpam: false, reason: '', matchedText: '', details: [] };
 };
 
 /**
