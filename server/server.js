@@ -9,7 +9,7 @@ if (process.env.NODE_ENV === 'development') {
 
 import express from "express";
 import cors from "cors";
-import http from "http";\nimport { initRedis } from "./utils/redisInit.js";\nimport logger from './utils/logger.js';
+import http from "http";\nimport { initRedis } from "./utils/redisInit.js";\nimport logger from "./utils/logger.js";
 import { Server } from "socket.io";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
