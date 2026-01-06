@@ -9,7 +9,7 @@ if (process.env.NODE_ENV === 'development') {
 
 import express from "express";
 import cors from "cors";
-import http from "http";
+import http from "http";\nimport { initRedis } from "./utils/redisInit.js";\nimport logger from './utils/logger.js';
 import { Server } from "socket.io";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
@@ -102,7 +102,7 @@ import {
 } from './middleware/rateLimiter.js';
 
 import connectDB from "./dbConn.js";
-import config from "./config/config.js";
+import config from "./config/config.js";\nimport { initRedis } from "./utils/redisInit.js";\nimport logger from "./utils/logger.js";\nlet redisClient = null;\n(async () => { redisClient = await initRedis(config, logger); })();
 
 // Track DB connection state for scheduler guards
 let isDBConnected = false;
@@ -863,11 +863,11 @@ app.use((err, req, res, next) => {
 });
 
 // Start server
-const PORT = config.port;
+const PORT = process.env.NODE_ENV === 'test' ? 0 : config.port;
 server.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-  console.log(`Base URL: ${config.baseURL}`);
-  console.log('Socket.IO server ready for real-time connections');
+  logger.info(`Server running on port ${PORT}`);
+  logger.info(`Base URL: ${config.baseURL}`);
+  logger.info('Socket.IO server ready for real-time connections');
 
   // Daily backup system is DISABLED by default
   // To enable daily backups, set ENABLE_AUTO_BACKUP=true in your .env file
