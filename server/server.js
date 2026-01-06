@@ -107,13 +107,20 @@ import config from "./config/config.js";
 // Track DB connection state for scheduler guards
 let isDBConnected = false;
 
-// Connect to DB and track state
-connectDB().then(() => {
-  isDBConnected = true;
-}).catch((err) => {
-  console.error('❌ Failed to connect to MongoDB:', err);
-  process.exit(1);
-});
+// Connect to DB and track state (skip auto-connect during tests to avoid double connections)
+if (process.env.NODE_ENV !== 'test') {
+  connectDB().then(() => {
+    isDBConnected = true;
+  }).catch((err) => {
+    console.error('❌ Failed to connect to MongoDB:', err);
+    process.exit(1);
+  });
+} else {
+  // In tests, connection is handled by the test harness to avoid multiple openUri calls.
+  if (mongoose.connection.readyState === 1) {
+    isDBConnected = true;
+  }
+}
 
 // Import models
 import Notification from './models/Notification.js';
