@@ -4,11 +4,11 @@ import config from '../config/config.js';
 
 // Note: NODE_ENV-aware behavior
 // - In normal operation (development/production), all limiters are fully
-//   enforced and must NOT be weakened.
+//   enforced and must NOT be weakened.
 // - In test environment (NODE_ENV === 'test'), we selectively bypass
-//   signup rate limiting so auth/signup tests can exercise validation
-//   paths (e.g. under-18 rejection) deterministically without hitting
-//   429 Too Many Requests from rapid, same-IP signups.
+//   signup rate limiting so auth/signup tests can exercise validation
+//   paths (e.g. under-18 rejection) deterministically without hitting
+//   429 Too Many Requests from rapid, same-IP signups.
 const isTestEnv = process.env.NODE_ENV === 'test';
 
 // Optional Redis support for distributed rate limiting
@@ -21,7 +21,6 @@ const initializeRedis = async () => {
     if (config.redis && config.redis.host && config.redis.port) {
       const Redis = (await import('ioredis')).default;
       RedisStore = (await import('rate-limit-redis')).default;
-
       redisClient = new Redis({
         host: config.redis.host,
         port: config.redis.port,
@@ -29,11 +28,9 @@ const initializeRedis = async () => {
         enableOfflineQueue: false,
         lazyConnect: true
       });
-
       // Test connection
       await redisClient.connect();
       logger.info('Redis connected for rate limiting');
-
       // Handle Redis errors gracefully
       redisClient.on('error', (err) => {
         logger.error('Redis error:', err);
@@ -73,7 +70,6 @@ const createAdvancedLimiter = (options) => {
       method: req.method,
       prefix: options.prefix || 'default'
     });
-
     res.status(429).json({
       error: 'Too Many Requests',
       message: opts.message,
@@ -151,15 +147,16 @@ export const loginLimiter = createAdvancedLimiter({
 // IMPORTANT:
 // - This behavior is ONLY enabled when NODE_ENV === 'test'.
 // - Development and production behavior are unchanged and still use the
-//   strict signup rate limit below.
+//   strict signup rate limit below.
+
 export const signupLimiter = isTestEnv
   ? (req, _res, next) => next()
   : createAdvancedLimiter({
-      windowMs: 60 * 60 * 1000, // 1 hour
-      max: 5, // 5 signup attempts per hour
-      prefix: 'signup',
-      message: 'Too many signup attempts, please try again later.'
-    });
+    windowMs: 60 * 60 * 1000, // 1 hour
+    max: 5, // 5 signup attempts per hour
+    prefix: 'signup',
+    message: 'Too many signup attempts, please try again later.'
+  });
 
 export const postLimiter = createAdvancedLimiter({
   windowMs: 15 * 60 * 1000, // 15 minutes

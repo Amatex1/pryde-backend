@@ -15,17 +15,14 @@ function getSessionId(req) {
   if (req.headers['x-session-id']) {
     return req.headers['x-session-id'];
   }
-  
   // Try cookie
   if (req.cookies?.sessionId) {
     return req.cookies.sessionId;
   }
-  
   // Try user ID (if authenticated)
   if (req.userId) {
     return `user-${req.userId}`;
   }
-  
   // Generate temporary session ID
   return `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 }
@@ -41,20 +38,26 @@ export default function timelineTracker(req, res, next) {
   req.sessionId = sessionId;
   
   // Track API request
-  trackEvent(sessionId, EventType.API_FAILURE, {
+  trackEvent(sessionId, EventType.API_REQUEST, {
     method: req.method,
     path: req.path,
     query: req.query,
     timestamp: startTime
   });
   
-  // Intercept response to track failures
+  // Intercept response to track failures and successes
   const originalSend = res.send;
   const originalJson = res.json;
   
   res.send = function(data) {
     const duration = Date.now() - startTime;
-    
+    trackEvent(sessionId, EventType.API_RESPONSE, {
+      method: req.method,
+      path: req.path,
+      statusCode: res.statusCode,
+      duration,
+      data
+    });
     // Track API failures (4xx, 5xx)
     if (res.statusCode >= 400) {
       trackEvent(sessionId, EventType.API_FAILURE, {
@@ -65,13 +68,18 @@ export default function timelineTracker(req, res, next) {
         error: data
       });
     }
-    
     return originalSend.call(this, data);
   };
   
   res.json = function(data) {
     const duration = Date.now() - startTime;
-    
+    trackEvent(sessionId, EventType.API_RESPONSE, {
+      method: req.method,
+      path: req.path,
+      statusCode: res.statusCode,
+      duration,
+      data
+    });
     // Track API failures (4xx, 5xx)
     if (res.statusCode >= 400) {
       trackEvent(sessionId, EventType.API_FAILURE, {
@@ -82,7 +90,6 @@ export default function timelineTracker(req, res, next) {
         error: data
       });
     }
-    
     return originalJson.call(this, data);
   };
   
@@ -140,4 +147,3 @@ export function trackSocketEvent(sessionId, eventName, data = {}) {
     ...data
   });
 }
-
