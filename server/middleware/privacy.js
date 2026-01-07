@@ -1,15 +1,6 @@
 import User from '../models/User.js';
 import { isBlocked } from '../utils/blockHelper.js';
 
-// Helper function to fetch user by ID or username
-const getUserByIdOrUsername = async (identifier) => {
-  const mongoose = (await import('mongoose')).default;
-  if (mongoose.Types.ObjectId.isValid(identifier) && identifier.length === 24) {
-    return User.findById(identifier);
-  }
-  return User.findOne({ username: identifier });
-};
-
 // Check if user is blocked
 export const checkBlocked = async (req, res, next) => {
   try {
@@ -39,12 +30,23 @@ export const checkProfileVisibility = async (req, res, next) => {
     if (!profileIdentifier) {
       return res.status(400).json({ message: 'User identifier is required' });
     }
-    // Find user by ID or username
-    let profileUser = await getUserByIdOrUsername(profileIdentifier);
+
+    // Find user by ID or username with proper select
+    const mongoose = (await import('mongoose')).default;
+    let profileUser;
+
+    if (mongoose.Types.ObjectId.isValid(profileIdentifier) && profileIdentifier.length === 24) {
+      profileUser = await User.findById(profileIdentifier)
+        .select('_id privacySettings friends followers');
+    } else {
+      profileUser = await User.findOne({ username: profileIdentifier })
+        .select('_id privacySettings friends followers');
+    }
+
     if (!profileUser) {
       return res.status(404).json({ message: 'User not found' });
     }
-    profileUser = await profileUser.select('_id privacySettings friends followers');
+
     // User can always view their own profile
     if (currentUserId === profileUser._id.toString()) {
       return next();
