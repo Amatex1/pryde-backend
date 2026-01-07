@@ -14,6 +14,7 @@ import { sanitizeFields } from '../middleware/sanitize.js';
 import mongoose from 'mongoose';
 import { getUserStabilityReport } from '../utils/stabilityScore.js';
 import { processUserBadgesById } from '../services/autoBadgeService.js';
+import { hasBlocked } from '../utils/blockHelper.js';
 import logger from '../utils/logger.js';
 
 /**
@@ -516,7 +517,6 @@ router.get('/:identifier', auth, checkProfileVisibility, async (req, res) => {
     }
 
     // Check if this user has blocked the current user (for messaging availability)
-    const { hasBlocked } = await import('../utils/blockHelper.js');
     const hasBlockedCurrentUser = await hasBlocked(user._id.toString(), currentUserId.toString());
     sanitizedUser.hasBlockedCurrentUser = hasBlockedCurrentUser;
 
