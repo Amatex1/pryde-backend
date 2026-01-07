@@ -9,7 +9,9 @@ if (process.env.NODE_ENV === 'development') {
 
 import express from "express";
 import cors from "cors";
-import http from "http";\nimport { initRedis } from "./utils/redisInit.js";\nimport logger from "./utils/logger.js";
+import http from "http";
+import { initRedis } from "./utils/redisInit.js";
+import logger from "./utils/logger.js";
 import { Server } from "socket.io";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
@@ -102,7 +104,9 @@ import {
 } from './middleware/rateLimiter.js';
 
 import connectDB from "./dbConn.js";
-import config from "./config/config.js";\nimport { initRedis } from "./utils/redisInit.js";\nimport logger from "./utils/logger.js";\nlet redisClient = null;\n(async () => { redisClient = await initRedis(config, logger); })();
+import config from "./config/config.js";
+let redisClient = null;
+(async () => { redisClient = await initRedis(config, logger); })();
 
 // Track DB connection state for scheduler guards
 let isDBConnected = false;
