@@ -10,7 +10,9 @@
     "migrate:creator-privacy": "node migrations/add-creator-and-privacy-fields.js",
     "migrate:fullname": "node migrations/add-fullname-and-identity-fields.js",
     "migrate:tag-group-bridge": "node migrations/activate-tag-group-bridge.js",
-    "rollback:tag-group-bridge": "node migrations/rollback-tag-group-bridge.js"
+    "rollback:tag-group-bridge": "node migrations/rollback-tag-group-bridge.js",
+    "audit": "npm audit",
+    "audit-fix": "npm audit fix"
   },
   "dependencies": {
     "@simplewebauthn/browser": "^13.2.2",

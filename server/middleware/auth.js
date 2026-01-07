@@ -7,34 +7,22 @@ import { verifyAccessToken } from '../utils/tokenUtils.js';
 
 const auth = async (req, res, next) => {
   try {
-    // CRITICAL: Try to get token from cookies FIRST (for cross-origin requests)
-    // Then fall back to Authorization header
+    // Try to get token from cookies or headers
     let token = req.cookies?.token || req.cookies?.accessToken;
-
-    // If no cookie token, try Authorization header (Bearer format)
     if (!token) {
-      token = req.header('Authorization')?.replace('Bearer ', '');
-    }
-
-    // If still no token, try x-auth-token header (backwards compatibility for uploads)
-    if (!token) {
-      token = req.header('x-auth-token');
+      token = req.header('Authorization')?.replace('Bearer ', '') || req.header('x-auth-token');
     }
 
     // Debug logging
     if (config.nodeEnv === 'development') {
       console.log('🔐 Auth middleware - Path:', req.path);
       console.log('🍪 Cookies:', req.cookies);
-      console.log('🔑 Token from cookie:', req.cookies?.token ? 'Yes' : 'No');
-      console.log('🔑 Token from Authorization header:', req.header('Authorization') ? 'Yes' : 'No');
-      console.log('🔑 Token from x-auth-token header:', req.header('x-auth-token') ? 'Yes' : 'No');
       console.log('🔑 Final token:', token ? 'Yes' : 'No');
     }
 
     if (!token) {
       if (config.nodeEnv === 'development') {
         console.log('❌ No token provided in cookies or headers');
-
         // DIAGNOSTIC: Special warning for upload routes
         if (req.path.includes('/upload')) {
           console.warn('[UPLOAD BLOCKED] Auth middleware returned 401');
@@ -48,14 +36,12 @@ const auth = async (req, res, next) => {
 
     // Verify token
     const decoded = verifyAccessToken(token);
-
     if (config.nodeEnv === 'development') {
       console.log('✅ Token decoded successfully');
     }
 
     // Get user from database
     const user = await User.findById(decoded.userId).select('-password');
-
     if (!user) {
       if (config.nodeEnv === 'development') {
         console.log('❌ User not found in database');
@@ -63,7 +49,7 @@ const auth = async (req, res, next) => {
       return res.status(401).json({ message: 'User not found' });
     }
 
-    // CRITICAL: Check if user account is deleted (hard block - permanent)
+    // Check if user account is deleted
     if (user.isDeleted) {
       if (config.nodeEnv === 'development') {
         console.log('❌ Account has been deleted');
@@ -71,17 +57,11 @@ const auth = async (req, res, next) => {
       return res.status(401).json({ message: 'Account deleted', code: 'ACCOUNT_DELETED' });
     }
 
-    // NOTE: We no longer block deactivated users at auth level
-    // Deactivated users can authenticate, but app routes use requireActiveUser middleware
-    // This allows deactivated users to access /reactivate and /logout
-
-    // Check if session still exists (session logout validation)
-    // SAFETY: Older users may not have activeSessions array
+    // Check if session still exists
     if (decoded.sessionId && user.activeSessions) {
       const sessionExists = user.activeSessions.some(
         s => s.sessionId === decoded.sessionId
       );
-
       if (!sessionExists) {
         if (config.nodeEnv === 'development') {
           console.log('❌ Session has been logged out');
@@ -94,23 +74,20 @@ const auth = async (req, res, next) => {
       console.log('✅ User authenticated:', user.username);
     }
 
-    // Check age if birthday exists (auto-ban underage users)
+    // Check age if birthday exists
     if (user.birthday) {
       const birthDate = new Date(user.birthday);
       const today = new Date();
       let age = today.getFullYear() - birthDate.getFullYear();
       const monthDiff = today.getMonth() - birthDate.getMonth();
-
       if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
         age--;
       }
-
       if (age < 18) {
         // Auto-ban underage user
         user.isBanned = true;
         user.bannedReason = 'Underage - Platform is strictly 18+ only';
         await user.save();
-
         // Log underage access attempt
         try {
           await SecurityLog.create({
@@ -129,8 +106,9 @@ const auth = async (req, res, next) => {
         } catch (logError) {
           console.error('Failed to log underage access attempt:', logError);
         }
-
-        console.log('❌ User is underage and has been banned:', user.username);
+        if (config.nodeEnv === 'development') {
+          console.log('❌ User is underage and has been banned:', user.username);
+        }
         return res.status(403).json({
           message: 'Your account has been banned. This platform is strictly 18+ only.',
           reason: 'underage'
@@ -140,13 +118,17 @@ const auth = async (req, res, next) => {
 
     // Check if user is banned
     if (user.isBanned) {
-      console.log('❌ User is banned:', user.username);
+      if (config.nodeEnv === 'development') {
+        console.log('❌ User is banned:', user.username);
+      }
       return res.status(403).json({ message: 'Your account has been banned' });
     }
 
     // Check if user is suspended
     if (user.isSuspended && user.suspendedUntil > new Date()) {
-      console.log('❌ User is suspended:', user.username);
+      if (config.nodeEnv === 'development') {
+        console.log('❌ User is suspended:', user.username);
+      }
       return res.status(403).json({ message: 'Your account is suspended' });
     }
 
@@ -175,11 +157,7 @@ export const optionalAuth = async (req, res, next) => {
     // Try to get token from cookies or headers
     let token = req.cookies?.token || req.cookies?.accessToken;
     if (!token) {
-      token = req.header('Authorization')?.replace('Bearer ', '');
-    }
-    // Also check x-auth-token header (backwards compatibility for uploads)
-    if (!token) {
-      token = req.header('x-auth-token');
+      token = req.header('Authorization')?.replace('Bearer ', '') || req.header('x-auth-token');
     }
 
     // No token - continue without authentication
@@ -198,7 +176,6 @@ export const optionalAuth = async (req, res, next) => {
       req.user = user;
       req.userId = user._id;
     }
-
     next();
   } catch (error) {
     // Token invalid or expired - continue without authentication
@@ -207,3 +184,4 @@ export const optionalAuth = async (req, res, next) => {
 };
 
 export default auth;
+

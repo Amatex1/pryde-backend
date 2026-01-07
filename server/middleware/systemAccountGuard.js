@@ -1,22 +1,3 @@
-/**
- * System Account Guard Middleware
- * 
- * Enforces strict behavioral limits for system accounts.
- * System accounts must NEVER:
- * - Pretend to be human
- * - Share personal stories or opinions
- * - Express emotions (e.g. "I'm proud of you", "That sounds hard")
- * - Engage in arguments or debates
- * - React to user content with praise or validation
- * - Attempt to drive engagement
- * - Simulate conversation
- * - Post frequently or dominate the feed
- * - Send unsolicited DMs
- * - Replace human moderation judgment
- * 
- * This middleware prevents system accounts from performing unauthorized actions.
- */
-
 import User from '../models/User.js';
 import logger from '../utils/logger.js';
 
@@ -24,7 +5,6 @@ import logger from '../utils/logger.js';
 // ROLE-BASED PERMISSION MATRIX
 // Defines what each system role can and cannot do
 // ============================================================================
-
 const SYSTEM_ROLE_PERMISSIONS = {
   PROMPTS: {
     canCreatePosts: true,
@@ -39,7 +19,7 @@ const SYSTEM_ROLE_PERMISSIONS = {
   GUIDE: {
     canCreatePosts: true,
     canComment: true, // Only predefined informational responses
-    canReply: true,   // Only predefined informational responses
+    canReply: true,   // Only predefined informational responses
     canReact: false,
     canSendDM: false,
     canJoinGroups: false,
@@ -96,13 +76,11 @@ export function guardSystemAccountAction(action) {
       
       // Fetch user with system fields
       const user = await User.findById(userId).select('isSystemAccount systemRole username');
-      
       if (!user || !user.isSystemAccount) {
         return next(); // Regular users pass through
       }
       
       const permissions = SYSTEM_ROLE_PERMISSIONS[user.systemRole];
-      
       if (!permissions) {
         logger.warn(`System account ${user.username} has no valid systemRole`);
         return res.status(403).json({
@@ -113,7 +91,6 @@ export function guardSystemAccountAction(action) {
       
       // Check if action is allowed for this role
       const permissionKey = `can${action.charAt(0).toUpperCase() + action.slice(1)}`;
-      
       if (!permissions[permissionKey]) {
         logger.info(`System account ${user.username} blocked from action: ${action}`);
         return res.status(403).json({
@@ -156,4 +133,3 @@ export default {
   guardJoinGroups,
   SYSTEM_ROLE_PERMISSIONS
 };
-

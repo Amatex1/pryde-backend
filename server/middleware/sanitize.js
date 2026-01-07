@@ -1,10 +1,10 @@
+import sanitizeHtml from 'sanitize-html';
+
 /**
  * Backend XSS Protection Middleware
  * Sanitizes user input before saving to database
  * Uses sanitize-html for comprehensive XSS protection
  */
-
-import sanitizeHtml from 'sanitize-html';
 
 /**
  * Default sanitization options
@@ -25,8 +25,7 @@ const DEFAULT_OPTIONS = {
  * Removes all HTML and special characters
  */
 const STRICT_OPTIONS = {
-  allowedTags: [],
-  allowedAttributes: {},
+  ...DEFAULT_OPTIONS,
   textFilter: (text) => {
     // Remove any remaining special characters that could be used for XSS
     return text.replace(/[<>'"]/g, '');
@@ -39,15 +38,12 @@ const STRICT_OPTIONS = {
  * @param {Object} options - Sanitization options
  * @returns {string} Sanitized value
  */
-const sanitizeValue = (value, options = DEFAULT_OPTIONS) => {
+const sanitizeValue = (value, options) => {
   if (typeof value !== 'string') return value;
-
   // Sanitize HTML
   let sanitized = sanitizeHtml(value, options);
-
   // Trim whitespace
   sanitized = sanitized.trim();
-
   return sanitized;
 };
 
@@ -63,14 +59,12 @@ export const sanitizeFields = (fields = [], options = DEFAULT_OPTIONS) => {
       if (!req.body) {
         return next();
       }
-
       // Sanitize each specified field
       fields.forEach(field => {
         if (req.body[field] && typeof req.body[field] === 'string') {
           req.body[field] = sanitizeValue(req.body[field], options);
         }
       });
-
       next();
     } catch (error) {
       console.error('Sanitization error:', error);
@@ -90,7 +84,6 @@ export const sanitizeAll = (options = DEFAULT_OPTIONS) => {
       if (!req.body) {
         return next();
       }
-
       // Recursively sanitize all string fields
       const sanitizeObject = (obj) => {
         Object.keys(obj).forEach(key => {
@@ -105,7 +98,6 @@ export const sanitizeAll = (options = DEFAULT_OPTIONS) => {
           }
         });
       };
-
       sanitizeObject(req.body);
       next();
     } catch (error) {
@@ -126,4 +118,3 @@ export const sanitizeStrict = (fields = []) => {
 };
 
 export default { sanitizeFields, sanitizeAll, sanitizeStrict };
-

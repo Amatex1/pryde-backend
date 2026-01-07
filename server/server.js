@@ -426,8 +426,17 @@ app._router.stack.forEach((middleware) => {
 });
 
 // Health check and status endpoints
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', message: 'Pryde Social API is running', timestamp: new Date().toISOString() });
+app.get('/api/health', async (req, res) => {
+  let redisStatus = 'unknown';
+  try {
+    if (typeof redisClient?.ping === 'function') {
+      const ping = await redisClient.ping();
+      redisStatus = ping || 'OK';
+    }
+  } catch (err) {
+    redisStatus = 'error';
+  }
+  res.json({ status: 'ok', message: 'Pryde Social API is running', redis: redisStatus, timestamp: new Date().toISOString() });
 });
 
 app.get('/api/status', (req, res) => {
