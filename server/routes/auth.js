@@ -547,9 +547,11 @@ router.post('/signup', validateAgeBeforeRateLimit, signupLimiter, validateSignup
     res.cookie('refreshToken', refreshToken, cookieOptions);
 
     // CRITICAL: Also set access token in cookie for cross-origin auth
+    // Cookie maxAge should match refresh token (30 days) to persist across browser restarts
+    // The JWT itself expires in 15 minutes, but the cookie stays to allow refresh
     const accessTokenCookieOptions = {
       ...cookieOptions,
-      maxAge: 15 * 60 * 1000 // 15 minutes (access token expiry)
+      maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days (same as refresh token cookie)
     };
     res.cookie('token', accessToken, accessTokenCookieOptions);
 
@@ -919,9 +921,11 @@ router.post('/login', loginLimiter, validateLogin, async (req, res) => {
     res.cookie('refreshToken', refreshToken, cookieOptions);
 
     // CRITICAL: Also set access token in cookie for cross-origin auth
+    // Cookie maxAge should match refresh token (30 days) to persist across browser restarts
+    // The JWT itself expires in 15 minutes, but the cookie stays to allow refresh
     const accessTokenCookieOptions = {
       ...cookieOptions,
-      maxAge: 15 * 60 * 1000 // 15 minutes (access token expiry)
+      maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days (same as refresh token cookie)
     };
     logger.debug('Setting access token cookie (login) with options:', accessTokenCookieOptions);
     res.cookie('token', accessToken, accessTokenCookieOptions);
@@ -1177,9 +1181,10 @@ router.post('/verify-2fa-login', loginLimiter, async (req, res) => {
     res.cookie('refreshToken', refreshToken, cookieOptions);
 
     // Also set access token cookie for cross-origin auth, matching /login
+    // Cookie maxAge should match refresh token (30 days) to persist across browser restarts
     const accessTokenCookieOptions = {
       ...cookieOptions,
-      maxAge: 15 * 60 * 1000 // 15 minutes (access token expiry)
+      maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days (same as refresh token cookie)
     };
     logger.debug('Setting access token cookie (2FA login) with options:', accessTokenCookieOptions);
     res.cookie('token', accessToken, accessTokenCookieOptions);

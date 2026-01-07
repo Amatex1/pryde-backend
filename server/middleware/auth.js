@@ -18,11 +18,29 @@ const auth = async (req, res, next) => {
       console.log('🔐 Auth middleware - Path:', req.path);
       console.log('🍪 Cookies:', req.cookies);
       console.log('🔑 Final token:', token ? 'Yes' : 'No');
+
+      // Log token age if present
+      if (token) {
+        try {
+          const decoded = jwt.decode(token);
+          if (decoded && decoded.exp) {
+            const expiresIn = decoded.exp * 1000 - Date.now();
+            const minutesLeft = Math.floor(expiresIn / 1000 / 60);
+            console.log(`⏰ Token expires in: ${minutesLeft} minutes`);
+          }
+        } catch (e) {
+          // Ignore decode errors
+        }
+      }
     }
 
     if (!token) {
       if (config.nodeEnv === 'development') {
         console.log('❌ No token provided in cookies or headers');
+        console.log('📍 Cookie names present:', Object.keys(req.cookies || {}));
+        console.log('📍 Authorization header:', req.header('Authorization') ? 'Present' : 'Missing');
+        console.log('📍 x-auth-token header:', req.header('x-auth-token') ? 'Present' : 'Missing');
+
         // DIAGNOSTIC: Special warning for upload routes
         if (req.path.includes('/upload')) {
           console.warn('[UPLOAD BLOCKED] Auth middleware returned 401');

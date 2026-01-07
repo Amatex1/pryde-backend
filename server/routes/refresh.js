@@ -171,17 +171,21 @@ router.post('/', async (req, res) => {
     await user.save();
 
     logger.debug(`Token refreshed for user: ${user.username} (${user.email})`);
+    logger.info(`✅ Token refresh successful for ${user.username} - Rotated: ${shouldRotateToken}, Using previous: ${usingPreviousToken}`);
 
     // Set refresh token in httpOnly cookie
     const cookieOptions = getRefreshTokenCookieOptions();
 
     logger.debug('Setting refresh token cookie (refresh) with options:', cookieOptions);
+    logger.debug(`Refresh token cookie maxAge: ${cookieOptions.maxAge}ms (${cookieOptions.maxAge / 1000 / 60 / 60 / 24} days)`);
     res.cookie('refreshToken', newRefreshToken, cookieOptions);
 
     // CRITICAL: Also set access token in cookie for cross-origin auth
+    // Cookie maxAge should match refresh token (30 days) to persist across browser restarts
+    // The JWT itself expires in 15 minutes, but the cookie stays to allow refresh
     const accessTokenCookieOptions = {
       ...cookieOptions,
-      maxAge: 15 * 60 * 1000 // 15 minutes (access token expiry)
+      maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days (same as refresh token cookie)
     };
     logger.debug('Setting access token cookie (refresh) with options:', accessTokenCookieOptions);
     res.cookie('token', accessToken, accessTokenCookieOptions);
