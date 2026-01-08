@@ -622,13 +622,8 @@ router.post('/login', loginLimiter, validateLogin, async (req, res) => {
       });
     }
 
-    // CRITICAL: Check if account is deactivated (soft block - cannot login)
-    if (!user.isActive) {
-      return res.status(403).json({
-        message: 'Account deactivated. Contact support to reactivate.',
-        code: 'ACCOUNT_DEACTIVATED'
-      });
-    }
+    // Note: Deactivated accounts will be auto-reactivated after successful password verification
+    // (See auto-reactivation logic after password check below)
 
     // Check if account is locked
     if (user.isLocked()) {
@@ -747,7 +742,25 @@ router.post('/login', loginLimiter, validateLogin, async (req, res) => {
       await user.resetLoginAttempts();
     }
 
-    // NOTE: Removed auto-reactivation logic - deactivated users must contact support
+    // Auto-reactivate deactivated accounts on successful login
+    if (!user.isActive) {
+      user.isActive = true;
+      user.deactivatedAt = null;
+      await user.save();
+
+      logger.info(`✅ Account auto-reactivated for user: ${user.username} (${user.email})`);
+
+      // Emit real-time event for admin panel
+      const io = req.app.get('io');
+      if (io) {
+        io.emit('user_reactivated', {
+          userId: user._id,
+          username: user.username,
+          automatic: true,
+          timestamp: new Date()
+        });
+      }
+    }
 
     // Get device and IP info
     const ipAddress = getClientIp(req);
@@ -1045,10 +1058,25 @@ router.post('/verify-2fa-login', loginLimiter, async (req, res) => {
       return res.status(400).json({ message: 'Invalid 2FA code' });
     }
 
-    // Reactivate account if it was deactivated
-    if (user.isActive === false) {
+    // Auto-reactivate deactivated accounts on successful 2FA login
+    if (!user.isActive) {
       user.isActive = true;
+      user.deactivatedAt = null;
       await user.save();
+
+      logger.info(`✅ Account auto-reactivated for user: ${user.username} (${user.email}) via 2FA login`);
+
+      // Emit real-time event for admin panel
+      const io = req.app.get('io');
+      if (io) {
+        io.emit('user_reactivated', {
+          userId: user._id,
+          username: user.username,
+          automatic: true,
+          method: '2FA',
+          timestamp: new Date()
+        });
+      }
     }
 
     // Get device and IP info

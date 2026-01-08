@@ -369,6 +369,26 @@ router.post('/login-finish', async (req, res) => {
     passkey.counter = verification.authenticationInfo.newCounter;
     passkey.lastUsedAt = new Date();
 
+    // Auto-reactivate deactivated accounts on successful passkey login
+    if (!user.isActive) {
+      user.isActive = true;
+      user.deactivatedAt = null;
+
+      logger.info(`✅ Account auto-reactivated for user: ${user.username} (${user.email}) via passkey login`);
+
+      // Emit real-time event for admin panel
+      const io = req.app?.get('io');
+      if (io) {
+        io.emit('user_reactivated', {
+          userId: user._id,
+          username: user.username,
+          automatic: true,
+          method: 'passkey',
+          timestamp: new Date()
+        });
+      }
+    }
+
     // Update user last login
     user.lastLogin = new Date();
     user.lastSeen = new Date();
