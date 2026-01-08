@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Refresh Token Test</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .container {
+      background: white;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #333;
+      margin-bottom: 20px;
+    }
+    .test-section {
+      margin: 20px 0;
+      padding: 15px;
+      background: #f9f9f9;
+      border-left: 4px solid #4CAF50;
+    }
+    button {
+      background: #4CAF50;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 4px;
+      cursor: pointer;
+      margin: 5px;
+    }
+    button:hover {
+      background: #45a049;
+    }
+    .result {
+      margin-top: 10px;
+      padding: 10px;
+      background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-family: monospace;
+      white-space: pre-wrap;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+    .success { color: #4CAF50; }
+    .error { color: #f44336; }
+    .info { color: #2196F3; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔐 Refresh Token Diagnostic Tool</h1>
+    
+    <div class="test-section">
+      <h3>Step 1: Test Login</h3>
+      <p>Enter your credentials to test if cookies are being set:</p>
+      <input type="email" id="email" placeholder="Email" style="width: 100%; padding: 8px; margin: 5px 0;">
+      <input type="password" id="password" placeholder="Password" style="width: 100%; padding: 8px; margin: 5px 0;">
+      <button onclick="testLogin()">Test Login</button>
+      <div id="loginResult" class="result"></div>
+    </div>
+
+    <div class="test-section">
+      <h3>Step 2: Test Refresh Token</h3>
+      <p>After logging in, test if the refresh token works:</p>
+      <button onclick="testRefresh()">Test Refresh</button>
+      <div id="refreshResult" class="result"></div>
+    </div>
+
+    <div class="test-section">
+      <h3>Step 3: Check Cookies</h3>
+      <p>Check what cookies are stored:</p>
+      <button onclick="checkCookies()">Check Cookies</button>
+      <div id="cookieResult" class="result"></div>
+    </div>
+
+    <div class="test-section">
+      <h3>Step 4: Test CORS</h3>
+      <p>Verify CORS configuration:</p>
+      <button onclick="testCORS()">Test CORS</button>
+      <div id="corsResult" class="result"></div>
+    </div>
+  </div>
+
+  <script>
+    const API_URL = 'https://pryde-backend.onrender.com/api';
+
+    function log(elementId, message, type = 'info') {
+      const element = document.getElementById(elementId);
+      const timestamp = new Date().toLocaleTimeString();
+      const className = type === 'error' ? 'error' : type === 'success' ? 'success' : 'info';
+      element.innerHTML += `<span class="${className}">[${timestamp}] ${message}</span>\n`;
+      element.scrollTop = element.scrollHeight;
+    }
+
+    async function testLogin() {
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      const resultDiv = document.getElementById('loginResult');
+      resultDiv.innerHTML = '';
+
+      if (!email || !password) {
+        log('loginResult', 'Please enter email and password', 'error');
+        return;
+      }
+
+      try {
+        log('loginResult', 'Attempting login...', 'info');
+        
+        const response = await fetch(`${API_URL}/auth/login`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          credentials: 'include', // CRITICAL: Send/receive cookies
+          body: JSON.stringify({ email, password })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          log('loginResult', '✅ Login successful!', 'success');
+          log('loginResult', `User: ${data.user?.username}`, 'success');
+          log('loginResult', `Access Token: ${data.accessToken?.substring(0, 20)}...`, 'info');
+          
+          // Check if Set-Cookie header is present (we can't read it due to HttpOnly)
+          log('loginResult', '\nChecking cookies...', 'info');
+          setTimeout(() => {
+            log('loginResult', 'Cookie should be set now. Click "Check Cookies" to verify.', 'info');
+          }, 500);
+        } else {
+          log('loginResult', `❌ Login failed: ${data.message}`, 'error');
+        }
+      } catch (error) {
+        log('loginResult', `❌ Error: ${error.message}`, 'error');
+      }
+    }
+
+    async function testRefresh() {
+      const resultDiv = document.getElementById('refreshResult');
+      resultDiv.innerHTML = '';
+
+      try {
+        log('refreshResult', 'Attempting token refresh...', 'info');
+        log('refreshResult', 'Sending request with credentials: include', 'info');
+        
+        const response = await fetch(`${API_URL}/refresh`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          credentials: 'include' // CRITICAL: Send cookies
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          log('refreshResult', '✅ Refresh successful!', 'success');
+          log('refreshResult', `New Access Token: ${data.accessToken?.substring(0, 20)}...`, 'success');
+        } else {
+          log('refreshResult', `❌ Refresh failed (${response.status}): ${data.message}`, 'error');
+          
+          if (response.status === 401) {
+            log('refreshResult', '\n🔍 Diagnosis:', 'error');
+            log('refreshResult', '- The refreshToken cookie is not being sent', 'error');
+            log('refreshResult', '- Check if you logged in successfully', 'error');
+            log('refreshResult', '- Check browser cookies (Application tab)', 'error');
+          }
+        }
+      } catch (error) {
+        log('refreshResult', `❌ Error: ${error.message}`, 'error');
+      }
+    }
+
+    function checkCookies() {
+      const resultDiv = document.getElementById('cookieResult');
+      resultDiv.innerHTML = '';
+
+      log('cookieResult', 'Checking cookies...', 'info');
+      log('cookieResult', '\nNote: HttpOnly cookies (like refreshToken) cannot be read by JavaScript', 'info');
+      log('cookieResult', 'You need to check DevTools → Application → Cookies\n', 'info');
+
+      const cookies = document.cookie.split(';');
+      if (cookies.length === 0 || (cookies.length === 1 && cookies[0] === '')) {
+        log('cookieResult', 'No readable cookies found', 'info');
+      } else {
+        log('cookieResult', 'Readable cookies:', 'info');
+        cookies.forEach(cookie => {
+          log('cookieResult', `  ${cookie.trim()}`, 'info');
+        });
+      }
+
+      log('cookieResult', '\n📋 To check HttpOnly cookies:', 'info');
+      log('cookieResult', '1. Open DevTools (F12)', 'info');
+      log('cookieResult', '2. Go to Application tab', 'info');
+      log('cookieResult', '3. Expand Cookies in left sidebar', 'info');
+      log('cookieResult', '4. Look for pryde-backend.onrender.com', 'info');
+      log('cookieResult', '5. Check if "refreshToken" cookie exists', 'info');
+    }
+
+    async function testCORS() {
+      const resultDiv = document.getElementById('corsResult');
+      resultDiv.innerHTML = '';
+
+      try {
+        log('corsResult', 'Testing CORS configuration...', 'info');
+        log('corsResult', `Origin: ${window.location.origin}`, 'info');
+        
+        const response = await fetch(`${API_URL}/auth/status`, {
+          method: 'GET',
+          credentials: 'include'
+        });
+
+        if (response.ok) {
+          log('corsResult', '✅ CORS is configured correctly!', 'success');
+          log('corsResult', `Backend allows requests from: ${window.location.origin}`, 'success');
+        } else {
+          log('corsResult', `⚠️ Response status: ${response.status}`, 'error');
+        }
+      } catch (error) {
+        if (error.message.includes('CORS')) {
+          log('corsResult', '❌ CORS Error!', 'error');
+          log('corsResult', `Your origin (${window.location.origin}) is not allowed`, 'error');
+          log('corsResult', 'Backend needs to add your domain to allowedOrigins', 'error');
+        } else {
+          log('corsResult', `❌ Error: ${error.message}`, 'error');
+        }
+      }
+    }
+  </script>
+</body>
+</html>
+
