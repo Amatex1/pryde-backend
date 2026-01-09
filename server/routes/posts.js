@@ -998,6 +998,39 @@ router.post('/:id/comment/:commentId/reply', auth, requireActiveUser, commentLim
 
     await post.save();
 
+    // Create notification for parent comment author (don't notify yourself)
+    if (parentComment.user.toString() !== userId.toString()) {
+      const notification = new Notification({
+        recipient: parentComment.user,
+        sender: userId,
+        type: 'comment',
+        message: 'replied to your comment',
+        postId: post._id,
+        commentId: newReply._id
+      });
+      await notification.save();
+      await notification.populate('sender', 'username displayName profilePhoto');
+
+      // ✅ Emit real-time notification
+      emitNotificationCreated(req.io, parentComment.user.toString(), notification);
+
+      // Send push notification
+      const replier = await User.findById(userId).select('username displayName');
+      const replierName = replier.displayName || replier.username;
+
+      sendPushNotification(parentComment.user, {
+        title: `💬 New Reply`,
+        body: `${replierName} replied to your comment`,
+        data: {
+          type: 'reply',
+          postId: post._id.toString(),
+          commentId: newReply._id.toString(),
+          url: `/feed?post=${post._id}&comment=${newReply._id}`
+        },
+        tag: `reply-${newReply._id}`
+      }).catch(err => logger.error('Push notification error:', err));
+    }
+
     // PHASE 1 REFACTOR: Don't populate likes (keep private)
     await post.populate('author', 'username displayName profilePhoto isVerified pronouns badges');
     await post.populate('comments.user', 'username displayName profilePhoto isVerified pronouns badges');

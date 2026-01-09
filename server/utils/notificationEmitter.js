@@ -40,11 +40,11 @@ export function emitNotificationCreated(io, recipientId, notification) {
     createdAt: notification.createdAt
   };
 
-  io.to(`user:${recipientId}`).emit('notification:new', {
+  io.to(`user_${recipientId}`).emit('notification:new', {
     notification: sanitized
   });
 
-  console.log(`📡 [NotificationEmitter] Emitted notification:new to user:${recipientId}`);
+  console.log(`📡 [NotificationEmitter] Emitted notification:new to user_${recipientId}`);
 }
 
 /**
@@ -56,11 +56,11 @@ export function emitNotificationCreated(io, recipientId, notification) {
 export function emitNotificationRead(io, recipientId, notificationId) {
   if (!io || !recipientId || !notificationId) return;
 
-  io.to(`user:${recipientId}`).emit('notification:read', {
+  io.to(`user_${recipientId}`).emit('notification:read', {
     notificationId
   });
 
-  console.log(`📡 [NotificationEmitter] Emitted notification:read to user:${recipientId}`);
+  console.log(`📡 [NotificationEmitter] Emitted notification:read to user_${recipientId}`);
 }
 
 /**
@@ -72,11 +72,11 @@ export function emitNotificationRead(io, recipientId, notificationId) {
 export function emitNotificationDeleted(io, recipientId, notificationId) {
   if (!io || !recipientId || !notificationId) return;
 
-  io.to(`user:${recipientId}`).emit('notification:deleted', {
+  io.to(`user_${recipientId}`).emit('notification:deleted', {
     notificationId
   });
 
-  console.log(`📡 [NotificationEmitter] Emitted notification:deleted to user:${recipientId}`);
+  console.log(`📡 [NotificationEmitter] Emitted notification:deleted to user_${recipientId}`);
 }
 
 /**
@@ -87,8 +87,8 @@ export function emitNotificationDeleted(io, recipientId, notificationId) {
 export function emitAllNotificationsRead(io, recipientId) {
   if (!io || !recipientId) return;
 
-  io.to(`user:${recipientId}`).emit('notification:read_all');
+  io.to(`user_${recipientId}`).emit('notification:read_all');
 
-  console.log(`📡 [NotificationEmitter] Emitted notification:read_all to user:${recipientId}`);
+  console.log(`📡 [NotificationEmitter] Emitted notification:read_all to user_${recipientId}`);
 }
 
