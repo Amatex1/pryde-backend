@@ -23,6 +23,7 @@ import { deleteFromGridFS } from './upload.js'; // For deleting images from stor
 import { MutationTrace, verifyWrite } from '../utils/mutationTrace.js';
 import { asyncHandler, requireAuth, requireValidId, sendError, HttpStatus } from '../utils/errorHandler.js';
 import { processUserBadgesById } from '../services/autoBadgeService.js';
+import { populatePostBadges, populateSinglePostBadges } from '../utils/populateBadges.js';
 
 // PHASE 1 REFACTOR: Helper function to sanitize post for private likes
 // Removes like count and list of who liked, only shows if current user liked
@@ -149,6 +150,9 @@ router.get('/', auth, requireActiveUser, asyncHandler(async (req, res) => {
 
   const count = await Post.countDocuments(query);
 
+  // Populate badges for all posts
+  await populatePostBadges(posts);
+
   // Sanitize posts to hide like counts
   const sanitizedPosts = posts.map(post => sanitizePostForPrivateLikes(post, userId));
 
@@ -220,6 +224,9 @@ router.get('/user/:identifier', auth, requireActiveUser, asyncHandler(async (req
     .populate('commentCount')
     .sort({ createdAt: -1 });
 
+  // Populate badges for all posts
+  await populatePostBadges(posts);
+
   // Sanitize posts to hide like counts
   const sanitizedPosts = posts.map(post => sanitizePostForPrivateLikes(post, currentUserId));
 
@@ -248,6 +255,9 @@ router.get('/:id', auth, requireActiveUser, asyncHandler(async (req, res) => {
   if (!post) {
     return sendError(res, HttpStatus.NOT_FOUND, 'Post not found');
   }
+
+  // Populate badges for the post
+  await populateSinglePostBadges(post);
 
   // Sanitize post to hide like counts
   const sanitizedPost = sanitizePostForPrivateLikes(post, userId);
