@@ -138,8 +138,8 @@ router.get('/', auth, requireActiveUser, asyncHandler(async (req, res) => {
   }
 
   const posts = await Post.find(query)
-    .populate('author', 'username displayName profilePhoto isVerified pronouns')
-    .populate('comments.user', 'username displayName profilePhoto isVerified pronouns')
+    .populate('author', 'username displayName profilePhoto isVerified pronouns badges')
+    .populate('comments.user', 'username displayName profilePhoto isVerified pronouns badges')
     .populate('reactions.user', 'username displayName profilePhoto')
     .populate('comments.reactions.user', 'username displayName profilePhoto')
     .populate('commentCount')
@@ -213,8 +213,8 @@ router.get('/user/:identifier', auth, requireActiveUser, asyncHandler(async (req
   }
 
   const posts = await Post.find(query)
-    .populate('author', 'username displayName profilePhoto isVerified pronouns')
-    .populate('comments.user', 'username displayName profilePhoto isVerified pronouns')
+    .populate('author', 'username displayName profilePhoto isVerified pronouns badges')
+    .populate('comments.user', 'username displayName profilePhoto isVerified pronouns badges')
     .populate('reactions.user', 'username displayName profilePhoto')
     .populate('comments.reactions.user', 'username displayName profilePhoto')
     .populate('commentCount')
@@ -240,8 +240,8 @@ router.get('/:id', auth, requireActiveUser, asyncHandler(async (req, res) => {
   if (!requireValidId(postId, 'post ID', res)) return;
 
   const post = await Post.findById(postId)
-    .populate('author', 'username displayName profilePhoto isVerified pronouns')
-    .populate('comments.user', 'username displayName profilePhoto isVerified pronouns')
+    .populate('author', 'username displayName profilePhoto isVerified pronouns badges')
+    .populate('comments.user', 'username displayName profilePhoto isVerified pronouns badges')
     .populate('reactions.user', 'username displayName profilePhoto')
     .populate('comments.reactions.user', 'username displayName profilePhoto');
 
@@ -334,7 +334,7 @@ router.post('/', auth, requireActiveUser, postLimiter, sanitizeFields(['content'
     // CRITICAL: Verify write succeeded - never assume MongoDB write worked silently
     await verifyWrite(Post, post._id, mutation, { author: userId });
 
-    await post.populate('author', 'username displayName profilePhoto isVerified pronouns');
+    await post.populate('author', 'username displayName profilePhoto isVerified pronouns badges');
     // REMOVED 2025-12-28: tags populate deleted (Phase 5 - tags removed from Post schema)
 
     // ✅ Emit real-time event for new post
@@ -458,9 +458,9 @@ router.put('/:id', auth, requireActiveUser, sanitizeFields(['content', 'contentW
     await post.save();
 
     // PHASE 1 REFACTOR: Don't populate likes (keep private)
-    await post.populate('author', 'username displayName profilePhoto isVerified pronouns');
+    await post.populate('author', 'username displayName profilePhoto isVerified pronouns badges');
     // await post.populate('likes', 'username displayName profilePhoto'); // REMOVED - private likes
-    await post.populate('comments.user', 'username displayName profilePhoto isVerified pronouns');
+    await post.populate('comments.user', 'username displayName profilePhoto isVerified pronouns badges');
     // REMOVED 2025-12-26: originalPost population deleted (Phase 5)
 
     // PHASE 1 REFACTOR: Sanitize post to hide like counts
@@ -618,9 +618,9 @@ router.post('/:id/like', auth, requireActiveUser, reactionLimiter, guardReact, a
     await post.save();
 
     // PHASE 1 REFACTOR: Don't populate likes (keep private)
-    await post.populate('author', 'username displayName profilePhoto isVerified pronouns');
+    await post.populate('author', 'username displayName profilePhoto isVerified pronouns badges');
     // await post.populate('likes', 'username displayName profilePhoto'); // REMOVED - private likes
-    await post.populate('comments.user', 'username displayName profilePhoto isVerified pronouns');
+    await post.populate('comments.user', 'username displayName profilePhoto isVerified pronouns badges');
     // REMOVED 2025-12-26: originalPost population deleted (Phase 5)
 
     // PHASE 1 REFACTOR: Sanitize post to hide like counts
@@ -712,10 +712,10 @@ router.post('/:id/react', auth, requireActiveUser, reactionLimiter, async (req, 
     await post.save();
 
     // PHASE 1 REFACTOR: Don't populate likes (keep private)
-    await post.populate('author', 'username displayName profilePhoto isVerified pronouns');
+    await post.populate('author', 'username displayName profilePhoto isVerified pronouns badges');
     // await post.populate('likes', 'username displayName profilePhoto'); // REMOVED - private likes
     await post.populate('reactions.user', 'username displayName profilePhoto');
-    await post.populate('comments.user', 'username displayName profilePhoto isVerified pronouns');
+    await post.populate('comments.user', 'username displayName profilePhoto isVerified pronouns badges');
     // REMOVED 2025-12-26: originalPost population deleted (Phase 5)
 
     // PHASE 1 REFACTOR: Sanitize post to hide like counts
@@ -806,10 +806,10 @@ router.post('/:id/comment/:commentId/react', auth, requireActiveUser, reactionLi
     await post.save();
 
     // PHASE 1 REFACTOR: Don't populate likes (keep private)
-    await post.populate('author', 'username displayName profilePhoto isVerified pronouns');
+    await post.populate('author', 'username displayName profilePhoto isVerified pronouns badges');
     // await post.populate('likes', 'username displayName profilePhoto'); // REMOVED - private likes
     await post.populate('reactions.user', 'username displayName profilePhoto');
-    await post.populate('comments.user', 'username displayName profilePhoto isVerified pronouns');
+    await post.populate('comments.user', 'username displayName profilePhoto isVerified pronouns badges');
     await post.populate('comments.reactions.user', 'username displayName profilePhoto');
     // REMOVED 2025-12-26: originalPost population deleted (Phase 5)
 
@@ -921,8 +921,8 @@ router.post('/:id/comment', auth, requireActiveUser, commentLimiter, guardCommen
     }
 
     // PHASE 1 REFACTOR: Don't populate likes (keep private)
-    await post.populate('author', 'username displayName profilePhoto isVerified pronouns');
-    await post.populate('comments.user', 'username displayName profilePhoto isVerified pronouns');
+    await post.populate('author', 'username displayName profilePhoto isVerified pronouns badges');
+    await post.populate('comments.user', 'username displayName profilePhoto isVerified pronouns badges');
     // await post.populate('likes', 'username displayName profilePhoto'); // REMOVED - private likes
     // REMOVED 2025-12-26: originalPost population deleted (Phase 5)
 
@@ -989,8 +989,8 @@ router.post('/:id/comment/:commentId/reply', auth, requireActiveUser, commentLim
     await post.save();
 
     // PHASE 1 REFACTOR: Don't populate likes (keep private)
-    await post.populate('author', 'username displayName profilePhoto isVerified pronouns');
-    await post.populate('comments.user', 'username displayName profilePhoto isVerified pronouns');
+    await post.populate('author', 'username displayName profilePhoto isVerified pronouns badges');
+    await post.populate('comments.user', 'username displayName profilePhoto isVerified pronouns badges');
     // await post.populate('likes', 'username displayName profilePhoto'); // REMOVED - private likes
     // REMOVED 2025-12-26: originalPost population deleted (Phase 5)
 
@@ -1040,8 +1040,8 @@ router.put('/:id/comment/:commentId', auth, requireActiveUser, async (req, res) 
     await post.save();
 
     // PHASE 1 REFACTOR: Don't populate likes (keep private)
-    await post.populate('author', 'username displayName profilePhoto isVerified pronouns');
-    await post.populate('comments.user', 'username displayName profilePhoto isVerified pronouns');
+    await post.populate('author', 'username displayName profilePhoto isVerified pronouns badges');
+    await post.populate('comments.user', 'username displayName profilePhoto isVerified pronouns badges');
     // await post.populate('likes', 'username displayName profilePhoto'); // REMOVED - private likes
     // REMOVED 2025-12-26: originalPost population deleted (Phase 5)
 
@@ -1083,8 +1083,8 @@ router.delete('/:id/comment/:commentId', auth, requireActiveUser, async (req, re
     await post.save();
 
     // PHASE 1 REFACTOR: Don't populate likes (keep private)
-    await post.populate('author', 'username displayName profilePhoto isVerified pronouns');
-    await post.populate('comments.user', 'username displayName profilePhoto isVerified pronouns');
+    await post.populate('author', 'username displayName profilePhoto isVerified pronouns badges');
+    await post.populate('comments.user', 'username displayName profilePhoto isVerified pronouns badges');
     // await post.populate('likes', 'username displayName profilePhoto'); // REMOVED - private likes
     // REMOVED 2025-12-26: originalPost population deleted (Phase 5)
 
@@ -1176,7 +1176,7 @@ router.post('/:id/poll/vote', auth, requireActiveUser, async (req, res) => {
     post.poll.options[optionIndex].votes.push(userId);
 
     await post.save();
-    await post.populate('author', 'username displayName profilePhoto isVerified pronouns');
+    await post.populate('author', 'username displayName profilePhoto isVerified pronouns badges');
 
     const sanitizedPost = sanitizePostForPrivateLikes(post, userId);
     res.json(sanitizedPost);
@@ -1220,7 +1220,7 @@ router.delete('/:id/poll/vote', auth, requireActiveUser, async (req, res) => {
         targetId: req.params.id,
         endpoint: 'DELETE /posts/:id/poll/vote'
       });
-      await post.populate('author', 'username displayName profilePhoto isVerified pronouns');
+      await post.populate('author', 'username displayName profilePhoto isVerified pronouns badges');
       const sanitizedPost = sanitizePostForPrivateLikes(post, userId);
       return res.json(sanitizedPost);
     }
@@ -1231,7 +1231,7 @@ router.delete('/:id/poll/vote', auth, requireActiveUser, async (req, res) => {
     });
 
     await post.save();
-    await post.populate('author', 'username displayName profilePhoto isVerified pronouns');
+    await post.populate('author', 'username displayName profilePhoto isVerified pronouns badges');
 
     const sanitizedPost = sanitizePostForPrivateLikes(post, userId);
     res.json(sanitizedPost);
