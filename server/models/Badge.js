@@ -12,6 +12,11 @@
  * - platform: Official Pryde team/staff badges
  * - community: Community recognition badges
  * - activity: Earned through platform activity
+ *
+ * Badge Categories (for user control):
+ * - CORE_ROLE: Founder/Admin/Moderator/Verified (always visible, cannot be hidden)
+ * - STATUS: Active this month, Group organizer, Profile complete, Event host (user-controlled)
+ * - COSMETIC: Pride flags, Fun emojis, Seasonal, Collectibles (user-controlled)
  */
 
 import mongoose from 'mongoose';
@@ -37,6 +42,12 @@ const badgeSchema = new mongoose.Schema({
     type: String,
     enum: ['platform', 'community', 'activity'],
     required: true
+  },
+  // Badge category for user control (determines if user can hide it)
+  category: {
+    type: String,
+    enum: ['CORE_ROLE', 'STATUS', 'COSMETIC'],
+    default: 'STATUS'
   },
   // Assignment type: automatic (system) or manual (admin)
   assignmentType: {

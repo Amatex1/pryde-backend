@@ -123,7 +123,7 @@ router.get('/catalog', async (req, res) => {
 router.get('/me', auth, async (req, res) => {
   try {
     const user = await User.findById(req.user.id)
-      .select('badges privacySettings.hideBadges')
+      .select('badges publicBadges hiddenBadges privacySettings.hideBadges')
       .lean();
 
     if (!user) {
@@ -138,6 +138,8 @@ router.get('/me', auth, async (req, res) => {
 
     res.json({
       badges,
+      publicBadges: user.publicBadges || [],
+      hiddenBadges: user.hiddenBadges || [],
       hideBadges: user.privacySettings?.hideBadges || false,
       count: badges.length
     });
@@ -147,13 +149,72 @@ router.get('/me', auth, async (req, res) => {
   }
 });
 
+// @route   PUT /api/badges/me/visibility
+// @desc    Update badge visibility settings (public/hidden badges)
+// @access  Authenticated
+router.put('/me/visibility', auth, async (req, res) => {
+  try {
+    const { publicBadges, hiddenBadges } = req.body;
+
+    // Validate publicBadges array
+    if (publicBadges && (!Array.isArray(publicBadges) || publicBadges.length > 3)) {
+      return res.status(400).json({ message: 'You can only display up to 3 public badges' });
+    }
+
+    // Get user's current badges
+    const user = await User.findById(req.user.id).select('badges');
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Validate that all publicBadges belong to user
+    if (publicBadges) {
+      const invalidBadges = publicBadges.filter(badgeId => !user.badges.includes(badgeId));
+      if (invalidBadges.length > 0) {
+        return res.status(400).json({ message: 'You can only make your own badges public' });
+      }
+    }
+
+    // Validate that hiddenBadges are not CORE_ROLE badges
+    if (hiddenBadges && hiddenBadges.length > 0) {
+      const badgesToHide = await Badge.find({ id: { $in: hiddenBadges } }).select('id category');
+      const coreRoleBadges = badgesToHide.filter(b => b.category === 'CORE_ROLE');
+      if (coreRoleBadges.length > 0) {
+        return res.status(400).json({
+          message: 'Core role badges (Founder/Admin/Moderator/Verified) cannot be hidden'
+        });
+      }
+    }
+
+    // Update user's badge visibility settings
+    const updateData = {};
+    if (publicBadges !== undefined) updateData.publicBadges = publicBadges;
+    if (hiddenBadges !== undefined) updateData.hiddenBadges = hiddenBadges;
+
+    const updatedUser = await User.findByIdAndUpdate(
+      req.user.id,
+      { $set: updateData },
+      { new: true, runValidators: true }
+    ).select('badges publicBadges hiddenBadges');
+
+    res.json({
+      message: 'Badge visibility updated successfully',
+      publicBadges: updatedUser.publicBadges,
+      hiddenBadges: updatedUser.hiddenBadges
+    });
+  } catch (error) {
+    console.error('Update badge visibility error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // @route   GET /api/badges/user/:userId
-// @desc    Get badges for a specific user (with full badge details)
+// @desc    Get badges for a specific user (with full badge details, respecting visibility settings)
 // @access  Public
 router.get('/user/:userId', async (req, res) => {
   try {
     const user = await User.findById(req.params.userId)
-      .select('badges privacySettings.hideBadges')
+      .select('badges publicBadges hiddenBadges privacySettings.hideBadges')
       .lean();
 
     if (!user) {
@@ -166,12 +227,30 @@ router.get('/user/:userId', async (req, res) => {
     }
 
     // Get full badge details for user's badges
-    const badges = await Badge.find({
+    const allBadges = await Badge.find({
       id: { $in: user.badges || [] },
       isActive: true
-    }).sort({ priority: 1 }).lean();
+    }).lean();
 
-    res.json(badges);
+    // Filter badges based on user's visibility settings
+    let visibleBadges = allBadges;
+
+    // If user has configured public badges, show only those + CORE_ROLE badges
+    if (user.publicBadges && user.publicBadges.length > 0) {
+      visibleBadges = allBadges.filter(badge =>
+        badge.category === 'CORE_ROLE' || user.publicBadges.includes(badge.id)
+      );
+    } else {
+      // Otherwise, show all badges except hidden ones
+      visibleBadges = allBadges.filter(badge =>
+        !user.hiddenBadges?.includes(badge.id)
+      );
+    }
+
+    // Sort by priority
+    visibleBadges.sort((a, b) => (a.priority || 100) - (b.priority || 100));
+
+    res.json(visibleBadges);
   } catch (error) {
     console.error('Get user badges error:', error);
     res.status(500).json({ message: 'Server error' });

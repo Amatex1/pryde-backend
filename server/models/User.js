@@ -284,6 +284,30 @@ const userSchema = new mongoose.Schema({
     }],
     default: []
   },
+  // Badge visibility settings (added 2026-01-09)
+  // User can choose up to 3 badges to display publicly
+  // CORE_ROLE badges (Founder/Admin/Moderator/Verified) are always visible
+  publicBadges: {
+    type: [{
+      type: String,
+      ref: 'Badge'
+    }],
+    default: [],
+    validate: {
+      validator: function(v) {
+        return v.length <= 3; // Max 3 public badges
+      },
+      message: 'You can only display up to 3 public badges'
+    }
+  },
+  // Badges user has chosen to hide (only STATUS and COSMETIC badges can be hidden)
+  hiddenBadges: {
+    type: [{
+      type: String,
+      ref: 'Badge'
+    }],
+    default: []
+  },
   // REMOVED 2025-12-26: isVerified, verificationRequested, verificationRequestDate, verificationRequestReason (Phase 5)
   // Email verification
   emailVerified: {
