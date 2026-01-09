@@ -122,7 +122,7 @@ router.get('/catalog', async (req, res) => {
 // @access  Authenticated
 router.get('/me', auth, async (req, res) => {
   try {
-    const user = await User.findById(req.user.id)
+    const user = await User.findById(req.userId)
       .select('badges publicBadges hiddenBadges privacySettings.hideBadges')
       .lean();
 
@@ -162,7 +162,7 @@ router.put('/me/visibility', auth, async (req, res) => {
     }
 
     // Get user's current badges
-    const user = await User.findById(req.user.id).select('badges');
+    const user = await User.findById(req.userId).select('badges');
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
@@ -192,7 +192,7 @@ router.put('/me/visibility', auth, async (req, res) => {
     if (hiddenBadges !== undefined) updateData.hiddenBadges = hiddenBadges;
 
     const updatedUser = await User.findByIdAndUpdate(
-      req.user.id,
+      req.userId,
       { $set: updateData },
       { new: true, runValidators: true }
     ).select('badges publicBadges hiddenBadges');
@@ -468,7 +468,7 @@ router.post('/assign', auth, adminAuth(['admin', 'super_admin']), async (req, re
       badgeId: badge.id,
       badgeLabel: badge.label,
       action: 'assigned',
-      performedBy: req.user.id,
+      performedBy: req.userId,
       performedByUsername: req.user.username,
       isAutomatic: false,
       reason: reason || ''
@@ -522,7 +522,7 @@ router.post('/revoke', auth, adminAuth(['admin', 'super_admin']), async (req, re
       badgeId: badgeId,
       badgeLabel: badge?.label || badgeId,
       action: 'revoked',
-      performedBy: req.user.id,
+      performedBy: req.userId,
       performedByUsername: req.user.username,
       isAutomatic: false,
       reason: reason || ''
@@ -628,7 +628,7 @@ router.post('/admin/assign', auth, adminAuth(['admin', 'super_admin']), async (r
       badgeId: badgeId,
       badgeLabel: badge.label,
       action: 'assigned',
-      performedBy: req.user.id,
+      performedBy: req.userId,
       performedByUsername: req.user.username,
       isAutomatic: false,
       reason: reason || ''
@@ -682,7 +682,7 @@ router.post('/admin/revoke', auth, adminAuth(['admin', 'super_admin']), async (r
       badgeId: badgeId,
       badgeLabel: badge?.label || badgeId,
       action: 'revoked',
-      performedBy: req.user.id,
+      performedBy: req.userId,
       performedByUsername: req.user.username,
       isAutomatic: false,
       reason: reason || ''
