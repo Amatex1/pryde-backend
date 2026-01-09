@@ -642,6 +642,29 @@ router.put('/profile', auth, requireActiveUser, sanitizeFields([
       }
     });
 
+    // ✅ Emit real-time event for profile update
+    const io = req.app.get('io');
+    if (io) {
+      io.to(`user_${user._id}`).emit('profile:updated', {
+        user: {
+          _id: user._id,
+          username: user.username,
+          displayName: user.displayName,
+          fullName: user.fullName,
+          nickname: user.nickname,
+          pronouns: user.pronouns,
+          gender: user.gender,
+          bio: user.bio,
+          profilePhoto: user.profilePhoto,
+          coverPhoto: user.coverPhoto,
+          coverPhotoPosition: user.coverPhotoPosition,
+          profilePhotoPosition: user.profilePhotoPosition,
+          badges: user.badges
+        }
+      });
+      console.log(`📡 Emitted profile:updated to user_${user._id}`);
+    }
+
     res.json({ user });
   } catch (error) {
     console.error('Update profile error:', error);
