@@ -705,9 +705,14 @@ io.on('connection', (socket) => {
 
   // Handle request for online users list (privileged users only)
   socket.on('global_chat:get_online_users', async () => {
+    const startTime = Date.now();
     try {
+      console.log(`📡 User ${userId} requested online users list`);
+
       // Get current user to check role
+      const userCheckStart = Date.now();
       const user = await User.findById(userId).select('role').lean();
+      console.log(`⏱️ User role check took ${Date.now() - userCheckStart}ms`);
 
       if (!user) {
         socket.emit('error', { message: 'User not found' });
@@ -721,13 +726,16 @@ io.on('connection', (socket) => {
       }
 
       // Get all online user IDs from the global_chat room
+      const roomCheckStart = Date.now();
       const globalChatRoom = io.sockets.adapter.rooms.get('global_chat');
       if (!globalChatRoom) {
         socket.emit('global_chat:online_users_list', { users: [] });
         return;
       }
+      console.log(`⏱️ Room check took ${Date.now() - roomCheckStart}ms`);
 
       // Get socket IDs from the room - use Set for O(1) lookup
+      const mapStart = Date.now();
       const socketIdsSet = new Set(globalChatRoom);
 
       // Map socket IDs to user IDs - O(n) instead of O(n*m)
@@ -737,13 +745,17 @@ io.on('connection', (socket) => {
           onlineUserIds.push(uid);
         }
       }
+      console.log(`⏱️ Socket ID mapping took ${Date.now() - mapStart}ms (${onlineUserIds.length} users)`);
 
       // Fetch user details for online users with lean() for faster queries
+      const dbQueryStart = Date.now();
       const onlineUsersDetails = await User.find({
         _id: { $in: onlineUserIds }
       }).select('username displayName profilePhoto avatar role').lean();
+      console.log(`⏱️ Database query took ${Date.now() - dbQueryStart}ms`);
 
       // Format response
+      const formatStart = Date.now();
       const formattedUsers = onlineUsersDetails.map(u => ({
         id: u._id,
         username: u.username,
@@ -751,9 +763,10 @@ io.on('connection', (socket) => {
         avatar: u.profilePhoto || u.avatar,
         role: u.role
       }));
+      console.log(`⏱️ Response formatting took ${Date.now() - formatStart}ms`);
 
       socket.emit('global_chat:online_users_list', { users: formattedUsers });
-      console.log(`📡 Sent online users list to ${user.role} ${userId} (${formattedUsers.length} users)`);
+      console.log(`✅ Sent online users list to ${user.role} ${userId} (${formattedUsers.length} users) - Total: ${Date.now() - startTime}ms`);
 
     } catch (error) {
       console.error('❌ Error fetching online users:', error);
@@ -778,8 +791,9 @@ io.on('connection', (socket) => {
     }
   });
 
-  // Handle global message send
+  // Handle global message send (OPTIMIZED with performance logging)
   socket.on('global_message:send', async (data) => {
+    const startTime = Date.now();
     try {
       const { text, gifUrl, contentWarning } = data;
 
@@ -797,7 +811,9 @@ io.on('connection', (socket) => {
       }
 
       // Get user to check if banned/suspended
+      const userCheckStart = Date.now();
       const user = await User.findById(userId).select('username displayName profilePhoto avatar isBanned isSuspended');
+      console.log(`⏱️ User check took ${Date.now() - userCheckStart}ms`);
 
       if (!user) {
         socket.emit('error', { message: 'User not found' });
@@ -815,9 +831,12 @@ io.on('connection', (socket) => {
       }
 
       // Import GlobalMessage model
+      const importStart = Date.now();
       const GlobalMessage = (await import('./models/GlobalMessage.js')).default;
+      console.log(`⏱️ Model import took ${Date.now() - importStart}ms`);
 
       // Create new global message
+      const saveStart = Date.now();
       const newMessage = new GlobalMessage({
         senderId: userId,
         text: trimmedText || '',
@@ -826,6 +845,7 @@ io.on('connection', (socket) => {
       });
 
       await newMessage.save();
+      console.log(`⏱️ Message save took ${Date.now() - saveStart}ms`);
 
       // Prepare message payload for broadcast
       const messagePayload = {
@@ -844,9 +864,11 @@ io.on('connection', (socket) => {
       };
 
       // Broadcast to all users in global_chat room
+      const broadcastStart = Date.now();
       io.to('global_chat').emit('global_message:new', messagePayload);
+      console.log(`⏱️ Broadcast took ${Date.now() - broadcastStart}ms`);
 
-      console.log(`✅ Global message sent by ${user.username}`);
+      console.log(`✅ Global message sent by ${user.username} - Total: ${Date.now() - startTime}ms`);
 
     } catch (error) {
       console.error('❌ Error sending global message:', error);
