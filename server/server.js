@@ -163,6 +163,10 @@ const allowedOrigins = [
   config.cloudflareURL
 ].filter(Boolean); // Remove any undefined values
 
+// OPTIMIZATION: In-memory cache for online user details
+const onlineUsersCache = new Map(); // userId -> { username, displayName, avatar, role, timestamp }
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
 // Socket.IO setup with CORS and enhanced stability
 const io = new Server(server, {
   cors: {
@@ -170,15 +174,20 @@ const io = new Server(server, {
     methods: ['GET', 'POST'],
     credentials: true
   },
-  // Enhanced stability settings
-  pingTimeout: 60000, // 60 seconds - how long to wait for pong before considering connection dead
-  pingInterval: 25000, // 25 seconds - how often to send ping packets
-  upgradeTimeout: 30000, // 30 seconds - how long to wait for upgrade to complete
+  // OPTIMIZED: Faster ping/pong for better real-time performance
+  pingTimeout: 20000, // 20 seconds - faster detection of dead connections
+  pingInterval: 10000, // 10 seconds - more frequent pings for better responsiveness
+  upgradeTimeout: 10000, // 10 seconds - faster upgrade to WebSocket
   maxHttpBufferSize: 1e6, // 1MB - max message size
   transports: ['websocket', 'polling'], // Prefer WebSocket, fallback to polling
   allowUpgrades: true, // Allow transport upgrades
   perMessageDeflate: {
     threshold: 1024 // Only compress messages larger than 1KB
+  },
+  // OPTIMIZATION: Connection state recovery for better reliability
+  connectionStateRecovery: {
+    maxDisconnectionDuration: 2 * 60 * 1000, // 2 minutes
+    skipMiddlewares: true, // Skip auth middleware on recovery
   },
   httpCompression: {
     threshold: 1024 // Only compress HTTP responses larger than 1KB
@@ -719,66 +728,102 @@ io.on('connection', (socket) => {
     try {
       console.log(`📡 User ${userId} requested online users list`);
 
-      // Get current user to check role
-      const userCheckStart = Date.now();
-      const user = await User.findById(userId).select('role').lean();
-      console.log(`⏱️ User role check took ${Date.now() - userCheckStart}ms`);
-
-      if (!user) {
-        console.error(`❌ User ${userId} not found in database`);
-        socket.emit('error', { message: 'User not found' });
-        return;
+      // OPTIMIZATION: Cache user role in socket object to avoid DB query
+      if (!socket.userRole) {
+        const user = await User.findById(userId).select('role').lean();
+        if (!user) {
+          console.error(`❌ User ${userId} not found in database`);
+          socket.emit('error', { message: 'User not found' });
+          return;
+        }
+        socket.userRole = user.role; // Cache for future requests
       }
 
       // Only allow super_admin, admin, and moderator to see online users list
-      if (!['super_admin', 'admin', 'moderator'].includes(user.role)) {
-        console.warn(`⚠️ User ${userId} (${user.role}) attempted to access online users list`);
+      if (!['super_admin', 'admin', 'moderator'].includes(socket.userRole)) {
+        console.warn(`⚠️ User ${userId} (${socket.userRole}) attempted to access online users list`);
         socket.emit('error', { message: 'Insufficient permissions' });
         return;
       }
 
       // Get all online user IDs from the global_chat room
-      const roomCheckStart = Date.now();
       const globalChatRoom = io.sockets.adapter.rooms.get('global_chat');
       if (!globalChatRoom) {
         socket.emit('global_chat:online_users_list', { users: [] });
         return;
       }
-      console.log(`⏱️ Room check took ${Date.now() - roomCheckStart}ms`);
-
-      // Get socket IDs from the room - use Set for O(1) lookup
-      const mapStart = Date.now();
-      const socketIdsSet = new Set(globalChatRoom);
 
       // Map socket IDs to user IDs - O(n) instead of O(n*m)
+      const socketIdsSet = new Set(globalChatRoom);
       const onlineUserIds = [];
       for (const [uid, sid] of onlineUsers.entries()) {
         if (socketIdsSet.has(sid)) {
           onlineUserIds.push(uid);
         }
       }
-      console.log(`⏱️ Socket ID mapping took ${Date.now() - mapStart}ms (${onlineUserIds.length} users)`);
 
-      // Fetch user details for online users with lean() for faster queries
-      const dbQueryStart = Date.now();
-      const onlineUsersDetails = await User.find({
-        _id: { $in: onlineUserIds }
-      }).select('username displayName profilePhoto avatar role').lean();
-      console.log(`⏱️ Database query took ${Date.now() - dbQueryStart}ms`);
+      // OPTIMIZATION: Use cache to avoid DB queries
+      const now = Date.now();
+      const formattedUsers = [];
+      const uncachedUserIds = [];
 
-      // Format response
-      const formatStart = Date.now();
-      const formattedUsers = onlineUsersDetails.map(u => ({
-        id: u._id,
-        username: u.username,
-        displayName: u.displayName || u.username,
-        avatar: u.profilePhoto || u.avatar,
-        role: u.role
-      }));
-      console.log(`⏱️ Response formatting took ${Date.now() - formatStart}ms`);
+      // Check cache first
+      for (const uid of onlineUserIds) {
+        const cached = onlineUsersCache.get(uid);
+        if (cached && (now - cached.timestamp) < CACHE_TTL) {
+          // Use cached data
+          formattedUsers.push({
+            id: uid,
+            username: cached.username,
+            displayName: cached.displayName,
+            avatar: cached.avatar,
+            role: cached.role
+          });
+        } else {
+          // Need to fetch from DB
+          uncachedUserIds.push(uid);
+        }
+      }
+
+      // Fetch uncached users from database
+      if (uncachedUserIds.length > 0) {
+        const dbQueryStart = Date.now();
+        const onlineUsersDetails = await User.find({
+          _id: { $in: uncachedUserIds }
+        })
+        .select('username displayName profilePhoto avatar role')
+        .lean()
+        .maxTimeMS(2000); // Timeout after 2 seconds
+        console.log(`⏱️ Database query took ${Date.now() - dbQueryStart}ms for ${onlineUsersDetails.length} users`);
+
+        // Add to cache and formatted list
+        for (const u of onlineUsersDetails) {
+          const userData = {
+            username: u.username,
+            displayName: u.displayName || u.username,
+            avatar: u.profilePhoto || u.avatar,
+            role: u.role,
+            timestamp: now
+          };
+
+          // Update cache
+          onlineUsersCache.set(u._id.toString(), userData);
+
+          // Add to response
+          formattedUsers.push({
+            id: u._id,
+            username: userData.username,
+            displayName: userData.displayName,
+            avatar: userData.avatar,
+            role: userData.role
+          });
+        }
+      }
+
+      console.log(`📊 Cache stats: ${formattedUsers.length - uncachedUserIds.length} cached, ${uncachedUserIds.length} from DB`);
 
       socket.emit('global_chat:online_users_list', { users: formattedUsers });
-      console.log(`✅ Sent online users list to ${user.role} ${userId} (${formattedUsers.length} users) - Total: ${Date.now() - startTime}ms`);
+      console.log(`✅ Sent online users list (${formattedUsers.length} users) - Total: ${Date.now() - startTime}ms`);
 
     } catch (error) {
       console.error('❌ Error fetching online users:', error);
@@ -919,6 +964,21 @@ io.on('connection', (socket) => {
 // Make io accessible in routes
 app.set('io', io);
 app.set('onlineUsers', onlineUsers);
+
+// OPTIMIZATION: Periodic cache cleanup (every 10 minutes)
+setInterval(() => {
+  const now = Date.now();
+  let cleaned = 0;
+  for (const [userId, data] of onlineUsersCache.entries()) {
+    if ((now - data.timestamp) > CACHE_TTL) {
+      onlineUsersCache.delete(userId);
+      cleaned++;
+    }
+  }
+  if (cleaned > 0) {
+    console.log(`🧹 Cleaned ${cleaned} stale entries from online users cache`);
+  }
+}, 10 * 60 * 1000); // Every 10 minutes
 
 // Error handling middleware
 app.use((err, req, res, next) => {
