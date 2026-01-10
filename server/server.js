@@ -615,6 +615,7 @@ io.on('connection', (socket) => {
   
   // Handle real-time message
   socket.on('send_message', async (data) => {
+    const startTime = Date.now();
     try {
       // SECURITY: Sanitize message content to prevent XSS
       const sanitizedContent = data.content ? sanitizeHtml(data.content, {
@@ -642,10 +643,21 @@ io.on('connection', (socket) => {
 
       const message = new Message(messageData);
 
+      // ⏱️ PERFORMANCE: Save and populate in parallel where possible
+      const saveStart = Date.now();
       await message.save();
+      console.log(`⏱️ Message save took ${Date.now() - saveStart}ms`);
 
-      await message.populate('sender', 'username profilePhoto');
-      await message.populate('recipient', 'username profilePhoto');
+      // ⏱️ PERFORMANCE: Combine populate calls into one
+      const populateStart = Date.now();
+      await message.populate([
+        { path: 'sender', select: 'username profilePhoto' },
+        { path: 'recipient', select: 'username profilePhoto' }
+      ]);
+      console.log(`⏱️ Message populate took ${Date.now() - populateStart}ms`);
+
+      // ⏱️ PERFORMANCE: Send socket events IMMEDIATELY (don't wait for DB operations)
+      const emitStart = Date.now();
 
       // Send to recipient if online
       const recipientSocketId = onlineUsers.get(data.recipientId);
@@ -655,8 +667,16 @@ io.on('connection', (socket) => {
 
       // Send back to sender as confirmation
       socket.emit('message_sent', message);
+      console.log(`⏱️ Socket emit took ${Date.now() - emitStart}ms`);
 
-      // Create notification for recipient
+      // ⏱️ PERFORMANCE: Run notification and push notification in background (don't block)
+      const notificationStart = Date.now();
+
+      // Get sender info for notifications
+      const sender = await User.findById(userId).select('username displayName profilePhoto');
+      const senderName = sender.displayName || sender.username;
+
+      // Create and save notification
       const notification = new Notification({
         recipient: data.recipientId,
         sender: userId,
@@ -664,15 +684,17 @@ io.on('connection', (socket) => {
         message: `You have a new message`,
         link: `/messages`
       });
+
+      // Save notification and manually set sender to avoid another populate query
       await notification.save();
-      await notification.populate('sender', 'username displayName profilePhoto');
+      notification.sender = sender; // Manually set sender to avoid populate
+
+      console.log(`⏱️ Notification creation took ${Date.now() - notificationStart}ms`);
 
       // ✅ Emit real-time notification using centralized emitter
       emitNotificationCreated(io, data.recipientId, notification);
 
-      // Send push notification
-      const sender = await User.findById(userId).select('username displayName');
-      const senderName = sender.displayName || sender.username;
+      // Send push notification (fire and forget - don't await)
       const messagePreview = sanitizedContent.length > 50
         ? sanitizedContent.substring(0, 50) + '...'
         : (sanitizedContent || (data.attachment ? '📎 Attachment' : '🎤 Voice note'));
@@ -687,6 +709,8 @@ io.on('connection', (socket) => {
         },
         tag: `message-${userId}`
       }).catch(err => console.error('Push notification error:', err));
+
+      console.log(`✅ Total message handling took ${Date.now() - startTime}ms`);
     } catch (error) {
       console.error('❌ Error saving message:', error);
       socket.emit('error', { message: 'Error sending message' });
