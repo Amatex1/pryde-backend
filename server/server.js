@@ -715,12 +715,14 @@ io.on('connection', (socket) => {
       console.log(`⏱️ User role check took ${Date.now() - userCheckStart}ms`);
 
       if (!user) {
+        console.error(`❌ User ${userId} not found in database`);
         socket.emit('error', { message: 'User not found' });
         return;
       }
 
       // Only allow super_admin, admin, and moderator to see online users list
       if (!['super_admin', 'admin', 'moderator'].includes(user.role)) {
+        console.warn(`⚠️ User ${userId} (${user.role}) attempted to access online users list`);
         socket.emit('error', { message: 'Insufficient permissions' });
         return;
       }
