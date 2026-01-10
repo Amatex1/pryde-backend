@@ -279,7 +279,9 @@ app.use(helmet({
         "https://pryde-backend.onrender.com",
         "wss://pryde-backend.onrender.com",
         "https://prydeapp.com",
-        "https://tenor.googleapis.com"
+        "https://tenor.googleapis.com",
+        "https://media.tenor.com",
+        "https://*.tenor.com"
       ],
       fontSrc: ["'self'", "data:"],
       mediaSrc: ["'self'", "blob:", "https://media.tenor.com", "https://*.tenor.com"],
