@@ -67,6 +67,35 @@ const auth = async (req, res, next) => {
       return res.status(401).json({ message: 'User not found' });
     }
 
+    // PHASE B: Lock System Accounts
+    // System accounts can NEVER authenticate
+    // They can only be used by admins via "Post As" functionality
+    if (user.isSystemAccount === true) {
+      if (config.nodeEnv === 'development') {
+        console.log('❌ System account cannot authenticate');
+        console.log('🤖 System account:', user.username);
+      }
+
+      // Log security event
+      await SecurityLog.create({
+        userId: user._id,
+        action: 'SYSTEM_ACCOUNT_LOGIN_ATTEMPT',
+        ipAddress: getClientIp(req),
+        userAgent: req.headers['user-agent'],
+        success: false,
+        details: {
+          username: user.username,
+          systemRole: user.systemRole,
+          reason: 'System accounts cannot authenticate'
+        }
+      });
+
+      return res.status(403).json({
+        message: 'System accounts cannot authenticate',
+        code: 'SYSTEM_ACCOUNT_LOGIN_DENIED'
+      });
+    }
+
     // Check if user account is deleted
     if (user.isDeleted) {
       if (config.nodeEnv === 'development') {

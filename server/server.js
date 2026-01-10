@@ -44,6 +44,7 @@ import pushNotificationsRouter from './routes/pushNotifications.js';
 import reportsRoutes from './routes/reports.js';
 import blocksRoutes from './routes/blocks.js';
 import adminRoutes from './routes/admin.js';
+import adminPostsRoutes from './routes/adminPosts.js'; // PHASE C: Admin posting as system accounts
 import searchRoutes from './routes/search.js';
 import twoFactorRoutes from './routes/twoFactor.js';
 import sessionsRoutes, { setSocketIO } from './routes/sessions.js';
@@ -365,6 +366,7 @@ app.use('/api/push', pushNotificationsRouter);
 app.use('/api/reports', reportsRoutes);
 app.use('/api/blocks', blocksRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/admin/posts', adminPostsRoutes); // PHASE C: Admin posting as system accounts
 app.use('/api/search', searchRoutes);
 app.use('/api/2fa', twoFactorRoutes);
 app.use('/api/sessions', sessionsRoutes);

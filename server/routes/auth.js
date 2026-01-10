@@ -614,6 +614,33 @@ router.post('/login', loginLimiter, validateLogin, async (req, res) => {
       return res.status(401).json({ message: 'Invalid email or password' });
     }
 
+    // PHASE B: Lock System Accounts
+    // System accounts can NEVER authenticate
+    if (user.isSystemAccount === true) {
+      // Log security event
+      try {
+        await SecurityLog.create({
+          userId: user._id,
+          action: 'SYSTEM_ACCOUNT_LOGIN_ATTEMPT',
+          ipAddress: getClientIp(req),
+          userAgent: req.headers['user-agent'],
+          success: false,
+          details: {
+            username: user.username,
+            systemRole: user.systemRole,
+            reason: 'System accounts cannot authenticate'
+          }
+        });
+      } catch (logError) {
+        logger.error('Failed to log system account login attempt:', logError);
+      }
+
+      return res.status(403).json({
+        message: 'System accounts cannot authenticate',
+        code: 'SYSTEM_ACCOUNT_LOGIN_DENIED'
+      });
+    }
+
     // CRITICAL: Check if account is deleted (hard block - cannot login)
     if (user.isDeleted) {
       return res.status(401).json({

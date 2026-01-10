@@ -244,13 +244,15 @@ const userSchema = new mongoose.Schema({
   },
 
   // System account role - determines permissions and behavioral limits
+  // CORE: Essential platform functions (future: pryde_safety, pryde_support)
   // PROMPTS: Can create scheduled prompt posts, cannot reply/react/DM
   // GUIDE: Can post onboarding guidance, reply with predefined info only
   // MODERATION: Can post notices, lock threads, cannot argue
   // ANNOUNCEMENTS: Rare platform updates only (max 1-2 per month)
+  // SAFETY: Safety resources and crisis support (future)
   systemRole: {
     type: String,
-    enum: ['PROMPTS', 'GUIDE', 'MODERATION', 'ANNOUNCEMENTS', null],
+    enum: ['CORE', 'PROMPTS', 'GUIDE', 'MODERATION', 'ANNOUNCEMENTS', 'SAFETY', null],
     default: null
   },
 

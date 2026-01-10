@@ -8,6 +8,7 @@ import Post from '../models/Post.js';
 import Message from '../models/Message.js';
 import SecurityLog from '../models/SecurityLog.js';
 import ModerationSettings from '../models/ModerationSettings.js';
+import AdminActionLog from '../models/AdminActionLog.js'; // PHASE D: Admin action logs
 import auth from '../middleware/auth.js';
 import adminAuth, { checkPermission } from '../middleware/adminAuth.js';
 import crypto from 'crypto';
@@ -239,6 +240,15 @@ router.put('/users/:id/suspend', checkPermission('canManageUsers'), async (req, 
       return res.status(404).json({ message: 'User not found' });
     }
 
+    // PHASE G: God-Mode Protection
+    // NEVER allow system accounts to be suspended
+    if (user.isSystemAccount === true) {
+      return res.status(403).json({
+        message: 'Cannot suspend system accounts',
+        code: 'SYSTEM_ACCOUNT_PROTECTED'
+      });
+    }
+
     // NEVER allow super admins to be suspended (platform owner protection)
     if (user.role === 'super_admin') {
       return res.status(403).json({ message: 'Cannot suspend super admin (platform owner)' });
@@ -316,6 +326,15 @@ router.put('/users/:id/ban', checkPermission('canManageUsers'), async (req, res)
       return res.status(404).json({ message: 'User not found' });
     }
 
+    // PHASE G: God-Mode Protection
+    // NEVER allow system accounts to be banned
+    if (user.isSystemAccount === true) {
+      return res.status(403).json({
+        message: 'Cannot ban system accounts',
+        code: 'SYSTEM_ACCOUNT_PROTECTED'
+      });
+    }
+
     // NEVER allow super admins to be banned (platform owner protection)
     if (user.role === 'super_admin') {
       return res.status(403).json({ message: 'Cannot ban super admin (platform owner)' });
@@ -325,6 +344,20 @@ router.put('/users/:id/ban', checkPermission('canManageUsers'), async (req, res)
     if (['moderator', 'admin'].includes(user.role) && req.adminUser.role !== 'super_admin') {
       return res.status(403).json({ message: 'Cannot ban admin users' });
     }
+
+    // Log the action
+    await AdminActionLog.logAction({
+      actorId: req.user.id,
+      action: 'BAN_USER',
+      targetType: 'USER',
+      targetId: user._id,
+      details: {
+        username: user.username,
+        reason: reason || 'Severe violation of Terms of Service'
+      },
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent']
+    });
 
     user.isBanned = true;
     user.bannedReason = reason || 'Severe violation of Terms of Service';
@@ -388,6 +421,32 @@ router.put('/users/:id/role', checkPermission('canManageAdmins'), async (req, re
 
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
+    }
+
+    // PHASE G: God-Mode Protection
+    // NEVER allow system accounts to have their role changed
+    if (user.isSystemAccount === true) {
+      return res.status(403).json({
+        message: 'Cannot change role of system accounts',
+        code: 'SYSTEM_ACCOUNT_PROTECTED'
+      });
+    }
+
+    // PHASE G: Prevent Platform Suicide
+    // If demoting the last SUPER_ADMIN, prevent it
+    if (user.role === 'super_admin' && role !== 'super_admin') {
+      const superAdminCount = await User.countDocuments({
+        role: 'super_admin',
+        isDeleted: { $ne: true },
+        isBanned: { $ne: true }
+      });
+
+      if (superAdminCount <= 1) {
+        return res.status(403).json({
+          message: 'Cannot demote the last super admin. Promote another user to super admin first.',
+          code: 'LAST_SUPER_ADMIN_PROTECTED'
+        });
+      }
     }
 
     if (role) {
@@ -1388,6 +1447,250 @@ router.post('/moderation/user/:userId/reset-violations', checkPermission('canMan
     });
   } catch (error) {
     logger.error('Reset violations error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// ============================================================================
+// PHASE D: Admin Action Logs
+// ============================================================================
+
+// @route   GET /api/admin/action-logs
+// @desc    Get admin action logs (audit trail)
+// @access  Admin (canViewAnalytics)
+router.get('/action-logs', checkPermission('canViewAnalytics'), async (req, res) => {
+  try {
+    const {
+      page = 1,
+      limit = 50,
+      action = null,
+      actorId = null,
+      targetId = null,
+      asUserId = null
+    } = req.query;
+
+    const query = {};
+
+    if (action) {
+      query.action = action;
+    }
+
+    if (actorId) {
+      query.actorId = actorId;
+    }
+
+    if (targetId) {
+      query.targetId = targetId;
+    }
+
+    if (asUserId) {
+      query.asUserId = asUserId;
+    }
+
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+
+    const logs = await AdminActionLog.find(query)
+      .populate('actorId', 'username displayName profilePhoto')
+      .populate('asUserId', 'username displayName isSystemAccount systemRole')
+      .sort({ timestamp: -1 })
+      .limit(parseInt(limit))
+      .skip(skip);
+
+    const total = await AdminActionLog.countDocuments(query);
+
+    res.json({
+      success: true,
+      logs: logs,
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total: total,
+        pages: Math.ceil(total / parseInt(limit))
+      }
+    });
+  } catch (error) {
+    logger.error('Get admin action logs error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   GET /api/admin/action-logs/stats
+// @desc    Get admin action log statistics
+// @access  Admin (canViewAnalytics)
+router.get('/action-logs/stats', checkPermission('canViewAnalytics'), async (req, res) => {
+  try {
+    const { days = 30 } = req.query;
+
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - parseInt(days));
+
+    const totalActions = await AdminActionLog.countDocuments({
+      timestamp: { $gte: startDate }
+    });
+
+    const actionsByType = await AdminActionLog.aggregate([
+      { $match: { timestamp: { $gte: startDate } } },
+      { $group: { _id: '$action', count: { $sum: 1 } } },
+      { $sort: { count: -1 } }
+    ]);
+
+    const actionsByActor = await AdminActionLog.aggregate([
+      { $match: { timestamp: { $gte: startDate } } },
+      { $group: { _id: '$actorId', count: { $sum: 1 } } },
+      { $sort: { count: -1 } },
+      { $limit: 10 }
+    ]);
+
+    // Populate actor details
+    const actorIds = actionsByActor.map(a => a._id);
+    const actors = await User.find({ _id: { $in: actorIds } })
+      .select('username displayName profilePhoto');
+
+    const actorMap = {};
+    actors.forEach(actor => {
+      actorMap[actor._id.toString()] = actor;
+    });
+
+    const actionsByActorWithDetails = actionsByActor.map(a => ({
+      actor: actorMap[a._id.toString()],
+      count: a.count
+    }));
+
+    res.json({
+      success: true,
+      stats: {
+        totalActions: totalActions,
+        actionsByType: actionsByType,
+        actionsByActor: actionsByActorWithDetails,
+        period: `Last ${days} days`
+      }
+    });
+  } catch (error) {
+    logger.error('Get admin action log stats error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// ============================================================================
+// PHASE G: System Account Management (with God-Mode Protection)
+// ============================================================================
+
+// @route   PUT /api/admin/system-accounts/:id/activate
+// @desc    Activate a system account
+// @access  Admin (canManageUsers)
+router.put('/system-accounts/:id/activate', checkPermission('canManageUsers'), async (req, res) => {
+  try {
+    const systemAccount = await User.findById(req.params.id);
+
+    if (!systemAccount) {
+      return res.status(404).json({ message: 'System account not found' });
+    }
+
+    if (!systemAccount.isSystemAccount) {
+      return res.status(400).json({ message: 'This is not a system account' });
+    }
+
+    systemAccount.isActive = true;
+    await systemAccount.save();
+
+    // Log the action
+    await AdminActionLog.logAction({
+      actorId: req.user.id,
+      action: 'ACTIVATE_SYSTEM_ACCOUNT',
+      targetType: 'SYSTEM_ACCOUNT',
+      targetId: systemAccount._id,
+      details: {
+        username: systemAccount.username,
+        systemRole: systemAccount.systemRole
+      },
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent']
+    });
+
+    logger.info(`Admin ${req.user.username} activated system account ${systemAccount.username}`);
+
+    res.json({
+      success: true,
+      message: `System account ${systemAccount.username} activated`,
+      systemAccount: {
+        _id: systemAccount._id,
+        username: systemAccount.username,
+        displayName: systemAccount.displayName,
+        systemRole: systemAccount.systemRole,
+        isActive: systemAccount.isActive
+      }
+    });
+  } catch (error) {
+    logger.error('Activate system account error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   PUT /api/admin/system-accounts/:id/deactivate
+// @desc    Deactivate a system account
+// @access  Admin (canManageUsers)
+router.put('/system-accounts/:id/deactivate', checkPermission('canManageUsers'), async (req, res) => {
+  try {
+    const systemAccount = await User.findById(req.params.id);
+
+    if (!systemAccount) {
+      return res.status(404).json({ message: 'System account not found' });
+    }
+
+    if (!systemAccount.isSystemAccount) {
+      return res.status(400).json({ message: 'This is not a system account' });
+    }
+
+    systemAccount.isActive = false;
+    await systemAccount.save();
+
+    // Log the action
+    await AdminActionLog.logAction({
+      actorId: req.user.id,
+      action: 'DEACTIVATE_SYSTEM_ACCOUNT',
+      targetType: 'SYSTEM_ACCOUNT',
+      targetId: systemAccount._id,
+      details: {
+        username: systemAccount.username,
+        systemRole: systemAccount.systemRole
+      },
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent']
+    });
+
+    logger.info(`Admin ${req.user.username} deactivated system account ${systemAccount.username}`);
+
+    res.json({
+      success: true,
+      message: `System account ${systemAccount.username} deactivated`,
+      systemAccount: {
+        _id: systemAccount._id,
+        username: systemAccount.username,
+        displayName: systemAccount.displayName,
+        systemRole: systemAccount.systemRole,
+        isActive: systemAccount.isActive
+      }
+    });
+  } catch (error) {
+    logger.error('Deactivate system account error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   GET /api/admin/system-accounts
+// @desc    Get all system accounts
+// @access  Admin (canViewAnalytics)
+router.get('/system-accounts', checkPermission('canViewAnalytics'), async (req, res) => {
+  try {
+    const systemAccounts = await User.find({ isSystemAccount: true })
+      .select('username displayName systemRole isActive systemDescription systemCreatedBy createdAt');
+
+    res.json({
+      success: true,
+      systemAccounts: systemAccounts
+    });
+  } catch (error) {
+    logger.error('Get system accounts error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });

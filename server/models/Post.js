@@ -7,6 +7,17 @@ const postSchema = new mongoose.Schema({
     required: true,
     index: true
   },
+  // PHASE C: Acting On Behalf Of
+  // When an admin posts as a system account:
+  // - author = system account (what users see)
+  // - createdBy = admin who actually created it (audit trail)
+  // For regular posts: createdBy = author
+  createdBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    default: null,
+    index: true
+  },
   content: {
     type: String,
     required: false,
