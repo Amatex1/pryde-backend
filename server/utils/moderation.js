@@ -76,7 +76,8 @@ const spamPatterns = [
   { pattern: /\b(lottery|winner|prize)\b/i, description: 'Lottery/prize scam' },
   { pattern: /\b(click\s+here|buy\s+now)\b/i, description: 'Marketing spam' },
   { pattern: /(.)\1{10,}/, description: 'Repeated characters' },
-  { pattern: /[A-Z]{20,}/, description: 'Excessive caps block' },
+  // REMOVED: All-caps block - users should be allowed to express themselves how they want
+  // { pattern: /[A-Z]{20,}/, description: 'Excessive caps block' },
 ];
 
 /**
@@ -167,20 +168,21 @@ export const checkSpam = (content) => {
     };
   }
 
-  // Check for excessive caps (more than 70% of text)
-  const capsCount = (content.match(/[A-Z]/g) || []).length;
-  const letterCount = (content.match(/[A-Za-z]/g) || []).length;
-  if (letterCount > 10 && capsCount / letterCount > 0.7) {
-    const capsPercent = Math.round((capsCount / letterCount) * 100);
-    const capsPreview = content.substring(0, 50);
-    details.push(`${capsPercent}% capitalization`);
-    return {
-      isSpam: true,
-      reason: `Excessive capitalization (${capsPercent}% caps)`,
-      matchedText: capsPreview,
-      details: details
-    };
-  }
+  // REMOVED: Excessive caps check - users should be allowed to express themselves how they want
+  // People should be free to type in all caps if they choose to
+  // const capsCount = (content.match(/[A-Z]/g) || []).length;
+  // const letterCount = (content.match(/[A-Za-z]/g) || []).length;
+  // if (letterCount > 10 && capsCount / letterCount > 0.7) {
+  //   const capsPercent = Math.round((capsCount / letterCount) * 100);
+  //   const capsPreview = content.substring(0, 50);
+  //   details.push(`${capsPercent}% capitalization`);
+  //   return {
+  //     isSpam: true,
+  //     reason: `Excessive capitalization (${capsPercent}% caps)`,
+  //     matchedText: capsPreview,
+  //     details: details
+  //   };
+  // }
 
   return { isSpam: false, reason: '', matchedText: '', details: [] };
 };
