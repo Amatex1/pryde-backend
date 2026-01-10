@@ -273,15 +273,16 @@ app.use(helmet({
       scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "blob:"], // unsafe-* needed for React, blob: for Workbox
       scriptSrcElem: ["'self'", "'unsafe-inline'", "blob:"], // For Workbox service worker
       styleSrc: ["'self'", "'unsafe-inline'"],
-      imgSrc: ["'self'", "data:", "blob:"],
+      imgSrc: ["'self'", "data:", "blob:", "https://media.tenor.com", "https://*.tenor.com"],
       connectSrc: [
         "'self'",
         "https://pryde-backend.onrender.com",
         "wss://pryde-backend.onrender.com",
-        "https://prydeapp.com"
+        "https://prydeapp.com",
+        "https://tenor.googleapis.com"
       ],
       fontSrc: ["'self'", "data:"],
-      mediaSrc: ["'self'", "blob:"],
+      mediaSrc: ["'self'", "blob:", "https://media.tenor.com", "https://*.tenor.com"],
       workerSrc: ["'self'", "blob:"], // For Workbox service worker
       objectSrc: ["'none'"],
       frameAncestors: ["'self'"],
