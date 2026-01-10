@@ -19,6 +19,7 @@ import Post from '../models/Post.js';
 import AdminActionLog from '../models/AdminActionLog.js';
 import { authenticateToken } from '../middleware/auth.js';
 import { sanitizeFields } from '../middleware/sanitize.js';
+import requireAdminEscalation from '../middleware/requireAdminEscalation.js';
 import { getClientIp } from '../utils/sessionUtils.js';
 import logger from '../utils/logger.js';
 
@@ -50,8 +51,8 @@ const requireAdmin = async (req, res, next) => {
 /**
  * @route   POST /api/admin/posts
  * @desc    Create a post as admin or as a system account
- * @access  Admin
- * 
+ * @access  Admin (PRIVILEGED - requires escalation)
+ *
  * Body:
  * {
  *   content: string (required),
@@ -59,7 +60,7 @@ const requireAdmin = async (req, res, next) => {
  *   visibility: string (optional) - 'public', 'friends', 'private'
  * }
  */
-router.post('/', authenticateToken, requireAdmin, sanitizeFields(['content']), async (req, res) => {
+router.post('/', authenticateToken, requireAdmin, requireAdminEscalation, sanitizeFields(['content']), async (req, res) => {
   try {
     const { content, postAs, visibility = 'public' } = req.body;
     const actorId = req.adminUser._id;
@@ -110,7 +111,7 @@ router.post('/', authenticateToken, requireAdmin, sanitizeFields(['content']), a
     await post.populate('author', 'username displayName profilePhoto isVerified isSystemAccount systemRole');
     await post.populate('createdBy', 'username displayName');
     
-    // Log the action
+    // Log the action with escalation method
     await AdminActionLog.logAction({
       actorId: actorId,
       action: asUserId ? 'POST_AS_SYSTEM' : 'CREATE_POST',
@@ -122,6 +123,7 @@ router.post('/', authenticateToken, requireAdmin, sanitizeFields(['content']), a
         visibility: visibility,
         systemAccount: postAs || null
       },
+      escalationMethod: req.adminEscalation?.method || null,
       ipAddress: getClientIp(req),
       userAgent: req.headers['user-agent']
     });

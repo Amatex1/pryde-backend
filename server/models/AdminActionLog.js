@@ -95,19 +95,26 @@ const adminActionLogSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.Mixed,
     default: {}
   },
-  
+
+  // Escalation method used for privileged actions (passkey, totp, password)
+  escalationMethod: {
+    type: String,
+    enum: ['passkey', 'totp', 'password', null],
+    default: null
+  },
+
   // IP address of the admin (for security)
   ipAddress: {
     type: String,
     default: null
   },
-  
+
   // User agent (browser/device info)
   userAgent: {
     type: String,
     default: null
   },
-  
+
   // Timestamp (auto-generated)
   timestamp: {
     type: Date,
@@ -132,6 +139,7 @@ adminActionLogSchema.statics.logAction = async function({
   targetId = null,
   asUserId = null,
   details = {},
+  escalationMethod = null,
   ipAddress = null,
   userAgent = null
 }) {
@@ -142,6 +150,7 @@ adminActionLogSchema.statics.logAction = async function({
     targetId,
     asUserId,
     details,
+    escalationMethod,
     ipAddress,
     userAgent,
     timestamp: new Date()

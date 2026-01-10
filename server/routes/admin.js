@@ -11,6 +11,7 @@ import ModerationSettings from '../models/ModerationSettings.js';
 import AdminActionLog from '../models/AdminActionLog.js'; // PHASE D: Admin action logs
 import auth from '../middleware/auth.js';
 import adminAuth, { checkPermission } from '../middleware/adminAuth.js';
+import requireAdminEscalation from '../middleware/requireAdminEscalation.js'; // Privileged Admin Escalation
 import crypto from 'crypto';
 import { sendPasswordResetEmail, sendPasswordChangedEmail } from '../utils/emailService.js';
 import config from '../config/config.js';
@@ -315,8 +316,8 @@ router.put('/users/:id/unsuspend', checkPermission('canManageUsers'), async (req
 
 // @route   PUT /api/admin/users/:id/ban
 // @desc    Ban a user permanently
-// @access  Admin (canManageUsers)
-router.put('/users/:id/ban', checkPermission('canManageUsers'), async (req, res) => {
+// @access  Admin (canManageUsers) - PRIVILEGED (requires escalation)
+router.put('/users/:id/ban', checkPermission('canManageUsers'), requireAdminEscalation, async (req, res) => {
   try {
     const { reason } = req.body;
 
@@ -345,7 +346,7 @@ router.put('/users/:id/ban', checkPermission('canManageUsers'), async (req, res)
       return res.status(403).json({ message: 'Cannot ban admin users' });
     }
 
-    // Log the action
+    // Log the action with escalation method
     await AdminActionLog.logAction({
       actorId: req.user.id,
       action: 'BAN_USER',
@@ -355,6 +356,7 @@ router.put('/users/:id/ban', checkPermission('canManageUsers'), async (req, res)
         username: user.username,
         reason: reason || 'Severe violation of Terms of Service'
       },
+      escalationMethod: req.adminEscalation?.method || null,
       ipAddress: req.ip,
       userAgent: req.headers['user-agent']
     });
@@ -381,8 +383,8 @@ router.put('/users/:id/ban', checkPermission('canManageUsers'), async (req, res)
 
 // @route   PUT /api/admin/users/:id/unban
 // @desc    Unban a user
-// @access  Admin (canManageUsers)
-router.put('/users/:id/unban', checkPermission('canManageUsers'), async (req, res) => {
+// @access  Admin (canManageUsers) - PRIVILEGED (requires escalation)
+router.put('/users/:id/unban', checkPermission('canManageUsers'), requireAdminEscalation, async (req, res) => {
   try {
     const user = await User.findById(req.params.id);
 
@@ -412,8 +414,8 @@ router.put('/users/:id/unban', checkPermission('canManageUsers'), async (req, re
 
 // @route   PUT /api/admin/users/:id/role
 // @desc    Update user role and permissions
-// @access  Super Admin only (canManageAdmins)
-router.put('/users/:id/role', checkPermission('canManageAdmins'), async (req, res) => {
+// @access  Super Admin only (canManageAdmins) - PRIVILEGED (requires escalation)
+router.put('/users/:id/role', checkPermission('canManageAdmins'), requireAdminEscalation, async (req, res) => {
   try {
     const { role, permissions } = req.body;
 

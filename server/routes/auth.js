@@ -5,6 +5,7 @@ import crypto from 'crypto';
 import User from '../models/User.js';
 import Badge from '../models/Badge.js';
 import SecurityLog from '../models/SecurityLog.js';
+import AdminEscalationToken from '../models/AdminEscalationToken.js'; // PHASE G: Auto-revoke escalation on security events
 import Invite from '../models/Invite.js'; // Phase 7B: Invite-only growth
 import auth from '../middleware/auth.js';
 import config from '../config/config.js';
@@ -1574,6 +1575,18 @@ router.post('/logout', auth, async (req, res) => {
     // Get current session ID from JWT
     const sessionId = req.sessionId;
 
+    // PHASE G: Revoke admin escalation on logout
+    if (['admin', 'super_admin'].includes(user.role)) {
+      try {
+        const revokedCount = await AdminEscalationToken.revokeAllForUser(user._id, 'User logout');
+        if (revokedCount > 0) {
+          logger.info(`Revoked ${revokedCount} admin escalation token(s) for ${user.username} on logout`);
+        }
+      } catch (escalationError) {
+        logger.error('Error revoking admin escalation on logout:', escalationError);
+      }
+    }
+
     // Remove the current session from activeSessions
     if (sessionId) {
       user.activeSessions = user.activeSessions.filter(
@@ -1607,6 +1620,14 @@ router.post('/logout', auth, async (req, res) => {
     // Clear refresh token cookie
     const isProduction = config.nodeEnv === 'production';
     res.clearCookie('refreshToken', {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: isProduction ? 'none' : 'lax',
+      path: '/'
+    });
+
+    // Clear admin escalation cookie
+    res.clearCookie('pryde_admin_escalated', {
       httpOnly: true,
       secure: isProduction,
       sameSite: isProduction ? 'none' : 'lax',
