@@ -44,7 +44,8 @@ router.put('/:id/read', authMiddleware, requireActiveUser, asyncHandler(async (r
   }
 
   // SAFETY: Optional chaining for io
-  req.io?.to(`user:${userId}`).emit('notification:read', {
+  // NOTE: Socket room uses underscore format: user_${userId}
+  req.io?.to(`user_${userId}`).emit('notification:read', {
     notificationId: req.params.id
   });
 
@@ -63,7 +64,8 @@ router.put('/read-all', authMiddleware, requireActiveUser, asyncHandler(async (r
   );
 
   // SAFETY: Optional chaining for io
-  req.io?.to(`user:${userId}`).emit('notification:read_all');
+  // NOTE: Socket room uses underscore format: user_${userId}
+  req.io?.to(`user_${userId}`).emit('notification:read_all');
 
   res.json({ message: 'All notifications marked as read' });
 }));
@@ -80,7 +82,8 @@ router.delete('/:id', authMiddleware, requireActiveUser, asyncHandler(async (req
   await Notification.findOneAndDelete({ _id: req.params.id, recipient: userId });
 
   // SAFETY: Optional chaining for io
-  req.io?.to(`user:${userId}`).emit('notification:deleted', {
+  // NOTE: Socket room uses underscore format: user_${userId}
+  req.io?.to(`user_${userId}`).emit('notification:deleted', {
     notificationId: req.params.id
   });
 
