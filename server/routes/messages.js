@@ -6,6 +6,7 @@ import Conversation from '../models/Conversation.js';
 import mongoose from 'mongoose';
 import auth from '../middleware/auth.js';
 import requireActiveUser from '../middleware/requireActiveUser.js';
+import requireEmailVerification from '../middleware/requireEmailVerification.js';
 import { messageLimiter } from '../middleware/rateLimiter.js';
 import { checkMessagingPermission, checkBlocked } from '../middleware/privacy.js';
 import { checkMuted, moderateContent } from '../middleware/moderation.js';
@@ -220,9 +221,9 @@ router.get('/', auth, requireActiveUser, async (req, res) => {
   }
 });
 
-// Send a message
+// Send a message (requires email verification)
 // System accounts cannot send DMs (all roles blocked)
-router.post('/', auth, requireActiveUser, messageLimiter, guardSendDM, sanitizeFields(['content']), checkMessagingPermission, checkMuted, moderateContent, async (req, res) => {
+router.post('/', auth, requireActiveUser, requireEmailVerification, messageLimiter, guardSendDM, sanitizeFields(['content']), checkMessagingPermission, checkMuted, moderateContent, async (req, res) => {
   try {
     // REMOVED 2025-12-26: voiceNote no longer accepted (Phase 5)
     const { recipient, content, attachment, groupChatId } = req.body;

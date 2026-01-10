@@ -11,6 +11,7 @@ import User from '../models/User.js';
 import Notification from '../models/Notification.js';
 import auth from '../middleware/auth.js';
 import requireActiveUser from '../middleware/requireActiveUser.js';
+import requireEmailVerification from '../middleware/requireEmailVerification.js';
 import { postLimiter, commentLimiter, reactionLimiter } from '../middleware/rateLimiter.js';
 import { checkMuted, moderateContent } from '../middleware/moderation.js';
 import { guardComment, guardReply, guardReact } from '../middleware/systemAccountGuard.js';
@@ -267,8 +268,8 @@ router.get('/:id', auth, requireActiveUser, asyncHandler(async (req, res) => {
 
 // @route   POST /api/posts
 // @desc    Create a new post
-// @access  Private
-router.post('/', auth, requireActiveUser, postLimiter, sanitizeFields(['content', 'contentWarning']), checkMuted, moderateContent, async (req, res) => {
+// @access  Private (requires email verification)
+router.post('/', auth, requireActiveUser, requireEmailVerification, postLimiter, sanitizeFields(['content', 'contentWarning']), checkMuted, moderateContent, async (req, res) => {
   // Initialize mutation trace for end-to-end tracking
   const mutationId = req.headers['x-mutation-id'] || req.body?._mutationId;
   const userId = req.userId || req.user._id;
@@ -866,8 +867,8 @@ router.delete('/:id/share', auth, requireActiveUser, (req, res) => {
 
 // @route   POST /api/posts/:id/comment
 // @desc    Add a comment to a post
-// @access  Private (System accounts with PROMPTS/ANNOUNCEMENTS roles cannot comment)
-router.post('/:id/comment', auth, requireActiveUser, commentLimiter, guardComment, sanitizeFields(['content']), checkMuted, moderateContent, async (req, res) => {
+// @access  Private (System accounts with PROMPTS/ANNOUNCEMENTS roles cannot comment, requires email verification)
+router.post('/:id/comment', auth, requireActiveUser, requireEmailVerification, commentLimiter, guardComment, sanitizeFields(['content']), checkMuted, moderateContent, async (req, res) => {
   try {
     const { content, gifUrl } = req.body;
 
