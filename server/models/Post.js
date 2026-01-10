@@ -75,6 +75,11 @@ const postSchema = new mongoose.Schema({
       medium: String
     }
   }],
+  // GIF URL for posts (alternative to media array for GIF-only posts)
+  gifUrl: {
+    type: String,
+    required: false
+  },
   likes: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'

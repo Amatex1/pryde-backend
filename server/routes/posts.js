@@ -279,12 +279,12 @@ router.post('/', auth, requireActiveUser, requireEmailVerification, postLimiter,
 
   try {
     // REMOVED 2025-12-26: hiddenFrom, sharedWith, tags, tagOnly deleted (Phase 5)
-    const { content, images, media, visibility, contentWarning, hideMetrics, poll } = req.body;
+    const { content, images, media, visibility, contentWarning, hideMetrics, poll, gifUrl } = req.body;
 
-    // Require either content, media, or poll
-    if ((!content || content.trim() === '') && (!media || media.length === 0) && !poll) {
-      mutation.fail('Validation failed: missing content/media/poll', 400);
-      return res.status(400).json({ message: 'Post must have content, media, or a poll', _mutationId: mutation.mutationId });
+    // Require either content, media, poll, or GIF
+    if ((!content || content.trim() === '') && (!media || media.length === 0) && !poll && !gifUrl) {
+      mutation.fail('Validation failed: missing content/media/poll/gif', 400);
+      return res.status(400).json({ message: 'Post must have content, media, GIF, or a poll', _mutationId: mutation.mutationId });
     }
 
     mutation.addStep('VALIDATION_PASSED');
@@ -324,6 +324,7 @@ router.post('/', auth, requireActiveUser, requireEmailVerification, postLimiter,
       content: content || '',
       images: images || [],
       media: media || [],
+      gifUrl: gifUrl || null, // Include GIF URL if provided
       visibility: visibility || 'public',
       // REMOVED 2025-12-26: hiddenFrom, sharedWith, tags, tagOnly deleted (Phase 5)
       contentWarning: contentWarning || '',
