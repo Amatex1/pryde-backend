@@ -68,6 +68,7 @@ router.get('/messages', authMiddleware, async (req, res) => {
     const transformedMessages = messages.map(msg => ({
       _id: msg._id,
       text: msg.text,
+      gifUrl: msg.gifUrl, // 🔥 FIX: Include gifUrl in response
       contentWarning: msg.contentWarning,
       createdAt: msg.createdAt,
       updatedAt: msg.updatedAt,
