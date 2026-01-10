@@ -622,10 +622,16 @@ io.on('connection', (socket) => {
         allowedAttributes: {}
       }).trim() : '';
 
+      // Validate that either content or attachment is provided
+      if (!sanitizedContent && !data.attachment && !data.voiceNote) {
+        socket.emit('error', { message: 'Message must have content, attachment, or voice note' });
+        return;
+      }
+
       const messageData = {
         sender: userId,
         recipient: data.recipientId,
-        content: sanitizedContent,
+        content: sanitizedContent || ' ', // Use space if empty to satisfy required field
         attachment: data.attachment || null
       };
 
@@ -667,9 +673,9 @@ io.on('connection', (socket) => {
       // Send push notification
       const sender = await User.findById(userId).select('username displayName');
       const senderName = sender.displayName || sender.username;
-      const messagePreview = data.content.length > 50
-        ? data.content.substring(0, 50) + '...'
-        : data.content;
+      const messagePreview = sanitizedContent.length > 50
+        ? sanitizedContent.substring(0, 50) + '...'
+        : (sanitizedContent || (data.attachment ? '📎 Attachment' : '🎤 Voice note'));
 
       sendPushNotification(data.recipientId, {
         title: `💬 ${senderName}`,

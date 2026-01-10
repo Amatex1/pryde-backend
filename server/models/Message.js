@@ -18,7 +18,8 @@ const messageSchema = new mongoose.Schema({
   },
   content: {
     type: String,
-    required: true
+    required: false, // Allow empty content if attachment is present
+    default: ''
   },
   attachment: {
     type: String,
@@ -68,6 +69,21 @@ messageSchema.index({ sender: 1, recipient: 1, createdAt: -1 });
 messageSchema.index({ groupChat: 1, createdAt: -1 }); // For group chat messages
 messageSchema.index({ sender: 1, createdAt: -1 }); // For user's sent messages
 messageSchema.index({ recipient: 1, createdAt: -1 }); // For user's received messages
+
+// ============================================================================
+// VALIDATION
+// ============================================================================
+
+/**
+ * Validate that message has either content or attachment
+ */
+messageSchema.pre('validate', function(next) {
+  if (!this.content && !this.attachment) {
+    next(new Error('Message must have either content or attachment'));
+  } else {
+    next();
+  }
+});
 
 // ============================================================================
 // ENCRYPTION MIDDLEWARE
