@@ -83,6 +83,7 @@ import systemPromptsRoutes from './routes/systemPrompts.js'; // Rotating system 
 // Import middleware
 import auth from './middleware/auth.js';
 import requireActiveUser from './middleware/requireActiveUser.js';
+import { trackActivity, checkSessionTimeout } from './middleware/sessionTimeout.js';
 import { setCsrfToken, enforceCsrf } from './middleware/csrf.js';
 import { requestId, requestTimeout, apiSecurityHeaders, safeJsonResponse } from './middleware/hardening.js';
 
@@ -343,6 +344,11 @@ app.use((req, res, next) => {
   req.io = io;
   next();
 });
+
+// Session timeout middleware - tracks activity and enforces 30-minute idle timeout
+// Applied globally to all routes (will only affect authenticated requests)
+app.use(checkSessionTimeout);
+app.use(trackActivity);
 
 // Routes with specific rate limiters
 app.use('/api/auth', authRoutes);

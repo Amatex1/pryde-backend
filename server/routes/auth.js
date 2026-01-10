@@ -8,6 +8,7 @@ import SecurityLog from '../models/SecurityLog.js';
 import AdminEscalationToken from '../models/AdminEscalationToken.js'; // PHASE G: Auto-revoke escalation on security events
 import Invite from '../models/Invite.js'; // Phase 7B: Invite-only growth
 import auth from '../middleware/auth.js';
+import { getSessionInfo, clearSessionActivity, SESSION_TIMEOUT_MS } from '../middleware/sessionTimeout.js';
 import config from '../config/config.js';
 import { sendPasswordResetEmail, sendLoginAlertEmail, sendSuspiciousLoginEmail, sendVerificationEmail, sendPasswordChangedEmail } from '../utils/emailService.js';
 import {
@@ -1339,6 +1340,14 @@ router.get('/me', auth, async (req, res) => {
     // Add showTour flag for frontend (determines if tour modal should appear)
     if (user) {
       user.showTour = !user.hasCompletedTour && !user.hasSkippedTour;
+
+      // Add session timeout info
+      const sessionInfo = getSessionInfo(req.userId);
+      user.session = {
+        timeoutMs: SESSION_TIMEOUT_MS,
+        timeUntilTimeout: sessionInfo?.timeUntilTimeout || SESSION_TIMEOUT_MS,
+        lastActivity: sessionInfo?.lastActivity || Date.now()
+      };
     }
 
     res.json(user);
@@ -1650,6 +1659,9 @@ router.post('/logout', auth, async (req, res) => {
       sameSite: isProduction ? 'none' : 'lax',
       path: '/'
     });
+
+    // Clear session activity tracking
+    clearSessionActivity(req.userId);
 
     logger.debug(`User ${user.username} logged out successfully`);
 
