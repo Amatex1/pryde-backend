@@ -761,6 +761,23 @@ io.on('connection', (socket) => {
     }
   });
 
+  // Handle global chat typing indicator
+  socket.on('global_chat:typing', (data) => {
+    try {
+      const { isTyping } = data;
+
+      // Broadcast typing status to all users in global_chat room (except sender)
+      socket.to('global_chat').emit('global_chat:user_typing', {
+        userId,
+        isTyping: isTyping || false
+      });
+
+      console.log(`📡 User ${userId} is ${isTyping ? 'typing' : 'stopped typing'} in global chat`);
+    } catch (error) {
+      console.error('❌ Error handling global chat typing:', error);
+    }
+  });
+
   // Handle global message send
   socket.on('global_message:send', async (data) => {
     try {
