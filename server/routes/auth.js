@@ -588,10 +588,20 @@ router.post('/signup', validateAgeBeforeRateLimit, signupLimiter, validateSignup
     });
   } catch (error) {
     logger.error('Signup error:', error.message);
-    res.status(500).json({ 
+
+    // Handle password validation errors
+    if (error.name === 'ValidationError' && error.errors?.password) {
+      return res.status(400).json({
+        success: false,
+        message: error.errors.password.message,
+        field: 'password'
+      });
+    }
+
+    res.status(500).json({
       success: false,
       message: 'Server error during registration',
-      error: error.message 
+      error: error.message
     });
   }
 });
