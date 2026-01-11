@@ -135,7 +135,7 @@ function wrapIO(io) {
   };
 }
 
-module.exports = {
+export {
   emitValidated,
   toRoom,
   wrapSocket,
