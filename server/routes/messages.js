@@ -135,6 +135,9 @@ router.get('/:userId', auth, requireActiveUser, checkBlocked, async (req, res) =
     const { userId } = req.params;
     const currentUserId = req.userId;
 
+    // DEBUG: Production logging to trace message fetch issue
+    console.log(`📬 [GET /messages/:userId] Fetching messages between ${currentUserId} and ${userId}`);
+
     // Allow viewing existing message threads regardless of user status
     // This preserves chat history even if user is deactivated/deleted
     // Exclude messages that are deleted for this user specifically
@@ -149,6 +152,9 @@ router.get('/:userId', auth, requireActiveUser, checkBlocked, async (req, res) =
       .populate('sender', 'username profilePhoto')
       .populate('recipient', 'username profilePhoto')
       .sort({ createdAt: 1 });
+
+    // DEBUG: Production logging
+    console.log(`📬 [GET /messages/:userId] Found ${messages.length} messages`);
 
     // Transform messages to show "deleted" state for messages deleted for all
     const transformedMessages = messages.map(msg => {
