@@ -503,25 +503,34 @@ app.use(globalErrorHandler);
 
 // Socket.IO authentication middleware
 io.use(async (socket, next) => {
-  // Try to get token from auth object first, then from Authorization header
-  const token = socket.handshake.auth?.token ||
-                socket.handshake.headers?.authorization?.split(' ')[1];
+  const authStart = Date.now();
 
-  if (config.nodeEnv === 'development') {
-    console.log('🔌 Socket.IO authentication attempt');
-    console.log('🔑 Token received:', token ? 'Yes' : 'No');
-    console.log('🔑 Token source:', socket.handshake.auth?.token ? 'auth.token' :
-                socket.handshake.headers?.authorization ? 'Authorization header' : 'none');
-  }
-
-  if (!token) {
-    if (config.nodeEnv === 'development') {
-      console.log('❌ No token provided');
-    }
-    return next(new Error('Authentication required'));
-  }
+  // 🔥 CRITICAL: Add timeout to prevent hanging connections
+  const authTimeout = setTimeout(() => {
+    console.error('❌ Socket auth timeout after 5 seconds');
+    next(new Error('Authentication timeout'));
+  }, 5000); // 5 second timeout
 
   try {
+    // Try to get token from auth object first, then from Authorization header
+    const token = socket.handshake.auth?.token ||
+                  socket.handshake.headers?.authorization?.split(' ')[1];
+
+    if (config.nodeEnv === 'development') {
+      console.log('🔌 Socket.IO authentication attempt');
+      console.log('🔑 Token received:', token ? 'Yes' : 'No');
+      console.log('🔑 Token source:', socket.handshake.auth?.token ? 'auth.token' :
+                  socket.handshake.headers?.authorization ? 'Authorization header' : 'none');
+    }
+
+    if (!token) {
+      if (config.nodeEnv === 'development') {
+        console.log('❌ No token provided');
+      }
+      clearTimeout(authTimeout);
+      return next(new Error('Authentication required'));
+    }
+
     const decoded = jwt.verify(token, config.jwtSecret);
     if (config.nodeEnv === 'development') {
       console.log('✅ Token verified successfully');
@@ -529,12 +538,18 @@ io.use(async (socket, next) => {
 
     // Check if session still exists and user is active (session logout validation)
     if (decoded.sessionId) {
-      const user = await User.findById(decoded.userId).select('activeSessions isActive isDeleted');
+      const dbQueryStart = Date.now();
+      const user = await User.findById(decoded.userId)
+        .select('activeSessions isActive isDeleted')
+        .maxTimeMS(3000); // 3 second MongoDB query timeout
+
+      console.log(`⏱️ DB query took ${Date.now() - dbQueryStart}ms`);
 
       if (!user) {
         if (config.nodeEnv === 'development') {
           console.log('❌ User not found');
         }
+        clearTimeout(authTimeout);
         return next(new Error('User not found'));
       }
 
@@ -543,6 +558,7 @@ io.use(async (socket, next) => {
         if (config.nodeEnv === 'development') {
           console.log('❌ Account has been deleted');
         }
+        clearTimeout(authTimeout);
         return next(new Error('Account deleted'));
       }
 
@@ -551,6 +567,7 @@ io.use(async (socket, next) => {
         if (config.nodeEnv === 'development') {
           console.log('❌ Account is deactivated');
         }
+        clearTimeout(authTimeout);
         return next(new Error('Account deactivated'));
       }
 
@@ -562,14 +579,19 @@ io.use(async (socket, next) => {
         if (config.nodeEnv === 'development') {
           console.log('❌ Session has been logged out');
         }
+        clearTimeout(authTimeout);
         return next(new Error('Session has been logged out'));
       }
     }
 
     socket.userId = decoded.userId;
     socket.sessionId = decoded.sessionId;
+
+    clearTimeout(authTimeout);
+    console.log(`✅ Socket auth completed in ${Date.now() - authStart}ms`);
     next();
   } catch (error) {
+    clearTimeout(authTimeout);
     if (config.nodeEnv === 'development') {
       console.log('❌ Token verification failed:', error.message);
     }
