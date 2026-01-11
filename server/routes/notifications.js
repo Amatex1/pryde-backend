@@ -27,18 +27,30 @@ router.get('/', authMiddleware, requireActiveUser, asyncHandler(async (req, res)
 
   const { category } = req.query;
 
+  logger.info(`📬 [Notifications] Fetching for user: ${userId}, category: ${category || 'all'}`);
+
   let notifications = await Notification.find({ recipient: userId })
     .populate('sender', 'username displayName profilePhoto')
     .sort({ createdAt: -1 })
     .limit(50);
 
+  logger.info(`📬 [Notifications] Found ${notifications.length} notifications for user ${userId}`);
+
   // Filter by category if specified
   if (category === 'social') {
+    const before = notifications.length;
     notifications = notifications.filter(n => isSocialNotificationType(n.type));
+    logger.info(`📬 [Notifications] After social filter: ${notifications.length} (was ${before})`);
   } else if (category === 'message') {
     // Validation warning: MESSAGE notifications should use /messages/unread endpoint
     logger.warn('[Notification] MESSAGE category requested via /notifications - use /messages/unread instead');
     notifications = notifications.filter(n => isMessageNotificationType(n.type));
+  }
+
+  // Log first few notification types for debugging
+  if (notifications.length > 0) {
+    const types = notifications.slice(0, 5).map(n => n.type);
+    logger.info(`📬 [Notifications] First 5 types: ${types.join(', ')}`);
   }
 
   res.json(notifications);
