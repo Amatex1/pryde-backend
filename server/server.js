@@ -80,6 +80,9 @@ import circlesRoutes from './routes/circles.js'; // Feature 4: Small Circles
 import presenceRoutes from './routes/presence.js'; // Feature 5: Soft Presence States
 import systemPromptsRoutes from './routes/systemPrompts.js'; // Rotating system prompt posts
 
+// Mention notification service
+import { notifyMentionsInLounge } from './services/mentionNotificationService.js';
+
 // Import middleware
 import auth from './middleware/auth.js';
 import requireActiveUser from './middleware/requireActiveUser.js';
@@ -660,13 +663,20 @@ io.on('connection', (socket) => {
       const emitStart = Date.now();
 
       // Send to recipient if online
+      // UNIFIED: Using 'message:new' for all message events (Phase R unification)
       const recipientSocketId = onlineUsers.get(data.recipientId);
       if (recipientSocketId) {
-        io.to(recipientSocketId).emit('new_message', message);
+        io.to(recipientSocketId).emit('message:new', message);
       }
 
+      // Also emit to recipient's user room for cross-device sync
+      io.to(`user_${data.recipientId}`).emit('message:new', message);
+
       // Send back to sender as confirmation
-      socket.emit('message_sent', message);
+      // UNIFIED: Using 'message:sent' for consistency
+      socket.emit('message:sent', message);
+      // Also emit to sender's user room for cross-device sync
+      io.to(`user_${userId}`).emit('message:sent', message);
       console.log(`⏱️ Socket emit took ${Date.now() - emitStart}ms`);
 
       // ⏱️ PERFORMANCE: Run notification and push notification in background (don't block)
@@ -957,6 +967,16 @@ io.on('connection', (socket) => {
       const broadcastStart = Date.now();
       io.to('global_chat').emit('global_message:new', messagePayload);
       console.log(`⏱️ Broadcast took ${Date.now() - broadcastStart}ms`);
+
+      // Process @mention notifications (fire-and-forget, don't block response)
+      if (trimmedText) {
+        notifyMentionsInLounge({
+          content: trimmedText,
+          authorId: userId,
+          author: { displayName: user.displayName, username: user.username },
+          messageId: newMessage._id.toString()
+        }).catch(err => console.error('[Mention] Lounge notification error:', err));
+      }
 
       console.log(`✅ Global message sent by ${user.username} - Total: ${Date.now() - startTime}ms`);
 

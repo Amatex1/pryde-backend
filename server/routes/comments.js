@@ -6,6 +6,7 @@
 import express from 'express';
 import Comment from '../models/Comment.js';
 import Post from '../models/Post.js';
+import User from '../models/User.js';
 import auth from '../middleware/auth.js';
 import requireActiveUser from '../middleware/requireActiveUser.js';
 import { reactionLimiter } from '../middleware/rateLimiter.js';
@@ -17,6 +18,7 @@ import {
   MutationType
 } from '../utils/mutationTracker.js';
 import { asyncHandler, requireAuth, requireValidId, requireParams, sendError, HttpStatus } from '../utils/errorHandler.js';
+import { notifyMentionsInComment } from '../services/mentionNotificationService.js';
 
 const router = express.Router();
 
@@ -194,6 +196,20 @@ router.post('/posts/:postId/comments', auth, requireActiveUser, asyncHandler(asy
 
     // Populate author
     await comment.populate('authorId', 'username displayName profilePhoto isVerified pronouns');
+
+    // Process @mention notifications (fire-and-forget, don't block response)
+    if (content) {
+      const author = await User.findById(userId).select('username displayName').lean();
+      const surface = parentCommentId ? 'reply' : 'comment';
+      notifyMentionsInComment({
+        content,
+        authorId: userId,
+        author,
+        commentId: comment._id.toString(),
+        postId,
+        surface
+      }).catch(err => logger.error('[Mention] Notification error', { error: err.message }));
+    }
 
     // SAFETY: Optional chaining for io
     req.io?.emit('comment_added', {

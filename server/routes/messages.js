@@ -561,6 +561,21 @@ router.put('/:id/read', auth, requireActiveUser, async (req, res) => {
     if (message.recipient && message.recipient.toString() === req.userId) {
       message.read = true;
       await message.save();
+
+      // PHASE R: Emit socket event for cross-device sync
+      const io = req.app.get('io');
+      if (io) {
+        // Notify the reader (for cross-device sync)
+        io.to(`user_${req.userId}`).emit('message:read', {
+          messageId: message._id,
+          conversationWith: message.sender.toString()
+        });
+        // Notify the sender (for read receipts)
+        io.to(`user_${message.sender.toString()}`).emit('message:read', {
+          messageId: message._id,
+          readBy: req.userId
+        });
+      }
     }
 
     // For group messages - add to readBy array
@@ -572,6 +587,15 @@ router.put('/:id/read', auth, requireActiveUser, async (req, res) => {
           readAt: new Date()
         });
         await message.save();
+
+        // PHASE R: Emit socket event for group message read
+        const io = req.app.get('io');
+        if (io) {
+          io.to(`user_${req.userId}`).emit('message:read', {
+            messageId: message._id,
+            groupChatId: message.groupChat.toString()
+          });
+        }
       }
     }
 
@@ -907,6 +931,14 @@ router.delete('/conversations/:userId/mark-unread', auth, requireActiveUser, asy
     );
 
     await conversation.save();
+
+    // PHASE R: Emit socket event for cross-device sync
+    const io = req.app.get('io');
+    if (io) {
+      io.to(`user_${currentUserId}`).emit('message:read', {
+        conversationWith: otherUserId
+      });
+    }
 
     res.json({ message: 'Conversation marked as read', conversation });
   } catch (error) {
