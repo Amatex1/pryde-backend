@@ -83,6 +83,9 @@ import systemPromptsRoutes from './routes/systemPrompts.js'; // Rotating system 
 // Mention notification service
 import { notifyMentionsInLounge } from './services/mentionNotificationService.js';
 
+// Socket emit validation (DEV-ONLY validation)
+import { emitValidated, wrapIO, wrapSocket } from './utils/emitValidated.js';
+
 // Import middleware
 import auth from './middleware/auth.js';
 import requireActiveUser from './middleware/requireActiveUser.js';
@@ -582,12 +585,12 @@ io.on('connection', (socket) => {
   // Store user's socket connection
   onlineUsers.set(userId, socket.id);
 
-  // Emit online status to all users (dual events for compatibility)
-  io.emit('user_online', { userId });
-  io.emit('presence:update', { userId, online: true });
+  // Emit online status to all users (using validated emitter)
+  // Note: user_online is legacy - presence:update is canonical
+  emitValidated(io, 'presence:update', { userId, online: true });
 
   // Send list of online users to the newly connected user
-  socket.emit('online_users', Array.from(onlineUsers.keys()));
+  emitValidated(socket, 'online_users', Array.from(onlineUsers.keys()));
   
   // Join user to their personal room for targeted notifications
   socket.join(`user_${userId}`);
@@ -597,19 +600,19 @@ io.on('connection', (socket) => {
 
   // Emit updated online count to global chat
   const globalChatOnlineCount = io.sockets.adapter.rooms.get('global_chat')?.size || 0;
-  io.to('global_chat').emit('global_chat:online_count', { count: globalChatOnlineCount });
+  emitValidated(io.to('global_chat'), 'global_chat:online_count', { count: globalChatOnlineCount });
 
   // Handle request for online users list (for mobile/slow connections)
   socket.on('get_online_users', () => {
     console.log(`📡 User ${userId} requested online users list`);
-    socket.emit('online_users', Array.from(onlineUsers.keys()));
+    emitValidated(socket, 'online_users', Array.from(onlineUsers.keys()));
   });
 
   // Handle typing indicator
   socket.on('typing', (data) => {
     const recipientSocketId = onlineUsers.get(data.recipientId);
     if (recipientSocketId) {
-      io.to(recipientSocketId).emit('user_typing', {
+      emitValidated(io.to(recipientSocketId), 'user_typing', {
         userId: userId,
         isTyping: data.isTyping
       });
@@ -666,17 +669,17 @@ io.on('connection', (socket) => {
       // UNIFIED: Using 'message:new' for all message events (Phase R unification)
       const recipientSocketId = onlineUsers.get(data.recipientId);
       if (recipientSocketId) {
-        io.to(recipientSocketId).emit('message:new', message);
+        emitValidated(io.to(recipientSocketId), 'message:new', message);
       }
 
       // Also emit to recipient's user room for cross-device sync
-      io.to(`user_${data.recipientId}`).emit('message:new', message);
+      emitValidated(io.to(`user_${data.recipientId}`), 'message:new', message);
 
       // Send back to sender as confirmation
       // UNIFIED: Using 'message:sent' for consistency
-      socket.emit('message:sent', message);
+      emitValidated(socket, 'message:sent', message);
       // Also emit to sender's user room for cross-device sync
-      io.to(`user_${userId}`).emit('message:sent', message);
+      emitValidated(io.to(`user_${userId}`), 'message:sent', message);
       console.log(`⏱️ Socket emit took ${Date.now() - emitStart}ms`);
 
       // ⏱️ PERFORMANCE: Run notification and push notification in background (don't block)
@@ -762,7 +765,7 @@ io.on('connection', (socket) => {
 
     // Send updated online count
     const globalChatOnlineCount = io.sockets.adapter.rooms.get('global_chat')?.size || 0;
-    io.to('global_chat').emit('global_chat:online_count', { count: globalChatOnlineCount });
+    emitValidated(io.to('global_chat'), 'global_chat:online_count', { count: globalChatOnlineCount });
   });
 
   // Handle request for online users list (privileged users only)
@@ -792,7 +795,7 @@ io.on('connection', (socket) => {
       // Get all online user IDs from the global_chat room
       const globalChatRoom = io.sockets.adapter.rooms.get('global_chat');
       if (!globalChatRoom) {
-        socket.emit('global_chat:online_users_list', { users: [] });
+        emitValidated(socket, 'global_chat:online_users_list', { users: [] });
         return;
       }
 
@@ -865,12 +868,12 @@ io.on('connection', (socket) => {
 
       console.log(`📊 Cache stats: ${formattedUsers.length - uncachedUserIds.length} cached, ${uncachedUserIds.length} from DB`);
 
-      socket.emit('global_chat:online_users_list', { users: formattedUsers });
+      emitValidated(socket, 'global_chat:online_users_list', { users: formattedUsers });
       console.log(`✅ Sent online users list (${formattedUsers.length} users) - Total: ${Date.now() - startTime}ms`);
 
     } catch (error) {
       console.error('❌ Error fetching online users:', error);
-      socket.emit('error', { message: 'Error fetching online users' });
+      emitValidated(socket, 'error', { message: 'Error fetching online users' });
     }
   });
 
@@ -880,7 +883,7 @@ io.on('connection', (socket) => {
       const { isTyping } = data;
 
       // Broadcast typing status to all users in global_chat room (except sender)
-      socket.to('global_chat').emit('global_chat:user_typing', {
+      emitValidated(socket.to('global_chat'), 'global_chat:user_typing', {
         userId,
         isTyping: isTyping || false
       });
@@ -965,7 +968,7 @@ io.on('connection', (socket) => {
 
       // Broadcast to all users in global_chat room
       const broadcastStart = Date.now();
-      io.to('global_chat').emit('global_message:new', messagePayload);
+      emitValidated(io.to('global_chat'), 'global_message:new', messagePayload);
       console.log(`⏱️ Broadcast took ${Date.now() - broadcastStart}ms`);
 
       // Process @mention notifications (fire-and-forget, don't block response)
@@ -1003,14 +1006,14 @@ io.on('connection', (socket) => {
         console.error('Error updating lastSeen:', error);
       }
 
-      // Emit offline status to all users (dual events for compatibility)
-      io.emit('user_offline', { userId });
-      io.emit('presence:update', { userId, online: false });
+      // Emit offline status to all users (using validated emitter)
+      // Note: user_offline is legacy - presence:update is canonical
+      emitValidated(io, 'presence:update', { userId, online: false });
     }
 
     // Emit updated global chat online count
     const globalChatOnlineCount = io.sockets.adapter.rooms.get('global_chat')?.size || 0;
-    io.to('global_chat').emit('global_chat:online_count', { count: globalChatOnlineCount });
+    emitValidated(io.to('global_chat'), 'global_chat:online_count', { count: globalChatOnlineCount });
   });
 });
 
