@@ -1353,6 +1353,7 @@ router.get('/me', auth, async (req, res) => {
       _id: user._id,  // Legacy format (for backward compatibility)
       username: user.username,
       email: user.email,
+      emailVerified: user.emailVerified || false,  // CRITICAL: Include emailVerified status
       fullName: user.fullName,
       displayName: user.displayName,
       nickname: user.nickname,
