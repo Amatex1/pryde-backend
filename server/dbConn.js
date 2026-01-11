@@ -13,12 +13,44 @@ const connectDB = async () => {
 
     console.log("📡 Connecting to MongoDB...");
 
-    await mongoose.connect(mongoURL, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
+    // OPTIMIZED: Enhanced connection options for production
+    const connectionOptions = {
+      // Connection pool settings
+      maxPoolSize: parseInt(process.env.MONGO_MAX_POOL_SIZE || '50', 10), // Max connections in pool
+      minPoolSize: parseInt(process.env.MONGO_MIN_POOL_SIZE || '10', 10), // Min connections to maintain
+      maxIdleTimeMS: 60000, // Close idle connections after 60 seconds
+
+      // Timeout settings
+      serverSelectionTimeoutMS: 5000, // Timeout for selecting a server (5 seconds)
+      socketTimeoutMS: 45000, // Socket timeout (45 seconds)
+      connectTimeoutMS: 10000, // Initial connection timeout (10 seconds)
+
+      // Retry settings
+      retryWrites: true, // Automatically retry failed writes
+      retryReads: true, // Automatically retry failed reads
+
+      // Write concern
+      w: 'majority', // Wait for majority of replicas to acknowledge writes
+
+      // Read preference
+      readPreference: 'primaryPreferred', // Read from primary, fallback to secondary
+
+      // Compression
+      compressors: ['zlib'], // Enable compression for network traffic
+      zlibCompressionLevel: 6, // Compression level (1-9, 6 is balanced)
+
+      // Monitoring
+      heartbeatFrequencyMS: 10000, // Check server health every 10 seconds
+
+      // Auto-index creation (disable in production for performance)
+      autoIndex: process.env.NODE_ENV !== 'production',
+    };
+
+    await mongoose.connect(mongoURL, connectionOptions);
 
     console.log("✅ MongoDB Connected Successfully");
+    console.log(`📊 Connection Pool: ${connectionOptions.minPoolSize}-${connectionOptions.maxPoolSize} connections`);
+    console.log(`🔧 Environment: ${process.env.NODE_ENV || 'development'}`);
 
     // PHASE 4: Initialize core tags after DB connection
     const { initializeTags } = await import('./routes/tags.js');
