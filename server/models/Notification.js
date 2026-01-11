@@ -1,4 +1,6 @@
 import mongoose from 'mongoose';
+import { ALL_NOTIFICATION_TYPES, validateNotificationType, isForbiddenNotificationType } from '../constants/notificationTypes.js';
+import logger from '../utils/logger.js';
 
 const notificationSchema = new mongoose.Schema({
   recipient: {
@@ -14,18 +16,7 @@ const notificationSchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    enum: [
-      'friend_request', 'friend_accept', 'message', 'mention',
-      'like', 'comment', 'share', 'login_approval',
-      // PHASE 4B: Group notification types
-      'group_post',    // New post in a group you've opted into
-      'group_mention', // Someone @mentioned you in a group
-      // Life-Signal Feature 3: Resonance signals
-      'resonance',     // "Someone quietly resonated with something you shared"
-      // Life-Signal Feature 4: Circle notifications
-      'circle_invite', // Invited to join a circle
-      'circle_post'    // New post in a circle (minimal)
-    ],
+    enum: ALL_NOTIFICATION_TYPES,
     required: true
   },
   message: {
@@ -59,10 +50,13 @@ const notificationSchema = new mongoose.Schema({
   groupName: {
     type: String
   },
-  // For batched notifications (e.g., "3 new posts in Book Club")
+  // DEPRECATED: batchCount - notifications should NOT be batched per calm-first spec
+  // Kept for backward compatibility but should always be 1
+  // DO NOT use this field for new features
   batchCount: {
     type: Number,
-    default: 1
+    default: 1,
+    max: 1 // Enforce no batching
   },
   // For login approval notifications
   loginApprovalId: {
@@ -98,9 +92,34 @@ const notificationSchema = new mongoose.Schema({
   }
 });
 
+// ============================================
+// PRE-SAVE VALIDATION (Calm-First Enforcement)
+// ============================================
+notificationSchema.pre('save', function(next) {
+  const validation = validateNotificationType(this.type);
+
+  if (!validation.valid) {
+    // Log warning but don't block (non-fatal per spec)
+    logger.warn(`[Notification] ${validation.reason}`, {
+      type: this.type,
+      recipient: this.recipient?.toString(),
+      sender: this.sender?.toString()
+    });
+
+    // Block forbidden types entirely
+    if (isForbiddenNotificationType(this.type)) {
+      return next(new Error(validation.reason));
+    }
+  }
+
+  next();
+});
+
 // Indexes for efficient queries
 notificationSchema.index({ recipient: 1, createdAt: -1 });
 notificationSchema.index({ recipient: 1, read: 1 });
 notificationSchema.index({ createdAt: -1 });
+// Index for type-based filtering (social vs message)
+notificationSchema.index({ recipient: 1, type: 1, createdAt: -1 });
 
 export default mongoose.model('Notification', notificationSchema);

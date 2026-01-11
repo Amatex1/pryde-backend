@@ -1,5 +1,11 @@
 /**
  * Notification Routes
+ *
+ * CANONICAL NOTIFICATION SYSTEM
+ * - Bell icon: SOCIAL notifications only
+ * - Messages badge: MESSAGE notifications only (handled by messages routes)
+ * - No batching, no grouping, chronological order only
+ *
  * PHASE 2 SAFETY: All routes use guard clauses and optional chaining
  */
 
@@ -9,17 +15,31 @@ import Notification from '../models/Notification.js';
 import authMiddleware from '../middleware/auth.js';
 import requireActiveUser from '../middleware/requireActiveUser.js';
 import { asyncHandler, requireAuth, requireValidId, sendError, HttpStatus } from '../utils/errorHandler.js';
+import { isSocialNotificationType, isMessageNotificationType, getNotificationCategory } from '../constants/notificationTypes.js';
+import logger from '../utils/logger.js';
 
 // Get user notifications
+// Supports ?category=social|message filter for proper Bell/Messages separation
 router.get('/', authMiddleware, requireActiveUser, asyncHandler(async (req, res) => {
   // SAFETY: Guard clause for auth
   const userId = requireAuth(req, res);
   if (!userId) return;
 
-  const notifications = await Notification.find({ recipient: userId })
+  const { category } = req.query;
+
+  let notifications = await Notification.find({ recipient: userId })
     .populate('sender', 'username displayName profilePhoto')
     .sort({ createdAt: -1 })
     .limit(50);
+
+  // Filter by category if specified
+  if (category === 'social') {
+    notifications = notifications.filter(n => isSocialNotificationType(n.type));
+  } else if (category === 'message') {
+    // Validation warning: MESSAGE notifications should use /messages/unread endpoint
+    logger.warn('[Notification] MESSAGE category requested via /notifications - use /messages/unread instead');
+    notifications = notifications.filter(n => isMessageNotificationType(n.type));
+  }
 
   res.json(notifications);
 }));
