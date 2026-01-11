@@ -38,6 +38,8 @@ const collectionItemSchema = new mongoose.Schema({
     type: Date,
     default: Date.now
   }
+}, {
+  suppressReservedKeysWarning: true
 });
 
 // Compound index to prevent duplicates
