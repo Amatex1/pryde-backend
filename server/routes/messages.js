@@ -14,6 +14,121 @@ import { guardSendDM } from '../middleware/systemAccountGuard.js';
 import { sanitizeFields } from '../utils/sanitize.js';
 import logger from '../utils/logger.js';
 
+// ========================================
+// IMPORTANT: Define specific routes BEFORE wildcard routes like /:userId
+// ========================================
+
+// Get all conversations list (for dropdown and main messages page)
+// This route MUST be before /:userId to avoid matching
+router.get('/list', auth, requireActiveUser, async (req, res) => {
+  try {
+    const currentUserId = req.userId;
+    const currentUserObjId = new mongoose.Types.ObjectId(currentUserId);
+
+    // Get unique conversation partners with last message and unread count in ONE aggregation
+    const conversations = await Message.aggregate([
+      {
+        $match: {
+          $or: [
+            { sender: currentUserObjId },
+            { recipient: currentUserObjId }
+          ]
+        }
+      },
+      {
+        $sort: { createdAt: -1 }
+      },
+      {
+        $group: {
+          _id: {
+            $cond: [
+              { $eq: ['$sender', currentUserObjId] },
+              '$recipient',
+              '$sender'
+            ]
+          },
+          lastMessage: { $first: '$$ROOT' },
+          // Count unread messages (from other user to current user, not read)
+          unreadCount: {
+            $sum: {
+              $cond: [
+                {
+                  $and: [
+                    { $ne: ['$sender', currentUserObjId] },
+                    { $eq: ['$read', false] }
+                  ]
+                },
+                1,
+                0
+              ]
+            }
+          }
+        }
+      },
+      {
+        $sort: { 'lastMessage.createdAt': -1 }
+      }
+    ]);
+
+    // Get all other user IDs for batch lookup
+    const otherUserIds = conversations.map(c => c._id);
+
+    // Batch fetch all users at once
+    const [users, conversationDocs] = await Promise.all([
+      User.find({ _id: { $in: otherUserIds } }).select('username profilePhoto displayName').lean(),
+      Conversation.find({
+        participants: { $all: [currentUserId] },
+        $or: otherUserIds.map(id => ({ participants: id }))
+      }).select('participants unreadFor').lean()
+    ]);
+
+    // Create lookup maps for O(1) access
+    const userMap = new Map(users.map(u => [u._id.toString(), u]));
+    const conversationMap = new Map();
+    conversationDocs.forEach(c => {
+      const otherParticipant = c.participants.find(p => p.toString() !== currentUserId);
+      if (otherParticipant) {
+        conversationMap.set(otherParticipant.toString(), c);
+      }
+    });
+
+    // Import encryption utilities once
+    const { decryptMessage, isEncrypted } = await import('../utils/encryption.js');
+
+    // Build response using maps (no additional DB queries)
+    const populatedConversations = conversations.map(conv => {
+      const otherUserId = conv._id.toString();
+      const otherUser = userMap.get(otherUserId) || null;
+      const conversationDoc = conversationMap.get(otherUserId);
+
+      const isManuallyUnread = conversationDoc?.unreadFor?.some(
+        u => u.user.toString() === currentUserId
+      ) || false;
+
+      // Decrypt last message if needed
+      if (conv.lastMessage?.content && isEncrypted(conv.lastMessage.content)) {
+        try {
+          conv.lastMessage.content = decryptMessage(conv.lastMessage.content);
+        } catch (error) {
+          conv.lastMessage.content = '[Encrypted message]';
+        }
+      }
+
+      return {
+        ...conv,
+        otherUser,
+        manuallyUnread: isManuallyUnread,
+        unread: conv.unreadCount
+      };
+    });
+
+    res.json(populatedConversations);
+  } catch (error) {
+    logger.error('❌ Error fetching conversations list:', error);
+    res.status(500).json({ message: 'Error fetching conversations', error: error.message });
+  }
+});
+
 // Get conversation with a user
 router.get('/:userId', auth, requireActiveUser, checkBlocked, async (req, res) => {
   try {
