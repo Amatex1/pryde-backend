@@ -40,7 +40,10 @@ router.get('/messages', authMiddleware, async (req, res) => {
     const parsedLimit = Math.min(parseInt(limit) || 50, 100);
 
     // Build query
-    let query = {};
+    let query = {
+      // Exclude messages deleted for current user (self-delete)
+      'deletedFor.user': { $ne: currentUserId }
+    };
 
     // Filter deleted messages unless admin requested them
     if (!includeDeleted || !isAdmin) {
@@ -186,10 +189,12 @@ router.post('/messages', authMiddleware, messageLimiter, async (req, res) => {
   }
 });
 
-// DELETE /api/global-chat/messages/:id - Soft-delete a message (admin/mod only)
-router.delete('/messages/:id', authMiddleware, adminAuth, async (req, res) => {
+// DELETE /api/global-chat/messages/:id - Delete a message
+// Supports two modes via query param: deleteForAll=true (sender or admin) or delete for self only
+router.delete('/messages/:id', authMiddleware, async (req, res) => {
   try {
     const { id } = req.params;
+    const { deleteForAll } = req.query;
     const currentUserId = req.userId;
 
     // Find the message
@@ -199,26 +204,61 @@ router.delete('/messages/:id', authMiddleware, adminAuth, async (req, res) => {
       return res.status(404).json({ message: 'Message not found' });
     }
 
-    if (message.isDeleted) {
-      return res.status(400).json({ message: 'Message is already deleted' });
+    // Get user to check if admin/mod
+    const user = await User.findById(currentUserId);
+    const isAdmin = user && ['moderator', 'admin', 'super_admin'].includes(user.role);
+    const isSender = message.senderId.toString() === currentUserId;
+
+    // Delete for all (sender or admin can do this)
+    if (deleteForAll === 'true') {
+      if (!isSender && !isAdmin) {
+        return res.status(403).json({ message: 'Only the sender or admins can delete for everyone' });
+      }
+
+      if (message.isDeleted) {
+        return res.status(400).json({ message: 'Message is already deleted' });
+      }
+
+      // Soft delete the message for all
+      message.isDeleted = true;
+      message.deletedBy = currentUserId;
+      message.deletedAt = new Date();
+
+      await message.save();
+
+      // Emit Socket.IO event to notify all clients
+      const io = req.app.get('io');
+      if (io) {
+        io.to('global_chat').emit('global_message:deleted', {
+          messageId: id,
+          deleteForAll: true
+        });
+      }
+
+      return res.json({
+        message: 'Message deleted for everyone',
+        messageId: id,
+        deleteForAll: true
+      });
     }
 
-    // Soft delete the message
-    message.isDeleted = true;
-    message.deletedBy = currentUserId;
-    message.deletedAt = new Date();
+    // Delete for self only
+    const alreadyDeleted = message.deletedFor.some(
+      d => d.user.toString() === currentUserId
+    );
 
-    await message.save();
-
-    // Emit Socket.IO event to notify all clients
-    const io = req.app.get('io');
-    if (io) {
-      io.to('global_chat').emit('global_message:deleted', { messageId: id });
+    if (!alreadyDeleted) {
+      message.deletedFor.push({
+        user: currentUserId,
+        deletedAt: new Date()
+      });
+      await message.save();
     }
 
     res.json({
-      message: 'Message deleted successfully',
-      messageId: id
+      message: 'Message deleted for you',
+      messageId: id,
+      deleteForAll: false
     });
 
   } catch (error) {

@@ -137,19 +137,40 @@ router.get('/:userId', auth, requireActiveUser, checkBlocked, async (req, res) =
 
     // Allow viewing existing message threads regardless of user status
     // This preserves chat history even if user is deactivated/deleted
+    // Exclude messages that are deleted for this user specifically
     const messages = await Message.find({
       $or: [
         { sender: currentUserId, recipient: userId },
         { sender: userId, recipient: currentUserId }
-      ]
+      ],
+      // Exclude messages deleted for current user only
+      'deletedFor.user': { $ne: currentUserId }
     })
       .populate('sender', 'username profilePhoto')
       .populate('recipient', 'username profilePhoto')
       .sort({ createdAt: 1 });
 
-    logger.debug('✅ Found messages:', messages.length);
+    // Transform messages to show "deleted" state for messages deleted for all
+    const transformedMessages = messages.map(msg => {
+      const msgObj = msg.toJSON();
 
-    res.json(messages);
+      // If deleted for all, hide content but keep the message placeholder
+      if (msgObj.isDeletedForAll) {
+        return {
+          ...msgObj,
+          content: '',
+          attachment: null,
+          isDeleted: true,
+          deletedType: 'all'
+        };
+      }
+
+      return msgObj;
+    });
+
+    logger.debug('✅ Found messages:', transformedMessages.length);
+
+    res.json(transformedMessages);
   } catch (error) {
     logger.error('❌ Error fetching messages:', error);
     res.status(500).json({ message: 'Error fetching messages', error: error.message });
@@ -438,22 +459,89 @@ router.put('/:id', auth, requireActiveUser, async (req, res) => {
 });
 
 // Delete a message
+// Supports two modes: deleteForAll (sender only) or deleteForSelf (anyone in conversation)
 router.delete('/:id', auth, requireActiveUser, async (req, res) => {
   try {
+    const { deleteForAll } = req.query;
     const message = await Message.findById(req.params.id);
 
     if (!message) {
       return res.status(404).json({ message: 'Message not found' });
     }
 
-    // Check if user is the sender
-    if (message.sender.toString() !== req.userId) {
+    const isSender = message.sender.toString() === req.userId;
+    const isRecipient = message.recipient && message.recipient.toString() === req.userId;
+    const isInConversation = isSender || isRecipient;
+
+    // Check if user is part of this conversation
+    if (!isInConversation) {
       return res.status(403).json({ message: 'Not authorized to delete this message' });
     }
 
-    await message.deleteOne();
+    // Delete for all (only sender can do this)
+    if (deleteForAll === 'true') {
+      if (!isSender) {
+        return res.status(403).json({ message: 'Only the sender can delete for everyone' });
+      }
 
-    res.json({ message: 'Message deleted successfully' });
+      message.isDeletedForAll = true;
+      message.deletedForAll = {
+        by: req.userId,
+        at: new Date()
+      };
+      await message.save();
+
+      // Emit socket event to notify all participants
+      const io = req.app.get('io');
+      if (io) {
+        // Notify both sender and recipient
+        io.to(`user_${message.sender.toString()}`).emit('message:deleted', {
+          messageId: message._id,
+          deleteForAll: true
+        });
+        if (message.recipient) {
+          io.to(`user_${message.recipient.toString()}`).emit('message:deleted', {
+            messageId: message._id,
+            deleteForAll: true
+          });
+        }
+      }
+
+      return res.json({
+        message: 'Message deleted for everyone',
+        messageId: message._id,
+        deleteForAll: true
+      });
+    }
+
+    // Delete for self only
+    const alreadyDeleted = message.deletedFor.some(
+      d => d.user.toString() === req.userId
+    );
+
+    if (!alreadyDeleted) {
+      message.deletedFor.push({
+        user: req.userId,
+        deletedAt: new Date()
+      });
+      await message.save();
+    }
+
+    // Emit socket event only to this user
+    const io = req.app.get('io');
+    if (io) {
+      io.to(`user_${req.userId}`).emit('message:deleted', {
+        messageId: message._id,
+        deleteForAll: false,
+        deletedForUser: req.userId
+      });
+    }
+
+    res.json({
+      message: 'Message deleted for you',
+      messageId: message._id,
+      deleteForAll: false
+    });
   } catch (error) {
     logger.error('❌ Error deleting message:', error);
     res.status(500).json({ message: 'Error deleting message', error: error.message });

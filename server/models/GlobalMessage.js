@@ -23,6 +23,7 @@ const globalMessageSchema = new mongoose.Schema({
     trim: true,
     default: null
   },
+  // Soft delete for all users (sender or admin can do this)
   isDeleted: {
     type: Boolean,
     default: false,
@@ -37,6 +38,17 @@ const globalMessageSchema = new mongoose.Schema({
     type: Date,
     default: null
   },
+  // Track who deleted for themselves only (message still visible to others)
+  deletedFor: [{
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
+    },
+    deletedAt: {
+      type: Date,
+      default: Date.now
+    }
+  }],
   createdAt: {
     type: Date,
     default: Date.now,
@@ -55,6 +67,9 @@ globalMessageSchema.index({ createdAt: -1, _id: -1 });
 
 // Index for moderation queries
 globalMessageSchema.index({ isDeleted: 1, createdAt: -1 });
+
+// Index for deletedFor queries
+globalMessageSchema.index({ 'deletedFor.user': 1 });
 
 // Update the updatedAt timestamp before saving
 globalMessageSchema.pre('save', function(next) {

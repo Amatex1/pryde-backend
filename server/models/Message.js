@@ -58,6 +58,30 @@ const messageSchema = new mongoose.Schema({
     type: Date
   },
   // REMOVED 2025-12-26: reactions deleted (Phase 5)
+  // Soft delete support - tracks who deleted message for themselves
+  isDeletedForAll: {
+    type: Boolean,
+    default: false
+  },
+  deletedForAll: {
+    by: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
+    },
+    at: {
+      type: Date
+    }
+  },
+  deletedFor: [{
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
+    },
+    deletedAt: {
+      type: Date,
+      default: Date.now
+    }
+  }],
   createdAt: {
     type: Date,
     default: Date.now
@@ -69,6 +93,8 @@ messageSchema.index({ sender: 1, recipient: 1, createdAt: -1 });
 messageSchema.index({ groupChat: 1, createdAt: -1 }); // For group chat messages
 messageSchema.index({ sender: 1, createdAt: -1 }); // For user's sent messages
 messageSchema.index({ recipient: 1, createdAt: -1 }); // For user's received messages
+messageSchema.index({ 'deletedFor.user': 1 }); // For filtering out deleted messages
+messageSchema.index({ isDeletedForAll: 1 }); // For filtering deleted-for-all messages
 
 // ============================================================================
 // VALIDATION
