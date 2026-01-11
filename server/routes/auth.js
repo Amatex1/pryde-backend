@@ -84,6 +84,7 @@ router.get('/status', async (req, res) => {
         authenticated: true,
         user: {
           id: user._id,
+          _id: user._id,  // Include both for backward compatibility
           username: user.username,
           displayName: user.displayName,
           profilePhoto: user.profilePhoto
@@ -565,6 +566,7 @@ router.post('/signup', validateAgeBeforeRateLimit, signupLimiter, validateSignup
       refreshToken,
       user: {
         id: user._id,
+        _id: user._id,  // Include both for backward compatibility
         username: user.username,
         email: user.email,
         fullName: user.fullName,
@@ -1004,6 +1006,7 @@ router.post('/login', loginLimiter, validateLogin, async (req, res) => {
       suspicious,
       user: {
         id: user._id,
+        _id: user._id,  // Include both for backward compatibility
         username: user.username,
         email: user.email,
         fullName: user.fullName,
@@ -1278,6 +1281,7 @@ router.post('/verify-2fa-login', loginLimiter, async (req, res) => {
       refreshToken,
       user: {
         id: user._id,
+        _id: user._id,  // Include both for backward compatibility
         username: user.username,
         email: user.email,
         fullName: user.fullName,
@@ -1318,39 +1322,73 @@ router.get('/me', auth, async (req, res) => {
       .populate('friends', 'username displayName profilePhoto')
       .lean();
 
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
     // BADGE SYSTEM: Resolve badge IDs to full badge objects
-    if (user && user.badges && user.badges.length > 0) {
+    let resolvedBadges = [];
+    if (user.badges && user.badges.length > 0) {
       // Check if user has hideBadges enabled
       const hideBadges = user.privacySettings?.hideBadges;
-      if (hideBadges) {
-        user.badges = [];
-      } else {
+      if (!hideBadges) {
         try {
           const badges = await Badge.find({ id: { $in: user.badges }, isActive: true })
             .select('id label icon tooltip type priority color')
             .lean();
-          user.badges = badges.sort((a, b) => (a.priority || 100) - (b.priority || 100));
+          resolvedBadges = badges.sort((a, b) => (a.priority || 100) - (b.priority || 100));
         } catch (badgeError) {
           logger.error('Failed to resolve badges in /me:', badgeError);
-          user.badges = [];
         }
       }
     }
 
-    // Add showTour flag for frontend (determines if tour modal should appear)
-    if (user) {
-      user.showTour = !user.hasCompletedTour && !user.hasSkippedTour;
+    // Add session timeout info
+    const sessionInfo = getSessionInfo(req.userId);
 
-      // Add session timeout info
-      const sessionInfo = getSessionInfo(req.userId);
-      user.session = {
+    // Transform response to include both `id` and `_id` for backward compatibility
+    // Some frontend code uses `id`, some uses `_id` - support both during migration
+    const responseUser = {
+      id: user._id,   // New format (matches login endpoint)
+      _id: user._id,  // Legacy format (for backward compatibility)
+      username: user.username,
+      email: user.email,
+      fullName: user.fullName,
+      displayName: user.displayName,
+      nickname: user.nickname,
+      pronouns: user.pronouns,
+      customPronouns: user.customPronouns,
+      gender: user.gender,
+      customGender: user.customGender,
+      profilePhoto: user.profilePhoto,
+      coverPhoto: user.coverPhoto,
+      bio: user.bio,
+      location: user.location,
+      website: user.website,
+      socialLinks: user.socialLinks,
+      role: user.role,
+      permissions: user.permissions,
+      badges: resolvedBadges,
+      friends: user.friends,
+      privacySettings: user.privacySettings,
+      notificationPreferences: user.notificationPreferences,
+      // Onboarding tour flags
+      hasCompletedTour: user.hasCompletedTour,
+      hasSkippedTour: user.hasSkippedTour,
+      showTour: !user.hasCompletedTour && !user.hasSkippedTour,
+      // Session info
+      session: {
         timeoutMs: SESSION_TIMEOUT_MS,
         timeUntilTimeout: sessionInfo?.timeUntilTimeout || SESSION_TIMEOUT_MS,
         lastActivity: sessionInfo?.lastActivity || Date.now()
-      };
-    }
+      },
+      // Additional fields that may be needed
+      identity: user.identity,
+      createdAt: user.createdAt,
+      lastActive: user.lastActive
+    };
 
-    res.json(user);
+    res.json(responseUser);
   } catch (error) {
     logger.error('Get me error:', error);
     res.status(500).json({ message: 'Server error' });
