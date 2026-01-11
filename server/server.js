@@ -622,6 +622,13 @@ io.on('connection', (socket) => {
   // Handle real-time message
   socket.on('send_message', async (data) => {
     const startTime = Date.now();
+    console.log(`📨 [send_message] Received from user ${userId}:`, {
+      recipientId: data.recipientId,
+      hasContent: !!data.content,
+      hasAttachment: !!data.attachment,
+      hasVoiceNote: !!data.voiceNote,
+      socketId: socket.id
+    });
     try {
       // SECURITY: Sanitize message content to prevent XSS
       const sanitizedContent = data.content ? sanitizeHtml(data.content, {
@@ -631,9 +638,12 @@ io.on('connection', (socket) => {
 
       // Validate that either content or attachment is provided
       if (!sanitizedContent && !data.attachment && !data.voiceNote) {
+        console.log(`❌ [send_message] Validation failed - no content/attachment/voiceNote for user ${userId}`);
         socket.emit('error', { message: 'Message must have content, attachment, or voice note' });
         return;
       }
+
+      console.log(`✅ [send_message] Validated, creating message from ${userId} to ${data.recipientId}`);
 
       const messageData = {
         sender: userId,
