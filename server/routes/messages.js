@@ -420,6 +420,20 @@ router.post('/', auth, requireActiveUser, requireEmailVerification, messageLimit
       });
     }
 
+    // 🔥 CRITICAL FIX: Emit socket events for real-time delivery
+    // This ensures messages work even if sent via REST API instead of socket
+    if (req.io && !groupChatId) {
+      const { emitValidated } = require('../utils/emitValidated.js');
+
+      // Send to recipient if online
+      emitValidated(req.io.to(`user_${recipient}`), 'message:new', message);
+
+      // Send back to sender as confirmation
+      emitValidated(req.io.to(`user_${req.userId}`), 'message:sent', message);
+
+      logger.debug('✅ Socket events emitted for REST API message');
+    }
+
     res.status(201).json(message);
   } catch (error) {
     logger.error('❌ Error sending message:', error);
