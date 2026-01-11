@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CORS Test - Pryde Backend</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #1a1a2e;
+            color: #eee;
+        }
+        h1 { color: #a855f7; }
+        .test { 
+            background: #16213e; 
+            padding: 15px; 
+            margin: 10px 0; 
+            border-radius: 8px;
+            border-left: 4px solid #a855f7;
+        }
+        .success { border-left-color: #10b981; }
+        .error { border-left-color: #ef4444; }
+        button {
+            background: #a855f7;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #9333ea; }
+        pre {
+            background: #0f172a;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔒 CORS Test Suite</h1>
+    <p>Test CORS configuration for notifications, messages, and socket.io</p>
+
+    <div id="results"></div>
+
+    <button onclick="runAllTests()">🚀 Run All Tests</button>
+    <button onclick="clearResults()">🗑️ Clear Results</button>
+
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script>
+        const API_URL = 'https://pryde-backend.onrender.com';
+        const results = document.getElementById('results');
+
+        function addResult(title, success, message, details = null) {
+            const div = document.createElement('div');
+            div.className = `test ${success ? 'success' : 'error'}`;
+            div.innerHTML = `
+                <h3>${success ? '✅' : '❌'} ${title}</h3>
+                <p>${message}</p>
+                ${details ? `<pre>${JSON.stringify(details, null, 2)}</pre>` : ''}
+            `;
+            results.appendChild(div);
+        }
+
+        function clearResults() {
+            results.innerHTML = '';
+        }
+
+        async function testPreflight() {
+            try {
+                const response = await fetch(`${API_URL}/api/health`, {
+                    method: 'OPTIONS',
+                    headers: {
+                        'Origin': window.location.origin,
+                        'Access-Control-Request-Method': 'GET',
+                        'Access-Control-Request-Headers': 'Content-Type,Authorization'
+                    }
+                });
+                
+                const corsHeaders = {
+                    'Access-Control-Allow-Origin': response.headers.get('Access-Control-Allow-Origin'),
+                    'Access-Control-Allow-Methods': response.headers.get('Access-Control-Allow-Methods'),
+                    'Access-Control-Allow-Headers': response.headers.get('Access-Control-Allow-Headers'),
+                    'Access-Control-Allow-Credentials': response.headers.get('Access-Control-Allow-Credentials')
+                };
+
+                addResult(
+                    'Preflight OPTIONS Request',
+                    response.ok,
+                    response.ok ? 'Preflight request successful' : 'Preflight request failed',
+                    corsHeaders
+                );
+            } catch (error) {
+                addResult('Preflight OPTIONS Request', false, error.message);
+            }
+        }
+
+        async function testHealthEndpoint() {
+            try {
+                const response = await fetch(`${API_URL}/api/health`, {
+                    method: 'GET',
+                    credentials: 'include'
+                });
+                const data = await response.json();
+                addResult(
+                    'Health Endpoint (GET)',
+                    response.ok,
+                    response.ok ? 'Health endpoint accessible' : 'Health endpoint failed',
+                    data
+                );
+            } catch (error) {
+                addResult('Health Endpoint (GET)', false, error.message);
+            }
+        }
+
+        async function testNotificationsEndpoint() {
+            try {
+                const response = await fetch(`${API_URL}/api/notifications`, {
+                    method: 'GET',
+                    credentials: 'include',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                addResult(
+                    'Notifications Endpoint',
+                    response.status === 401 || response.ok,
+                    response.status === 401 
+                        ? 'Endpoint accessible (401 expected without auth)' 
+                        : response.ok 
+                            ? 'Endpoint accessible and authenticated' 
+                            : 'Unexpected response',
+                    { status: response.status, statusText: response.statusText }
+                );
+            } catch (error) {
+                addResult('Notifications Endpoint', false, error.message);
+            }
+        }
+
+        async function testMessagesEndpoint() {
+            try {
+                const response = await fetch(`${API_URL}/api/messages/list`, {
+                    method: 'GET',
+                    credentials: 'include',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                addResult(
+                    'Messages Endpoint',
+                    response.status === 401 || response.ok,
+                    response.status === 401 
+                        ? 'Endpoint accessible (401 expected without auth)' 
+                        : response.ok 
+                            ? 'Endpoint accessible and authenticated' 
+                            : 'Unexpected response',
+                    { status: response.status, statusText: response.statusText }
+                );
+            } catch (error) {
+                addResult('Messages Endpoint', false, error.message);
+            }
+        }
+
+        function testSocketConnection() {
+            return new Promise((resolve) => {
+                const socket = io(API_URL, {
+                    transports: ['websocket', 'polling'],
+                    withCredentials: true
+                });
+
+                const timeout = setTimeout(() => {
+                    socket.disconnect();
+                    addResult('Socket.io Connection', false, 'Connection timeout after 5 seconds');
+                    resolve();
+                }, 5000);
+
+                socket.on('connect', () => {
+                    clearTimeout(timeout);
+                    addResult(
+                        'Socket.io Connection',
+                        true,
+                        'Socket connected successfully',
+                        {
+                            id: socket.id,
+                            transport: socket.io.engine.transport.name,
+                            connected: socket.connected
+                        }
+                    );
+                    socket.disconnect();
+                    resolve();
+                });
+
+                socket.on('connect_error', (error) => {
+                    clearTimeout(timeout);
+                    addResult('Socket.io Connection', false, error.message);
+                    socket.disconnect();
+                    resolve();
+                });
+            });
+        }
+
+        async function runAllTests() {
+            clearResults();
+            addResult('Test Suite', true, 'Running CORS tests...', { timestamp: new Date().toISOString() });
+            
+            await testPreflight();
+            await testHealthEndpoint();
+            await testNotificationsEndpoint();
+            await testMessagesEndpoint();
+            await testSocketConnection();
+            
+            addResult('Test Suite', true, 'All tests completed!');
+        }
+
+        // Auto-run tests on load
+        window.addEventListener('load', () => {
+            console.log('🧪 CORS Test Suite loaded. Click "Run All Tests" to begin.');
+        });
+    </script>
+</body>
+</html>
+

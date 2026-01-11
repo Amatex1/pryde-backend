@@ -159,6 +159,9 @@ const allowedOrigins = [
   'http://localhost:3000',
   'http://localhost:3001',
   'http://localhost:5173',
+  'http://localhost:9000',
+  'http://127.0.0.1:5173',
+  'http://127.0.0.1:3000',
   // Render URLs
   'https://pryde-frontend.onrender.com',
   'https://pryde-backend.onrender.com',
@@ -282,12 +285,32 @@ app.use(helmet({
       imgSrc: ["'self'", "data:", "blob:", "https://media.tenor.com", "https://*.tenor.com"],
       connectSrc: [
         "'self'",
+        // Backend API endpoints
         "https://pryde-backend.onrender.com",
         "wss://pryde-backend.onrender.com",
+        "ws://pryde-backend.onrender.com",
+        "https://api.prydeapp.com",
+        "wss://api.prydeapp.com",
+        // Frontend domains
         "https://prydeapp.com",
+        "https://www.prydeapp.com",
+        "https://prydesocial.com",
+        "https://www.prydesocial.com",
+        // Cloudflare Pages
+        "https://pryde-social.pages.dev",
+        // External APIs
         "https://tenor.googleapis.com",
         "https://media.tenor.com",
-        "https://*.tenor.com"
+        "https://*.tenor.com",
+        "https://hcaptcha.com",
+        "https://*.hcaptcha.com",
+        // Development
+        "http://localhost:3000",
+        "http://localhost:5173",
+        "http://localhost:9000",
+        "ws://localhost:9000",
+        "http://127.0.0.1:5173",
+        "http://127.0.0.1:9000"
       ],
       fontSrc: ["'self'", "data:"],
       mediaSrc: ["'self'", "blob:", "https://media.tenor.com", "https://*.tenor.com"],
@@ -327,6 +350,10 @@ app.use(mongoSanitize({
 // Note: xss-clean is deprecated, so we use the combination above instead
 
 app.use(cors(corsOptions));
+
+// Handle preflight requests explicitly for all routes
+app.options('*', cors(corsOptions));
+
 app.use(cookieParser()); // Parse cookies for CSRF tokens
 
 // Compression middleware - compress all responses
