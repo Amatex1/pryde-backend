@@ -52,10 +52,9 @@ const initializeRedis = async () => {
   }
 };
 
-// Initialize Redis (non-blocking)
-initializeRedis().catch(err => {
-  logger.error('Redis initialization error:', err);
-});
+// Initialize Redis and wait for it to be ready
+// Using top-level await (ES modules support this)
+await initializeRedis();
 
 // Advanced rate limiting configuration
 // Updated for express-rate-limit v7 compatibility
