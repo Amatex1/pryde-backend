@@ -34,14 +34,18 @@ describe('Message Persistence Tests', function() {
       username: `testuser1_${Date.now()}`,
       email: `test1_${Date.now()}@example.com`,
       password: 'TestPassword123!',
-      emailVerified: true
+      emailVerified: true,
+      fullName: 'Test User One',
+      dateOfBirth: new Date('1990-01-01')
     });
 
     testUser2 = await User.create({
       username: `testuser2_${Date.now()}`,
       email: `test2_${Date.now()}@example.com`,
       password: 'TestPassword123!',
-      emailVerified: true
+      emailVerified: true,
+      fullName: 'Test User Two',
+      dateOfBirth: new Date('1990-01-01')
     });
   });
 
@@ -70,7 +74,10 @@ describe('Message Persistence Tests', function() {
       expect(message._id).to.exist;
       expect(message.sender.toString()).to.equal(testUser1._id.toString());
       expect(message.recipient.toString()).to.equal(testUser2._id.toString());
-      expect(message.content).to.equal('Test message content');
+
+      // Message content is encrypted in DB, use toJSON() to decrypt
+      const decryptedMessage = message.toJSON();
+      expect(decryptedMessage.content).to.equal('Test message content');
       expect(message.createdAt).to.exist;
     });
 
@@ -110,10 +117,13 @@ describe('Message Persistence Tests', function() {
 
       expect(messages).to.be.an('array');
       expect(messages.length).to.be.at.least(1);
-      
+
       const found = messages.find(m => m._id.toString() === savedMessage._id.toString());
       expect(found).to.exist;
-      expect(found.content).to.equal('Retrieval test message');
+
+      // Decrypt content for verification
+      const decryptedFound = found.toJSON();
+      expect(decryptedFound.content).to.equal('Retrieval test message');
     });
 
     it('should populate sender and recipient information', async function() {
