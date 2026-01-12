@@ -167,8 +167,28 @@ router.put('/me/visibility', auth, async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
+    // If user has no badges, allow empty arrays but reject non-empty ones
+    if (!user.badges || user.badges.length === 0) {
+      if ((publicBadges && publicBadges.length > 0) || (hiddenBadges && hiddenBadges.length > 0)) {
+        return res.status(400).json({ message: 'You have no badges to configure' });
+      }
+      // Allow setting empty arrays even with no badges
+      const updatedUser = await User.findByIdAndUpdate(
+        req.userId,
+        { $set: { publicBadges: [], hiddenBadges: [] } },
+        { new: true, runValidators: true }
+      ).select('badges publicBadges hiddenBadges');
+
+      return res.json({
+        message: 'Badge visibility updated',
+        badges: updatedUser.badges || [],
+        publicBadges: updatedUser.publicBadges || [],
+        hiddenBadges: updatedUser.hiddenBadges || []
+      });
+    }
+
     // Validate that all publicBadges belong to user
-    if (publicBadges) {
+    if (publicBadges && publicBadges.length > 0) {
       const invalidBadges = publicBadges.filter(badgeId => !user.badges.includes(badgeId));
       if (invalidBadges.length > 0) {
         return res.status(400).json({ message: 'You can only make your own badges public' });
