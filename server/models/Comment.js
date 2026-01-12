@@ -73,6 +73,90 @@ commentSchema.virtual('replyCount', {
 commentSchema.set('toJSON', { virtuals: true });
 commentSchema.set('toObject', { virtuals: true });
 
+// ============================================
+// STATIC METHODS FOR THREAD MANAGEMENT
+// ============================================
+
+/**
+ * Get comment thread (parent + all replies)
+ * @param {string} commentId - Parent comment ID
+ * @returns {Object} Thread with parent and replies
+ */
+commentSchema.statics.getThread = async function(commentId) {
+  const parent = await this.findById(commentId)
+    .populate('authorId', 'username displayName profilePhoto')
+    .lean();
+
+  if (!parent) return null;
+
+  const replies = await this.find({ parentCommentId: commentId, isDeleted: false })
+    .populate('authorId', 'username displayName profilePhoto')
+    .sort({ createdAt: 1 })
+    .lean();
+
+  return {
+    ...parent,
+    replies
+  };
+};
+
+/**
+ * Get all top-level comments for a post with reply counts
+ * @param {string} postId - Post ID
+ * @param {Object} options - Query options (limit, skip, sort)
+ * @returns {Array} Top-level comments with reply counts
+ */
+commentSchema.statics.getTopLevelComments = async function(postId, options = {}) {
+  const { limit = 20, skip = 0, sort = { createdAt: -1 } } = options;
+
+  const comments = await this.find({
+    postId,
+    parentCommentId: null,
+    isDeleted: false
+  })
+    .populate('authorId', 'username displayName profilePhoto')
+    .populate('replyCount')
+    .sort(sort)
+    .limit(limit)
+    .skip(skip)
+    .lean();
+
+  return comments;
+};
+
+/**
+ * Get reply count for a comment
+ * @param {string} commentId - Comment ID
+ * @returns {number} Reply count
+ */
+commentSchema.statics.getReplyCount = async function(commentId) {
+  return await this.countDocuments({
+    parentCommentId: commentId,
+    isDeleted: false
+  });
+};
+
+/**
+ * Delete comment and all replies (soft delete)
+ * @param {string} commentId - Comment ID
+ * @returns {Object} Delete result
+ */
+commentSchema.statics.deleteThread = async function(commentId) {
+  // Soft delete parent
+  await this.findByIdAndUpdate(commentId, { isDeleted: true });
+
+  // Soft delete all replies
+  const result = await this.updateMany(
+    { parentCommentId: commentId },
+    { isDeleted: true }
+  );
+
+  return {
+    deletedParent: 1,
+    deletedReplies: result.modifiedCount
+  };
+};
+
 const Comment = mongoose.model('Comment', commentSchema);
 
 export default Comment;

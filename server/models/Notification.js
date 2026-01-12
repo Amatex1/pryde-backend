@@ -86,7 +86,18 @@ const notificationSchema = new mongoose.Schema({
     type: String
   },
 
+  // Generic metadata field for additional context
+  metadata: {
+    type: mongoose.Schema.Types.Mixed,
+    default: {}
+  },
+
   createdAt: {
+    type: Date,
+    default: Date.now
+  },
+
+  updatedAt: {
     type: Date,
     default: Date.now
   }
