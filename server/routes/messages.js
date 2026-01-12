@@ -3,6 +3,7 @@ const router = express.Router();
 import Message from '../models/Message.js';
 import User from '../models/User.js';
 import Conversation from '../models/Conversation.js';
+import Notification from '../models/Notification.js';
 import mongoose from 'mongoose';
 import auth from '../middleware/auth.js';
 import requireActiveUser from '../middleware/requireActiveUser.js';
@@ -13,6 +14,8 @@ import { checkMuted, moderateContent } from '../middleware/moderation.js';
 import { guardSendDM } from '../middleware/systemAccountGuard.js';
 import { sanitizeFields } from '../utils/sanitize.js';
 import logger from '../utils/logger.js';
+import { emitNotificationCreated } from '../utils/notificationEmitter.js';
+import { sendPushNotification } from '../utils/pushNotifications.js';
 
 // ========================================
 // IMPORTANT: Define specific routes BEFORE wildcard routes like /:userId
@@ -432,6 +435,41 @@ router.post('/', auth, requireActiveUser, requireEmailVerification, messageLimit
       emitValidated(req.io.to(`user_${req.userId}`), 'message:sent', message);
 
       logger.debug('✅ Socket events emitted for REST API message');
+    }
+
+    // 🔔 Create notification for new DM (only for direct messages, not group chats)
+    if (!groupChatId && recipient) {
+      try {
+        const notification = new Notification({
+          recipient: recipient,
+          sender: req.userId,
+          type: 'message',
+          message: 'sent you a message'
+        });
+        await notification.save();
+        await notification.populate('sender', 'username displayName profilePhoto');
+
+        // ✅ Emit real-time notification
+        emitNotificationCreated(req.io, recipient.toString(), notification);
+
+        // Send push notification
+        const sender = await User.findById(req.userId).select('username displayName');
+        const senderName = sender.displayName || sender.username;
+
+        sendPushNotification(recipient, {
+          title: `💬 New Message`,
+          body: `${senderName}: ${content ? content.substring(0, 50) : 'Sent an attachment'}`,
+          data: {
+            type: 'message',
+            userId: req.userId.toString(),
+            url: `/messages/${sender.username}`
+          },
+          tag: `message-${req.userId}`
+        }).catch(err => logger.error('Push notification error:', err));
+      } catch (notificationError) {
+        // Don't fail the request if notification creation fails
+        logger.error('Failed to create message notification:', notificationError);
+      }
     }
 
     res.status(201).json(message);

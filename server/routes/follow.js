@@ -2,11 +2,14 @@ import express from 'express';
 const router = express.Router();
 import User from '../models/User.js';
 import FollowRequest from '../models/FollowRequest.js';
+import Notification from '../models/Notification.js';
 import auth from '../middleware/auth.js';
 import requireActiveUser from '../middleware/requireActiveUser.js';
 import { checkBlocked } from '../middleware/privacy.js';
 import { guardFollow } from '../middleware/systemAccountGuard.js';
 import logger from '../utils/logger.js';
+import { emitNotificationCreated } from '../utils/notificationEmitter.js';
+import { sendPushNotification } from '../utils/pushNotifications.js';
 
 // @route   POST /api/follow/:userId
 // @desc    Follow a user (instant for public accounts, request for private)
@@ -73,10 +76,43 @@ router.post('/:userId', auth, requireActiveUser, guardFollow, checkBlocked, asyn
 
       await followRequest.save();
 
-      return res.status(201).json({ 
+      // 🔔 Create notification for follow request
+      try {
+        const notification = new Notification({
+          recipient: targetUserId,
+          sender: currentUserId,
+          type: 'system', // Using 'system' type for follow requests
+          message: 'sent you a follow request'
+        });
+        await notification.save();
+        await notification.populate('sender', 'username displayName profilePhoto');
+
+        // ✅ Emit real-time notification
+        emitNotificationCreated(req.io, targetUserId.toString(), notification);
+
+        // Send push notification
+        const requester = await User.findById(currentUserId).select('username displayName');
+        const requesterName = requester.displayName || requester.username;
+
+        sendPushNotification(targetUserId, {
+          title: `👤 Follow Request`,
+          body: `${requesterName} wants to follow you`,
+          data: {
+            type: 'follow_request',
+            userId: currentUserId.toString(),
+            url: `/profile/${requester.username}`
+          },
+          tag: `follow-request-${currentUserId}`
+        }).catch(err => logger.error('Push notification error:', err));
+      } catch (notificationError) {
+        // Don't fail the request if notification creation fails
+        logger.error('Failed to create follow request notification:', notificationError);
+      }
+
+      return res.status(201).json({
         message: 'Follow request sent',
         requiresApproval: true,
-        followRequest 
+        followRequest
       });
     } else {
       // Public account - instant follow
@@ -86,7 +122,40 @@ router.post('/:userId', auth, requireActiveUser, guardFollow, checkBlocked, asyn
       await targetUser.save();
       await currentUser.save();
 
-      return res.status(200).json({ 
+      // 🔔 Create notification for new follower
+      try {
+        const notification = new Notification({
+          recipient: targetUserId,
+          sender: currentUserId,
+          type: 'system', // Using 'system' type for follows (no dedicated 'follow' type)
+          message: 'started following you'
+        });
+        await notification.save();
+        await notification.populate('sender', 'username displayName profilePhoto');
+
+        // ✅ Emit real-time notification
+        emitNotificationCreated(req.io, targetUserId.toString(), notification);
+
+        // Send push notification
+        const follower = await User.findById(currentUserId).select('username displayName');
+        const followerName = follower.displayName || follower.username;
+
+        sendPushNotification(targetUserId, {
+          title: `👤 New Follower`,
+          body: `${followerName} started following you`,
+          data: {
+            type: 'follow',
+            userId: currentUserId.toString(),
+            url: `/profile/${follower.username}`
+          },
+          tag: `follow-${currentUserId}`
+        }).catch(err => logger.error('Push notification error:', err));
+      } catch (notificationError) {
+        // Don't fail the request if notification creation fails
+        logger.error('Failed to create follow notification:', notificationError);
+      }
+
+      return res.status(200).json({
         message: `You are now following ${targetUser.username}`,
         requiresApproval: false
       });
@@ -266,6 +335,39 @@ router.post('/requests/:requestId/accept', auth, requireActiveUser, async (req, 
 
     await receiver.save();
     await sender.save();
+
+    // 🔔 Create notification for follow request acceptance
+    try {
+      const notification = new Notification({
+        recipient: followRequest.sender, // Notify the person who sent the request
+        sender: followRequest.receiver,  // The person who accepted it
+        type: 'system',
+        message: 'accepted your follow request'
+      });
+      await notification.save();
+      await notification.populate('sender', 'username displayName profilePhoto');
+
+      // ✅ Emit real-time notification
+      emitNotificationCreated(req.io, followRequest.sender.toString(), notification);
+
+      // Send push notification
+      const accepter = await User.findById(followRequest.receiver).select('username displayName');
+      const accepterName = accepter.displayName || accepter.username;
+
+      sendPushNotification(followRequest.sender, {
+        title: `✅ Follow Request Accepted`,
+        body: `${accepterName} accepted your follow request`,
+        data: {
+          type: 'follow_accepted',
+          userId: followRequest.receiver.toString(),
+          url: `/profile/${accepter.username}`
+        },
+        tag: `follow-accepted-${followRequest.receiver}`
+      }).catch(err => logger.error('Push notification error:', err));
+    } catch (notificationError) {
+      // Don't fail the request if notification creation fails
+      logger.error('Failed to create follow acceptance notification:', notificationError);
+    }
 
     res.json({ message: 'Follow request accepted' });
   } catch (error) {
