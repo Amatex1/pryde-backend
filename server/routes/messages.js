@@ -15,7 +15,7 @@ import { guardSendDM } from '../middleware/systemAccountGuard.js';
 import { sanitizeFields } from '../utils/sanitize.js';
 import logger from '../utils/logger.js';
 import { emitNotificationCreated } from '../utils/notificationEmitter.js';
-import { sendPushNotification } from '../utils/pushNotifications.js';
+import { sendPushNotification } from './pushNotifications.js';
 
 // ========================================
 // IMPORTANT: Define specific routes BEFORE wildcard routes like /:userId

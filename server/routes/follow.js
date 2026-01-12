@@ -9,7 +9,7 @@ import { checkBlocked } from '../middleware/privacy.js';
 import { guardFollow } from '../middleware/systemAccountGuard.js';
 import logger from '../utils/logger.js';
 import { emitNotificationCreated } from '../utils/notificationEmitter.js';
-import { sendPushNotification } from '../utils/pushNotifications.js';
+import { sendPushNotification } from './pushNotifications.js';
 
 // @route   POST /api/follow/:userId
 // @desc    Follow a user (instant for public accounts, request for private)

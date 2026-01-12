@@ -21,7 +21,7 @@ import {
 import { asyncHandler, requireAuth, requireValidId, requireParams, sendError, HttpStatus } from '../utils/errorHandler.js';
 import { notifyMentionsInComment } from '../services/mentionNotificationService.js';
 import { emitNotificationCreated } from '../utils/notificationEmitter.js';
-import { sendPushNotification } from '../utils/pushNotifications.js';
+import { sendPushNotification } from './pushNotifications.js';
 
 const router = express.Router();
 
