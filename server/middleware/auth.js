@@ -4,6 +4,7 @@ import User from '../models/User.js';
 import SecurityLog from '../models/SecurityLog.js';
 import { getClientIp } from '../utils/sessionUtils.js';
 import { verifyAccessToken } from '../utils/tokenUtils.js';
+import { sendUnauthorizedError, ErrorCodes } from '../utils/errorResponse.js';
 
 const auth = async (req, res, next) => {
   try {
@@ -49,7 +50,7 @@ const auth = async (req, res, next) => {
           console.warn('[UPLOAD BLOCKED] This is the exact cause of the auth failure');
         }
       }
-      return res.status(401).json({ message: 'No authentication token, access denied' });
+      return sendUnauthorizedError(res, 'No authentication token, access denied', ErrorCodes.UNAUTHORIZED);
     }
 
     // Verify token
@@ -64,7 +65,7 @@ const auth = async (req, res, next) => {
       if (config.nodeEnv === 'development') {
         console.log('❌ User not found in database');
       }
-      return res.status(401).json({ message: 'User not found' });
+      return sendUnauthorizedError(res, 'User not found', ErrorCodes.UNAUTHORIZED);
     }
 
     // PHASE B: Lock System Accounts
@@ -101,7 +102,7 @@ const auth = async (req, res, next) => {
       if (config.nodeEnv === 'development') {
         console.log('❌ Account has been deleted');
       }
-      return res.status(401).json({ message: 'Account deleted', code: 'ACCOUNT_DELETED' });
+      return sendUnauthorizedError(res, 'Account deleted', ErrorCodes.ACCOUNT_DELETED);
     }
 
     // Check if session still exists
@@ -113,7 +114,7 @@ const auth = async (req, res, next) => {
         if (config.nodeEnv === 'development') {
           console.log('❌ Session has been logged out');
         }
-        return res.status(401).json({ message: 'Session has been logged out. Please log in again.' });
+        return sendUnauthorizedError(res, 'Session has been logged out. Please log in again.', ErrorCodes.UNAUTHORIZED);
       }
     }
 
@@ -184,10 +185,32 @@ const auth = async (req, res, next) => {
     req.sessionId = decoded.sessionId; // Extract session ID from token
     next();
   } catch (error) {
+    // 🔥 CRITICAL FIX: NEVER return 500 on auth failures - always return 401
     if (config.nodeEnv === 'development') {
       console.log('❌ Auth error:', error.message);
     }
-    res.status(401).json({ message: 'Token is not valid', error: config.nodeEnv === 'development' ? error.message : undefined });
+
+    // Determine specific error message
+    let errorMessage = 'Token is not valid';
+    let errorCode = 'INVALID_TOKEN';
+
+    if (error.name === 'TokenExpiredError') {
+      errorMessage = 'Token has expired';
+      errorCode = 'TOKEN_EXPIRED';
+    } else if (error.name === 'JsonWebTokenError') {
+      errorMessage = 'Invalid token format';
+      errorCode = 'MALFORMED_TOKEN';
+    } else if (error.name === 'NotBeforeError') {
+      errorMessage = 'Token not yet valid';
+      errorCode = 'TOKEN_NOT_ACTIVE';
+    }
+
+    // ALWAYS return 401, NEVER 500
+    res.status(401).json({
+      message: errorMessage,
+      code: errorCode,
+      error: config.nodeEnv === 'development' ? error.message : undefined
+    });
   }
 };
 

@@ -680,7 +680,29 @@ io.on('connection', (socket) => {
       hasVoiceNote: !!data.voiceNote,
       socketId: socket.id
     });
+
+    // 🔥 CRITICAL FIX: Comprehensive error handling wrapper
     try {
+      // 🔥 VALIDATION: Check for required data object
+      if (!data || typeof data !== 'object') {
+        console.error(`❌ [send_message] Invalid data object from user ${userId}`);
+        socket.emit('message:error', {
+          message: 'Invalid message data',
+          code: 'INVALID_DATA'
+        });
+        return;
+      }
+
+      // 🔥 VALIDATION: Check for recipient ID
+      if (!data.recipientId) {
+        console.error(`❌ [send_message] Missing recipientId from user ${userId}`);
+        socket.emit('message:error', {
+          message: 'Recipient ID is required',
+          code: 'MISSING_RECIPIENT'
+        });
+        return;
+      }
+
       // SECURITY: Sanitize message content to prevent XSS
       const sanitizedContent = data.content ? sanitizeHtml(data.content, {
         allowedTags: [],
@@ -690,11 +712,17 @@ io.on('connection', (socket) => {
       // Validate that either content or attachment is provided
       if (!sanitizedContent && !data.attachment && !data.voiceNote) {
         console.log(`❌ [send_message] Validation failed - no content/attachment/voiceNote for user ${userId}`);
-        socket.emit('error', { message: 'Message must have content, attachment, or voice note' });
+        socket.emit('message:error', {
+          message: 'Message must have content, attachment, or voice note',
+          code: 'EMPTY_MESSAGE'
+        });
         return;
       }
 
       console.log(`✅ [send_message] Validated, creating message from ${userId} to ${data.recipientId}`);
+
+      // 🔥 CRITICAL FIX: Server-side deduplication
+      const { createMessageIdempotent } = await import('./utils/messageDeduplication.js');
 
       const messageData = {
         sender: userId,
@@ -708,11 +736,31 @@ io.on('connection', (socket) => {
         messageData.voiceNote = data.voiceNote;
       }
 
-      const message = new Message(messageData);
-
       // ⏱️ PERFORMANCE: Save and populate in parallel where possible
       const saveStart = Date.now();
-      await message.save();
+
+      // Create message with deduplication
+      const result = await createMessageIdempotent(messageData, async (data) => {
+        const msg = new Message(data);
+        await msg.save();
+        return msg;
+      });
+
+      // If duplicate, fetch existing message and return it
+      if (result.isDuplicate) {
+        console.log(`🔄 Duplicate message detected, returning existing message: ${result.messageId}`);
+        const message = await Message.findById(result.messageId)
+          .populate([
+            { path: 'sender', select: 'username profilePhoto' },
+            { path: 'recipient', select: 'username profilePhoto' }
+          ]);
+
+        // Send back to sender as confirmation (no notification needed)
+        emitValidated(socket, 'message:sent', message);
+        return;
+      }
+
+      const message = result.message;
       console.log(`⏱️ Message save took ${Date.now() - saveStart}ms`);
 
       // ⏱️ PERFORMANCE: Combine populate calls into one
@@ -750,23 +798,36 @@ io.on('connection', (socket) => {
       const sender = await User.findById(userId).select('username displayName profilePhoto');
       const senderName = sender.displayName || sender.username;
 
-      // Create and save notification
-      const notification = new Notification({
+      // 🔥 CRITICAL FIX: Create notification with deduplication
+      const { createNotificationIdempotent } = await import('./utils/notificationDeduplication.js');
+
+      const notificationData = {
         recipient: data.recipientId,
         sender: userId,
         type: 'message',
         message: `You have a new message`,
-        link: `/messages`
+        link: `/messages`,
+        metadata: { senderId: userId }
+      };
+
+      const notifResult = await createNotificationIdempotent(notificationData, async (data) => {
+        const notif = new Notification(data);
+        await notif.save();
+        return notif;
       });
 
-      // Save notification and manually set sender to avoid another populate query
-      await notification.save();
-      notification.sender = sender; // Manually set sender to avoid populate
+      // Only emit if not duplicate
+      if (!notifResult.isDuplicate) {
+        const notification = notifResult.notification;
+        notification.sender = sender; // Manually set sender to avoid populate
 
-      console.log(`⏱️ Notification creation took ${Date.now() - notificationStart}ms`);
+        console.log(`⏱️ Notification creation took ${Date.now() - notificationStart}ms`);
 
-      // ✅ Emit real-time notification using centralized emitter
-      emitNotificationCreated(io, data.recipientId, notification);
+        // ✅ Emit real-time notification using centralized emitter
+        emitNotificationCreated(io, data.recipientId, notification);
+      } else {
+        console.log(`🔄 Skipping duplicate notification emission`);
+      }
 
       // Send push notification (fire and forget - don't await)
       const messagePreview = sanitizedContent.length > 50
@@ -786,8 +847,34 @@ io.on('connection', (socket) => {
 
       console.log(`✅ Total message handling took ${Date.now() - startTime}ms`);
     } catch (error) {
-      console.error('❌ Error saving message:', error);
-      socket.emit('error', { message: 'Error sending message' });
+      // 🔥 CRITICAL FIX: Comprehensive error handling with specific error codes
+      console.error('❌ Error in send_message handler:', {
+        error: error.message,
+        stack: error.stack,
+        userId,
+        recipientId: data?.recipientId
+      });
+
+      // Determine error type and send appropriate response
+      let errorMessage = 'Error sending message';
+      let errorCode = 'SEND_MESSAGE_ERROR';
+
+      if (error.name === 'ValidationError') {
+        errorMessage = 'Invalid message data';
+        errorCode = 'VALIDATION_ERROR';
+      } else if (error.name === 'CastError') {
+        errorMessage = 'Invalid recipient ID';
+        errorCode = 'INVALID_RECIPIENT_ID';
+      } else if (error.code === 11000) {
+        errorMessage = 'Duplicate message detected';
+        errorCode = 'DUPLICATE_MESSAGE';
+      }
+
+      socket.emit('message:error', {
+        message: errorMessage,
+        code: errorCode,
+        timestamp: new Date().toISOString()
+      });
     }
   });
   
