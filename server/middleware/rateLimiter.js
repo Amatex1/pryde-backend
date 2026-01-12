@@ -21,16 +21,24 @@ const initializeRedis = async () => {
     if (config.redis && config.redis.host && config.redis.port) {
       const Redis = (await import('ioredis')).default;
       RedisStore = (await import('rate-limit-redis')).default;
-      redisClient = new Redis({
+
+      const redisOptions = {
         host: config.redis.host,
         port: config.redis.port,
         password: config.redis.password,
         enableOfflineQueue: false,
         lazyConnect: true
-      });
+      };
+
+      // Add TLS support if configured (required for Upstash and other cloud Redis providers)
+      if (config.redis.tls) {
+        redisOptions.tls = config.redis.tls;
+      }
+
+      redisClient = new Redis(redisOptions);
       // Test connection
       await redisClient.connect();
-      logger.info('Redis connected for rate limiting');
+      logger.info('✅ Redis connected for rate limiting');
       // Handle Redis errors gracefully
       redisClient.on('error', (err) => {
         logger.error('Redis error:', err);
