@@ -11,7 +11,13 @@ import Notification from '../models/Notification.js';
 // Load environment variables
 dotenv.config();
 
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/pryde';
+// Support MONGO_URI, MONGO_URL and MONGODB_URI for flexibility (same as dbConn.js)
+const MONGODB_URI = process.env.MONGO_URI || process.env.MONGO_URL || process.env.MONGODB_URI;
+
+if (!MONGODB_URI) {
+  console.error('❌ MONGO_URI is missing in environment variables');
+  process.exit(1);
+}
 
 /**
  * Create a test notification for a user
