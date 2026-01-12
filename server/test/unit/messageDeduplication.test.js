@@ -2,7 +2,7 @@
  * Unit Tests: Message Deduplication
  */
 
-import { describe, it, expect, beforeEach } from '@jest/globals';
+import { expect } from 'chai';
 import {
   generateMessageFingerprint,
   checkDuplicate,
@@ -20,44 +20,44 @@ describe('Message Deduplication', () => {
     it('should generate consistent fingerprints for same input', () => {
       const fp1 = generateMessageFingerprint('user1', 'user2', 'Hello');
       const fp2 = generateMessageFingerprint('user1', 'user2', 'Hello');
-      
-      expect(fp1).toBe(fp2);
+
+      expect(fp1).to.equal(fp2);
     });
 
     it('should generate different fingerprints for different content', () => {
       const fp1 = generateMessageFingerprint('user1', 'user2', 'Hello');
       const fp2 = generateMessageFingerprint('user1', 'user2', 'Hi');
-      
-      expect(fp1).not.toBe(fp2);
+
+      expect(fp1).to.not.equal(fp2);
     });
 
     it('should round timestamps to 5-second intervals', () => {
       const timestamp1 = 1000000;
       const timestamp2 = 1002000; // 2 seconds later
-      
+
       const fp1 = generateMessageFingerprint('user1', 'user2', 'Hello', timestamp1);
       const fp2 = generateMessageFingerprint('user1', 'user2', 'Hello', timestamp2);
-      
+
       // Should be same because within 5-second window
-      expect(fp1).toBe(fp2);
+      expect(fp1).to.equal(fp2);
     });
   });
 
   describe('checkDuplicate', () => {
     it('should return null for non-existent fingerprint', () => {
       const result = checkDuplicate('nonexistent');
-      expect(result).toBeNull();
+      expect(result).to.be.null;
     });
 
     it('should return cached message for existing fingerprint', () => {
       const fingerprint = 'test123';
       const messageId = 'msg456';
-      
+
       registerMessage(fingerprint, messageId);
       const result = checkDuplicate(fingerprint);
-      
-      expect(result).not.toBeNull();
-      expect(result.messageId).toBe(messageId);
+
+      expect(result).to.not.be.null;
+      expect(result.messageId).to.equal(messageId);
     });
   });
 
@@ -65,11 +65,11 @@ describe('Message Deduplication', () => {
     it('should register message fingerprint', () => {
       const fingerprint = 'test123';
       const messageId = 'msg456';
-      
+
       registerMessage(fingerprint, messageId);
       const result = checkDuplicate(fingerprint);
-      
-      expect(result.messageId).toBe(messageId);
+
+      expect(result.messageId).to.equal(messageId);
     });
   });
 
@@ -80,17 +80,21 @@ describe('Message Deduplication', () => {
         recipient: 'user2',
         content: 'Test message'
       };
-      
-      const createFn = jest.fn(async (data) => ({
-        _id: 'msg123',
-        ...data
-      }));
-      
+
+      let callCount = 0;
+      const createFn = async (data) => {
+        callCount++;
+        return {
+          _id: 'msg123',
+          ...data
+        };
+      };
+
       const result = await createMessageIdempotent(messageData, createFn);
-      
-      expect(result.isDuplicate).toBe(false);
-      expect(result.message._id).toBe('msg123');
-      expect(createFn).toHaveBeenCalledTimes(1);
+
+      expect(result.isDuplicate).to.equal(false);
+      expect(result.message._id).to.equal('msg123');
+      expect(callCount).to.equal(1);
     });
 
     it('should return existing message if duplicate', async () => {
@@ -99,28 +103,25 @@ describe('Message Deduplication', () => {
         recipient: 'user2',
         content: 'Test message'
       };
-      
-      const createFn = jest.fn(async (data) => ({
-        _id: 'msg123',
-        ...data
-      }));
-      
+
+      let callCount = 0;
+      const createFn = async (data) => {
+        callCount++;
+        return {
+          _id: 'msg123',
+          ...data
+        };
+      };
+
       // Create first message
       await createMessageIdempotent(messageData, createFn);
-      
+
       // Try to create duplicate
       const result = await createMessageIdempotent(messageData, createFn);
-      
-      expect(result.isDuplicate).toBe(true);
-      expect(result.messageId).toBe('msg123');
-      expect(createFn).toHaveBeenCalledTimes(1); // Should not call createFn again
-    });
-  });
 
-  describe('Cache expiration', () => {
-    it('should expire entries after TTL', async () => {
-      // This test would require mocking Date.now() or using fake timers
-      // Skipping for now, but should be implemented with jest.useFakeTimers()
+      expect(result.isDuplicate).to.equal(true);
+      expect(result.messageId).to.equal('msg123');
+      expect(callCount).to.equal(1); // Should not call createFn again
     });
   });
 });

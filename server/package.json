@@ -48,6 +48,7 @@
     "xss-clean": "^0.1.4"
   },
   "devDependencies": {
+    "chai": "^6.2.2",
     "mocha": "^11.7.5",
     "nodemon": "^3.0.1",
     "supertest": "^7.1.4"
