@@ -79,6 +79,7 @@ import resonanceRoutes from './routes/resonance.js'; // Feature 3: Resonance Sig
 import circlesRoutes from './routes/circles.js'; // Feature 4: Small Circles
 import presenceRoutes from './routes/presence.js'; // Feature 5: Soft Presence States
 import systemPromptsRoutes from './routes/systemPrompts.js'; // Rotating system prompt posts
+import testNotificationsRoutes from './routes/testNotifications.js'; // Test notification endpoint
 
 // Mention notification service
 import { notifyMentionsInLounge } from './services/mentionNotificationService.js';
@@ -411,6 +412,7 @@ app.use('/api/groups', groupsRoutes); // Migration Phase: TAGS → GROUPS (Phase
 app.use('/api/photo-essays', photoEssaysRoutes); // PHASE 5: Photo essays
 app.use('/api/upload', uploadRoutes);
 app.use('/api/notifications', notificationsRoutes);
+app.use('/api/test-notifications', testNotificationsRoutes);
 app.use('/api/messages', messagesRoutes);
 app.use('/api/groupchats', groupChatsRoutes);
 app.use('/api/global-chat', globalChatRoutes);
