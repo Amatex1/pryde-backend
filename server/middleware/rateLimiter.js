@@ -38,6 +38,7 @@ const initializeRedis = async () => {
       redisClient = new Redis(redisOptions);
       // Test connection
       await redisClient.connect();
+      console.log('✅ Redis connected for rate limiting');
       logger.info('✅ Redis connected for rate limiting');
       // Handle Redis errors gracefully
       redisClient.on('error', (err) => {
