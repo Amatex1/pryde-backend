@@ -156,11 +156,6 @@ router.put('/me/visibility', auth, async (req, res) => {
   try {
     const { publicBadges, hiddenBadges } = req.body;
 
-    // Validate publicBadges array
-    if (publicBadges && (!Array.isArray(publicBadges) || publicBadges.length > 3)) {
-      return res.status(400).json({ message: 'You can only display up to 3 public badges' });
-    }
-
     // Get user's current badges
     const user = await User.findById(req.userId).select('badges');
     if (!user) {
@@ -192,6 +187,15 @@ router.put('/me/visibility', auth, async (req, res) => {
       const invalidBadges = publicBadges.filter(badgeId => !user.badges.includes(badgeId));
       if (invalidBadges.length > 0) {
         return res.status(400).json({ message: 'You can only make your own badges public' });
+      }
+
+      // Validate publicBadges array (excluding CORE_ROLE badges from the 3-badge limit)
+      const publicBadgeDetails = await Badge.find({ id: { $in: publicBadges } }).select('id category');
+      const nonCoreRoleBadges = publicBadgeDetails.filter(b => b.category !== 'CORE_ROLE');
+      if (nonCoreRoleBadges.length > 3) {
+        return res.status(400).json({
+          message: 'You can only display up to 3 public badges (excluding core role badges like Founder/Admin/Moderator/Verified)'
+        });
       }
     }
 
