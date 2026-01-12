@@ -45,6 +45,8 @@ export default {
     host: process.env.REDIS_HOST,
     port: parseInt(process.env.REDIS_PORT, 10),
     password: process.env.REDIS_PASSWORD || null,
+    // TLS/SSL support for cloud Redis providers (Upstash, Redis Cloud, etc.)
+    tls: process.env.REDIS_TLS === 'true' ? {} : undefined,
     // Additional Redis connection options
     connectionTimeout: parseInt(process.env.REDIS_CONNECT_TIMEOUT || '5000', 10),
     maxRetriesPerRequest: parseInt(process.env.REDIS_MAX_RETRIES || '3', 10)
