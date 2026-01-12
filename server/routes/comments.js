@@ -7,6 +7,7 @@ import express from 'express';
 import Comment from '../models/Comment.js';
 import Post from '../models/Post.js';
 import User from '../models/User.js';
+import Notification from '../models/Notification.js';
 import auth from '../middleware/auth.js';
 import requireActiveUser from '../middleware/requireActiveUser.js';
 import { reactionLimiter } from '../middleware/rateLimiter.js';
@@ -19,6 +20,8 @@ import {
 } from '../utils/mutationTracker.js';
 import { asyncHandler, requireAuth, requireValidId, requireParams, sendError, HttpStatus } from '../utils/errorHandler.js';
 import { notifyMentionsInComment } from '../services/mentionNotificationService.js';
+import { emitNotificationCreated } from '../utils/notificationEmitter.js';
+import { sendPushNotification } from '../utils/pushNotifications.js';
 
 const router = express.Router();
 
@@ -196,6 +199,86 @@ router.post('/posts/:postId/comments', auth, requireActiveUser, asyncHandler(asy
 
     // Populate author
     await comment.populate('authorId', 'username displayName profilePhoto isVerified pronouns');
+
+    // 🔔 Create notification for post author or parent comment author
+    try {
+      if (parentCommentId) {
+        // This is a reply to a comment
+        const parentComment = await Comment.findById(parentCommentId).select('authorId');
+
+        // Notify parent comment author (don't notify yourself)
+        if (parentComment && parentComment.authorId.toString() !== userId.toString()) {
+          const notification = new Notification({
+            recipient: parentComment.authorId,
+            sender: userId,
+            type: 'comment',
+            message: 'replied to your comment',
+            postId,
+            commentId: comment._id
+          });
+          await notification.save();
+          await notification.populate('sender', 'username displayName profilePhoto');
+
+          // ✅ Emit real-time notification
+          emitNotificationCreated(req.io, parentComment.authorId.toString(), notification);
+
+          // Send push notification
+          const replier = await User.findById(userId).select('username displayName');
+          const replierName = replier.displayName || replier.username;
+
+          sendPushNotification(parentComment.authorId, {
+            title: `💬 New Reply`,
+            body: `${replierName} replied to your comment`,
+            data: {
+              type: 'reply',
+              postId: postId.toString(),
+              commentId: comment._id.toString(),
+              url: `/post/${postId}?comment=${comment._id}`
+            },
+            tag: `reply-${comment._id}`
+          }).catch(err => logger.error('Push notification error:', err));
+        }
+      } else {
+        // This is a comment on a post
+        const post = await Post.findById(postId).select('author');
+
+        // Notify post author (don't notify yourself)
+        if (post && post.author.toString() !== userId.toString()) {
+          const notification = new Notification({
+            recipient: post.author,
+            sender: userId,
+            type: 'comment',
+            message: 'commented on your post',
+            postId,
+            commentId: comment._id
+          });
+          await notification.save();
+          await notification.populate('sender', 'username displayName profilePhoto');
+
+          // ✅ Emit real-time notification
+          emitNotificationCreated(req.io, post.author.toString(), notification);
+
+          // Send push notification
+          const commenter = await User.findById(userId).select('username displayName');
+          const commenterName = commenter.displayName || commenter.username;
+
+          sendPushNotification(post.author, {
+            title: `💬 New Comment`,
+            body: `${commenterName} commented on your post`,
+            data: {
+              type: 'comment',
+              postId: postId.toString(),
+              commentId: comment._id.toString(),
+              url: `/post/${postId}?comment=${comment._id}`
+            },
+            tag: `comment-${postId}`
+          }).catch(err => logger.error('Push notification error:', err));
+        }
+      }
+    } catch (notificationError) {
+      // Don't fail the request if notification creation fails
+      logger.error('Failed to create comment notification:', notificationError);
+    }
 
     // Process @mention notifications (fire-and-forget, don't block response)
     if (content) {

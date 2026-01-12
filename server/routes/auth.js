@@ -1009,6 +1009,7 @@ router.post('/login', loginLimiter, validateLogin, async (req, res) => {
         _id: user._id,  // Include both for backward compatibility
         username: user.username,
         email: user.email,
+        emailVerified: user.emailVerified || false,  // 🔔 CRITICAL: Include emailVerified status
         fullName: user.fullName,
         displayName: user.displayName,
         nickname: user.nickname,
@@ -1284,6 +1285,7 @@ router.post('/verify-2fa-login', loginLimiter, async (req, res) => {
         _id: user._id,  // Include both for backward compatibility
         username: user.username,
         email: user.email,
+        emailVerified: user.emailVerified || false,  // 🔔 CRITICAL: Include emailVerified status
         fullName: user.fullName,
         displayName: user.displayName,
         nickname: user.nickname,
