@@ -159,6 +159,7 @@ const allowedOrigins = [
   // Vercel deployment URLs
   'https://pryde-frontend.vercel.app',
   'https://pryde-frontend-2m8ympy3-mats-projects-d8392976.vercel.app',
+  'https://pryde-frontend-j9j6871wz-mats-projects-d8392976.vercel.app',
   // Development
   'http://localhost:3000',
   'http://localhost:3001',
