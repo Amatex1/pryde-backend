@@ -156,9 +156,9 @@ const allowedOrigins = [
   'https://www.prydesocial.com',
   'https://prydeapp.com',
   'https://www.prydeapp.com',
-  // Vercel deployment URLs (add your specific Vercel URL here after deployment)
-  // Example: 'https://pryde-frontend.vercel.app',
-  // Example: 'https://pryde-frontend-xyz.vercel.app',
+  // Vercel deployment URLs
+  'https://pryde-frontend.vercel.app',
+  'https://pryde-frontend-2m8ympy3-mats-projects-d8392976.vercel.app',
   // Development
   'http://localhost:3000',
   'http://localhost:3001',
