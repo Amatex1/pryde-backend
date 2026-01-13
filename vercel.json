@@ -2,19 +2,19 @@
   "version": 2,
   "builds": [
     {
-      "src": "server/server.js",
-      "use": "@vercel/node",
-      "config": {
-        "includeFiles": ["server/**"]
-      }
+      "src": "api/index.js",
+      "use": "@vercel/node"
     }
   ],
   "routes": [
     {
       "src": "/(.*)",
-      "dest": "server/server.js"
+      "dest": "/api/index.js"
     }
   ],
-  "installCommand": "cd server && npm install"
+  "installCommand": "cd server && npm install",
+  "env": {
+    "NODE_ENV": "production"
+  }
 }
 
