@@ -160,6 +160,7 @@ const allowedOrigins = [
   'https://pryde-frontend.vercel.app',
   'https://pryde-frontend-2m8ympy3-mats-projects-d8392976.vercel.app',
   'https://pryde-frontend-j9j6871wz-mats-projects-d8392976.vercel.app',
+  'https://pryde-frontend-git-main-mats-projects-d8392976.vercel.app',
   // Development
   'http://localhost:3000',
   'http://localhost:3001',
@@ -217,7 +218,7 @@ const io = new Server(server, {
 setSocketIO(io);
 
 // Middleware - Enhanced CORS configuration
-// SECURITY: Strict allowlist - no regex patterns for security
+// SECURITY: Strict allowlist with limited pattern matching for Vercel preview URLs
 const corsOptions = {
   origin: function(origin, callback) {
     // Allow requests with no origin (like mobile apps or curl requests)
@@ -226,13 +227,22 @@ const corsOptions = {
       return;
     }
 
-    // Check if origin is in allowed list (exact string match only)
+    // Check if origin is in allowed list (exact string match)
     if (allowedOrigins.includes(origin)) {
       callback(null, true);
-    } else {
-      console.log(`CORS blocked origin: ${origin}`);
-      callback(new Error('Not allowed by CORS'));
+      return;
     }
+
+    // Allow Vercel preview URLs (pryde-frontend-*.vercel.app)
+    // SECURITY: Strict pattern - only allows pryde-frontend subdomains on vercel.app
+    if (origin.match(/^https:\/\/pryde-frontend-[a-z0-9-]+\.vercel\.app$/)) {
+      callback(null, true);
+      return;
+    }
+
+    // Block all other origins
+    console.log(`CORS blocked origin: ${origin}`);
+    callback(new Error('Not allowed by CORS'));
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
