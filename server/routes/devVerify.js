@@ -180,5 +180,69 @@ router.get('/verify/snapshot/:entity', devOnlyGuard, auth, async (req, res) => {
   }
 });
 
+/**
+ * @route   GET /api/dev/online-users
+ * @desc    Get list of currently online users (for debugging Socket.IO)
+ * @access  Private (Dev only)
+ */
+router.get('/online-users', devOnlyGuard, auth, async (req, res) => {
+  try {
+    // Get the io instance from the app
+    const io = req.app.get('io');
+    if (!io) {
+      return res.json({
+        error: 'Socket.IO not initialized',
+        onlineUsers: [],
+        count: 0
+      });
+    }
+
+    // Get the onlineUsers Map from the app
+    const onlineUsers = req.app.get('onlineUsers');
+    if (!onlineUsers) {
+      return res.json({
+        error: 'onlineUsers Map not found',
+        onlineUsers: [],
+        count: 0
+      });
+    }
+
+    // Convert Map to array of objects with user details
+    const onlineUsersList = Array.from(onlineUsers.entries()).map(([userId, socketId]) => ({
+      userId,
+      socketId
+    }));
+
+    // Get user details from database
+    const userIds = onlineUsersList.map(u => u.userId);
+    const users = await User.find({ _id: { $in: userIds } })
+      .select('username displayName profilePhoto role')
+      .lean();
+
+    // Merge socket info with user details
+    const enrichedList = onlineUsersList.map(online => {
+      const user = users.find(u => u._id.toString() === online.userId);
+      return {
+        ...online,
+        username: user?.username || 'Unknown',
+        displayName: user?.displayName || user?.username || 'Unknown',
+        role: user?.role || 'user'
+      };
+    });
+
+    res.json({
+      onlineUsers: enrichedList,
+      count: enrichedList.length,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    logger.error('Error fetching online users:', error);
+    res.status(500).json({
+      message: 'Failed to fetch online users',
+      error: error.message
+    });
+  }
+});
+
 export default router;
 

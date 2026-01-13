@@ -138,12 +138,17 @@ router.get('/:userId', auth, requireActiveUser, checkBlocked, async (req, res) =
     const { userId } = req.params;
     const currentUserId = req.userId;
 
-    // DEBUG: Production logging to trace message fetch issue
-    console.log(`📬 [GET /messages/:userId] Fetching messages between ${currentUserId} and ${userId}`);
+    // 📝 DETAILED LOGGING: Request received
+    logger.info('📥 [GET /messages/:userId] Fetching conversation', {
+      currentUser: currentUserId,
+      otherUser: userId,
+      timestamp: new Date().toISOString()
+    });
 
     // Allow viewing existing message threads regardless of user status
     // This preserves chat history even if user is deactivated/deleted
     // Exclude messages that are deleted for this user specifically
+    const queryStartTime = Date.now();
     const messages = await Message.find({
       $or: [
         { sender: currentUserId, recipient: userId },
@@ -156,8 +161,15 @@ router.get('/:userId', auth, requireActiveUser, checkBlocked, async (req, res) =
       .populate('recipient', 'username profilePhoto')
       .sort({ createdAt: 1 });
 
-    // DEBUG: Production logging
-    console.log(`📬 [GET /messages/:userId] Found ${messages.length} messages`);
+    const queryDuration = Date.now() - queryStartTime;
+
+    // 📝 DETAILED LOGGING: Query results
+    logger.info('📬 [GET /messages/:userId] Messages retrieved', {
+      count: messages.length,
+      queryDuration: `${queryDuration}ms`,
+      firstMessageId: messages[0]?._id,
+      lastMessageId: messages[messages.length - 1]?._id
+    });
 
     // Transform messages to show "deleted" state for messages deleted for all
     const transformedMessages = messages.map(msg => {
@@ -373,28 +385,46 @@ router.post('/', auth, requireActiveUser, requireEmailVerification, messageLimit
     // REMOVED 2025-12-26: voiceNote no longer accepted (Phase 5)
     const { recipient, content, attachment, groupChatId } = req.body;
 
+    // 📝 DETAILED LOGGING: Request received
+    logger.info('📤 [POST /messages] New message request', {
+      sender: req.userId,
+      recipient: recipient || 'N/A',
+      groupChatId: groupChatId || 'N/A',
+      hasContent: !!content,
+      hasAttachment: !!attachment,
+      contentLength: content?.length || 0,
+      timestamp: new Date().toISOString()
+    });
+
     // Validate recipient availability (only for direct messages, not group chats)
     if (!groupChatId && recipient) {
+      logger.debug('🔍 [POST /messages] Validating recipient availability', { recipient });
       const recipientUser = await User.findById(recipient);
 
       if (!recipientUser) {
+        logger.warn('⚠️ [POST /messages] Recipient not found', { recipient });
         return res.status(403).json({ message: 'This user is unavailable.' });
       }
 
       // Check if recipient is active
       if (recipientUser.isActive === false) {
+        logger.warn('⚠️ [POST /messages] Recipient is inactive', { recipient });
         return res.status(403).json({ message: 'This user is unavailable.' });
       }
 
       // Check if recipient is deleted
       if (recipientUser.isDeleted === true) {
+        logger.warn('⚠️ [POST /messages] Recipient is deleted', { recipient });
         return res.status(403).json({ message: 'This user is unavailable.' });
       }
 
       // Check if recipient has blocked the sender
       if (recipientUser.blockedUsers && recipientUser.blockedUsers.some(blockedId => blockedId.toString() === req.userId)) {
+        logger.warn('⚠️ [POST /messages] Sender is blocked by recipient', { sender: req.userId, recipient });
         return res.status(403).json({ message: 'This user is unavailable.' });
       }
+
+      logger.debug('✅ [POST /messages] Recipient validation passed');
     }
 
     const messageData = {
@@ -406,13 +436,32 @@ router.post('/', auth, requireActiveUser, requireEmailVerification, messageLimit
       // REMOVED 2025-12-26: voiceNote deleted (Phase 5)
     };
 
+    logger.debug('💾 [POST /messages] Creating message document', {
+      sender: messageData.sender,
+      recipient: messageData.recipient,
+      groupChat: messageData.groupChat,
+      hasContent: !!messageData.content,
+      hasAttachment: !!messageData.attachment
+    });
+
     const message = new Message(messageData);
 
+    logger.debug('💾 [POST /messages] Saving message to database...');
+    const saveStartTime = Date.now();
     await message.save();
+    const saveDuration = Date.now() - saveStartTime;
+
+    logger.info('✅ [POST /messages] Message saved to database', {
+      messageId: message._id,
+      createdAt: message.createdAt,
+      saveDuration: `${saveDuration}ms`
+    });
+
     await message.populate('sender', 'username profilePhoto');
     if (!groupChatId) {
       await message.populate('recipient', 'username profilePhoto');
     }
+    logger.debug('✅ [POST /messages] Message populated with user data');
 
     // Update group chat's last message if it's a group message
     if (groupChatId) {
@@ -426,15 +475,24 @@ router.post('/', auth, requireActiveUser, requireEmailVerification, messageLimit
     // 🔥 CRITICAL FIX: Emit socket events for real-time delivery
     // This ensures messages work even if sent via REST API instead of socket
     if (req.io && !groupChatId) {
+      logger.debug('🔌 [POST /messages] Emitting socket events', {
+        recipientRoom: `user_${recipient}`,
+        senderRoom: `user_${req.userId}`
+      });
+
       const { emitValidated } = require('../utils/emitValidated.js');
 
       // Send to recipient if online
       emitValidated(req.io.to(`user_${recipient}`), 'message:new', message);
+      logger.debug('✅ [POST /messages] Emitted message:new to recipient');
 
       // Send back to sender as confirmation
       emitValidated(req.io.to(`user_${req.userId}`), 'message:sent', message);
+      logger.debug('✅ [POST /messages] Emitted message:sent to sender');
 
-      logger.debug('✅ Socket events emitted for REST API message');
+      logger.info('✅ [POST /messages] Socket events emitted successfully');
+    } else if (!req.io) {
+      logger.warn('⚠️ [POST /messages] Socket.IO not available, skipping real-time events');
     }
 
     // 🔔 Create notification for new DM (only for direct messages, not group chats)
@@ -472,9 +530,22 @@ router.post('/', auth, requireActiveUser, requireEmailVerification, messageLimit
       }
     }
 
+    logger.info('✅ [POST /messages] Message sent successfully', {
+      messageId: message._id,
+      sender: req.userId,
+      recipient: recipient || groupChatId,
+      type: groupChatId ? 'group' : 'direct'
+    });
+
     res.status(201).json(message);
   } catch (error) {
-    logger.error('❌ Error sending message:', error);
+    logger.error('❌ [POST /messages] Error sending message', {
+      error: error.message,
+      stack: error.stack,
+      sender: req.userId,
+      recipient: req.body.recipient,
+      groupChatId: req.body.groupChatId
+    });
     res.status(500).json({ message: 'Error sending message', error: error.message });
   }
 });

@@ -156,6 +156,9 @@ const allowedOrigins = [
   'https://www.prydesocial.com',
   'https://prydeapp.com',
   'https://www.prydeapp.com',
+  // Vercel deployment URLs
+  'https://pryde-frontend.vercel.app',
+  'https://pryde-frontend-2m8ympy3-mats-projects-d8392976.vercel.app',
   // Development
   'http://localhost:3000',
   'http://localhost:3001',
@@ -1219,12 +1222,15 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Start server
+// Start server (skip on Vercel - serverless functions don't need listen())
 const PORT = process.env.NODE_ENV === 'test' ? 0 : config.port;
-server.listen(PORT, () => {
-  logger.info(`Server running on port ${PORT}`);
-  logger.info(`Base URL: ${config.baseURL}`);
-  logger.info('Socket.IO server ready for real-time connections');
+const isVercel = process.env.VERCEL === '1';
+
+if (!isVercel) {
+  server.listen(PORT, () => {
+    logger.info(`Server running on port ${PORT}`);
+    logger.info(`Base URL: ${config.baseURL}`);
+    logger.info('Socket.IO server ready for real-time connections');
 
   // Daily backup system is DISABLED by default
   // To enable daily backups, set ENABLE_AUTO_BACKUP=true in your .env file
@@ -1350,7 +1356,11 @@ server.listen(PORT, () => {
       })
       .catch(err => console.error('[FoundingMember] ❌ Failed to import seed script:', err));
   }
-});
+  });
+} else {
+  logger.info('Running on Vercel serverless - skipping server.listen()');
+  logger.info('Socket.IO and scheduled tasks disabled on serverless');
+}
 
-// Export app for testing
+// Export app for testing and Vercel
 export default app;
