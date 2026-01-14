@@ -645,10 +645,11 @@ io.use(async (socket, next) => {
 // Socket.IO connection handling
 io.on('connection', (socket) => {
   const userId = socket.userId;
-  console.log(`User connected: ${userId}`);
-  
+  console.log(`🔌 User connected: ${userId} (socket: ${socket.id})`);
+
   // Store user's socket connection
   onlineUsers.set(userId, socket.id);
+  console.log(`📊 Online users count: ${onlineUsers.size}`);
 
   // Emit online status to all users (using validated emitter)
   // Note: user_online is legacy - presence:update is canonical
@@ -656,12 +657,14 @@ io.on('connection', (socket) => {
 
   // Send list of online users to the newly connected user
   emitValidated(socket, 'online_users', Array.from(onlineUsers.keys()));
-  
+
   // Join user to their personal room for targeted notifications
   socket.join(`user_${userId}`);
+  console.log(`✅ User ${userId} joined room: user_${userId}`);
 
   // Join user to global chat room
   socket.join('global_chat');
+  console.log(`✅ User ${userId} joined room: global_chat`);
 
   // Emit updated online count to global chat
   const globalChatOnlineCount = io.sockets.adapter.rooms.get('global_chat')?.size || 0;
@@ -767,8 +770,8 @@ io.on('connection', (socket) => {
           .populate([
             { path: 'sender', select: 'username profilePhoto' },
             { path: 'recipient', select: 'username profilePhoto' }
-          ])
-          .lean(); // ⚡ PERFORMANCE: 2-3x faster for read-only queries
+          ]);
+        // 🔥 CRITICAL: Don't use .lean() here - we need toJSON() to decrypt messages!
 
         // Send back to sender as confirmation (no notification needed)
         emitValidated(socket, 'message:sent', message);
@@ -789,21 +792,45 @@ io.on('connection', (socket) => {
       // ⏱️ PERFORMANCE: Send socket events IMMEDIATELY (don't wait for DB operations)
       const emitStart = Date.now();
 
+      // 🔥 CRITICAL: Log message details before emitting
+      console.log(`📤 [send_message] Emitting message:`, {
+        messageId: message._id,
+        sender: userId,
+        recipient: data.recipientId,
+        hasContent: !!message.content,
+        contentPreview: message.content ? message.content.substring(0, 50) : 'N/A',
+        hasAttachment: !!message.attachment
+      });
+
       // Send to recipient if online
       // UNIFIED: Using 'message:new' for all message events (Phase R unification)
       const recipientSocketId = onlineUsers.get(data.recipientId);
+      console.log(`📡 [send_message] Recipient socket lookup:`, {
+        recipientId: data.recipientId,
+        recipientSocketId: recipientSocketId || 'NOT_ONLINE',
+        onlineUsersCount: onlineUsers.size
+      });
+
       if (recipientSocketId) {
+        console.log(`✅ [send_message] Emitting to recipient's socket: ${recipientSocketId}`);
         emitValidated(io.to(recipientSocketId), 'message:new', message);
+      } else {
+        console.log(`⚠️ [send_message] Recipient not online, only emitting to user room`);
       }
 
       // Also emit to recipient's user room for cross-device sync
+      console.log(`📡 [send_message] Emitting to recipient's user room: user_${data.recipientId}`);
       emitValidated(io.to(`user_${data.recipientId}`), 'message:new', message);
 
       // Send back to sender as confirmation
       // UNIFIED: Using 'message:sent' for consistency
+      console.log(`📡 [send_message] Emitting confirmation to sender: ${userId}`);
       emitValidated(socket, 'message:sent', message);
+
       // Also emit to sender's user room for cross-device sync
+      console.log(`📡 [send_message] Emitting to sender's user room: user_${userId}`);
       emitValidated(io.to(`user_${userId}`), 'message:sent', message);
+
       console.log(`⏱️ Socket emit took ${Date.now() - emitStart}ms`);
 
       // ⏱️ PERFORMANCE: Run notification and push notification in background (don't block)
