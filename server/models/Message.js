@@ -145,17 +145,16 @@ messageSchema.pre('save', async function(next) {
  * Decrypt message content when converting to JSON
  * This ensures messages are decrypted when sent to clients
  *
- * ⚡ PERFORMANCE: Skips decryption if encryption is disabled
+ * 🔥 CRITICAL: Always decrypt encrypted messages, even if encryption is disabled
+ * This handles old encrypted messages when encryption is turned off
  */
 messageSchema.methods.toJSON = function() {
   const message = this.toObject();
 
   try {
-    // ⚡ PERFORMANCE: Skip decryption if encryption is disabled
-    const encryptionEnabled = process.env.ENABLE_MESSAGE_ENCRYPTION !== 'false';
-
-    // Decrypt content if encryption is enabled AND it's encrypted
-    if (encryptionEnabled && message.content && isEncrypted(message.content)) {
+    // 🔥 CRITICAL: Always decrypt if content is encrypted (regardless of ENABLE_MESSAGE_ENCRYPTION)
+    // This ensures old encrypted messages are still readable when encryption is disabled
+    if (message.content && isEncrypted(message.content)) {
       message.content = decryptMessage(message.content);
     }
   } catch (error) {
