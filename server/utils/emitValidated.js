@@ -16,28 +16,29 @@ const ALLOWED_EVENTS = [
   'message:sent',
   'message:read',
   'message:deleted',
-  
+  'message:error',
+
   // Notifications
   'notification:new',
   'notification:read',
   'notification:read_all',
   'notification:deleted',
-  
+
   // Global Chat
   'global_message:new',
   'global_chat:online_count',
   'global_chat:user_typing',
   'global_chat:online_users_list',
-  
+
   // Presence
   'presence:update',
   'user_typing',
   'online_users',
-  
+
   // Friend requests (legacy - to be migrated)
   'friend_request_received',
   'friend_request_accepted',
-  
+
   // Errors
   'error'
 ];
@@ -48,6 +49,7 @@ const REQUIRED_KEYS = {
   'message:sent': ['_id', 'sender', 'content'],
   'message:read': ['messageIds', 'readBy'],
   'message:deleted': ['_id'],
+  'message:error': ['message'],
   'notification:new': ['_id', 'type'],
   'notification:read': ['_id'],
   'notification:read_all': ['userId'],
