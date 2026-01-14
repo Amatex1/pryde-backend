@@ -140,12 +140,33 @@ export const validateProfileUpdate = [
 ];
 
 /**
- * ID parameter validation
+ * ID parameter validation (for :id routes)
  */
 export const validateMongoId = [
   param('id')
     .isMongoId()
     .withMessage('Invalid ID format'),
+  handleValidationErrors
+];
+
+/**
+ * Factory function for custom param name validation
+ * @param {string} paramName - The route parameter name to validate
+ * @returns {Array} - Express middleware array
+ */
+export const validateParamId = (paramName = 'id') => [
+  param(paramName)
+    .custom((value) => {
+      // 🔥 CRITICAL: Reject temp_* optimistic IDs
+      if (typeof value === 'string' && value.startsWith('temp_')) {
+        throw new Error('Optimistic IDs not allowed - please wait for message confirmation');
+      }
+      // Validate as MongoDB ObjectId
+      if (!value.match(/^[0-9a-fA-F]{24}$/)) {
+        throw new Error('Invalid ID format');
+      }
+      return true;
+    }),
   handleValidationErrors
 ];
 
@@ -173,5 +194,6 @@ export default {
   validateMessage,
   validateProfileUpdate,
   validateMongoId,
+  validateParamId,
   validatePagination
 };

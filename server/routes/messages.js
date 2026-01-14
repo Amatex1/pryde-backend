@@ -12,6 +12,7 @@ import { messageLimiter } from '../middleware/rateLimiter.js';
 import { checkMessagingPermission, checkBlocked } from '../middleware/privacy.js';
 import { checkMuted, moderateContent } from '../middleware/moderation.js';
 import { guardSendDM } from '../middleware/systemAccountGuard.js';
+import { validateParamId } from '../middleware/validation.js';
 import { sanitizeFields } from '../utils/sanitize.js';
 import logger from '../utils/logger.js';
 import { emitNotificationCreated } from '../utils/notificationEmitter.js';
@@ -551,7 +552,8 @@ router.post('/', auth, requireActiveUser, requireEmailVerification, messageLimit
 });
 
 // Edit a message
-router.put('/:id', auth, requireActiveUser, async (req, res) => {
+// 🔥 CRITICAL: validateParamId blocks temp_* optimistic IDs and validates ObjectId format
+router.put('/:id', auth, requireActiveUser, validateParamId('id'), async (req, res) => {
   try {
     const { content } = req.body;
 
@@ -589,7 +591,8 @@ router.put('/:id', auth, requireActiveUser, async (req, res) => {
 
 // Delete a message
 // Supports two modes: deleteForAll (sender only) or deleteForSelf (anyone in conversation)
-router.delete('/:id', auth, requireActiveUser, async (req, res) => {
+// 🔥 CRITICAL: validateParamId blocks temp_* optimistic IDs and validates ObjectId format
+router.delete('/:id', auth, requireActiveUser, validateParamId('id'), async (req, res) => {
   try {
     const { deleteForAll } = req.query;
     const message = await Message.findById(req.params.id);
@@ -678,7 +681,8 @@ router.delete('/:id', auth, requireActiveUser, async (req, res) => {
 });
 
 // Mark message as read (with read receipts)
-router.put('/:id/read', auth, requireActiveUser, async (req, res) => {
+// 🔥 CRITICAL: validateParamId blocks temp_* optimistic IDs and validates ObjectId format
+router.put('/:id/read', auth, requireActiveUser, validateParamId('id'), async (req, res) => {
   try {
     const message = await Message.findById(req.params.id);
 
@@ -736,7 +740,8 @@ router.put('/:id/read', auth, requireActiveUser, async (req, res) => {
 });
 
 // Mark message as delivered
-router.put('/:id/delivered', auth, requireActiveUser, async (req, res) => {
+// 🔥 CRITICAL: validateParamId blocks temp_* optimistic IDs and validates ObjectId format
+router.put('/:id/delivered', auth, requireActiveUser, validateParamId('id'), async (req, res) => {
   try {
     const message = await Message.findById(req.params.id);
 
@@ -783,7 +788,8 @@ router.get('/group/:groupId', auth, requireActiveUser, async (req, res) => {
 // @route   POST /api/messages/:id/react
 // @desc    Add a reaction to a message
 // @access  Private
-router.post('/:id/react', auth, requireActiveUser, async (req, res) => {
+// 🔥 CRITICAL: validateParamId blocks temp_* optimistic IDs and validates ObjectId format
+router.post('/:id/react', auth, requireActiveUser, validateParamId('id'), async (req, res) => {
   try {
     const { emoji } = req.body;
 
@@ -834,7 +840,8 @@ router.post('/:id/react', auth, requireActiveUser, async (req, res) => {
 // @route   DELETE /api/messages/:id/react
 // @desc    Remove a reaction from a message
 // @access  Private
-router.delete('/:id/react', auth, requireActiveUser, async (req, res) => {
+// 🔥 CRITICAL: validateParamId blocks temp_* optimistic IDs and validates ObjectId format
+router.delete('/:id/react', auth, requireActiveUser, validateParamId('id'), async (req, res) => {
   try {
     const { emoji } = req.body;
 
