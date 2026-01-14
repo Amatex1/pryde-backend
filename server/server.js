@@ -774,7 +774,12 @@ io.on('connection', (socket) => {
         // 🔥 CRITICAL: Don't use .lean() here - we need toJSON() to decrypt messages!
 
         // Send back to sender as confirmation (no notification needed)
-        emitValidated(socket, 'message:sent', message);
+        // 🔥 CRITICAL: Include _tempId for optimistic UI reconciliation
+        const messageWithTempId = message.toJSON ? message.toJSON() : { ...message };
+        if (data._tempId) {
+          messageWithTempId._tempId = data._tempId;
+        }
+        emitValidated(socket, 'message:sent', messageWithTempId);
         return;
       }
 
@@ -824,12 +829,19 @@ io.on('connection', (socket) => {
 
       // Send back to sender as confirmation
       // UNIFIED: Using 'message:sent' for consistency
+      // 🔥 CRITICAL: Include _tempId for optimistic UI reconciliation
+      const messageWithTempId = message.toJSON ? message.toJSON() : { ...message };
+      if (data._tempId) {
+        messageWithTempId._tempId = data._tempId;
+        console.log(`📡 [send_message] Including _tempId for reconciliation: ${data._tempId}`);
+      }
+
       console.log(`📡 [send_message] Emitting confirmation to sender: ${userId}`);
-      emitValidated(socket, 'message:sent', message);
+      emitValidated(socket, 'message:sent', messageWithTempId);
 
       // Also emit to sender's user room for cross-device sync
       console.log(`📡 [send_message] Emitting to sender's user room: user_${userId}`);
-      emitValidated(io.to(`user_${userId}`), 'message:sent', message);
+      emitValidated(io.to(`user_${userId}`), 'message:sent', messageWithTempId);
 
       console.log(`⏱️ Socket emit took ${Date.now() - emitStart}ms`);
 
