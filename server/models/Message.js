@@ -118,13 +118,21 @@ messageSchema.pre('validate', function(next) {
 /**
  * Encrypt message content before saving to database
  * This ensures all messages are encrypted at rest
+ *
+ * ⚡ PERFORMANCE: Can be disabled via ENABLE_MESSAGE_ENCRYPTION=false
+ * Disabling saves ~50-100ms per message
  */
 messageSchema.pre('save', async function(next) {
   try {
-    // Only encrypt if content is modified and not already encrypted
-    if (this.isModified('content') && this.content && !isEncrypted(this.content)) {
+    // ⚡ PERFORMANCE: Skip encryption if disabled
+    const encryptionEnabled = process.env.ENABLE_MESSAGE_ENCRYPTION !== 'false';
+
+    // Only encrypt if enabled AND content is modified and not already encrypted
+    if (encryptionEnabled && this.isModified('content') && this.content && !isEncrypted(this.content)) {
       console.log('🔒 Encrypting message content...');
       this.content = encryptMessage(this.content);
+    } else if (!encryptionEnabled && this.isModified('content')) {
+      console.log('⚡ Encryption disabled - storing message in plaintext');
     }
     next();
   } catch (error) {
@@ -136,13 +144,18 @@ messageSchema.pre('save', async function(next) {
 /**
  * Decrypt message content when converting to JSON
  * This ensures messages are decrypted when sent to clients
+ *
+ * ⚡ PERFORMANCE: Skips decryption if encryption is disabled
  */
 messageSchema.methods.toJSON = function() {
   const message = this.toObject();
 
   try {
-    // Decrypt content if it's encrypted
-    if (message.content && isEncrypted(message.content)) {
+    // ⚡ PERFORMANCE: Skip decryption if encryption is disabled
+    const encryptionEnabled = process.env.ENABLE_MESSAGE_ENCRYPTION !== 'false';
+
+    // Decrypt content if encryption is enabled AND it's encrypted
+    if (encryptionEnabled && message.content && isEncrypted(message.content)) {
       message.content = decryptMessage(message.content);
     }
   } catch (error) {

@@ -767,7 +767,8 @@ io.on('connection', (socket) => {
           .populate([
             { path: 'sender', select: 'username profilePhoto' },
             { path: 'recipient', select: 'username profilePhoto' }
-          ]);
+          ])
+          .lean(); // ⚡ PERFORMANCE: 2-3x faster for read-only queries
 
         // Send back to sender as confirmation (no notification needed)
         emitValidated(socket, 'message:sent', message);
@@ -1100,8 +1101,7 @@ io.on('connection', (socket) => {
       const GlobalMessage = (await import('./models/GlobalMessage.js')).default;
       console.log(`⏱️ Model import took ${Date.now() - importStart}ms`);
 
-      // Create new global message
-      const saveStart = Date.now();
+      // Create new global message (but don't save yet)
       const newMessage = new GlobalMessage({
         senderId: userId,
         text: trimmedText || '',
@@ -1109,10 +1109,8 @@ io.on('connection', (socket) => {
         contentWarning: contentWarning?.trim() || null
       });
 
-      await newMessage.save();
-      console.log(`⏱️ Message save took ${Date.now() - saveStart}ms`);
-
-      // Prepare message payload for broadcast
+      // ⚡ PERFORMANCE OPTIMIZATION: Prepare message payload BEFORE saving
+      // This allows us to emit the socket event immediately
       const messagePayload = {
         _id: newMessage._id,
         text: newMessage.text,
@@ -1128,10 +1126,22 @@ io.on('connection', (socket) => {
         }
       };
 
-      // Broadcast to all users in global_chat room
+      // ⚡ EMIT IMMEDIATELY - Don't wait for database save!
       const broadcastStart = Date.now();
       emitValidated(io.to('global_chat'), 'global_message:new', messagePayload);
-      console.log(`⏱️ Broadcast took ${Date.now() - broadcastStart}ms`);
+      console.log(`⚡ Instant broadcast took ${Date.now() - broadcastStart}ms`);
+
+      // 💾 Save to database in background (fire-and-forget)
+      // This doesn't block the socket emission
+      const saveStart = Date.now();
+      newMessage.save()
+        .then(() => {
+          console.log(`💾 Background save completed in ${Date.now() - saveStart}ms`);
+        })
+        .catch(err => {
+          console.error('❌ Background save failed:', err);
+          // TODO: Implement retry logic or dead letter queue
+        });
 
       // Process @mention notifications (fire-and-forget, don't block response)
       if (trimmedText) {
