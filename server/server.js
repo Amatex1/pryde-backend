@@ -189,25 +189,22 @@ const io = new Server(server, {
     methods: ['GET', 'POST'],
     credentials: true
   },
-  // OPTIMIZED: Faster ping/pong for better real-time performance
-  pingTimeout: 20000, // 20 seconds - faster detection of dead connections
-  pingInterval: 10000, // 10 seconds - more frequent pings for better responsiveness
-  upgradeTimeout: 10000, // 10 seconds - faster upgrade to WebSocket
+  // 🔥 ENHANCED: Improved stability settings
+  transports: ['websocket', 'polling'], // WebSocket primary, polling fallback
+  pingTimeout: 60000, // 60 seconds - more tolerant of slow connections
+  pingInterval: 25000, // 25 seconds - balanced frequency
+  connectTimeout: 45000, // 45 seconds - generous connect timeout
+  upgradeTimeout: 30000, // 30 seconds - longer upgrade timeout for slow networks
   maxHttpBufferSize: 1e6, // 1MB - max message size
-  transports: ['websocket', 'polling'], // Prefer WebSocket, fallback to polling
   allowUpgrades: true, // Allow transport upgrades
+  allowEIO3: true, // Better compatibility with older clients
   perMessageDeflate: {
     threshold: 1024 // Only compress messages larger than 1KB
-  },
-  // OPTIMIZATION: Connection state recovery for better reliability
-  connectionStateRecovery: {
-    maxDisconnectionDuration: 2 * 60 * 1000, // 2 minutes
-    skipMiddlewares: true, // Skip auth middleware on recovery
   },
   httpCompression: {
     threshold: 1024 // Only compress HTTP responses larger than 1KB
   },
-  // Connection state recovery (experimental but helpful)
+  // Connection state recovery for better reliability
   connectionStateRecovery: {
     maxDisconnectionDuration: 2 * 60 * 1000, // 2 minutes
     skipMiddlewares: true // Skip auth middleware on recovery
@@ -676,6 +673,64 @@ io.on('connection', (socket) => {
     emitValidated(socket, 'online_users', Array.from(onlineUsers.keys()));
   });
 
+  // 🔥 NEW: Room join handler with confirmation
+  socket.on('join', async (data) => {
+    try {
+      const roomUserId = typeof data === 'string' ? data : data?.room?.replace('user_', '') || data?.userId;
+
+      if (roomUserId && roomUserId === userId) {
+        await socket.join(`user_${roomUserId}`);
+        console.log(`✅ User ${userId} manually joined room user_${roomUserId}`);
+        emitValidated(socket, 'room:joined', {
+          room: `user_${roomUserId}`,
+          userId: roomUserId,
+          socketId: socket.id
+        });
+      } else {
+        console.warn(`⚠️ User ${userId} tried to join invalid room: ${roomUserId}`);
+        emitValidated(socket, 'room:error', { message: 'Invalid user ID or room' });
+      }
+    } catch (error) {
+      console.error('Error joining room:', error);
+      emitValidated(socket, 'room:error', { message: 'Failed to join room' });
+    }
+  });
+
+  // 🔥 NEW: Connection verification ping
+  socket.on('ping', (callback) => {
+    if (typeof callback === 'function') {
+      callback({
+        status: 'ok',
+        userId: socket.userId,
+        timestamp: Date.now()
+      });
+    } else {
+      // If no callback, emit response event
+      emitValidated(socket, 'pong', {
+        status: 'ok',
+        userId: socket.userId,
+        timestamp: Date.now()
+      });
+    }
+  });
+
+  // 🔥 NEW: Debug rooms endpoint for troubleshooting
+  socket.on('debug:rooms', (callback) => {
+    const debugInfo = {
+      rooms: Array.from(socket.rooms),
+      userId: socket.userId,
+      socketId: socket.id,
+      isOnline: onlineUsers.has(socket.userId),
+      onlineUsersCount: onlineUsers.size
+    };
+
+    if (typeof callback === 'function') {
+      callback(debugInfo);
+    } else {
+      emitValidated(socket, 'debug:rooms:response', debugInfo);
+    }
+  });
+
   // Handle typing indicator
   socket.on('typing', (data) => {
     const recipientSocketId = onlineUsers.get(data.recipientId);
@@ -687,36 +742,40 @@ io.on('connection', (socket) => {
     }
   });
   
-  // Handle real-time message
-  socket.on('send_message', async (data) => {
+  // Handle real-time message (supports ACK callback for confirmation)
+  socket.on('send_message', async (data, callback) => {
     const startTime = Date.now();
     console.log(`📨 [send_message] Received from user ${userId}:`, {
       recipientId: data.recipientId,
       hasContent: !!data.content,
       hasAttachment: !!data.attachment,
       hasVoiceNote: !!data.voiceNote,
-      socketId: socket.id
+      socketId: socket.id,
+      hasCallback: typeof callback === 'function'
     });
+
+    // Helper to send error response (via callback and/or event)
+    const sendError = (message, code) => {
+      const errorResponse = { error: message, code, timestamp: new Date().toISOString() };
+      if (typeof callback === 'function') {
+        callback(errorResponse);
+      }
+      socket.emit('message:error', errorResponse);
+    };
 
     // 🔥 CRITICAL FIX: Comprehensive error handling wrapper
     try {
       // 🔥 VALIDATION: Check for required data object
       if (!data || typeof data !== 'object') {
         console.error(`❌ [send_message] Invalid data object from user ${userId}`);
-        socket.emit('message:error', {
-          message: 'Invalid message data',
-          code: 'INVALID_DATA'
-        });
+        sendError('Invalid message data', 'INVALID_DATA');
         return;
       }
 
       // 🔥 VALIDATION: Check for recipient ID
       if (!data.recipientId) {
         console.error(`❌ [send_message] Missing recipientId from user ${userId}`);
-        socket.emit('message:error', {
-          message: 'Recipient ID is required',
-          code: 'MISSING_RECIPIENT'
-        });
+        sendError('Recipient ID is required', 'MISSING_RECIPIENT');
         return;
       }
 
@@ -729,10 +788,7 @@ io.on('connection', (socket) => {
       // Validate that either content or attachment is provided
       if (!sanitizedContent && !data.attachment && !data.voiceNote) {
         console.log(`❌ [send_message] Validation failed - no content/attachment/voiceNote for user ${userId}`);
-        socket.emit('message:error', {
-          message: 'Message must have content, attachment, or voice note',
-          code: 'EMPTY_MESSAGE'
-        });
+        sendError('Message must have content, attachment, or voice note', 'EMPTY_MESSAGE');
         return;
       }
 
@@ -778,6 +834,11 @@ io.on('connection', (socket) => {
         const messageWithTempId = message.toJSON ? message.toJSON() : { ...message };
         if (data._tempId) {
           messageWithTempId._tempId = data._tempId;
+        }
+
+        // 🔥 ACK callback for duplicate (still success)
+        if (typeof callback === 'function') {
+          callback({ success: true, duplicate: true, messageId: result.messageId, _tempId: data._tempId });
         }
         emitValidated(socket, 'message:sent', messageWithTempId);
         return;
@@ -837,6 +898,16 @@ io.on('connection', (socket) => {
       }
 
       console.log(`📡 [send_message] Emitting confirmation to sender: ${userId}`);
+
+      // 🔥 ACK callback for successful send
+      if (typeof callback === 'function') {
+        callback({
+          success: true,
+          messageId: message._id.toString(),
+          _tempId: data._tempId
+        });
+      }
+
       emitValidated(socket, 'message:sent', messageWithTempId);
 
       // Also emit to sender's user room for cross-device sync
@@ -924,11 +995,8 @@ io.on('connection', (socket) => {
         errorCode = 'DUPLICATE_MESSAGE';
       }
 
-      socket.emit('message:error', {
-        message: errorMessage,
-        code: errorCode,
-        timestamp: new Date().toISOString()
-      });
+      // 🔥 Use sendError helper for consistent error handling
+      sendError(errorMessage, errorCode);
     }
   });
   
