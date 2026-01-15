@@ -134,7 +134,8 @@ router.get('/list', auth, requireActiveUser, async (req, res) => {
 });
 
 // Get conversation with a user
-router.get('/:userId', auth, requireActiveUser, checkBlocked, async (req, res) => {
+// 🔥 FIX: Added validateParamId to prevent MongoDB errors with invalid IDs
+router.get('/:userId', auth, requireActiveUser, validateParamId('userId'), checkBlocked, async (req, res) => {
   try {
     const { userId } = req.params;
     const currentUserId = req.userId;
@@ -877,7 +878,8 @@ router.delete('/:id/react', auth, requireActiveUser, validateParamId('id'), asyn
 // @route   POST /api/messages/conversations/:userId/archive
 // @desc    Archive a conversation with a user
 // @access  Private
-router.post('/conversations/:userId/archive', auth, requireActiveUser, async (req, res) => {
+// 🔥 FIX: Added validateParamId to prevent MongoDB errors with invalid IDs
+router.post('/conversations/:userId/archive', auth, requireActiveUser, validateParamId('userId'), async (req, res) => {
   try {
     const currentUserId = req.userId;
     const otherUserId = req.params.userId;
@@ -910,7 +912,7 @@ router.post('/conversations/:userId/archive', auth, requireActiveUser, async (re
 // @route   POST /api/messages/conversations/:userId/unarchive
 // @desc    Unarchive a conversation with a user
 // @access  Private
-router.post('/conversations/:userId/unarchive', auth, requireActiveUser, async (req, res) => {
+router.post('/conversations/:userId/unarchive', auth, requireActiveUser, validateParamId('userId'), async (req, res) => {
   try {
     const currentUserId = req.userId;
     const otherUserId = req.params.userId;
@@ -937,7 +939,7 @@ router.post('/conversations/:userId/unarchive', auth, requireActiveUser, async (
 // @route   POST /api/messages/conversations/:userId/mute
 // @desc    Mute notifications for a conversation
 // @access  Private
-router.post('/conversations/:userId/mute', auth, requireActiveUser, async (req, res) => {
+router.post('/conversations/:userId/mute', auth, requireActiveUser, validateParamId('userId'), async (req, res) => {
   try {
     const currentUserId = req.userId;
     const otherUserId = req.params.userId;
@@ -979,7 +981,7 @@ router.post('/conversations/:userId/mute', auth, requireActiveUser, async (req, 
 // @route   POST /api/messages/conversations/:userId/unmute
 // @desc    Unmute notifications for a conversation
 // @access  Private
-router.post('/conversations/:userId/unmute', auth, requireActiveUser, async (req, res) => {
+router.post('/conversations/:userId/unmute', auth, requireActiveUser, validateParamId('userId'), async (req, res) => {
   try {
     const currentUserId = req.userId;
     const otherUserId = req.params.userId;
@@ -1006,7 +1008,7 @@ router.post('/conversations/:userId/unmute', auth, requireActiveUser, async (req
 // @route   POST /api/messages/conversations/:userId/mark-unread
 // @desc    Mark conversation as unread
 // @access  Private
-router.post('/conversations/:userId/mark-unread', auth, requireActiveUser, async (req, res) => {
+router.post('/conversations/:userId/mark-unread', auth, requireActiveUser, validateParamId('userId'), async (req, res) => {
   try {
     const currentUserId = req.userId;
     const otherUserId = req.params.userId;
@@ -1046,7 +1048,7 @@ router.post('/conversations/:userId/mark-unread', auth, requireActiveUser, async
 // @route   DELETE /api/messages/conversations/:userId/mark-unread
 // @desc    Remove manual unread status from conversation
 // @access  Private
-router.delete('/conversations/:userId/mark-unread', auth, requireActiveUser, async (req, res) => {
+router.delete('/conversations/:userId/mark-unread', auth, requireActiveUser, validateParamId('userId'), async (req, res) => {
   try {
     const currentUserId = req.userId;
     const otherUserId = req.params.userId;
@@ -1086,7 +1088,7 @@ router.delete('/conversations/:userId/mark-unread', auth, requireActiveUser, asy
 // @route   DELETE /api/messages/conversations/:userId
 // @desc    Delete entire conversation with a user
 // @access  Private
-router.delete('/conversations/:userId', auth, requireActiveUser, async (req, res) => {
+router.delete('/conversations/:userId', auth, requireActiveUser, validateParamId('userId'), async (req, res) => {
   try {
     const currentUserId = req.userId;
     const otherUserId = req.params.userId;

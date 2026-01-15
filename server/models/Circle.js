@@ -82,6 +82,26 @@ circleSchema.index({ owner: 1 });
 circleSchema.index({ createdAt: -1 });
 circleSchema.index({ lastActivityAt: -1 });
 
+// 🔥 FIX: Add virtual for members from CircleMember collection
+// This allows enforcing the 20-member limit and querying members
+circleSchema.virtual('members', {
+  ref: 'CircleMember',
+  localField: '_id',
+  foreignField: 'circle'
+});
+
+// Virtual for member count
+circleSchema.virtual('memberCount', {
+  ref: 'CircleMember',
+  localField: '_id',
+  foreignField: 'circle',
+  count: true
+});
+
+// Ensure virtuals are included when converting to JSON
+circleSchema.set('toJSON', { virtuals: true });
+circleSchema.set('toObject', { virtuals: true });
+
 const Circle = mongoose.model('Circle', circleSchema);
 
 export default Circle;

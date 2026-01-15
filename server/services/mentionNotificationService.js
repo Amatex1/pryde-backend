@@ -84,9 +84,10 @@ async function resolveUsers(usernames, authorId) {
  * @param {String} options.commentId - The comment ID (sourceEntityId)
  * @param {String} options.postId - The post ID (for link construction)
  * @param {String} options.surface - 'comment' | 'reply' (for validation)
+ * @param {Object} options.io - Socket.IO server instance for real-time emission
  * @returns {Number} Number of notifications created
  */
-export async function notifyMentionsInComment({ content, authorId, author, commentId, postId, surface = 'comment' }) {
+export async function notifyMentionsInComment({ content, authorId, author, commentId, postId, surface = 'comment', io = null }) {
   try {
     // Safety guard: block forbidden surfaces (overreach prevention)
     if (FORBIDDEN_SURFACES.includes(surface)) {
@@ -140,14 +141,31 @@ export async function notifyMentionsInComment({ content, authorId, author, comme
     }
     
     if (notificationsToCreate.length > 0) {
-      await Notification.insertMany(notificationsToCreate);
+      const savedNotifications = await Notification.insertMany(notificationsToCreate);
       logger.info('[Mention] Notifications created', {
         surface,
         commentId,
         recipientCount: notificationsToCreate.length
       });
+
+      // 🔥 FIX: Emit real-time notification events via Socket.IO
+      if (io) {
+        for (const notification of savedNotifications) {
+          const populatedNotification = await Notification.findById(notification._id)
+            .populate('sender', 'username displayName profilePhoto')
+            .lean();
+
+          if (populatedNotification) {
+            io.to(`user_${notification.recipient.toString()}`).emit('notification:new', populatedNotification);
+            logger.debug('[Mention] Real-time notification emitted', {
+              recipient: notification.recipient.toString(),
+              type: 'mention'
+            });
+          }
+        }
+      }
     }
-    
+
     return notificationsToCreate.length;
   } catch (error) {
     logger.error('[Mention] Error creating notifications', { error: error.message, surface });
@@ -162,9 +180,10 @@ export async function notifyMentionsInComment({ content, authorId, author, comme
  * @param {String} options.authorId - The message author's ID
  * @param {Object} options.author - The author user object (with displayName/username)
  * @param {String} options.messageId - The message ID (sourceEntityId)
+ * @param {Object} options.io - Socket.IO server instance for real-time emission
  * @returns {Number} Number of notifications created
  */
-export async function notifyMentionsInLounge({ content, authorId, author, messageId }) {
+export async function notifyMentionsInLounge({ content, authorId, author, messageId, io = null }) {
   try {
     // Extract mentions from content
     const mentionedUsernames = extractMentions(content);
@@ -197,11 +216,28 @@ export async function notifyMentionsInLounge({ content, authorId, author, messag
     }
 
     if (notificationsToCreate.length > 0) {
-      await Notification.insertMany(notificationsToCreate);
+      const savedNotifications = await Notification.insertMany(notificationsToCreate);
       logger.info('[Mention] Lounge notifications created', {
         messageId,
         recipientCount: notificationsToCreate.length
       });
+
+      // 🔥 FIX: Emit real-time notification events via Socket.IO
+      if (io) {
+        for (const notification of savedNotifications) {
+          const populatedNotification = await Notification.findById(notification._id)
+            .populate('sender', 'username displayName profilePhoto')
+            .lean();
+
+          if (populatedNotification) {
+            io.to(`user_${notification.recipient.toString()}`).emit('notification:new', populatedNotification);
+            logger.debug('[Mention] Real-time lounge notification emitted', {
+              recipient: notification.recipient.toString(),
+              type: 'mention'
+            });
+          }
+        }
+      }
     }
 
     return notificationsToCreate.length;

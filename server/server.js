@@ -732,14 +732,42 @@ io.on('connection', (socket) => {
   });
 
   // Handle typing indicator
+  // 🔥 FIX: Added server-side timeout to auto-stop typing indicators
+  const typingTimeouts = new Map(); // Track typing timeouts per recipient
+
   socket.on('typing', (data) => {
     const recipientSocketId = onlineUsers.get(data.recipientId);
     if (recipientSocketId) {
+      // Clear any existing timeout for this recipient
+      const existingTimeout = typingTimeouts.get(data.recipientId);
+      if (existingTimeout) {
+        clearTimeout(existingTimeout);
+        typingTimeouts.delete(data.recipientId);
+      }
+
       emitValidated(io.to(recipientSocketId), 'user_typing', {
         userId: userId,
         isTyping: data.isTyping
       });
+
+      // If user started typing, set a 3-second timeout to auto-stop
+      if (data.isTyping) {
+        const timeout = setTimeout(() => {
+          emitValidated(io.to(recipientSocketId), 'user_typing', {
+            userId: userId,
+            isTyping: false
+          });
+          typingTimeouts.delete(data.recipientId);
+        }, 3000); // 3 second timeout
+        typingTimeouts.set(data.recipientId, timeout);
+      }
     }
+  });
+
+  // Clear all typing timeouts on disconnect
+  socket.on('disconnect', () => {
+    typingTimeouts.forEach((timeout) => clearTimeout(timeout));
+    typingTimeouts.clear();
   });
   
   // Handle real-time message (supports ACK callback for confirmation)
@@ -1000,10 +1028,19 @@ io.on('connection', (socket) => {
     }
   });
   
-  // Handle friend request notification
+  // Handle follow request notification
+  // 🔥 FIX: Renamed from friend_request to follow_request (system uses follow, not friends)
+  // Keep legacy event names for backward compatibility but also emit new ones
   socket.on('friend_request_sent', async (data) => {
     const recipientSocketId = onlineUsers.get(data.recipientId);
     if (recipientSocketId) {
+      // Emit both old and new event names for backward compatibility
+      io.to(recipientSocketId).emit('follow_request_received', {
+        senderId: userId,
+        senderUsername: data.senderUsername,
+        senderPhoto: data.senderPhoto
+      });
+      // Legacy event (deprecated)
       io.to(recipientSocketId).emit('friend_request_received', {
         senderId: userId,
         senderUsername: data.senderUsername,
@@ -1011,12 +1048,43 @@ io.on('connection', (socket) => {
       });
     }
   });
-  
-  // Handle friend request accepted
+
+  // Also support new event name
+  socket.on('follow_request_sent', async (data) => {
+    const recipientSocketId = onlineUsers.get(data.recipientId);
+    if (recipientSocketId) {
+      io.to(recipientSocketId).emit('follow_request_received', {
+        senderId: userId,
+        senderUsername: data.senderUsername,
+        senderPhoto: data.senderPhoto
+      });
+    }
+  });
+
+  // Handle follow request accepted
   socket.on('friend_request_accepted', async (data) => {
     const requesterSocketId = onlineUsers.get(data.requesterId);
     if (requesterSocketId) {
+      // Emit both old and new event names for backward compatibility
+      io.to(requesterSocketId).emit('follow_request_accepted', {
+        accepterId: userId,
+        accepterUsername: data.accepterUsername,
+        accepterPhoto: data.accepterPhoto
+      });
+      // Legacy event (deprecated)
       io.to(requesterSocketId).emit('friend_request_accepted', {
+        accepterId: userId,
+        accepterUsername: data.accepterUsername,
+        accepterPhoto: data.accepterPhoto
+      });
+    }
+  });
+
+  // Also support new event name
+  socket.on('follow_request_accepted', async (data) => {
+    const requesterSocketId = onlineUsers.get(data.requesterId);
+    if (requesterSocketId) {
+      io.to(requesterSocketId).emit('follow_request_accepted', {
         accepterId: userId,
         accepterUsername: data.accepterUsername,
         accepterPhoto: data.accepterPhoto

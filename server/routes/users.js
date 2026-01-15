@@ -4,13 +4,14 @@ import User from '../models/User.js';
 import Badge from '../models/Badge.js';
 import Post from '../models/Post.js';
 import Message from '../models/Message.js';
-import FriendRequest from '../models/FriendRequest.js';
+import FollowRequest from '../models/FollowRequest.js';
 import GroupChat from '../models/GroupChat.js';
 import Notification from '../models/Notification.js';
 import auth from '../middleware/auth.js';
 import requireActiveUser from '../middleware/requireActiveUser.js';
 import { checkProfileVisibility, checkBlocked } from '../middleware/privacy.js';
 import { sanitizeFields } from '../middleware/sanitize.js';
+import { searchLimiter } from '../middleware/rateLimiter.js';
 import mongoose from 'mongoose';
 import { getUserStabilityReport } from '../utils/stabilityScore.js';
 import { processUserBadgesById } from '../services/autoBadgeService.js';
@@ -73,7 +74,8 @@ const sanitizeUserForPrivateFollowers = (user, currentUserId) => {
 // @route   GET /api/users/search
 // @desc    Search users
 // @access  Private
-router.get('/search', auth, async (req, res) => {
+// 🔥 FIX: Added searchLimiter to prevent user enumeration and data scraping
+router.get('/search', auth, searchLimiter, async (req, res) => {
   try {
     const { q } = req.query;
 

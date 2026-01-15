@@ -3,11 +3,14 @@ const router = express.Router();
 import Report from '../models/Report.js';
 import auth from '../middleware/auth.js';
 import { reportLimiter } from '../middleware/rateLimiter.js';
+import { sanitizeFields } from '../utils/sanitize.js';
+import { validateParamId } from '../middleware/validation.js';
 
 // @route   POST /api/reports
 // @desc    Create a new report
 // @access  Private
-router.post('/', auth, reportLimiter, async (req, res) => {
+// 🔥 FIX: Added sanitizeFields to prevent XSS via description field
+router.post('/', auth, reportLimiter, sanitizeFields(['description', 'reason']), async (req, res) => {
   try {
     const { reportType, reportedContent, reportedUser, reason, description } = req.body;
     const userId = req.userId || req.user._id;
@@ -81,7 +84,7 @@ router.get('/my-reports', auth, async (req, res) => {
 // @route   GET /api/reports/:id
 // @desc    Get single report
 // @access  Private
-router.get('/:id', auth, async (req, res) => {
+router.get('/:id', auth, validateParamId('id'), async (req, res) => {
   try {
     const userId = req.userId || req.user._id;
     const report = await Report.findById(req.params.id)
@@ -107,7 +110,7 @@ router.get('/:id', auth, async (req, res) => {
 // @route   DELETE /api/reports/:id
 // @desc    Delete/cancel a report
 // @access  Private
-router.delete('/:id', auth, async (req, res) => {
+router.delete('/:id', auth, validateParamId('id'), async (req, res) => {
   try {
     const userId = req.userId || req.user._id;
     const report = await Report.findById(req.params.id);

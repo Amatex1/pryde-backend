@@ -43,9 +43,11 @@ const photoEssaySchema = new mongoose.Schema({
     enum: ['public', 'followers', 'private'],
     default: 'public'
   },
+  // 🔥 FIX: Changed from ObjectId ref to String array (Tag model deprecated in Phase 4C)
   tags: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Tag'
+    type: String,
+    trim: true,
+    maxlength: 50
   }],
   likes: [{
     type: mongoose.Schema.Types.ObjectId,
@@ -80,7 +82,8 @@ const photoEssaySchema = new mongoose.Schema({
 // Indexes for efficient queries
 photoEssaySchema.index({ user: 1, createdAt: -1 }); // For user's photo essay timeline
 photoEssaySchema.index({ visibility: 1, createdAt: -1 }); // For public/followers discovery
-photoEssaySchema.index({ tags: 1 }); // For tag-based discovery
+// 🔥 FIX: Updated index for string tags (not ObjectId refs anymore)
+photoEssaySchema.index({ tags: 1 }); // For tag-based discovery (string array)
 
 // Update the updatedAt timestamp before saving
 photoEssaySchema.pre('save', function(next) {

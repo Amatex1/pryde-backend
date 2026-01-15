@@ -35,7 +35,11 @@ const ALLOWED_EVENTS = [
   'user_typing',
   'online_users',
 
-  // Friend requests (legacy - to be migrated)
+  // Follow requests (current system)
+  'follow_request_received',
+  'follow_request_accepted',
+
+  // Friend requests (legacy - deprecated, kept for backward compatibility)
   'friend_request_received',
   'friend_request_accepted',
 
