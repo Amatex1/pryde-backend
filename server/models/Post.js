@@ -99,10 +99,59 @@ const postSchema = new mongoose.Schema({
       default: Date.now
     }
   }],
-  // 🔥 REMOVED 2026-01-15: Embedded comments array deleted (data duplication fix)
-  // Comments are now ONLY stored in the Comment collection
-  // Use the 'commentCount' virtual for count, and query Comment collection for data
-  // Legacy data migration: Run scripts/migrateEmbeddedComments.js if needed
+  // NOTE: Embedded comments array kept for backward compatibility
+  // The codebase heavily relies on post.comments.id(), post.comments.push(), populate('comments.user'), etc.
+  // Future migration: Move to Comment collection only, but requires refactoring ~50+ usages
+  comments: [{
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: true
+    },
+    content: {
+      type: String,
+      required: false,
+      maxlength: 1000
+    },
+    gifUrl: {
+      type: String,
+      required: false
+    },
+    edited: {
+      type: Boolean,
+      default: false
+    },
+    editedAt: {
+      type: Date
+    },
+    reactions: [{
+      user: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        required: true
+      },
+      emoji: {
+        type: String,
+        required: true
+      },
+      createdAt: {
+        type: Date,
+        default: Date.now
+      }
+    }],
+    createdAt: {
+      type: Date,
+      default: Date.now
+    },
+    // Threaded comments (replies)
+    parentComment: {
+      type: mongoose.Schema.Types.ObjectId,
+      default: null
+    },
+    replies: [{
+      type: mongoose.Schema.Types.ObjectId
+    }]
+  }],
   // REMOVED 2025-12-26: shares, isShared, originalPost, shareComment deleted (Phase 5)
   // PHASE 1 REFACTOR: Simplified to 3 options (removed 'friends' and 'custom')
   // Phase 2: Added 'group' visibility for group-only posts
