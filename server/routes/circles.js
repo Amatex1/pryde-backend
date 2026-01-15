@@ -14,6 +14,7 @@ import Notification from '../models/Notification.js';
 import User from '../models/User.js';
 import { authenticateToken } from '../middleware/auth.js';
 import { sanitizeFields } from '../middleware/sanitize.js';
+import { validateParamId } from '../middleware/validation.js';
 
 const router = express.Router();
 
@@ -87,7 +88,7 @@ router.post('/', authenticateToken, sanitizeFields(['name', 'intent', 'rules']),
 // @route   GET /api/circles/:id
 // @desc    Get a circle's details
 // @access  Private (members only)
-router.get('/:id', authenticateToken, async (req, res) => {
+router.get('/:id', authenticateToken, validateParamId('id'), async (req, res) => {
   try {
     const { id } = req.params;
     
@@ -127,7 +128,7 @@ router.get('/:id', authenticateToken, async (req, res) => {
 // @route   POST /api/circles/:id/invite
 // @desc    Invite a user to the circle
 // @access  Private (owner/member)
-router.post('/:id/invite', authenticateToken, async (req, res) => {
+router.post('/:id/invite', authenticateToken, validateParamId('id'), async (req, res) => {
   try {
     const { id } = req.params;
     const { userId } = req.body;
@@ -182,7 +183,7 @@ router.post('/:id/invite', authenticateToken, async (req, res) => {
 // @route   POST /api/circles/:id/join
 // @desc    Accept an invitation and join a circle
 // @access  Private
-router.post('/:id/join', authenticateToken, async (req, res) => {
+router.post('/:id/join', authenticateToken, validateParamId('id'), async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -220,7 +221,7 @@ router.post('/:id/join', authenticateToken, async (req, res) => {
 // @route   POST /api/circles/:id/leave
 // @desc    Leave a circle
 // @access  Private
-router.post('/:id/leave', authenticateToken, async (req, res) => {
+router.post('/:id/leave', authenticateToken, validateParamId('id'), async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -246,7 +247,7 @@ router.post('/:id/leave', authenticateToken, async (req, res) => {
 // @route   GET /api/circles/:id/feed
 // @desc    Get posts in a circle's feed
 // @access  Private (members only)
-router.get('/:id/feed', authenticateToken, async (req, res) => {
+router.get('/:id/feed', authenticateToken, validateParamId('id'), async (req, res) => {
   try {
     const { id } = req.params;
     const { cursor, limit = 20 } = req.query;
@@ -288,7 +289,7 @@ router.get('/:id/feed', authenticateToken, async (req, res) => {
 // @route   DELETE /api/circles/:id
 // @desc    Delete a circle (owner only)
 // @access  Private
-router.delete('/:id', authenticateToken, async (req, res) => {
+router.delete('/:id', authenticateToken, validateParamId('id'), async (req, res) => {
   try {
     const { id } = req.params;
 

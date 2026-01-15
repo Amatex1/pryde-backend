@@ -3,6 +3,9 @@ const router = express.Router();
 import Event from '../models/Event.js';
 import auth from '../middleware/auth.js';
 import { sanitizeFields } from '../middleware/sanitize.js';
+import { validateParamId } from '../middleware/validation.js';
+import { escapeRegex } from '../utils/sanitize.js';
+import { eventLimiter } from '../middleware/rateLimiter.js';
 
 // @route   GET /api/events
 // @desc    Get all upcoming events
@@ -17,9 +20,9 @@ router.get('/', async (req, res) => {
       query.category = category;
     }
 
-    // Filter by city
+    // Filter by city - 🔒 SECURITY: Escape regex to prevent ReDoS
     if (city) {
-      query['location.city'] = new RegExp(city, 'i');
+      query['location.city'] = new RegExp(escapeRegex(city), 'i');
     }
 
     // Filter by event type
@@ -52,7 +55,7 @@ router.get('/', async (req, res) => {
 // @route   GET /api/events/:id
 // @desc    Get single event
 // @access  Public
-router.get('/:id', async (req, res) => {
+router.get('/:id', validateParamId('id'), async (req, res) => {
   try {
     const event = await Event.findById(req.params.id)
       .populate('creator', 'username displayName profilePhoto isVerified')
@@ -72,7 +75,7 @@ router.get('/:id', async (req, res) => {
 // @route   POST /api/events
 // @desc    Create a new event
 // @access  Private
-router.post('/', auth, sanitizeFields(['title', 'description']), async (req, res) => {
+router.post('/', auth, eventLimiter, sanitizeFields(['title', 'description']), async (req, res) => {
   try {
     const {
       title,
@@ -133,7 +136,7 @@ router.post('/', auth, sanitizeFields(['title', 'description']), async (req, res
 // @route   PUT /api/events/:id
 // @desc    Update an event
 // @access  Private (creator only)
-router.put('/:id', auth, sanitizeFields(['title', 'description']), async (req, res) => {
+router.put('/:id', auth, validateParamId('id'), sanitizeFields(['title', 'description']), async (req, res) => {
   try {
     const event = await Event.findById(req.params.id);
 
@@ -190,7 +193,7 @@ router.put('/:id', auth, sanitizeFields(['title', 'description']), async (req, r
 // @route   DELETE /api/events/:id
 // @desc    Delete an event
 // @access  Private (creator only)
-router.delete('/:id', auth, async (req, res) => {
+router.delete('/:id', auth, validateParamId('id'), async (req, res) => {
   try {
     const event = await Event.findById(req.params.id);
 
@@ -215,7 +218,7 @@ router.delete('/:id', auth, async (req, res) => {
 // @route   POST /api/events/:id/rsvp
 // @desc    RSVP to an event
 // @access  Private
-router.post('/:id/rsvp', auth, async (req, res) => {
+router.post('/:id/rsvp', auth, validateParamId('id'), async (req, res) => {
   try {
     const { status } = req.body; // 'going', 'interested', 'not-going'
 

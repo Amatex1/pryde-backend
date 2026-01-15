@@ -16,6 +16,7 @@ import crypto from 'crypto';
 import { sendPasswordResetEmail, sendPasswordChangedEmail } from '../utils/emailService.js';
 import config from '../config/config.js';
 import logger from '../utils/logger.js';
+import { escapeRegex } from '../utils/sanitize.js';
 
 /**
  * Helper to resolve badge IDs to full badge objects for admin user listing
@@ -180,11 +181,13 @@ router.get('/users', checkPermission('canManageUsers'), async (req, res) => {
     const query = {};
 
     if (search) {
+      // 🔒 SECURITY: Escape regex to prevent ReDoS attacks
+      const safeSearch = escapeRegex(search);
       query.$or = [
-        { username: { $regex: search, $options: 'i' } },
-        { email: { $regex: search, $options: 'i' } },
-        { displayName: { $regex: search, $options: 'i' } },
-        { fullName: { $regex: search, $options: 'i' } }
+        { username: { $regex: safeSearch, $options: 'i' } },
+        { email: { $regex: safeSearch, $options: 'i' } },
+        { displayName: { $regex: safeSearch, $options: 'i' } },
+        { fullName: { $regex: safeSearch, $options: 'i' } }
       ];
     }
 

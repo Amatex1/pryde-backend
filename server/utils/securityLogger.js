@@ -147,6 +147,85 @@ export const logAccountDeletion = async (user, ipAddress, userAgent) => {
   });
 };
 
+/**
+ * Log failed authentication attempt
+ */
+export const logFailedAuth = async (email, ipAddress, userAgent, reason = 'invalid_credentials') => {
+  return logSecurityEvent({
+    type: 'failed_authentication',
+    severity: 'medium',
+    email,
+    ipAddress,
+    userAgent,
+    details: `Failed login attempt: ${reason}`,
+    action: 'logged'
+  });
+};
+
+/**
+ * Log suspicious request (potential attack)
+ */
+export const logSuspiciousRequest = async (req, reason) => {
+  return logSecurityEvent({
+    type: 'suspicious_request',
+    severity: 'high',
+    userId: req.user?._id || null,
+    username: req.user?.username || null,
+    ipAddress: req.ip || req.headers['x-forwarded-for']?.split(',')[0] || 'unknown',
+    userAgent: req.headers['user-agent'] || 'unknown',
+    details: `${reason} | Path: ${req.path} | Method: ${req.method}`,
+    action: 'flagged'
+  });
+};
+
+/**
+ * Log rate limit exceeded
+ */
+export const logRateLimitExceeded = async (req, limiterType) => {
+  return logSecurityEvent({
+    type: 'rate_limit_exceeded',
+    severity: 'medium',
+    userId: req.user?._id || null,
+    username: req.user?.username || null,
+    ipAddress: req.ip || req.headers['x-forwarded-for']?.split(',')[0] || 'unknown',
+    userAgent: req.headers['user-agent'] || 'unknown',
+    details: `Rate limit exceeded for ${limiterType} | Path: ${req.path}`,
+    action: 'blocked'
+  });
+};
+
+/**
+ * Log SQL/NoSQL injection attempt
+ */
+export const logInjectionAttempt = async (req, payload) => {
+  return logSecurityEvent({
+    type: 'injection_attempt',
+    severity: 'critical',
+    userId: req.user?._id || null,
+    username: req.user?.username || null,
+    ipAddress: req.ip || req.headers['x-forwarded-for']?.split(',')[0] || 'unknown',
+    userAgent: req.headers['user-agent'] || 'unknown',
+    details: `Potential injection detected | Path: ${req.path} | Payload snippet: ${payload.substring(0, 100)}`,
+    action: 'blocked'
+  });
+};
+
+/**
+ * Log XSS attempt
+ */
+export const logXSSAttempt = async (req, payload) => {
+  return logSecurityEvent({
+    type: 'xss_attempt',
+    severity: 'high',
+    userId: req.user?._id || null,
+    username: req.user?.username || null,
+    ipAddress: req.ip || req.headers['x-forwarded-for']?.split(',')[0] || 'unknown',
+    userAgent: req.headers['user-agent'] || 'unknown',
+    details: `Potential XSS detected | Path: ${req.path} | Payload snippet: ${payload.substring(0, 100)}`,
+    action: 'sanitized'
+  });
+};
+
 export default {
   logSecurityEvent,
   logPasswordChange,
@@ -154,6 +233,11 @@ export default {
   logEmailVerification,
   logTwoFactorEnabled,
   logTwoFactorDisabled,
-  logAccountDeletion
+  logAccountDeletion,
+  logFailedAuth,
+  logSuspiciousRequest,
+  logRateLimitExceeded,
+  logInjectionAttempt,
+  logXSSAttempt
 };
 

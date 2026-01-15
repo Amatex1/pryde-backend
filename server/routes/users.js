@@ -17,6 +17,7 @@ import { getUserStabilityReport } from '../utils/stabilityScore.js';
 import { processUserBadgesById } from '../services/autoBadgeService.js';
 import { hasBlocked } from '../utils/blockHelper.js';
 import logger from '../utils/logger.js';
+import { escapeRegex } from '../utils/sanitize.js';
 
 /**
  * Helper to resolve badge IDs to full badge objects
@@ -87,10 +88,13 @@ router.get('/search', auth, searchLimiter, async (req, res) => {
     const currentUser = await User.findById(req.userId).select('blockedUsers');
     const blockedUserIds = currentUser?.blockedUsers || [];
 
+    // 🔒 SECURITY: Escape regex to prevent ReDoS attacks
+    const safeQuery = escapeRegex(q);
+
     const users = await User.find({
       $or: [
-        { username: { $regex: q, $options: 'i' } },
-        { displayName: { $regex: q, $options: 'i' } }
+        { username: { $regex: safeQuery, $options: 'i' } },
+        { displayName: { $regex: safeQuery, $options: 'i' } }
       ],
       _id: {
         $ne: req.userId, // Exclude current user

@@ -4,6 +4,7 @@ import GroupChat from '../models/GroupChat.js';
 import Message from '../models/Message.js';
 import Conversation from '../models/Conversation.js';
 import auth from '../middleware/auth.js';
+import { validateParamId } from '../middleware/validation.js';
 
 // Create a new group chat
 router.post('/create', auth, async (req, res) => {
@@ -47,7 +48,8 @@ router.get('/', auth, async (req, res) => {
 });
 
 // Get single group chat by ID
-router.get('/:id', auth, async (req, res) => {
+// 🔒 SECURITY: validateParamId prevents invalid ObjectId injection
+router.get('/:id', auth, validateParamId('id'), async (req, res) => {
   try {
     const groupChat = await GroupChat.findById(req.params.id)
       .populate('members', 'username displayName profilePhoto')
@@ -71,7 +73,7 @@ router.get('/:id', auth, async (req, res) => {
 });
 
 // Add members to group
-router.post('/:id/add-members', auth, async (req, res) => {
+router.post('/:id/add-members', auth, validateParamId('id'), async (req, res) => {
   try {
     const { memberIds } = req.body;
     const groupChat = await GroupChat.findById(req.params.id);
@@ -103,7 +105,7 @@ router.post('/:id/add-members', auth, async (req, res) => {
 });
 
 // Remove member from group
-router.post('/:id/remove-member', auth, async (req, res) => {
+router.post('/:id/remove-member', auth, validateParamId('id'), async (req, res) => {
   try {
     const { memberId } = req.body;
     const groupChat = await GroupChat.findById(req.params.id);
@@ -132,7 +134,7 @@ router.post('/:id/remove-member', auth, async (req, res) => {
 });
 
 // Leave group
-router.post('/:id/leave', auth, async (req, res) => {
+router.post('/:id/leave', auth, validateParamId('id'), async (req, res) => {
   try {
     const groupChat = await GroupChat.findById(req.params.id);
 
@@ -167,7 +169,7 @@ router.post('/:id/leave', auth, async (req, res) => {
 });
 
 // Update group details
-router.put('/:id', auth, async (req, res) => {
+router.put('/:id', auth, validateParamId('id'), async (req, res) => {
   try {
     const { name, description, avatar } = req.body;
     const groupChat = await GroupChat.findById(req.params.id);

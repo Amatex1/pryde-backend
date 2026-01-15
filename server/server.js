@@ -93,6 +93,7 @@ import requireActiveUser from './middleware/requireActiveUser.js';
 import { trackActivity, checkSessionTimeout } from './middleware/sessionTimeout.js';
 import { setCsrfToken, enforceCsrf } from './middleware/csrf.js';
 import { requestId, requestTimeout, apiSecurityHeaders, safeJsonResponse } from './middleware/hardening.js';
+import { detectAttacks } from './middleware/attackDetection.js';
 
 // Import global error handler (Phase 2 - Backend Failure Safety)
 import { globalErrorHandler, sendError, HttpStatus } from './utils/errorHandler.js';
@@ -384,6 +385,9 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Apply global rate limiter to all requests
 app.use(globalLimiter);
+
+// 🔒 SECURITY: Attack detection middleware - logs suspicious patterns
+app.use(detectAttacks);
 
 // CSRF Protection - Set token on all requests
 // This generates and sends CSRF token in cookie for client to use

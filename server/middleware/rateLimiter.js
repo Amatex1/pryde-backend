@@ -222,6 +222,21 @@ export const reportLimiter = createAdvancedLimiter({
   message: 'Too many reports submitted, please try again later.'
 });
 
+// Event creation/update limiter
+export const eventLimiter = createAdvancedLimiter({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 10, // 10 event creations per hour
+  prefix: 'event',
+  message: 'Too many event submissions, please try again later.'
+});
+
+// Generic write limiter for miscellaneous POST/PUT/DELETE operations
+export const writeLimiter = createAdvancedLimiter({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 60, // 60 write operations per 15 minutes
+  prefix: 'write'
+});
+
 // Cleanup Redis connection on process exit
 process.on('SIGINT', async () => {
   try {
@@ -246,5 +261,7 @@ export default {
   uploadLimiter,
   searchLimiter,
   reactionLimiter,
-  reportLimiter
+  reportLimiter,
+  eventLimiter,
+  writeLimiter
 };

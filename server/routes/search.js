@@ -10,15 +10,7 @@ import { searchLimiter } from '../middleware/rateLimiter.js';
 import { decryptMessage } from '../utils/encryption.js';
 import logger from '../utils/logger.js';
 import { getBlockedUserIds } from '../utils/blockHelper.js';
-
-/**
- * Escape special regex characters to prevent ReDoS attacks
- * @param {string} str - String to escape
- * @returns {string} - Escaped string safe for regex
- */
-const escapeRegex = (str) => {
-  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-};
+import { escapeRegex } from '../utils/sanitize.js';
 
 // @route   GET /api/search
 // @desc    Global search for users and posts

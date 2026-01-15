@@ -112,10 +112,25 @@ export const sanitizeFields = (fields) => {
   };
 };
 
+/**
+ * 🔒 SECURITY: Escape special regex characters to prevent ReDoS attacks
+ * Use this when building regex patterns from user input
+ * @param {string} str - The string to escape
+ * @returns {string} - Escaped string safe for use in regex
+ */
+export const escapeRegex = (str) => {
+  if (!str || typeof str !== 'string') {
+    return '';
+  }
+  // Escape all special regex characters: . * + ? ^ $ { } ( ) | [ ] \
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+};
+
 export default {
   sanitizeInput,
   sanitizeObject,
   sanitizeBody,
-  sanitizeFields
+  sanitizeFields,
+  escapeRegex
 };
 
