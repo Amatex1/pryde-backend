@@ -90,7 +90,8 @@ import { emitValidated, wrapIO, wrapSocket } from './utils/emitValidated.js';
 // Import middleware
 import auth from './middleware/auth.js';
 import requireActiveUser from './middleware/requireActiveUser.js';
-import { trackActivity, checkSessionTimeout } from './middleware/sessionTimeout.js';
+// DISABLED 2026-01-17: In-memory session timeout was causing logout on server restart
+// import { trackActivity, checkSessionTimeout } from './middleware/sessionTimeout.js';
 import { setCsrfToken, enforceCsrf } from './middleware/csrf.js';
 import { requestId, requestTimeout, apiSecurityHeaders, safeJsonResponse } from './middleware/hardening.js';
 import { detectAttacks } from './middleware/attackDetection.js';
@@ -406,10 +407,15 @@ app.use((req, res, next) => {
   next();
 });
 
-// Session timeout middleware - tracks activity and enforces 30-minute idle timeout
-// Applied globally to all routes (will only affect authenticated requests)
-app.use(checkSessionTimeout);
-app.use(trackActivity);
+// Session timeout middleware - DISABLED
+// 🔥 REMOVED 2026-01-17: The in-memory sessionActivity Map was causing users to be
+// logged out whenever the server restarts (Render free tier restarts daily).
+// JWT-based refresh tokens (30-day expiry) already handle session persistence properly.
+// The 30-minute idle timeout was redundant and harmful for user experience.
+//
+// To re-enable with proper persistence, store session activity in MongoDB or Redis.
+// app.use(checkSessionTimeout);
+// app.use(trackActivity);
 
 // Routes with specific rate limiters
 app.use('/api/auth', authRoutes);
