@@ -812,6 +812,28 @@ router.post('/:id/comment/:commentId/react', auth, requireActiveUser, reactionLi
           commentId: comment._id
         });
         await notification.save();
+
+        // Populate sender for Socket.IO emission
+        await notification.populate('sender', 'username displayName profilePhoto');
+
+        // ✅ Emit real-time notification
+        emitNotificationCreated(req.io, comment.user.toString(), notification);
+
+        // Send push notification
+        const reactor = await User.findById(userId).select('username displayName');
+        const reactorName = reactor.displayName || reactor.username;
+
+        sendPushNotification(comment.user, {
+          title: `${emoji} New Reaction`,
+          body: `${reactorName} reacted ${emoji} to your comment`,
+          data: {
+            type: 'reaction',
+            postId: post._id.toString(),
+            commentId: comment._id.toString(),
+            url: `/feed?post=${post._id}&comment=${comment._id}`
+          },
+          tag: `reaction-comment-${comment._id}`
+        }).catch(err => logger.error('Push notification error:', err));
       }
     }
 
