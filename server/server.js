@@ -727,19 +727,24 @@ io.on('connection', (socket) => {
 
   // 🔥 NEW: Connection verification ping
   socket.on('ping', (callback) => {
+    console.log(`🏓 Ping received from user ${userId}, callback type:`, typeof callback);
+    const response = {
+      status: 'ok',
+      userId: socket.userId,
+      timestamp: Date.now()
+    };
+
     if (typeof callback === 'function') {
-      callback({
-        status: 'ok',
-        userId: socket.userId,
-        timestamp: Date.now()
-      });
+      try {
+        callback(response);
+        console.log(`🏓 Ping callback sent to user ${userId}`);
+      } catch (err) {
+        console.error(`❌ Error sending ping callback:`, err);
+      }
     } else {
       // If no callback, emit response event
-      emitValidated(socket, 'pong', {
-        status: 'ok',
-        userId: socket.userId,
-        timestamp: Date.now()
-      });
+      console.log(`🏓 No callback, emitting pong event to user ${userId}`);
+      emitValidated(socket, 'pong', response);
     }
   });
 
