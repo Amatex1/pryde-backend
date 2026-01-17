@@ -202,6 +202,11 @@ router.get('/:userId', auth, requireActiveUser, validateParamId('userId'), check
   }
 });
 
+// ✅ Explicit CORS preflight for message counters
+router.options('/unread/counts', (req, res) => {
+  res.sendStatus(204);
+});
+
 // Get unread message counts per user
 router.get('/unread/counts', auth, requireActiveUser, async (req, res) => {
   try {
