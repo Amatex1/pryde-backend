@@ -698,10 +698,17 @@ io.on('connection', (socket) => {
   // 🔥 DEBUG: Log ALL incoming events from this socket (NO FILTERING)
   socket.onAny((eventName, ...args) => {
     try {
-      const preview =
-        args && args.length > 0 && args[0] !== undefined
-          ? JSON.stringify(args[0]).slice(0, 300)
-          : '(no args)';
+      let preview = '(no args)';
+      if (args && args.length > 0 && args[0] !== undefined) {
+        const firstArg = args[0];
+        // Handle functions (callbacks) specially
+        if (typeof firstArg === 'function') {
+          preview = '(callback function)';
+        } else {
+          const str = JSON.stringify(firstArg);
+          preview = str ? str.slice(0, 300) : '(empty)';
+        }
+      }
 
       console.log(
         `📥 [Socket ${socket.id}] Event: "${eventName}" from user ${userId}`,
