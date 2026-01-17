@@ -1334,7 +1334,8 @@ io.on('connection', (socket) => {
           content: trimmedText,
           authorId: userId,
           author: { displayName: user.displayName, username: user.username },
-          messageId: newMessage._id.toString()
+          messageId: newMessage._id.toString(),
+          io // Pass io for real-time notification emission
         }).catch(err => console.error('[Mention] Lounge notification error:', err));
       }
 

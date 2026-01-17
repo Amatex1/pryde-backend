@@ -24,6 +24,11 @@ const ALLOWED_EVENTS = [
   'notification:read_all',
   'notification:deleted',
 
+  // Reactions
+  'reaction_added',
+  'reaction_removed',
+  'reaction_updated',
+
   // Global Chat
   'global_message:new',
   'global_chat:online_count',

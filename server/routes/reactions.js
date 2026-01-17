@@ -7,6 +7,7 @@ import auth, { optionalAuth } from '../middleware/auth.js';
 import requireActiveUser from '../middleware/requireActiveUser.js';
 import { reactionLimiter } from '../middleware/rateLimiter.js';
 import logger from '../utils/logger.js';
+import { emitValidated } from '../utils/emitValidated.js';
 
 const router = express.Router();
 
@@ -72,9 +73,9 @@ router.post('/', auth, requireActiveUser, reactionLimiter, async (req, res) => {
         // Get updated aggregated reactions
         const reactions = await getAggregatedReactions(targetType, targetId);
 
-        // Emit real-time event
+        // Emit real-time event (broadcast to all connected users viewing feed)
         if (req.io) {
-          req.io.emit('reaction_removed', {
+          emitValidated(req.io, 'reaction_removed', {
             targetType,
             targetId,
             reactions,
@@ -97,9 +98,9 @@ router.post('/', auth, requireActiveUser, reactionLimiter, async (req, res) => {
         // Get updated aggregated reactions
         const reactions = await getAggregatedReactions(targetType, targetId);
 
-        // Emit real-time event
+        // Emit real-time event (broadcast to all connected users viewing feed)
         if (req.io) {
-          req.io.emit('reaction_added', {
+          emitValidated(req.io, 'reaction_updated', {
             targetType,
             targetId,
             reactions,
@@ -130,9 +131,9 @@ router.post('/', auth, requireActiveUser, reactionLimiter, async (req, res) => {
       // Get updated aggregated reactions
       const reactions = await getAggregatedReactions(targetType, targetId);
 
-      // Emit real-time event
+      // Emit real-time event (broadcast to all connected users viewing feed)
       if (req.io) {
-        req.io.emit('reaction_added', {
+        emitValidated(req.io, 'reaction_added', {
           targetType,
           targetId,
           reactions,

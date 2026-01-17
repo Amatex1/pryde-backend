@@ -17,6 +17,7 @@ import { sanitizeFields } from '../utils/sanitize.js';
 import logger from '../utils/logger.js';
 import { emitNotificationCreated } from '../utils/notificationEmitter.js';
 import { sendPushNotification } from './pushNotifications.js';
+import { emitValidated } from '../utils/emitValidated.js';
 
 // ========================================
 // IMPORTANT: Define specific routes BEFORE wildcard routes like /:userId
@@ -481,8 +482,6 @@ router.post('/', auth, requireActiveUser, requireEmailVerification, messageLimit
         recipientRoom: `user_${recipient}`,
         senderRoom: `user_${req.userId}`
       });
-
-      const { emitValidated } = require('../utils/emitValidated.js');
 
       // Send to recipient if online
       emitValidated(req.io.to(`user_${recipient}`), 'message:new', message);
