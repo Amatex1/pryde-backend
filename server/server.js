@@ -725,6 +725,17 @@ io.on('connection', (socket) => {
     }
   });
 
+  // 🔥 DIAGNOSTIC: Simple echo test (no DB, no validation - just callback)
+  socket.on('echo', (data, callback) => {
+    console.log(`🔊 Echo received from user ${userId}:`, data);
+    if (typeof callback === 'function') {
+      callback({ echo: data, timestamp: Date.now(), userId: socket.userId });
+      console.log(`🔊 Echo callback sent to user ${userId}`);
+    } else {
+      console.log(`🔊 No callback for echo`);
+    }
+  });
+
   // 🔥 NEW: Connection verification ping
   socket.on('ping', (callback) => {
     console.log(`🏓 Ping received from user ${userId}, callback type:`, typeof callback);
