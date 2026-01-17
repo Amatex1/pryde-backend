@@ -665,13 +665,12 @@ io.on('connection', (socket) => {
 
   console.log(`🔌 User connected: ${userId} (socket: ${socket.id})`);
 
-  // 🔥 DEBUG: Log ALL incoming events from this socket
+  // 🔥 DEBUG: Log ALL incoming events from this socket (NO FILTERING)
   socket.onAny((eventName, ...args) => {
-    // Don't log internal ping/pong, but log everything else
-    if (eventName !== 'ping' && eventName !== 'get_online_users') {
-      console.log(`📥 [Socket ${socket.id}] Event: "${eventName}" from user ${userId}`,
-        args.length > 0 ? JSON.stringify(args[0]).substring(0, 200) : '');
-    }
+    // Log EVERYTHING to diagnose missing send_message events
+    console.log(`📥 [Socket ${socket.id}] Event: "${eventName}" from user ${userId}`,
+      eventName === 'send_message' ? '🔥 SEND_MESSAGE RECEIVED!' : '',
+      args.length > 0 ? JSON.stringify(args[0]).substring(0, 300) : '(no args)');
   });
 
   // Store user's socket connection
