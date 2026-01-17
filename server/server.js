@@ -574,9 +574,7 @@ io.use(async (socket, next) => {
     }
 
     if (!token) {
-      if (config.nodeEnv === 'development') {
-        console.log('❌ No token provided');
-      }
+      console.warn('❌ Socket auth failed: No token provided');
       clearTimeout(authTimeout);
       return next(new Error('Authentication required'));
     }
@@ -642,9 +640,7 @@ io.use(async (socket, next) => {
     next();
   } catch (error) {
     clearTimeout(authTimeout);
-    if (config.nodeEnv === 'development') {
-      console.log('❌ Token verification failed:', error.message);
-    }
+    console.error('❌ Socket auth failed:', error.message);
     next(new Error('Authentication error'));
   }
 });
@@ -652,6 +648,19 @@ io.use(async (socket, next) => {
 // Socket.IO connection handling
 io.on('connection', (socket) => {
   const userId = socket.userId;
+
+  // 🔥 CRITICAL: Reject connections with undefined userId
+  // This should never happen if auth middleware works correctly
+  if (!userId) {
+    console.error('❌ CRITICAL: Connection with undefined userId detected! Disconnecting...');
+    console.error('   Socket ID:', socket.id);
+    console.error('   Auth token present:', !!socket.handshake.auth?.token);
+    console.error('   Headers auth:', !!socket.handshake.headers?.authorization);
+    socket.emit('auth_error', { message: 'Authentication failed - no user ID' });
+    socket.disconnect(true);
+    return;
+  }
+
   console.log(`🔌 User connected: ${userId} (socket: ${socket.id})`);
 
   // Store user's socket connection
