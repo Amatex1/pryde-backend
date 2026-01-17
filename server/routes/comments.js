@@ -4,6 +4,7 @@
  */
 
 import express from 'express';
+import mongoose from 'mongoose';
 import Comment from '../models/Comment.js';
 import Post from '../models/Post.js';
 import User from '../models/User.js';
@@ -47,30 +48,63 @@ router.get('/posts/:postId/comments', auth, requireActiveUser, asyncHandler(asyn
     return sendError(res, HttpStatus.NOT_FOUND, 'Post not found');
   }
 
-  // Get top-level comments (parentCommentId === null)
-  const comments = await Comment.find({
-    postId,
-    parentCommentId: null,
-    isDeleted: false // Don't show deleted comments
-  })
-    .populate('authorId', 'username displayName profilePhoto isVerified pronouns')
-    .sort({ isPinned: -1, createdAt: 1 }) // Pinned first, then oldest first
-    .lean();
+  // PERFORMANCE: Use aggregation to get comments with reply counts in ONE query
+  // This replaces N+1 queries (1 query + N countDocuments) with a single aggregation
+  const commentsWithReplyCounts = await Comment.aggregate([
+    // Match top-level comments for this post
+    {
+      $match: {
+        postId: new mongoose.Types.ObjectId(postId),
+        parentCommentId: null,
+        isDeleted: false
+      }
+    },
+    // Sort by pinned first, then oldest first
+    { $sort: { isPinned: -1, createdAt: 1 } },
+    // Lookup reply counts in a single operation
+    {
+      $lookup: {
+        from: 'comments',
+        let: { commentId: '$_id' },
+        pipeline: [
+          {
+            $match: {
+              $expr: { $eq: ['$parentCommentId', '$$commentId'] },
+              isDeleted: false
+            }
+          },
+          { $count: 'count' }
+        ],
+        as: 'replyData'
+      }
+    },
+    // Add replyCount field
+    {
+      $addFields: {
+        replyCount: {
+          $ifNull: [{ $arrayElemAt: ['$replyData.count', 0] }, 0]
+        }
+      }
+    },
+    // Remove the temporary replyData array
+    { $project: { replyData: 0 } },
+    // Lookup author details
+    {
+      $lookup: {
+        from: 'users',
+        localField: 'authorId',
+        foreignField: '_id',
+        pipeline: [
+          { $project: { username: 1, displayName: 1, profilePhoto: 1, isVerified: 1, pronouns: 1 } }
+        ],
+        as: 'authorId'
+      }
+    },
+    // Unwind author (convert array to object)
+    { $unwind: { path: '$authorId', preserveNullAndEmptyArrays: true } }
+  ]);
 
-  logger.debug(`✅ Found ${comments.length} comments for post ${postId}`);
-
-  // For each top-level comment, get reply count
-  const commentsWithReplyCounts = await Promise.all(
-    comments.map(async (comment) => {
-      const replyCount = await Comment.countDocuments({
-        parentCommentId: comment._id
-      });
-      return {
-        ...comment,
-        replyCount
-      };
-    })
-  );
+  logger.debug(`✅ Found ${commentsWithReplyCounts.length} comments for post ${postId}`);
 
   res.json(commentsWithReplyCounts);
 }));

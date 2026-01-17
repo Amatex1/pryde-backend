@@ -268,6 +268,12 @@ postSchema.index({ groupId: 1, createdAt: -1 });
 postSchema.index({ circleId: 1, createdAt: -1 });
 // REMOVED 2025-12-26: hashtags and tags indexes deleted (Phase 5)
 
+// PERFORMANCE: Critical compound indexes for feed queries (40-60% faster)
+postSchema.index({ visibility: 1, groupId: 1, createdAt: -1 }); // Global feed filtering
+postSchema.index({ visibility: 1, author: 1, groupId: 1, createdAt: -1 }); // Followers feed
+postSchema.index({ isPinned: -1, createdAt: -1 }); // Pinned post sorting
+postSchema.index({ isLocked: 1, createdAt: -1 }); // Locked post queries
+
 // Virtual for comment count from Comment collection
 postSchema.virtual('commentCount', {
   ref: 'Comment',

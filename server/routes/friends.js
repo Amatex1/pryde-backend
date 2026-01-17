@@ -268,20 +268,27 @@ router.get('/', auth, async (req, res) => {
       !blockedUsers.some(blockedId => blockedId.toString() === friend._id.toString())
     );
 
-    // Filter out users who have blocked the current user
-    const friendsWithBlockCheck = await Promise.all(
-      friends.map(async (friend) => {
-        const friendUser = await User.findById(friend._id).select('blockedUsers');
-        if (!friendUser) return null;
-        const friendBlockedUsers = friendUser.blockedUsers || [];
-        const isBlockedByFriend = friendBlockedUsers.some(
-          blockedId => blockedId.toString() === req.userId
-        );
-        return isBlockedByFriend ? null : friend;
-      })
-    );
+    // PERFORMANCE: Batch fetch all friend users in ONE query instead of N queries
+    // This replaces N+1 pattern with a single query
+    const friendIds = friends.map(f => f._id);
+    const friendUsers = await User.find({
+      _id: { $in: friendIds }
+    }).select('_id blockedUsers').lean();
 
-    const filteredFriends = friendsWithBlockCheck.filter(friend => friend !== null);
+    // Create a map for O(1) lookup
+    const friendBlockMap = new Map();
+    friendUsers.forEach(fu => {
+      const isBlockedByFriend = (fu.blockedUsers || []).some(
+        blockedId => blockedId.toString() === req.userId
+      );
+      friendBlockMap.set(fu._id.toString(), isBlockedByFriend);
+    });
+
+    // Filter out users who have blocked the current user
+    const filteredFriends = friends.filter(friend => {
+      const isBlocked = friendBlockMap.get(friend._id.toString());
+      return !isBlocked;
+    });
 
     res.json(filteredFriends);
   } catch (error) {

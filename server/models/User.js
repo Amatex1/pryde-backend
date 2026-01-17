@@ -994,6 +994,15 @@ userSchema.index({ resetPasswordToken: 1 });
 userSchema.index({ lastSeen: -1 });
 userSchema.index({ 'groupNotificationSettings.groupId': 1 });
 
+// PERFORMANCE: Admin dashboard and user management indexes
+userSchema.index({ isSuspended: 1, createdAt: -1 }); // Suspension tracking
+userSchema.index({ isBanned: 1, createdAt: -1 }); // Ban tracking
+userSchema.index({ isDeleted: 1, createdAt: -1 }); // Deleted account queries
+userSchema.index({ emailVerified: 1 }); // Email verification status
+userSchema.index({ lastLogin: -1 }); // Active user queries
+// Text index for user search (faster than regex)
+userSchema.index({ username: 'text', displayName: 'text' });
+
 // Hash password before saving
 // SECURITY: Using 12 rounds for stronger protection (OWASP recommended minimum)
 userSchema.pre('save', async function(next) {

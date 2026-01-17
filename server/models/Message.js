@@ -96,6 +96,11 @@ messageSchema.index({ recipient: 1, createdAt: -1 }); // For user's received mes
 messageSchema.index({ 'deletedFor.user': 1 }); // For filtering out deleted messages
 messageSchema.index({ isDeletedForAll: 1 }); // For filtering deleted-for-all messages
 
+// PERFORMANCE: Critical indexes for unread message queries (high-traffic)
+messageSchema.index({ recipient: 1, read: 1, createdAt: -1 }); // Unread message counts
+messageSchema.index({ sender: 1, recipient: 1, read: 1 }); // Conversation unread status
+messageSchema.index({ groupChat: 1, isDeletedForAll: 1, createdAt: -1 }); // Group message filtering
+
 // ============================================================================
 // VALIDATION
 // ============================================================================

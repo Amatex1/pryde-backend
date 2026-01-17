@@ -88,47 +88,50 @@ router.post('/all', auth, async (req, res) => {
       });
     }
 
-    let successCount = 0;
-    let failCount = 0;
-    const notifications = [];
+    // PERFORMANCE: Use insertMany for batch insert (N times faster than individual saves)
+    const notificationDocs = users.map(user => ({
+      recipient: user._id,
+      sender: userId,
+      type: type || 'system',
+      message: message || `🧪 Test notification from admin - ${new Date().toLocaleString()}`,
+      read: false,
+      createdAt: new Date()
+    }));
 
-    // Create notifications for each user
-    for (const user of users) {
-      try {
-        const notification = new Notification({
-          recipient: user._id,
-          sender: userId,
-          type: type || 'system',
-          message: message || `🧪 Test notification from admin - ${new Date().toLocaleString()}`,
-          read: false,
-          createdAt: new Date()
-        });
+    // Batch insert all notifications in one operation
+    const insertedNotifications = await Notification.insertMany(notificationDocs, { ordered: false });
 
-        await notification.save();
-        await notification.populate('sender', 'username displayName profilePhoto');
+    // Get sender info for socket emissions
+    const sender = await User.findById(userId).select('username displayName profilePhoto').lean();
 
-        // Emit Socket.IO event
-        if (req.io) {
-          emitNotificationCreated(req.io, user._id.toString(), notification);
-        }
+    // Emit socket events and push notifications in parallel
+    const successCount = insertedNotifications.length;
+    const failCount = users.length - successCount;
 
-        // Send push notification (fire and forget)
-        sendPushNotification(user._id, {
-          title: '🧪 Test Notification',
-          body: notification.message,
-          data: {
-            type: 'test',
-            url: '/notifications'
-          }
-        }).catch(err => console.error('Push error:', err));
-
-        notifications.push(notification);
-        successCount++;
-      } catch (error) {
-        console.error(`Failed to create notification for user ${user._id}:`, error);
-        failCount++;
-      }
+    // Fire socket events (non-blocking)
+    if (req.io) {
+      insertedNotifications.forEach(notification => {
+        const sanitized = {
+          ...notification.toObject(),
+          sender
+        };
+        emitNotificationCreated(req.io, notification.recipient.toString(), sanitized);
+      });
     }
+
+    // Fire push notifications in parallel (non-blocking)
+    Promise.all(insertedNotifications.map(notification =>
+      sendPushNotification(notification.recipient, {
+        title: '🧪 Test Notification',
+        body: notification.message,
+        data: {
+          type: 'test',
+          url: '/notifications'
+        }
+      }).catch(err => console.error('Push error:', err))
+    ));
+
+    const notifications = insertedNotifications;
 
     res.json({
       success: true,

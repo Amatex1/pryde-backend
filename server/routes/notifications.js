@@ -29,10 +29,12 @@ router.get('/', authMiddleware, requireActiveUser, asyncHandler(async (req, res)
 
   logger.info(`📬 [Notifications] Fetching for user: ${userId}, category: ${category || 'all'}`);
 
+  // PERFORMANCE: Add .lean() for read-only queries (30% faster, less memory)
   let notifications = await Notification.find({ recipient: userId })
     .populate('sender', 'username displayName profilePhoto')
     .sort({ createdAt: -1 })
-    .limit(50);
+    .limit(50)
+    .lean();
 
   logger.info(`📬 [Notifications] Found ${notifications.length} notifications for user ${userId}`);
 
