@@ -191,12 +191,12 @@ const io = new Server(server, {
     methods: ['GET', 'POST'],
     credentials: true
   },
-  // 🔥 ENHANCED: Improved stability settings
+  // 🔥 OPTIMIZED: Faster connection with stability
   transports: ['websocket', 'polling'], // WebSocket primary, polling fallback
-  pingTimeout: 60000, // 60 seconds - more tolerant of slow connections
+  pingTimeout: 30000, // 30 seconds - balanced for mobile networks
   pingInterval: 25000, // 25 seconds - balanced frequency
-  connectTimeout: 45000, // 45 seconds - generous connect timeout
-  upgradeTimeout: 30000, // 30 seconds - longer upgrade timeout for slow networks
+  connectTimeout: 20000, // 20 seconds - reduced from 45s for faster failure detection
+  upgradeTimeout: 10000, // 10 seconds - reduced from 30s for faster WebSocket upgrade
   maxHttpBufferSize: 1e6, // 1MB - max message size
   allowUpgrades: true, // Allow transport upgrades
   allowEIO3: true, // Better compatibility with older clients
@@ -669,6 +669,15 @@ io.on('connection', (socket) => {
   socket.join(`user_${userId}`);
   console.log(`✅ User ${userId} joined room: user_${userId}`);
 
+  // 🔥 FIX: Emit room:joined confirmation automatically on connect
+  // This allows the client to know the room is ready without sending a separate 'join' event
+  emitValidated(socket, 'room:joined', {
+    room: `user_${userId}`,
+    userId: String(userId),
+    socketId: socket.id,
+    autoJoined: true // Indicates this was auto-joined on connect
+  });
+
   // Join user to global chat room
   socket.join('global_chat');
   console.log(`✅ User ${userId} joined room: global_chat`);
@@ -688,16 +697,17 @@ io.on('connection', (socket) => {
     try {
       const roomUserId = typeof data === 'string' ? data : data?.room?.replace('user_', '') || data?.userId;
 
-      if (roomUserId && roomUserId === userId) {
+      // 🔥 FIX: Compare as strings to avoid ObjectId vs string mismatch
+      if (roomUserId && String(roomUserId) === String(userId)) {
         await socket.join(`user_${roomUserId}`);
         console.log(`✅ User ${userId} manually joined room user_${roomUserId}`);
         emitValidated(socket, 'room:joined', {
           room: `user_${roomUserId}`,
-          userId: roomUserId,
+          userId: String(roomUserId),
           socketId: socket.id
         });
       } else {
-        console.warn(`⚠️ User ${userId} tried to join invalid room: ${roomUserId}`);
+        console.warn(`⚠️ User ${userId} tried to join invalid room: ${roomUserId} (mismatch: ${roomUserId} !== ${userId})`);
         emitValidated(socket, 'room:error', { message: 'Invalid user ID or room' });
       }
     } catch (error) {

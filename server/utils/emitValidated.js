@@ -48,6 +48,10 @@ const ALLOWED_EVENTS = [
   'friend_request_received',
   'friend_request_accepted',
 
+  // Room management
+  'room:joined',
+  'room:error',
+
   // Errors
   'error'
 ];
