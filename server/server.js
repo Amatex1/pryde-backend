@@ -888,7 +888,8 @@ io.on('connection', (socket) => {
         if (typeof callback === 'function') {
           callback({ success: true, duplicate: true, messageId: result.messageId, _tempId: data._tempId });
         }
-        emitValidated(socket, 'message:sent', messageWithTempId);
+        // 🔥 FIX: Emit to user room (consistent with non-duplicate case)
+        emitValidated(io.to(`user_${userId}`), 'message:sent', messageWithTempId);
         return;
       }
 
@@ -918,21 +919,8 @@ io.on('connection', (socket) => {
 
       // Send to recipient if online
       // UNIFIED: Using 'message:new' for all message events (Phase R unification)
-      const recipientSocketId = onlineUsers.get(data.recipientId);
-      console.log(`📡 [send_message] Recipient socket lookup:`, {
-        recipientId: data.recipientId,
-        recipientSocketId: recipientSocketId || 'NOT_ONLINE',
-        onlineUsersCount: onlineUsers.size
-      });
-
-      if (recipientSocketId) {
-        console.log(`✅ [send_message] Emitting to recipient's socket: ${recipientSocketId}`);
-        emitValidated(io.to(recipientSocketId), 'message:new', message);
-      } else {
-        console.log(`⚠️ [send_message] Recipient not online, only emitting to user room`);
-      }
-
-      // Also emit to recipient's user room for cross-device sync
+      // 🔥 FIX: Only emit to user ROOM (not individual socket + room - that causes duplicates!)
+      // The user's socket is ALREADY in their user room, so emitting to both = 2x messages
       console.log(`📡 [send_message] Emitting to recipient's user room: user_${data.recipientId}`);
       emitValidated(io.to(`user_${data.recipientId}`), 'message:new', message);
 
@@ -956,10 +944,8 @@ io.on('connection', (socket) => {
         });
       }
 
-      emitValidated(socket, 'message:sent', messageWithTempId);
-
-      // Also emit to sender's user room for cross-device sync
-      console.log(`📡 [send_message] Emitting to sender's user room: user_${userId}`);
+      // 🔥 FIX: Only emit to user ROOM (the socket IS in the room, so this covers it)
+      // Emitting to both socket AND room was causing duplicate messages!
       emitValidated(io.to(`user_${userId}`), 'message:sent', messageWithTempId);
 
       console.log(`⏱️ Socket emit took ${Date.now() - emitStart}ms`);
