@@ -206,11 +206,13 @@ const io = new Server(server, {
   httpCompression: {
     threshold: 1024 // Only compress HTTP responses larger than 1KB
   },
-  // Connection state recovery for better reliability
-  connectionStateRecovery: {
-    maxDisconnectionDuration: 2 * 60 * 1000, // 2 minutes
-    skipMiddlewares: true // Skip auth middleware on recovery
-  }
+  // 🔥 DISABLED: Connection state recovery was causing undefined userId on reconnect
+  // When skipMiddlewares: true, reconnecting sockets skip auth middleware,
+  // which means socket.userId is undefined, causing all socket handlers to fail.
+  // connectionStateRecovery: {
+  //   maxDisconnectionDuration: 2 * 60 * 1000,
+  //   skipMiddlewares: false // MUST be false to preserve userId on reconnect
+  // }
 });
 
 // Set Socket.IO instance for session routes
