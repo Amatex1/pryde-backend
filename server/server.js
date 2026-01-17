@@ -666,6 +666,29 @@ io.on('connection', (socket) => {
   console.log(`🔌 User connected: ${userId} (socket: ${socket.id})`);
 
   /**
+   * 🔒 SOCKET-LEVEL MIDDLEWARE
+   * Ensures critical events like send_message are NEVER blocked.
+   * This runs before event handlers.
+   */
+  socket.use((packet, next) => {
+    try {
+      const eventName = packet?.[0];
+
+      // 🔒 Always allow send_message to pass through immediately
+      if (eventName === 'send_message') {
+        console.log(`🔓 [socket.use] send_message allowed through for user ${userId}`);
+        return next();
+      }
+
+      // For other events, just pass through
+      next();
+    } catch (err) {
+      console.error('❌ Socket middleware error:', err);
+      next(); // NEVER block events on error
+    }
+  });
+
+  /**
    * 🔍 DEEP SOCKET DIAGNOSTICS
    * These logs bypass normal event dispatch.
    * If send_message exists ANYWHERE in the inbound pipeline,
