@@ -674,10 +674,23 @@ io.on('connection', (socket) => {
 
   // 🔥 DEBUG: Log ALL incoming events from this socket (NO FILTERING)
   socket.onAny((eventName, ...args) => {
-    // Log EVERYTHING to diagnose missing send_message events
-    console.log(`📥 [Socket ${socket.id}] Event: "${eventName}" from user ${userId}`,
-      eventName === 'send_message' ? '🔥 SEND_MESSAGE RECEIVED!' : '',
-      args.length > 0 ? JSON.stringify(args[0]).substring(0, 300) : '(no args)');
+    try {
+      const preview =
+        args && args.length > 0 && args[0] !== undefined
+          ? JSON.stringify(args[0]).slice(0, 300)
+          : '(no args)';
+
+      console.log(
+        `📥 [Socket ${socket.id}] Event: "${eventName}" from user ${userId}`,
+        eventName === 'send_message' ? '🔥 SEND_MESSAGE RECEIVED!' : '',
+        preview
+      );
+    } catch (err) {
+      console.warn(
+        `⚠️ [Socket ${socket.id}] Failed to log event "${eventName}":`,
+        err.message
+      );
+    }
   });
 
   // 🧬 Engine.IO-level (raw packet) - catches events before Socket.IO parses them
