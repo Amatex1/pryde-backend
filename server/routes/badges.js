@@ -15,6 +15,7 @@
 import express from 'express';
 import auth from '../middleware/auth.js';
 import adminAuth from '../middleware/adminAuth.js';
+import { cacheLong, cacheMedium } from '../middleware/caching.js';
 import Badge from '../models/Badge.js';
 import BadgeAssignmentLog from '../models/BadgeAssignmentLog.js';
 import User from '../models/User.js';
@@ -33,7 +34,7 @@ const router = express.Router();
 // @route   GET /api/badges
 // @desc    Get all active badges with optional filtering
 // @access  Public
-router.get('/', async (req, res) => {
+router.get('/', cacheLong, async (req, res) => {
   try {
     const { type, assignmentType } = req.query;
     const query = { isActive: true };
@@ -54,7 +55,7 @@ router.get('/', async (req, res) => {
 // @route   GET /api/badges/explain
 // @desc    Get user-facing explanation of the badge system
 // @access  Public
-router.get('/explain', async (req, res) => {
+router.get('/explain', cacheLong, async (req, res) => {
   try {
     res.json({
       title: 'About Badges',
@@ -88,7 +89,7 @@ router.get('/explain', async (req, res) => {
 // @route   GET /api/badges/catalog
 // @desc    Get badge catalog with categories
 // @access  Public
-router.get('/catalog', async (req, res) => {
+router.get('/catalog', cacheLong, async (req, res) => {
   try {
     const badges = await Badge.find({ isActive: true })
       .sort({ priority: 1, label: 1 })

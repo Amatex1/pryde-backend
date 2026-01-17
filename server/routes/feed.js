@@ -11,18 +11,22 @@ import express from 'express';
 import Post from '../models/Post.js';
 import auth from '../middleware/auth.js';
 import requireActiveUser from '../middleware/requireActiveUser.js';
+import { cacheShort, cacheConditional } from '../middleware/caching.js';
 import { getBlockedUserIds } from '../utils/blockHelper.js';
 import { asyncHandler, requireAuth, sendError, HttpStatus } from '../utils/errorHandler.js';
 import logger from '../utils/logger.js';
 
 const router = express.Router();
 
+// Feed cache config: first page cached 30s, other pages 15s
+const feedCache = cacheConditional({ firstPage: 'short', otherPages: 15 });
+
 /**
  * GET /api/feed
  * Root feed endpoint - defaults to global feed
  * Supports page/limit params for backward compatibility
  */
-router.get('/', auth, requireActiveUser, asyncHandler(async (req, res) => {
+router.get('/', auth, requireActiveUser, feedCache, asyncHandler(async (req, res) => {
   // SAFETY: Guard clause for auth
   const currentUserId = requireAuth(req, res);
   if (!currentUserId) return;
@@ -71,7 +75,7 @@ router.get('/', auth, requireActiveUser, asyncHandler(async (req, res) => {
  * Returns public posts in reverse chronological order
  * Optional slow weighting for promoted posts
  */
-router.get('/global', auth, requireActiveUser, asyncHandler(async (req, res) => {
+router.get('/global', auth, requireActiveUser, cacheShort, asyncHandler(async (req, res) => {
   // SAFETY: Guard clause for auth
   const currentUserId = requireAuth(req, res);
   if (!currentUserId) return;
@@ -124,7 +128,7 @@ router.get('/global', auth, requireActiveUser, asyncHandler(async (req, res) => 
  * Returns posts only from users the current user follows
  * Same slow sorting logic as global feed
  */
-router.get('/following', auth, requireActiveUser, asyncHandler(async (req, res) => {
+router.get('/following', auth, requireActiveUser, cacheShort, asyncHandler(async (req, res) => {
   // SAFETY: Guard clause for auth
   const currentUserId = requireAuth(req, res);
   if (!currentUserId) return;

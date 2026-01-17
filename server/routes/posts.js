@@ -12,6 +12,7 @@ import Notification from '../models/Notification.js';
 import auth from '../middleware/auth.js';
 import requireActiveUser from '../middleware/requireActiveUser.js';
 import requireEmailVerification from '../middleware/requireEmailVerification.js';
+import { cacheShort, cacheMedium } from '../middleware/caching.js';
 import { postLimiter, commentLimiter, reactionLimiter } from '../middleware/rateLimiter.js';
 import { checkMuted, moderateContent } from '../middleware/moderation.js';
 import { guardComment, guardReply, guardReact } from '../middleware/systemAccountGuard.js';
@@ -237,7 +238,7 @@ router.get('/user/:identifier', auth, requireActiveUser, asyncHandler(async (req
 // @route   GET /api/posts/:id
 // @desc    Get single post
 // @access  Private
-router.get('/:id', auth, requireActiveUser, asyncHandler(async (req, res) => {
+router.get('/:id', auth, requireActiveUser, cacheShort, asyncHandler(async (req, res) => {
   // SAFETY: Guard clause for auth
   const userId = requireAuth(req, res);
   if (!userId) return;

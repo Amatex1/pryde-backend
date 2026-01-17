@@ -9,6 +9,7 @@ import GroupChat from '../models/GroupChat.js';
 import Notification from '../models/Notification.js';
 import auth from '../middleware/auth.js';
 import requireActiveUser from '../middleware/requireActiveUser.js';
+import { cacheShort, cacheMedium } from '../middleware/caching.js';
 import { checkProfileVisibility, checkBlocked } from '../middleware/privacy.js';
 import { sanitizeFields } from '../middleware/sanitize.js';
 import { searchLimiter } from '../middleware/rateLimiter.js';
@@ -76,7 +77,7 @@ const sanitizeUserForPrivateFollowers = (user, currentUserId) => {
 // @desc    Search users
 // @access  Private
 // 🔥 FIX: Added searchLimiter to prevent user enumeration and data scraping
-router.get('/search', auth, searchLimiter, async (req, res) => {
+router.get('/search', auth, searchLimiter, cacheShort, async (req, res) => {
   try {
     const { q } = req.query;
 
@@ -119,7 +120,7 @@ router.get('/search', auth, searchLimiter, async (req, res) => {
 // @route   GET /api/users/suggested
 // @desc    Get suggested users based on interests, location, and sexual orientation
 // @access  Private
-router.get('/suggested', auth, async (req, res) => {
+router.get('/suggested', auth, cacheMedium, async (req, res) => {
   try {
     const currentUser = await User.findById(req.userId);
 
