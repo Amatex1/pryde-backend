@@ -951,11 +951,20 @@ io.on('connection', (socket) => {
 
       // 🔥 ACK callback for successful send
       if (typeof callback === 'function') {
-        callback({
+        const ackResponse = {
           success: true,
           messageId: message._id.toString(),
           _tempId: data._tempId
-        });
+        };
+        console.log(`✅ [send_message] Sending ACK callback to user ${userId}:`, ackResponse);
+        try {
+          callback(ackResponse);
+          console.log(`✅ [send_message] ACK callback sent successfully`);
+        } catch (callbackErr) {
+          console.error(`❌ [send_message] ACK callback error:`, callbackErr);
+        }
+      } else {
+        console.warn(`⚠️ [send_message] No callback function provided by client`);
       }
 
       // 🔥 FIX: Only emit to user ROOM (the socket IS in the room, so this covers it)
