@@ -665,6 +665,13 @@ io.on('connection', (socket) => {
 
   console.log(`🔌 User connected: ${userId} (socket: ${socket.id})`);
 
+  /**
+   * 🔍 DEEP SOCKET DIAGNOSTICS
+   * These logs bypass normal event dispatch.
+   * If send_message exists ANYWHERE in the inbound pipeline,
+   * it WILL show up here.
+   */
+
   // 🔥 DEBUG: Log ALL incoming events from this socket (NO FILTERING)
   socket.onAny((eventName, ...args) => {
     // Log EVERYTHING to diagnose missing send_message events
@@ -672,6 +679,20 @@ io.on('connection', (socket) => {
       eventName === 'send_message' ? '🔥 SEND_MESSAGE RECEIVED!' : '',
       args.length > 0 ? JSON.stringify(args[0]).substring(0, 300) : '(no args)');
   });
+
+  // 🧬 Engine.IO-level (raw packet) - catches events before Socket.IO parses them
+  if (socket.conn) {
+    socket.conn.on('packet', (packet) => {
+      // Only log message packets (type 4 = message in Engine.IO)
+      if (packet?.type === 'message' && packet?.data) {
+        const dataStr = typeof packet.data === 'string' ? packet.data : JSON.stringify(packet.data);
+        // Check if this is a send_message event
+        if (dataStr.includes('send_message')) {
+          console.log(`🧬 [Engine.IO PACKET] socket=${socket.id} user=${userId} 🔥 SEND_MESSAGE IN RAW PACKET!`, dataStr.substring(0, 500));
+        }
+      }
+    });
+  }
 
   // Store user's socket connection
   onlineUsers.set(userId, socket.id);
