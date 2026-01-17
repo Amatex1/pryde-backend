@@ -665,6 +665,15 @@ io.on('connection', (socket) => {
 
   console.log(`🔌 User connected: ${userId} (socket: ${socket.id})`);
 
+  // 🔥 DEBUG: Log ALL incoming events from this socket
+  socket.onAny((eventName, ...args) => {
+    // Don't log internal ping/pong, but log everything else
+    if (eventName !== 'ping' && eventName !== 'get_online_users') {
+      console.log(`📥 [Socket ${socket.id}] Event: "${eventName}" from user ${userId}`,
+        args.length > 0 ? JSON.stringify(args[0]).substring(0, 200) : '');
+    }
+  });
+
   // Store user's socket connection
   onlineUsers.set(userId, socket.id);
   console.log(`📊 Online users count: ${onlineUsers.size}`);
