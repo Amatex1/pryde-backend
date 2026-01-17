@@ -193,9 +193,9 @@ router.delete('/', auth, requireActiveUser, async (req, res) => {
     // Get updated aggregated reactions
     const reactions = await getAggregatedReactions(targetType, targetId);
 
-    // Emit real-time event
+    // Emit real-time event (broadcast to all connected users viewing feed)
     if (req.io) {
-      req.io.emit('reaction_updated', {
+      emitValidated(req.io, 'reaction_updated', {
         targetType,
         targetId,
         reactions

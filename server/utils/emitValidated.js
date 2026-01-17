@@ -52,18 +52,34 @@ const ALLOWED_EVENTS = [
   'room:joined',
   'room:error',
 
+  // Posts and comments (feed updates)
+  'post_created',
+  'post_updated',
+  'post_deleted',
+  'post_reaction_added',
+  'comment_added',
+  'comment_reaction_added',
+
+  // Admin events
+  'user_suspended',
+  'user_unsuspended',
+  'user_banned',
+  'user_unbanned',
+  'user_created',
+
   // Errors
   'error'
 ];
 
 // Required payload keys per event (for validation)
+// Note: content is not required - messages can have attachment only
 const REQUIRED_KEYS = {
-  'message:new': ['_id', 'sender', 'content'],
-  'message:sent': ['_id', 'sender', 'content'],
+  'message:new': ['_id', 'sender'],
+  'message:sent': ['_id', 'sender'],
   'message:read': ['messageIds', 'readBy'],
   'message:deleted': ['_id'],
   'message:error': ['message'],
-  'notification:new': ['_id', 'type'],
+  'notification:new': ['notification'],
   'notification:read': ['_id'],
   'notification:read_all': ['userId'],
   'notification:deleted': ['_id'],

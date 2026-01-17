@@ -4,6 +4,7 @@ import Message from '../models/Message.js';
 import User from '../models/User.js';
 import Conversation from '../models/Conversation.js';
 import Notification from '../models/Notification.js';
+import GroupChat from '../models/GroupChat.js';
 import mongoose from 'mongoose';
 import auth from '../middleware/auth.js';
 import requireActiveUser from '../middleware/requireActiveUser.js';
@@ -468,7 +469,6 @@ router.post('/', auth, requireActiveUser, requireEmailVerification, messageLimit
 
     // Update group chat's last message if it's a group message
     if (groupChatId) {
-      const GroupChat = require('../models/GroupChat');
       await GroupChat.findByIdAndUpdate(groupChatId, {
         lastMessage: message._id,
         updatedAt: Date.now()
