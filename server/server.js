@@ -859,14 +859,26 @@ io.on('connection', (socket) => {
     typingTimeouts.clear();
   });
   
-  // Handle real-time message (supports ACK callback for confirmation)
-  socket.on('send_message', async (data, callback) => {
+  /**
+   * 💬 SEND MESSAGE (HARDENED)
+   * This handler MUST always be registered for every socket.
+   * ACK is guaranteed in all paths.
+   */
+  socket.on('send_message', async (data, callback = () => {}) => {
+    // 🔥 IMMEDIATE LOG: Confirm handler is hit
+    console.log('📥 [send_message] handler HIT', {
+      socketId: socket.id,
+      userId: socket.userId || userId,
+      hasData: !!data,
+      hasCallback: typeof callback === 'function'
+    });
+
     const startTime = Date.now();
     console.log(`📨 [send_message] Received from user ${userId}:`, {
-      recipientId: data.recipientId,
-      hasContent: !!data.content,
-      hasAttachment: !!data.attachment,
-      hasVoiceNote: !!data.voiceNote,
+      recipientId: data?.recipientId,
+      hasContent: !!data?.content,
+      hasAttachment: !!data?.attachment,
+      hasVoiceNote: !!data?.voiceNote,
       socketId: socket.id,
       hasCallback: typeof callback === 'function'
     });
