@@ -811,8 +811,12 @@ io.on('connection', (socket) => {
   });
 
   // 🔥 NEW: Connection verification ping
-  socket.on('ping', (callback) => {
+  // Handles both formats: socket.emit('ping', callback) and socket.emit('ping', data, callback)
+  socket.on('ping', (dataOrCallback, maybeCallback) => {
+    // Determine which argument is the callback
+    const callback = typeof dataOrCallback === 'function' ? dataOrCallback : maybeCallback;
     console.log(`🏓 Ping received from user ${userId}, callback type:`, typeof callback);
+
     const response = {
       status: 'ok',
       userId: socket.userId,
