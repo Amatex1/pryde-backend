@@ -1015,9 +1015,32 @@ userSchema.index({ lastLogin: -1 }); // Active user queries
 // Text index for user search (faster than regex)
 userSchema.index({ username: 'text', displayName: 'text' });
 
-// Hash password before saving
+// =========================
+// PHASE 3A: SAFE CAPS
+// Enforce rolling caps on embedded arrays to prevent 16MB document limit
+// =========================
+const CAPS = {
+  activeSessions: 5,
+  loginHistory: 50,
+  moderationHistory: 100
+};
+
+function capArray(arr, limit) {
+  if (!Array.isArray(arr)) return arr;
+  if (arr.length <= limit) return arr;
+  // Keep the most recent entries (last N items)
+  return arr.slice(-limit);
+}
+
+// Hash password before saving + enforce array caps
 // SECURITY: Using 12 rounds for stronger protection (OWASP recommended minimum)
 userSchema.pre('save', async function(next) {
+  // PHASE 3A: Enforce caps on embedded arrays
+  this.activeSessions = capArray(this.activeSessions, CAPS.activeSessions);
+  this.loginHistory = capArray(this.loginHistory, CAPS.loginHistory);
+  this.moderationHistory = capArray(this.moderationHistory, CAPS.moderationHistory);
+
+  // Hash password if modified
   if (!this.isModified('password')) return next();
 
   try {
@@ -1134,6 +1157,144 @@ userSchema.statics.recordLoginAttempt = async function (userId, wasSuccessful) {
       }
     ]
   );
+};
+
+// ======================================================================
+// PHASE 3A: ATOMIC CAPPED ARRAY OPERATIONS
+// For use cases requiring atomic updates (bypasses pre-save hook)
+// Uses same CAPS constant defined above
+// ======================================================================
+
+/**
+ * Add a session atomically with cap enforcement
+ * Keeps only the most recent sessions (uses CAPS.activeSessions)
+ * @param {ObjectId} userId - User ID
+ * @param {Object} session - Session object to add
+ * @returns {Promise} Update result
+ */
+userSchema.statics.addSessionCapped = async function (userId, session) {
+  // Ensure createdAt is set for sorting
+  if (!session.createdAt) {
+    session.createdAt = new Date();
+  }
+  if (!session.lastActive) {
+    session.lastActive = new Date();
+  }
+
+  return this.updateOne(
+    { _id: userId },
+    {
+      $push: {
+        activeSessions: {
+          $each: [session],
+          $sort: { lastActive: -1 },  // Newest first
+          $slice: CAPS.activeSessions  // Keep only MAX sessions
+        }
+      }
+    }
+  );
+};
+
+/**
+ * Add a login history entry atomically with cap enforcement
+ * Keeps only the most recent entries (uses CAPS.loginHistory)
+ * @param {ObjectId} userId - User ID
+ * @param {Object} entry - Login history entry
+ * @returns {Promise} Update result
+ */
+userSchema.statics.addLoginHistoryCapped = async function (userId, entry) {
+  // Ensure timestamp is set for sorting
+  if (!entry.timestamp) {
+    entry.timestamp = new Date();
+  }
+
+  return this.updateOne(
+    { _id: userId },
+    {
+      $push: {
+        loginHistory: {
+          $each: [entry],
+          $sort: { timestamp: -1 },  // Newest first
+          $slice: CAPS.loginHistory   // Keep only MAX entries
+        }
+      }
+    }
+  );
+};
+
+/**
+ * Add a moderation history entry atomically with cap enforcement
+ * Keeps only the most recent entries (uses CAPS.moderationHistory)
+ * @param {ObjectId} userId - User ID
+ * @param {Object} entry - Moderation history entry
+ * @returns {Promise} Update result
+ */
+userSchema.statics.addModerationHistoryCapped = async function (userId, entry) {
+  // Ensure timestamp is set for sorting
+  if (!entry.timestamp) {
+    entry.timestamp = new Date();
+  }
+
+  return this.updateOne(
+    { _id: userId },
+    {
+      $push: {
+        moderationHistory: {
+          $each: [entry],
+          $sort: { timestamp: -1 },       // Newest first
+          $slice: CAPS.moderationHistory  // Keep only MAX entries
+        }
+      }
+    }
+  );
+};
+
+/**
+ * Cleanup utility: Trim existing arrays to caps (one-time migration safe)
+ * Can be called on user documents that may have exceeded caps before this code was deployed
+ * Uses CAPS constants for consistency
+ * @param {ObjectId} userId - User ID
+ * @returns {Promise} Update result
+ */
+userSchema.statics.enforceAllCaps = async function (userId) {
+  const user = await this.findById(userId);
+  if (!user) return null;
+
+  const updates = {};
+  let needsUpdate = false;
+
+  // Trim activeSessions if needed
+  if (user.activeSessions && user.activeSessions.length > CAPS.activeSessions) {
+    const sorted = [...user.activeSessions].sort((a, b) =>
+      new Date(b.lastActive) - new Date(a.lastActive)
+    );
+    updates.activeSessions = sorted.slice(0, CAPS.activeSessions);
+    needsUpdate = true;
+  }
+
+  // Trim loginHistory if needed
+  if (user.loginHistory && user.loginHistory.length > CAPS.loginHistory) {
+    const sorted = [...user.loginHistory].sort((a, b) =>
+      new Date(b.timestamp) - new Date(a.timestamp)
+    );
+    updates.loginHistory = sorted.slice(0, CAPS.loginHistory);
+    needsUpdate = true;
+  }
+
+  // Trim moderationHistory if needed
+  if (user.moderationHistory && user.moderationHistory.length > CAPS.moderationHistory) {
+    const sorted = [...user.moderationHistory].sort((a, b) =>
+      new Date(b.timestamp) - new Date(a.timestamp)
+    );
+    updates.moderationHistory = sorted.slice(0, CAPS.moderationHistory);
+    needsUpdate = true;
+  }
+
+  if (needsUpdate) {
+    return this.updateOne({ _id: userId }, { $set: updates });
+  }
+
+  return { modifiedCount: 0, message: 'No trimming needed' };
 };
 
 
