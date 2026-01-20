@@ -39,7 +39,8 @@ router.post('/', async (req, res) => {
     }
 
     // Get user from database
-    const user = await User.findById(decoded.userId).select('-password');
+    const user = await User.findById(decoded.userId)
+      .select('+activeSessions.refreshToken +activeSessions.refreshTokenHash');
 
     if (!user) {
       return res.status(401).json({ message: 'User not found' });
@@ -69,6 +70,32 @@ router.post('/', async (req, res) => {
     if (user.isSuspended && user.suspendedUntil > new Date()) {
       return res.status(403).json({ message: 'Your account is suspended' });
     }
+
+    // 🔐 SESSION-BOUND REFRESH TOKEN VERIFICATION
+    const session = user.activeSessions?.find(
+      s => s.sessionId === decoded.sessionId
+    );
+
+    if (!session) {
+      logger.warn('❌ Refresh failed: session not found', {
+        userId: decoded.userId,
+        sessionId: decoded.sessionId
+      });
+      return res.status(401).json({ message: 'Session not found' });
+    }
+
+    // Verify refresh token against hashed (or legacy plaintext) token
+    if (!user.verifyRefreshToken(session, refreshToken)) {
+      logger.warn('❌ Refresh failed: token mismatch', {
+        userId: decoded.userId,
+        sessionId: decoded.sessionId
+      });
+      return res.status(401).json({ message: 'Invalid refresh token' });
+    }
+
+    // 🔁 MIGRATE LEGACY PLAINTEXT TOKEN → HASHED (ONE-TIME, SAFE)
+    user.migrateRefreshToken(session, refreshToken);
+    await user.save();
 
     // Find the session with this refresh token (check current token OR previous token for grace period)
     let sessionIndex = user.activeSessions.findIndex(
