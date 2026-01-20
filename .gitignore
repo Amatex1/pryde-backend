@@ -70,3 +70,7 @@ check-deployment.html
 debug-auth.html
 test-cloudflare-token.js
 fix-and-deploy.ps1
+
+# Local model files
+TheBloke/
+.continue/

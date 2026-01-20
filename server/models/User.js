@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
 
 const userSchema = new mongoose.Schema({
   username: {
@@ -376,8 +377,7 @@ const userSchema = new mongoose.Schema({
     type: [{
       credentialId: {
         type: String,
-        required: true,
-        unique: true
+        required: true
       },
       publicKey: {
         type: String,
@@ -477,7 +477,13 @@ const userSchema = new mongoose.Schema({
       },
       refreshToken: {
         type: String,
-        default: null
+        default: null,
+        select: false // never return tokens by default
+      },
+      refreshTokenHash: {
+        type: String,
+        default: null,
+        select: false
       },
       refreshTokenExpiry: {
         type: Date,
@@ -486,7 +492,13 @@ const userSchema = new mongoose.Schema({
       // Grace period: previous token still valid for 30 mins after rotation
       previousRefreshToken: {
         type: String,
-        default: null
+        default: null,
+        select: false
+      },
+      previousRefreshTokenHash: {
+        type: String,
+        default: null,
+        select: false
       },
       previousTokenExpiry: {
         type: Date,
@@ -1022,6 +1034,40 @@ userSchema.methods.comparePassword = async function(candidatePassword) {
   return await bcrypt.compare(candidatePassword, this.password);
 };
 
+// ======================================================================
+// SECURITY HELPERS
+// ======================================================================
+
+// Hash refresh tokens (one-way, leak-safe)
+userSchema.methods.hashRefreshToken = function (token) {
+  return crypto.createHash('sha256').update(token).digest('hex');
+};
+
+// Verify refresh token against stored hash OR legacy plaintext
+userSchema.methods.verifyRefreshToken = function (session, token) {
+  const hashed = this.hashRefreshToken(token);
+
+  // Preferred: hashed comparison
+  if (session.refreshTokenHash) {
+    return session.refreshTokenHash === hashed;
+  }
+
+  // Legacy fallback (plaintext) — allows safe migration
+  return session.refreshToken === token;
+};
+
+// Migrate legacy plaintext refresh tokens → hashed (called on successful refresh)
+userSchema.methods.migrateRefreshToken = function (session, token) {
+  const hashed = this.hashRefreshToken(token);
+
+  session.previousRefreshTokenHash = session.refreshTokenHash || null;
+  session.refreshTokenHash = hashed;
+
+  // Remove plaintext storage
+  session.refreshToken = null;
+  session.previousRefreshToken = null;
+};
+
 // Method to get public profile
 userSchema.methods.toJSON = function() {
   const user = this.toObject();
@@ -1029,6 +1075,8 @@ userSchema.methods.toJSON = function() {
   delete user.twoFactorSecret;
   delete user.twoFactorBackupCodes;
   delete user.resetPasswordToken;
+  delete user.emailVerificationToken;
+  delete user.deletionConfirmationToken;
   return user;
 };
 
@@ -1038,36 +1086,55 @@ userSchema.methods.isLocked = function() {
   return !!(this.lockoutUntil && this.lockoutUntil > Date.now());
 };
 
-// Method to increment login attempts
-userSchema.methods.incrementLoginAttempts = async function() {
-  // If we have a previous lockout that has expired, reset attempts
-  if (this.lockoutUntil && this.lockoutUntil < Date.now()) {
-    return this.updateOne({
-      $set: { loginAttempts: 1 },
-      $unset: { lockoutUntil: 1 }
-    });
+// ATOMIC login attempt tracking (race-free)
+userSchema.statics.recordLoginAttempt = async function (userId, wasSuccessful) {
+  const now = Date.now();
+  const MAX_ATTEMPTS = 5;
+  const LOCKOUT_DURATION = 15 * 60 * 1000; // 15 minutes
+
+  // Successful login → reset counters
+  if (wasSuccessful) {
+    return this.updateOne(
+      { _id: userId },
+      {
+        $set: {
+          loginAttempts: 0,
+          lockoutUntil: null,
+          lastLogin: now
+        }
+      }
+    );
   }
 
-  // Otherwise increment attempts
-  const updates = { $inc: { loginAttempts: 1 } };
-
-  // Lock account after 5 failed attempts
-  const maxAttempts = 5;
-  const lockoutDuration = 15 * 60 * 1000; // 15 minutes
-
-  if (this.loginAttempts + 1 >= maxAttempts && !this.isLocked()) {
-    updates.$set = { lockoutUntil: Date.now() + lockoutDuration };
-  }
-
-  return this.updateOne(updates);
+  // Failed login → atomic increment + conditional lock
+  return this.updateOne(
+    {
+      _id: userId,
+      $or: [
+        { lockoutUntil: null },
+        { lockoutUntil: { $lt: now } }
+      ]
+    },
+    [
+      {
+        $set: {
+          loginAttempts: { $add: ['$loginAttempts', 1] }
+        }
+      },
+      {
+        $set: {
+          lockoutUntil: {
+            $cond: [
+              { $gte: [{ $add: ['$loginAttempts', 1] }, MAX_ATTEMPTS] },
+              now + LOCKOUT_DURATION,
+              '$lockoutUntil'
+            ]
+          }
+        }
+      }
+    ]
+  );
 };
 
-// Method to reset login attempts
-userSchema.methods.resetLoginAttempts = async function() {
-  return this.updateOne({
-    $set: { loginAttempts: 0 },
-    $unset: { lockoutUntil: 1 }
-  });
-};
 
 export default mongoose.model('User', userSchema);
