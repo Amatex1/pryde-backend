@@ -97,42 +97,10 @@ router.post('/', async (req, res) => {
     user.migrateRefreshToken(session, refreshToken);
     await user.save();
 
-    // Find the session with this refresh token (check current token OR previous token for grace period)
-    let sessionIndex = user.activeSessions.findIndex(
-      s => s.sessionId === decoded.sessionId && s.refreshToken === refreshToken
+    // Get session index for later use (we already verified session exists above)
+    const sessionIndex = user.activeSessions.findIndex(
+      s => s.sessionId === decoded.sessionId
     );
-
-    // 🔥 GRACE PERIOD: If current token doesn't match, check if it matches the previous token
-    // This handles cases where the frontend didn't save the new token after rotation
-    let usingPreviousToken = false;
-    if (sessionIndex === -1) {
-      sessionIndex = user.activeSessions.findIndex(
-        s => s.sessionId === decoded.sessionId &&
-             s.previousRefreshToken === refreshToken &&
-             s.previousTokenExpiry && new Date() < s.previousTokenExpiry
-      );
-      if (sessionIndex !== -1) {
-        usingPreviousToken = true;
-        logger.info(`🔄 Using previous refresh token for user (within grace period)`);
-      }
-    }
-
-    if (sessionIndex === -1) {
-      // Enhanced debugging for session mismatch
-      const sessionById = user.activeSessions.find(s => s.sessionId === decoded.sessionId);
-      if (sessionById) {
-        logger.warn(`❌ Refresh token mismatch for user ${user.username} - session exists but token differs`);
-        logger.debug(`   Current token (first 20): ${sessionById.refreshToken?.substring(0, 20)}...`);
-        logger.debug(`   Previous token (first 20): ${sessionById.previousRefreshToken?.substring(0, 20) || 'none'}...`);
-        logger.debug(`   Received token (first 20): ${refreshToken?.substring(0, 20)}...`);
-      } else {
-        logger.warn(`❌ Session ${decoded.sessionId} not found for user ${user.username}`);
-        logger.debug(`   Active sessions: ${user.activeSessions.length}`);
-      }
-      return res.status(401).json({ message: 'Invalid session or refresh token has been revoked' });
-    }
-
-    const session = user.activeSessions[sessionIndex];
 
     // Check if refresh token has expired
     if (session.refreshTokenExpiry && new Date() > session.refreshTokenExpiry) {
@@ -153,7 +121,7 @@ router.post('/', async (req, res) => {
     let newRefreshToken;
     let accessToken;
 
-    if (shouldRotateToken && !usingPreviousToken) {
+    if (shouldRotateToken) {
       // Full rotation - new access token AND new refresh token
       const tokens = generateTokenPair(user._id, decoded.sessionId);
       accessToken = tokens.accessToken;
