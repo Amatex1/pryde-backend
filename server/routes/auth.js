@@ -7,6 +7,7 @@ import Badge from '../models/Badge.js';
 import SecurityLog from '../models/SecurityLog.js';
 import AdminEscalationToken from '../models/AdminEscalationToken.js'; // PHASE G: Auto-revoke escalation on security events
 import Invite from '../models/Invite.js'; // Phase 7B: Invite-only growth
+import Session from '../models/Session.js'; // Phase 3B-A: First-class sessions
 import auth from '../middleware/auth.js';
 import { getSessionInfo, clearSessionActivity, SESSION_TIMEOUT_MS } from '../middleware/sessionTimeout.js';
 import config from '../config/config.js';
@@ -482,17 +483,42 @@ router.post('/signup', validateAgeBeforeRateLimit, signupLimiter, validateSignup
 
     // Store session with refresh token
     const deviceInfo = parseUserAgent(req.headers['user-agent']);
-    user.activeSessions.push({
+    const ipAddress = getClientIp(req);
+    const sessionData = {
       sessionId,
       refreshToken,
       refreshTokenExpiry: getRefreshTokenExpiry(),
       deviceInfo: deviceInfo.device || 'Unknown Device',
       browser: deviceInfo.browser || 'Unknown Browser',
       os: deviceInfo.os || 'Unknown OS',
-      ipAddress: getClientIp(req),
+      ipAddress,
       createdAt: new Date(),
       lastActive: new Date()
-    });
+    };
+
+    // Phase 3B-A: Dual-write - create first-class session (authoritative)
+    try {
+      await Session.create({
+        userId: user._id,
+        sessionId,
+        refreshTokenHash: Session.hashToken(refreshToken),
+        refreshTokenExpiry: sessionData.refreshTokenExpiry,
+        deviceInfo: sessionData.deviceInfo,
+        browser: sessionData.browser,
+        os: sessionData.os,
+        ipAddress,
+        createdAt: sessionData.createdAt,
+        lastActiveAt: sessionData.lastActive,
+        isActive: true
+      });
+      logger.debug(`[Phase 3B-A] Created first-class session ${sessionId} for user ${user.username}`);
+    } catch (sessionError) {
+      // Log but don't fail - User.activeSessions is fallback
+      logger.error('[Phase 3B-A] Failed to create Session document:', sessionError.message);
+    }
+
+    // Keep existing behavior (User.activeSessions as cache)
+    user.activeSessions.push(sessionData);
 
     // Enforce max concurrent sessions (removes oldest if limit exceeded)
     enforceMaxSessions(user);
@@ -903,7 +929,7 @@ router.post('/login', loginLimiter, validateLogin, async (req, res) => {
     const { accessToken, refreshToken, sessionId } = generateTokenPair(user._id);
 
     // Create session with refresh token and location
-    const session = {
+    const sessionData = {
       sessionId,
       refreshToken,
       refreshTokenExpiry: getRefreshTokenExpiry(),
@@ -916,8 +942,30 @@ router.post('/login', loginLimiter, validateLogin, async (req, res) => {
       lastActive: new Date()
     };
 
-    // Add new session
-    user.activeSessions.push(session);
+    // Phase 3B-A: Dual-write - create first-class session (authoritative)
+    try {
+      await Session.create({
+        userId: user._id,
+        sessionId,
+        refreshTokenHash: Session.hashToken(refreshToken),
+        refreshTokenExpiry: sessionData.refreshTokenExpiry,
+        deviceInfo,
+        browser,
+        os,
+        ipAddress,
+        location,
+        createdAt: sessionData.createdAt,
+        lastActiveAt: sessionData.lastActive,
+        isActive: true
+      });
+      logger.debug(`[Phase 3B-A] Created first-class session ${sessionId} for user ${user.username}`);
+    } catch (sessionError) {
+      // Log but don't fail - User.activeSessions is fallback
+      logger.error('[Phase 3B-A] Failed to create Session document:', sessionError.message);
+    }
+
+    // Keep existing behavior (User.activeSessions as cache)
+    user.activeSessions.push(sessionData);
 
     // Enforce max concurrent sessions (removes oldest if limit exceeded)
     enforceMaxSessions(user);
@@ -1235,6 +1283,35 @@ router.post('/verify-2fa-login', loginLimiter, async (req, res) => {
       lastActive: new Date()
     };
 
+    // Phase 3B-A: Dual-write - create or update first-class session (authoritative)
+    try {
+      await Session.findOneAndUpdate(
+        { sessionId: newSessionId, userId: user._id },
+        {
+          $set: {
+            refreshTokenHash: Session.hashToken(refreshToken),
+            refreshTokenExpiry: baseSession.refreshTokenExpiry,
+            deviceInfo,
+            browser,
+            os,
+            ipAddress,
+            location,
+            lastActiveAt: new Date(),
+            isActive: true
+          },
+          $setOnInsert: {
+            createdAt: baseSession.createdAt
+          }
+        },
+        { upsert: true, new: true }
+      );
+      logger.debug(`[Phase 3B-A] Created/updated first-class session ${newSessionId} for 2FA login`);
+    } catch (sessionError) {
+      // Log but don't fail - User.activeSessions is fallback
+      logger.error('[Phase 3B-A] Failed to create/update Session document:', sessionError.message);
+    }
+
+    // Keep existing behavior (User.activeSessions as cache)
     if (sessionIndex >= 0) {
       user.activeSessions[sessionIndex] = baseSession;
     } else {
@@ -1647,13 +1724,26 @@ router.post('/logout', auth, async (req, res) => {
       }
     }
 
-    // Remove the current session from activeSessions
+    // Phase 3B-A: Revoke session in Session collection (authoritative)
+    if (sessionId) {
+      try {
+        await Session.updateOne(
+          { sessionId, userId: req.user.id },
+          { $set: { isActive: false, revokedAt: new Date() } }
+        );
+        logger.debug(`[Phase 3B-A] Session ${sessionId} revoked in Session collection`);
+      } catch (sessionError) {
+        logger.error('[Phase 3B-A] Failed to revoke Session document:', sessionError.message);
+      }
+    }
+
+    // Remove the current session from User.activeSessions (cache)
     if (sessionId) {
       user.activeSessions = user.activeSessions.filter(
         s => s.sessionId !== sessionId
       );
       await user.save();
-      logger.debug(`Session ${sessionId} removed for user ${user.username}`);
+      logger.debug(`Session ${sessionId} removed from User.activeSessions for user ${user.username}`);
     }
 
     // 🔥 CRITICAL: Force disconnect Socket.IO for this session

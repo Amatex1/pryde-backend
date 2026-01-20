@@ -1,6 +1,7 @@
 import express from 'express';
 const router = express.Router();
 import User from '../models/User.js';
+import Session from '../models/Session.js'; // Phase 3B-A: First-class sessions
 import { verifyRefreshToken, generateTokenPair, getRefreshTokenExpiry, generateAccessToken } from '../utils/tokenUtils.js';
 import { getClientIp, parseUserAgent } from '../utils/sessionUtils.js';
 import { getRefreshTokenCookieOptions } from '../utils/cookieUtils.js';
@@ -71,10 +72,30 @@ router.post('/', async (req, res) => {
       return res.status(403).json({ message: 'Your account is suspended' });
     }
 
-    // 🔐 SESSION-BOUND REFRESH TOKEN VERIFICATION
-    const session = user.activeSessions?.find(
-      s => s.sessionId === decoded.sessionId
-    );
+    // 🔐 PHASE 3B-A: SESSION-BOUND REFRESH TOKEN VERIFICATION
+    // Read from Session collection first (authoritative), fallback to User.activeSessions
+    let session = await Session.findOne({
+      sessionId: decoded.sessionId,
+      userId: user._id,
+      isActive: true
+    }).select('+refreshTokenHash +previousRefreshTokenHash');
+
+    let usingSessionCollection = !!session;
+
+    // Fallback: Try User.activeSessions if Session not found (transitional)
+    if (!session) {
+      logger.debug('[Phase 3B-A] Session not in collection, falling back to User.activeSessions');
+      const userSession = user.activeSessions?.find(
+        s => s.sessionId === decoded.sessionId
+      );
+      if (userSession) {
+        // Create wrapper object for compatibility
+        session = {
+          ...userSession,
+          _isUserSession: true // Flag to identify fallback source
+        };
+      }
+    }
 
     if (!session) {
       logger.warn('❌ Refresh failed: session not found', {
@@ -84,29 +105,61 @@ router.post('/', async (req, res) => {
       return res.status(401).json({ message: 'Session not found' });
     }
 
-    // Verify refresh token against hashed (or legacy plaintext) token
-    if (!user.verifyRefreshToken(session, refreshToken)) {
+    // Verify refresh token
+    let tokenValid = false;
+    if (usingSessionCollection) {
+      // Use Session model's verification method
+      tokenValid = session.verifyRefreshToken(refreshToken);
+    } else {
+      // Fallback to User model's verification method
+      tokenValid = user.verifyRefreshToken(session, refreshToken);
+    }
+
+    if (!tokenValid) {
       logger.warn('❌ Refresh failed: token mismatch', {
         userId: decoded.userId,
-        sessionId: decoded.sessionId
+        sessionId: decoded.sessionId,
+        source: usingSessionCollection ? 'Session' : 'User.activeSessions'
       });
       return res.status(401).json({ message: 'Invalid refresh token' });
     }
 
     // 🔁 MIGRATE LEGACY PLAINTEXT TOKEN → HASHED (ONE-TIME, SAFE)
-    user.migrateRefreshToken(session, refreshToken);
-    await user.save();
+    // Only needed for User.activeSessions fallback
+    if (!usingSessionCollection && session._isUserSession) {
+      const userSessionObj = user.activeSessions?.find(
+        s => s.sessionId === decoded.sessionId
+      );
+      if (userSessionObj) {
+        user.migrateRefreshToken(userSessionObj, refreshToken);
+        await user.save();
+      }
+    }
 
-    // Get session index for later use (we already verified session exists above)
+    // Update lastActiveAt on Session collection
+    if (usingSessionCollection) {
+      session.lastActiveAt = new Date();
+      await session.save();
+    }
+
+    // Get session index for later use (we need this for User.activeSessions updates)
     const sessionIndex = user.activeSessions.findIndex(
       s => s.sessionId === decoded.sessionId
     );
 
     // Check if refresh token has expired
     if (session.refreshTokenExpiry && new Date() > session.refreshTokenExpiry) {
-      // Remove expired session
-      user.activeSessions.splice(sessionIndex, 1);
-      await user.save();
+      // Remove expired session from both stores
+      if (usingSessionCollection) {
+        await Session.updateOne(
+          { sessionId: decoded.sessionId, userId: user._id },
+          { $set: { isActive: false, revokedAt: new Date() } }
+        );
+      }
+      if (sessionIndex >= 0) {
+        user.activeSessions.splice(sessionIndex, 1);
+        await user.save();
+      }
       return res.status(401).json({ message: 'Refresh token has expired. Please log in again.' });
     }
 
@@ -127,40 +180,52 @@ router.post('/', async (req, res) => {
       accessToken = tokens.accessToken;
       newRefreshToken = tokens.refreshToken;
 
+      // Phase 3B-A: Update Session collection with rotated token
+      if (usingSessionCollection) {
+        session.rotateToken(newRefreshToken);
+        session.refreshTokenExpiry = getRefreshTokenExpiry();
+        await session.save();
+      }
+
       // 🔥 GRACE PERIOD: Save the old token so it still works for 30 minutes
       // This handles cases where the frontend fails to save the new token
-      user.activeSessions[sessionIndex].previousRefreshToken = session.refreshToken;
-      user.activeSessions[sessionIndex].previousTokenExpiry = new Date(Date.now() + 30 * 60 * 1000); // 30 min grace
+      if (sessionIndex >= 0) {
+        user.activeSessions[sessionIndex].previousRefreshToken = user.activeSessions[sessionIndex].refreshToken;
+        user.activeSessions[sessionIndex].previousTokenExpiry = new Date(Date.now() + 30 * 60 * 1000); // 30 min grace
 
-      // Update session with new refresh token
-      user.activeSessions[sessionIndex].refreshToken = newRefreshToken;
-      user.activeSessions[sessionIndex].refreshTokenExpiry = getRefreshTokenExpiry();
-      user.activeSessions[sessionIndex].lastTokenRotation = new Date();
+        // Update session with new refresh token
+        user.activeSessions[sessionIndex].refreshToken = newRefreshToken;
+        user.activeSessions[sessionIndex].refreshTokenExpiry = getRefreshTokenExpiry();
+        user.activeSessions[sessionIndex].lastTokenRotation = new Date();
+      }
 
       logger.debug(`🔄 Rotated refresh token for user ${user.username} (${hoursSinceRotation.toFixed(1)}h since last rotation)`);
     } else {
       // Just issue new access token, keep existing refresh token
       accessToken = generateAccessToken(user._id, decoded.sessionId);
-      newRefreshToken = session.refreshToken; // Return the CURRENT token from DB (not the one sent)
+      // Return the refresh token from the request (unchanged)
+      newRefreshToken = refreshToken;
 
       logger.debug(`🔑 Issued new access token for user ${user.username} (no rotation, ${hoursSinceRotation.toFixed(1)}h since last)`);
     }
 
-    // Always update lastActive
-    user.activeSessions[sessionIndex].lastActive = new Date();
-
-    // Update device info if changed
+    // Always update lastActive on User.activeSessions
     const deviceInfo = parseUserAgent(req.headers['user-agent']);
     const ipAddress = getClientIp(req);
-    
-    if (deviceInfo.browser) {
-      user.activeSessions[sessionIndex].browser = deviceInfo.browser;
-    }
-    if (deviceInfo.os) {
-      user.activeSessions[sessionIndex].os = deviceInfo.os;
-    }
-    if (ipAddress) {
-      user.activeSessions[sessionIndex].ipAddress = ipAddress;
+
+    if (sessionIndex >= 0) {
+      user.activeSessions[sessionIndex].lastActive = new Date();
+
+      // Update device info if changed
+      if (deviceInfo.browser) {
+        user.activeSessions[sessionIndex].browser = deviceInfo.browser;
+      }
+      if (deviceInfo.os) {
+        user.activeSessions[sessionIndex].os = deviceInfo.os;
+      }
+      if (ipAddress) {
+        user.activeSessions[sessionIndex].ipAddress = ipAddress;
+      }
     }
 
     await user.save();
