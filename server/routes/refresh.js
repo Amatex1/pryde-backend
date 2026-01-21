@@ -71,12 +71,18 @@ router.post('/', async (req, res) => {
     }
 
     // 🔐 PHASE 3B-A: SESSION-BOUND REFRESH TOKEN VERIFICATION
-    // 🔐 SECURITY: Session collection is the SOLE source of truth
+    // Try Session collection first (authoritative), fallback to User.activeSessions
     let session = await Session.findOne({
       sessionId: decoded.sessionId,
       userId: user._id,
       isActive: true
     }).select('+refreshTokenHash +previousRefreshTokenHash');
+
+    // Get legacy session from User.activeSessions for fallback/cache updates
+    const sessionIndex = user.activeSessions.findIndex(
+      s => s.sessionId === decoded.sessionId
+    );
+    const legacySession = sessionIndex >= 0 ? user.activeSessions[sessionIndex] : null;
 
     // Phase 4A: Check for revoked session access attempt
     if (!session) {
@@ -86,7 +92,6 @@ router.post('/', async (req, res) => {
         isActive: false
       });
       if (revokedSession) {
-        // Session exists but was revoked - potential attack or stale token
         logRevokedSessionAccess({
           userId: decoded.userId,
           sessionId: decoded.sessionId
@@ -94,52 +99,8 @@ router.post('/', async (req, res) => {
         return res.status(401).json({ message: 'Session has been revoked' });
       }
 
-      // 🔐 LEGACY MIGRATION: Session not in collection - check User.activeSessions
-      // This handles sessions created before Session collection was implemented
-      const legacySession = user.activeSessions.find(s => s.sessionId === decoded.sessionId);
-
-      if (legacySession) {
-        logger.info(`[LegacyMigration] Migrating session ${decoded.sessionId} for user ${user.username}`);
-
-        // Verify token against legacy session first
-        const legacyTokenValid = user.verifyRefreshToken(legacySession, refreshToken);
-
-        if (!legacyTokenValid) {
-          logRefreshFailure({
-            userId: decoded.userId,
-            sessionId: decoded.sessionId,
-            reason: 'legacy_token_mismatch'
-          });
-          return res.status(401).json({ message: 'Invalid refresh token' });
-        }
-
-        // Create Session document from legacy data
-        try {
-          session = await Session.create({
-            userId: user._id,
-            sessionId: decoded.sessionId,
-            refreshTokenHash: legacySession.refreshTokenHash || Session.hashToken(refreshToken),
-            previousRefreshTokenHash: legacySession.previousRefreshTokenHash,
-            previousTokenExpiry: legacySession.previousTokenExpiry,
-            refreshTokenExpiry: legacySession.refreshTokenExpiry || getRefreshTokenExpiry(),
-            deviceInfo: legacySession.deviceInfo || 'Unknown Device',
-            browser: legacySession.browser || 'Unknown Browser',
-            os: legacySession.os || 'Unknown OS',
-            ipAddress: legacySession.ipAddress,
-            location: legacySession.location,
-            createdAt: legacySession.createdAt || new Date(),
-            lastActiveAt: legacySession.lastActive || new Date(),
-            isActive: true
-          });
-          logger.info(`[LegacyMigration] Successfully migrated session ${decoded.sessionId}`);
-          incCounter('auth.session.legacy_migrated');
-        } catch (migrationError) {
-          logger.error('[LegacyMigration] Failed to migrate session:', migrationError.message);
-          // If migration fails, still allow refresh with legacy session
-          // We'll just proceed without a Session document this time
-        }
-      } else {
-        // Session not found in either collection - refresh fails
+      // 🔐 FALLBACK: Session not in collection - check User.activeSessions
+      if (!legacySession) {
         incCounter('auth.session.not_found');
         logRefreshFailure({
           userId: decoded.userId,
@@ -148,15 +109,58 @@ router.post('/', async (req, res) => {
         });
         return res.status(401).json({ message: 'Session not found' });
       }
-    }
 
-    // Verify refresh token using Session model's method
-    // Note: If session was just migrated from legacy, we already verified above
-    if (session && session.refreshTokenHash) {
+      // Verify token against legacy session
+      logger.info(`[LegacyFallback] Using User.activeSessions for session ${decoded.sessionId}`);
+      const legacyTokenValid = user.verifyRefreshToken(legacySession, refreshToken);
+
+      if (!legacyTokenValid) {
+        logRefreshFailure({
+          userId: decoded.userId,
+          sessionId: decoded.sessionId,
+          reason: 'legacy_token_mismatch'
+        });
+        return res.status(401).json({ message: 'Invalid refresh token' });
+      }
+
+      // Try to create Session document for future requests
+      try {
+        session = await Session.create({
+          userId: user._id,
+          sessionId: decoded.sessionId,
+          refreshTokenHash: legacySession.refreshTokenHash || Session.hashToken(refreshToken),
+          previousRefreshTokenHash: legacySession.previousRefreshTokenHash,
+          previousTokenExpiry: legacySession.previousTokenExpiry,
+          refreshTokenExpiry: legacySession.refreshTokenExpiry || getRefreshTokenExpiry(),
+          deviceInfo: legacySession.deviceInfo || 'Unknown Device',
+          browser: legacySession.browser || 'Unknown Browser',
+          os: legacySession.os || 'Unknown OS',
+          ipAddress: legacySession.ipAddress,
+          location: legacySession.location,
+          createdAt: legacySession.createdAt || new Date(),
+          lastActiveAt: legacySession.lastActive || new Date(),
+          isActive: true
+        });
+        logger.info(`[LegacyMigration] Created Session document for ${decoded.sessionId}`);
+        incCounter('auth.session.legacy_migrated');
+      } catch (migrationError) {
+        // If duplicate key, try to fetch it (race condition)
+        if (migrationError.code === 11000) {
+          session = await Session.findOne({
+            sessionId: decoded.sessionId,
+            userId: user._id,
+            isActive: true
+          }).select('+refreshTokenHash +previousRefreshTokenHash');
+        }
+        if (!session) {
+          logger.warn('[LegacyMigration] Could not create Session document:', migrationError.message);
+          // Continue anyway - we verified against legacy session
+        }
+      }
+    } else {
+      // Session found in collection - verify token
       const tokenValid = session.verifyRefreshToken(refreshToken);
-
       if (!tokenValid) {
-        // Phase 4A: Structured observability
         logRefreshFailure({
           userId: decoded.userId,
           sessionId: decoded.sessionId,
@@ -166,14 +170,9 @@ router.post('/', async (req, res) => {
       }
     }
 
-    // Get session index for User.activeSessions cache updates
-    const sessionIndex = user.activeSessions.findIndex(
-      s => s.sessionId === decoded.sessionId
-    );
-
-    // Check if refresh token has expired
-    if (session.refreshTokenExpiry && new Date() > session.refreshTokenExpiry) {
-      // Phase 4A: Track session expiry
+    // Check if refresh token has expired (use session or legacy data)
+    const tokenExpiry = session?.refreshTokenExpiry || legacySession?.refreshTokenExpiry;
+    if (tokenExpiry && new Date() > tokenExpiry) {
       incCounter('auth.session.expired');
       logRefreshFailure({
         userId: decoded.userId,
@@ -182,10 +181,12 @@ router.post('/', async (req, res) => {
       });
 
       // Remove expired session from both stores
-      await Session.updateOne(
-        { sessionId: decoded.sessionId, userId: user._id },
-        { $set: { isActive: false, revokedAt: new Date() } }
-      );
+      if (session) {
+        await Session.updateOne(
+          { sessionId: decoded.sessionId, userId: user._id },
+          { $set: { isActive: false, revokedAt: new Date() } }
+        );
+      }
       if (sessionIndex >= 0) {
         user.activeSessions.splice(sessionIndex, 1);
         await user.save();
@@ -193,18 +194,18 @@ router.post('/', async (req, res) => {
       return res.status(401).json({ message: 'Refresh token has expired. Please log in again.' });
     }
 
-    // 🔐 PART 2 FIX: ALWAYS rotate refresh token on every successful refresh
-    // This prevents race conditions between tabs, focus events, and sockets
-    // The 30-minute grace period on the previous token handles edge cases
+    // 🔐 Generate new tokens
     const tokens = generateTokenPair(user._id, decoded.sessionId);
     const accessToken = tokens.accessToken;
     const newRefreshToken = tokens.refreshToken;
 
-    // Update Session collection with rotated token (Session is authoritative)
-    session.rotateToken(newRefreshToken);
-    session.refreshTokenExpiry = getRefreshTokenExpiry();
-    session.lastActiveAt = new Date();
-    await session.save();
+    // Update Session collection if we have a session document
+    if (session) {
+      session.rotateToken(newRefreshToken);
+      session.refreshTokenExpiry = getRefreshTokenExpiry();
+      session.lastActiveAt = new Date();
+      await session.save();
+    }
 
     // Update User.activeSessions cache (non-authoritative, for compatibility)
     if (sessionIndex >= 0) {
