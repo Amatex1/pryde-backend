@@ -72,8 +72,7 @@ router.post('/', async (req, res) => {
 
     // 🔐 PHASE 3B-A: SESSION-BOUND REFRESH TOKEN VERIFICATION
     // 🔐 SECURITY: Session collection is the SOLE source of truth
-    // NO fallback to User.activeSessions - that is now cache-only
-    const session = await Session.findOne({
+    let session = await Session.findOne({
       sessionId: decoded.sessionId,
       userId: user._id,
       isActive: true
@@ -95,27 +94,76 @@ router.post('/', async (req, res) => {
         return res.status(401).json({ message: 'Session has been revoked' });
       }
 
-      // Session not found in collection - refresh fails
-      incCounter('auth.session.not_found');
-      logRefreshFailure({
-        userId: decoded.userId,
-        sessionId: decoded.sessionId,
-        reason: 'session_not_found'
-      });
-      return res.status(401).json({ message: 'Session not found' });
+      // 🔐 LEGACY MIGRATION: Session not in collection - check User.activeSessions
+      // This handles sessions created before Session collection was implemented
+      const legacySession = user.activeSessions.find(s => s.sessionId === decoded.sessionId);
+
+      if (legacySession) {
+        logger.info(`[LegacyMigration] Migrating session ${decoded.sessionId} for user ${user.username}`);
+
+        // Verify token against legacy session first
+        const legacyTokenValid = user.verifyRefreshToken(legacySession, refreshToken);
+
+        if (!legacyTokenValid) {
+          logRefreshFailure({
+            userId: decoded.userId,
+            sessionId: decoded.sessionId,
+            reason: 'legacy_token_mismatch'
+          });
+          return res.status(401).json({ message: 'Invalid refresh token' });
+        }
+
+        // Create Session document from legacy data
+        try {
+          session = await Session.create({
+            userId: user._id,
+            sessionId: decoded.sessionId,
+            refreshTokenHash: legacySession.refreshTokenHash || Session.hashToken(refreshToken),
+            previousRefreshTokenHash: legacySession.previousRefreshTokenHash,
+            previousTokenExpiry: legacySession.previousTokenExpiry,
+            refreshTokenExpiry: legacySession.refreshTokenExpiry || getRefreshTokenExpiry(),
+            deviceInfo: legacySession.deviceInfo || 'Unknown Device',
+            browser: legacySession.browser || 'Unknown Browser',
+            os: legacySession.os || 'Unknown OS',
+            ipAddress: legacySession.ipAddress,
+            location: legacySession.location,
+            createdAt: legacySession.createdAt || new Date(),
+            lastActiveAt: legacySession.lastActive || new Date(),
+            isActive: true
+          });
+          logger.info(`[LegacyMigration] Successfully migrated session ${decoded.sessionId}`);
+          incCounter('auth.session.legacy_migrated');
+        } catch (migrationError) {
+          logger.error('[LegacyMigration] Failed to migrate session:', migrationError.message);
+          // If migration fails, still allow refresh with legacy session
+          // We'll just proceed without a Session document this time
+        }
+      } else {
+        // Session not found in either collection - refresh fails
+        incCounter('auth.session.not_found');
+        logRefreshFailure({
+          userId: decoded.userId,
+          sessionId: decoded.sessionId,
+          reason: 'session_not_found'
+        });
+        return res.status(401).json({ message: 'Session not found' });
+      }
     }
 
     // Verify refresh token using Session model's method
-    const tokenValid = session.verifyRefreshToken(refreshToken);
+    // Note: If session was just migrated from legacy, we already verified above
+    if (session && session.refreshTokenHash) {
+      const tokenValid = session.verifyRefreshToken(refreshToken);
 
-    if (!tokenValid) {
-      // Phase 4A: Structured observability
-      logRefreshFailure({
-        userId: decoded.userId,
-        sessionId: decoded.sessionId,
-        reason: 'token_mismatch'
-      });
-      return res.status(401).json({ message: 'Invalid refresh token' });
+      if (!tokenValid) {
+        // Phase 4A: Structured observability
+        logRefreshFailure({
+          userId: decoded.userId,
+          sessionId: decoded.sessionId,
+          reason: 'token_mismatch'
+        });
+        return res.status(401).json({ message: 'Invalid refresh token' });
+      }
     }
 
     // Get session index for User.activeSessions cache updates
