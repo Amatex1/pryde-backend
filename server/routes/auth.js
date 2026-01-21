@@ -572,27 +572,20 @@ router.post('/signup', validateAgeBeforeRateLimit, signupLimiter, validateSignup
       });
     }
 
-    // Set refresh token in httpOnly cookie
+    // Set refresh token in httpOnly cookie (ONLY source of truth for refresh tokens)
     const cookieOptions = getRefreshTokenCookieOptions();
 
     logger.debug('Setting refresh token cookie (register) with options:', cookieOptions);
     res.cookie('refreshToken', refreshToken, cookieOptions);
 
-    // CRITICAL: Also set access token in cookie for cross-origin auth
-    // Cookie maxAge should match refresh token (30 days) to persist across browser restarts
-    // The JWT itself expires in 15 minutes, but the cookie stays to allow refresh
-    const accessTokenCookieOptions = {
-      ...cookieOptions,
-      maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days (same as refresh token cookie)
-    };
-    res.cookie('token', accessToken, accessTokenCookieOptions);
+    // 🔐 SECURITY: Access token returned ONLY in JSON body, NOT as cookie
+    // Frontend stores in memory (AuthContext), not localStorage
 
     res.status(201).json({
       success: true,
       message: 'User registered successfully',
       accessToken,
-      // Send refresh token in response for cross-domain setups (Cloudflare Pages → Render)
-      refreshToken,
+      // 🔐 SECURITY: refreshToken no longer returned in body - cookie is sole source
       user: {
         id: user._id,
         _id: user._id,  // Include both for backward compatibility
@@ -1025,22 +1018,14 @@ router.post('/login', loginLimiter, validateLogin, async (req, res) => {
 
     logger.debug(`User logged in: ${email} from ${ipAddress}`);
 
-    // Set refresh token in httpOnly cookie
+    // Set refresh token in httpOnly cookie (ONLY source of truth for refresh tokens)
     const cookieOptions = getRefreshTokenCookieOptions();
 
     logger.debug('Setting refresh token cookie (login) with options:', cookieOptions);
-    logger.debug('Refresh token (first 20 chars):', refreshToken.substring(0, 20) + '...');
     res.cookie('refreshToken', refreshToken, cookieOptions);
 
-    // CRITICAL: Also set access token in cookie for cross-origin auth
-    // Cookie maxAge should match refresh token (30 days) to persist across browser restarts
-    // The JWT itself expires in 15 minutes, but the cookie stays to allow refresh
-    const accessTokenCookieOptions = {
-      ...cookieOptions,
-      maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days (same as refresh token cookie)
-    };
-    logger.debug('Setting access token cookie (login) with options:', accessTokenCookieOptions);
-    res.cookie('token', accessToken, accessTokenCookieOptions);
+    // 🔐 SECURITY: Access token returned ONLY in JSON body, NOT as cookie
+    // Frontend stores in memory (AuthContext), not localStorage
 
     // BADGE SYSTEM: Process automatic badges on login (non-blocking)
     setImmediate(async () => {
@@ -1061,9 +1046,7 @@ router.post('/login', loginLimiter, validateLogin, async (req, res) => {
       success: true,
       message: 'Login successful',
       accessToken,
-      // Send refresh token in response for cross-domain setups (Cloudflare Pages → Render)
-      // Frontend will store it securely and send it back when needed
-      refreshToken,
+      // 🔐 SECURITY: refreshToken no longer returned in body - cookie is sole source
       suspicious,
       user: {
         id: user._id,
@@ -1340,19 +1323,13 @@ router.post('/verify-2fa-login', loginLimiter, async (req, res) => {
 
     await user.save();
 
-    // Set refresh token cookie (reuse normal login cookie options)
+    // Set refresh token in httpOnly cookie (ONLY source of truth for refresh tokens)
     const cookieOptions = getRefreshTokenCookieOptions();
     logger.debug('Setting refresh token cookie (2FA login) with options:', cookieOptions);
     res.cookie('refreshToken', refreshToken, cookieOptions);
 
-    // Also set access token cookie for cross-origin auth, matching /login
-    // Cookie maxAge should match refresh token (30 days) to persist across browser restarts
-    const accessTokenCookieOptions = {
-      ...cookieOptions,
-      maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days (same as refresh token cookie)
-    };
-    logger.debug('Setting access token cookie (2FA login) with options:', accessTokenCookieOptions);
-    res.cookie('token', accessToken, accessTokenCookieOptions);
+    // 🔐 SECURITY: Access token returned ONLY in JSON body, NOT as cookie
+    // Frontend stores in memory (AuthContext), not localStorage
 
     logger.debug(`User logged in with 2FA: ${user.email} from ${ipAddress}`);
 
@@ -1375,8 +1352,7 @@ router.post('/verify-2fa-login', loginLimiter, async (req, res) => {
       success: true,
       message: 'Login successful',
       accessToken,
-      // Send refresh token in response for cross-domain setups (Cloudflare Pages → Render)
-      refreshToken,
+      // 🔐 SECURITY: refreshToken no longer returned in body - cookie is sole source
       user: {
         id: user._id,
         _id: user._id,  // Include both for backward compatibility

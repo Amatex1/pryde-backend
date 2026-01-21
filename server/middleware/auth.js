@@ -8,17 +8,15 @@ import { sendUnauthorizedError, ErrorCodes } from '../utils/errorResponse.js';
 
 const auth = async (req, res, next) => {
   try {
-    // Try to get token from cookies or headers
-    let token = req.cookies?.token || req.cookies?.accessToken;
-    if (!token) {
-      token = req.header('Authorization')?.replace('Bearer ', '') || req.header('x-auth-token');
-    }
+    // 🔐 SECURITY: Access token ONLY from Authorization header
+    // NO cookie fallback - cookies are for refresh tokens only
+    const authHeader = req.header('Authorization');
+    const token = authHeader?.replace('Bearer ', '') || req.header('x-auth-token');
 
     // Debug logging
     if (config.nodeEnv === 'development') {
       console.log('🔐 Auth middleware - Path:', req.path);
-      console.log('🍪 Cookies:', req.cookies);
-      console.log('🔑 Final token:', token ? 'Yes' : 'No');
+      console.log('🔑 Token present:', token ? 'Yes' : 'No');
 
       // Log token age if present
       if (token) {
@@ -37,18 +35,8 @@ const auth = async (req, res, next) => {
 
     if (!token) {
       if (config.nodeEnv === 'development') {
-        console.log('❌ No token provided in cookies or headers');
-        console.log('📍 Cookie names present:', Object.keys(req.cookies || {}));
-        console.log('📍 Authorization header:', req.header('Authorization') ? 'Present' : 'Missing');
-        console.log('📍 x-auth-token header:', req.header('x-auth-token') ? 'Present' : 'Missing');
-
-        // DIAGNOSTIC: Special warning for upload routes
-        if (req.path.includes('/upload')) {
-          console.warn('[UPLOAD BLOCKED] Auth middleware returned 401');
-          console.warn('[UPLOAD BLOCKED] Reason: No authentication token');
-          console.warn('[UPLOAD BLOCKED] Path:', req.path);
-          console.warn('[UPLOAD BLOCKED] This is the exact cause of the auth failure');
-        }
+        console.log('❌ No token provided in Authorization header');
+        console.log('📍 Authorization header:', authHeader ? 'Present' : 'Missing');
       }
       return sendUnauthorizedError(res, 'No authentication token, access denied', ErrorCodes.UNAUTHORIZED);
     }
@@ -224,11 +212,9 @@ export const authenticateToken = auth;
  */
 export const optionalAuth = async (req, res, next) => {
   try {
-    // Try to get token from cookies or headers
-    let token = req.cookies?.token || req.cookies?.accessToken;
-    if (!token) {
-      token = req.header('Authorization')?.replace('Bearer ', '') || req.header('x-auth-token');
-    }
+    // 🔐 SECURITY: Access token ONLY from Authorization header
+    const authHeader = req.header('Authorization');
+    const token = authHeader?.replace('Bearer ', '') || req.header('x-auth-token');
 
     // No token - continue without authentication
     if (!token) {
