@@ -485,9 +485,11 @@ router.post('/signup', validateAgeBeforeRateLimit, signupLimiter, validateSignup
     // Store session with refresh token
     const deviceInfo = parseUserAgent(req.headers['user-agent']);
     const ipAddress = getClientIp(req);
+    const refreshTokenHash = crypto.createHash('sha256').update(refreshToken).digest('hex');
     const sessionData = {
       sessionId,
-      refreshToken,
+      refreshToken: null, // 🔐 Don't store plaintext - use hash only
+      refreshTokenHash,   // 🔐 Store hash for secure verification
       refreshTokenExpiry: getRefreshTokenExpiry(),
       deviceInfo: deviceInfo.device || 'Unknown Device',
       browser: deviceInfo.browser || 'Unknown Browser',
@@ -932,10 +934,14 @@ router.post('/login', loginLimiter, validateLogin, async (req, res) => {
     // Generate token pair with new session
     const { accessToken, refreshToken, sessionId } = generateTokenPair(user._id);
 
-    // Create session with refresh token and location
+    // 🔐 Hash refresh token for secure storage
+    const refreshTokenHash = crypto.createHash('sha256').update(refreshToken).digest('hex');
+
+    // Create session with refresh token hash (no plaintext storage)
     const sessionData = {
       sessionId,
-      refreshToken,
+      refreshToken: null,    // 🔐 Don't store plaintext
+      refreshTokenHash,      // 🔐 Store hash for secure verification
       refreshTokenExpiry: getRefreshTokenExpiry(),
       deviceInfo,
       browser,
@@ -951,7 +957,7 @@ router.post('/login', loginLimiter, validateLogin, async (req, res) => {
       await Session.create({
         userId: user._id,
         sessionId,
-        refreshTokenHash: Session.hashToken(refreshToken),
+        refreshTokenHash,
         refreshTokenExpiry: sessionData.refreshTokenExpiry,
         deviceInfo,
         browser,
@@ -1275,11 +1281,15 @@ router.post('/verify-2fa-login', loginLimiter, async (req, res) => {
 	    // Generate token pair with new session (aligned with /api/auth/login)
     const { accessToken, refreshToken, sessionId: newSessionId } = generateTokenPair(user._id);
 
-    // Create or update session with refresh token and location
+    // 🔐 Hash refresh token for secure storage
+    const refreshTokenHash = crypto.createHash('sha256').update(refreshToken).digest('hex');
+
+    // Create or update session with refresh token hash (no plaintext storage)
     const sessionIndex = user.activeSessions.findIndex(s => s.sessionId === newSessionId);
     const baseSession = {
       sessionId: newSessionId,
-      refreshToken,
+      refreshToken: null,    // 🔐 Don't store plaintext
+      refreshTokenHash,      // 🔐 Store hash for secure verification
       refreshTokenExpiry: getRefreshTokenExpiry(),
       deviceInfo,
       browser,
@@ -1296,7 +1306,7 @@ router.post('/verify-2fa-login', loginLimiter, async (req, res) => {
         { sessionId: newSessionId, userId: user._id },
         {
           $set: {
-            refreshTokenHash: Session.hashToken(refreshToken),
+            refreshTokenHash,
             refreshTokenExpiry: baseSession.refreshTokenExpiry,
             deviceInfo,
             browser,
