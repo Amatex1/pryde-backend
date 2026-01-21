@@ -28,6 +28,7 @@ import { logEmailVerification, logPasswordChange } from '../utils/securityLogger
 import { loginLimiter, signupLimiter, passwordResetLimiter } from '../middleware/rateLimiter.js';
 import { validateSignup, validateLogin } from '../middleware/validation.js';
 import logger from '../utils/logger.js';
+import { incCounter } from '../utils/authMetrics.js'; // Phase 4A
 import { generateTokenPair, getRefreshTokenExpiry } from '../utils/tokenUtils.js';
 import { getRefreshTokenCookieOptions } from '../utils/cookieUtils.js';
 import { decryptString, isEncrypted } from '../utils/encryption.js';
@@ -769,6 +770,9 @@ router.post('/login', loginLimiter, validateLogin, async (req, res) => {
     // Check password
     const isMatch = await user.comparePassword(password);
     if (!isMatch) {
+      // Phase 4A: Track failed login
+      incCounter('auth.login.failure');
+
       // Increment login attempts and potentially lock account
       await user.incrementLoginAttempts();
 
@@ -1043,6 +1047,9 @@ router.post('/login', loginLimiter, validateLogin, async (req, res) => {
 
     // Determine if tour should be shown (first login with tour not completed/skipped)
     const showTour = !user.hasCompletedTour && !user.hasSkippedTour;
+
+    // Phase 4A: Track successful login
+    incCounter('auth.login.success');
 
     res.json({
       success: true,
@@ -1350,6 +1357,9 @@ router.post('/verify-2fa-login', loginLimiter, async (req, res) => {
 
     // Determine if tour should be shown (first login with tour not completed/skipped)
     const showTour = !user.hasCompletedTour && !user.hasSkippedTour;
+
+    // Phase 4A: Track successful 2FA login
+    incCounter('auth.login.success');
 
     res.json({
       success: true,
@@ -1793,6 +1803,9 @@ router.post('/logout', auth, async (req, res) => {
 
     // Clear session activity tracking
     clearSessionActivity(req.userId);
+
+    // Phase 4A: Track logout
+    incCounter('auth.logout');
 
     logger.debug(`User ${user.username} logged out successfully`);
 

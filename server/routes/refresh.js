@@ -6,6 +6,7 @@ import { verifyRefreshToken, generateTokenPair, getRefreshTokenExpiry, generateA
 import { getClientIp, parseUserAgent } from '../utils/sessionUtils.js';
 import { getRefreshTokenCookieOptions } from '../utils/cookieUtils.js';
 import logger from '../utils/logger.js';
+import { incCounter, logRefreshFailure, logRevokedSessionAccess } from '../utils/authMetrics.js'; // Phase 4A
 
 // @route   POST /api/refresh
 // @desc    Refresh access token using refresh token
@@ -82,6 +83,23 @@ router.post('/', async (req, res) => {
 
     let usingSessionCollection = !!session;
 
+    // Phase 4A: Check for revoked session access attempt
+    if (!session) {
+      const revokedSession = await Session.findOne({
+        sessionId: decoded.sessionId,
+        userId: user._id,
+        isActive: false
+      });
+      if (revokedSession) {
+        // Session exists but was revoked - potential attack or stale token
+        logRevokedSessionAccess({
+          userId: decoded.userId,
+          sessionId: decoded.sessionId
+        });
+        return res.status(401).json({ message: 'Session has been revoked' });
+      }
+    }
+
     // Fallback: Try User.activeSessions if Session not found (transitional)
     if (!session) {
       logger.debug('[Phase 3B-A] Session not in collection, falling back to User.activeSessions');
@@ -98,9 +116,12 @@ router.post('/', async (req, res) => {
     }
 
     if (!session) {
-      logger.warn('❌ Refresh failed: session not found', {
+      // Phase 4A: Structured observability
+      incCounter('auth.session.not_found');
+      logRefreshFailure({
         userId: decoded.userId,
-        sessionId: decoded.sessionId
+        sessionId: decoded.sessionId,
+        reason: 'session_not_found'
       });
       return res.status(401).json({ message: 'Session not found' });
     }
@@ -116,10 +137,11 @@ router.post('/', async (req, res) => {
     }
 
     if (!tokenValid) {
-      logger.warn('❌ Refresh failed: token mismatch', {
+      // Phase 4A: Structured observability
+      logRefreshFailure({
         userId: decoded.userId,
         sessionId: decoded.sessionId,
-        source: usingSessionCollection ? 'Session' : 'User.activeSessions'
+        reason: 'token_mismatch'
       });
       return res.status(401).json({ message: 'Invalid refresh token' });
     }
@@ -149,6 +171,14 @@ router.post('/', async (req, res) => {
 
     // Check if refresh token has expired
     if (session.refreshTokenExpiry && new Date() > session.refreshTokenExpiry) {
+      // Phase 4A: Track session expiry
+      incCounter('auth.session.expired');
+      logRefreshFailure({
+        userId: decoded.userId,
+        sessionId: decoded.sessionId,
+        reason: 'token_expired'
+      });
+
       // Remove expired session from both stores
       if (usingSessionCollection) {
         await Session.updateOne(
@@ -249,6 +279,9 @@ router.post('/', async (req, res) => {
     };
     logger.debug('Setting access token cookie (refresh) with options:', accessTokenCookieOptions);
     res.cookie('token', accessToken, accessTokenCookieOptions);
+
+    // Phase 4A: Track successful refresh
+    incCounter('auth.refresh.success');
 
     res.json({
       success: true,

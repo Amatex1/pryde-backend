@@ -93,6 +93,12 @@ const sessionSchema = new mongoose.Schema({
 sessionSchema.index({ userId: 1, isActive: 1 });
 sessionSchema.index({ userId: 1, sessionId: 1 });
 
+// Phase 4B: TTL index for automatic cleanup of revoked sessions
+// MongoDB will automatically delete revoked sessions 30 days after revokedAt
+const REVOKED_SESSION_TTL_DAYS = parseInt(process.env.SESSION_REVOKED_TTL_DAYS || '30', 10);
+const REVOKED_SESSION_TTL_SECONDS = REVOKED_SESSION_TTL_DAYS * 24 * 60 * 60;
+sessionSchema.index({ revokedAt: 1 }, { expireAfterSeconds: REVOKED_SESSION_TTL_SECONDS });
+
 /**
  * Hash a refresh token using SHA-256
  */
