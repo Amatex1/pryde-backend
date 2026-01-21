@@ -1048,6 +1048,8 @@ router.post('/login', loginLimiter, validateLogin, async (req, res) => {
       accessToken,
       // 🔐 SECURITY: refreshToken no longer returned in body - cookie is sole source
       suspicious,
+      // 🌍 Country code for SafetyWarning (avoids CORS issues with frontend geolocation APIs)
+      countryCode: location.countryCode || null,
       user: {
         id: user._id,
         _id: user._id,  // Include both for backward compatibility

@@ -17,6 +17,7 @@ export async function getIpGeolocation(ipAddress) {
       ipAddress === 'localhost') {
     return {
       country: '',
+      countryCode: '', // ISO 3166-1 alpha-2 code for SafetyWarning
       region: '',
       city: ''
     };
@@ -34,7 +35,7 @@ export async function getIpGeolocation(ipAddress) {
 
     if (!response.ok) {
       console.warn(`IP geolocation API returned ${response.status} for IP ${ipAddress}`);
-      return { country: '', region: '', city: '' };
+      return { country: '', countryCode: '', region: '', city: '' };
     }
 
     const data = await response.json();
@@ -42,11 +43,12 @@ export async function getIpGeolocation(ipAddress) {
     // Check for API error response
     if (data.error) {
       console.warn(`IP geolocation API error for IP ${ipAddress}:`, data.reason);
-      return { country: '', region: '', city: '' };
+      return { country: '', countryCode: '', region: '', city: '' };
     }
 
     return {
       country: data.country_name || '',
+      countryCode: data.country_code || '', // ISO 3166-1 alpha-2 code for SafetyWarning
       region: data.region || '',
       city: data.city || ''
     };
@@ -55,6 +57,7 @@ export async function getIpGeolocation(ipAddress) {
     console.warn(`Failed to get geolocation for IP ${ipAddress}:`, error.message);
     return {
       country: '',
+      countryCode: '',
       region: '',
       city: ''
     };
