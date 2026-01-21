@@ -1,5 +1,6 @@
 import express from 'express';
 const router = express.Router();
+import crypto from 'crypto';
 import User from '../models/User.js';
 import Session from '../models/Session.js'; // Phase 3B-A: First-class sessions
 import { verifyRefreshToken, generateTokenPair, getRefreshTokenExpiry, generateAccessToken } from '../utils/tokenUtils.js';
@@ -217,16 +218,23 @@ router.post('/', async (req, res) => {
         await session.save();
       }
 
-      // 🔥 GRACE PERIOD: Save the old token so it still works for 30 minutes
+      // 🔥 GRACE PERIOD: Save the old token HASH so it still works for 30 minutes
       // This handles cases where the frontend fails to save the new token
       if (sessionIndex >= 0) {
-        user.activeSessions[sessionIndex].previousRefreshToken = user.activeSessions[sessionIndex].refreshToken;
-        user.activeSessions[sessionIndex].previousTokenExpiry = new Date(Date.now() + 30 * 60 * 1000); // 30 min grace
+        const activeSession = user.activeSessions[sessionIndex];
 
-        // Update session with new refresh token
-        user.activeSessions[sessionIndex].refreshToken = newRefreshToken;
-        user.activeSessions[sessionIndex].refreshTokenExpiry = getRefreshTokenExpiry();
-        user.activeSessions[sessionIndex].lastTokenRotation = new Date();
+        // Move current hash to previous (for grace period)
+        activeSession.previousRefreshTokenHash = activeSession.refreshTokenHash;
+        activeSession.previousTokenExpiry = new Date(Date.now() + 30 * 60 * 1000); // 30 min grace
+
+        // Clear legacy plaintext fields
+        activeSession.previousRefreshToken = null;
+        activeSession.refreshToken = null;
+
+        // 🔐 CRITICAL: Hash the new token for storage
+        activeSession.refreshTokenHash = crypto.createHash('sha256').update(newRefreshToken).digest('hex');
+        activeSession.refreshTokenExpiry = getRefreshTokenExpiry();
+        activeSession.lastTokenRotation = new Date();
       }
 
       logger.debug(`🔄 Rotated refresh token for user ${user.username} (${hoursSinceRotation.toFixed(1)}h since last rotation)`);

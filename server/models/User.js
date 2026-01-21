@@ -1070,13 +1070,25 @@ userSchema.methods.hashRefreshToken = function (token) {
 userSchema.methods.verifyRefreshToken = function (session, token) {
   const hashed = this.hashRefreshToken(token);
 
-  // Preferred: hashed comparison
-  if (session.refreshTokenHash) {
-    return session.refreshTokenHash === hashed;
+  // Check current hash first
+  if (session.refreshTokenHash && session.refreshTokenHash === hashed) {
+    return true;
+  }
+
+  // Check previous hash (grace period during rotation)
+  if (session.previousRefreshTokenHash &&
+      session.previousTokenExpiry &&
+      new Date() < session.previousTokenExpiry &&
+      session.previousRefreshTokenHash === hashed) {
+    return true;
   }
 
   // Legacy fallback (plaintext) — allows safe migration
-  return session.refreshToken === token;
+  if (session.refreshToken === token) {
+    return true;
+  }
+
+  return false;
 };
 
 // Migrate legacy plaintext refresh tokens → hashed (called on successful refresh)
