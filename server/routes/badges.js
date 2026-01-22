@@ -373,6 +373,83 @@ router.get('/admin/audit-log', auth, adminAuth(['admin', 'super_admin']), async 
   }
 });
 
+// @route   GET /api/badges/admin/audit-stats
+// @desc    Get badge assignment audit statistics (to identify churn)
+// @access  Admin
+router.get('/admin/audit-stats', auth, adminAuth(['admin', 'super_admin']), async (req, res) => {
+  try {
+    // Get badge churn by badge type
+    const badgeStats = await BadgeAssignmentLog.aggregate([
+      {
+        $group: {
+          _id: { badgeId: '$badgeId', action: '$action' },
+          count: { $sum: 1 }
+        }
+      },
+      { $sort: { count: -1 } }
+    ]);
+
+    // Get users with the most badge changes
+    const userChurn = await BadgeAssignmentLog.aggregate([
+      {
+        $group: {
+          _id: '$userId',
+          username: { $first: '$username' },
+          totalChanges: { $sum: 1 },
+          assigned: { $sum: { $cond: [{ $eq: ['$action', 'assigned'] }, 1, 0] } },
+          revoked: { $sum: { $cond: [{ $eq: ['$action', 'revoked'] }, 1, 0] } }
+        }
+      },
+      { $sort: { totalChanges: -1 } },
+      { $limit: 20 }
+    ]);
+
+    // Get recent churn patterns (same badge assigned/revoked within 48 hours)
+    const recentChurn = await BadgeAssignmentLog.aggregate([
+      {
+        $match: {
+          createdAt: { $gte: new Date(Date.now() - 48 * 60 * 60 * 1000) }
+        }
+      },
+      {
+        $group: {
+          _id: { userId: '$userId', badgeId: '$badgeId' },
+          username: { $first: '$username' },
+          actions: { $push: { action: '$action', time: '$createdAt' } },
+          count: { $sum: 1 }
+        }
+      },
+      { $match: { count: { $gte: 2 } } }, // Only show if 2+ changes for same badge
+      { $sort: { count: -1 } },
+      { $limit: 50 }
+    ]);
+
+    // Overall stats
+    const overallStats = await BadgeAssignmentLog.aggregate([
+      {
+        $group: {
+          _id: null,
+          total: { $sum: 1 },
+          assigned: { $sum: { $cond: [{ $eq: ['$action', 'assigned'] }, 1, 0] } },
+          revoked: { $sum: { $cond: [{ $eq: ['$action', 'revoked'] }, 1, 0] } },
+          automatic: { $sum: { $cond: ['$isAutomatic', 1, 0] } },
+          manual: { $sum: { $cond: ['$isAutomatic', 0, 1] } }
+        }
+      }
+    ]);
+
+    res.json({
+      overall: overallStats[0] || { total: 0, assigned: 0, revoked: 0, automatic: 0, manual: 0 },
+      byBadge: badgeStats,
+      topUserChurn: userChurn,
+      recentChurn: recentChurn
+    });
+  } catch (error) {
+    console.error('Get badge audit stats error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // @route   POST /api/badges
 // @desc    Create a new badge (admin only)
 // @access  Admin
