@@ -440,10 +440,12 @@ router.post('/login-finish', async (req, res) => {
         ipAddress,
         location,
         createdAt: sessionData.createdAt,
-        lastActive: sessionData.lastActive
+        lastActiveAt: sessionData.lastActive, // 🔧 FIX: Use correct field name (was 'lastActive')
+        isActive: true // 🔧 FIX: Explicitly set (aligns with auth.js)
       });
+      logger.debug(`[Phase 3B-A] Created first-class session ${sessionId} for user ${user.username} (passkey)`);
     } catch (sessionError) {
-      logger.error('Failed to create Session document (passkey):', sessionError);
+      logger.error('Failed to create Session document (passkey):', sessionError.message);
       // Continue with legacy storage - don't fail the login
     }
 
