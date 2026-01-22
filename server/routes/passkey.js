@@ -1,7 +1,9 @@
 import express from 'express';
 const router = express.Router();
 import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
 import User from '../models/User.js';
+import Session from '../models/Session.js'; // Phase 3B-A: First-class sessions
 import auth from '../middleware/auth.js';
 import config from '../config/config.js';
 import logger from '../utils/logger.js';
@@ -20,7 +22,8 @@ import {
   getIpGeolocation,
   enforceMaxSessions
 } from '../utils/sessionUtils.js';
-import { generateTokenPair } from '../utils/tokenUtils.js';
+import { generateTokenPair, getRefreshTokenExpiry } from '../utils/tokenUtils.js';
+import { getRefreshTokenCookieOptions } from '../utils/cookieUtils.js';
 
 // Store challenges temporarily (in production, use Redis)
 const challenges = new Map();
@@ -406,11 +409,15 @@ router.post('/login-finish', async (req, res) => {
     // Generate token pair with new session
     const { accessToken, refreshToken, sessionId } = generateTokenPair(user._id);
 
-    // Create session with refresh token and location
-    const session = {
+    // 🔐 Hash refresh token for secure storage (aligned with auth.js)
+    const refreshTokenHash = crypto.createHash('sha256').update(refreshToken).digest('hex');
+
+    // Create session with refresh token hash (no plaintext storage)
+    const sessionData = {
       sessionId,
-      refreshToken,
-      refreshTokenExpiry: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
+      refreshToken: null,    // 🔐 Don't store plaintext
+      refreshTokenHash,      // 🔐 Store hash for secure verification
+      refreshTokenExpiry: getRefreshTokenExpiry(),
       deviceInfo,
       browser,
       os,
@@ -420,8 +427,28 @@ router.post('/login-finish', async (req, res) => {
       lastActive: new Date()
     };
 
-    // Add new session
-    user.activeSessions.push(session);
+    // Phase 3B-A: Dual-write - create first-class session (authoritative)
+    try {
+      await Session.create({
+        userId: user._id,
+        sessionId,
+        refreshTokenHash,
+        refreshTokenExpiry: sessionData.refreshTokenExpiry,
+        deviceInfo,
+        browser,
+        os,
+        ipAddress,
+        location,
+        createdAt: sessionData.createdAt,
+        lastActive: sessionData.lastActive
+      });
+    } catch (sessionError) {
+      logger.error('Failed to create Session document (passkey):', sessionError);
+      // Continue with legacy storage - don't fail the login
+    }
+
+    // Add to legacy activeSessions array (backward compatibility)
+    user.activeSessions.push(sessionData);
 
     // Enforce max concurrent sessions (removes oldest if limit exceeded)
     enforceMaxSessions(user);
@@ -431,14 +458,8 @@ router.post('/login-finish', async (req, res) => {
     // Clean up challenge
     challenges.delete(challengeKey);
 
-    // Set refresh token in httpOnly cookie
-    const cookieOptions = {
-      httpOnly: true,
-      secure: true, // Always use secure in production (HTTPS required)
-      sameSite: 'none', // Allow cross-site cookies for frontend/backend on different domains
-      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
-      path: '/' // Explicitly set path
-    };
+    // Set refresh token in httpOnly cookie (ONLY source of truth for refresh tokens)
+    const cookieOptions = getRefreshTokenCookieOptions();
 
     logger.debug('Setting refresh token cookie (passkey) with options:', cookieOptions);
     res.cookie('refreshToken', refreshToken, cookieOptions);
@@ -447,11 +468,10 @@ router.post('/login-finish', async (req, res) => {
       success: true,
       message: 'Login successful',
       accessToken,
-      // Send refresh token in response for cross-domain setups (Cloudflare Pages → Render)
-      // Frontend will store it securely and send it back when needed
-      refreshToken,
+      // 🔐 SECURITY: refreshToken no longer returned in body - cookie is sole source
       user: {
         id: user._id,
+        _id: user._id,  // Include both for backward compatibility
         username: user.username,
         email: user.email,
         displayName: user.displayName,
