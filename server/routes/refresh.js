@@ -115,6 +115,17 @@ router.post('/', async (req, res) => {
       const legacyTokenValid = user.verifyRefreshToken(legacySession, refreshToken);
 
       if (!legacyTokenValid) {
+        // 🔍 DEBUG: Log detailed info about legacy token mismatch
+        const providedHash = crypto.createHash('sha256').update(refreshToken).digest('hex');
+        logger.warn(`🔴 Legacy token mismatch for session ${decoded.sessionId}:`, {
+          providedHashPrefix: providedHash.substring(0, 16) + '...',
+          currentHashPrefix: legacySession.refreshTokenHash ? legacySession.refreshTokenHash.substring(0, 16) + '...' : 'null',
+          previousHashPrefix: legacySession.previousRefreshTokenHash ? legacySession.previousRefreshTokenHash.substring(0, 16) + '...' : 'null',
+          hasPlaintextToken: !!legacySession.refreshToken,
+          previousTokenExpiry: legacySession.previousTokenExpiry,
+          graceStillValid: legacySession.previousTokenExpiry ? new Date() < legacySession.previousTokenExpiry : 'no expiry'
+        });
+
         logRefreshFailure({
           userId: decoded.userId,
           sessionId: decoded.sessionId,
@@ -161,6 +172,17 @@ router.post('/', async (req, res) => {
       // Session found in collection - verify token
       const tokenValid = session.verifyRefreshToken(refreshToken);
       if (!tokenValid) {
+        // 🔍 DEBUG: Log detailed info about token mismatch
+        const providedHash = crypto.createHash('sha256').update(refreshToken).digest('hex');
+        logger.warn(`🔴 Token mismatch for session ${decoded.sessionId}:`, {
+          providedHashPrefix: providedHash.substring(0, 16) + '...',
+          currentHashPrefix: session.refreshTokenHash ? session.refreshTokenHash.substring(0, 16) + '...' : 'null',
+          previousHashPrefix: session.previousRefreshTokenHash ? session.previousRefreshTokenHash.substring(0, 16) + '...' : 'null',
+          previousTokenExpiry: session.previousTokenExpiry,
+          graceStillValid: session.previousTokenExpiry ? new Date() < session.previousTokenExpiry : 'no expiry',
+          lastRotation: session.lastTokenRotation
+        });
+
         logRefreshFailure({
           userId: decoded.userId,
           sessionId: decoded.sessionId,
