@@ -133,12 +133,23 @@ sessionSchema.methods.verifyRefreshToken = function(providedToken) {
 
 /**
  * Rotate refresh token with grace period
+ * @param {string} newToken - The new refresh token
+ * @param {string} [currentToken] - The current token being presented (used if refreshTokenHash is null)
  */
-sessionSchema.methods.rotateToken = function(newToken) {
-  // Move current to previous (grace period)
-  this.previousRefreshTokenHash = this.refreshTokenHash;
+sessionSchema.methods.rotateToken = function(newToken, currentToken = null) {
+  // 🔧 FIX: Move current to previous (grace period)
+  // If refreshTokenHash is null (legacy session), hash the current token being presented
+  // This ensures grace period works even for sessions that haven't been migrated yet
+  if (this.refreshTokenHash) {
+    this.previousRefreshTokenHash = this.refreshTokenHash;
+  } else if (currentToken) {
+    // Hash the current token to use as previous (for legacy sessions)
+    this.previousRefreshTokenHash = crypto.createHash('sha256').update(currentToken).digest('hex');
+  }
+  // Note: If both are null, previousRefreshTokenHash remains null (can't create grace period from nothing)
+
   this.previousTokenExpiry = new Date(Date.now() + 30 * 60 * 1000); // 30 min grace
-  
+
   // Set new hash
   this.refreshTokenHash = crypto.createHash('sha256').update(newToken).digest('hex');
   this.lastTokenRotation = new Date();

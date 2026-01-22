@@ -66,6 +66,26 @@ const connectDB = async () => {
     } catch (badgeError) {
       console.warn("⚠️ Badge seeding skipped:", badgeError.message);
     }
+
+    // 🔧 FIX: Drop legacy token_1 index on sessions collection (one-time cleanup)
+    // This index was from an old schema and causes duplicate key errors
+    try {
+      const db = mongoose.connection.db;
+      const collections = await db.listCollections({ name: 'sessions' }).toArray();
+      if (collections.length > 0) {
+        const indexes = await db.collection('sessions').indexes();
+        const hasLegacyTokenIndex = indexes.some(idx => idx.name === 'token_1');
+        if (hasLegacyTokenIndex) {
+          await db.collection('sessions').dropIndex('token_1');
+          console.log('🔧 Dropped legacy token_1 index from sessions collection');
+        }
+      }
+    } catch (indexError) {
+      // Ignore if index doesn't exist or other errors
+      if (indexError.code !== 27 && indexError.codeName !== 'IndexNotFound') {
+        console.warn("⚠️ Index cleanup skipped:", indexError.message);
+      }
+    }
   } catch (error) {
     console.error("❌ MongoDB connection error:", error);
     process.exit(1);

@@ -223,7 +223,8 @@ router.post('/', async (req, res) => {
 
     // Update Session collection if we have a session document
     if (session) {
-      session.rotateToken(newRefreshToken);
+      // 🔧 FIX: Pass the current token so grace period works for legacy sessions
+      session.rotateToken(newRefreshToken, refreshToken);
       session.refreshTokenExpiry = getRefreshTokenExpiry();
       session.lastActiveAt = new Date();
       await session.save();
@@ -233,8 +234,12 @@ router.post('/', async (req, res) => {
     if (sessionIndex >= 0) {
       const activeSession = user.activeSessions[sessionIndex];
 
-      // Move current hash to previous (30-minute grace period)
-      activeSession.previousRefreshTokenHash = activeSession.refreshTokenHash;
+      // 🔧 FIX: Move current hash to previous (30-minute grace period)
+      // If refreshTokenHash is null (legacy session), hash the CURRENT token being presented
+      // This ensures grace period works even for sessions that haven't been migrated yet
+      const currentHash = activeSession.refreshTokenHash ||
+                          crypto.createHash('sha256').update(refreshToken).digest('hex');
+      activeSession.previousRefreshTokenHash = currentHash;
       activeSession.previousTokenExpiry = new Date(Date.now() + 30 * 60 * 1000);
 
       // Clear legacy plaintext fields
