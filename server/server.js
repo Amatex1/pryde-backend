@@ -1036,8 +1036,16 @@ io.on('connection', (socket) => {
       // UNIFIED: Using 'message:new' for all message events (Phase R unification)
       // 🔥 FIX: Only emit to user ROOM (not individual socket + room - that causes duplicates!)
       // The user's socket is ALREADY in their user room, so emitting to both = 2x messages
-      console.log(`📡 [send_message] Emitting to recipient's user room: user_${data.recipientId}`);
-      emitValidated(io.to(`user_${data.recipientId}`), 'message:new', message);
+      const recipientRoom = `user_${data.recipientId}`;
+      const recipientRoomSockets = io.sockets.adapter.rooms.get(recipientRoom);
+      const recipientSocketCount = recipientRoomSockets?.size || 0;
+      console.log(`📡 [send_message] Emitting to recipient's user room: ${recipientRoom} (${recipientSocketCount} socket(s) in room)`);
+
+      if (recipientSocketCount === 0) {
+        console.warn(`⚠️ [send_message] Recipient ${data.recipientId} has NO sockets in room - message will NOT be delivered in real-time!`);
+      }
+
+      emitValidated(io.to(recipientRoom), 'message:new', message);
 
       // Send back to sender as confirmation
       // UNIFIED: Using 'message:sent' for consistency
@@ -1070,7 +1078,12 @@ io.on('connection', (socket) => {
 
       // 🔥 FIX: Only emit to user ROOM (the socket IS in the room, so this covers it)
       // Emitting to both socket AND room was causing duplicate messages!
-      emitValidated(io.to(`user_${userId}`), 'message:sent', messageWithTempId);
+      const senderRoom = `user_${userId}`;
+      const senderRoomSockets = io.sockets.adapter.rooms.get(senderRoom);
+      const senderSocketCount = senderRoomSockets?.size || 0;
+      console.log(`📡 [send_message] Emitting message:sent to sender room: ${senderRoom} (${senderSocketCount} socket(s) in room)`);
+
+      emitValidated(io.to(senderRoom), 'message:sent', messageWithTempId);
 
       console.log(`⏱️ Socket emit took ${Date.now() - emitStart}ms`);
 
