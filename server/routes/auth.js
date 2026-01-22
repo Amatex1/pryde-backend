@@ -32,7 +32,7 @@ import { incCounter } from '../utils/authMetrics.js'; // Phase 4A
 import { generateTokenPair, getRefreshTokenExpiry } from '../utils/tokenUtils.js';
 import { getRefreshTokenCookieOptions } from '../utils/cookieUtils.js';
 import { decryptString, isEncrypted } from '../utils/encryption.js';
-import { processUserBadgesById } from '../services/autoBadgeService.js';
+// 🔧 BADGE CHURN FIX: Badge processing removed from login (now event-driven + daily sweep)
 
 /**
  * Helper to get the decrypted 2FA secret
@@ -1027,14 +1027,9 @@ router.post('/login', loginLimiter, validateLogin, async (req, res) => {
     // 🔐 SECURITY: Access token returned ONLY in JSON body, NOT as cookie
     // Frontend stores in memory (AuthContext), not localStorage
 
-    // BADGE SYSTEM: Process automatic badges on login (non-blocking)
-    setImmediate(async () => {
-      try {
-        await processUserBadgesById(user._id.toString());
-      } catch (err) {
-        logger.warn('Failed to process badges on login:', err.message);
-      }
-    });
+    // 🔧 BADGE CHURN FIX: Removed badge processing from login
+    // Badges are now only processed on relevant events (post creation, profile update)
+    // and via the daily sweep job. This prevents excessive assign/revoke cycles.
 
     // Determine if tour should be shown (first login with tour not completed/skipped)
     const showTour = !user.hasCompletedTour && !user.hasSkippedTour;
@@ -1335,14 +1330,9 @@ router.post('/verify-2fa-login', loginLimiter, async (req, res) => {
 
     logger.debug(`User logged in with 2FA: ${user.email} from ${ipAddress}`);
 
-    // BADGE SYSTEM: Process automatic badges on login (non-blocking)
-    setImmediate(async () => {
-      try {
-        await processUserBadgesById(user._id.toString());
-      } catch (err) {
-        logger.warn('Failed to process badges on 2FA login:', err.message);
-      }
-    });
+    // 🔧 BADGE CHURN FIX: Removed badge processing from 2FA login
+    // Badges are now only processed on relevant events (post creation, profile update)
+    // and via the daily sweep job. This prevents excessive assign/revoke cycles.
 
     // Determine if tour should be shown (first login with tour not completed/skipped)
     const showTour = !user.hasCompletedTour && !user.hasSkippedTour;

@@ -1650,6 +1650,18 @@ if (!isVercel) {
       .catch(err => console.error('[SystemPrompts] ❌ Failed to start scheduler:', err));
 
     // ========================================
+    // BADGE SWEEP SCHEDULER (Daily)
+    // ========================================
+    // 🔧 BADGE CHURN FIX: Runs daily to revoke badges with grace period
+    // Prevents badge flapping for active_this_month and similar badges
+    import('./scripts/dailyBadgeSweep.js')
+      .then(({ startBadgeSweepScheduler }) => {
+        startBadgeSweepScheduler();
+        console.log('[BadgeSweep] 🕐 Scheduler started (runs daily at 04:00 UTC)');
+      })
+      .catch(err => console.error('[BadgeSweep] ❌ Failed to start scheduler:', err));
+
+    // ========================================
     // REFLECTION PROMPTS (Private per-user)
     // ========================================
     // Seeds private reflection prompts shown to users

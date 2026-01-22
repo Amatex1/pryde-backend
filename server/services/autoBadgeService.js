@@ -41,6 +41,8 @@ const AUTO_BADGE_CONFIG = {
     // Minimum posts/comments in last 30 days (low threshold - not engagement-based)
     minActivity: 1, // Just 1 post or comment
     periodDays: 30,
+    // 🔧 CHURN FIX: Grace period before revocation (prevents flapping)
+    gracePeriodDays: 7,
     description: 'Active in the last 30 days'
   },
   group_organizer: {
@@ -49,6 +51,15 @@ const AUTO_BADGE_CONFIG = {
     description: 'Owns at least one group'
   }
 };
+
+// 🔧 CHURN FIX: Badges that should only be assigned (never auto-revoked)
+// Revocation for these badges happens only in the daily sweep job with grace period
+const ASSIGN_ONLY_BADGES = ['active_this_month'];
+
+// Helper: Calculate days since a date
+function daysSince(date) {
+  return (Date.now() - new Date(date).getTime()) / (1000 * 60 * 60 * 24);
+}
 
 /**
  * Check if a user qualifies for the early_member badge
@@ -128,18 +139,23 @@ const BADGE_CHECKS = {
  * Process automatic badges for a single user
  * @param {Object} user - User document
  * @param {Array} autoBadges - List of automatic badge definitions
+ * @param {Object} options - Processing options
+ * @param {boolean} options.assignOnly - If true, only assign badges, never revoke (default: false)
+ * @param {boolean} options.withGracePeriod - If true, check grace period before revocation (default: false)
  * @returns {Object} Results of badge processing
  */
-async function processUserBadges(user, autoBadges) {
-  const results = { assigned: [], revoked: [], unchanged: [] };
-  
+async function processUserBadges(user, autoBadges, options = {}) {
+  const { assignOnly = false, withGracePeriod = false } = options;
+  const results = { assigned: [], revoked: [], unchanged: [], skipped: [] };
+
   for (const badge of autoBadges) {
     const checkFn = BADGE_CHECKS[badge.automaticRule];
     if (!checkFn) continue;
-    
+
     const qualifies = await checkFn(user);
     const hasBadge = user.badges.includes(badge.id);
-    
+    const isAssignOnlyBadge = ASSIGN_ONLY_BADGES.includes(badge.id);
+
     if (qualifies && !hasBadge) {
       // Assign badge
       await User.findByIdAndUpdate(user._id, { $addToSet: { badges: badge.id } });
@@ -154,7 +170,36 @@ async function processUserBadges(user, autoBadges) {
       });
       results.assigned.push(badge.id);
     } else if (!qualifies && hasBadge) {
-      // Revoke badge (user no longer qualifies)
+      // 🔧 CHURN FIX: Skip revocation for assign-only badges during normal processing
+      // These will be revoked only by the daily sweep job with grace period
+      if (assignOnly || isAssignOnlyBadge) {
+        results.skipped.push(badge.id);
+        continue;
+      }
+
+      // 🔧 CHURN FIX: Check grace period before revocation
+      if (withGracePeriod && badge.automaticRule === 'active_this_month') {
+        const gracePeriodDays = AUTO_BADGE_CONFIG.active_this_month.gracePeriodDays || 7;
+        const lastAssignment = await BadgeAssignmentLog.findOne({
+          userId: user._id,
+          badgeId: badge.id,
+          action: 'assigned'
+        }).sort({ createdAt: -1 }).lean();
+
+        if (lastAssignment) {
+          const daysSinceAssignment = daysSince(lastAssignment.createdAt);
+          const totalWindowDays = AUTO_BADGE_CONFIG.active_this_month.periodDays + gracePeriodDays;
+
+          if (daysSinceAssignment < totalWindowDays) {
+            // Still within grace period, skip revocation
+            results.skipped.push(badge.id);
+            logger.debug(`[Badge] Skipping revocation for ${badge.id} - grace period (${daysSinceAssignment.toFixed(1)} days < ${totalWindowDays} days)`);
+            continue;
+          }
+        }
+      }
+
+      // Revoke badge (user no longer qualifies and grace period expired)
       await User.findByIdAndUpdate(user._id, { $pull: { badges: badge.id } });
       await BadgeAssignmentLog.create({
         userId: user._id,
@@ -170,7 +215,7 @@ async function processUserBadges(user, autoBadges) {
       results.unchanged.push(badge.id);
     }
   }
-  
+
   return results;
 }
 
@@ -365,12 +410,103 @@ async function seedAutomaticBadges() {
   return { created, existing };
 }
 
+/**
+ * 🔧 CHURN FIX: Daily badge sweep with grace period
+ * Only revokes badges that have been unqualified for longer than the grace period
+ * This prevents badge flapping for active_this_month and similar badges
+ * @param {Object} options - Processing options
+ * @returns {Object} Summary of sweep processing
+ */
+async function runDailyBadgeSweep(options = {}) {
+  const { batchSize = 100, dryRun = false } = options;
+  const summary = {
+    usersProcessed: 0,
+    badgesRevoked: 0,
+    badgesSkipped: 0,
+    errors: 0,
+    startedAt: new Date(),
+    completedAt: null
+  };
+
+  try {
+    // Only process badges that can be revoked (not the permanent ones)
+    const revocableBadges = await Badge.find({
+      assignmentType: 'automatic',
+      isActive: true,
+      id: { $in: ASSIGN_ONLY_BADGES } // Only process badges that need grace period checking
+    }).lean();
+
+    if (revocableBadges.length === 0) {
+      logger.info('[DailySweep] No revocable badges configured');
+      summary.completedAt = new Date();
+      return summary;
+    }
+
+    logger.info(`[DailySweep] Starting daily badge sweep for ${revocableBadges.length} badge types`);
+
+    // Find users who have any of these badges
+    let skip = 0;
+    let hasMore = true;
+
+    while (hasMore) {
+      const users = await User.find({
+        isActive: true,
+        isBanned: false,
+        badges: { $in: ASSIGN_ONLY_BADGES }
+      })
+        .select('_id username badges createdAt displayName bio profilePhoto pronouns')
+        .skip(skip)
+        .limit(batchSize)
+        .lean();
+
+      if (users.length === 0) {
+        hasMore = false;
+        break;
+      }
+
+      for (const user of users) {
+        try {
+          if (!dryRun) {
+            // Process with grace period checking enabled
+            const results = await processUserBadges(user, revocableBadges, { withGracePeriod: true });
+            summary.badgesRevoked += results.revoked.length;
+            summary.badgesSkipped += results.skipped.length;
+          }
+          summary.usersProcessed++;
+        } catch (error) {
+          logger.error(`[DailySweep] Error processing badges for user ${user.username}:`, error);
+          summary.errors++;
+        }
+      }
+
+      skip += batchSize;
+
+      // Log progress
+      if (summary.usersProcessed % 500 === 0) {
+        logger.info(`[DailySweep] Processed ${summary.usersProcessed} users...`);
+      }
+    }
+
+    summary.completedAt = new Date();
+    logger.info(`[DailySweep] Complete: ${summary.usersProcessed} users, ${summary.badgesRevoked} revoked, ${summary.badgesSkipped} skipped (in grace period)`);
+
+    return summary;
+  } catch (error) {
+    logger.error('[DailySweep] Error:', error);
+    summary.errors++;
+    summary.completedAt = new Date();
+    return summary;
+  }
+}
+
 export {
   processUserBadges,
   processUserBadgesById,
   runBatchBadgeProcessing,
+  runDailyBadgeSweep,
   seedAutomaticBadges,
   BADGE_CHECKS,
-  AUTO_BADGE_CONFIG
+  AUTO_BADGE_CONFIG,
+  ASSIGN_ONLY_BADGES
 };
 
