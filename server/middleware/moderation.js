@@ -1,5 +1,15 @@
 import User from '../models/User.js';
-import { checkBlockedWords, checkSpam, calculateToxicityScore, getAutoMuteSettings } from '../utils/moderation.js';
+import {
+  checkBlockedWords,
+  checkSpam,
+  calculateToxicityScore,
+  getAutoMuteSettings,
+  getViolationDecaySettings,
+  getEnforcementSettings,
+  getWarningMessages,
+  getWarningTier,
+  applyViolationDecay
+} from '../utils/moderation.js';
 import logger from '../utils/logger.js';
 
 /**
@@ -51,7 +61,14 @@ export const checkMuted = async (req, res, next) => {
 
 /**
  * Moderate content for blocked words and spam
- * Uses configurable settings from database
+ * Uses configurable settings from database.
+ *
+ * ENFORCEMENT PHILOSOPHY (Community Guidelines):
+ * - Profanity: Allowed, contributes to toxicity score only, no violations
+ * - Slurs/Hate Speech: Zero tolerance, immediate enforcement
+ * - Sexual/Custom blocked: Standard warning ladder
+ * - Spam: Separate enforcement track from speech violations
+ * - Toxicity Score: Soft warnings only, NEVER auto-mute/ban
  */
 export const moderateContent = async (req, res, next) => {
   try {
@@ -67,8 +84,13 @@ export const moderateContent = async (req, res, next) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // Get configurable auto-mute settings from database
-    const autoMuteSettings = await getAutoMuteSettings();
+    // Get all settings
+    const [autoMuteSettings, decaySettings, enforcementSettings, warningMessages] = await Promise.all([
+      getAutoMuteSettings(),
+      getViolationDecaySettings(),
+      getEnforcementSettings(),
+      getWarningMessages()
+    ]);
 
     // SAFETY: Ensure moderation object exists (older users may not have it)
     if (!user.moderation) {
@@ -77,12 +99,34 @@ export const moderateContent = async (req, res, next) => {
         muteExpires: null,
         muteReason: '',
         violationCount: 0,
+        spamViolationCount: 0,
+        slurViolationCount: 0,
         lastViolation: null,
+        lastDecayApplied: null,
         autoMuteEnabled: true
       });
     }
+    // Ensure new fields exist for older users
+    if (user.moderation.spamViolationCount === undefined) {
+      user.moderation.spamViolationCount = 0;
+    }
+    if (user.moderation.slurViolationCount === undefined) {
+      user.moderation.slurViolationCount = 0;
+    }
     if (!user.moderationHistory) {
       user.set('moderationHistory', []);
+    }
+
+    // Apply violation decay before processing new content
+    const { decayApplied, amountDecayed } = applyViolationDecay(user, decaySettings);
+    if (decayApplied) {
+      user.moderationHistory.push({
+        action: 'decay-applied',
+        reason: `Violation count reduced by ${amountDecayed} due to clean behavior period`,
+        contentType: 'other',
+        detectedViolations: [`Decayed ${amountDecayed} violation(s)`],
+        automated: true
+      });
     }
 
     // Helper to create a truncated content preview (max 200 chars)
@@ -94,67 +138,209 @@ export const moderateContent = async (req, res, next) => {
 
     // Determine content type and ID
     const contentType = req.body.postId ? 'comment' : 'post';
-    const contentId = req.body.postId || null; // postId for comments, null for new posts
+    const contentId = req.body.postId || null;
 
-    // Check for blocked words (now async - uses database settings)
-    const { isBlocked, blockedWords } = await checkBlockedWords(content);
+    // ═══════════════════════════════════════════════════════════════════════════
+    // BLOCKED WORDS CHECK (with category awareness)
+    // ═══════════════════════════════════════════════════════════════════════════
+    const { isBlocked, blockedWords, categories } = await checkBlockedWords(content);
+
     if (isBlocked) {
-      // Log violation
-      user.moderation.violationCount += 1;
-      user.moderation.lastViolation = new Date();
-      user.moderationHistory.push({
-        action: 'warning',
-        reason: `Blocked words detected: ${blockedWords.join(', ')}`,
-        contentType,
-        contentId,
-        contentPreview: createContentPreview(content),
-        detectedViolations: blockedWords,
-        automated: true
-      });
+      const hasSlurs = categories.slurs.length > 0;
+      const hasSexual = categories.sexual.length > 0;
+      const hasCustom = categories.custom.length > 0;
+      const hasProfanityOnly = categories.profanity.length > 0 &&
+                               !hasSlurs && !hasSexual && !hasCustom;
+      const hasSpamWords = categories.spam.length > 0;
 
-      // Auto-mute if enabled globally AND for user, AND violations exceed configurable threshold
-      const shouldAutoMute = autoMuteSettings.enabled &&
-                             user.moderation.autoMuteEnabled &&
-                             user.moderation.violationCount >= autoMuteSettings.violationThreshold;
+      // ─────────────────────────────────────────────────────────────────────────
+      // SLUR DETECTION: Zero tolerance, immediate enforcement
+      // ─────────────────────────────────────────────────────────────────────────
+      if (hasSlurs && enforcementSettings.slursZeroTolerance) {
+        user.moderation.slurViolationCount = (user.moderation.slurViolationCount || 0) + 1;
+        user.moderation.violationCount += 1;
+        user.moderation.lastViolation = new Date();
 
-      if (shouldAutoMute) {
-        // Calculate mute duration using configurable settings
+        // Calculate escalating mute duration for slurs
+        const baseDuration = autoMuteSettings.slurMuteDuration || 120;
+        const escalationMultiplier = autoMuteSettings.slurEscalationMultiplier || 2;
         const muteDuration = Math.min(
-          user.moderation.violationCount * autoMuteSettings.minutesPerViolation,
+          baseDuration * Math.pow(escalationMultiplier, user.moderation.slurViolationCount - 1),
           autoMuteSettings.maxMuteDuration
         );
-        user.moderation.isMuted = true;
-        user.moderation.muteExpires = new Date(Date.now() + muteDuration * 60 * 1000);
-        user.moderation.muteReason = 'Repeated violations of community guidelines';
+
         user.moderationHistory.push({
-          action: 'mute',
-          reason: `Auto-muted for ${muteDuration} minutes due to repeated violations (${user.moderation.violationCount} violations)`,
-          contentType: 'other',
-          detectedViolations: [`Total violations: ${user.moderation.violationCount}`],
+          action: 'slur-detected',
+          reason: `Slur/hate speech detected: ${categories.slurs.join(', ')}`,
+          contentType,
+          contentId,
+          contentPreview: createContentPreview(content),
+          detectedViolations: categories.slurs,
           automated: true
+        });
+
+        // Immediate mute (bypasses warning ladder)
+        if (autoMuteSettings.enabled && user.moderation.autoMuteEnabled) {
+          user.moderation.isMuted = true;
+          user.moderation.muteExpires = new Date(Date.now() + muteDuration * 60 * 1000);
+          user.moderation.muteReason = 'Slur or hate speech detected (zero tolerance policy)';
+          user.moderationHistory.push({
+            action: 'mute',
+            reason: `Immediate mute for ${muteDuration} minutes - slur offense #${user.moderation.slurViolationCount}`,
+            contentType: 'other',
+            detectedViolations: [`Slur violations: ${user.moderation.slurViolationCount}`],
+            automated: true
+          });
+        }
+
+        await user.save();
+
+        return res.status(400).json({
+          message: warningMessages.slur,
+          blockedWords: categories.slurs,
+          violationCount: user.moderation.violationCount,
+          isMuted: user.moderation.isMuted,
+          warningType: 'slur'
         });
       }
 
-      await user.save();
+      // ─────────────────────────────────────────────────────────────────────────
+      // PROFANITY ONLY: Log but do NOT increment violations (Community Guidelines)
+      // ─────────────────────────────────────────────────────────────────────────
+      if (hasProfanityOnly && !enforcementSettings.profanityTriggersViolation) {
+        // Profanity contributes to toxicity score only
+        // Allow the content to proceed - profanity is permitted
+        // Just calculate toxicity for soft warning
+        const toxicityScore = await calculateToxicityScore(content);
+        if (toxicityScore > 50) {
+          req.toxicityWarning = true;
+          user.moderationHistory.push({
+            action: 'warning',
+            reason: `High toxicity score (${toxicityScore}) with profanity: ${categories.profanity.join(', ')}`,
+            contentType,
+            contentId,
+            contentPreview: createContentPreview(content),
+            detectedViolations: [`Toxicity: ${toxicityScore}`, ...categories.profanity],
+            automated: true
+          });
+          await user.save();
+        }
+        // Allow content through - profanity alone doesn't block
+        return next();
+      }
 
-      return res.status(400).json({
-        message: 'Content contains inappropriate language',
-        blockedWords: blockedWords,
-        violationCount: user.moderation.violationCount,
-        warning: user.moderation.violationCount >= (autoMuteSettings.violationThreshold - 1)
-          ? 'Further violations may result in temporary mute'
-          : null
-      });
+      // ─────────────────────────────────────────────────────────────────────────
+      // SEXUAL/CUSTOM BLOCKED WORDS: Standard warning ladder with tiered messages
+      // ─────────────────────────────────────────────────────────────────────────
+      if (hasSexual || hasCustom) {
+        const violatingWords = [...categories.sexual, ...categories.custom];
+        user.moderation.violationCount += 1;
+        user.moderation.lastViolation = new Date();
+
+        // Determine warning tier based on violation count
+        const warningTier = getWarningTier(user.moderation.violationCount, autoMuteSettings.violationThreshold);
+        const tierMessage = warningTier === 3 ? warningMessages.tier3 :
+                           warningTier === 2 ? warningMessages.tier2 :
+                           warningMessages.tier1;
+
+        user.moderationHistory.push({
+          action: 'warning',
+          reason: `Blocked words detected: ${violatingWords.join(', ')} (Tier ${warningTier} warning)`,
+          contentType,
+          contentId,
+          contentPreview: createContentPreview(content),
+          detectedViolations: violatingWords,
+          automated: true
+        });
+
+        // Auto-mute if threshold exceeded (standard ladder)
+        const shouldAutoMute = autoMuteSettings.enabled &&
+                               user.moderation.autoMuteEnabled &&
+                               user.moderation.violationCount >= autoMuteSettings.violationThreshold;
+
+        if (shouldAutoMute) {
+          const muteDuration = Math.min(
+            user.moderation.violationCount * autoMuteSettings.minutesPerViolation,
+            autoMuteSettings.maxMuteDuration
+          );
+          user.moderation.isMuted = true;
+          user.moderation.muteExpires = new Date(Date.now() + muteDuration * 60 * 1000);
+          user.moderation.muteReason = 'Repeated violations of community guidelines';
+          user.moderationHistory.push({
+            action: 'mute',
+            reason: `Auto-muted for ${muteDuration} minutes due to ${user.moderation.violationCount} violations`,
+            contentType: 'other',
+            detectedViolations: [`Total violations: ${user.moderation.violationCount}`],
+            automated: true
+          });
+        }
+
+        await user.save();
+
+        return res.status(400).json({
+          message: tierMessage,
+          blockedWords: violatingWords,
+          violationCount: user.moderation.violationCount,
+          warningTier,
+          warningType: 'speech',
+          isMuted: user.moderation.isMuted || false
+        });
+      }
+
+      // ─────────────────────────────────────────────────────────────────────────
+      // SPAM WORDS (from blockedWords.spam): Separate track
+      // ─────────────────────────────────────────────────────────────────────────
+      if (hasSpamWords) {
+        // Uses spam violation track, not speech violations
+        user.moderation.spamViolationCount = (user.moderation.spamViolationCount || 0) + 1;
+        user.moderation.lastViolation = new Date();
+
+        user.moderationHistory.push({
+          action: 'spam-detected',
+          reason: `Spam keywords detected: ${categories.spam.join(', ')}`,
+          contentType,
+          contentId,
+          contentPreview: createContentPreview(content),
+          detectedViolations: categories.spam,
+          automated: true
+        });
+
+        if (autoMuteSettings.enabled && user.moderation.autoMuteEnabled) {
+          const muteDuration = autoMuteSettings.spamMuteDuration;
+          user.moderation.isMuted = true;
+          user.moderation.muteExpires = new Date(Date.now() + muteDuration * 60 * 1000);
+          user.moderation.muteReason = 'Spam content detected';
+          user.moderationHistory.push({
+            action: 'mute',
+            reason: `Auto-muted for ${muteDuration} minutes due to spam words`,
+            contentType: 'other',
+            detectedViolations: [`Spam violations: ${user.moderation.spamViolationCount}`],
+            automated: true
+          });
+        }
+
+        await user.save();
+
+        return res.status(400).json({
+          message: warningMessages.spam,
+          blockedWords: categories.spam,
+          spamViolationCount: user.moderation.spamViolationCount,
+          warningType: 'spam',
+          isMuted: user.moderation.isMuted || false
+        });
+      }
     }
 
-    // Check for spam (now returns detailed info including matched text)
+    // ═══════════════════════════════════════════════════════════════════════════
+    // SPAM PATTERN CHECK (separate from blocked words)
+    // Uses separate spam violation track
+    // ═══════════════════════════════════════════════════════════════════════════
     const { isSpam, reason, matchedText, details } = checkSpam(content);
     if (isSpam) {
-      // Log spam detection with detailed info
-      user.moderation.violationCount += 1;
+      // Spam uses separate violation track from speech violations
+      user.moderation.spamViolationCount = (user.moderation.spamViolationCount || 0) + 1;
       user.moderation.lastViolation = new Date();
 
-      // Build detailed violations array
       const spamViolations = details.length > 0 ? details : [reason];
       if (matchedText && !spamViolations.some(v => v.includes(matchedText))) {
         spamViolations.push(`Matched: "${matchedText}"`);
@@ -170,7 +356,7 @@ export const moderateContent = async (req, res, next) => {
         automated: true
       });
 
-      // Auto-mute for spam using configurable duration
+      // Auto-mute for spam (separate duration from speech violations)
       if (autoMuteSettings.enabled && user.moderation.autoMuteEnabled) {
         const muteDuration = autoMuteSettings.spamMuteDuration;
         user.moderation.isMuted = true;
@@ -188,20 +374,26 @@ export const moderateContent = async (req, res, next) => {
       await user.save();
 
       return res.status(400).json({
-        message: 'Content flagged as spam',
+        message: warningMessages.spam,
         reason: reason,
         matchedText: matchedText,
-        violationCount: user.moderation.violationCount
+        spamViolationCount: user.moderation.spamViolationCount,
+        warningType: 'spam',
+        isMuted: user.moderation.isMuted || false
       });
     }
 
-    // Calculate toxicity score (now async - uses database settings)
+    // ═══════════════════════════════════════════════════════════════════════════
+    // TOXICITY SCORE (soft warnings only - NEVER auto-mute/ban)
+    // Uses configurable warningThreshold from settings
+    // ═══════════════════════════════════════════════════════════════════════════
     const toxicityScore = await calculateToxicityScore(content);
-    if (toxicityScore > 50) {
-      // Log high toxicity
+    const toxicityThreshold = autoMuteSettings.warningThreshold || 65;
+    if (toxicityScore > toxicityThreshold) {
+      // Log for moderator review prioritisation
       user.moderationHistory.push({
         action: 'warning',
-        reason: `High toxicity score: ${toxicityScore}`,
+        reason: `High toxicity score: ${toxicityScore} (threshold: ${toxicityThreshold})`,
         contentType,
         contentId,
         contentPreview: createContentPreview(content),
@@ -210,7 +402,8 @@ export const moderateContent = async (req, res, next) => {
       });
       await user.save();
 
-      // Allow content but warn user
+      // Set warning flag for user-facing soft warning
+      // IMPORTANT: This MUST NOT trigger auto-mute or auto-ban
       req.toxicityWarning = true;
     }
 

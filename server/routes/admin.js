@@ -1131,11 +1131,13 @@ router.get('/moderation/settings', checkPermission('canManageUsers'), async (req
 // @access  Admin (canManageUsers)
 router.put('/moderation/settings', checkPermission('canManageUsers'), async (req, res) => {
   try {
-    const { autoMute, toxicity } = req.body;
+    const { autoMute, toxicity, violationDecay, enforcement } = req.body;
 
     const updates = {};
     if (autoMute) updates.autoMute = autoMute;
     if (toxicity) updates.toxicity = toxicity;
+    if (violationDecay) updates.violationDecay = violationDecay;
+    if (enforcement) updates.enforcement = enforcement;
 
     const settings = await ModerationSettings.updateSettings(updates, req.userId);
 
@@ -1427,7 +1429,7 @@ router.post('/moderation/user/:userId/mute', checkPermission('canManageUsers'), 
 });
 
 // @route   POST /api/admin/moderation/user/:userId/reset-violations
-// @desc    Reset a user's violation count
+// @desc    Reset a user's violation count (all tracks)
 // @access  Admin (canManageUsers)
 router.post('/moderation/user/:userId/reset-violations', checkPermission('canManageUsers'), async (req, res) => {
   try {
@@ -1441,22 +1443,34 @@ router.post('/moderation/user/:userId/reset-violations', checkPermission('canMan
       user.moderation = {};
     }
 
-    const previousCount = user.moderation.violationCount || 0;
+    // Store previous counts for logging
+    const previousCounts = {
+      speech: user.moderation.violationCount || 0,
+      spam: user.moderation.spamViolationCount || 0,
+      slur: user.moderation.slurViolationCount || 0
+    };
+
+    // Reset all violation tracks
     user.moderation.violationCount = 0;
+    user.moderation.spamViolationCount = 0;
+    user.moderation.slurViolationCount = 0;
     user.moderation.lastViolation = null;
+    user.moderation.lastDecayApplied = null;
+
     user.moderationHistory = user.moderationHistory || [];
     user.moderationHistory.push({
       action: 'warning',
-      reason: `Violation count reset from ${previousCount} to 0 by admin`,
+      reason: `All violation counts reset by admin (speech: ${previousCounts.speech}, spam: ${previousCounts.spam}, slur: ${previousCounts.slur})`,
       automated: false,
+      moderatorId: req.userId,
       timestamp: new Date()
     });
 
     await user.save();
 
-    logger.info(`User ${user.username} violation count reset by admin ${req.userId}`);
+    logger.info(`User ${user.username} violation counts reset by admin ${req.userId}`);
     res.json({
-      message: 'Violations reset',
+      message: 'Violations reset — context reviewed',
       user: {
         username: user.username,
         moderation: user.moderation
@@ -1464,6 +1478,49 @@ router.post('/moderation/user/:userId/reset-violations', checkPermission('canMan
     });
   } catch (error) {
     logger.error('Reset violations error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   POST /api/admin/moderation/user/:userId/add-note
+// @desc    Add a private moderation context note (internal, not visible to user)
+// @access  Admin (canManageUsers)
+router.post('/moderation/user/:userId/add-note', checkPermission('canManageUsers'), async (req, res) => {
+  try {
+    const { note } = req.body;
+
+    if (!note || typeof note !== 'string' || note.trim().length === 0) {
+      return res.status(400).json({ message: 'Note content is required' });
+    }
+
+    if (note.length > 1000) {
+      return res.status(400).json({ message: 'Note must be 1000 characters or less' });
+    }
+
+    const user = await User.findById(req.params.userId);
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    user.moderationHistory = user.moderationHistory || [];
+    user.moderationHistory.push({
+      action: 'admin-note',
+      reason: note.trim(),
+      automated: false,
+      moderatorId: req.userId,
+      timestamp: new Date()
+    });
+
+    await user.save();
+
+    logger.info(`Admin ${req.userId} added moderation note for user ${user.username}`);
+    res.json({
+      message: 'Note added successfully',
+      noteCount: user.moderationHistory.filter(h => h.action === 'admin-note').length
+    });
+  } catch (error) {
+    logger.error('Add moderation note error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });

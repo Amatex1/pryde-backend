@@ -49,6 +49,7 @@ const moderationSettingsSchema = new mongoose.Schema({
 
   // ═══════════════════════════════════════════════════════════════════════════
   // AUTO-MUTE CONFIGURATION
+  // Defaults tuned for human-centric, gentle enforcement
   // ═══════════════════════════════════════════════════════════════════════════
   autoMute: {
     // Global toggle for auto-mute
@@ -56,48 +57,115 @@ const moderationSettingsSchema = new mongoose.Schema({
       type: Boolean,
       default: true
     },
-    // Number of violations before auto-mute kicks in
+    // Number of speech violations before auto-mute kicks in (gentle default)
     violationThreshold: {
       type: Number,
-      default: 3,
+      default: 5, // Phase 2B: Increased from 3 to 5 for gentler enforcement
       min: 1,
       max: 10
     },
     // Minutes per violation (mute duration = violations * this value)
     minutesPerViolation: {
       type: Number,
-      default: 30,
+      default: 15, // Phase 2B: Reduced from 30 to 15 for gentler enforcement
       min: 5,
       max: 1440
     },
-    // Maximum mute duration in minutes (24 hours default)
+    // Maximum mute duration in minutes (6 hours default for gentler enforcement)
     maxMuteDuration: {
       type: Number,
-      default: 1440,
+      default: 360, // Phase 2B: Reduced from 1440 (24h) to 360 (6h)
       min: 60,
       max: 10080 // 7 days
     },
-    // Spam mute duration in minutes
+    // Spam mute duration in minutes (separate track from speech violations)
     spamMuteDuration: {
       type: Number,
       default: 60,
       min: 15,
       max: 1440
+    },
+    // Slur/hate speech immediate mute duration (zero tolerance)
+    slurMuteDuration: {
+      type: Number,
+      default: 120, // 2 hours for first offense
+      min: 30,
+      max: 1440
+    },
+    // Slur escalation multiplier for repeat offenses
+    slurEscalationMultiplier: {
+      type: Number,
+      default: 2,
+      min: 1.5,
+      max: 5
+    }
+  },
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // VIOLATION DECAY CONFIGURATION (Forgiveness Mechanism)
+  // ═══════════════════════════════════════════════════════════════════════════
+  violationDecay: {
+    // Enable time-based decay of violations
+    enabled: {
+      type: Boolean,
+      default: true
+    },
+    // Days without violations before speech violations decay
+    cleanPeriodDays: {
+      type: Number,
+      default: 7,
+      min: 1,
+      max: 90
+    },
+    // How many speech violations to decay per clean period
+    decayAmount: {
+      type: Number,
+      default: 1,
+      min: 1,
+      max: 5
+    },
+    // Days without violations before spam violations decay
+    spamCleanPeriodDays: {
+      type: Number,
+      default: 7,
+      min: 1,
+      max: 90
+    },
+    // Days without violations before slur violations decay (much slower)
+    slurCleanPeriodDays: {
+      type: Number,
+      default: 30, // Slurs decay slowly - 30 days
+      min: 14,
+      max: 365
+    },
+    // Whether slur violations decay at all
+    slurDecayEnabled: {
+      type: Boolean,
+      default: false // By default, slur violations do NOT decay
     }
   },
 
   // ═══════════════════════════════════════════════════════════════════════════
   // TOXICITY CONFIGURATION
+  // Toxicity is used for soft warnings and moderator prioritisation only.
+  // It MUST NOT trigger auto-mute or auto-ban.
   // ═══════════════════════════════════════════════════════════════════════════
   toxicity: {
-    // Score threshold for warnings (0-100)
+    // Score threshold for soft warnings (0-100)
     warningThreshold: {
       type: Number,
-      default: 50,
+      default: 65, // Phase 2B: Increased from 50 to 65 for gentler warnings
       min: 10,
       max: 100
     },
-    // Points per blocked word found
+    // Points per profanity word (0 = profanity doesn't affect toxicity)
+    pointsPerProfanity: {
+      type: Number,
+      default: 0, // Phase 2B: Set to 0 - profanity is allowed
+      min: 0,
+      max: 20
+    },
+    // Points per blocked word (non-profanity categories)
     pointsPerBlockedWord: {
       type: Number,
       default: 10,
@@ -110,6 +178,54 @@ const moderationSettingsSchema = new mongoose.Schema({
       default: 20,
       min: 5,
       max: 50
+    }
+  },
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // WARNING MESSAGES (Human-Centric Language)
+  // Three-tier warning system with supportive, non-punitive tone
+  // ═══════════════════════════════════════════════════════════════════════════
+  warningMessages: {
+    // Tier 1: Soft signal (no punishment)
+    tier1: {
+      type: String,
+      default: "Hey — this conversation's getting intense. You're allowed to express yourself here, just try to keep it from turning personal."
+    },
+    // Tier 2: Clear boundary
+    tier2: {
+      type: String,
+      default: "Strong opinions are fine — attacks on people aren't. Please adjust how you're engaging."
+    },
+    // Tier 3: Final notice
+    tier3: {
+      type: String,
+      default: "This is a final warning. Continued personal attacks will result in a temporary mute."
+    },
+    // Slur/Identity harm (separate path)
+    slur: {
+      type: String,
+      default: "This content targets identity and isn't allowed on Pryde. The content has been removed and your account is temporarily restricted."
+    },
+    // Spam detection
+    spam: {
+      type: String,
+      default: "This content has been flagged as spam. Repeated spam will result in account restrictions."
+    }
+  },
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // ENFORCEMENT BEHAVIOR
+  // ═══════════════════════════════════════════════════════════════════════════
+  enforcement: {
+    // Profanity alone does NOT trigger violations (Community Guidelines)
+    profanityTriggersViolation: {
+      type: Boolean,
+      default: false
+    },
+    // Slurs bypass warning ladder (zero tolerance)
+    slursZeroTolerance: {
+      type: Boolean,
+      default: true
     }
   },
 

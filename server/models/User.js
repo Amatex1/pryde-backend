@@ -843,11 +843,27 @@ const userSchema = new mongoose.Schema({
       type: String,
       default: ''
     },
+    // Speech violations (slurs, sexual, custom - NOT profanity)
     violationCount: {
       type: Number,
       default: 0
     },
+    // Spam violations tracked separately from speech
+    spamViolationCount: {
+      type: Number,
+      default: 0
+    },
+    // Slur violations tracked for escalation
+    slurViolationCount: {
+      type: Number,
+      default: 0
+    },
     lastViolation: {
+      type: Date,
+      default: null
+    },
+    // When the last violation decay was applied
+    lastDecayApplied: {
       type: Date,
       default: null
     },
@@ -860,7 +876,7 @@ const userSchema = new mongoose.Schema({
     type: [{
       action: {
         type: String,
-        enum: ['warning', 'mute', 'unmute', 'content-removed', 'spam-detected'],
+        enum: ['warning', 'mute', 'unmute', 'content-removed', 'spam-detected', 'slur-detected', 'decay-applied', 'admin-note'],
         required: true
       },
       reason: {

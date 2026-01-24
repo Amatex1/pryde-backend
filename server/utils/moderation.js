@@ -23,7 +23,7 @@ async function getSettings() {
     return cachedSettings;
   } catch (error) {
     console.error('Failed to load moderation settings:', error);
-    // Return defaults if database fails
+    // Return defaults if database fails (Phase 2B: gentler defaults)
     return {
       blockedWords: {
         profanity: ['fuck', 'shit', 'bitch', 'asshole', 'bastard', 'damn', 'crap'],
@@ -34,15 +34,37 @@ async function getSettings() {
       },
       autoMute: {
         enabled: true,
-        violationThreshold: 3,
-        minutesPerViolation: 30,
-        maxMuteDuration: 1440,
-        spamMuteDuration: 60
+        violationThreshold: 5, // Phase 2B: Increased from 3
+        minutesPerViolation: 15, // Phase 2B: Reduced from 30
+        maxMuteDuration: 360, // Phase 2B: Reduced from 1440 (6h instead of 24h)
+        spamMuteDuration: 60,
+        slurMuteDuration: 120,
+        slurEscalationMultiplier: 2
+      },
+      violationDecay: {
+        enabled: true,
+        cleanPeriodDays: 7,
+        decayAmount: 1,
+        spamCleanPeriodDays: 7,
+        slurCleanPeriodDays: 30,
+        slurDecayEnabled: false
       },
       toxicity: {
-        warningThreshold: 50,
+        warningThreshold: 65, // Phase 2B: Increased from 50
+        pointsPerProfanity: 0, // Phase 2B: Set to 0 - profanity allowed
         pointsPerBlockedWord: 10,
         pointsForSpam: 20
+      },
+      enforcement: {
+        profanityTriggersViolation: false,
+        slursZeroTolerance: true
+      },
+      warningMessages: {
+        tier1: "Hey — this conversation's getting intense. You're allowed to express yourself here, just try to keep it from turning personal.",
+        tier2: "Strong opinions are fine — attacks on people aren't. Please adjust how you're engaging.",
+        tier3: "This is a final warning. Continued personal attacks will result in a temporary mute.",
+        slur: "This content targets identity and isn't allowed on Pryde. The content has been removed and your account is temporarily restricted.",
+        spam: "This content has been flagged as spam. Repeated spam will result in account restrictions."
       },
       getAllBlockedWords() {
         const { profanity, slurs, sexual, spam, custom } = this.blockedWords;
@@ -69,6 +91,137 @@ export async function getAutoMuteSettings() {
   return settings.autoMute;
 }
 
+/**
+ * Get violation decay settings
+ */
+export async function getViolationDecaySettings() {
+  const settings = await getSettings();
+  return settings.violationDecay || { enabled: true, cleanPeriodDays: 7, decayAmount: 1 };
+}
+
+/**
+ * Get enforcement behavior settings
+ */
+export async function getEnforcementSettings() {
+  const settings = await getSettings();
+  return settings.enforcement || { profanityTriggersViolation: false, slursZeroTolerance: true };
+}
+
+/**
+ * Get warning messages configuration
+ */
+export async function getWarningMessages() {
+  const settings = await getSettings();
+  return settings.warningMessages || {
+    tier1: "Hey — this conversation's getting intense. You're allowed to express yourself here, just try to keep it from turning personal.",
+    tier2: "Strong opinions are fine — attacks on people aren't. Please adjust how you're engaging.",
+    tier3: "This is a final warning. Continued personal attacks will result in a temporary mute.",
+    slur: "This content targets identity and isn't allowed on Pryde. The content has been removed and your account is temporarily restricted.",
+    spam: "This content has been flagged as spam. Repeated spam will result in account restrictions."
+  };
+}
+
+/**
+ * Determine warning tier based on violation count
+ * @param {number} violationCount - Current violation count
+ * @param {number} threshold - Mute threshold
+ * @returns {number} - Warning tier (1, 2, or 3)
+ */
+export function getWarningTier(violationCount, threshold = 5) {
+  if (violationCount >= threshold - 1) {
+    return 3; // Final warning (1 more violation = mute)
+  } else if (violationCount >= Math.floor(threshold / 2)) {
+    return 2; // Clear boundary
+  }
+  return 1; // Soft signal
+}
+
+/**
+ * Apply violation decay to a user if eligible.
+ * Called during content moderation checks.
+ * Handles separate decay timelines for speech, spam, and slur violations.
+ * @param {object} user - User document with moderation field
+ * @param {object} decaySettings - Violation decay settings
+ * @returns {object} - { decayApplied: boolean, amountDecayed: number, decayDetails: object }
+ */
+export function applyViolationDecay(user, decaySettings) {
+  if (!decaySettings?.enabled || !user?.moderation) {
+    return { decayApplied: false, amountDecayed: 0, decayDetails: {} };
+  }
+
+  const {
+    cleanPeriodDays = 7,
+    decayAmount = 1,
+    spamCleanPeriodDays = 7,
+    slurCleanPeriodDays = 30,
+    slurDecayEnabled = false
+  } = decaySettings;
+  const now = new Date();
+
+  // Check if user has any violations to decay
+  const hasViolations = user.moderation.violationCount > 0 ||
+                        user.moderation.spamViolationCount > 0 ||
+                        (slurDecayEnabled && user.moderation.slurViolationCount > 0);
+
+  if (!hasViolations) {
+    return { decayApplied: false, amountDecayed: 0, decayDetails: {} };
+  }
+
+  // Check if enough time has passed since last violation
+  const lastViolation = user.moderation.lastViolation;
+  if (!lastViolation) {
+    return { decayApplied: false, amountDecayed: 0, decayDetails: {} };
+  }
+
+  const daysSinceViolation = (now - new Date(lastViolation)) / (1000 * 60 * 60 * 24);
+
+  // Check if we already decayed recently (prevent multiple decays in same period)
+  const lastDecay = user.moderation.lastDecayApplied;
+  const minCleanPeriod = Math.min(cleanPeriodDays, spamCleanPeriodDays);
+  if (lastDecay) {
+    const daysSinceDecay = (now - new Date(lastDecay)) / (1000 * 60 * 60 * 24);
+    if (daysSinceDecay < minCleanPeriod) {
+      return { decayApplied: false, amountDecayed: 0, decayDetails: {} };
+    }
+  }
+
+  // Apply decay for each violation type with their own timelines
+  let totalDecayed = 0;
+  const decayDetails = { speech: 0, spam: 0, slur: 0 };
+
+  // Decay speech violations (uses cleanPeriodDays)
+  if (user.moderation.violationCount > 0 && daysSinceViolation >= cleanPeriodDays) {
+    const speechDecay = Math.min(decayAmount, user.moderation.violationCount);
+    user.moderation.violationCount -= speechDecay;
+    totalDecayed += speechDecay;
+    decayDetails.speech = speechDecay;
+  }
+
+  // Decay spam violations independently (uses spamCleanPeriodDays)
+  if (user.moderation.spamViolationCount > 0 && daysSinceViolation >= spamCleanPeriodDays) {
+    const spamDecay = Math.min(decayAmount, user.moderation.spamViolationCount);
+    user.moderation.spamViolationCount -= spamDecay;
+    totalDecayed += spamDecay;
+    decayDetails.spam = spamDecay;
+  }
+
+  // Decay slur violations ONLY if enabled (slow decay, or no decay by default)
+  if (slurDecayEnabled &&
+      user.moderation.slurViolationCount > 0 &&
+      daysSinceViolation >= slurCleanPeriodDays) {
+    const slurDecay = Math.min(decayAmount, user.moderation.slurViolationCount);
+    user.moderation.slurViolationCount -= slurDecay;
+    totalDecayed += slurDecay;
+    decayDetails.slur = slurDecay;
+  }
+
+  if (totalDecayed > 0) {
+    user.moderation.lastDecayApplied = now;
+  }
+
+  return { decayApplied: totalDecayed > 0, amountDecayed: totalDecayed, decayDetails };
+}
+
 // Spam patterns with descriptions (these are not configurable via admin UI for security)
 const spamPatterns = [
   { pattern: /\b(viagra|cialis|pharmacy)\b/i, description: 'Pharmacy spam' },
@@ -82,35 +235,46 @@ const spamPatterns = [
 
 /**
  * Check if content contains blocked words (async - uses database settings)
+ * Returns categorized results for enforcement logic.
  * @param {string} content - The content to check
- * @param {array} blockedWordsList - Optional pre-fetched list of blocked words
- * @returns {Promise<object>} - { isBlocked: boolean, blockedWords: array }
+ * @returns {Promise<object>} - { isBlocked, blockedWords, categories }
  */
-export const checkBlockedWords = async (content, blockedWordsList = null) => {
+export const checkBlockedWords = async (content) => {
   if (!content || typeof content !== 'string') {
-    return { isBlocked: false, blockedWords: [] };
+    return {
+      isBlocked: false,
+      blockedWords: [],
+      categories: { profanity: [], slurs: [], sexual: [], spam: [], custom: [] }
+    };
   }
 
-  // Get blocked words from database or use provided list
-  let wordsList = blockedWordsList;
-  if (!wordsList) {
-    const settings = await getSettings();
-    wordsList = settings.getAllBlockedWords ? settings.getAllBlockedWords() : [];
-  }
+  const settings = await getSettings();
+  const blockedWordsConfig = settings.blockedWords || {
+    profanity: [], slurs: [], sexual: [], spam: [], custom: []
+  };
 
   const lowerContent = content.toLowerCase();
   const foundWords = [];
+  const categories = { profanity: [], slurs: [], sexual: [], spam: [], custom: [] };
 
-  for (const word of wordsList) {
-    const regex = new RegExp(`\\b${word}\\b`, 'i');
-    if (regex.test(lowerContent)) {
-      foundWords.push(word);
+  // Check each category separately
+  for (const category of ['profanity', 'slurs', 'sexual', 'spam', 'custom']) {
+    const wordsList = blockedWordsConfig[category] || [];
+    for (const word of wordsList) {
+      // Escape regex special characters in the word
+      const escapedWord = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const regex = new RegExp(`\\b${escapedWord}\\b`, 'i');
+      if (regex.test(lowerContent)) {
+        foundWords.push(word);
+        categories[category].push(word);
+      }
     }
   }
 
   return {
     isBlocked: foundWords.length > 0,
-    blockedWords: foundWords
+    blockedWords: foundWords,
+    categories
   };
 };
 
@@ -230,7 +394,9 @@ export const sanitizeContent = async (content, blockedWordsList = null) => {
   let sanitized = content;
 
   for (const word of wordsList) {
-    const regex = new RegExp(`\\b${word}\\b`, 'gi');
+    // Escape regex special characters in the word
+    const escapedWord = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(`\\b${escapedWord}\\b`, 'gi');
     sanitized = sanitized.replace(regex, (match) => {
       return '*'.repeat(match.length);
     });
@@ -241,6 +407,8 @@ export const sanitizeContent = async (content, blockedWordsList = null) => {
 
 /**
  * Calculate content toxicity score (0-100) (async - uses database settings)
+ * Toxicity is used for soft warnings and moderator review prioritisation only.
+ * It MUST NOT trigger auto-mute or auto-ban.
  * @param {string} content - The content to analyze
  * @returns {Promise<number>} - Toxicity score (0 = clean, 100 = very toxic)
  */
@@ -250,13 +418,26 @@ export const calculateToxicityScore = async (content) => {
   }
 
   const settings = await getSettings();
-  const toxicityConfig = settings.toxicity || { pointsPerBlockedWord: 10, pointsForSpam: 20 };
+  const toxicityConfig = settings.toxicity || {
+    pointsPerProfanity: 5,
+    pointsPerBlockedWord: 10,
+    pointsForSpam: 20
+  };
 
   let score = 0;
 
-  // Check blocked words (configurable points each)
-  const { blockedWords: foundWords } = await checkBlockedWords(content);
-  score += foundWords.length * toxicityConfig.pointsPerBlockedWord;
+  // Check blocked words with category breakdown
+  const { categories } = await checkBlockedWords(content);
+
+  // Profanity uses lower points (contributes to toxicity but less severely)
+  score += categories.profanity.length * (toxicityConfig.pointsPerProfanity || 5);
+
+  // Other categories use standard blocked word points
+  const otherCategoryCount = categories.slurs.length +
+                             categories.sexual.length +
+                             categories.spam.length +
+                             categories.custom.length;
+  score += otherCategoryCount * toxicityConfig.pointsPerBlockedWord;
 
   // Check spam (configurable points)
   const { isSpam } = checkSpam(content);
