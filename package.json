@@ -5,6 +5,7 @@
   "description": "Pryde Social Network Backend",
   "type": "module",
   "scripts": {
+    "prestart": "node scripts/update-version.js",
     "start": "cd server && npm start",
     "dev": "cd server && npm run dev",
     "test": "cd server && npm test",
