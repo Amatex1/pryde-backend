@@ -60,7 +60,8 @@ cloudflare-*.py
 
 # Frontend files (not needed in backend repo)
 /public/
-/scripts/
+/scripts/*
+!/scripts/update-version.js
 vite.config.js
 vite-plugin-build-version.js
 index.html
