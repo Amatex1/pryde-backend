@@ -25,6 +25,8 @@ const followRequestSchema = new mongoose.Schema({
 // Index for faster queries
 followRequestSchema.index({ sender: 1, receiver: 1 });
 followRequestSchema.index({ receiver: 1, status: 1 });
+// Phase 1 Index Hygiene: Added for GET /api/follow/requests/sent query
+followRequestSchema.index({ sender: 1, status: 1 });
 
 const FollowRequest = mongoose.model('FollowRequest', followRequestSchema);
 
