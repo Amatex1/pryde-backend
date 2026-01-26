@@ -40,7 +40,15 @@ router.post('/', authenticateToken, sanitizeFields(['title', 'body']), async (re
     res.status(201).json(populatedJournal);
   } catch (error) {
     console.error('Create journal error:', error);
-    res.status(500).json({ message: 'Failed to create journal entry' });
+    console.error('Create journal error details:', {
+      name: error.name,
+      message: error.message,
+      stack: error.stack
+    });
+    res.status(500).json({
+      message: 'Failed to create journal entry',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 });
 
