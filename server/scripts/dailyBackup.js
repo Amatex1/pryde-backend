@@ -91,10 +91,10 @@ console.log('📅 Estimated disk usage: ~23 MB');
 console.log('💡 Tip: Set BACKUP_WEBHOOK_URL to get notifications');
 console.log('💡 For manual backups: npm run backup\n');
 
-// Optional: Run initial backup on startup (disabled by default)
-// Uncomment the lines below if you want a backup when the server starts
-// console.log('🚀 Running initial backup on startup...');
-// runBackup();
+// Run initial backup on startup to ensure backup exists after deploy
+// This is critical because Render's filesystem is ephemeral
+console.log('🚀 Running initial backup on startup...');
+runBackup();
 
 // Keep the process running
 process.on('SIGINT', () => {
