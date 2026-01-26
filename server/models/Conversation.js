@@ -36,6 +36,21 @@ const conversationSchema = new mongoose.Schema({
       type: Date,
       default: Date.now
     }
+  }],
+  // Track last read message per user (for unread divider)
+  lastReadMessageId: [{
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
+    },
+    messageId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Message'
+    },
+    updatedAt: {
+      type: Date,
+      default: Date.now
+    }
   }]
 }, {
   timestamps: true
@@ -46,6 +61,7 @@ conversationSchema.index({ participants: 1 }); // For finding conversations by p
 conversationSchema.index({ groupChat: 1 }); // For finding group chat conversations
 conversationSchema.index({ archivedBy: 1 }); // For filtering archived conversations
 conversationSchema.index({ updatedAt: -1 }); // For sorting conversations by last activity
+conversationSchema.index({ 'lastReadMessageId.user': 1 }); // For quick lookup of last read message per user
 
 const Conversation = mongoose.model('Conversation', conversationSchema);
 

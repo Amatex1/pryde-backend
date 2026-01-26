@@ -85,7 +85,7 @@ router.get('/list', auth, requireActiveUser, async (req, res) => {
       Conversation.find({
         participants: { $all: [currentUserId] },
         $or: otherUserIds.map(id => ({ participants: id }))
-      }).select('participants unreadFor').lean()
+      }).select('participants unreadFor lastReadMessageId').lean()
     ]);
 
     // Create lookup maps for O(1) access
@@ -111,6 +111,12 @@ router.get('/list', auth, requireActiveUser, async (req, res) => {
         u => u.user.toString() === currentUserId
       ) || false;
 
+      // Get last read message ID for this user (for unread divider)
+      const lastReadEntry = conversationDoc?.lastReadMessageId?.find(
+        lr => lr.user.toString() === currentUserId
+      );
+      const lastReadMessageId = lastReadEntry?.messageId?.toString() || null;
+
       // Decrypt last message if needed
       if (conv.lastMessage?.content && isEncrypted(conv.lastMessage.content)) {
         try {
@@ -124,7 +130,8 @@ router.get('/list', auth, requireActiveUser, async (req, res) => {
         ...conv,
         otherUser,
         manuallyUnread: isManuallyUnread,
-        unread: conv.unreadCount
+        unread: conv.unreadCount,
+        lastReadMessageId
       };
     });
 
@@ -132,6 +139,48 @@ router.get('/list', auth, requireActiveUser, async (req, res) => {
   } catch (error) {
     logger.error('❌ Error fetching conversations list:', error);
     res.status(500).json({ message: 'Error fetching conversations', error: error.message });
+  }
+});
+
+// Get shared media with a user (messages with attachments)
+// 🔥 IMPORTANT: This route MUST be defined BEFORE /:userId to avoid route collision
+router.get('/:userId/media', auth, requireActiveUser, validateParamId('userId'), checkBlocked, async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const currentUserId = req.userId;
+    const limit = parseInt(req.query.limit) || 50;
+    const skip = parseInt(req.query.skip) || 0;
+
+    logger.debug('📸 Fetching shared media', { currentUserId, userId, limit, skip });
+
+    const messages = await Message.find({
+      $or: [
+        { sender: currentUserId, recipient: userId },
+        { sender: userId, recipient: currentUserId }
+      ],
+      attachment: { $ne: null, $exists: true },
+      'deletedFor.user': { $ne: currentUserId },
+      isDeletedForAll: false
+    })
+      .populate('sender', 'username profilePhoto')
+      .sort({ createdAt: -1 })
+      .limit(limit)
+      .skip(skip);
+
+    logger.debug('📸 Found shared media:', messages.length);
+
+    res.json({
+      media: messages.map(msg => ({
+        _id: msg._id,
+        attachment: msg.attachment,
+        sender: msg.sender,
+        createdAt: msg.createdAt
+      })),
+      hasMore: messages.length === limit
+    });
+  } catch (error) {
+    logger.error('❌ Error fetching shared media:', error);
+    res.status(500).json({ message: 'Error fetching shared media', error: error.message });
   }
 });
 
@@ -337,7 +386,7 @@ router.get('/', auth, requireActiveUser, async (req, res) => {
       Conversation.find({
         participants: { $all: [currentUserId] },
         $or: otherUserIds.map(id => ({ participants: id }))
-      }).select('participants unreadFor').lean()
+      }).select('participants unreadFor lastReadMessageId').lean()
     ]);
 
     // Create lookup maps for O(1) access
@@ -363,6 +412,12 @@ router.get('/', auth, requireActiveUser, async (req, res) => {
         u => u.user.toString() === currentUserId
       ) || false;
 
+      // Get last read message ID for this user (for unread divider)
+      const lastReadEntry = conversationDoc?.lastReadMessageId?.find(
+        lr => lr.user.toString() === currentUserId
+      );
+      const lastReadMessageId = lastReadEntry?.messageId?.toString() || null;
+
       // Decrypt last message if needed
       if (conv.lastMessage?.content && isEncrypted(conv.lastMessage.content)) {
         try {
@@ -376,7 +431,8 @@ router.get('/', auth, requireActiveUser, async (req, res) => {
         ...conv,
         otherUser,
         manuallyUnread: isManuallyUnread,
-        unread: conv.unreadCount
+        unread: conv.unreadCount,
+        lastReadMessageId
       };
     });
 
@@ -1085,6 +1141,63 @@ router.delete('/conversations/:userId/mark-unread', auth, requireActiveUser, val
     res.json({ message: 'Conversation marked as read', conversation });
   } catch (error) {
     logger.error('Mark read error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   PUT /api/messages/conversations/:userId/last-read
+// @desc    Update last read message ID for unread divider
+// @access  Private
+router.put('/conversations/:userId/last-read', auth, requireActiveUser, validateParamId('userId'), async (req, res) => {
+  try {
+    const currentUserId = req.userId;
+    const otherUserId = req.params.userId;
+    const { messageId } = req.body;
+
+    if (!messageId) {
+      return res.status(400).json({ message: 'messageId is required' });
+    }
+
+    // Validate messageId is a valid ObjectId
+    if (!mongoose.Types.ObjectId.isValid(messageId)) {
+      return res.status(400).json({ message: 'Invalid messageId format' });
+    }
+
+    // Find or create conversation
+    let conversation = await Conversation.findOne({
+      participants: { $all: [currentUserId, otherUserId] },
+      groupChat: null
+    });
+
+    if (!conversation) {
+      conversation = new Conversation({
+        participants: [currentUserId, otherUserId]
+      });
+    }
+
+    // Remove existing lastReadMessageId for this user
+    conversation.lastReadMessageId = conversation.lastReadMessageId.filter(
+      lr => lr.user.toString() !== currentUserId
+    );
+
+    // Add new lastReadMessageId
+    conversation.lastReadMessageId.push({
+      user: currentUserId,
+      messageId: messageId,
+      updatedAt: new Date()
+    });
+
+    await conversation.save();
+
+    logger.debug('✅ Updated lastReadMessageId', {
+      currentUserId,
+      otherUserId,
+      messageId
+    });
+
+    res.json({ message: 'Last read message updated', lastReadMessageId: messageId });
+  } catch (error) {
+    logger.error('Update last read message error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
