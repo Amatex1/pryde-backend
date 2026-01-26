@@ -12,17 +12,30 @@ import { sanitizeFields } from '../middleware/sanitize.js';
 
 const router = express.Router();
 
+// @route   GET /api/journals/health
+// @desc    Health check for journals route
+// @access  Public
+router.get('/health', (req, res) => {
+  res.json({ status: 'ok', route: 'journals', timestamp: new Date().toISOString() });
+});
+
 // @route   POST /api/journals
 // @desc    Create a new journal entry
 // @access  Private
 router.post('/', authenticateToken, sanitizeFields(['title', 'body']), async (req, res) => {
   try {
+    console.log('[Journals] POST request received');
+    console.log('[Journals] User ID:', req.user?.id);
+    console.log('[Journals] Request body keys:', Object.keys(req.body || {}));
+
     const { title, body, visibility, mood, tags } = req.body;
 
     if (!body || body.trim().length === 0) {
+      console.log('[Journals] Validation failed: body is required');
       return res.status(400).json({ message: 'Journal body is required' });
     }
 
+    console.log('[Journals] Creating journal document...');
     const journal = new Journal({
       user: req.user.id,
       title: title || null,
@@ -32,18 +45,22 @@ router.post('/', authenticateToken, sanitizeFields(['title', 'body']), async (re
       tags: tags || []
     });
 
+    console.log('[Journals] Saving journal...');
     await journal.save();
+    console.log('[Journals] Journal saved with ID:', journal._id);
 
     const populatedJournal = await Journal.findById(journal._id)
       .populate('user', 'username displayName profilePhoto isVerified');
 
+    console.log('[Journals] Journal created successfully');
     res.status(201).json(populatedJournal);
   } catch (error) {
-    console.error('Create journal error:', error);
-    console.error('Create journal error details:', {
+    console.error('[Journals] Create journal error:', error);
+    console.error('[Journals] Error details:', {
       name: error.name,
       message: error.message,
-      stack: error.stack
+      code: error.code,
+      stack: error.stack?.split('\n').slice(0, 5).join('\n')
     });
     res.status(500).json({
       message: 'Failed to create journal entry',
