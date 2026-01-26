@@ -528,6 +528,29 @@ app.get('/api/status', (req, res) => {
   });
 });
 
+// Cookie debug endpoint (public - for testing cookie clearing)
+app.get('/api/debug/cookies', (req, res) => {
+  const cookies = req.cookies || {};
+  const hasRefreshToken = !!cookies.refreshToken;
+  const refreshTokenPrefix = hasRefreshToken ? cookies.refreshToken.substring(0, 20) + '...' : null;
+
+  res.json({
+    message: 'Cookie debug info',
+    timestamp: new Date().toISOString(),
+    cookies: {
+      hasRefreshToken,
+      refreshTokenPrefix,
+      allCookieNames: Object.keys(cookies),
+      cookieCount: Object.keys(cookies).length
+    },
+    headers: {
+      origin: req.headers.origin,
+      referer: req.headers.referer,
+      cookie: req.headers.cookie ? 'present' : 'absent'
+    }
+  });
+});
+
 // Version endpoint for update detection
 app.get('/api/version', (req, res) => {
   res.json({
