@@ -543,5 +543,30 @@ router.get('/overlay', (req, res) => {
   }
 });
 
+// @route   GET /api/admin/debug/cookies
+// @desc    Debug endpoint to see what cookies are being received (for testing cookie clearing)
+// @access  Public (no auth required - for debugging cookie issues)
+router.get('/cookies', (req, res) => {
+  const cookies = req.cookies || {};
+  const hasRefreshToken = !!cookies.refreshToken;
+  const refreshTokenPrefix = hasRefreshToken ? cookies.refreshToken.substring(0, 20) + '...' : null;
+
+  res.json({
+    message: 'Cookie debug info',
+    timestamp: new Date().toISOString(),
+    cookies: {
+      hasRefreshToken,
+      refreshTokenPrefix,
+      allCookieNames: Object.keys(cookies),
+      cookieCount: Object.keys(cookies).length
+    },
+    headers: {
+      origin: req.headers.origin,
+      referer: req.headers.referer,
+      cookie: req.headers.cookie ? 'present' : 'absent'
+    }
+  });
+});
+
 export default router;
 
