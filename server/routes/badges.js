@@ -163,10 +163,27 @@ router.put('/me/visibility', auth, async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // If user has no badges, allow empty arrays but reject non-empty ones
-    if (!user.badges || user.badges.length === 0) {
+    // HARDENED: Normalize user badges to strings for consistent comparison
+    // This prevents type mismatch issues between string IDs and potential ObjectId references
+    const userBadgeIds = (user.badges || []).map(b => String(b));
+
+    // Debug logging (non-production only) to diagnose badge ownership issues
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('[BadgeVisibility]', {
+        userId: req.userId,
+        userBadges: userBadgeIds,
+        requestedPublic: publicBadges,
+        requestedHidden: hiddenBadges
+      });
+    }
+
+    // If user has no badges, provide a clear diagnostic error
+    if (userBadgeIds.length === 0) {
       if ((publicBadges && publicBadges.length > 0) || (hiddenBadges && hiddenBadges.length > 0)) {
-        return res.status(400).json({ message: 'You have no badges to configure' });
+        return res.status(400).json({
+          message: 'No badges are currently assigned to this user.',
+          code: 'NO_BADGES_ASSIGNED'
+        });
       }
       // Allow setting empty arrays even with no badges
       const updatedUser = await User.findByIdAndUpdate(
@@ -183,11 +200,28 @@ router.put('/me/visibility', auth, async (req, res) => {
       });
     }
 
-    // Validate that all publicBadges belong to user
+    // HARDENED: Validate that all publicBadges belong to user
+    // Normalize both arrays to strings to prevent type mismatch failures
     if (publicBadges && publicBadges.length > 0) {
-      const invalidBadges = publicBadges.filter(badgeId => !user.badges.includes(badgeId));
+      const invalidBadges = publicBadges.filter(
+        badgeId => !userBadgeIds.includes(String(badgeId))
+      );
+
+      // Debug logging for invalid badges (non-production only)
+      if (process.env.NODE_ENV !== 'production' && invalidBadges.length > 0) {
+        console.log('[BadgeVisibility] Invalid badges detected:', {
+          invalidBadges,
+          userBadgeIds,
+          requestedPublic: publicBadges
+        });
+      }
+
       if (invalidBadges.length > 0) {
-        return res.status(400).json({ message: 'You can only make your own badges public' });
+        return res.status(400).json({
+          message: 'You can only make your own badges public',
+          code: 'BADGE_NOT_OWNED',
+          invalidBadges // Include for debugging
+        });
       }
 
       // Validate publicBadges array (excluding CORE_ROLE badges from the 3-badge limit)
@@ -200,13 +234,27 @@ router.put('/me/visibility', auth, async (req, res) => {
       }
     }
 
-    // Validate that hiddenBadges are not CORE_ROLE badges
+    // HARDENED: Validate that hiddenBadges belong to user and are not CORE_ROLE badges
     if (hiddenBadges && hiddenBadges.length > 0) {
+      // First, verify ownership using normalized string comparison
+      const invalidHiddenBadges = hiddenBadges.filter(
+        badgeId => !userBadgeIds.includes(String(badgeId))
+      );
+      if (invalidHiddenBadges.length > 0) {
+        return res.status(400).json({
+          message: 'You can only hide your own badges',
+          code: 'BADGE_NOT_OWNED',
+          invalidBadges: invalidHiddenBadges
+        });
+      }
+
+      // Then check that none are CORE_ROLE badges
       const badgesToHide = await Badge.find({ id: { $in: hiddenBadges } }).select('id category');
       const coreRoleBadges = badgesToHide.filter(b => b.category === 'CORE_ROLE');
       if (coreRoleBadges.length > 0) {
         return res.status(400).json({
-          message: 'Core role badges (Founder/Admin/Moderator/Verified) cannot be hidden'
+          message: 'Core role badges (Founder/Admin/Moderator/Verified) cannot be hidden',
+          code: 'CORE_ROLE_PROTECTED'
         });
       }
     }
