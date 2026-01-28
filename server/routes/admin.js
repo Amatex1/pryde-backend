@@ -29,9 +29,17 @@ async function resolveBadges(badgeIds) {
   }
 
   try {
-    const badges = await Badge.find({ id: { $in: badgeIds } })
-      .select('id label icon tooltip type priority color')
+    // Normalize badge IDs to strings (handles ObjectId edge cases)
+    const normalizedIds = badgeIds.map(id => String(id));
+
+    const badges = await Badge.find({ id: { $in: normalizedIds } })
+      .select('id label icon tooltip type priority color assignmentType')
       .lean();
+
+    // Debug: Log if we're not finding expected badges
+    if (badges.length !== normalizedIds.length) {
+      logger.warn(`resolveBadges: Requested ${normalizedIds.length} badges (${normalizedIds.join(', ')}), found ${badges.length}`);
+    }
 
     return badges.sort((a, b) => (a.priority || 100) - (b.priority || 100));
   } catch (error) {
