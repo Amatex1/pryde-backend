@@ -353,6 +353,49 @@ router.get('/user/:userId', async (req, res) => {
   }
 });
 
+// @route   GET /api/badges/debug/user/:userId
+// @desc    Debug endpoint to check user's raw badge data
+// @access  Public (temporary for debugging)
+router.get('/debug/user/:userId', async (req, res) => {
+  try {
+    const user = await User.findById(req.params.userId)
+      .select('username badges publicBadges hiddenBadges privacySettings.hideBadges')
+      .lean();
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Get all badges in the system
+    const allBadges = await Badge.find({}).select('id label isActive').lean();
+
+    // Check which of the user's badges exist
+    const badgeCheck = (user.badges || []).map(badgeId => {
+      const found = allBadges.find(b => b.id === badgeId);
+      return {
+        id: badgeId,
+        exists: !!found,
+        isActive: found?.isActive,
+        label: found?.label
+      };
+    });
+
+    res.json({
+      userId: req.params.userId,
+      username: user.username,
+      rawBadges: user.badges || [],
+      publicBadges: user.publicBadges || [],
+      hiddenBadges: user.hiddenBadges || [],
+      hideBadgesEnabled: user.privacySettings?.hideBadges || false,
+      badgeCheck,
+      allBadgesInSystem: allBadges.map(b => ({ id: b.id, label: b.label, isActive: b.isActive }))
+    });
+  } catch (error) {
+    console.error('Debug user badges error:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
 // @route   GET /api/badges/:id
 // @desc    Get a specific badge by ID
 // @access  Public
