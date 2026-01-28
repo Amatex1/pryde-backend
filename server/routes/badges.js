@@ -290,20 +290,42 @@ router.get('/user/:userId', async (req, res) => {
       .select('badges publicBadges hiddenBadges privacySettings.hideBadges')
       .lean();
 
+    console.log('[badges/user/:userId] User lookup:', {
+      userId: req.params.userId,
+      found: !!user,
+      userBadges: user?.badges || [],
+      publicBadges: user?.publicBadges || [],
+      hiddenBadges: user?.hiddenBadges || [],
+      hideBadges: user?.privacySettings?.hideBadges
+    });
+
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
 
     // If user has hidden badges, return empty array (respect Quiet Mode)
     if (user.privacySettings?.hideBadges) {
+      console.log('[badges/user/:userId] User has hideBadges enabled, returning empty');
+      return res.json([]);
+    }
+
+    // Check if user has any badges assigned
+    if (!user.badges || user.badges.length === 0) {
+      console.log('[badges/user/:userId] User has no badges assigned');
       return res.json([]);
     }
 
     // Get full badge details for user's badges
     const allBadges = await Badge.find({
-      id: { $in: user.badges || [] },
+      id: { $in: user.badges },
       isActive: true
     }).lean();
+
+    console.log('[badges/user/:userId] Badge lookup:', {
+      requestedBadgeIds: user.badges,
+      foundBadges: allBadges.map(b => ({ id: b.id, label: b.label })),
+      count: allBadges.length
+    });
 
     // Filter badges based on user's visibility settings
     let visibleBadges = allBadges;
@@ -323,6 +345,7 @@ router.get('/user/:userId', async (req, res) => {
     // Sort by priority
     visibleBadges.sort((a, b) => (a.priority || 100) - (b.priority || 100));
 
+    console.log('[badges/user/:userId] Returning', visibleBadges.length, 'visible badges');
     res.json(visibleBadges);
   } catch (error) {
     console.error('Get user badges error:', error);
