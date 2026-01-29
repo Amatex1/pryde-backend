@@ -990,10 +990,10 @@ router.post('/admin/seed', auth, adminAuth(['super_admin']), async (req, res) =>
   }
 });
 
-// @route   GET /api/badges/admin/fix-hide-badges
-// @desc    Fix hideBadges bug - reset all users with hideBadges=true to false
-// @access  Admin
-router.get('/admin/fix-hide-badges', auth, adminAuth(['admin', 'super_admin']), async (req, res) => {
+// @route   GET /api/badges/fix-hide-badges-temp
+// @desc    TEMPORARY: Fix hideBadges bug - reset all users with hideBadges=true to false
+// @access  Public (TEMPORARY - remove after use)
+router.get('/fix-hide-badges-temp', async (req, res) => {
   try {
     // Find all users with hideBadges set to true
     const affectedUsers = await User.find({
@@ -1020,10 +1020,10 @@ router.get('/admin/fix-hide-badges', auth, adminAuth(['admin', 'super_admin']), 
   }
 });
 
-// @route   GET /api/badges/admin/check-hide-badges
-// @desc    Check how many users have hideBadges enabled (diagnostic)
-// @access  Admin
-router.get('/admin/check-hide-badges', auth, adminAuth(['admin', 'super_admin']), async (req, res) => {
+// @route   GET /api/badges/check-hide-badges-temp
+// @desc    TEMPORARY: Check how many users have hideBadges enabled (diagnostic)
+// @access  Public (TEMPORARY - remove after use)
+router.get('/check-hide-badges-temp', async (req, res) => {
   try {
     const usersWithHideBadges = await User.find({
       'privacySettings.hideBadges': true
