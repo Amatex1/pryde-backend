@@ -353,14 +353,28 @@ router.get('/user/:userId', async (req, res) => {
   }
 });
 
-// @route   GET /api/badges/debug/user/:userId
+// @route   GET /api/badges/debug/user/:userIdOrUsername
 // @desc    Debug endpoint to check user's raw badge data
 // @access  Public (temporary for debugging)
-router.get('/debug/user/:userId', async (req, res) => {
+router.get('/debug/user/:userIdOrUsername', async (req, res) => {
   try {
-    const user = await User.findById(req.params.userId)
-      .select('username badges publicBadges hiddenBadges privacySettings.hideBadges')
-      .lean();
+    const param = req.params.userIdOrUsername;
+
+    // Try to find by ID first, then by username
+    let user;
+    if (param.match(/^[0-9a-fA-F]{24}$/)) {
+      // Looks like a MongoDB ObjectId
+      user = await User.findById(param)
+        .select('username badges publicBadges hiddenBadges privacySettings.hideBadges')
+        .lean();
+    }
+
+    // If not found by ID, try username (case-insensitive)
+    if (!user) {
+      user = await User.findOne({ username: { $regex: new RegExp(`^${param}$`, 'i') } })
+        .select('username badges publicBadges hiddenBadges privacySettings.hideBadges')
+        .lean();
+    }
 
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
