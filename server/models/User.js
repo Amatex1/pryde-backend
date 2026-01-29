@@ -1035,8 +1035,10 @@ userSchema.index({ username: 'text', displayName: 'text' });
 // PHASE 3A: SAFE CAPS
 // Enforce rolling caps on embedded arrays to prevent 16MB document limit
 // =========================
+// NOTE: activeSessions is now just a UI cache - Session collection is authoritative
+// Increased from 5 to 10 to show more recent sessions in the UI
 const CAPS = {
-  activeSessions: 5,
+  activeSessions: 10,
   loginHistory: 50,
   moderationHistory: 100
 };

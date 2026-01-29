@@ -1,6 +1,7 @@
 import jwt from 'jsonwebtoken';
 import config from '../config/config.js';
 import User from '../models/User.js';
+import Session from '../models/Session.js'; // Phase 3B-A: Authoritative session store
 import SecurityLog from '../models/SecurityLog.js';
 import { getClientIp } from '../utils/sessionUtils.js';
 import { verifyAccessToken } from '../utils/tokenUtils.js';
@@ -93,16 +94,35 @@ const auth = async (req, res, next) => {
       return sendUnauthorizedError(res, 'Account deleted', ErrorCodes.ACCOUNT_DELETED);
     }
 
-    // Check if session still exists
-    if (decoded.sessionId && user.activeSessions) {
-      const sessionExists = user.activeSessions.some(
-        s => s.sessionId === decoded.sessionId
-      );
-      if (!sessionExists) {
-        if (config.nodeEnv === 'development') {
-          console.log('❌ Session has been logged out');
+    // 🔐 PHASE 3B-A FIX: Check Session collection (authoritative), fallback to User.activeSessions
+    // The Session collection is the source of truth for active sessions.
+    // User.activeSessions is just a bounded cache (capped at 5) for UI display.
+    if (decoded.sessionId) {
+      // First, check the authoritative Session collection
+      const sessionDoc = await Session.findOne({
+        sessionId: decoded.sessionId,
+        userId: user._id,
+        isActive: true
+      }).lean();
+
+      if (!sessionDoc) {
+        // Fallback: Check User.activeSessions cache (for backward compatibility during migration)
+        const cacheHasSession = user.activeSessions?.some(
+          s => s.sessionId === decoded.sessionId
+        );
+
+        if (!cacheHasSession) {
+          if (config.nodeEnv === 'development') {
+            console.log('❌ Session has been logged out (not found in Session collection or cache)');
+          }
+          return sendUnauthorizedError(res, 'Session has been logged out. Please log in again.', ErrorCodes.UNAUTHORIZED);
         }
-        return sendUnauthorizedError(res, 'Session has been logged out. Please log in again.', ErrorCodes.UNAUTHORIZED);
+
+        // Session found in cache but not in collection - this is a legacy session
+        // Allow it but log for monitoring
+        if (config.nodeEnv === 'development') {
+          console.log('⚠️ Session found in User.activeSessions cache but not in Session collection (legacy)');
+        }
       }
     }
 

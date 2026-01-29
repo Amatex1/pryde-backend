@@ -241,7 +241,9 @@ export function limitLoginHistory(user) {
 }
 
 // Maximum concurrent sessions per user
-const MAX_SESSIONS_PER_USER = 5;
+// NOTE: This is for the User.activeSessions cache (UI display).
+// The Session collection (authoritative) has no hard limit - old sessions are cleaned by TTL.
+const MAX_SESSIONS_PER_USER = 10;
 
 /**
  * Enforce maximum concurrent sessions limit
