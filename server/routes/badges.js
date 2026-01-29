@@ -281,6 +281,63 @@ router.put('/me/visibility', auth, async (req, res) => {
   }
 });
 
+// @route   GET /api/badges/debug/user/:userIdOrUsername
+// @desc    Debug endpoint to check user's raw badge data
+// @access  Public (temporary for debugging)
+// NOTE: This route MUST be defined BEFORE /user/:userId to avoid route conflicts
+router.get('/debug/user/:userIdOrUsername', async (req, res) => {
+  try {
+    const param = req.params.userIdOrUsername;
+
+    // Try to find by ID first, then by username
+    let user;
+    if (param.match(/^[0-9a-fA-F]{24}$/)) {
+      // Looks like a MongoDB ObjectId
+      user = await User.findById(param)
+        .select('username badges publicBadges hiddenBadges privacySettings.hideBadges')
+        .lean();
+    }
+
+    // If not found by ID, try username (case-insensitive)
+    if (!user) {
+      user = await User.findOne({ username: { $regex: new RegExp(`^${param}$`, 'i') } })
+        .select('username badges publicBadges hiddenBadges privacySettings.hideBadges')
+        .lean();
+    }
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Get all badges in the system
+    const allBadges = await Badge.find({}).select('id label isActive').lean();
+
+    // Check which of the user's badges exist
+    const badgeCheck = (user.badges || []).map(badgeId => {
+      const found = allBadges.find(b => b.id === badgeId);
+      return {
+        id: badgeId,
+        exists: !!found,
+        isActive: found?.isActive,
+        label: found?.label
+      };
+    });
+
+    res.json({
+      username: user.username,
+      rawBadges: user.badges || [],
+      publicBadges: user.publicBadges || [],
+      hiddenBadges: user.hiddenBadges || [],
+      hideBadgesEnabled: user.privacySettings?.hideBadges || false,
+      badgeCheck,
+      allBadgesInSystem: allBadges.map(b => ({ id: b.id, label: b.label, isActive: b.isActive }))
+    });
+  } catch (error) {
+    console.error('Debug user badges error:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
 // @route   GET /api/badges/user/:userId
 // @desc    Get badges for a specific user (with full badge details, respecting visibility settings)
 // @access  Public
@@ -350,63 +407,6 @@ router.get('/user/:userId', async (req, res) => {
   } catch (error) {
     console.error('Get user badges error:', error);
     res.status(500).json({ message: 'Server error' });
-  }
-});
-
-// @route   GET /api/badges/debug/user/:userIdOrUsername
-// @desc    Debug endpoint to check user's raw badge data
-// @access  Public (temporary for debugging)
-router.get('/debug/user/:userIdOrUsername', async (req, res) => {
-  try {
-    const param = req.params.userIdOrUsername;
-
-    // Try to find by ID first, then by username
-    let user;
-    if (param.match(/^[0-9a-fA-F]{24}$/)) {
-      // Looks like a MongoDB ObjectId
-      user = await User.findById(param)
-        .select('username badges publicBadges hiddenBadges privacySettings.hideBadges')
-        .lean();
-    }
-
-    // If not found by ID, try username (case-insensitive)
-    if (!user) {
-      user = await User.findOne({ username: { $regex: new RegExp(`^${param}$`, 'i') } })
-        .select('username badges publicBadges hiddenBadges privacySettings.hideBadges')
-        .lean();
-    }
-
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-
-    // Get all badges in the system
-    const allBadges = await Badge.find({}).select('id label isActive').lean();
-
-    // Check which of the user's badges exist
-    const badgeCheck = (user.badges || []).map(badgeId => {
-      const found = allBadges.find(b => b.id === badgeId);
-      return {
-        id: badgeId,
-        exists: !!found,
-        isActive: found?.isActive,
-        label: found?.label
-      };
-    });
-
-    res.json({
-      userId: req.params.userId,
-      username: user.username,
-      rawBadges: user.badges || [],
-      publicBadges: user.publicBadges || [],
-      hiddenBadges: user.hiddenBadges || [],
-      hideBadgesEnabled: user.privacySettings?.hideBadges || false,
-      badgeCheck,
-      allBadgesInSystem: allBadges.map(b => ({ id: b.id, label: b.label, isActive: b.isActive }))
-    });
-  } catch (error) {
-    console.error('Debug user badges error:', error);
-    res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
 
