@@ -339,135 +339,41 @@ router.get('/debug/user/:userIdOrUsername', async (req, res) => {
 });
 
 // @route   GET /api/badges/user/:userId
-// @desc    Get badges for a specific user (with full badge details, respecting visibility settings)
+// @desc    Get badges for a specific user (shows ALL badges, respects hideBadges toggle)
 // @access  Public
 router.get('/user/:userId', async (req, res) => {
   try {
     const user = await User.findById(req.params.userId)
-      .select('badges publicBadges hiddenBadges privacySettings.hideBadges')
+      .select('badges privacySettings.hideBadges')
       .lean();
-
-    console.log('[badges/user/:userId] User lookup:', {
-      userId: req.params.userId,
-      found: !!user,
-      userBadges: user?.badges || [],
-      publicBadges: user?.publicBadges || [],
-      hiddenBadges: user?.hiddenBadges || [],
-      hideBadges: user?.privacySettings?.hideBadges
-    });
 
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // If user has hidden badges, return empty array (respect Quiet Mode)
+    // If user has hidden badges, return empty array
     if (user.privacySettings?.hideBadges) {
-      console.log('[badges/user/:userId] User has hideBadges enabled, returning empty');
       return res.json([]);
     }
 
     // Check if user has any badges assigned
     if (!user.badges || user.badges.length === 0) {
-      console.log('[badges/user/:userId] User has no badges assigned');
       return res.json([]);
     }
 
-    // Get full badge details for user's badges
+    // Get full badge details for ALL user's badges
     const allBadges = await Badge.find({
       id: { $in: user.badges },
       isActive: true
     }).lean();
 
-    console.log('[badges/user/:userId] Badge lookup:', {
-      requestedBadgeIds: user.badges,
-      foundBadges: allBadges.map(b => ({ id: b.id, label: b.label })),
-      count: allBadges.length
-    });
+    // Sort by priority (lower = more important)
+    allBadges.sort((a, b) => (a.priority || 100) - (b.priority || 100));
 
-    // Filter badges based on user's visibility settings
-    let visibleBadges = allBadges;
-
-    // If user has configured public badges, show only those + CORE_ROLE badges
-    if (user.publicBadges && user.publicBadges.length > 0) {
-      visibleBadges = allBadges.filter(badge =>
-        badge.category === 'CORE_ROLE' || user.publicBadges.includes(badge.id)
-      );
-    } else {
-      // Otherwise, show all badges except hidden ones
-      visibleBadges = allBadges.filter(badge =>
-        !user.hiddenBadges?.includes(badge.id)
-      );
-    }
-
-    // Sort by priority
-    visibleBadges.sort((a, b) => (a.priority || 100) - (b.priority || 100));
-
-    console.log('[badges/user/:userId] Returning', visibleBadges.length, 'visible badges');
-    res.json(visibleBadges);
+    res.json(allBadges);
   } catch (error) {
     console.error('Get user badges error:', error);
     res.status(500).json({ message: 'Server error' });
-  }
-});
-
-// ============================================================
-// TEMPORARY FIX ROUTES (move before /:id to avoid route conflicts)
-// ============================================================
-
-// @route   GET /api/badges/fix-hide-badges-temp
-// @desc    TEMPORARY: Fix hideBadges bug - reset all users with hideBadges=true to false
-// @access  Public (TEMPORARY - remove after use)
-router.get('/fix-hide-badges-temp', async (req, res) => {
-  try {
-    // Find all users with hideBadges set to true
-    const affectedUsers = await User.find({
-      'privacySettings.hideBadges': true
-    }).select('username privacySettings.hideBadges').lean();
-
-    console.log(`[fix-hide-badges] Found ${affectedUsers.length} users with hideBadges=true`);
-
-    // Reset hideBadges to false for all affected users
-    const result = await User.updateMany(
-      { 'privacySettings.hideBadges': true },
-      { $set: { 'privacySettings.hideBadges': false } }
-    );
-
-    res.json({
-      message: 'Fixed hideBadges for all affected users',
-      affectedCount: affectedUsers.length,
-      affectedUsers: affectedUsers.map(u => u.username),
-      updateResult: result
-    });
-  } catch (error) {
-    console.error('Fix hide badges error:', error);
-    res.status(500).json({ message: 'Server error', error: error.message });
-  }
-});
-
-// @route   GET /api/badges/check-hide-badges-temp
-// @desc    TEMPORARY: Check how many users have hideBadges enabled (diagnostic)
-// @access  Public (TEMPORARY - remove after use)
-router.get('/check-hide-badges-temp', async (req, res) => {
-  try {
-    const usersWithHideBadges = await User.find({
-      'privacySettings.hideBadges': true
-    }).select('username privacySettings.hideBadges').lean();
-
-    const usersWithoutHideBadges = await User.countDocuments({
-      $or: [
-        { 'privacySettings.hideBadges': false },
-        { 'privacySettings.hideBadges': { $exists: false } }
-      ]
-    });
-
-    res.json({
-      usersWithHideBadgesEnabled: usersWithHideBadges.length,
-      usersWithHideBadgesDisabledOrUnset: usersWithoutHideBadges,
-      affectedUsernames: usersWithHideBadges.map(u => u.username)
-    });
-  } catch (error) {
-    console.error('Check hide badges error:', error);
-    res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
 
