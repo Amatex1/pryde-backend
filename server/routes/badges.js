@@ -990,4 +990,61 @@ router.post('/admin/seed', auth, adminAuth(['super_admin']), async (req, res) =>
   }
 });
 
+// @route   GET /api/badges/admin/fix-hide-badges
+// @desc    Fix hideBadges bug - reset all users with hideBadges=true to false
+// @access  Admin
+router.get('/admin/fix-hide-badges', auth, adminAuth(['admin', 'super_admin']), async (req, res) => {
+  try {
+    // Find all users with hideBadges set to true
+    const affectedUsers = await User.find({
+      'privacySettings.hideBadges': true
+    }).select('username privacySettings.hideBadges').lean();
+
+    console.log(`[fix-hide-badges] Found ${affectedUsers.length} users with hideBadges=true`);
+
+    // Reset hideBadges to false for all affected users
+    const result = await User.updateMany(
+      { 'privacySettings.hideBadges': true },
+      { $set: { 'privacySettings.hideBadges': false } }
+    );
+
+    res.json({
+      message: 'Fixed hideBadges for all affected users',
+      affectedCount: affectedUsers.length,
+      affectedUsers: affectedUsers.map(u => u.username),
+      updateResult: result
+    });
+  } catch (error) {
+    console.error('Fix hide badges error:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+// @route   GET /api/badges/admin/check-hide-badges
+// @desc    Check how many users have hideBadges enabled (diagnostic)
+// @access  Admin
+router.get('/admin/check-hide-badges', auth, adminAuth(['admin', 'super_admin']), async (req, res) => {
+  try {
+    const usersWithHideBadges = await User.find({
+      'privacySettings.hideBadges': true
+    }).select('username privacySettings.hideBadges').lean();
+
+    const usersWithoutHideBadges = await User.countDocuments({
+      $or: [
+        { 'privacySettings.hideBadges': false },
+        { 'privacySettings.hideBadges': { $exists: false } }
+      ]
+    });
+
+    res.json({
+      usersWithHideBadgesEnabled: usersWithHideBadges.length,
+      usersWithHideBadgesDisabledOrUnset: usersWithoutHideBadges,
+      affectedUsernames: usersWithHideBadges.map(u => u.username)
+    });
+  } catch (error) {
+    console.error('Check hide badges error:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
 export default router;
