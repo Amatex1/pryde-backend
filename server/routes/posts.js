@@ -350,6 +350,9 @@ router.post('/', auth, requireActiveUser, requireEmailVerification, postLimiter,
     await post.populate('author', 'username displayName profilePhoto isVerified pronouns badges');
     // REMOVED 2025-12-28: tags populate deleted (Phase 5 - tags removed from Post schema)
 
+    // ⚡ PHASE 2C FIX: Populate badges before socket emit (badges are stored as IDs, need full objects)
+    await populateSinglePostBadges(post);
+
     // ✅ Emit real-time event for new post
     if (req.io) {
       const sanitizedPost = sanitizePostForPrivateLikes(post, userId);
@@ -475,6 +478,9 @@ router.put('/:id', auth, requireActiveUser, sanitizeFields(['content', 'contentW
     // await post.populate('likes', 'username displayName profilePhoto'); // REMOVED - private likes
     await post.populate('comments.user', 'username displayName profilePhoto isVerified pronouns badges');
     // REMOVED 2025-12-26: originalPost population deleted (Phase 5)
+
+    // ⚡ PHASE 2C FIX: Populate badges before socket emit
+    await populateSinglePostBadges(post);
 
     // PHASE 1 REFACTOR: Sanitize post to hide like counts
     const sanitizedPost = sanitizePostForPrivateLikes(post, userId);
@@ -731,6 +737,9 @@ router.post('/:id/react', auth, requireActiveUser, reactionLimiter, async (req, 
     await post.populate('comments.user', 'username displayName profilePhoto isVerified pronouns badges');
     // REMOVED 2025-12-26: originalPost population deleted (Phase 5)
 
+    // ⚡ PHASE 2C FIX: Populate badges before socket emit
+    await populateSinglePostBadges(post);
+
     // PHASE 1 REFACTOR: Sanitize post to hide like counts
     const sanitizedPost = sanitizePostForPrivateLikes(post, userId);
 
@@ -848,6 +857,9 @@ router.post('/:id/comment/:commentId/react', auth, requireActiveUser, reactionLi
     await post.populate('comments.reactions.user', 'username displayName profilePhoto');
     // REMOVED 2025-12-26: originalPost population deleted (Phase 5)
 
+    // ⚡ PHASE 2C FIX: Populate badges before socket emit
+    await populateSinglePostBadges(post);
+
     // PHASE 1 REFACTOR: Sanitize post to hide like counts
     const sanitizedPost = sanitizePostForPrivateLikes(post, userId);
 
@@ -960,6 +972,9 @@ router.post('/:id/comment', auth, requireActiveUser, requireEmailVerification, c
     await post.populate('comments.user', 'username displayName profilePhoto isVerified pronouns badges');
     // await post.populate('likes', 'username displayName profilePhoto'); // REMOVED - private likes
     // REMOVED 2025-12-26: originalPost population deleted (Phase 5)
+
+    // ⚡ PHASE 2C FIX: Populate badges before socket emit
+    await populateSinglePostBadges(post);
 
     // PHASE 1 REFACTOR: Sanitize post to hide like counts
     const sanitizedPost = sanitizePostForPrivateLikes(post, userId);
