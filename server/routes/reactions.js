@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 import Reaction, { APPROVED_REACTIONS } from '../models/Reaction.js';
 import Post from '../models/Post.js';
 import Comment from '../models/Comment.js';
+import User from '../models/User.js';
 import auth, { optionalAuth } from '../middleware/auth.js';
 import requireActiveUser from '../middleware/requireActiveUser.js';
 import { reactionLimiter } from '../middleware/rateLimiter.js';
@@ -10,6 +11,15 @@ import logger from '../utils/logger.js';
 import { emitValidated } from '../utils/emitValidated.js';
 
 const router = express.Router();
+
+// CALM ONBOARDING: Helper to update lastActivityDate for quiet return detection
+const updateLastActivityDate = async (userId) => {
+  try {
+    await User.findByIdAndUpdate(userId, { lastActivityDate: new Date() });
+  } catch (err) {
+    logger.warn('Failed to update lastActivityDate:', err.message);
+  }
+};
 
 /**
  * @route   POST /api/reactions
@@ -141,6 +151,9 @@ router.post('/', auth, requireActiveUser, reactionLimiter, async (req, res) => {
           emoji
         });
       }
+
+      // CALM ONBOARDING: Track activity for quiet return detection (non-blocking)
+      setImmediate(() => updateLastActivityDate(userId));
 
       return res.json({
         action: 'added',

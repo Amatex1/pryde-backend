@@ -27,6 +27,17 @@ import { asyncHandler, requireAuth, requireValidId, sendError, HttpStatus } from
 import { processUserBadgesById } from '../services/autoBadgeService.js';
 import { populatePostBadges, populateSinglePostBadges } from '../utils/populateBadges.js';
 
+// CALM ONBOARDING: Helper to update lastActivityDate for quiet return detection
+// Updates user's lastActivityDate when they post, react, or comment
+const updateLastActivityDate = async (userId) => {
+  try {
+    await User.findByIdAndUpdate(userId, { lastActivityDate: new Date() });
+  } catch (err) {
+    // Non-blocking - don't fail the main operation if this fails
+    logger.warn('Failed to update lastActivityDate:', err.message);
+  }
+};
+
 // PHASE 1 REFACTOR: Helper function to sanitize post for private likes
 // Removes like count and list of who liked, only shows if current user liked
 const sanitizePostForPrivateLikes = (post, currentUserId) => {
@@ -374,6 +385,9 @@ router.post('/', auth, requireActiveUser, requireEmailVerification, postLimiter,
         logger.warn('Failed to process badges on post creation:', err.message);
       }
     });
+
+    // CALM ONBOARDING: Track activity for quiet return detection (non-blocking)
+    setImmediate(() => updateLastActivityDate(userId));
 
     res.status(201).json({ ...post.toObject(), _mutationId: mutation.mutationId });
   } catch (error) {
@@ -751,6 +765,9 @@ router.post('/:id/react', auth, requireActiveUser, reactionLimiter, async (req, 
       });
     }
 
+    // CALM ONBOARDING: Track activity for quiet return detection (non-blocking)
+    setImmediate(() => updateLastActivityDate(userId));
+
     res.json(sanitizedPost);
   } catch (error) {
     logger.error('React to post error:', error);
@@ -987,6 +1004,9 @@ router.post('/:id/comment', auth, requireActiveUser, requireEmailVerification, c
         post: sanitizedPost
       });
     }
+
+    // CALM ONBOARDING: Track activity for quiet return detection (non-blocking)
+    setImmediate(() => updateLastActivityDate(userId));
 
     res.json(sanitizedPost);
   } catch (error) {

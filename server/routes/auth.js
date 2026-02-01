@@ -1968,4 +1968,128 @@ router.post('/onboarding/remind-later', auth, async (req, res) => {
   }
 });
 
+// ============================================
+// CALM ONBOARDING: Phase 4 - Quiet Return
+// ============================================
+
+/**
+ * @route   GET /api/auth/onboarding/quiet-return
+ * @desc    Check if user should see quiet return message (inactive 14-30 days)
+ * @access  Private
+ *
+ * Returns:
+ * - showQuietReturn: boolean - true if user should see the message
+ * - Only returns true ONCE per inactivity window
+ */
+router.get('/onboarding/quiet-return', auth, async (req, res) => {
+  try {
+    const user = await User.findById(req.userId);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found',
+        showQuietReturn: false
+      });
+    }
+
+    // Don't show to users who haven't completed initial onboarding
+    if (!user.hasCompletedTour && !user.hasSkippedTour && !user.onboardingTourDismissed) {
+      return res.json({
+        success: true,
+        showQuietReturn: false,
+        reason: 'onboarding_not_complete'
+      });
+    }
+
+    // Check if user has been inactive for 14-30 days
+    const now = new Date();
+    const lastActivity = user.lastActivityDate;
+
+    // If no activity recorded, don't show (they're new or we don't have data)
+    if (!lastActivity) {
+      return res.json({
+        success: true,
+        showQuietReturn: false,
+        reason: 'no_activity_recorded'
+      });
+    }
+
+    const daysSinceActivity = Math.floor((now - lastActivity) / (1000 * 60 * 60 * 24));
+
+    // Only show for 14-30 days of inactivity
+    if (daysSinceActivity < 14 || daysSinceActivity > 30) {
+      return res.json({
+        success: true,
+        showQuietReturn: false,
+        reason: daysSinceActivity < 14 ? 'too_recent' : 'too_long'
+      });
+    }
+
+    // Check if we've already shown the quiet return message in this inactivity window
+    const quietReturnShown = user.quietReturnShownAt;
+    if (quietReturnShown) {
+      // If shown after their last activity, don't show again
+      if (quietReturnShown > lastActivity) {
+        return res.json({
+          success: true,
+          showQuietReturn: false,
+          reason: 'already_shown_this_window'
+        });
+      }
+    }
+
+    // User qualifies for quiet return message
+    return res.json({
+      success: true,
+      showQuietReturn: true,
+      daysSinceActivity
+    });
+
+  } catch (error) {
+    logger.error('Quiet return check error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Server error',
+      showQuietReturn: false
+    });
+  }
+});
+
+/**
+ * @route   POST /api/auth/onboarding/quiet-return-shown
+ * @desc    Mark quiet return message as shown (once per inactivity window)
+ * @access  Private
+ */
+router.post('/onboarding/quiet-return-shown', auth, async (req, res) => {
+  try {
+    const user = await User.findById(req.userId);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    user.quietReturnShownAt = new Date();
+    await user.save();
+
+    logger.info(`User ${user.username} saw quiet return message`);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Quiet return marked as shown',
+      quietReturnShownAt: user.quietReturnShownAt
+    });
+
+  } catch (error) {
+    logger.error('Quiet return shown error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to mark quiet return as shown'
+    });
+  }
+});
+
 export default router;
