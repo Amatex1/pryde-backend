@@ -1868,4 +1868,104 @@ router.post('/tour/skip', auth, async (req, res) => {
   }
 });
 
+// ============================================
+// CALM ONBOARDING ENDPOINTS (Phase 1-5)
+// ============================================
+
+// @route   POST /api/auth/onboarding/welcome-seen
+// @desc    Mark welcome page as seen (Phase 1)
+// @access  Private
+router.post('/onboarding/welcome-seen', auth, async (req, res) => {
+  try {
+    const user = await User.findById(req.userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Update onboarding step
+    user.onboardingStep = 'welcome_seen';
+    await user.save();
+
+    logger.info(`User ${user.username} saw welcome page`);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Welcome seen',
+      onboardingStep: 'welcome_seen'
+    });
+  } catch (error) {
+    logger.error('Welcome seen error:', error);
+    return res.status(500).json({
+      message: 'Failed to update onboarding status',
+      success: false
+    });
+  }
+});
+
+// @route   POST /api/auth/onboarding/tour-dismissed
+// @desc    Mark tour as dismissed from intro page (Phase 2)
+// @access  Private
+router.post('/onboarding/tour-dismissed', auth, async (req, res) => {
+  try {
+    const user = await User.findById(req.userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Mark tour as dismissed (never show again)
+    user.onboardingTourDismissed = true;
+    user.hasSkippedTour = true;
+    user.onboardingStep = 'tour_dismissed';
+    await user.save();
+
+    logger.info(`User ${user.username} dismissed tour from intro`);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Tour dismissed',
+      onboardingTourDismissed: true
+    });
+  } catch (error) {
+    logger.error('Tour dismissed error:', error);
+    return res.status(500).json({
+      message: 'Failed to update tour status',
+      success: false
+    });
+  }
+});
+
+// @route   POST /api/auth/onboarding/remind-later
+// @desc    Defer tour for 3 days (Phase 3 - "Remind me later")
+// @access  Private
+router.post('/onboarding/remind-later', auth, async (req, res) => {
+  try {
+    const user = await User.findById(req.userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Set remind later date to 3 days from now
+    const remindDate = new Date();
+    remindDate.setDate(remindDate.getDate() + 3);
+
+    user.tourRemindLaterDate = remindDate;
+    user.onboardingStep = 'remind_later';
+    await user.save();
+
+    logger.info(`User ${user.username} deferred tour until ${remindDate.toISOString()}`);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Tour deferred',
+      tourRemindLaterDate: remindDate
+    });
+  } catch (error) {
+    logger.error('Remind later error:', error);
+    return res.status(500).json({
+      message: 'Failed to defer tour',
+      success: false
+    });
+  }
+});
+
 export default router;

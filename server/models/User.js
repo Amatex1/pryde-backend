@@ -821,6 +821,24 @@ const userSchema = new mongoose.Schema({
     type: Date,
     default: null
   },
+  // Calm Onboarding (added 2025-02-01)
+  // Tracks opt-in onboarding flow states
+  onboardingTourDismissed: {
+    type: Boolean,
+    default: false
+  },
+  tourRemindLaterDate: {
+    type: Date,
+    default: null
+  },
+  lastActivityDate: {
+    type: Date,
+    default: null
+  },
+  quietReturnShownAt: {
+    type: Date,
+    default: null
+  },
   // Blocked Users
   blockedUsers: {
     type: [{
