@@ -10,6 +10,7 @@ import {
   getWarningTier,
   applyViolationDecay
 } from '../utils/moderation.js';
+import { moderateContentV2 } from '../utils/moderationV2.js';
 import logger from '../utils/logger.js';
 
 /**
@@ -60,15 +61,15 @@ export const checkMuted = async (req, res, next) => {
 };
 
 /**
- * Moderate content for blocked words and spam
- * Uses configurable settings from database.
+ * Moderate content using PRYDE_MODERATION_V2 (5-layer intent-driven system)
+ * Maintains backward compatibility with existing response format
  *
- * ENFORCEMENT PHILOSOPHY (Community Guidelines):
- * - Profanity: Allowed, contributes to toxicity score only, no violations
- * - Slurs/Hate Speech: Zero tolerance, immediate enforcement
- * - Sexual/Custom blocked: Standard warning ladder
- * - Spam: Separate enforcement track from speech violations
- * - Toxicity Score: Soft warnings only, NEVER auto-mute/ban
+ * CONSTRAINTS:
+ * - Layer 1: CLASSIFICATION ONLY - never triggers blocks/mutes/decay
+ * - Intent: Categorical (expressive/neutral/disruptive/hostile/dangerous) - not toxicity score
+ * - Behavior score outweighs formatting signals
+ * - Visibility dampening: Non-punitive, temporary, reversible
+ * - Admin override: Full undo/restore/remove history/manual actions
  */
 export const moderateContent = async (req, res, next) => {
   try {
@@ -84,7 +85,7 @@ export const moderateContent = async (req, res, next) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // Get all settings
+    // Get all settings for backward compatibility
     const [autoMuteSettings, decaySettings, enforcementSettings, warningMessages] = await Promise.all([
       getAutoMuteSettings(),
       getViolationDecaySettings(),
@@ -129,287 +130,133 @@ export const moderateContent = async (req, res, next) => {
       });
     }
 
-    // Helper to create a truncated content preview (max 200 chars)
-    const createContentPreview = (text) => {
-      if (!text) return '';
-      const cleaned = text.replace(/\s+/g, ' ').trim();
-      return cleaned.length > 200 ? cleaned.substring(0, 197) + '...' : cleaned;
-    };
-
     // Determine content type and ID
     const contentType = req.body.postId ? 'comment' : 'post';
     const contentId = req.body.postId || null;
 
     // ═══════════════════════════════════════════════════════════════════════════
-    // BLOCKED WORDS CHECK (with category awareness)
+    // PRYDE_MODERATION_V2: Use the new 5-layer system
     // ═══════════════════════════════════════════════════════════════════════════
-    const { isBlocked, blockedWords, categories } = await checkBlockedWords(content);
 
-    if (isBlocked) {
-      const hasSlurs = categories.slurs.length > 0;
-      const hasSexual = categories.sexual.length > 0;
-      const hasCustom = categories.custom.length > 0;
-      const hasProfanityOnly = categories.profanity.length > 0 &&
-                               !hasSlurs && !hasSexual && !hasCustom;
-      const hasSpamWords = categories.spam.length > 0;
+    // Get recent content for behavior analysis (last 10 items from history)
+    const recentContent = user.moderationHistory
+      .filter(entry => entry.contentPreview && entry.timestamp)
+      .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+      .slice(0, 10)
+      .map(entry => ({
+        content: entry.contentPreview,
+        timestamp: entry.timestamp
+      }));
 
-      // ─────────────────────────────────────────────────────────────────────────
-      // SLUR DETECTION: Zero tolerance, immediate enforcement
-      // ─────────────────────────────────────────────────────────────────────────
-      if (hasSlurs && enforcementSettings.slursZeroTolerance) {
-        user.moderation.slurViolationCount = (user.moderation.slurViolationCount || 0) + 1;
-        user.moderation.violationCount += 1;
-        user.moderation.lastViolation = new Date();
+    // Call the new moderation system
+    const moderationResult = await moderateContentV2(content, req.userId, {
+      recentContent,
+      userContext: {
+        recentHostileContent: user.moderationHistory.some(entry =>
+          entry.action === 'hostile-detected' &&
+          new Date(entry.timestamp) > new Date(Date.now() - 24 * 60 * 60 * 1000) // Last 24 hours
+        )
+      },
+      returnAllLayers: true
+    });
 
-        // Calculate escalating mute duration for slurs
-        const baseDuration = autoMuteSettings.slurMuteDuration || 120;
-        const escalationMultiplier = autoMuteSettings.slurEscalationMultiplier || 2;
-        const muteDuration = Math.min(
-          baseDuration * Math.pow(escalationMultiplier, user.moderation.slurViolationCount - 1),
-          autoMuteSettings.maxMuteDuration
-        );
+    // Log the layer outputs to moderation history
+    user.moderationHistory.push({
+      action: 'moderation-v2-processed',
+      reason: `PRYDE_MODERATION_V2 processed - Action: ${moderationResult.action}`,
+      contentType,
+      contentId,
+      contentPreview: content.length > 200 ? content.substring(0, 197) + '...' : content,
+      detectedViolations: [`Intent: ${moderationResult.layer_outputs.layer2.intent_category}`],
+      automated: true,
+      layer_outputs: moderationResult.layer_outputs
+    });
 
-        user.moderationHistory.push({
-          action: 'slur-detected',
-          reason: `Slur/hate speech detected: ${categories.slurs.join(', ')}`,
-          contentType,
-          contentId,
-          contentPreview: createContentPreview(content),
-          detectedViolations: categories.slurs,
-          automated: true
-        });
+    // Handle different actions from the new system
+    switch (moderationResult.action) {
+      case 'ALLOW':
+        // Content allowed - proceed
+        return next();
 
-        // Immediate mute (bypasses warning ladder)
+      case 'ALLOW_WITH_INTERNAL_NOTE':
+        // Content allowed but flagged for monitoring
+        await user.save();
+        return next();
+
+      case 'VISIBILITY_DAMPEN':
+        // Temporarily reduce visibility (non-punitive)
+        req.visibilityDampened = true;
+        req.dampeningDuration = moderationResult.dampening_duration;
+        await user.save();
+        return next();
+
+      case 'QUEUE_FOR_REVIEW':
+        // Queue for human review
+        req.queuedForReview = true;
+        req.queuePriority = moderationResult.queue_priority;
+        await user.save();
+        return next();
+
+      case 'TEMP_MUTE':
+        // Apply temporary mute
         if (autoMuteSettings.enabled && user.moderation.autoMuteEnabled) {
+          const muteDuration = moderationResult.dampening_duration || 30; // Default 30 minutes
           user.moderation.isMuted = true;
           user.moderation.muteExpires = new Date(Date.now() + muteDuration * 60 * 1000);
-          user.moderation.muteReason = 'Slur or hate speech detected (zero tolerance policy)';
+          user.moderation.muteReason = moderationResult.reason;
           user.moderationHistory.push({
             action: 'mute',
-            reason: `Immediate mute for ${muteDuration} minutes - slur offense #${user.moderation.slurViolationCount}`,
+            reason: `Auto-muted for ${muteDuration} minutes - ${moderationResult.reason}`,
             contentType: 'other',
-            detectedViolations: [`Slur violations: ${user.moderation.slurViolationCount}`],
-            automated: true
-          });
-        }
-
-        await user.save();
-
-        return res.status(400).json({
-          message: warningMessages.slur,
-          blockedWords: categories.slurs,
-          violationCount: user.moderation.violationCount,
-          isMuted: user.moderation.isMuted,
-          warningType: 'slur'
-        });
-      }
-
-      // ─────────────────────────────────────────────────────────────────────────
-      // PROFANITY ONLY: Log but do NOT increment violations (Community Guidelines)
-      // ─────────────────────────────────────────────────────────────────────────
-      if (hasProfanityOnly && !enforcementSettings.profanityTriggersViolation) {
-        // Profanity contributes to toxicity score only
-        // Allow the content to proceed - profanity is permitted
-        // Just calculate toxicity for soft warning
-        const toxicityScore = await calculateToxicityScore(content);
-        if (toxicityScore > 50) {
-          req.toxicityWarning = true;
-          user.moderationHistory.push({
-            action: 'warning',
-            reason: `High toxicity score (${toxicityScore}) with profanity: ${categories.profanity.join(', ')}`,
-            contentType,
-            contentId,
-            contentPreview: createContentPreview(content),
-            detectedViolations: [`Toxicity: ${toxicityScore}`, ...categories.profanity],
+            detectedViolations: [`Intent: ${moderationResult.layer_outputs.layer2.intent_category}`],
             automated: true
           });
           await user.save();
-        }
-        // Allow content through - profanity alone doesn't block
-        return next();
-      }
 
-      // ─────────────────────────────────────────────────────────────────────────
-      // SEXUAL/CUSTOM BLOCKED WORDS: Standard warning ladder with tiered messages
-      // ─────────────────────────────────────────────────────────────────────────
-      if (hasSexual || hasCustom) {
-        const violatingWords = [...categories.sexual, ...categories.custom];
+          return res.status(400).json({
+            message: warningMessages.tier3, // Use highest tier message
+            violationCount: user.moderation.violationCount,
+            warningTier: 3,
+            warningType: 'intent_violation',
+            isMuted: true,
+            intentCategory: moderationResult.layer_outputs.layer2.intent_category
+          });
+        }
+        // If auto-mute disabled, still allow content but log
+        await user.save();
+        return next();
+
+      case 'HARD_BLOCK':
+        // Hard block content
         user.moderation.violationCount += 1;
         user.moderation.lastViolation = new Date();
 
-        // Determine warning tier based on violation count
-        const warningTier = getWarningTier(user.moderation.violationCount, autoMuteSettings.violationThreshold);
-        const tierMessage = warningTier === 3 ? warningMessages.tier3 :
-                           warningTier === 2 ? warningMessages.tier2 :
-                           warningMessages.tier1;
-
         user.moderationHistory.push({
-          action: 'warning',
-          reason: `Blocked words detected: ${violatingWords.join(', ')} (Tier ${warningTier} warning)`,
+          action: 'hard-block',
+          reason: moderationResult.reason,
           contentType,
           contentId,
-          contentPreview: createContentPreview(content),
-          detectedViolations: violatingWords,
+          contentPreview: content.length > 200 ? content.substring(0, 197) + '...' : content,
+          detectedViolations: [`Intent: ${moderationResult.layer_outputs.layer2.intent_category}`],
           automated: true
         });
-
-        // Auto-mute if threshold exceeded (standard ladder)
-        const shouldAutoMute = autoMuteSettings.enabled &&
-                               user.moderation.autoMuteEnabled &&
-                               user.moderation.violationCount >= autoMuteSettings.violationThreshold;
-
-        if (shouldAutoMute) {
-          const muteDuration = Math.min(
-            user.moderation.violationCount * autoMuteSettings.minutesPerViolation,
-            autoMuteSettings.maxMuteDuration
-          );
-          user.moderation.isMuted = true;
-          user.moderation.muteExpires = new Date(Date.now() + muteDuration * 60 * 1000);
-          user.moderation.muteReason = 'Repeated violations of community guidelines';
-          user.moderationHistory.push({
-            action: 'mute',
-            reason: `Auto-muted for ${muteDuration} minutes due to ${user.moderation.violationCount} violations`,
-            contentType: 'other',
-            detectedViolations: [`Total violations: ${user.moderation.violationCount}`],
-            automated: true
-          });
-        }
 
         await user.save();
 
         return res.status(400).json({
-          message: tierMessage,
-          blockedWords: violatingWords,
+          message: warningMessages.slur, // Use slur message for hard blocks
           violationCount: user.moderation.violationCount,
-          warningTier,
-          warningType: 'speech',
-          isMuted: user.moderation.isMuted || false
-        });
-      }
-
-      // ─────────────────────────────────────────────────────────────────────────
-      // SPAM WORDS (from blockedWords.spam): Separate track
-      // ─────────────────────────────────────────────────────────────────────────
-      if (hasSpamWords) {
-        // Uses spam violation track, not speech violations
-        user.moderation.spamViolationCount = (user.moderation.spamViolationCount || 0) + 1;
-        user.moderation.lastViolation = new Date();
-
-        user.moderationHistory.push({
-          action: 'spam-detected',
-          reason: `Spam keywords detected: ${categories.spam.join(', ')}`,
-          contentType,
-          contentId,
-          contentPreview: createContentPreview(content),
-          detectedViolations: categories.spam,
-          automated: true
+          warningType: 'hard_block',
+          intentCategory: moderationResult.layer_outputs.layer2.intent_category
         });
 
-        if (autoMuteSettings.enabled && user.moderation.autoMuteEnabled) {
-          const muteDuration = autoMuteSettings.spamMuteDuration;
-          user.moderation.isMuted = true;
-          user.moderation.muteExpires = new Date(Date.now() + muteDuration * 60 * 1000);
-          user.moderation.muteReason = 'Spam content detected';
-          user.moderationHistory.push({
-            action: 'mute',
-            reason: `Auto-muted for ${muteDuration} minutes due to spam words`,
-            contentType: 'other',
-            detectedViolations: [`Spam violations: ${user.moderation.spamViolationCount}`],
-            automated: true
-          });
-        }
-
-        await user.save();
-
-        return res.status(400).json({
-          message: warningMessages.spam,
-          blockedWords: categories.spam,
-          spamViolationCount: user.moderation.spamViolationCount,
-          warningType: 'spam',
-          isMuted: user.moderation.isMuted || false
-        });
-      }
+      default:
+        // Unknown action - allow content
+        return next();
     }
 
-    // ═══════════════════════════════════════════════════════════════════════════
-    // SPAM PATTERN CHECK (separate from blocked words)
-    // Uses separate spam violation track
-    // ═══════════════════════════════════════════════════════════════════════════
-    const { isSpam, reason, matchedText, details } = checkSpam(content);
-    if (isSpam) {
-      // Spam uses separate violation track from speech violations
-      user.moderation.spamViolationCount = (user.moderation.spamViolationCount || 0) + 1;
-      user.moderation.lastViolation = new Date();
-
-      const spamViolations = details.length > 0 ? details : [reason];
-      if (matchedText && !spamViolations.some(v => v.includes(matchedText))) {
-        spamViolations.push(`Matched: "${matchedText}"`);
-      }
-
-      user.moderationHistory.push({
-        action: 'spam-detected',
-        reason: reason,
-        contentType,
-        contentId,
-        contentPreview: createContentPreview(content),
-        detectedViolations: spamViolations,
-        automated: true
-      });
-
-      // Auto-mute for spam (separate duration from speech violations)
-      if (autoMuteSettings.enabled && user.moderation.autoMuteEnabled) {
-        const muteDuration = autoMuteSettings.spamMuteDuration;
-        user.moderation.isMuted = true;
-        user.moderation.muteExpires = new Date(Date.now() + muteDuration * 60 * 1000);
-        user.moderation.muteReason = 'Spam content detected';
-        user.moderationHistory.push({
-          action: 'mute',
-          reason: `Auto-muted for ${muteDuration} minutes due to spam: ${reason}`,
-          contentType: 'other',
-          detectedViolations: [`Spam trigger: ${reason}`],
-          automated: true
-        });
-      }
-
-      await user.save();
-
-      return res.status(400).json({
-        message: warningMessages.spam,
-        reason: reason,
-        matchedText: matchedText,
-        spamViolationCount: user.moderation.spamViolationCount,
-        warningType: 'spam',
-        isMuted: user.moderation.isMuted || false
-      });
-    }
-
-    // ═══════════════════════════════════════════════════════════════════════════
-    // TOXICITY SCORE (soft warnings only - NEVER auto-mute/ban)
-    // Uses configurable warningThreshold from settings
-    // ═══════════════════════════════════════════════════════════════════════════
-    const toxicityScore = await calculateToxicityScore(content);
-    const toxicityThreshold = autoMuteSettings.warningThreshold || 65;
-    if (toxicityScore > toxicityThreshold) {
-      // Log for moderator review prioritisation
-      user.moderationHistory.push({
-        action: 'warning',
-        reason: `High toxicity score: ${toxicityScore} (threshold: ${toxicityThreshold})`,
-        contentType,
-        contentId,
-        contentPreview: createContentPreview(content),
-        detectedViolations: [`Toxicity score: ${toxicityScore}`],
-        automated: true
-      });
-      await user.save();
-
-      // Set warning flag for user-facing soft warning
-      // IMPORTANT: This MUST NOT trigger auto-mute or auto-ban
-      req.toxicityWarning = true;
-    }
-
-    next();
   } catch (error) {
-    logger.error('Moderate content error:', error);
+    logger.error('Moderate content V2 error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 };

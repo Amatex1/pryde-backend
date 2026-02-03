@@ -5,7 +5,7 @@ import User from '../models/User.js';
 import authMiddleware from '../middleware/auth.js';
 import adminAuth from '../middleware/adminAuth.js';
 import { messageLimiter } from '../middleware/rateLimiter.js';
-import { moderateContent } from '../middleware/moderation.js';
+import { moderateContentV2 } from '../utils/moderationV2.js';
 
 // GET /api/global-chat/online-count - Get current online count (fast REST endpoint)
 router.get('/online-count', authMiddleware, async (req, res) => {
@@ -133,13 +133,22 @@ router.post('/messages', authMiddleware, messageLimiter, async (req, res) => {
       return res.status(403).json({ message: 'Your account is suspended and cannot send messages' });
     }
 
-    // Moderate content (check for toxicity, spam, etc.) - only if text is provided
+    // Moderate content using PRYDE_MODERATION_V2 (5-layer intent-driven system) - only if text is provided
     if (trimmedText) {
-      const moderationResult = await moderateContent(trimmedText);
+      const moderationResult = await moderateContentV2(trimmedText, currentUserId, {
+        userContext: {
+          recentHostileContent: user.moderationHistory?.some(entry =>
+            entry.action === 'hostile-detected' &&
+            new Date(entry.timestamp) > new Date(Date.now() - 24 * 60 * 60 * 1000) // Last 24 hours
+          )
+        }
+      });
+
       if (moderationResult.blocked) {
         return res.status(400).json({
           message: 'Message contains inappropriate content',
-          reason: moderationResult.reason
+          reason: moderationResult.reason,
+          intentCategory: moderationResult.layer_outputs?.layer2?.intent_category
         });
       }
     }
