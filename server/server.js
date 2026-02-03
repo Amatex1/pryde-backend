@@ -64,6 +64,7 @@ import versionRoutes from './routes/version.js';
 import devVerifyRoutes from './routes/devVerify.js';
 import adminDebugRoutes from './routes/adminDebug.js';
 import adminHealthRoutes from './routes/adminHealth.js';
+import adminModerationV2Routes from './routes/adminModerationV2.js'; // PRYDE_MODERATION_ADMIN_V2
 import stabilityControlsRoutes from './routes/stabilityControls.js';
 import safeModeRoutes from './routes/safeMode.js';
 import sessionInspectorRoutes from './routes/sessionInspector.js';
@@ -462,6 +463,7 @@ app.use('/api/version', versionRoutes); // Version endpoint for update detection
 app.use('/api/dev', devVerifyRoutes); // Dev-only verification endpoints
 app.use('/api/admin/debug', adminDebugRoutes); // Admin-only PWA debug tools
 app.use('/api/admin/health', adminHealthRoutes); // Admin-only health & incident dashboard
+app.use('/api/admin/moderation-v2', adminModerationV2Routes); // PRYDE_MODERATION_ADMIN_V2
 app.use('/api/safe-mode', safeModeRoutes); // User-controlled Safe Mode
 app.use('/api/session-inspector', sessionInspectorRoutes); // Session state inspector
 app.use('/api/stability', stabilityControlsRoutes); // User-visible stability controls

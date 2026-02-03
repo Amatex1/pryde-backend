@@ -1,8 +1,10 @@
 import User from '../models/User.js';
+import ModerationEvent from '../models/ModerationEvent.js';
+import ModerationSettings from '../models/ModerationSettings.js';
 import logger from './logger.js';
 
 /**
- * PRYDE_MODERATION_V2 - 5-Layer Intent-Driven Moderation System
+ * PRYDE_MODERATION_PLATFORM_V3 - 5-Layer Intent-Driven Moderation System
  *
  * CONSTRAINTS:
  * - Layer 1: CLASSIFICATION ONLY - never triggers blocks/mutes/decay
@@ -10,7 +12,39 @@ import logger from './logger.js';
  * - Behavior score outweighs formatting signals
  * - Visibility dampening: Non-punitive, temporary, reversible
  * - Admin override: Full undo/restore/remove history/manual actions
+ * - Shadow mode: All layers execute, events logged, NO user-facing penalties
  */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// V3: ACTION MAPPING (Legacy → V3 contract)
+// ═══════════════════════════════════════════════════════════════════════════
+const ACTION_MAP_V3 = {
+  'ALLOW': 'ALLOW',
+  'ALLOW_WITH_INTERNAL_NOTE': 'NOTE',
+  'VISIBILITY_DAMPEN': 'DAMPEN',
+  'QUEUE_FOR_REVIEW': 'REVIEW',
+  'TEMP_MUTE': 'MUTE',
+  'HARD_BLOCK': 'BLOCK'
+};
+
+// V3: Explanation codes for human-first language
+const EXPLANATION_CODES = {
+  'ALLOW': 'ALLOWED',
+  'ALLOW_WITH_INTERNAL_NOTE': 'FLAGGED_FOR_MONITORING',
+  'VISIBILITY_DAMPEN': 'VISIBILITY_DAMPENED',
+  'QUEUE_FOR_REVIEW': 'QUEUED_FOR_REVIEW',
+  'TEMP_MUTE': 'TEMPORARILY_MUTED',
+  'HARD_BLOCK': 'CONTENT_BLOCKED'
+};
+
+// V3: Map intent categories for emphatic classification
+function getExpressionClassification(layer1) {
+  // Map expressive/symbolic to emphatic, neutral stays normal
+  if (layer1.classification === 'expressive' || layer1.classification === 'symbolic') {
+    return 'emphatic';
+  }
+  return 'normal';
+}
 
 // ═══════════════════════════════════════════════════════════════════════════
 // LAYER 1: EXPRESSION FILTER (CLASSIFICATION ONLY)
@@ -512,16 +546,44 @@ async function layer5_humanOverride(userId, action, overrideReason, adminId) {
 
 /**
  * Main moderation function - processes content through all 5 layers
+ *
+ * V3 Features:
+ * - Shadow mode: All layers execute, events logged, NO user-facing penalties
+ * - V3 data contract: expression, intent, behavior, response fields
+ * - Explanation codes for human-first language
  */
 export async function moderateContentV2(content, userId, options = {}) {
   const {
     recentContent = [],
     userContext = {},
     skipLayers = [],
-    returnAllLayers = false
+    returnAllLayers = false,
+    contentType = 'other', // post/comment/message/global_chat/profile/other
+    contentId = null,      // Reference to the content document
+    emitEvent = true,      // Whether to create ModerationEvent (disable for testing)
+    forceMode = null       // Force LIVE/SHADOW mode (for simulation)
   } = options;
 
   try {
+    // V3: Fetch moderation settings to check shadow mode
+    let moderationMode = 'LIVE';
+    let settings = null;
+    try {
+      settings = await ModerationSettings.findOne({});
+      if (settings?.moderationV2?.moderationMode) {
+        moderationMode = settings.moderationV2.moderationMode;
+      }
+    } catch (settingsError) {
+      logger.warn('Failed to fetch moderation settings, defaulting to LIVE mode:', settingsError);
+    }
+
+    // Allow forcing mode for simulation
+    if (forceMode === 'LIVE' || forceMode === 'SHADOW') {
+      moderationMode = forceMode;
+    }
+
+    const isShadowMode = moderationMode === 'SHADOW';
+
     // LAYER 1: Expression Filter (always runs, classification only)
     const layer1 = layer1_expressionFilter(content);
 
@@ -534,14 +596,22 @@ export async function moderateContentV2(content, userId, options = {}) {
     // LAYER 4: Response Engine
     const layer4 = layer4_responseEngine(layer1, layer2, layer3);
 
+    // V3: In shadow mode, don't apply user-facing penalties
+    // All layers still execute and events are logged
+    const effectiveAction = isShadowMode ? 'ALLOW' : layer4.action;
+    const effectiveBlocked = isShadowMode ? false : ['TEMP_MUTE', 'HARD_BLOCK'].includes(layer4.action);
+    const effectiveDampening = isShadowMode ? 0 : layer4.dampening_duration;
+
     // Prepare result
     const result = {
-      action: layer4.action,
-      blocked: ['TEMP_MUTE', 'HARD_BLOCK'].includes(layer4.action),
+      action: effectiveAction,
+      blocked: effectiveBlocked,
       reason: layer4.action_reason,
       confidence: layer4.confidence,
-      dampening_duration: layer4.dampening_duration,
+      dampening_duration: effectiveDampening,
       queue_priority: layer4.queue_priority,
+      shadowMode: isShadowMode, // V3: Indicate if penalties were skipped
+      originalAction: isShadowMode ? layer4.action : null, // V3: Original action in shadow mode
       layer_outputs: {
         layer1,
         layer2,
@@ -565,6 +635,98 @@ export async function moderateContentV2(content, userId, options = {}) {
         layer3,
         layer4
       };
+    }
+
+    // V3: Calculate behavior trend
+    const behaviorTrend = layer3.behavior_score >= 60 ? 'rising' :
+                          layer3.behavior_score <= 20 ? 'falling' : 'stable';
+
+    // V3: Get account age in days from layer3
+    const accountAgeDays = layer3.account_age_score < 20 ? 7 :
+                           layer3.account_age_score < 40 ? 30 :
+                           layer3.account_age_score < 60 ? 90 : 365;
+
+    // PRYDE_MODERATION_PLATFORM_V3: Emit ModerationEvent with V3 contract fields
+    if (emitEvent && userId) {
+      try {
+        const dampeningExpires = layer4.dampening_duration > 0
+          ? new Date(Date.now() + layer4.dampening_duration * 60 * 1000)
+          : null;
+
+        const event = await ModerationEvent.create({
+          userId,
+          contentType: contentType === 'chat' ? 'global_chat' : contentType, // V3: Map 'chat' to 'global_chat'
+          contentId,
+          contentPreview: typeof content === 'string' ? content.substring(0, 500) : '',
+
+          // V3 Contract: Expression layer
+          expression: {
+            classification: getExpressionClassification(layer1),
+            expressiveRatio: layer1.expressive_ratio,
+            realWordRatio: layer1.real_word_ratio
+          },
+
+          // V3 Contract: Intent layer
+          intent: {
+            category: layer2.intent_category,
+            score: layer2.intent_score,
+            targetDetected: layer2.targets && layer2.targets.length > 0
+          },
+
+          // V3 Contract: Behavior layer
+          behavior: {
+            score: layer3.behavior_score,
+            trend: behaviorTrend,
+            accountAgeDays: accountAgeDays
+          },
+
+          // V3 Contract: Response layer
+          response: {
+            action: ACTION_MAP_V3[layer4.action] || 'ALLOW',
+            durationMinutes: layer4.dampening_duration || 0,
+            automated: true
+          },
+
+          confidence: layer4.confidence,
+          explanationCode: EXPLANATION_CODES[layer4.action] || 'ALLOWED',
+          shadowMode: isShadowMode,
+
+          // Legacy fields (kept for backward compatibility)
+          layerOutputs: {
+            layer1,
+            layer2: {
+              intent_category: layer2.intent_category,
+              intent_score: layer2.intent_score,
+              targets: layer2.targets,
+              hostility_markers: layer2.hostility_markers,
+              threat_patterns: layer2.threat_patterns,
+              confidence: layer2.confidence
+            },
+            layer3: {
+              behavior_score: layer3.behavior_score,
+              frequency_score: layer3.frequency_score,
+              duplicate_score: layer3.duplicate_score,
+              account_age_score: layer3.account_age_score,
+              history_score: layer3.history_score
+            },
+            layer4: {
+              combined_score: layer4.combined_score,
+              dampening_duration: layer4.dampening_duration,
+              queue_priority: layer4.queue_priority
+            }
+          },
+          dampeningDuration: layer4.dampening_duration,
+          dampeningExpires,
+          queuePriority: layer4.queue_priority,
+          overrideStatus: layer4.action === 'QUEUE_FOR_REVIEW' ? 'pending_review' : 'none'
+        });
+
+        // Attach event ID to result for reference
+        result.eventId = event._id;
+      } catch (eventError) {
+        // Non-fatal: log but don't fail moderation
+        logger.error('Failed to create ModerationEvent:', eventError);
+      }
     }
 
     return result;

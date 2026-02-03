@@ -888,6 +888,29 @@ const userSchema = new mongoose.Schema({
     autoMuteEnabled: {
       type: Boolean,
       default: true
+    },
+    // PRYDE_MODERATION_ADMIN_V2: Additional moderation controls
+    shadowMute: {
+      type: Boolean,
+      default: false
+    },
+    onWatchlist: {
+      type: Boolean,
+      default: false
+    },
+    watchlistReason: {
+      type: String,
+      default: null
+    },
+    trusted: {
+      type: Boolean,
+      default: false
+    },
+    behaviorScore: {
+      type: Number,
+      default: 100,
+      min: 0,
+      max: 100
     }
   },
   moderationHistory: {

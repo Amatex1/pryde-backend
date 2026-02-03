@@ -229,6 +229,116 @@ const moderationSettingsSchema = new mongoose.Schema({
     }
   },
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // PRYDE_MODERATION_PLATFORM_V3 (Admin-configurable, no code changes needed)
+  // ═══════════════════════════════════════════════════════════════════════════
+  moderationV2: {
+    // V3: Moderation mode - LIVE applies penalties, SHADOW only logs
+    moderationMode: {
+      type: String,
+      enum: ['LIVE', 'SHADOW'],
+      default: 'LIVE'
+    },
+
+    // Expressive tolerance (0-100 scale for V3)
+    // Affects Layer 1 classification thresholds
+    expressiveTolerance: {
+      type: Number,
+      default: 50,
+      min: 0,
+      max: 100
+    },
+
+    // Legacy string-based tolerance (kept for backward compatibility)
+    expressiveToleranceLevel: {
+      type: String,
+      enum: ['low', 'medium', 'high'],
+      default: 'medium'
+    },
+
+    // Behavior escalation sensitivity (0-100 for V3)
+    // How quickly behavior score triggers actions
+    behaviorEscalationSensitivity: {
+      type: Number,
+      default: 50,
+      min: 0,
+      max: 100
+    },
+
+    // New account strictness (0-100 for V3)
+    // Higher = more scrutiny for new accounts
+    newAccountStrictness: {
+      type: Number,
+      default: 50,
+      min: 0,
+      max: 100
+    },
+
+    // Default visibility dampening duration (minutes) - V3: dampeningDurationMinutes
+    dampeningDurationMinutes: {
+      type: Number,
+      default: 15,
+      min: 5,
+      max: 120
+    },
+
+    // Review threshold (0-100) - triggers QUEUE_FOR_REVIEW
+    reviewThreshold: {
+      type: Number,
+      default: 60,
+      min: 0,
+      max: 100
+    },
+
+    // Auto-expiry duration for penalties (hours) - V3: autoExpiryHours
+    autoExpiryHours: {
+      type: Number,
+      default: 24,
+      min: 1,
+      max: 168 // 7 days
+    },
+
+    // Legacy: Review queue thresholds (kept for backward compatibility)
+    reviewQueueThresholds: {
+      confidenceThreshold: {
+        type: Number,
+        default: 70,
+        min: 0,
+        max: 100
+      },
+      intentScoreThreshold: {
+        type: Number,
+        default: 60,
+        min: 0,
+        max: 100
+      }
+    },
+
+    // User-facing transparency settings
+    transparency: {
+      showReasonToUsers: {
+        type: Boolean,
+        default: true
+      },
+      enableAppeals: {
+        type: Boolean,
+        default: true
+      },
+      appealCooldown: {
+        type: Number,
+        default: 24,
+        min: 1,
+        max: 168
+      }
+    },
+
+    // V3: Last settings change timestamp (for "Effective from now" display)
+    lastUpdated: {
+      type: Date,
+      default: Date.now
+    }
+  },
+
   // Who last updated these settings
   updatedBy: {
     type: mongoose.Schema.Types.ObjectId,

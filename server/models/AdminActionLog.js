@@ -47,6 +47,22 @@ const adminActionLogSchema = new mongoose.Schema({
       'DELETE_USER',
       'VERIFY_USER',
       'UNVERIFY_USER',
+
+      // PRYDE_MODERATION_ADMIN_V2: Override actions
+      'OVERRIDE_MODERATION',
+      'RESTORE_CONTENT',
+      'CLEAR_STRIKES',
+      'RESET_BEHAVIOR_SCORE',
+      'MANUAL_MUTE',
+      'SHADOW_MUTE',
+      'LOCK_THREAD',
+      'UNLOCK_THREAD',
+      'ADD_WATCHLIST',
+      'REMOVE_WATCHLIST',
+      'ADD_TRUSTED',
+      'REMOVE_TRUSTED',
+      'ADJUST_PENALTY',
+      'QUEUE_FOR_REVIEW',
       
       // System account management
       'ACTIVATE_SYSTEM_ACCOUNT',
