@@ -12,6 +12,11 @@ import {
 } from '../utils/moderation.js';
 import { moderateContentV2 } from '../utils/moderationV2.js';
 import logger from '../utils/logger.js';
+import {
+  legacyEnforcementAllowed,
+  logSkippedEnforcement,
+  createSkippedEnforcementEvent
+} from '../utils/legacyModerationGuard.js';
 
 /**
  * Check if user is currently muted
@@ -198,7 +203,29 @@ export const moderateContent = async (req, res, next) => {
         return next();
 
       case 'TEMP_MUTE':
-        // Apply temporary mute
+        // PRYDE_LEGACY_MODERATION_PASSIVE_MODE: Check if legacy enforcement is allowed
+        if (!legacyEnforcementAllowed()) {
+          // Log the skipped enforcement
+          logSkippedEnforcement('temp-mute', moderationResult.reason, {
+            userId: req.userId,
+            contentType,
+            contentId,
+            intentCategory: moderationResult.layer_outputs?.layer2?.intent_category
+          });
+
+          // Log to user history but mark as skipped
+          user.moderationHistory.push(createSkippedEnforcementEvent('temp-mute', moderationResult.reason, {
+            contentType,
+            contentId,
+            contentPreview: content.length > 200 ? content.substring(0, 197) + '...' : content,
+            detectedViolations: [`Intent: ${moderationResult.layer_outputs?.layer2?.intent_category || 'unknown'}`]
+          }));
+
+          await user.save();
+          return next(); // Allow content, V5 will handle enforcement
+        }
+
+        // Apply temporary mute (legacy enforcement ACTIVE)
         if (autoMuteSettings.enabled && user.moderation.autoMuteEnabled) {
           const muteDuration = moderationResult.dampening_duration || 30; // Default 30 minutes
           user.moderation.isMuted = true;
@@ -227,7 +254,29 @@ export const moderateContent = async (req, res, next) => {
         return next();
 
       case 'HARD_BLOCK':
-        // Hard block content
+        // PRYDE_LEGACY_MODERATION_PASSIVE_MODE: Check if legacy enforcement is allowed
+        if (!legacyEnforcementAllowed()) {
+          // Log the skipped enforcement
+          logSkippedEnforcement('hard-block', moderationResult.reason, {
+            userId: req.userId,
+            contentType,
+            contentId,
+            intentCategory: moderationResult.layer_outputs?.layer2?.intent_category
+          });
+
+          // Log to user history but mark as skipped (NO violation count increment)
+          user.moderationHistory.push(createSkippedEnforcementEvent('hard-block', moderationResult.reason, {
+            contentType,
+            contentId,
+            contentPreview: content.length > 200 ? content.substring(0, 197) + '...' : content,
+            detectedViolations: [`Intent: ${moderationResult.layer_outputs?.layer2?.intent_category || 'unknown'}`]
+          }));
+
+          await user.save();
+          return next(); // Allow content, V5 will handle enforcement
+        }
+
+        // Hard block content (legacy enforcement ACTIVE)
         user.moderation.violationCount += 1;
         user.moderation.lastViolation = new Date();
 

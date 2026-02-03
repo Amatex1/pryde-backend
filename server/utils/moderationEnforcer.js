@@ -1,18 +1,21 @@
 /**
  * PRYDE_MODERATION_ROLLOUT_V4 - Moderation Enforcer
- * 
+ *
  * Enforcement gate that respects:
  * - Shadow mode (no penalties)
  * - Enabled actions (gradual rollout)
- * 
+ * - V5-only enforcement authority (PRYDE_LEGACY_MODERATION_PASSIVE_MODE)
+ *
  * RULES:
  * - If mode === SHADOW → no penalties applied, action = NOTE
  * - If action not enabled → downgrade to NOTE
+ * - If event.system !== 'V5' → force action = NOTE (V5-only authority)
  * - All layers still execute and events are logged
  */
 
 import { getModerationConfig, getCurrentPhase } from '../config/moderation.config.js';
 import { ACTION_MAP_V2_TO_V4 } from '../contracts/moderation.contract.js';
+import { isV5Primary } from '../config/moderationModes.js';
 import ModerationSettings from '../models/ModerationSettings.js';
 import logger from './logger.js';
 
@@ -41,6 +44,33 @@ export async function enforceModeration(event, options = {}) {
         enforced: false,
         reason: 'SIMULATION',
         originalAction: event.response?.action
+      }
+    };
+  }
+
+  // PRYDE_LEGACY_MODERATION_PASSIVE_MODE: V5-only enforcement authority
+  // If V5 is primary and event is from a non-V5 system, force NOTE
+  if (isV5Primary() && event.system && event.system !== 'V5') {
+    const originalAction = event.response?.action || 'ALLOW';
+    logger.info('Non-V5 event downgraded to NOTE (V5 primary authority)', {
+      eventSystem: event.system,
+      originalAction,
+      userId: event.userId
+    });
+
+    return {
+      ...event,
+      shadowMode: false,
+      response: {
+        ...event.response,
+        action: 'NOTE',
+        durationMinutes: 0
+      },
+      _enforcement: {
+        enforced: false,
+        reason: 'V5_PRIMARY_AUTHORITY',
+        originalAction,
+        nonV5System: event.system
       }
     };
   }
