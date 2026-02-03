@@ -961,9 +961,9 @@ router.post('/simulate', checkPermission('canViewReports'), async (req, res) => 
       userContext
     });
 
-    // V3 Contract: Build simulation response (no id or timestamps)
+    // V4 Contract: Build simulation response with id="SIMULATION"
     const simulationResult = {
-      // No id - this is a simulation
+      id: 'SIMULATION', // V4: Explicit simulation marker
       contentType: contentType === 'chat' ? 'global_chat' : contentType,
       contentPreview: content.substring(0, 500),
       userId: userId || null,
@@ -1016,7 +1016,7 @@ router.post('/simulate', checkPermission('canViewReports'), async (req, res) => 
         'TEMP_MUTE': 'TEMPORARILY_MUTED',
         'HARD_BLOCK': 'CONTENT_BLOCKED'
       }[result.action] || 'ALLOWED',
-      shadowMode: false, // Simulations are not in shadow mode
+      shadowMode: true, // V4: Simulations are always shadow mode (no enforcement)
       overridden: false,
 
       // Additional simulation-specific data
@@ -1053,7 +1053,7 @@ router.get('/mode', checkPermission('canViewReports'), async (req, res) => {
     const settings = await ModerationSettings.findOne({});
 
     res.json({
-      mode: settings?.moderationV2?.moderationMode || 'LIVE',
+      mode: settings?.moderationV2?.moderationMode || 'SHADOW', // V4: Default to SHADOW
       lastUpdated: settings?.moderationV2?.lastUpdated || null
     });
   } catch (error) {
@@ -1126,6 +1126,228 @@ router.put('/mode', checkPermission('canManageUsers'), requireAdminEscalation, a
 
   } catch (error) {
     logger.error('Set mode error:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 9. GRADUAL ROLLOUT (V4)
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * @route   GET /api/admin/moderation-v2/rollout
+ * @desc    Get current rollout status and enabled actions
+ * @access  Admin (canViewReports)
+ */
+router.get('/rollout', checkPermission('canViewReports'), async (req, res) => {
+  try {
+    const settings = await ModerationSettings.findOne({});
+    const moderationV2 = settings?.moderationV2 || {};
+
+    const enabledActions = moderationV2.enabledActions || {
+      NOTE: true, DAMPEN: false, REVIEW: false, MUTE: false, BLOCK: false
+    };
+
+    // Calculate current phase
+    let currentPhase = 0;
+    if (enabledActions.BLOCK) currentPhase = 5;
+    else if (enabledActions.MUTE) currentPhase = 4;
+    else if (enabledActions.REVIEW) currentPhase = 3;
+    else if (enabledActions.DAMPEN) currentPhase = 2;
+    else if (enabledActions.NOTE) currentPhase = 1;
+
+    const phases = [
+      { phase: 0, name: 'Shadow Only', actions: ['NOTE'], description: 'All layers execute, no penalties' },
+      { phase: 1, name: 'Logging', actions: ['NOTE'], description: 'NOTE action enabled in LIVE mode' },
+      { phase: 2, name: 'Dampening', actions: ['NOTE', 'DAMPEN'], description: 'Visibility dampening enabled' },
+      { phase: 3, name: 'Review Queue', actions: ['NOTE', 'DAMPEN', 'REVIEW'], description: 'Human review queue enabled' },
+      { phase: 4, name: 'Muting', actions: ['NOTE', 'DAMPEN', 'REVIEW', 'MUTE'], description: 'Temporary muting enabled' },
+      { phase: 5, name: 'Full Enforcement', actions: ['NOTE', 'DAMPEN', 'REVIEW', 'MUTE', 'BLOCK'], description: 'All actions enabled' }
+    ];
+
+    res.json({
+      mode: moderationV2.moderationMode || 'SHADOW',
+      currentPhase,
+      phaseName: phases[currentPhase]?.name || 'Unknown',
+      enabledActions,
+      rollout: moderationV2.rollout || { startedAt: null, phaseHistory: [] },
+      phases,
+      lastUpdated: moderationV2.lastUpdated
+    });
+  } catch (error) {
+    logger.error('Get rollout error:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+/**
+ * @route   PUT /api/admin/moderation-v2/rollout/enable
+ * @desc    Enable a single action (gradual rollout - one at a time)
+ * @access  Super Admin (requires escalation)
+ *
+ * V4 GRADUAL ENABLEMENT:
+ * - Only one action can be enabled at a time
+ * - Must follow rollout order: NOTE → DAMPEN → REVIEW → MUTE → BLOCK
+ * - NO BULK ENABLES. NO SILENT CHANGES.
+ */
+router.put('/rollout/enable', adminAuth(['super_admin']), requireAdminEscalation, async (req, res) => {
+  try {
+    const { action } = req.body;
+    const validActions = ['NOTE', 'DAMPEN', 'REVIEW', 'MUTE', 'BLOCK'];
+
+    if (!action || !validActions.includes(action)) {
+      return res.status(400).json({
+        message: `Action must be one of: ${validActions.join(', ')}`
+      });
+    }
+
+    let settings = await ModerationSettings.findOne({});
+    if (!settings) {
+      settings = new ModerationSettings({});
+    }
+
+    if (!settings.moderationV2) settings.moderationV2 = {};
+    if (!settings.moderationV2.enabledActions) {
+      settings.moderationV2.enabledActions = {
+        NOTE: true, DAMPEN: false, REVIEW: false, MUTE: false, BLOCK: false
+      };
+    }
+    if (!settings.moderationV2.rollout) {
+      settings.moderationV2.rollout = { startedAt: null, currentPhase: 0, phaseHistory: [] };
+    }
+
+    const enabledActions = settings.moderationV2.enabledActions;
+
+    // Check rollout order
+    const rolloutOrder = ['NOTE', 'DAMPEN', 'REVIEW', 'MUTE', 'BLOCK'];
+    const actionIndex = rolloutOrder.indexOf(action);
+
+    // Ensure all previous actions are enabled
+    for (let i = 0; i < actionIndex; i++) {
+      if (!enabledActions[rolloutOrder[i]]) {
+        return res.status(400).json({
+          message: `Cannot enable ${action}. Must enable ${rolloutOrder[i]} first.`,
+          hint: 'Rollout order: NOTE → DAMPEN → REVIEW → MUTE → BLOCK'
+        });
+      }
+    }
+
+    // Check if already enabled
+    if (enabledActions[action]) {
+      return res.status(400).json({ message: `${action} is already enabled` });
+    }
+
+    // Enable the action
+    enabledActions[action] = true;
+    settings.moderationV2.lastUpdated = new Date();
+    settings.updatedBy = req.user._id;
+
+    // Update rollout tracking
+    if (!settings.moderationV2.rollout.startedAt) {
+      settings.moderationV2.rollout.startedAt = new Date();
+    }
+    settings.moderationV2.rollout.currentPhase = actionIndex + 1;
+    settings.moderationV2.rollout.phaseHistory.push({
+      phase: actionIndex + 1,
+      enabledAt: new Date(),
+      enabledBy: req.user._id
+    });
+
+    await settings.save();
+
+    // Log the action
+    await AdminActionLog.create({
+      adminId: req.user._id,
+      actionType: 'UPDATE_SETTINGS',
+      targetType: 'moderation_rollout',
+      targetId: settings._id,
+      changes: { enabledAction: action, phase: actionIndex + 1 },
+      reason: `Enabled ${action} action (Phase ${actionIndex + 1})`,
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent']
+    });
+
+    logger.info(`Rollout: ${action} enabled (Phase ${actionIndex + 1}) by admin ${req.user._id}`);
+
+    res.json({
+      message: `${action} action enabled`,
+      action,
+      phase: actionIndex + 1,
+      enabledActions,
+      note: 'Observe for 48-72 hours before enabling next action'
+    });
+
+  } catch (error) {
+    logger.error('Enable action error:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+/**
+ * @route   PUT /api/admin/moderation-v2/rollout/disable
+ * @desc    Disable an action (rollback)
+ * @access  Super Admin (requires escalation)
+ */
+router.put('/rollout/disable', adminAuth(['super_admin']), requireAdminEscalation, async (req, res) => {
+  try {
+    const { action } = req.body;
+    const validActions = ['DAMPEN', 'REVIEW', 'MUTE', 'BLOCK']; // NOTE cannot be disabled
+
+    if (!action || !validActions.includes(action)) {
+      return res.status(400).json({
+        message: `Action must be one of: ${validActions.join(', ')} (NOTE cannot be disabled)`
+      });
+    }
+
+    let settings = await ModerationSettings.findOne({});
+    if (!settings?.moderationV2?.enabledActions) {
+      return res.status(400).json({ message: 'No rollout configuration found' });
+    }
+
+    const enabledActions = settings.moderationV2.enabledActions;
+
+    // Check if already disabled
+    if (!enabledActions[action]) {
+      return res.status(400).json({ message: `${action} is already disabled` });
+    }
+
+    // Disable this action and all actions after it
+    const rolloutOrder = ['NOTE', 'DAMPEN', 'REVIEW', 'MUTE', 'BLOCK'];
+    const actionIndex = rolloutOrder.indexOf(action);
+
+    for (let i = actionIndex; i < rolloutOrder.length; i++) {
+      enabledActions[rolloutOrder[i]] = false;
+    }
+    enabledActions.NOTE = true; // NOTE always stays enabled
+
+    settings.moderationV2.lastUpdated = new Date();
+    settings.updatedBy = req.user._id;
+    settings.moderationV2.rollout.currentPhase = actionIndex;
+
+    await settings.save();
+
+    await AdminActionLog.create({
+      adminId: req.user._id,
+      actionType: 'UPDATE_SETTINGS',
+      targetType: 'moderation_rollout',
+      targetId: settings._id,
+      changes: { disabledAction: action, phase: actionIndex },
+      reason: `Disabled ${action} action (rolled back to Phase ${actionIndex})`,
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent']
+    });
+
+    logger.info(`Rollout: ${action} disabled (Phase ${actionIndex}) by admin ${req.user._id}`);
+
+    res.json({
+      message: `${action} action disabled`,
+      action,
+      phase: actionIndex,
+      enabledActions
+    });
+
+  } catch (error) {
+    logger.error('Disable action error:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });

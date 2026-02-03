@@ -233,11 +233,12 @@ const moderationSettingsSchema = new mongoose.Schema({
   // PRYDE_MODERATION_PLATFORM_V3 (Admin-configurable, no code changes needed)
   // ═══════════════════════════════════════════════════════════════════════════
   moderationV2: {
-    // V3: Moderation mode - LIVE applies penalties, SHADOW only logs
+    // V4: Moderation mode - LIVE applies penalties, SHADOW only logs
+    // DEFAULT: SHADOW for safe rollout
     moderationMode: {
       type: String,
       enum: ['LIVE', 'SHADOW'],
-      default: 'LIVE'
+      default: 'SHADOW'
     },
 
     // Expressive tolerance (0-100 scale for V3)
@@ -336,6 +337,28 @@ const moderationSettingsSchema = new mongoose.Schema({
     lastUpdated: {
       type: Date,
       default: Date.now
+    },
+
+    // V4: Enabled actions for gradual rollout
+    // In SHADOW mode, all actions downgrade to NOTE
+    // In LIVE mode, disabled actions downgrade to NOTE
+    enabledActions: {
+      NOTE: { type: Boolean, default: true },    // Always enabled - logging only
+      DAMPEN: { type: Boolean, default: false }, // Visibility dampening
+      REVIEW: { type: Boolean, default: false }, // Queue for human review
+      MUTE: { type: Boolean, default: false },   // Temporary mute
+      BLOCK: { type: Boolean, default: false }   // Hard block content
+    },
+
+    // V4: Rollout tracking for gradual enablement
+    rollout: {
+      startedAt: { type: Date, default: null },
+      currentPhase: { type: Number, default: 0, min: 0, max: 5 },
+      phaseHistory: [{
+        phase: { type: Number },
+        enabledAt: { type: Date },
+        enabledBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
+      }]
     }
   },
 
