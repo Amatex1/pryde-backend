@@ -1,46 +1,64 @@
 /**
- * PRYDE_MODERATION_ROLLOUT_V4 - Data Contracts
- * 
+ * PRYDE_MODERATION_SAFE_ROLLOUT_V5 - Data Contracts
+ *
  * SOURCE OF TRUTH for moderation data shapes.
  * Used by API responses and frontend consumption.
- * 
+ *
+ * V5 SAFE ROLLOUT:
+ * - Limited to ALLOW, NOTE, DAMPEN only
+ * - No REVIEW, MUTE, BLOCK in initial rollout
+ * - Shadow mode first, always
+ *
  * RULE: Frontend never recalculates moderation logic.
  * All display values come directly from these contracts.
  */
 
 /**
- * V4 Content Types
+ * V5 Content Types
  * @typedef {'post' | 'comment' | 'message' | 'global_chat'} ContentType
  */
 export const CONTENT_TYPES = ['post', 'comment', 'message', 'global_chat'];
 
 /**
- * V4 Expression Classifications
+ * V5 Expression Classifications
  * @typedef {'normal' | 'emphatic'} ExpressionClassification
  */
 export const EXPRESSION_CLASSIFICATIONS = ['normal', 'emphatic'];
 
 /**
- * V4 Intent Categories
+ * V5 Intent Categories
  * @typedef {'expressive' | 'neutral' | 'disruptive' | 'hostile' | 'dangerous'} IntentCategory
  */
 export const INTENT_CATEGORIES = ['expressive', 'neutral', 'disruptive', 'hostile', 'dangerous'];
 
 /**
- * V4 Behavior Trends
+ * V5 Behavior Trends
  * @typedef {'stable' | 'rising' | 'falling'} BehaviorTrend
  */
 export const BEHAVIOR_TRENDS = ['stable', 'rising', 'falling'];
 
 /**
- * V4 Response Actions (simplified from V2)
- * @typedef {'ALLOW' | 'NOTE' | 'DAMPEN' | 'REVIEW' | 'MUTE' | 'BLOCK'} ResponseAction
+ * V5 Response Actions (SAFE ROLLOUT - NOTE and DAMPEN only)
+ * REVIEW, MUTE, BLOCK are reserved for future phases
+ * @typedef {'ALLOW' | 'NOTE' | 'DAMPEN'} ResponseAction
  */
-export const RESPONSE_ACTIONS = ['ALLOW', 'NOTE', 'DAMPEN', 'REVIEW', 'MUTE', 'BLOCK'];
+export const RESPONSE_ACTIONS = ['ALLOW', 'NOTE', 'DAMPEN'];
 
 /**
- * V4 Explanation Codes
+ * V5 Reserved Actions (not enabled in safe rollout)
+ * These will be enabled in future phases after observation
+ */
+export const RESERVED_ACTIONS = ['REVIEW', 'MUTE', 'BLOCK'];
+
+/**
+ * All possible actions (for reference/mapping)
+ */
+export const ALL_ACTIONS = ['ALLOW', 'NOTE', 'DAMPEN', 'REVIEW', 'MUTE', 'BLOCK'];
+
+/**
+ * V5 Explanation Codes
  * Human-first language codes for moderation explanations
+ * V5 Safe Rollout: Only codes for ALLOW, NOTE, DAMPEN are active
  */
 export const EXPLANATION_CODES = {
   ALLOWED: 'ALLOWED',
@@ -48,45 +66,50 @@ export const EXPLANATION_CODES = {
   NOTE_APPLIED: 'NOTE_APPLIED',
   FLAGGED_FOR_MONITORING: 'FLAGGED_FOR_MONITORING',
   VISIBILITY_DAMPENED: 'VISIBILITY_DAMPENED',
-  FREQUENCY_DAMPENED: 'FREQUENCY_DAMPENED',
-  QUEUED_FOR_REVIEW: 'QUEUED_FOR_REVIEW',
-  NEEDS_CONTEXT_CHECK: 'NEEDS_CONTEXT_CHECK',
-  TEMPORARILY_MUTED: 'TEMPORARILY_MUTED',
-  COOLDOWN_APPLIED: 'COOLDOWN_APPLIED',
-  CONTENT_BLOCKED: 'CONTENT_BLOCKED',
-  SAFETY_TRIGGERED: 'SAFETY_TRIGGERED'
+  FREQUENCY_DAMPENED: 'FREQUENCY_DAMPENED'
+  // RESERVED: QUEUED_FOR_REVIEW, TEMPORARILY_MUTED, CONTENT_BLOCKED, etc.
 };
 
 /**
- * Map legacy V2 actions to V4 actions
+ * Map legacy V2 actions to V5 actions
+ * V5: Reserved actions (REVIEW, MUTE, BLOCK) are downgraded to NOTE
  */
-export const ACTION_MAP_V2_TO_V4 = {
+export const ACTION_MAP_V2_TO_V5 = {
   'ALLOW': 'ALLOW',
   'ALLOW_WITH_INTERNAL_NOTE': 'NOTE',
   'VISIBILITY_DAMPEN': 'DAMPEN',
-  'QUEUE_FOR_REVIEW': 'REVIEW',
-  'TEMP_MUTE': 'MUTE',
-  'HARD_BLOCK': 'BLOCK'
+  // V5: Reserved actions downgrade to NOTE
+  'QUEUE_FOR_REVIEW': 'NOTE',
+  'TEMP_MUTE': 'NOTE',
+  'HARD_BLOCK': 'NOTE'
 };
 
+// Legacy alias for compatibility
+export const ACTION_MAP_V2_TO_V4 = ACTION_MAP_V2_TO_V5;
+
 /**
- * Map V4 actions to explanation codes
+ * Map V5 actions to explanation codes
+ * V5: Only ALLOW, NOTE, DAMPEN are active
  */
 export const ACTION_TO_EXPLANATION = {
   'ALLOW': 'ALLOWED',
   'NOTE': 'NOTE_APPLIED',
-  'DAMPEN': 'VISIBILITY_DAMPENED',
-  'REVIEW': 'QUEUED_FOR_REVIEW',
-  'MUTE': 'TEMPORARILY_MUTED',
-  'BLOCK': 'CONTENT_BLOCKED'
+  'DAMPEN': 'VISIBILITY_DAMPENED'
 };
 
 /**
- * Build a V4 ModerationEvent contract shape
+ * Build a V5 ModerationEvent contract shape
  * @param {Object} data - Raw moderation data
- * @returns {Object} V4 ModerationEvent contract
+ * @returns {Object} V5 ModerationEvent contract
  */
 export function buildModerationEventContract(data) {
+  // V5: Ensure action is within safe rollout scope
+  let action = data.response?.action || 'ALLOW';
+  if (!RESPONSE_ACTIONS.includes(action)) {
+    // V5: Downgrade reserved actions to NOTE
+    action = 'NOTE';
+  }
+
   return {
     id: data.id || data._id?.toString() || 'SIMULATION',
     contentId: data.contentId?.toString() || null,
@@ -114,7 +137,7 @@ export function buildModerationEventContract(data) {
     },
 
     response: {
-      action: data.response?.action || 'ALLOW',
+      action: action,
       durationMinutes: data.response?.durationMinutes || 0,
       automated: data.response?.automated !== false
     },
@@ -132,7 +155,10 @@ export default {
   INTENT_CATEGORIES,
   BEHAVIOR_TRENDS,
   RESPONSE_ACTIONS,
+  RESERVED_ACTIONS,
+  ALL_ACTIONS,
   EXPLANATION_CODES,
+  ACTION_MAP_V2_TO_V5,
   ACTION_MAP_V2_TO_V4,
   ACTION_TO_EXPLANATION,
   buildModerationEventContract

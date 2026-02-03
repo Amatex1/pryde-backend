@@ -1,17 +1,18 @@
 /**
- * PRYDE_MODERATION_ROLLOUT_V4 - Moderation Configuration
- * 
- * SHADOW MODE BY DEFAULT for safe rollout.
- * Gradual enablement of enforcement actions.
- * 
+ * PRYDE_MODERATION_SAFE_ROLLOUT_V5 - Moderation Configuration
+ *
+ * V5 SAFE ROLLOUT:
+ * - SHADOW mode by default (7-day minimum observation)
+ * - Limited to NOTE and DAMPEN only
+ * - No REVIEW, MUTE, BLOCK in initial rollout
+ *
  * ROLLOUT ORDER:
- * 1. NOTE (enabled by default - logging only)
- * 2. DAMPEN (enable after 48-72h observation)
- * 3. REVIEW (enable after DAMPEN is stable)
- * 4. MUTE (enable after REVIEW is stable)
- * 5. BLOCK (enable last, after all others stable)
- * 
+ * Phase 0: Shadow Only (7 days minimum)
+ * Phase 1: NOTE enabled in LIVE mode (48-72h observation)
+ * Phase 2: DAMPEN enabled - STOP and observe
+ *
  * NO BULK ENABLES. NO SILENT CHANGES.
+ * ADVANCE ONLY WHEN FALSE POSITIVES ARE RARE AND ADMINS TRUST THE SYSTEM.
  */
 
 /**
@@ -24,36 +25,55 @@ export const DEFAULT_MODERATION_CONFIG = {
   // LIVE = penalties applied according to enabledActions
   mode: 'SHADOW',
 
-  // Which actions are enabled for enforcement
-  // In SHADOW mode, all actions downgrade to NOTE
-  // In LIVE mode, disabled actions downgrade to NOTE
+  // V5: Which actions are enabled for enforcement
+  // Only NOTE and DAMPEN are available in V5 safe rollout
+  // REVIEW, MUTE, BLOCK are reserved for future phases
   enabledActions: {
     NOTE: true,     // Always enabled - logging only
-    DAMPEN: false,  // Visibility dampening (non-punitive)
-    REVIEW: false,  // Queue for human review
-    MUTE: false,    // Temporary mute
-    BLOCK: false    // Hard block content
+    DAMPEN: false   // Visibility dampening (non-punitive)
+    // V5: REVIEW, MUTE, BLOCK removed from safe rollout
   },
 
   // Rollout tracking
   rollout: {
     startedAt: null,
-    currentPhase: 0,  // 0 = shadow only, 1-5 = action phases
+    currentPhase: 0,  // 0 = shadow only, 1-2 = action phases
     phaseHistory: []  // Track when each phase was enabled
   }
 };
 
 /**
- * Rollout phases for gradual enablement
+ * V5 Rollout phases - simplified to 3 phases only
+ * Stop after DAMPEN and observe before considering future phases
  */
 export const ROLLOUT_PHASES = [
-  { phase: 0, name: 'Shadow Only', actions: ['NOTE'], description: 'All layers execute, no penalties' },
-  { phase: 1, name: 'Logging', actions: ['NOTE'], description: 'NOTE action enabled in LIVE mode' },
-  { phase: 2, name: 'Dampening', actions: ['NOTE', 'DAMPEN'], description: 'Visibility dampening enabled' },
-  { phase: 3, name: 'Review Queue', actions: ['NOTE', 'DAMPEN', 'REVIEW'], description: 'Human review queue enabled' },
-  { phase: 4, name: 'Muting', actions: ['NOTE', 'DAMPEN', 'REVIEW', 'MUTE'], description: 'Temporary muting enabled' },
-  { phase: 5, name: 'Full Enforcement', actions: ['NOTE', 'DAMPEN', 'REVIEW', 'MUTE', 'BLOCK'], description: 'All actions enabled' }
+  {
+    phase: 0,
+    name: 'Shadow Only',
+    actions: ['NOTE'],
+    description: 'All layers execute, no penalties. Observe for 7 days minimum.',
+    minObservationDays: 7
+  },
+  {
+    phase: 1,
+    name: 'Logging',
+    actions: ['NOTE'],
+    description: 'NOTE action enabled in LIVE mode. Observe for 48-72 hours.',
+    minObservationDays: 2
+  },
+  {
+    phase: 2,
+    name: 'Dampening',
+    actions: ['NOTE', 'DAMPEN'],
+    description: 'Visibility dampening enabled (non-punitive). STOP and observe before future phases.',
+    minObservationDays: 7
+  }
 ];
+
+/**
+ * V5 Max phase - stop at phase 2 for safe rollout
+ */
+export const MAX_PHASE = 2;
 
 /**
  * Get the current moderation config from database or defaults
@@ -90,45 +110,65 @@ export function getModerationConfig(dbSettings = null) {
 }
 
 /**
- * Get the current rollout phase based on enabled actions
+ * V5: Get the current rollout phase based on enabled actions
+ * Only NOTE and DAMPEN are tracked in V5 safe rollout
  * @param {Object} enabledActions - Map of action -> boolean
  * @returns {Object} Current phase info
  */
 export function getCurrentPhase(enabledActions) {
   let currentPhase = 0;
 
-  if (enabledActions.BLOCK) currentPhase = 5;
-  else if (enabledActions.MUTE) currentPhase = 4;
-  else if (enabledActions.REVIEW) currentPhase = 3;
-  else if (enabledActions.DAMPEN) currentPhase = 2;
+  // V5: Only check NOTE and DAMPEN
+  if (enabledActions.DAMPEN) currentPhase = 2;
   else if (enabledActions.NOTE) currentPhase = 1;
 
-  return ROLLOUT_PHASES[currentPhase];
+  // Clamp to max phase
+  currentPhase = Math.min(currentPhase, MAX_PHASE);
+
+  return ROLLOUT_PHASES[currentPhase] || ROLLOUT_PHASES[0];
 }
 
 /**
- * Validate that a phase transition is safe (only one step at a time)
+ * V5: Validate that a phase transition is safe (only one step at a time)
+ * Max phase is 2 (DAMPEN) for safe rollout
  * @param {number} currentPhase - Current phase number
  * @param {number} targetPhase - Target phase number
  * @returns {Object} { valid: boolean, message: string }
  */
 export function validatePhaseTransition(currentPhase, targetPhase) {
-  if (targetPhase < 0 || targetPhase > 5) {
-    return { valid: false, message: 'Invalid phase number (must be 0-5)' };
+  if (targetPhase < 0 || targetPhase > MAX_PHASE) {
+    return {
+      valid: false,
+      message: `Invalid phase number (must be 0-${MAX_PHASE}). V5 safe rollout is limited to NOTE and DAMPEN only.`
+    };
   }
 
   if (targetPhase > currentPhase + 1) {
-    return { valid: false, message: `Cannot skip phases. Current: ${currentPhase}, Target: ${targetPhase}. Enable one action at a time.` };
+    return {
+      valid: false,
+      message: `Cannot skip phases. Current: ${currentPhase}, Target: ${targetPhase}. Enable one action at a time.`
+    };
   }
 
   return { valid: true, message: 'Phase transition allowed' };
 }
 
+/**
+ * V5: Check if an action is allowed in safe rollout
+ * @param {string} action - Action to check
+ * @returns {boolean} Whether action is allowed in V5
+ */
+export function isV5Action(action) {
+  return ['NOTE', 'DAMPEN'].includes(action);
+}
+
 export default {
   DEFAULT_MODERATION_CONFIG,
   ROLLOUT_PHASES,
+  MAX_PHASE,
   getModerationConfig,
   getCurrentPhase,
-  validatePhaseTransition
+  validatePhaseTransition,
+  isV5Action
 };
 
