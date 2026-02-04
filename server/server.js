@@ -328,7 +328,9 @@ app.use(helmet({
         "http://localhost:9000",
         "ws://localhost:9000",
         "http://127.0.0.1:5173",
-        "http://127.0.0.1:9000"
+        "http://127.0.0.1:9000",
+        // Vercel preview URLs
+        "https://pryde-frontend-*.vercel.app"
       ],
       fontSrc: ["'self'", "data:"],
       mediaSrc: ["'self'", "blob:", "https://media.tenor.com", "https://*.tenor.com"],
