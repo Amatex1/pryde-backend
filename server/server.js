@@ -302,6 +302,7 @@ app.use(helmet({
       imgSrc: ["'self'", "data:", "blob:", "https://media.tenor.com", "https://*.tenor.com"],
       connectSrc: [
         "'self'",
+        "blob:", // Allow blob URLs for file uploads
         // Backend API endpoints
         "https://pryde-backend.onrender.com",
         "wss://pryde-backend.onrender.com",
