@@ -29,6 +29,7 @@
     "polish:theme:dry": "node server/scripts/themeLeakFixer.js --dry-run",
     "create-indexes": "cd server && node scripts/create-indexes.js"
   },
-  "dependencies": {},
-  "devDependencies": {}
+  "dependencies": {
+    "node-fetch": "^3.3.2"
+  }
 }

@@ -14,7 +14,7 @@ const router = express.Router();
 
 // Backend version - UPDATE THIS ON EACH DEPLOY
 // Format: YYYY.MM.DD-NNN (e.g., 2026.01.24-001)
-const BACKEND_VERSION = process.env.BUILD_VERSION || '2026.01.24-001';
+const BACKEND_VERSION = process.env.BUILD_VERSION || '2026.02.07-1803';
 
 // Minimum compatible frontend version
 // Update this when you make breaking API changes
