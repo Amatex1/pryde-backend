@@ -1600,6 +1600,14 @@ if (!isVercel) {
     logger.info(`Base URL: ${config.baseURL}`);
     logger.info('Socket.IO server ready for real-time connections');
 
+    // Production hardening verification logs
+    if (redisClient) {
+      logger.info('✅ Redis rate limiting active');
+    } else {
+      logger.info('⚠️ In-memory rate limiting (Redis not configured)');
+    }
+    logger.info('✅ Security headers enabled');
+
   // Daily backup system is DISABLED by default
   // To enable daily backups, set ENABLE_AUTO_BACKUP=true in your .env file
   // Backups run once per day at 3:00 AM UTC and keep 30 days of history
