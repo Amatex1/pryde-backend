@@ -13,6 +13,7 @@ import { cacheShort, cacheMedium } from '../middleware/caching.js';
 import { checkProfileVisibility, checkBlocked } from '../middleware/privacy.js';
 import { sanitizeFields } from '../middleware/sanitize.js';
 import { searchLimiter } from '../middleware/rateLimiter.js';
+import { deletionIPLimiter, deletionUserLimiter } from '../middleware/deletionRateLimiter.js';
 import mongoose from 'mongoose';
 import { getUserStabilityReport } from '../utils/stabilityScore.js';
 import { processUserBadgesById } from '../services/autoBadgeService.js';
@@ -20,6 +21,7 @@ import { hasBlocked } from '../utils/blockHelper.js';
 import logger from '../utils/logger.js';
 import { escapeRegex } from '../utils/sanitize.js';
 import { sendAccountDeletionEmail } from '../utils/emailService.js';
+import { encryptObject, decryptObject } from '../utils/encryption.js';
 
 /**
  * Helper to resolve badge IDs to full badge objects
@@ -951,13 +953,22 @@ router.put('/reactivate', auth, async (req, res) => {
 // @route   POST /api/users/account/delete-request
 // @desc    Request account deletion (sends confirmation email)
 // @access  Private
-router.post('/account/delete-request', auth, requireActiveUser, async (req, res) => {
+router.post('/account/delete-request', auth, requireActiveUser, deletionIPLimiter, deletionUserLimiter, async (req, res) => {
   try {
+    const { reason, message } = req.body; // Optional deletion reason
     const userId = req.userId;
     const user = await User.findById(userId);
 
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Store deletion reason if provided
+    if (reason) {
+      user.deletedReason = {
+        type: reason,
+        message: message || null
+      };
     }
 
     // Generate deletion confirmation token
@@ -990,7 +1001,7 @@ router.post('/account/delete-request', auth, requireActiveUser, async (req, res)
 // @route   POST /api/users/account/delete-confirm
 // @desc    Confirm account deletion with token (soft delete with 30-day recovery)
 // @access  Public
-router.post('/account/delete-confirm', async (req, res) => {
+router.post('/account/delete-confirm', deletionIPLimiter, async (req, res) => {
   try {
     const { token } = req.body;
 
@@ -1007,8 +1018,8 @@ router.post('/account/delete-confirm', async (req, res) => {
       return res.status(400).json({ message: 'Invalid or expired deletion token' });
     }
 
-    // Store original data before anonymization
-    user.originalData = {
+    // Store original data before anonymization (ENCRYPTED)
+    const originalData = {
       email: user.email,
       fullName: user.fullName,
       displayName: user.displayName,
@@ -1022,6 +1033,8 @@ router.post('/account/delete-confirm', async (req, res) => {
       gender: user.gender,
       socialLinks: user.socialLinks
     };
+
+    user.originalData = encryptObject(originalData);
 
     // Soft delete: Mark as deleted and schedule permanent deletion in 30 days
     user.isDeleted = true;
@@ -1137,20 +1150,26 @@ router.post('/account/recover', async (req, res) => {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
-    // Restore original data
+    // Restore original data (DECRYPTED)
     if (user.originalData) {
-      user.email = user.originalData.email || user.email;
-      user.fullName = user.originalData.fullName || user.fullName;
-      user.displayName = user.originalData.displayName || user.displayName;
-      user.nickname = user.originalData.nickname || user.nickname;
-      user.bio = user.originalData.bio || user.bio;
-      user.profilePhoto = user.originalData.profilePhoto || user.profilePhoto;
-      user.coverPhoto = user.originalData.coverPhoto || user.coverPhoto;
-      user.location = user.originalData.location || user.location;
-      user.website = user.originalData.website || user.website;
-      user.pronouns = user.originalData.pronouns || user.pronouns;
-      user.gender = user.originalData.gender || user.gender;
-      user.socialLinks = user.originalData.socialLinks || user.socialLinks;
+      try {
+        const decryptedData = decryptObject(user.originalData);
+        user.email = decryptedData.email || user.email;
+        user.fullName = decryptedData.fullName || user.fullName;
+        user.displayName = decryptedData.displayName || user.displayName;
+        user.nickname = decryptedData.nickname || user.nickname;
+        user.bio = decryptedData.bio || user.bio;
+        user.profilePhoto = decryptedData.profilePhoto || user.profilePhoto;
+        user.coverPhoto = decryptedData.coverPhoto || user.coverPhoto;
+        user.location = decryptedData.location || user.location;
+        user.website = decryptedData.website || user.website;
+        user.pronouns = decryptedData.pronouns || user.pronouns;
+        user.gender = decryptedData.gender || user.gender;
+        user.socialLinks = decryptedData.socialLinks || user.socialLinks;
+      } catch (decryptError) {
+        logger.error('Failed to decrypt originalData during recovery:', decryptError);
+        // Continue with empty data - better than failing recovery
+      }
     }
 
     // Restore account

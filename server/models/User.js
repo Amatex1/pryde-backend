@@ -982,20 +982,27 @@ const userSchema = new mongoose.Schema({
     type: Date,
     default: null
   },
-  // Store original data before anonymization for recovery
+  // Store original data before anonymization for recovery (ENCRYPTED)
   originalData: {
-    email: { type: String, default: null },
-    fullName: { type: String, default: null },
-    displayName: { type: String, default: null },
-    nickname: { type: String, default: null },
-    bio: { type: String, default: null },
-    profilePhoto: { type: String, default: null },
-    coverPhoto: { type: String, default: null },
-    location: { type: String, default: null },
-    website: { type: String, default: null },
-    pronouns: { type: String, default: null },
-    gender: { type: String, default: null },
-    socialLinks: { type: Object, default: null }
+    type: Object,
+    default: null,
+    select: false // Never include in queries by default
+  },
+
+  // Deletion reason (optional, for analytics and abuse detection)
+  deletedReason: {
+    type: {
+      type: String,
+      enum: [
+        "privacy",
+        "too_many_notifications",
+        "found_alternative",
+        "temporary_break",
+        "safety_concern",
+        "other"
+      ]
+    },
+    message: String
   },
 
   // PHASE 4B: Group Notification Preferences (per-user, per-group)
@@ -1186,6 +1193,8 @@ userSchema.methods.toJSON = function() {
   delete user.resetPasswordToken;
   delete user.emailVerificationToken;
   delete user.deletionConfirmationToken;
+  // CRITICAL: Never serialize originalData (contains encrypted recovery data)
+  delete user.originalData;
   return user;
 };
 

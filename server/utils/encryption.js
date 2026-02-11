@@ -1,162 +1,113 @@
 import crypto from 'crypto';
-import config from '../config/config.js';
-
-// Encryption configuration
-const ALGORITHM = 'aes-256-gcm';
-const IV_LENGTH = 16;
-const SALT_LENGTH = 64;
-const TAG_LENGTH = 16;
-const TAG_POSITION = SALT_LENGTH + IV_LENGTH;
-const ENCRYPTED_POSITION = TAG_POSITION + TAG_LENGTH;
 
 /**
- * Get encryption key from environment variable
- * The key must be 32 bytes (64 hex characters)
+ * Recovery Data Encryption Utility
+ *
+ * Uses AES-256-GCM for authenticated encryption of sensitive recovery data.
+ * This ensures that even if the database is compromised, original user data
+ * cannot be recovered without the encryption key.
  */
-function getEncryptionKey() {
-  const key = process.env.MESSAGE_ENCRYPTION_KEY;
-  
+
+// Get encryption key from environment (32 bytes base64 encoded)
+const getEncryptionKey = () => {
+  const key = process.env.RECOVERY_ENCRYPTION_KEY;
   if (!key) {
-    if (config.nodeEnv === 'production') {
-      throw new Error('MESSAGE_ENCRYPTION_KEY is required in production!');
+    // Development fallback - NOT for production
+    if (process.env.NODE_ENV === 'development') {
+      return Buffer.from('dev-key-32-bytes-for-testing-only!', 'utf8');
     }
-    // Development fallback (NOT SECURE - only for local development)
-    console.warn('⚠️ WARNING: Using default encryption key. Set MESSAGE_ENCRYPTION_KEY in production!');
-    return crypto.createHash('sha256').update('dev-encryption-key-CHANGE-IN-PRODUCTION').digest();
-  }
-  
-  // Convert hex string to buffer
-  if (key.length !== 64) {
-    throw new Error('MESSAGE_ENCRYPTION_KEY must be 64 hex characters (32 bytes)');
-  }
-  
-  return Buffer.from(key, 'hex');
-}
-
-/**
- * Encrypt text using AES-256-GCM
- * @param {string} text - Plain text to encrypt
- * @returns {string} - Encrypted text in hex format
- */
-export function encryptMessage(text) {
-  if (!text || typeof text !== 'string') {
-    throw new Error('Text to encrypt must be a non-empty string');
-  }
-  
-  try {
-    const key = getEncryptionKey();
-    const iv = crypto.randomBytes(IV_LENGTH);
-    const salt = crypto.randomBytes(SALT_LENGTH);
-    
-    // Create cipher
-    const cipher = crypto.createCipheriv(ALGORITHM, key, iv);
-    
-    // Encrypt the text
-    const encrypted = Buffer.concat([
-      cipher.update(text, 'utf8'),
-      cipher.final()
-    ]);
-    
-    // Get authentication tag
-    const tag = cipher.getAuthTag();
-    
-    // Combine salt + iv + tag + encrypted data
-    const result = Buffer.concat([salt, iv, tag, encrypted]);
-    
-    // Return as hex string
-    return result.toString('hex');
-  } catch (error) {
-    console.error('❌ Encryption error:', error);
-    throw new Error('Failed to encrypt message');
-  }
-}
-
-/**
- * Decrypt text using AES-256-GCM
- * @param {string} encryptedHex - Encrypted text in hex format
- * @returns {string} - Decrypted plain text
- */
-export function decryptMessage(encryptedHex) {
-  if (!encryptedHex || typeof encryptedHex !== 'string') {
-    throw new Error('Encrypted text must be a non-empty string');
-  }
-  
-  try {
-    const key = getEncryptionKey();
-    const data = Buffer.from(encryptedHex, 'hex');
-    
-    // Extract components
-    const salt = data.subarray(0, SALT_LENGTH);
-    const iv = data.subarray(SALT_LENGTH, TAG_POSITION);
-    const tag = data.subarray(TAG_POSITION, ENCRYPTED_POSITION);
-    const encrypted = data.subarray(ENCRYPTED_POSITION);
-    
-    // Create decipher
-    const decipher = crypto.createDecipheriv(ALGORITHM, key, iv);
-    decipher.setAuthTag(tag);
-    
-    // Decrypt the text
-    const decrypted = Buffer.concat([
-      decipher.update(encrypted),
-      decipher.final()
-    ]);
-    
-    return decrypted.toString('utf8');
-  } catch (error) {
-    console.error('❌ Decryption error:', error);
-    throw new Error('Failed to decrypt message');
-  }
-}
-
-/**
- * Generate a new encryption key
- * Use this to generate MESSAGE_ENCRYPTION_KEY for .env
- * @returns {string} - 64 character hex string (32 bytes)
- */
-export function generateEncryptionKey() {
-  return crypto.randomBytes(32).toString('hex');
-}
-
-/**
- * Check if a string is encrypted (basic heuristic)
- * @param {string} text - Text to check
- * @returns {boolean} - True if text appears to be encrypted
- */
-export function isEncrypted(text) {
-  if (!text || typeof text !== 'string') {
-    return false;
+    throw new Error('RECOVERY_ENCRYPTION_KEY environment variable is required');
   }
 
-  // Encrypted messages are hex strings with specific minimum length
-  const minLength = (SALT_LENGTH + IV_LENGTH + TAG_LENGTH) * 2; // *2 for hex encoding
-  return /^[0-9a-f]+$/i.test(text) && text.length >= minLength;
-}
+  // Decode base64 key
+  const decoded = Buffer.from(key, 'base64');
+  if (decoded.length !== 32) {
+    throw new Error('RECOVERY_ENCRYPTION_KEY must be 32 bytes when base64 decoded');
+  }
 
-/**
- * Encrypt a string value (alias for encryptMessage)
- * Use for encrypting sensitive data like 2FA secrets
- * @param {string} value - Plain text to encrypt
- * @returns {string} - Encrypted text in hex format
- */
-export function encryptString(value) {
-  return encryptMessage(value);
-}
-
-/**
- * Decrypt a string value (alias for decryptMessage)
- * Use for decrypting sensitive data like 2FA secrets
- * @param {string} encryptedValue - Encrypted text in hex format
- * @returns {string} - Decrypted plain text
- */
-export function decryptString(encryptedValue) {
-  return decryptMessage(encryptedValue);
-}
-
-// Export for testing
-export const _test = {
-  ALGORITHM,
-  IV_LENGTH,
-  SALT_LENGTH,
-  TAG_LENGTH
+  return decoded;
 };
 
+/**
+ * Encrypt an object using AES-256-GCM
+ * @param {Object} obj - Object to encrypt
+ * @returns {Object} Encrypted blob with iv, authTag, and encryptedData
+ */
+export function encryptObject(obj) {
+  if (!obj || typeof obj !== 'object') {
+    throw new Error('encryptObject requires a valid object');
+  }
+
+  const key = getEncryptionKey();
+  const iv = crypto.randomBytes(16); // 128-bit IV for GCM
+  const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
+
+  const jsonString = JSON.stringify(obj);
+  let encrypted = cipher.update(jsonString, 'utf8', 'hex');
+  encrypted += cipher.final('hex');
+
+  const authTag = cipher.getAuthTag(); // 128-bit authentication tag
+
+  return {
+    iv: iv.toString('hex'),
+    authTag: authTag.toString('hex'),
+    encryptedData: encrypted
+  };
+}
+
+/**
+ * Decrypt an encrypted blob back to object
+ * @param {Object} encryptedBlob - { iv, authTag, encryptedData }
+ * @returns {Object} Decrypted object
+ */
+export function decryptObject(encryptedBlob) {
+  if (!encryptedBlob || typeof encryptedBlob !== 'object') {
+    throw new Error('decryptObject requires a valid encrypted blob');
+  }
+
+  const { iv, authTag, encryptedData } = encryptedBlob;
+
+  if (!iv || !authTag || !encryptedData) {
+    throw new Error('Invalid encrypted blob structure');
+  }
+
+  try {
+    const key = getEncryptionKey();
+    const decipher = crypto.createDecipheriv('aes-256-gcm', key, Buffer.from(iv, 'hex'));
+
+    // Set the authentication tag
+    decipher.setAuthTag(Buffer.from(authTag, 'hex'));
+
+    let decrypted = decipher.update(encryptedData, 'hex', 'utf8');
+    decrypted += decipher.final('utf8');
+
+    return JSON.parse(decrypted);
+  } catch (error) {
+    // Handle backward compatibility: if decryption fails, assume it's plain text
+    // This allows migration from unencrypted to encrypted data
+    if (typeof encryptedBlob === 'object' && !encryptedBlob.encryptedData) {
+      // This looks like plain object data, return as-is
+      return encryptedBlob;
+    }
+    throw new Error('Failed to decrypt data: ' + error.message);
+  }
+}
+
+/**
+ * Check if data appears to be encrypted
+ * @param {*} data - Data to check
+ * @returns {boolean} True if data looks encrypted
+ */
+export function isEncrypted(data) {
+  return data &&
+         typeof data === 'object' &&
+         data.iv &&
+         data.authTag &&
+         data.encryptedData;
+}
+
+export default {
+  encryptObject,
+  decryptObject,
+  isEncrypted
+};

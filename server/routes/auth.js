@@ -428,7 +428,20 @@ router.post('/signup', validateAgeBeforeRateLimit, signupLimiter, validateSignup
     let user = await User.findOne({ $or: [{ email }, { username }] });
     if (user) {
       if (user.email === email) {
-        return res.status(400).json({ message: 'Email already registered' });
+        // Check if this is a deleted account in recovery window
+        if (user.isDeleted && user.deletionScheduledFor && user.deletionScheduledFor > Date.now()) {
+          return res.status(409).json({
+            message: 'This account is scheduled for deletion. Please log in to restore your account.'
+          });
+        }
+        // Check if this is a deleted account past recovery window - allow permanent deletion then registration
+        else if (user.isDeleted && user.deletionScheduledFor && user.deletionScheduledFor <= Date.now()) {
+          // Trigger permanent deletion cleanup
+          await user.deleteOne();
+          logger.info(`Permanently deleted expired account for email: ${email} during registration`);
+        } else {
+          return res.status(400).json({ message: 'Email already registered' });
+        }
       }
       return res.status(400).json({ message: 'Username already taken' });
     }
@@ -677,12 +690,39 @@ router.post('/login', loginLimiter, validateLogin, async (req, res) => {
       });
     }
 
-    // CRITICAL: Check if account is deleted (hard block - cannot login)
+    // Check if account is deleted
     if (user.isDeleted) {
-      return res.status(401).json({
-        message: 'Account deleted',
-        code: 'ACCOUNT_DELETED'
-      });
+      // If within recovery window, automatically restore account
+      if (user.deletionScheduledFor && user.deletionScheduledFor > Date.now()) {
+        logger.info(`Automatically recovering deleted account for user: ${user.username} (${user.email})`);
+
+        // Restore account
+        user.isDeleted = false;
+        user.deletionScheduledFor = null;
+        user.deletedAt = null;
+        user.deletionConfirmationToken = null;
+        user.deletionConfirmationExpires = null;
+
+        await user.save();
+
+        // Emit real-time event for admin panel
+        const io = req.app.get('io');
+        if (io) {
+          io.emit('user_recovered', {
+            userId: user._id,
+            username: user.username,
+            automatic: true,
+            method: 'login',
+            timestamp: new Date()
+          });
+        }
+      } else {
+        // Past recovery window - hard block
+        return res.status(401).json({
+          message: 'Account deleted',
+          code: 'ACCOUNT_DELETED'
+        });
+      }
     }
 
     // Note: Deactivated accounts will be auto-reactivated after successful password verification

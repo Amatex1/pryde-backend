@@ -956,6 +956,15 @@ export const sendAccountDeletionEmail = async (email, username, deletionToken) =
                         </ul>
                       </div>
 
+                      <div style="background-color: #D1FAE5; border-left: 4px solid #10B981; padding: 20px; margin: 30px 0; border-radius: 4px;">
+                        <p style="margin: 0 0 10px 0; color: #065F46; font-size: 14px; font-weight: 600;">
+                          🔄 Changed Your Mind?
+                        </p>
+                        <p style="margin: 0; color: #065F46; font-size: 14px; line-height: 1.6;">
+                          If this was a mistake, simply log back in using your existing credentials to cancel deletion and restore your account.
+                        </p>
+                      </div>
+
                       <p style="margin: 0 0 30px; color: #2B2B2B; font-size: 16px; line-height: 1.6;">
                         If you want to proceed with deleting your account, click the button below to confirm:
                       </p>
