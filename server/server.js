@@ -20,6 +20,7 @@ import mongoSanitize from "express-mongo-sanitize";
 import cookieParser from "cookie-parser";
 import compression from "compression";
 import sanitizeHtml from "sanitize-html";
+import schedule from "node-schedule";
 
 // Import routes
 import authRoutes from './routes/auth.js';
@@ -1724,6 +1725,29 @@ if (!isVercel) {
           .catch(err => console.error('[ReflectionPrompts] ❌ Seed failed:', err));
       })
       .catch(err => console.error('[ReflectionPrompts] ❌ Failed to import seed script:', err));
+
+    // ========================================
+    // DAILY DATA CLEANUP (Account Deletion, Notifications, etc.)
+    // ========================================
+    // Runs daily cleanup of old data including permanent account deletion
+    // This ensures deleted accounts are permanently removed after 30 days
+    import('./scripts/cleanupOldData.js')
+      .then(() => {
+        // Schedule daily cleanup at 02:00 UTC
+        const cleanupJob = schedule.scheduleJob('0 2 * * *', async () => {
+          console.log('[Cleanup] 🕐 Running daily data cleanup...');
+          try {
+            // Import and run the cleanup script
+            const cleanupModule = await import('./scripts/cleanupOldData.js');
+            await cleanupModule.default();
+            console.log('[Cleanup] ✅ Daily cleanup completed successfully');
+          } catch (err) {
+            console.error('[Cleanup] ❌ Daily cleanup failed:', err);
+          }
+        });
+        console.log('[Cleanup] 🕐 Daily cleanup job scheduled (runs at 02:00 UTC)');
+      })
+      .catch(err => console.error('[Cleanup] ❌ Failed to schedule daily cleanup:', err));
 
     // ========================================
     // FOUNDING MEMBER BADGE

@@ -982,6 +982,21 @@ const userSchema = new mongoose.Schema({
     type: Date,
     default: null
   },
+  // Store original data before anonymization for recovery
+  originalData: {
+    email: { type: String, default: null },
+    fullName: { type: String, default: null },
+    displayName: { type: String, default: null },
+    nickname: { type: String, default: null },
+    bio: { type: String, default: null },
+    profilePhoto: { type: String, default: null },
+    coverPhoto: { type: String, default: null },
+    location: { type: String, default: null },
+    website: { type: String, default: null },
+    pronouns: { type: String, default: null },
+    gender: { type: String, default: null },
+    socialLinks: { type: Object, default: null }
+  },
 
   // PHASE 4B: Group Notification Preferences (per-user, per-group)
   // Quiet, opt-in notifications - nothing is on by default

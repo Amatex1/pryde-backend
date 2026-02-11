@@ -900,12 +900,135 @@ export const sendRecoveryContactNotificationEmail = async (contactEmail, contact
   }
 };
 
+/**
+ * Send account deletion confirmation email
+ */
+export const sendAccountDeletionEmail = async (email, username, deletionToken) => {
+  try {
+    const resendClient = getResendClient();
+
+    if (!resendClient) {
+      console.warn('Resend API key not configured. Email not sent.');
+      return { success: false, error: 'Email service not configured' };
+    }
+
+    const deletionUrl = `${config.frontendURL}/delete-account/confirm?token=${deletionToken}`;
+
+    const { data, error } = await resendClient.emails.send({
+      from: FROM_EMAIL,
+      to: email,
+      subject: '⚠️ Account Deletion Request - Pryde Social',
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        </head>
+        <body style="margin: 0; padding: 0; background-color: #F7F7F7; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+          <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #F7F7F7;">
+            <tr>
+              <td style="padding: 40px 20px;">
+                <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="max-width: 600px; margin: 0 auto; background: linear-gradient(135deg, #DC3545 0%, #C82333 100%); border-radius: 16px; overflow: hidden;">
+                  <tr>
+                    <td style="padding: 40px; text-align: center;">
+                      <h1 style="margin: 0; color: #FFFFFF; font-size: 32px; font-weight: 700;">⚠️ Account Deletion</h1>
+                      <p style="margin: 10px 0 0; color: rgba(255,255,255,0.95); font-size: 16px;">Please confirm your request</p>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="background-color: #FFFFFF; padding: 40px;">
+                      <p style="margin: 0 0 20px; color: #2B2B2B; font-size: 16px; line-height: 1.6;">Hi ${username},</p>
+
+                      <p style="margin: 0 0 20px; color: #2B2B2B; font-size: 16px; line-height: 1.6;">
+                        We received a request to permanently delete your Pryde Social account. This action cannot be undone.
+                      </p>
+
+                      <div style="background-color: #FFF3CD; border-left: 4px solid #FFC107; padding: 20px; margin: 30px 0; border-radius: 4px;">
+                        <p style="margin: 0 0 10px 0; color: #856404; font-size: 14px; font-weight: 600;">
+                          ⚠️ Important: Account Deletion Consequences
+                        </p>
+                        <ul style="margin: 10px 0 0 20px; color: #856404; font-size: 14px; line-height: 1.6;">
+                          <li>Your profile and all posts will be permanently removed</li>
+                          <li>You will lose access to all your data</li>
+                          <li>This action cannot be reversed</li>
+                          <li>You have 30 days to recover your account after deletion</li>
+                        </ul>
+                      </div>
+
+                      <p style="margin: 0 0 30px; color: #2B2B2B; font-size: 16px; line-height: 1.6;">
+                        If you want to proceed with deleting your account, click the button below to confirm:
+                      </p>
+
+                      <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                        <tr>
+                          <td style="text-align: center; padding: 20px 0;">
+                            <a href="${deletionUrl}" style="display: inline-block; background: linear-gradient(135deg, #DC3545 0%, #C82333 100%); color: #FFFFFF; text-decoration: none; padding: 16px 40px; border-radius: 8px; font-weight: 600; font-size: 16px;">
+                              Confirm Account Deletion
+                            </a>
+                          </td>
+                        </tr>
+                      </table>
+
+                      <p style="margin: 30px 0 20px; color: #616161; font-size: 14px; line-height: 1.6;">
+                        Or copy and paste this link into your browser:
+                      </p>
+                      <p style="margin: 0 0 30px; color: #DC3545; font-size: 14px; word-break: break-all;">
+                        ${deletionUrl}
+                      </p>
+
+                      <div style="background-color: #D1FAE5; border-left: 4px solid #10B981; padding: 15px; margin: 30px 0; border-radius: 4px;">
+                        <p style="margin: 0; color: #065F46; font-size: 14px; line-height: 1.6;">
+                          <strong>Changed your mind?</strong><br>
+                          If you didn't request this deletion, you can safely ignore this email. Your account will remain active.
+                        </p>
+                      </div>
+
+                      <p style="margin: 30px 0 0; color: #2B2B2B; font-size: 16px; line-height: 1.6;">
+                        Best regards,<br>
+                        The Pryde Social Team
+                      </p>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="background-color: #F7F7F7; padding: 30px; text-align: center;">
+                      <p style="margin: 0 0 10px; color: #616161; font-size: 12px;">
+                        © ${new Date().getFullYear()} Pryde Social. All rights reserved.
+                      </p>
+                      <p style="margin: 0; color: #616161; font-size: 12px;">
+                        This is an automated email. Please do not reply.
+                      </p>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+        </body>
+        </html>
+      `
+    });
+
+    if (error) {
+      console.error('Error sending account deletion email:', error);
+      return { success: false, error: error.message };
+    }
+
+    console.log('Account deletion email sent:', data.id);
+    return { success: true, messageId: data.id };
+  } catch (error) {
+    console.error('Error sending account deletion email:', error);
+    return { success: false, error: error.message };
+  }
+};
+
 export default {
   sendPasswordResetEmail,
   sendLoginAlertEmail,
   sendSuspiciousLoginEmail,
   sendVerificationEmail,
   sendPasswordChangedEmail,
-  sendRecoveryContactNotificationEmail
+  sendRecoveryContactNotificationEmail,
+  sendAccountDeletionEmail
 };
 

@@ -13,6 +13,11 @@ import Notification from '../models/Notification.js';
 import GlobalMessage from '../models/GlobalMessage.js';
 import SecurityLog from '../models/SecurityLog.js';
 import TempMedia from '../models/TempMedia.js';
+import User from '../models/User.js';
+import Post from '../models/Post.js';
+import Message from '../models/Message.js';
+import FollowRequest from '../models/FollowRequest.js';
+import GroupChat from '../models/GroupChat.js';
 
 async function cleanupNotifications() {
   console.log('\n🔔 CLEANING UP OLD NOTIFICATIONS...\n');
@@ -134,30 +139,107 @@ async function cleanupTempMedia() {
   }
 }
 
+async function cleanupDeletedAccounts() {
+  console.log('\n🗑️ CLEANING UP PERMANENTLY DELETED ACCOUNTS...\n');
+
+  try {
+    // Find accounts that have been soft-deleted for more than 30 days
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    const expiredAccounts = await User.find({
+      isDeleted: true,
+      deletionScheduledFor: { $lt: thirtyDaysAgo }
+    }).select('_id username email');
+
+    if (expiredAccounts.length === 0) {
+      console.log('✅ No accounts ready for permanent deletion');
+      return;
+    }
+
+    console.log(`📋 Found ${expiredAccounts.length} accounts ready for permanent deletion:`);
+    expiredAccounts.forEach(account => {
+      console.log(`   - ${account.username} (${account._id})`);
+    });
+
+    let totalDeleted = 0;
+
+    // Delete each account and all associated data
+    for (const account of expiredAccounts) {
+      const accountId = account._id;
+      console.log(`\n🗑️ Permanently deleting account: ${account.username}`);
+
+      try {
+        // Delete all posts by this user
+        const postsDeleted = await Post.deleteMany({ author: accountId });
+        console.log(`   📝 Deleted ${postsDeleted.deletedCount} posts`);
+
+        // Delete all messages sent/received by this user
+        const messagesDeleted = await Message.deleteMany({
+          $or: [{ sender: accountId }, { recipient: accountId }]
+        });
+        console.log(`   💬 Deleted ${messagesDeleted.deletedCount} messages`);
+
+        // Delete all follow requests involving this user
+        const followRequestsDeleted = await FollowRequest.deleteMany({
+          $or: [{ sender: accountId }, { receiver: accountId }]
+        });
+        console.log(`   👥 Deleted ${followRequestsDeleted.deletedCount} follow requests`);
+
+        // Remove user from all group chats
+        const groupChatsUpdated = await GroupChat.updateMany(
+          { members: accountId },
+          { $pull: { members: accountId } }
+        );
+        console.log(`   👥 Removed from ${groupChatsUpdated.modifiedCount} group chats`);
+
+        // Finally, permanently delete the user account
+        await User.deleteOne({ _id: accountId });
+        console.log(`   ✅ Permanently deleted user account`);
+
+        totalDeleted++;
+      } catch (accountError) {
+        console.error(`   ❌ Error deleting account ${account.username}:`, accountError.message);
+      }
+    }
+
+    console.log(`\n✅ Successfully permanently deleted ${totalDeleted} accounts`);
+
+  } catch (error) {
+    console.error('❌ Error cleaning up deleted accounts:', error.message);
+  }
+}
+
 async function generateCleanupReport() {
   console.log('\n' + '='.repeat(80));
   console.log('📋 CLEANUP REPORT');
   console.log('='.repeat(80) + '\n');
-  
+
   try {
     // Get final stats for all collections
     const stats = {
       notifications: await Notification.countDocuments(),
       globalMessages: await GlobalMessage.countDocuments(),
       securityLogs: await SecurityLog.countDocuments(),
-      tempMedia: await TempMedia.countDocuments()
+      tempMedia: await TempMedia.countDocuments(),
+      users: await User.countDocuments(),
+      posts: await Post.countDocuments(),
+      messages: await Message.countDocuments()
     };
-    
+
     console.log('📊 FINAL COLLECTION SIZES:\n');
+    console.log(`   Users: ${stats.users.toLocaleString()}`);
+    console.log(`   Posts: ${stats.posts.toLocaleString()}`);
+    console.log(`   Messages: ${stats.messages.toLocaleString()}`);
     console.log(`   Notifications: ${stats.notifications.toLocaleString()}`);
     console.log(`   Global Messages: ${stats.globalMessages.toLocaleString()}`);
     console.log(`   Security Logs: ${stats.securityLogs.toLocaleString()}`);
     console.log(`   Temp Media: ${stats.tempMedia.toLocaleString()}`);
-    
+
     console.log('\n✅ Cleanup complete!\n');
-    console.log('💡 TIP: Run this script monthly to keep database clean.\n');
+    console.log('💡 TIP: Run this script daily to keep database clean.\n');
     console.log('='.repeat(80) + '\n');
-    
+
   } catch (error) {
     console.error('❌ Error generating cleanup report:', error.message);
   }
@@ -183,6 +265,7 @@ async function main() {
     await cleanupGlobalMessages();
     await cleanupSecurityLogs();
     await cleanupTempMedia();
+    await cleanupDeletedAccounts();
     
     // Generate final report
     await generateCleanupReport();

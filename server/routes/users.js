@@ -19,6 +19,7 @@ import { processUserBadgesById } from '../services/autoBadgeService.js';
 import { hasBlocked } from '../utils/blockHelper.js';
 import logger from '../utils/logger.js';
 import { escapeRegex } from '../utils/sanitize.js';
+import { sendAccountDeletionEmail } from '../utils/emailService.js';
 
 /**
  * Helper to resolve badge IDs to full badge objects
@@ -968,8 +969,13 @@ router.post('/account/delete-request', auth, requireActiveUser, async (req, res)
 
     await user.save();
 
-    // TODO: Send confirmation email with deletion link
-    // sendAccountDeletionEmail(user.email, user.username, deletionToken);
+    // Send confirmation email with deletion link
+    const emailResult = await sendAccountDeletionEmail(user.email, user.username, deletionToken);
+
+    if (!emailResult.success) {
+      console.warn('Failed to send deletion email, but token saved:', emailResult.error);
+      // Don't fail the request - token is saved, user can still confirm via other means
+    }
 
     res.json({
       message: 'Account deletion confirmation email sent. Please check your email to confirm.',
@@ -1000,6 +1006,22 @@ router.post('/account/delete-confirm', async (req, res) => {
     if (!user) {
       return res.status(400).json({ message: 'Invalid or expired deletion token' });
     }
+
+    // Store original data before anonymization
+    user.originalData = {
+      email: user.email,
+      fullName: user.fullName,
+      displayName: user.displayName,
+      nickname: user.nickname,
+      bio: user.bio,
+      profilePhoto: user.profilePhoto,
+      coverPhoto: user.coverPhoto,
+      location: user.location,
+      website: user.website,
+      pronouns: user.pronouns,
+      gender: user.gender,
+      socialLinks: user.socialLinks
+    };
 
     // Soft delete: Mark as deleted and schedule permanent deletion in 30 days
     user.isDeleted = true;
@@ -1098,14 +1120,15 @@ router.post('/account/recover', async (req, res) => {
       return res.status(400).json({ message: 'Email and password required' });
     }
 
-    // Find deleted user
+    // Find deleted user by original email stored in originalData
     const user = await User.findOne({
       isDeleted: true,
-      deletionScheduledFor: { $gt: Date.now() } // Still within recovery window
+      deletionScheduledFor: { $gt: Date.now() }, // Still within recovery window
+      'originalData.email': email // Validate email matches original email
     });
 
     if (!user) {
-      return res.status(404).json({ message: 'No recoverable account found or recovery period has expired' });
+      return res.status(404).json({ message: 'No recoverable account found with this email or recovery period has expired' });
     }
 
     // Verify password
@@ -1114,21 +1137,36 @@ router.post('/account/recover', async (req, res) => {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
+    // Restore original data
+    if (user.originalData) {
+      user.email = user.originalData.email || user.email;
+      user.fullName = user.originalData.fullName || user.fullName;
+      user.displayName = user.originalData.displayName || user.displayName;
+      user.nickname = user.originalData.nickname || user.nickname;
+      user.bio = user.originalData.bio || user.bio;
+      user.profilePhoto = user.originalData.profilePhoto || user.profilePhoto;
+      user.coverPhoto = user.originalData.coverPhoto || user.coverPhoto;
+      user.location = user.originalData.location || user.location;
+      user.website = user.originalData.website || user.website;
+      user.pronouns = user.originalData.pronouns || user.pronouns;
+      user.gender = user.originalData.gender || user.gender;
+      user.socialLinks = user.originalData.socialLinks || user.socialLinks;
+    }
+
     // Restore account
     user.isDeleted = false;
     user.deletedAt = null;
     user.deletionScheduledFor = null;
-
-    // Restore original email (if we stored it)
-    // For now, user will need to update their email manually
+    user.originalData = {}; // Clear stored original data
 
     await user.save();
 
     res.json({
-      message: 'Account recovered successfully! Please update your profile information.',
+      message: 'Account recovered successfully! Your profile has been restored.',
       user: {
         id: user._id,
-        username: user.username
+        username: user.username,
+        email: user.email
       }
     });
   } catch (error) {
