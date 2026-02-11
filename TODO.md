@@ -1,4 +1,4 @@
-# Delete Account Flow Fixes
+# Delete Account Flow Fixes - Implementation Plan
 
 ## Issues Identified
 1. **Email confirmation not sent** - Delete request endpoint has TODO but doesn't send email
