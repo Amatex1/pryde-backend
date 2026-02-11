@@ -257,7 +257,7 @@ async function main() {
     console.log('🔌 Connecting to MongoDB...\n');
     await mongoose.connect(mongoURL);
     console.log('✅ Connected to MongoDB!\n');
-    console.log('📍 Database:', mongoose.connection.db.databaseName);
+    console.log('📍 Database:', mongoose.connection.name);
     console.log('='.repeat(80));
 
     // Run all cleanup tasks
