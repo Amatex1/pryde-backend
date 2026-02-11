@@ -7,14 +7,13 @@ Users unable to login to production site with 500 Internal Server Error: "Client
 Race condition in server.js where the server starts listening for requests before the MongoDB database connection is established.
 
 ## Solution Implemented
-- Modified server startup to properly await the database connection promise before starting the server
-- Added `dbConnectionPromise` variable to store the connection promise
-- Updated `initializeServer()` to await the actual database connection promise
+- Modified server startup to properly await mongoose connection readyState === 1 before starting the server
+- This ensures the database is fully connected and ready for operations before accepting requests
 - Disabled initial backup on server startup to prevent database connection conflicts
 - Updated backup script to use consistent connection options with main server
 
 ## Files Modified
-- [x] `server/server.js` - Added database connection wait before server startup
+- [x] `server/server.js` - Fixed database connection waiting using mongoose.connection.readyState
 - [x] `server/scripts/dailyBackup.js` - Disabled initial backup on startup
 - [x] `server/scripts/backupToCloud.js` - Added consistent connection options
 

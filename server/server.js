@@ -122,24 +122,12 @@ import config from "./config/config.js";
 let redisClient = null;
 (async () => { redisClient = await initRedis(config, logger); })();
 
-// Track DB connection state for scheduler guards
-let isDBConnected = false;
-
-// Connect to DB and track state (skip auto-connect during tests to avoid double connections)
-let dbConnectionPromise = null;
+// Connect to DB (skip auto-connect during tests to avoid double connections)
 if (process.env.NODE_ENV !== 'test') {
-  dbConnectionPromise = connectDB().then(() => {
-    isDBConnected = true;
-    console.log('✅ Database connection ready for operations');
-  }).catch((err) => {
+  connectDB().catch((err) => {
     console.error('❌ Failed to connect to MongoDB:', err);
     process.exit(1);
   });
-} else {
-  // In tests, connection is handled by the test harness to avoid multiple openUri calls.
-  if (mongoose.connection.readyState === 1) {
-    isDBConnected = true;
-  }
 }
 
 // Initialize server startup (async to wait for DB connection)
@@ -147,8 +135,14 @@ const initializeServer = async () => {
   // Wait for database connection before starting server (prevents race condition)
   if (process.env.NODE_ENV !== 'test') {
     console.log('⏳ Waiting for database connection...');
-    await dbConnectionPromise; // Wait for the actual connection promise
-    console.log('✅ Database connected, starting server...');
+
+    // Wait for mongoose connection to be fully ready (readyState === 1)
+    while (mongoose.connection.readyState !== 1) {
+      console.log(`⏳ DB connection state: ${mongoose.connection.readyState} (waiting for 1)`);
+      await new Promise(resolve => setTimeout(resolve, 500)); // Check every 500ms
+    }
+
+    console.log('✅ Database connected and ready for operations, starting server...');
   }
 };
 
