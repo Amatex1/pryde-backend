@@ -245,19 +245,13 @@ async function generateCleanupReport() {
   }
 }
 
-async function main() {
+export default async function cleanupOldData() {
   try {
-    const mongoURL = process.env.MONGO_URI || process.env.MONGO_URL || process.env.MONGODB_URI;
-    
-    if (!mongoURL) {
-      console.error('❌ No MongoDB connection string found in environment variables');
-      process.exit(1);
+    if (mongoose.connection.readyState !== 1) {
+      throw new Error('Database not connected');
     }
 
-    console.log('🔌 Connecting to MongoDB...\n');
-    await mongoose.connect(mongoURL);
-    console.log('✅ Connected to MongoDB!\n');
-    console.log('📍 Database:', mongoose.connection.name);
+    console.log('📍 Database:', mongoose.connection.db ? mongoose.connection.db.databaseName : 'unknown');
     console.log('='.repeat(80));
 
     // Run all cleanup tasks
@@ -266,18 +260,13 @@ async function main() {
     await cleanupSecurityLogs();
     await cleanupTempMedia();
     await cleanupDeletedAccounts();
-    
+
     // Generate final report
     await generateCleanupReport();
-    
-    await mongoose.connection.close();
-    console.log('🔌 Disconnected from MongoDB\n');
-    
+
   } catch (error) {
     console.error('❌ Error:', error);
-    process.exit(1);
+    throw error; // Re-throw so caller can handle
   }
 }
-
-main();
 

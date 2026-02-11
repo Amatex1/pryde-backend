@@ -39,15 +39,13 @@ const DRY_RUN = process.argv.includes('--dry-run');
 let gridfsBucket;
 
 /**
- * Initialize database connection
+ * Initialize GridFS bucket (assumes DB is already connected)
  */
-const initDB = async () => {
+const initGridFS = () => {
   if (mongoose.connection.readyState !== 1) {
-    await mongoose.connect(config.mongoUri);
-    console.log('📦 Connected to MongoDB');
+    throw new Error('Database not connected');
   }
 
-  // Initialize GridFS
   gridfsBucket = new mongoose.mongo.GridFSBucket(mongoose.connection.db, {
     bucketName: 'uploads'
   });
@@ -144,9 +142,11 @@ const cleanup = async () => {
     // mongoose.connection.readyState values:
     // 0 = disconnected, 1 = connected, 2 = connecting, 3 = disconnecting
     if (mongoose.connection.readyState !== 1) {
-      console.log('[Cleanup] Mongo not connected, skipping temp media cleanup');
-      return { deleted: 0, filesDeleted: 0, skipped: true, reason: 'db_not_connected' };
+      throw new Error('Database not connected');
     }
+
+    // Initialize GridFS bucket
+    initGridFS();
 
     console.log('🧹 Starting temp media cleanup...');
     console.log(`📋 Configuration: MAX_AGE=${MAX_AGE_MINUTES}min, DRY_RUN=${DRY_RUN}`);
@@ -208,10 +208,10 @@ const cleanup = async () => {
 // Export for use in server
 export { cleanup as cleanupTempMedia, MAX_AGE_MINUTES };
 
-// Run directly if called as script
+// Run directly if called as script (legacy support)
 if (import.meta.url === `file://${process.argv[1].replace(/\\/g, '/')}`) {
-  initDB()
-    .then(() => cleanup())
+  console.warn('⚠️ Running cleanupTempMedia directly is deprecated. Use server/cli/runCleanup.js instead.');
+  cleanup()
     .then((result) => {
       console.log('\n✅ Cleanup complete:', result);
       process.exit(0);

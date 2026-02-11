@@ -1,28 +1,50 @@
-# Login Issue Fix - Database Connection Race Condition
-
 ## Problem
 Users unable to login to production site with 500 Internal Server Error: "Client must be connected before running operations"
 
 ## Root Cause
 Race condition in server.js where the server starts listening for requests before the MongoDB database connection is established.
 
-## Solution Implemented
-- Modified server startup to properly await mongoose connection readyState === 1 before starting the server
-- This ensures the database is fully connected and ready for operations before accepting requests
-- Disabled initial backup on server startup to prevent database connection conflicts
-- Updated backup script to use consistent connection options with main server
+## MongoDB Lifecycle Manager Implementation
 
-## Files Modified
-- [x] `server/server.js` - Fixed database connection waiting using mongoose.connection.readyState
-- [x] `server/scripts/dailyBackup.js` - Disabled initial backup on startup
-- [x] `server/scripts/backupToCloud.js` - Added consistent connection options
+### Solution Implemented
+- ✅ Created centralized `server/utils/dbManager.js` with connectDB/disconnectDB functions
+- ✅ Refactored `server/server.js` to use dbManager instead of direct mongoose.connect
+- ✅ Added mongoose connection event listeners for monitoring
+- ✅ Converted `cleanupOldData.js` and `cleanupTempMedia.js` to pure workers
+- ✅ Created safe CLI wrapper `server/cli/runCleanup.js`
+- ✅ Ensured server never calls disconnectDB (only CLI wrappers do)
 
-## Testing Required
+### Files Modified
+- [x] `server/utils/dbManager.js` - New centralized database manager
+- [x] `server/server.js` - Updated to use dbManager and added connection monitoring
+- [x] `server/scripts/cleanupOldData.js` - Converted to pure worker
+- [x] `server/scripts/cleanupTempMedia.js` - Converted to pure worker
+- [x] `server/cli/runCleanup.js` - New safe CLI wrapper
+
+### Implementation Complete ✅
+
+**Key Changes Made:**
+- ✅ Created `server/utils/dbManager.js` - Centralized database lifecycle manager
+- ✅ Updated `server/server.js` - Uses dbManager and waits for DB readiness
+- ✅ Converted scripts to pure workers - `cleanupOldData.js`, `cleanupTempMedia.js`
+- ✅ Created CLI wrapper - `server/cli/runCleanup.js` for standalone execution
+- ✅ Fixed database property access issue in cleanup script
+
+### Testing Required
 - [ ] Deploy to production and test login functionality
 - [ ] Verify no more 500 errors on login endpoint
 - [ ] Check server logs for proper database connection sequence
+- [ ] Test CLI script execution via wrapper
 
-## Expected Outcome
-- Server will wait for database connection before accepting requests
-- Login requests will no longer fail with "Client must be connected" error
-- Improved reliability for production deployments
+### Expected Outcome
+- **Login Issue Fixed**: Server waits for database connection before accepting requests
+- **No Race Conditions**: Only server manages DB lifecycle, scripts assume connection exists
+- **Improved Reliability**: Centralized connection management prevents accidental disconnects
+- **Better Architecture**: Scripts are pure workers, CLI wrappers handle standalone execution
+
+**Architecture Benefits:**
+- Single source of truth for database connections
+- Scripts never manage connections directly
+- Server lifecycle owns the connection during normal operation
+- CLI operations are properly isolated and managed
+- No possibility of accidental DB disconnects

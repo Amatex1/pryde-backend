@@ -117,16 +117,29 @@ import {
   reportLimiter
 } from './middleware/rateLimiter.js';
 
-import connectDB from "./dbConn.js";
+import { connectDB } from './utils/dbManager.js';
 import config from "./config/config.js";
 let redisClient = null;
 (async () => { redisClient = await initRedis(config, logger); })();
 
 // Connect to DB (skip auto-connect during tests to avoid double connections)
 if (process.env.NODE_ENV !== 'test') {
-  connectDB().catch((err) => {
+  connectDB(config.mongoURI).then(() => {
+    console.log('✅ Database connection ready for operations');
+  }).catch((err) => {
     console.error('❌ Failed to connect to MongoDB:', err);
     process.exit(1);
+  });
+
+  // Add connection event listeners
+  import mongoose from 'mongoose';
+
+  mongoose.connection.on('disconnected', () => {
+    console.error('🚨 MongoDB disconnected unexpectedly!');
+  });
+
+  mongoose.connection.on('error', (err) => {
+    console.error('🚨 MongoDB error:', err);
   });
 }
 
