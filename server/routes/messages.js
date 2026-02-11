@@ -117,10 +117,25 @@ router.get('/list', auth, requireActiveUser, async (req, res) => {
       );
       const lastReadMessageId = lastReadEntry?.messageId?.toString() || null;
 
-      // Decrypt last message if needed
-      if (conv.lastMessage?.content && isEncrypted(conv.lastMessage.content)) {
+      // Decrypt last message if needed (with backward compatibility for JSON strings)
+      if (conv.lastMessage?.content) {
         try {
-          conv.lastMessage.content = decryptMessage(conv.lastMessage.content);
+          let contentToDecrypt = conv.lastMessage.content;
+
+          // Handle backward compatibility: if content is a JSON string of encrypted blob, parse it
+          if (typeof conv.lastMessage.content === 'string') {
+            try {
+              contentToDecrypt = JSON.parse(conv.lastMessage.content);
+            } catch (parseError) {
+              // Not a JSON string, assume it's plain text - leave as is
+              // No decryption needed
+            }
+          }
+
+          // Decrypt if the content appears to be encrypted
+          if (contentToDecrypt && isEncrypted(contentToDecrypt)) {
+            conv.lastMessage.content = decryptMessage(contentToDecrypt);
+          }
         } catch (error) {
           conv.lastMessage.content = '[Encrypted message]';
         }
@@ -418,10 +433,25 @@ router.get('/', auth, requireActiveUser, async (req, res) => {
       );
       const lastReadMessageId = lastReadEntry?.messageId?.toString() || null;
 
-      // Decrypt last message if needed
-      if (conv.lastMessage?.content && isEncrypted(conv.lastMessage.content)) {
+      // Decrypt last message if needed (with backward compatibility for JSON strings)
+      if (conv.lastMessage?.content) {
         try {
-          conv.lastMessage.content = decryptMessage(conv.lastMessage.content);
+          let contentToDecrypt = conv.lastMessage.content;
+
+          // Handle backward compatibility: if content is a JSON string of encrypted blob, parse it
+          if (typeof conv.lastMessage.content === 'string') {
+            try {
+              contentToDecrypt = JSON.parse(conv.lastMessage.content);
+            } catch (parseError) {
+              // Not a JSON string, assume it's plain text - leave as is
+              // No decryption needed
+            }
+          }
+
+          // Decrypt if the content appears to be encrypted
+          if (contentToDecrypt && isEncrypted(contentToDecrypt)) {
+            conv.lastMessage.content = decryptMessage(contentToDecrypt);
+          }
         } catch (error) {
           conv.lastMessage.content = '[Encrypted message]';
         }

@@ -152,15 +152,27 @@ messageSchema.pre('save', async function(next) {
  *
  * 🔥 CRITICAL: Always decrypt encrypted messages, even if encryption is disabled
  * This handles old encrypted messages when encryption is turned off
+ * Also handles backward compatibility for messages stored as JSON strings
  */
 messageSchema.methods.toJSON = function() {
   const message = this.toObject();
 
   try {
-    // 🔥 CRITICAL: Always decrypt if content is encrypted (regardless of ENABLE_MESSAGE_ENCRYPTION)
-    // This ensures old encrypted messages are still readable when encryption is disabled
-    if (message.content && isEncrypted(message.content)) {
-      message.content = decryptMessage(message.content);
+    let contentToDecrypt = message.content;
+
+    // Handle backward compatibility: if content is a JSON string of encrypted blob, parse it
+    if (typeof message.content === 'string') {
+      try {
+        contentToDecrypt = JSON.parse(message.content);
+      } catch (parseError) {
+        // Not a JSON string, assume it's plain text - leave as is
+        return message;
+      }
+    }
+
+    // Decrypt if the content appears to be encrypted
+    if (contentToDecrypt && isEncrypted(contentToDecrypt)) {
+      message.content = decryptMessage(contentToDecrypt);
     }
   } catch (error) {
     console.error('❌ Error decrypting message:', error);
