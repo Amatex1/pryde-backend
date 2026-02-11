@@ -132,8 +132,6 @@ if (process.env.NODE_ENV !== 'test') {
   });
 
   // Add connection event listeners
-  import mongoose from 'mongoose';
-
   mongoose.connection.on('disconnected', () => {
     console.error('🚨 MongoDB disconnected unexpectedly!');
   });
@@ -433,6 +431,23 @@ app.use((req, res, next) => {
   next();
 });
 
+// Database readiness middleware - ensures DB is connected before processing requests
+// This prevents "Client must be connected before running operations" errors
+const requireDatabaseReady = (req, res, next) => {
+  if (mongoose.connection.readyState !== 1) {
+    console.error('❌ Database not ready - rejecting request:', {
+      path: req.path,
+      method: req.method,
+      readyState: mongoose.connection.readyState
+    });
+    return res.status(503).json({
+      message: 'Service temporarily unavailable - database connection initializing',
+      error: 'DATABASE_NOT_READY'
+    });
+  }
+  next();
+};
+
 // Session timeout middleware - DISABLED
 // 🔥 REMOVED 2026-01-17: The in-memory sessionActivity Map was causing users to be
 // logged out whenever the server restarts (Render free tier restarts daily).
@@ -444,7 +459,7 @@ app.use((req, res, next) => {
 // app.use(trackActivity);
 
 // Routes with specific rate limiters
-app.use('/api/auth', authRoutes);
+app.use('/api/auth', requireDatabaseReady, authRoutes);
 app.use('/api/refresh', refreshRoutes);
 app.use('/api/users', usersRoutes);
 // PHASE 1 REFACTOR: Friends routes kept for backward compatibility
@@ -1783,8 +1798,7 @@ if (!isVercel) {
                 console.log(`[FoundingMember] 🌟 Assigned badge to ${result.assigned} new founding members`);
               } else {
                 console.log('[FoundingMember] ✅ All founding members already have badge');
-              }
-            })
+              }            })
             .catch(err => console.error('[FoundingMember] ❌ Seed failed:', err));
         })
         .catch(err => console.error('[FoundingMember] ❌ Failed to import seed script:', err));
