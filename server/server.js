@@ -126,9 +126,11 @@ let redisClient = null;
 let isDBConnected = false;
 
 // Connect to DB and track state (skip auto-connect during tests to avoid double connections)
+let dbConnectionPromise = null;
 if (process.env.NODE_ENV !== 'test') {
-  connectDB().then(() => {
+  dbConnectionPromise = connectDB().then(() => {
     isDBConnected = true;
+    console.log('✅ Database connection ready for operations');
   }).catch((err) => {
     console.error('❌ Failed to connect to MongoDB:', err);
     process.exit(1);
@@ -145,9 +147,7 @@ const initializeServer = async () => {
   // Wait for database connection before starting server (prevents race condition)
   if (process.env.NODE_ENV !== 'test') {
     console.log('⏳ Waiting for database connection...');
-    while (!isDBConnected) {
-      await new Promise(resolve => setTimeout(resolve, 100)); // Wait 100ms and check again
-    }
+    await dbConnectionPromise; // Wait for the actual connection promise
     console.log('✅ Database connected, starting server...');
   }
 };
