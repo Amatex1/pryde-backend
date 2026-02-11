@@ -10,9 +10,13 @@ Race condition in server.js where the server starts listening for requests befor
 - Modified server startup to properly await the database connection promise before starting the server
 - Added `dbConnectionPromise` variable to store the connection promise
 - Updated `initializeServer()` to await the actual database connection promise
+- Disabled initial backup on server startup to prevent database connection conflicts
+- Updated backup script to use consistent connection options with main server
 
 ## Files Modified
 - [x] `server/server.js` - Added database connection wait before server startup
+- [x] `server/scripts/dailyBackup.js` - Disabled initial backup on startup
+- [x] `server/scripts/backupToCloud.js` - Added consistent connection options
 
 ## Testing Required
 - [ ] Deploy to production and test login functionality

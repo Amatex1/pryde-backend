@@ -80,7 +80,26 @@ async function backupToCloud() {
     }
 
     console.log('🔌 Connecting to MongoDB...');
-    await mongoose.connect(mongoURI);
+
+    // Use same connection options as main server for consistency
+    const connectionOptions = {
+      maxPoolSize: parseInt(process.env.MONGO_MAX_POOL_SIZE || '10', 10), // Smaller pool for backup
+      minPoolSize: parseInt(process.env.MONGO_MIN_POOL_SIZE || '2', 10),
+      maxIdleTimeMS: 60000,
+      serverSelectionTimeoutMS: 5000,
+      socketTimeoutMS: 45000,
+      connectTimeoutMS: 10000,
+      retryWrites: true,
+      retryReads: true,
+      w: 'majority',
+      readPreference: 'primaryPreferred',
+      compressors: ['zlib'],
+      zlibCompressionLevel: 6,
+      heartbeatFrequencyMS: 10000,
+      autoIndex: false, // Disable auto-indexing for backup
+    };
+
+    await mongoose.connect(mongoURI, connectionOptions);
     console.log('✅ Connected to MongoDB\n');
 
     const backup = {
