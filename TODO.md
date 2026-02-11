@@ -1,32 +1,24 @@
-# Delete Account Flow Fixes - Implementation Plan
+# Login Issue Fix - Database Connection Race Condition
 
-## Issues Identified
-1. **Email confirmation not sent** - Delete request endpoint has TODO but doesn't send email ✅ FIXED
-2. **Recovery security vulnerability** - Recover endpoint doesn't validate email
-3. **No permanent deletion** - Soft-deleted accounts never actually deleted after 30 days
-4. **Data loss on recovery** - Anonymized data not restored when recovering accounts
-5. **Missing email function** - No email service function for deletion confirmations ✅ FIXED
+## Problem
+Users unable to login to production site with 500 Internal Server Error: "Client must be connected before running operations"
 
-## Implementation Plan
+## Root Cause
+Race condition in server.js where the server starts listening for requests before the MongoDB database connection is established.
 
-### Phase 1: Email Service & Confirmation ✅ COMPLETED
-- [x] Add `sendAccountDeletionEmail` function to `server/utils/emailService.js`
-- [x] Update `server/routes/users.js` delete-request endpoint to send confirmation email
-- [x] Test email sending functionality
+## Solution Implemented
+- Added `initializeServer()` async function to wait for database connection before starting the server
+- Modified server startup to call `initializeServer().then(() => server.listen(...))` instead of starting immediately
 
-### Phase 2: Fix Recovery Security ✅ COMPLETED
-- [x] Modify User schema to store original data before anonymization
-- [x] Update delete-confirm endpoint to store original email/name/etc.
-- [x] Fix recover endpoint to validate email and restore original data
-- [x] Test recovery flow with proper validation
+## Files Modified
+- [x] `server/server.js` - Added database connection wait before server startup
 
-### Phase 3: Permanent Deletion Job ✅ COMPLETED
-- [x] Add account deletion cleanup to `server/scripts/cleanupOldData.js`
-- [x] Add scheduled job in `server/server.js` to run cleanup daily
-- [x] Test permanent deletion after 30 days
+## Testing Required
+- [ ] Deploy to production and test login functionality
+- [ ] Verify no more 500 errors on login endpoint
+- [ ] Check server logs for proper database connection sequence
 
-### Phase 4: Testing & Validation
-- [ ] Test complete delete account flow
-- [ ] Test recovery within 30-day window
-- [ ] Test permanent deletion after 30 days
-- [ ] Verify security fixes prevent unauthorized recovery
+## Expected Outcome
+- Server will wait for database connection before accepting requests
+- Login requests will no longer fail with "Client must be connected" error
+- Improved reliability for production deployments

@@ -140,6 +140,18 @@ if (process.env.NODE_ENV !== 'test') {
   }
 }
 
+// Initialize server startup (async to wait for DB connection)
+const initializeServer = async () => {
+  // Wait for database connection before starting server (prevents race condition)
+  if (process.env.NODE_ENV !== 'test') {
+    console.log('⏳ Waiting for database connection...');
+    while (!isDBConnected) {
+      await new Promise(resolve => setTimeout(resolve, 100)); // Wait 100ms and check again
+    }
+    console.log('✅ Database connected, starting server...');
+  }
+};
+
 // Import models
 import Notification from './models/Notification.js';
 import User from './models/User.js';
@@ -1596,178 +1608,184 @@ const PORT = process.env.NODE_ENV === 'test' ? 0 : config.port;
 const isVercel = process.env.VERCEL === '1';
 
 if (!isVercel) {
-  server.listen(PORT, () => {
-    logger.info(`Server running on port ${PORT}`);
-    logger.info(`Base URL: ${config.baseURL}`);
-    logger.info('Socket.IO server ready for real-time connections');
+  // Initialize server and wait for database connection
+  initializeServer().then(() => {
+    server.listen(PORT, () => {
+      logger.info(`Server running on port ${PORT}`);
+      logger.info(`Base URL: ${config.baseURL}`);
+      logger.info('Socket.IO server ready for real-time connections');
 
-    // Production hardening verification logs
-    if (redisClient) {
-      logger.info('✅ Redis rate limiting active');
+      // Production hardening verification logs
+      if (redisClient) {
+        logger.info('✅ Redis rate limiting active');
+      } else {
+        logger.info('⚠️ In-memory rate limiting (Redis not configured)');
+      }
+      logger.info('✅ Security headers enabled');
+
+    // Daily backup system is DISABLED by default
+    // To enable daily backups, set ENABLE_AUTO_BACKUP=true in your .env file
+    // Backups run once per day at 3:00 AM UTC and keep 30 days of history
+    // Or run manual backups with: npm run backup
+    if (process.env.ENABLE_AUTO_BACKUP === 'true') {
+      import('./scripts/dailyBackup.js')
+        .then(() => console.log('✅ Daily backup system started (3:00 AM UTC, 30-day retention)'))
+        .catch(err => console.error('❌ Failed to start backup system:', err));
     } else {
-      logger.info('⚠️ In-memory rate limiting (Redis not configured)');
+      console.log('ℹ️  Automatic backups disabled (set ENABLE_AUTO_BACKUP=true to enable)');
+      console.log('ℹ️  For manual backups: npm run backup');
     }
-    logger.info('✅ Security headers enabled');
 
-  // Daily backup system is DISABLED by default
-  // To enable daily backups, set ENABLE_AUTO_BACKUP=true in your .env file
-  // Backups run once per day at 3:00 AM UTC and keep 30 days of history
-  // Or run manual backups with: npm run backup
-  if (process.env.ENABLE_AUTO_BACKUP === 'true') {
-    import('./scripts/dailyBackup.js')
-      .then(() => console.log('✅ Daily backup system started (3:00 AM UTC, 30-day retention)'))
-      .catch(err => console.error('❌ Failed to start backup system:', err));
-  } else {
-    console.log('ℹ️  Automatic backups disabled (set ENABLE_AUTO_BACKUP=true to enable)');
-    console.log('ℹ️  For manual backups: npm run backup');
-  }
+    // ========================================
+    // TEMP MEDIA CLEANUP SCHEDULER
+    // ========================================
+    // Runs every hour to clean up orphaned uploads
+    // This prevents storage leaks from abandoned media uploads
+    //
+    // GUARDS:
+    // - Disabled in test environment (prevents flakiness)
+    // - Cleanup function itself checks DB readiness (fail-safe)
+    // - Never crashes the process (best-effort operation)
+    //
+    if (process.env.NODE_ENV === 'test') {
+      console.log('[Cleanup] Disabled in test environment');
+    } else {
+      import('./scripts/cleanupTempMedia.js')
+        .then(({ cleanupTempMedia }) => {
+          // Run cleanup on startup (after 5 minutes to allow server to stabilize)
+          // The cleanup function will check DB readiness before running
+          setTimeout(() => {
+            cleanupTempMedia()
+              .then(result => {
+                if (!result.skipped) {
+                  console.log('🧹 Initial temp media cleanup:', result);
+                }
+              })
+              .catch(err => console.error('❌ Temp media cleanup failed:', err));
+          }, 5 * 60 * 1000); // 5 minutes after startup
 
-  // ========================================
-  // TEMP MEDIA CLEANUP SCHEDULER
-  // ========================================
-  // Runs every hour to clean up orphaned uploads
-  // This prevents storage leaks from abandoned media uploads
-  //
-  // GUARDS:
-  // - Disabled in test environment (prevents flakiness)
-  // - Cleanup function itself checks DB readiness (fail-safe)
-  // - Never crashes the process (best-effort operation)
-  //
-  if (process.env.NODE_ENV === 'test') {
-    console.log('[Cleanup] Disabled in test environment');
-  } else {
-    import('./scripts/cleanupTempMedia.js')
-      .then(({ cleanupTempMedia }) => {
-        // Run cleanup on startup (after 5 minutes to allow server to stabilize)
-        // The cleanup function will check DB readiness before running
-        setTimeout(() => {
-          cleanupTempMedia()
+          // Run cleanup every hour
+          // The cleanup function will check DB readiness before running
+          setInterval(() => {
+            cleanupTempMedia()
+              .then(result => {
+                if (!result.skipped && result.deleted > 0) {
+                  console.log('🧹 Hourly temp media cleanup:', result);
+                }
+              })
+              .catch(err => console.error('❌ Temp media cleanup failed:', err));
+          }, 60 * 60 * 1000); // Every hour
+
+          console.log('🧹 Temp media cleanup scheduled (hourly, cleans uploads older than 60 min)');
+        })
+        .catch(err => console.error('❌ Failed to start temp media cleanup:', err));
+    }
+
+    // ========================================
+    // SYSTEM PROMPT SCHEDULER
+    // ========================================
+    // Posts one rotating prompt per day from pryde_prompts account
+    // Creates a gentle "heartbeat" for the platform
+    //
+    // GUARDS:
+    // - Disabled in test environment
+    // - Seeds system account and prompts on first run
+    // - Idempotent (safe to restart)
+    //
+    if (process.env.NODE_ENV === 'test') {
+      console.log('[SystemPrompts] Disabled in test environment');
+    } else {
+      import('./scripts/seedSystemPrompts.js')
+        .then(({ seedSystemPrompts }) => {
+          // Seed system account and prompts (idempotent)
+          seedSystemPrompts()
             .then(result => {
-              if (!result.skipped) {
-                console.log('🧹 Initial temp media cleanup:', result);
-              }
+              console.log('[SystemPrompts] ✅ System setup complete:', result);
             })
-            .catch(err => console.error('❌ Temp media cleanup failed:', err));
-        }, 5 * 60 * 1000); // 5 minutes after startup
+            .catch(err => console.error('[SystemPrompts] ❌ Seed failed:', err));
+        })
+        .catch(err => console.error('[SystemPrompts] ❌ Failed to import seed script:', err));
 
-        // Run cleanup every hour
-        // The cleanup function will check DB readiness before running
-        setInterval(() => {
-          cleanupTempMedia()
+      import('./scripts/systemPromptScheduler.js')
+        .then(({ startScheduler }) => {
+          startScheduler();
+          console.log('[SystemPrompts] 🕐 Scheduler started (posts daily at 10:00 AM UTC)');
+        })
+        .catch(err => console.error('[SystemPrompts] ❌ Failed to start scheduler:', err));
+
+      // ========================================
+      // BADGE SWEEP SCHEDULER (Daily)
+      // ========================================
+      // 🔧 BADGE CHURN FIX: Runs daily to revoke badges with grace period
+      // Prevents badge flapping for active_this_month and similar badges
+      import('./scripts/dailyBadgeSweep.js')
+        .then(({ startBadgeSweepScheduler }) => {
+          startBadgeSweepScheduler();
+          console.log('[BadgeSweep] 🕐 Scheduler started (runs daily at 04:00 UTC)');
+        })
+        .catch(err => console.error('[BadgeSweep] ❌ Failed to start scheduler:', err));
+
+      // ========================================
+      // REFLECTION PROMPTS (Private per-user)
+      // ========================================
+      // Seeds private reflection prompts shown to users
+      // Different from System Prompts (which are public feed posts)
+      import('./scripts/seedReflectionPrompts.js')
+        .then(({ seedReflectionPrompts }) => {
+          seedReflectionPrompts()
             .then(result => {
-              if (!result.skipped && result.deleted > 0) {
-                console.log('🧹 Hourly temp media cleanup:', result);
-              }
+              console.log('[ReflectionPrompts] ✅ Seed complete:', result);
             })
-            .catch(err => console.error('❌ Temp media cleanup failed:', err));
-        }, 60 * 60 * 1000); // Every hour
+            .catch(err => console.error('[ReflectionPrompts] ❌ Seed failed:', err));
+        })
+        .catch(err => console.error('[ReflectionPrompts] ❌ Failed to import seed script:', err));
 
-        console.log('🧹 Temp media cleanup scheduled (hourly, cleans uploads older than 60 min)');
-      })
-      .catch(err => console.error('❌ Failed to start temp media cleanup:', err));
-  }
-
-  // ========================================
-  // SYSTEM PROMPT SCHEDULER
-  // ========================================
-  // Posts one rotating prompt per day from pryde_prompts account
-  // Creates a gentle "heartbeat" for the platform
-  //
-  // GUARDS:
-  // - Disabled in test environment
-  // - Seeds system account and prompts on first run
-  // - Idempotent (safe to restart)
-  //
-  if (process.env.NODE_ENV === 'test') {
-    console.log('[SystemPrompts] Disabled in test environment');
-  } else {
-    import('./scripts/seedSystemPrompts.js')
-      .then(({ seedSystemPrompts }) => {
-        // Seed system account and prompts (idempotent)
-        seedSystemPrompts()
-          .then(result => {
-            console.log('[SystemPrompts] ✅ System setup complete:', result);
-          })
-          .catch(err => console.error('[SystemPrompts] ❌ Seed failed:', err));
-      })
-      .catch(err => console.error('[SystemPrompts] ❌ Failed to import seed script:', err));
-
-    import('./scripts/systemPromptScheduler.js')
-      .then(({ startScheduler }) => {
-        startScheduler();
-        console.log('[SystemPrompts] 🕐 Scheduler started (posts daily at 10:00 AM UTC)');
-      })
-      .catch(err => console.error('[SystemPrompts] ❌ Failed to start scheduler:', err));
-
-    // ========================================
-    // BADGE SWEEP SCHEDULER (Daily)
-    // ========================================
-    // 🔧 BADGE CHURN FIX: Runs daily to revoke badges with grace period
-    // Prevents badge flapping for active_this_month and similar badges
-    import('./scripts/dailyBadgeSweep.js')
-      .then(({ startBadgeSweepScheduler }) => {
-        startBadgeSweepScheduler();
-        console.log('[BadgeSweep] 🕐 Scheduler started (runs daily at 04:00 UTC)');
-      })
-      .catch(err => console.error('[BadgeSweep] ❌ Failed to start scheduler:', err));
-
-    // ========================================
-    // REFLECTION PROMPTS (Private per-user)
-    // ========================================
-    // Seeds private reflection prompts shown to users
-    // Different from System Prompts (which are public feed posts)
-    import('./scripts/seedReflectionPrompts.js')
-      .then(({ seedReflectionPrompts }) => {
-        seedReflectionPrompts()
-          .then(result => {
-            console.log('[ReflectionPrompts] ✅ Seed complete:', result);
-          })
-          .catch(err => console.error('[ReflectionPrompts] ❌ Seed failed:', err));
-      })
-      .catch(err => console.error('[ReflectionPrompts] ❌ Failed to import seed script:', err));
-
-    // ========================================
-    // DAILY DATA CLEANUP (Account Deletion, Notifications, etc.)
-    // ========================================
-    // Runs daily cleanup of old data including permanent account deletion
-    // This ensures deleted accounts are permanently removed after 30 days
-    import('./scripts/cleanupOldData.js')
-      .then(() => {
-        // Schedule daily cleanup at 02:00 UTC
-        const cleanupJob = schedule.scheduleJob('0 2 * * *', async () => {
-          console.log('[Cleanup] 🕐 Running daily data cleanup...');
-          try {
-            // Import and run the cleanup script
-            const cleanupModule = await import('./scripts/cleanupOldData.js');
-            await cleanupModule.default();
-            console.log('[Cleanup] ✅ Daily cleanup completed successfully');
-          } catch (err) {
-            console.error('[Cleanup] ❌ Daily cleanup failed:', err);
-          }
-        });
-        console.log('[Cleanup] 🕐 Daily cleanup job scheduled (runs at 02:00 UTC)');
-      })
-      .catch(err => console.error('[Cleanup] ❌ Failed to schedule daily cleanup:', err));
-
-    // ========================================
-    // FOUNDING MEMBER BADGE
-    // ========================================
-    // Assigns badge to first 100 members (idempotent)
-    // Excludes system accounts, test accounts, and Pryde bots
-    import('./scripts/seedFoundingMemberBadge.js')
-      .then(({ seedFoundingMemberBadge }) => {
-        seedFoundingMemberBadge()
-          .then(result => {
-            if (result.assigned > 0) {
-              console.log(`[FoundingMember] 🌟 Assigned badge to ${result.assigned} new founding members`);
-            } else {
-              console.log('[FoundingMember] ✅ All founding members already have badge');
+      // ========================================
+      // DAILY DATA CLEANUP (Account Deletion, Notifications, etc.)
+      // ========================================
+      // Runs daily cleanup of old data including permanent account deletion
+      // This ensures deleted accounts are permanently removed after 30 days
+      import('./scripts/cleanupOldData.js')
+        .then(() => {
+          // Schedule daily cleanup at 02:00 UTC
+          const cleanupJob = schedule.scheduleJob('0 2 * * *', async () => {
+            console.log('[Cleanup] 🕐 Running daily data cleanup...');
+            try {
+              // Import and run the cleanup script
+              const cleanupModule = await import('./scripts/cleanupOldData.js');
+              await cleanupModule.default();
+              console.log('[Cleanup] ✅ Daily cleanup completed successfully');
+            } catch (err) {
+              console.error('[Cleanup] ❌ Daily cleanup failed:', err);
             }
-          })
-          .catch(err => console.error('[FoundingMember] ❌ Seed failed:', err));
-      })
-      .catch(err => console.error('[FoundingMember] ❌ Failed to import seed script:', err));
-  }
+          });
+          console.log('[Cleanup] 🕐 Daily cleanup job scheduled (runs at 02:00 UTC)');
+        })
+        .catch(err => console.error('[Cleanup] ❌ Failed to schedule daily cleanup:', err));
+
+      // ========================================
+      // FOUNDING MEMBER BADGE
+      // ========================================
+      // Assigns badge to first 100 members (idempotent)
+      // Excludes system accounts, test accounts, and Pryde bots
+      import('./scripts/seedFoundingMemberBadge.js')
+        .then(({ seedFoundingMemberBadge }) => {
+          seedFoundingMemberBadge()
+            .then(result => {
+              if (result.assigned > 0) {
+                console.log(`[FoundingMember] 🌟 Assigned badge to ${result.assigned} new founding members`);
+              } else {
+                console.log('[FoundingMember] ✅ All founding members already have badge');
+              }
+            })
+            .catch(err => console.error('[FoundingMember] ❌ Seed failed:', err));
+        })
+        .catch(err => console.error('[FoundingMember] ❌ Failed to import seed script:', err));
+    }
+    });
+  }).catch((err) => {
+    console.error('❌ Failed to initialize server:', err);
+    process.exit(1);
   });
 } else {
   logger.info('Running on Vercel serverless - skipping server.listen()');
