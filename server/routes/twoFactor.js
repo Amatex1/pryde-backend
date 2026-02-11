@@ -3,7 +3,7 @@ import speakeasy from 'speakeasy';
 import QRCode from 'qrcode';
 import { authenticateToken } from '../middleware/auth.js';
 import User from '../models/User.js';
-import { encryptString, decryptString, isEncrypted } from '../utils/encryption.js';
+import { encryptMessage, decryptMessage, isEncrypted } from '../utils/encryption.js';
 
 const router = express.Router();
 

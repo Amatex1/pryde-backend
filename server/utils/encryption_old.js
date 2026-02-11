@@ -106,73 +106,8 @@ export function isEncrypted(data) {
          data.encryptedData;
 }
 
-/**
- * Encrypt a string message using AES-256-GCM
- * @param {string} message - Message to encrypt
- * @returns {Object} Encrypted blob with iv, authTag, and encryptedData
- */
-export function encryptMessage(message) {
-  if (typeof message !== 'string') {
-    throw new Error('encryptMessage requires a string');
-  }
-
-  const key = getEncryptionKey();
-  const iv = crypto.randomBytes(16); // 128-bit IV for GCM
-  const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
-
-  let encrypted = cipher.update(message, 'utf8', 'hex');
-  encrypted += cipher.final('hex');
-
-  const authTag = cipher.getAuthTag(); // 128-bit authentication tag
-
-  return {
-    iv: iv.toString('hex'),
-    authTag: authTag.toString('hex'),
-    encryptedData: encrypted
-  };
-}
-
-/**
- * Decrypt an encrypted message back to string
- * @param {Object} encryptedBlob - { iv, authTag, encryptedData }
- * @returns {string} Decrypted message
- */
-export function decryptMessage(encryptedBlob) {
-  if (!encryptedBlob || typeof encryptedBlob !== 'object') {
-    throw new Error('decryptMessage requires a valid encrypted blob');
-  }
-
-  const { iv, authTag, encryptedData } = encryptedBlob;
-
-  if (!iv || !authTag || !encryptedData) {
-    throw new Error('Invalid encrypted blob structure');
-  }
-
-  try {
-    const key = getEncryptionKey();
-    const decipher = crypto.createDecipheriv('aes-256-gcm', key, Buffer.from(iv, 'hex'));
-
-    // Set the authentication tag
-    decipher.setAuthTag(Buffer.from(authTag, 'hex'));
-
-    let decrypted = decipher.update(encryptedData, 'hex', 'utf8');
-    decrypted += decipher.final('utf8');
-
-    return decrypted;
-  } catch (error) {
-    // Handle backward compatibility: if decryption fails, assume it's plain text
-    // This allows migration from unencrypted to encrypted data
-    if (typeof encryptedBlob === 'string') {
-      return encryptedBlob;
-    }
-    throw new Error('Failed to decrypt message: ' + error.message);
-  }
-}
-
 export default {
   encryptObject,
   decryptObject,
-  encryptMessage,
-  decryptMessage,
   isEncrypted
 };

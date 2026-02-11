@@ -8,7 +8,7 @@ import adminAuth from '../middleware/adminAuth.js';
 import { getClientIp } from '../utils/sessionUtils.js';
 import logger from '../utils/logger.js';
 import speakeasy from 'speakeasy';
-import { decryptString, isEncrypted } from '../utils/encryption.js';
+import { decryptObject, isEncrypted } from '../utils/encryption.js';
 import {
   generatePasskeyAuthenticationOptions,
   verifyPasskeyAuthentication
