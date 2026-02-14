@@ -122,15 +122,21 @@ router.get('/list', auth, requireActiveUser, async (req, res) => {
         try {
           let contentToDecrypt = conv.lastMessage.content;
 
-          // Handle backward compatibility: if content is a JSON string of encrypted blob, parse it
+          // Handle both object format (from aggregation) and string format (for backward compatibility)
           if (typeof conv.lastMessage.content === 'string') {
+            // Content is a string - could be plain text or JSON string of encrypted blob
             try {
-              contentToDecrypt = JSON.parse(conv.lastMessage.content);
+              const parsed = JSON.parse(conv.lastMessage.content);
+              if (parsed && typeof parsed === 'object' && parsed.iv && parsed.authTag && parsed.encryptedData) {
+                contentToDecrypt = parsed;
+              }
+              // Not an encrypted JSON string - leave as plain text
             } catch (parseError) {
               // Not a JSON string, assume it's plain text - leave as is
-              // No decryption needed
             }
           }
+          // Content is already an object (from aggregation - MongoDB stores the encrypted object directly)
+          // Use it directly for decryption
 
           // Decrypt if the content appears to be encrypted
           if (contentToDecrypt && isEncrypted(contentToDecrypt)) {
@@ -465,15 +471,21 @@ router.get('/', auth, requireActiveUser, async (req, res) => {
         try {
           let contentToDecrypt = conv.lastMessage.content;
 
-          // Handle backward compatibility: if content is a JSON string of encrypted blob, parse it
+          // Handle both object format (from aggregation) and string format (for backward compatibility)
           if (typeof conv.lastMessage.content === 'string') {
+            // Content is a string - could be plain text or JSON string of encrypted blob
             try {
-              contentToDecrypt = JSON.parse(conv.lastMessage.content);
+              const parsed = JSON.parse(conv.lastMessage.content);
+              if (parsed && typeof parsed === 'object' && parsed.iv && parsed.authTag && parsed.encryptedData) {
+                contentToDecrypt = parsed;
+              }
+              // Not an encrypted JSON string - leave as plain text
             } catch (parseError) {
               // Not a JSON string, assume it's plain text - leave as is
-              // No decryption needed
             }
           }
+          // Content is already an object (from aggregation - MongoDB stores the encrypted object directly)
+          // Use it directly for decryption
 
           // Decrypt if the content appears to be encrypted
           if (contentToDecrypt && isEncrypted(contentToDecrypt)) {
