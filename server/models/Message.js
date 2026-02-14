@@ -163,40 +163,23 @@ messageSchema.methods.toJSON = function() {
       return message;
     }
 
-    let contentToDecrypt = message.content;
-
-    // CASE 1: Content is already an object (from toObject() after being stored as encrypted)
-    // This is the primary case - the encryption returns an object which gets stored
-    if (typeof message.content === 'object' && message.content !== null) {
-      contentToDecrypt = message.content;
-    }
-    // CASE 2: Content is a string - could be plain text, JSON string of encrypted blob, or raw hex encrypted data
-    else if (typeof message.content === 'string') {
-      // First, check if it's a raw hex encrypted string (no JSON wrapper)
-      // Raw encrypted strings are long hex strings without JSON structure
-      if (message.content.length > 50 && /^[a-f0-9]+$/i.test(message.content)) {
-        // This is likely a raw encrypted hex string - pass directly to decryptMessage
-        contentToDecrypt = message.content;
-      } else {
-        // Try to parse as JSON for backward compatibility with messages stored as JSON strings
-        try {
-          const parsed = JSON.parse(message.content);
-          if (parsed && typeof parsed === 'object') {
-            contentToDecrypt = parsed;
-          }
-        } catch (parseError) {
-          // Not a JSON string, assume it's plain text - no decryption needed
-          return message;
+    // Content should be a string (raw hex encrypted data or plain text)
+    if (typeof message.content === 'string') {
+      // Check if it's an encrypted hex string (long hex string)
+      if (message.content.length > 64 && /^[a-f0-9]+$/i.test(message.content)) {
+        // This is an encrypted hex string - decrypt it
+        if (isEncrypted(message.content)) {
+          message.content = decryptMessage(message.content);
         }
       }
-    } else {
-      // Content is neither object nor string (e.g., number, boolean) - return as is
-      return message;
+      // Otherwise, it's plain text - leave as is
     }
-
-    // Decrypt if the content appears to be encrypted
-    if (contentToDecrypt && isEncrypted(contentToDecrypt)) {
-      message.content = decryptMessage(contentToDecrypt);
+    // Handle backward compatibility: old messages might be stored as objects or JSON strings
+    else if (typeof message.content === 'object' && message.content !== null) {
+      // Check if it's an encrypted object format
+      if (isEncrypted(message.content)) {
+        message.content = decryptMessage(message.content);
+      }
     }
   } catch (error) {
     console.error('❌ Error decrypting message:', error);

@@ -122,7 +122,7 @@ export function isEncrypted(data) {
 /**
  * Encrypt a string message using AES-256-GCM
  * @param {string} message - Message to encrypt
- * @returns {Object} Encrypted blob with iv, authTag, and encryptedData
+ * @returns {string} Concatenated hex string: IV (32 chars) + authTag (32 chars) + encryptedData
  */
 export function encryptMessage(message) {
   if (typeof message !== 'string') {
@@ -138,12 +138,11 @@ export function encryptMessage(message) {
 
   const authTag = cipher.getAuthTag(); // 128-bit authentication tag
 
-  return {
-    iv: iv.toString('hex'),
-    authTag: authTag.toString('hex'),
-    encryptedData: encrypted
-  };
+  // Return concatenated hex string: IV + authTag + encryptedData
+  // This ensures proper storage in MongoDB String fields
+  return iv.toString('hex') + authTag.toString('hex') + encrypted;
 }
+
 
 /**
  * Decrypt an encrypted message back to string
