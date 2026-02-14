@@ -961,14 +961,21 @@ io.on('connection', (socket) => {
    * This handler MUST always be registered for every socket.
    * ACK is guaranteed in all paths.
    */
-  socket.on('send_message', async (data, callback = () => {}) => {
+  socket.on('send_message', async (data, callback) => {
     // 🔥 IMMEDIATE LOG: Confirm handler is hit
     console.log('📥 [send_message] handler HIT', {
       socketId: socket.id,
       userId: socket.userId || userId,
       hasData: !!data,
-      hasCallback: typeof callback === 'function'
+      hasCallback: typeof callback === 'function',
+      callbackType: typeof callback
     });
+
+    // 🔥 CRITICAL: Ensure callback is always a function
+    if (typeof callback !== 'function') {
+      console.error('❌ [send_message] No callback provided! This will cause ACK timeout on frontend.');
+      callback = () => {}; // Provide no-op callback to prevent crashes
+    }
 
     const startTime = Date.now();
     console.log(`📨 [send_message] Received from user ${userId}:`, {
@@ -1039,11 +1046,22 @@ io.on('connection', (socket) => {
       const saveStart = Date.now();
 
       // Create message with deduplication
-      const result = await createMessageIdempotent(messageData, async (data) => {
-        const msg = new Message(data);
-        await msg.save();
-        return msg;
-      });
+      let result;
+      try {
+        console.log('💾 [send_message] Creating message with encryption...');
+        result = await createMessageIdempotent(messageData, async (data) => {
+          const msg = new Message(data);
+          console.log('🔒 [send_message] Message model created, calling save() (will trigger encryption)...');
+          await msg.save();
+          console.log('✅ [send_message] Message saved successfully (encryption complete)');
+          return msg;
+        });
+      } catch (saveError) {
+        console.error('❌ [send_message] CRITICAL: Message save failed:', saveError);
+        console.error('❌ [send_message] Error stack:', saveError.stack);
+        sendError(`Failed to save message: ${saveError.message}`, 'MESSAGE_SAVE_ERROR');
+        return;
+      }
 
       // If duplicate, fetch existing message and return it
       if (result.isDuplicate) {
