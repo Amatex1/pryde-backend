@@ -257,65 +257,6 @@ router.post('/signup', validateAgeBeforeRateLimit, signupLimiter, validateSignup
     // - If inviteOnlyMode is false: invite code is OPTIONAL (for referral tracking)
     // ═══════════════════════════════════════════════════════════════════════════
 
-    let validatedInvite = null;
-
-    if (config.platform.inviteOnlyMode) {
-      // MANDATORY: Require invite code in invite-only mode
-      if (!inviteCode) {
-        return res.status(403).json({
-          error: 'invite_required',
-          message: 'Pryde is currently invite-only. You need an invite code to register.'
-        });
-      }
-    }
-
-    // Validate invite code if provided (works in both modes)
-    if (inviteCode) {
-      const normalizedCode = inviteCode.toUpperCase().trim();
-      const invite = await Invite.findOne({ code: normalizedCode });
-
-      if (!invite) {
-        if (config.platform.inviteOnlyMode) {
-          // Log failed attempt only in invite-only mode
-          await SecurityLog.create({
-            type: 'invite_registration_failed',
-            severity: 'medium',
-            details: `Registration attempted with invalid invite: ${normalizedCode.substring(0, 10)}...`,
-            ipAddress: getClientIp(req),
-            userAgent: req.headers['user-agent'],
-            action: 'blocked'
-          });
-
-          return res.status(403).json({
-            error: 'invalid_invite',
-            message: 'This invite code is not valid.'
-          });
-        }
-        // In open registration mode, just ignore invalid invite codes
-      } else {
-        const validation = invite.isValid();
-
-        if (!validation.valid) {
-          if (config.platform.inviteOnlyMode) {
-            const messages = {
-              already_used: 'This invite has already been used.',
-              expired: 'This invite has expired.',
-              revoked: 'This invite is no longer valid.'
-            };
-
-            return res.status(403).json({
-              error: validation.reason,
-              message: messages[validation.reason] || 'This invite is not valid.'
-            });
-          }
-          // In open registration mode, just ignore invalid invite codes
-        } else {
-          // Store for later (we'll mark it used after successful registration)
-          validatedInvite = invite;
-        }
-      }
-    }
-
     // ═══════════════════════════════════════════════════════════════════════════
     // VALIDATION ORDER: Per business rules, age check MUST run before CAPTCHA
     // 1. Required fields → 2. Age validation → 3. CAPTCHA → 4. Other validations
@@ -422,7 +363,64 @@ router.post('/signup', validateAgeBeforeRateLimit, signupLimiter, validateSignup
       }
     }
 
-    // STEP 4: Continue with other validations (email/username uniqueness, etc.)
+    // STEP 4: Validate invite code BEFORE user creation
+    // This prevents creating users with invalid invites
+    let validatedInvite = null;
+
+    // Check if invite-only mode is enabled
+    if (config.platform.inviteOnlyMode) {
+      // MANDATORY: Require invite code in invite-only mode
+      if (!inviteCode) {
+        return res.status(403).json({
+          error: 'invite_required',
+          message: 'Pryde is currently invite-only. You need an invite code to register.'
+        });
+      }
+    }
+
+    // Validate invite code if provided (works in both modes)
+    if (inviteCode) {
+      const normalizedCode = inviteCode.toUpperCase().trim();
+      const invite = await Invite.findOne({ code: normalizedCode });
+
+      if (!invite) {
+        // Invalid invite code - log and block
+        await SecurityLog.create({
+          type: 'invite_registration_failed',
+          severity: 'medium',
+          details: `Registration attempted with invalid invite: ${normalizedCode.substring(0, 10)}...`,
+          ipAddress: getClientIp(req),
+          userAgent: req.headers['user-agent'],
+          action: 'blocked'
+        });
+
+        return res.status(400).json({
+          error: 'invalid_invite',
+          message: 'This invite code is not valid.'
+        });
+      }
+
+      // Check if invite is valid (not expired, not used, not revoked)
+      const validation = invite.isValid();
+
+      if (!validation.valid) {
+        const messages = {
+          already_used: 'This invite has already been used.',
+          expired: 'This invite has expired.',
+          revoked: 'This invite is no longer valid.'
+        };
+
+        return res.status(400).json({
+          error: validation.reason,
+          message: messages[validation.reason] || 'This invite is not valid.'
+        });
+      }
+
+      // Invite is valid, store for later use (mark as used after user creation)
+      validatedInvite = invite;
+    }
+
+    // STEP 5: Continue with other validations (email/username uniqueness, etc.)
 
     // Check if user exists
     let user = await User.findOne({ $or: [{ email }, { username }] });
