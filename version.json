@@ -1,5 +1,5 @@
 {
-  "version": "2026.02.14-1430",
-  "buildTime": "2026-02-14T03:30:00.000Z",
-  "notes": "Backend build 2026.02.14-1430 - Fix: Decrypt messages in aggregation queries"
+  "version": "2026.02.14-1445",
+  "buildTime": "2026-02-14T03:45:00.000Z",
+  "notes": "Backend build 2026.02.14-1445 - Fix: Handle raw hex encrypted strings in messages"
 }
