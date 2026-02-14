@@ -158,16 +158,33 @@ messageSchema.methods.toJSON = function() {
   const message = this.toObject();
 
   try {
+    // Skip if no content
+    if (!message.content) {
+      return message;
+    }
+
     let contentToDecrypt = message.content;
 
-    // Handle backward compatibility: if content is a JSON string of encrypted blob, parse it
-    if (typeof message.content === 'string') {
+    // CASE 1: Content is already an object (from toObject() after being stored as encrypted)
+    // This is the primary case - the encryption returns an object which gets stored
+    if (typeof message.content === 'object' && message.content !== null) {
+      contentToDecrypt = message.content;
+    }
+    // CASE 2: Content is a string - could be plain text OR a JSON string of encrypted blob
+    else if (typeof message.content === 'string') {
+      // Try to parse as JSON for backward compatibility with messages stored as JSON strings
       try {
-        contentToDecrypt = JSON.parse(message.content);
+        const parsed = JSON.parse(message.content);
+        if (parsed && typeof parsed === 'object') {
+          contentToDecrypt = parsed;
+        }
       } catch (parseError) {
-        // Not a JSON string, assume it's plain text - leave as is
+        // Not a JSON string, assume it's plain text - no decryption needed
         return message;
       }
+    } else {
+      // Content is neither object nor string (e.g., number, boolean) - return as is
+      return message;
     }
 
     // Decrypt if the content appears to be encrypted
