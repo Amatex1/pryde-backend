@@ -1,7 +1,7 @@
 {
   "name": "pryde-social-server",
   "version": "1.0.0",
-  "buildVersion": "2026.02.14-1445",
+  "buildVersion": "2026.02.14-1540",
   "description": "Backend server for Pryde Social Network",
   "main": "server.js",
   "type": "module",
