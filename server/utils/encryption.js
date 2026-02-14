@@ -8,24 +8,23 @@ import crypto from 'crypto';
  * cannot be recovered without the encryption key.
  */
 
-// Get encryption key from environment (32 bytes base64 encoded)
+// Get encryption key from environment (32 bytes hex encoded)
 const getEncryptionKey = () => {
-  const key = process.env.RECOVERY_ENCRYPTION_KEY;
+  const key = process.env.MESSAGE_ENCRYPTION_KEY;
   if (!key) {
     // Development fallback - NOT for production
     if (process.env.NODE_ENV === 'development') {
       return Buffer.from('dev-key-32-bytes-for-testing-only!', 'utf8');
     }
-    throw new Error('RECOVERY_ENCRYPTION_KEY environment variable is required');
+    throw new Error('MESSAGE_ENCRYPTION_KEY environment variable is required');
   }
 
-  // Decode base64 key
-  const decoded = Buffer.from(key, 'base64');
-  if (decoded.length !== 32) {
-    throw new Error('RECOVERY_ENCRYPTION_KEY must be 32 bytes when base64 decoded');
+  // Convert hex string to buffer (64 hex chars = 32 bytes)
+  if (key.length !== 64) {
+    throw new Error('MESSAGE_ENCRYPTION_KEY must be 64 hex characters (32 bytes)');
   }
 
-  return decoded;
+  return Buffer.from(key, 'hex');
 };
 
 /**
