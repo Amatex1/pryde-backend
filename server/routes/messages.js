@@ -870,7 +870,10 @@ router.get('/group/:groupId', auth, requireActiveUser, async (req, res) => {
       .populate('deliveredTo.user', 'username')
       .sort({ createdAt: 1 });
     
-    res.json(messages);
+    // Explicitly call toJSON() on each message to decrypt content
+    const decryptedMessages = messages.map(msg => msg.toJSON());
+    
+    res.json(decryptedMessages);
   } catch (error) {
     res.status(500).json({ message: 'Error fetching group messages', error: error.message });
   }
