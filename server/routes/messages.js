@@ -239,9 +239,36 @@ router.get('/:userId', auth, requireActiveUser, validateParamId('userId'), check
       lastMessageId: messages[messages.length - 1]?._id
     });
 
+    // Import encryption utilities for explicit decryption
+    const { decryptMessage, isEncrypted } = await import('../utils/encryption.js');
+
     // Transform messages to show "deleted" state for messages deleted for all
     const transformedMessages = messages.map(msg => {
       const msgObj = msg.toJSON();
+
+      // Explicitly decrypt message content if needed (in addition to toJSON decryption)
+      if (msgObj.content) {
+        try {
+          let contentToDecrypt = msgObj.content;
+
+          // Handle backward compatibility: if content is a JSON string of encrypted blob, parse it
+          if (typeof msgObj.content === 'string') {
+            try {
+              contentToDecrypt = JSON.parse(msgObj.content);
+            } catch (parseError) {
+              // Not a JSON string, assume it's plain text - leave as is
+            }
+          }
+
+          // Decrypt if the content appears to be encrypted
+          if (contentToDecrypt && isEncrypted(contentToDecrypt)) {
+            msgObj.content = decryptMessage(contentToDecrypt);
+          }
+        } catch (decryptError) {
+          logger.warn('⚠️ Failed to decrypt message content:', decryptError.message);
+          msgObj.content = '[Encrypted message]';
+        }
+      }
 
       // If deleted for all, hide content but keep the message placeholder
       if (msgObj.isDeletedForAll) {
