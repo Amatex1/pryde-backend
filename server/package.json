@@ -1,12 +1,14 @@
 {
   "name": "pryde-social-server",
   "version": "1.0.0",
+  "buildVersion": "2026.02.14-1445",
   "description": "Backend server for Pryde Social Network",
   "main": "server.js",
   "type": "module",
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
+    "prebuild": "node scripts/update-version.js",
     "test": "mocha --require test/setup.js test/**/*.test.js --timeout 10000 --exit",
     "test:watch": "mocha --require test/setup.js test/**/*.test.js --timeout 10000 --watch --exit",
     "migrate:creator-privacy": "node migrations/add-creator-and-privacy-fields.js",
