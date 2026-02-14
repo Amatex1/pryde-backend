@@ -1,5 +1,5 @@
 {
-  "version": "2026.02.12-0017",
-  "buildTime": "2026-02-11T13:47:16.792Z",
-  "notes": "Backend build 2026.02.12-0017"
+  "version": "2026.02.14-1430",
+  "buildTime": "2026-02-14T03:30:00.000Z",
+  "notes": "Backend build 2026.02.14-1430 - Fix: Decrypt messages in aggregation queries"
 }
