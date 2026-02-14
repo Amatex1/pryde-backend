@@ -149,9 +149,14 @@ export function encryptMessage(message) {
  * @returns {string} Decrypted message
  */
 export function decryptMessage(encryptedBlob) {
+  // Handle null/undefined
+  if (!encryptedBlob) {
+    return '';
+  }
+
   // Handle string format (raw encrypted data without metadata)
   if (typeof encryptedBlob === 'string') {
-    // If it looks like a hex string, try to decrypt it as raw encrypted data
+    // If it looks like a hex string, try to decrypt it as raw encrypted data (NEW FORMAT)
     if (encryptedBlob.length > 64 && /^[a-f0-9]+$/i.test(encryptedBlob)) {
       try {
         const key = getEncryptionKey();
@@ -160,19 +165,19 @@ export function decryptMessage(encryptedBlob) {
         const ivHex = encryptedBlob.substring(0, 32);
         const authTagHex = encryptedBlob.substring(32, 64);
         const encryptedData = encryptedBlob.substring(64);
-        
+
         if (ivHex.length === 32 && authTagHex.length === 32 && encryptedData.length > 0) {
           const decipher = crypto.createDecipheriv('aes-256-gcm', key, Buffer.from(ivHex, 'hex'));
           decipher.setAuthTag(Buffer.from(authTagHex, 'hex'));
-          
+
           let decrypted = decipher.update(encryptedData, 'hex', 'utf8');
           decrypted += decipher.final('utf8');
-          
+
           return decrypted;
         }
       } catch (e) {
-        // If raw decryption fails, return as-is
-        console.log('⚠️ Raw string decryption failed, returning as plain text:', e.message);
+        // If raw decryption fails, log error but return as-is
+        console.error('⚠️ Raw string decryption failed:', e.message);
         return encryptedBlob;
       }
     }
@@ -180,35 +185,36 @@ export function decryptMessage(encryptedBlob) {
     return encryptedBlob;
   }
 
-  if (!encryptedBlob || typeof encryptedBlob !== 'object') {
-    throw new Error('decryptMessage requires a valid encrypted blob');
-  }
+  // Handle object format (OLD FORMAT - backward compatibility)
+  if (typeof encryptedBlob === 'object') {
+    const { iv, authTag, encryptedData } = encryptedBlob;
 
-  const { iv, authTag, encryptedData } = encryptedBlob;
-
-  if (!iv || !authTag || !encryptedData) {
-    throw new Error('Invalid encrypted blob structure');
-  }
-
-  try {
-    const key = getEncryptionKey();
-    const decipher = crypto.createDecipheriv('aes-256-gcm', key, Buffer.from(iv, 'hex'));
-
-    // Set the authentication tag
-    decipher.setAuthTag(Buffer.from(authTag, 'hex'));
-
-    let decrypted = decipher.update(encryptedData, 'hex', 'utf8');
-    decrypted += decipher.final('utf8');
-
-    return decrypted;
-  } catch (error) {
-    // Handle backward compatibility: if decryption fails, assume it's plain text
-    // This allows migration from unencrypted to encrypted data
-    if (typeof encryptedBlob === 'string') {
-      return encryptedBlob;
+    // Validate object has required fields
+    if (!iv || !authTag || !encryptedData) {
+      console.error('⚠️ Invalid encrypted blob structure:', encryptedBlob);
+      return '[Encrypted message - invalid format]';
     }
-    throw new Error('Failed to decrypt message: ' + error.message);
+
+    try {
+      const key = getEncryptionKey();
+      const decipher = crypto.createDecipheriv('aes-256-gcm', key, Buffer.from(iv, 'hex'));
+
+      // Set the authentication tag
+      decipher.setAuthTag(Buffer.from(authTag, 'hex'));
+
+      let decrypted = decipher.update(encryptedData, 'hex', 'utf8');
+      decrypted += decipher.final('utf8');
+
+      return decrypted;
+    } catch (error) {
+      console.error('❌ Failed to decrypt message (object format):', error.message);
+      return '[Encrypted message - decryption failed]';
+    }
   }
+
+  // Unknown format
+  console.error('⚠️ Unknown encrypted message format:', typeof encryptedBlob);
+  return '[Encrypted message - unknown format]';
 }
 
 
