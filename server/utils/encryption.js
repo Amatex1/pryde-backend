@@ -156,31 +156,86 @@ export function decryptMessage(encryptedBlob) {
 
   // Handle string format (raw encrypted data without metadata)
   if (typeof encryptedBlob === 'string') {
-    // If it looks like a hex string, try to decrypt it as raw encrypted data (NEW FORMAT)
-    if (encryptedBlob.length > 64 && /^[a-f0-9]+$/i.test(encryptedBlob)) {
+    // Check if it's a JSON string (old messages might be stringified objects)
+    if (encryptedBlob.startsWith('{') && encryptedBlob.includes('"iv"')) {
       try {
-        const key = getEncryptionKey();
-        // For raw encrypted strings, we need to extract IV and authTag from the beginning
-        // Standard GCM format: IV (32 hex chars = 16 bytes) + AuthTag (32 hex chars = 16 bytes) + Ciphertext
-        const ivHex = encryptedBlob.substring(0, 32);
-        const authTagHex = encryptedBlob.substring(32, 64);
-        const encryptedData = encryptedBlob.substring(64);
+        const parsed = JSON.parse(encryptedBlob);
+        if (parsed.iv && parsed.authTag && parsed.encryptedData) {
+          console.log('🔄 Detected JSON stringified object format, parsing...');
+          return decryptMessage(parsed); // Recursively call with parsed object
+        }
+      } catch (e) {
+        console.error('⚠️ Failed to parse JSON string:', e.message);
+      }
+    }
 
-        if (ivHex.length === 32 && authTagHex.length === 32 && encryptedData.length > 0) {
+    // If it looks like a hex string, try to decrypt it
+    if (encryptedBlob.length > 64 && /^[a-f0-9]+$/i.test(encryptedBlob)) {
+      const key = getEncryptionKey();
+
+      // Try NEW format first: IV (32 hex chars) + AuthTag (32 hex chars) + Ciphertext
+      // Minimum length: 64 chars (IV + AuthTag) + at least some ciphertext
+      if (encryptedBlob.length >= 66) {
+        try {
+          const ivHex = encryptedBlob.substring(0, 32);
+          const authTagHex = encryptedBlob.substring(32, 64);
+          const encryptedData = encryptedBlob.substring(64);
+
           const decipher = crypto.createDecipheriv('aes-256-gcm', key, Buffer.from(ivHex, 'hex'));
           decipher.setAuthTag(Buffer.from(authTagHex, 'hex'));
 
           let decrypted = decipher.update(encryptedData, 'hex', 'utf8');
           decrypted += decipher.final('utf8');
 
+          console.log('✅ Successfully decrypted NEW format (IV+AuthTag+Data)');
           return decrypted;
+        } catch (e) {
+          console.log('⚠️ NEW format decryption failed, trying OLD format...');
         }
-      } catch (e) {
-        // If raw decryption fails, log error but return as-is
-        console.error('⚠️ Raw string decryption failed:', e.message);
-        return encryptedBlob;
       }
+
+      // Try OLD format: Salt (128 hex chars) + IV (32 hex chars) + AuthTag (32 hex chars) + Ciphertext
+      // Minimum length: 192 chars (Salt + IV + AuthTag) + at least some ciphertext
+      if (encryptedBlob.length >= 194) {
+        try {
+          const data = Buffer.from(encryptedBlob, 'hex');
+
+          // Extract components (OLD format from commit 377046e)
+          const SALT_LENGTH = 64;  // 64 bytes = 128 hex chars
+          const IV_LENGTH = 16;    // 16 bytes = 32 hex chars
+          const TAG_LENGTH = 16;   // 16 bytes = 32 hex chars
+          const TAG_POSITION = SALT_LENGTH + IV_LENGTH;
+          const ENCRYPTED_POSITION = TAG_POSITION + TAG_LENGTH;
+
+          const salt = data.subarray(0, SALT_LENGTH);
+          const iv = data.subarray(SALT_LENGTH, TAG_POSITION);
+          const tag = data.subarray(TAG_POSITION, ENCRYPTED_POSITION);
+          const encrypted = data.subarray(ENCRYPTED_POSITION);
+
+          // Create decipher
+          const decipher = crypto.createDecipheriv('aes-256-gcm', key, iv);
+          decipher.setAuthTag(tag);
+
+          // Decrypt the text
+          const decrypted = Buffer.concat([
+            decipher.update(encrypted),
+            decipher.final()
+          ]);
+
+          console.log('✅ Successfully decrypted OLD format (Salt+IV+AuthTag+Data)');
+          return decrypted.toString('utf8');
+        } catch (e) {
+          console.error('⚠️ OLD format decryption also failed:', e.message);
+          // Both formats failed - return error message
+          return '[Encrypted message - unable to decrypt]';
+        }
+      }
+
+      // Hex string but too short for either format
+      console.error('⚠️ Hex string too short for any known format:', encryptedBlob.length);
+      return '[Encrypted message - invalid length]';
     }
+
     // Not an encrypted string, return as plain text
     return encryptedBlob;
   }
@@ -205,6 +260,7 @@ export function decryptMessage(encryptedBlob) {
       let decrypted = decipher.update(encryptedData, 'hex', 'utf8');
       decrypted += decipher.final('utf8');
 
+      console.log('✅ Successfully decrypted OLD format object');
       return decrypted;
     } catch (error) {
       console.error('❌ Failed to decrypt message (object format):', error.message);
