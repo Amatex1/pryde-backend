@@ -179,7 +179,15 @@ messageSchema.methods.toJSON = function() {
           contentToDecrypt = parsed;
         }
       } catch (parseError) {
-        // Not a JSON string, assume it's plain text - no decryption needed
+        // Not a JSON string, check if it looks like an encrypted string
+        // Some encryption implementations might store encrypted data as a string
+        // Check if it starts with typical encryption markers or has significant length
+        if (message.content && message.content.length > 50 && message.content.includes(':')) {
+          // This might be an encrypted string format - try to handle it
+          // For now, return as-is (can't reliably decrypt arbitrary strings)
+          console.log('⚠️ Potential encrypted string detected but cannot parse:', message.content.substring(0, 50) + '...');
+        }
+        // Plain text - no decryption needed
         return message;
       }
     } else {

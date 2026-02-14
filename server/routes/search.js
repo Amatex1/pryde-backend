@@ -142,13 +142,42 @@ router.get('/messages', auth, searchLimiter, async (req, res) => {
       .limit(parseInt(limit));
 
     // Decrypt and filter messages that match the search query
-    const matchingMessages = messages.filter(msg => {
-      const decryptedContent = decryptMessage(msg.content);
-      return decryptedContent.toLowerCase().includes(q.toLowerCase());
-    }).map(msg => ({
-      ...msg.toObject(),
-      content: decryptMessage(msg.content)
-    }));
+    // First, get the decrypted content for filtering (handle both encrypted and plain text)
+    const decryptedMessages = messages.map(msg => {
+      // Get the message object
+      const msgObj = msg.toObject ? msg.toObject() : msg;
+      let content = msgObj.content;
+      
+      // Try to decrypt if it looks encrypted
+      try {
+        if (content && typeof content === 'object' && content.iv && content.authTag && content.encryptedData) {
+          content = decryptMessage(content);
+        } else if (content && typeof content === 'string') {
+          // Try to parse as JSON for backward compatibility
+          try {
+            const parsed = JSON.parse(content);
+            if (parsed && typeof parsed === 'object' && parsed.iv && parsed.authTag && parsed.encryptedData) {
+              content = decryptMessage(parsed);
+            }
+          } catch (parseErr) {
+            // Not JSON, leave as is (plain text)
+          }
+        }
+      } catch (decryptErr) {
+        // Decryption failed, keep original content
+        console.log('⚠️ Decryption failed for message:', decryptErr.message);
+      }
+      
+      return {
+        ...msgObj,
+        content
+      };
+    });
+    
+    // Now filter by search query on decrypted content
+    const matchingMessages = decryptedMessages.filter(msg => {
+      return msg.content && msg.content.toLowerCase().includes(q.toLowerCase());
+    });
 
     res.json({ messages: matchingMessages, count: matchingMessages.length });
   } catch (error) {
@@ -230,4 +259,3 @@ router.get('/my-posts', auth, searchLimiter, async (req, res) => {
 });
 
 export default router;
-
