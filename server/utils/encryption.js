@@ -99,12 +99,25 @@ export function decryptObject(encryptedBlob) {
  * @returns {boolean} True if data looks encrypted
  */
 export function isEncrypted(data) {
-  return data &&
-         typeof data === 'object' &&
-         data.iv &&
-         data.authTag &&
-         data.encryptedData;
+  // Check for full encrypted object format
+  if (data &&
+      typeof data === 'object' &&
+      data.iv &&
+      data.authTag &&
+      data.encryptedData) {
+    return true;
+  }
+  
+  // Check if it's a string that looks like encrypted data (hex string of significant length)
+  // Raw encrypted strings from MongoDB are long hex strings (IV + AuthTag + Ciphertext)
+  if (typeof data === 'string' && data.length > 64 && /^[a-f0-9]+$/i.test(data)) {
+    return true;
+  }
+  
+  return false;
 }
+
+
 
 /**
  * Encrypt a string message using AES-256-GCM
@@ -134,10 +147,41 @@ export function encryptMessage(message) {
 
 /**
  * Decrypt an encrypted message back to string
- * @param {Object} encryptedBlob - { iv, authTag, encryptedData }
+ * @param {Object|string} encryptedBlob - { iv, authTag, encryptedData } or raw encrypted string
  * @returns {string} Decrypted message
  */
 export function decryptMessage(encryptedBlob) {
+  // Handle string format (raw encrypted data without metadata)
+  if (typeof encryptedBlob === 'string') {
+    // If it looks like a hex string, try to decrypt it as raw encrypted data
+    if (encryptedBlob.length > 64 && /^[a-f0-9]+$/i.test(encryptedBlob)) {
+      try {
+        const key = getEncryptionKey();
+        // For raw encrypted strings, we need to extract IV and authTag from the beginning
+        // Standard GCM format: IV (32 hex chars = 16 bytes) + AuthTag (32 hex chars = 16 bytes) + Ciphertext
+        const ivHex = encryptedBlob.substring(0, 32);
+        const authTagHex = encryptedBlob.substring(32, 64);
+        const encryptedData = encryptedBlob.substring(64);
+        
+        if (ivHex.length === 32 && authTagHex.length === 32 && encryptedData.length > 0) {
+          const decipher = crypto.createDecipheriv('aes-256-gcm', key, Buffer.from(ivHex, 'hex'));
+          decipher.setAuthTag(Buffer.from(authTagHex, 'hex'));
+          
+          let decrypted = decipher.update(encryptedData, 'hex', 'utf8');
+          decrypted += decipher.final('utf8');
+          
+          return decrypted;
+        }
+      } catch (e) {
+        // If raw decryption fails, return as-is
+        console.log('⚠️ Raw string decryption failed, returning as plain text:', e.message);
+        return encryptedBlob;
+      }
+    }
+    // Not an encrypted string, return as plain text
+    return encryptedBlob;
+  }
+
   if (!encryptedBlob || typeof encryptedBlob !== 'object') {
     throw new Error('decryptMessage requires a valid encrypted blob');
   }
@@ -168,6 +212,9 @@ export function decryptMessage(encryptedBlob) {
     throw new Error('Failed to decrypt message: ' + error.message);
   }
 }
+
+
+
 
 export default {
   encryptObject,

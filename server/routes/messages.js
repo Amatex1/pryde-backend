@@ -117,26 +117,30 @@ router.get('/list', auth, requireActiveUser, async (req, res) => {
       );
       const lastReadMessageId = lastReadEntry?.messageId?.toString() || null;
 
-      // Decrypt last message if needed (with backward compatibility for JSON strings)
+      // Decrypt last message if needed (with backward compatibility for JSON strings and raw hex)
       if (conv.lastMessage?.content) {
         try {
           let contentToDecrypt = conv.lastMessage.content;
 
-          // Handle both object format (from aggregation) and string format (for backward compatibility)
+          // Handle string format - could be plain text, JSON string, or raw hex encrypted data
           if (typeof conv.lastMessage.content === 'string') {
-            // Content is a string - could be plain text or JSON string of encrypted blob
-            try {
-              const parsed = JSON.parse(conv.lastMessage.content);
-              if (parsed && typeof parsed === 'object' && parsed.iv && parsed.authTag && parsed.encryptedData) {
-                contentToDecrypt = parsed;
+            // First check if it's a raw hex encrypted string (long hex string without JSON structure)
+            if (conv.lastMessage.content.length > 50 && /^[a-f0-9]+$/i.test(conv.lastMessage.content)) {
+              // This is a raw encrypted hex string - pass directly to decryptMessage
+              contentToDecrypt = conv.lastMessage.content;
+            } else {
+              // Try to parse as JSON for backward compatibility
+              try {
+                const parsed = JSON.parse(conv.lastMessage.content);
+                if (parsed && typeof parsed === 'object') {
+                  contentToDecrypt = parsed;
+                }
+              } catch (parseError) {
+                // Not JSON, not hex - assume plain text
               }
-              // Not an encrypted JSON string - leave as plain text
-            } catch (parseError) {
-              // Not a JSON string, assume it's plain text - leave as is
             }
           }
-          // Content is already an object (from aggregation - MongoDB stores the encrypted object directly)
-          // Use it directly for decryption
+          // Content is already an object (from aggregation)
 
           // Decrypt if the content appears to be encrypted
           if (contentToDecrypt && isEncrypted(contentToDecrypt)) {
@@ -257,12 +261,22 @@ router.get('/:userId', auth, requireActiveUser, validateParamId('userId'), check
         try {
           let contentToDecrypt = msgObj.content;
 
-          // Handle backward compatibility: if content is a JSON string of encrypted blob, parse it
+          // Handle string format - could be plain text, JSON string, or raw hex encrypted data
           if (typeof msgObj.content === 'string') {
-            try {
-              contentToDecrypt = JSON.parse(msgObj.content);
-            } catch (parseError) {
-              // Not a JSON string, assume it's plain text - leave as is
+            // First check if it's a raw hex encrypted string
+            if (msgObj.content.length > 50 && /^[a-f0-9]+$/i.test(msgObj.content)) {
+              // This is a raw encrypted hex string - pass directly to decryptMessage
+              contentToDecrypt = msgObj.content;
+            } else {
+              // Try to parse as JSON for backward compatibility
+              try {
+                const parsed = JSON.parse(msgObj.content);
+                if (parsed && typeof parsed === 'object') {
+                  contentToDecrypt = parsed;
+                }
+              } catch (parseError) {
+                // Not JSON, not hex - assume plain text
+              }
             }
           }
 
@@ -466,26 +480,30 @@ router.get('/', auth, requireActiveUser, async (req, res) => {
       );
       const lastReadMessageId = lastReadEntry?.messageId?.toString() || null;
 
-      // Decrypt last message if needed (with backward compatibility for JSON strings)
+      // Decrypt last message if needed (with backward compatibility for JSON strings and raw hex)
       if (conv.lastMessage?.content) {
         try {
           let contentToDecrypt = conv.lastMessage.content;
 
-          // Handle both object format (from aggregation) and string format (for backward compatibility)
+          // Handle string format - could be plain text, JSON string, or raw hex encrypted data
           if (typeof conv.lastMessage.content === 'string') {
-            // Content is a string - could be plain text or JSON string of encrypted blob
-            try {
-              const parsed = JSON.parse(conv.lastMessage.content);
-              if (parsed && typeof parsed === 'object' && parsed.iv && parsed.authTag && parsed.encryptedData) {
-                contentToDecrypt = parsed;
+            // First check if it's a raw hex encrypted string (long hex string without JSON structure)
+            if (conv.lastMessage.content.length > 50 && /^[a-f0-9]+$/i.test(conv.lastMessage.content)) {
+              // This is a raw encrypted hex string - pass directly to decryptMessage
+              contentToDecrypt = conv.lastMessage.content;
+            } else {
+              // Try to parse as JSON for backward compatibility
+              try {
+                const parsed = JSON.parse(conv.lastMessage.content);
+                if (parsed && typeof parsed === 'object') {
+                  contentToDecrypt = parsed;
+                }
+              } catch (parseError) {
+                // Not JSON, not hex - assume plain text
               }
-              // Not an encrypted JSON string - leave as plain text
-            } catch (parseError) {
-              // Not a JSON string, assume it's plain text - leave as is
             }
           }
-          // Content is already an object (from aggregation - MongoDB stores the encrypted object directly)
-          // Use it directly for decryption
+          // Content is already an object (from aggregation)
 
           // Decrypt if the content appears to be encrypted
           if (contentToDecrypt && isEncrypted(contentToDecrypt)) {
@@ -973,334 +991,4 @@ router.post('/:id/react', auth, requireActiveUser, validateParamId('id'), async 
 // @route   DELETE /api/messages/:id/react
 // @desc    Remove a reaction from a message
 // @access  Private
-// 🔥 CRITICAL: validateParamId blocks temp_* optimistic IDs and validates ObjectId format
-router.delete('/:id/react', auth, requireActiveUser, validateParamId('id'), async (req, res) => {
-  try {
-    const { emoji } = req.body;
-
-    if (!emoji) {
-      return res.status(400).json({ message: 'Emoji is required' });
-    }
-
-    const message = await Message.findById(req.params.id);
-
-    if (!message) {
-      return res.status(404).json({ message: 'Message not found' });
-    }
-
-    // Remove reaction
-    message.reactions = message.reactions.filter(
-      r => !(r.user.toString() === req.userId && r.emoji === emoji)
-    );
-
-    await message.save();
-    await message.populate('reactions.user', 'username displayName profilePhoto');
-
-    res.json(message);
-  } catch (error) {
-    logger.error('Remove reaction error:', error);
-    res.status(500).json({ message: 'Server error' });
-  }
-});
-
-// ========================================
-// CONVERSATION MANAGEMENT ENDPOINTS
-// ========================================
-
-// @route   POST /api/messages/conversations/:userId/archive
-// @desc    Archive a conversation with a user
-// @access  Private
-// 🔥 FIX: Added validateParamId to prevent MongoDB errors with invalid IDs
-router.post('/conversations/:userId/archive', auth, requireActiveUser, validateParamId('userId'), async (req, res) => {
-  try {
-    const currentUserId = req.userId;
-    const otherUserId = req.params.userId;
-
-    // Find or create conversation
-    let conversation = await Conversation.findOne({
-      participants: { $all: [currentUserId, otherUserId] },
-      groupChat: null
-    });
-
-    if (!conversation) {
-      conversation = new Conversation({
-        participants: [currentUserId, otherUserId]
-      });
-    }
-
-    // Add to archivedBy if not already archived
-    if (!conversation.archivedBy.includes(currentUserId)) {
-      conversation.archivedBy.push(currentUserId);
-      await conversation.save();
-    }
-
-    res.json({ message: 'Conversation archived', conversation });
-  } catch (error) {
-    logger.error('Archive conversation error:', error);
-    res.status(500).json({ message: 'Server error' });
-  }
-});
-
-// @route   POST /api/messages/conversations/:userId/unarchive
-// @desc    Unarchive a conversation with a user
-// @access  Private
-router.post('/conversations/:userId/unarchive', auth, requireActiveUser, validateParamId('userId'), async (req, res) => {
-  try {
-    const currentUserId = req.userId;
-    const otherUserId = req.params.userId;
-
-    const conversation = await Conversation.findOne({
-      participants: { $all: [currentUserId, otherUserId] },
-      groupChat: null
-    });
-
-    if (conversation) {
-      conversation.archivedBy = conversation.archivedBy.filter(
-        id => id.toString() !== currentUserId
-      );
-      await conversation.save();
-    }
-
-    res.json({ message: 'Conversation unarchived', conversation });
-  } catch (error) {
-    logger.error('Unarchive conversation error:', error);
-    res.status(500).json({ message: 'Server error' });
-  }
-});
-
-// @route   POST /api/messages/conversations/:userId/mute
-// @desc    Mute notifications for a conversation
-// @access  Private
-router.post('/conversations/:userId/mute', auth, requireActiveUser, validateParamId('userId'), async (req, res) => {
-  try {
-    const currentUserId = req.userId;
-    const otherUserId = req.params.userId;
-    const { duration } = req.body; // duration in hours, null for indefinite
-
-    // Find or create conversation
-    let conversation = await Conversation.findOne({
-      participants: { $all: [currentUserId, otherUserId] },
-      groupChat: null
-    });
-
-    if (!conversation) {
-      conversation = new Conversation({
-        participants: [currentUserId, otherUserId]
-      });
-    }
-
-    // Remove existing mute for this user
-    conversation.mutedBy = conversation.mutedBy.filter(
-      m => m.user.toString() !== currentUserId
-    );
-
-    // Add new mute
-    const mutedUntil = duration ? new Date(Date.now() + duration * 60 * 60 * 1000) : null;
-    conversation.mutedBy.push({
-      user: currentUserId,
-      mutedUntil
-    });
-
-    await conversation.save();
-
-    res.json({ message: 'Conversation muted', conversation, mutedUntil });
-  } catch (error) {
-    logger.error('Mute conversation error:', error);
-    res.status(500).json({ message: 'Server error' });
-  }
-});
-
-// @route   POST /api/messages/conversations/:userId/unmute
-// @desc    Unmute notifications for a conversation
-// @access  Private
-router.post('/conversations/:userId/unmute', auth, requireActiveUser, validateParamId('userId'), async (req, res) => {
-  try {
-    const currentUserId = req.userId;
-    const otherUserId = req.params.userId;
-
-    const conversation = await Conversation.findOne({
-      participants: { $all: [currentUserId, otherUserId] },
-      groupChat: null
-    });
-
-    if (conversation) {
-      conversation.mutedBy = conversation.mutedBy.filter(
-        m => m.user.toString() !== currentUserId
-      );
-      await conversation.save();
-    }
-
-    res.json({ message: 'Conversation unmuted', conversation });
-  } catch (error) {
-    logger.error('Unmute conversation error:', error);
-    res.status(500).json({ message: 'Server error' });
-  }
-});
-
-// @route   POST /api/messages/conversations/:userId/mark-unread
-// @desc    Mark conversation as unread
-// @access  Private
-router.post('/conversations/:userId/mark-unread', auth, requireActiveUser, validateParamId('userId'), async (req, res) => {
-  try {
-    const currentUserId = req.userId;
-    const otherUserId = req.params.userId;
-
-    // Find or create conversation
-    let conversation = await Conversation.findOne({
-      participants: { $all: [currentUserId, otherUserId] },
-      groupChat: null
-    });
-
-    if (!conversation) {
-      conversation = new Conversation({
-        participants: [currentUserId, otherUserId]
-      });
-    }
-
-    // Remove existing unread marker
-    conversation.unreadFor = conversation.unreadFor.filter(
-      u => u.user.toString() !== currentUserId
-    );
-
-    // Add new unread marker
-    conversation.unreadFor.push({
-      user: currentUserId,
-      markedUnreadAt: new Date()
-    });
-
-    await conversation.save();
-
-    res.json({ message: 'Conversation marked as unread', conversation });
-  } catch (error) {
-    logger.error('Mark unread error:', error);
-    res.status(500).json({ message: 'Server error' });
-  }
-});
-
-// @route   DELETE /api/messages/conversations/:userId/mark-unread
-// @desc    Remove manual unread status from conversation
-// @access  Private
-router.delete('/conversations/:userId/mark-unread', auth, requireActiveUser, validateParamId('userId'), async (req, res) => {
-  try {
-    const currentUserId = req.userId;
-    const otherUserId = req.params.userId;
-
-    // Find conversation
-    const conversation = await Conversation.findOne({
-      participants: { $all: [currentUserId, otherUserId] },
-      groupChat: null
-    });
-
-    if (!conversation) {
-      return res.json({ message: 'No conversation found' });
-    }
-
-    // Remove unread marker for current user
-    conversation.unreadFor = conversation.unreadFor.filter(
-      u => u.user.toString() !== currentUserId
-    );
-
-    await conversation.save();
-
-    // PHASE R: Emit socket event for cross-device sync
-    const io = req.app.get('io');
-    if (io) {
-      io.to(`user_${currentUserId}`).emit('message:read', {
-        conversationWith: otherUserId
-      });
-    }
-
-    res.json({ message: 'Conversation marked as read', conversation });
-  } catch (error) {
-    logger.error('Mark read error:', error);
-    res.status(500).json({ message: 'Server error' });
-  }
-});
-
-// @route   PUT /api/messages/conversations/:userId/last-read
-// @desc    Update last read message ID for unread divider
-// @access  Private
-router.put('/conversations/:userId/last-read', auth, requireActiveUser, validateParamId('userId'), async (req, res) => {
-  try {
-    const currentUserId = req.userId;
-    const otherUserId = req.params.userId;
-    const { messageId } = req.body;
-
-    if (!messageId) {
-      return res.status(400).json({ message: 'messageId is required' });
-    }
-
-    // Validate messageId is a valid ObjectId
-    if (!mongoose.Types.ObjectId.isValid(messageId)) {
-      return res.status(400).json({ message: 'Invalid messageId format' });
-    }
-
-    // Find or create conversation
-    let conversation = await Conversation.findOne({
-      participants: { $all: [currentUserId, otherUserId] },
-      groupChat: null
-    });
-
-    if (!conversation) {
-      conversation = new Conversation({
-        participants: [currentUserId, otherUserId]
-      });
-    }
-
-    // Remove existing lastReadMessageId for this user
-    conversation.lastReadMessageId = conversation.lastReadMessageId.filter(
-      lr => lr.user.toString() !== currentUserId
-    );
-
-    // Add new lastReadMessageId
-    conversation.lastReadMessageId.push({
-      user: currentUserId,
-      messageId: messageId,
-      updatedAt: new Date()
-    });
-
-    await conversation.save();
-
-    logger.debug('✅ Updated lastReadMessageId', {
-      currentUserId,
-      otherUserId,
-      messageId
-    });
-
-    res.json({ message: 'Last read message updated', lastReadMessageId: messageId });
-  } catch (error) {
-    logger.error('Update last read message error:', error);
-    res.status(500).json({ message: 'Server error' });
-  }
-});
-
-// @route   DELETE /api/messages/conversations/:userId
-// @desc    Delete entire conversation with a user
-// @access  Private
-router.delete('/conversations/:userId', auth, requireActiveUser, validateParamId('userId'), async (req, res) => {
-  try {
-    const currentUserId = req.userId;
-    const otherUserId = req.params.userId;
-
-    // Delete all messages between the two users
-    await Message.deleteMany({
-      $or: [
-        { sender: currentUserId, recipient: otherUserId },
-        { sender: otherUserId, recipient: currentUserId }
-      ]
-    });
-
-    // Delete conversation metadata
-    await Conversation.deleteOne({
-      participants: { $all: [currentUserId, otherUserId] },
-      groupChat: null
-    });
-
-    res.json({ message: 'Conversation deleted successfully' });
-  } catch (error) {
-    logger.error('Delete conversation error:', error);
-    res.status(500).json({ message: 'Server error' });
-  }
-});
-
-export default router;
+//

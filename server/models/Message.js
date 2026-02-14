@@ -152,7 +152,7 @@ messageSchema.pre('save', async function(next) {
  *
  * 🔥 CRITICAL: Always decrypt encrypted messages, even if encryption is disabled
  * This handles old encrypted messages when encryption is turned off
- * Also handles backward compatibility for messages stored as JSON strings
+ * Also handles backward compatibility for messages stored as JSON strings or raw hex strings
  */
 messageSchema.methods.toJSON = function() {
   const message = this.toObject();
@@ -170,25 +170,24 @@ messageSchema.methods.toJSON = function() {
     if (typeof message.content === 'object' && message.content !== null) {
       contentToDecrypt = message.content;
     }
-    // CASE 2: Content is a string - could be plain text OR a JSON string of encrypted blob
+    // CASE 2: Content is a string - could be plain text, JSON string of encrypted blob, or raw hex encrypted data
     else if (typeof message.content === 'string') {
-      // Try to parse as JSON for backward compatibility with messages stored as JSON strings
-      try {
-        const parsed = JSON.parse(message.content);
-        if (parsed && typeof parsed === 'object') {
-          contentToDecrypt = parsed;
+      // First, check if it's a raw hex encrypted string (no JSON wrapper)
+      // Raw encrypted strings are long hex strings without JSON structure
+      if (message.content.length > 50 && /^[a-f0-9]+$/i.test(message.content)) {
+        // This is likely a raw encrypted hex string - pass directly to decryptMessage
+        contentToDecrypt = message.content;
+      } else {
+        // Try to parse as JSON for backward compatibility with messages stored as JSON strings
+        try {
+          const parsed = JSON.parse(message.content);
+          if (parsed && typeof parsed === 'object') {
+            contentToDecrypt = parsed;
+          }
+        } catch (parseError) {
+          // Not a JSON string, assume it's plain text - no decryption needed
+          return message;
         }
-      } catch (parseError) {
-        // Not a JSON string, check if it looks like an encrypted string
-        // Some encryption implementations might store encrypted data as a string
-        // Check if it starts with typical encryption markers or has significant length
-        if (message.content && message.content.length > 50 && message.content.includes(':')) {
-          // This might be an encrypted string format - try to handle it
-          // For now, return as-is (can't reliably decrypt arbitrary strings)
-          console.log('⚠️ Potential encrypted string detected but cannot parse:', message.content.substring(0, 50) + '...');
-        }
-        // Plain text - no decryption needed
-        return message;
       }
     } else {
       // Content is neither object nor string (e.g., number, boolean) - return as is
