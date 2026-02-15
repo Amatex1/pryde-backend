@@ -56,6 +56,9 @@ function compareVersions(v1, v2) {
 // @desc    Get current build version and timestamp
 // @access  Public
 router.get('/', (req, res) => {
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.set('Pragma', 'no-cache');
+  res.set('Expires', '0');
   res.json({
     version: BACKEND_VERSION,
     timestamp: process.env.BUILD_TIME || Date.now(),
