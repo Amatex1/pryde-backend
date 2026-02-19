@@ -234,6 +234,10 @@ const userSchema = new mongoose.Schema({
     type: Object,
     default: null
   },
+  pushSubscriptions: {
+    type: [Object],
+    default: []
+  },
   isActive: {
     type: Boolean,
     default: true

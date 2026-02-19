@@ -41,16 +41,27 @@ router.get('/vapid-public-key', (req, res) => {
   res.json({ publicKey: vapidKeys.publicKey });
 });
 
-// Subscribe to push notifications
+// Subscribe to push notifications — adds this device, keeps others
 router.post('/subscribe', auth, async (req, res) => {
   try {
     const { subscription } = req.body;
-    
-    // Save subscription to user
+    const endpoint = subscription?.endpoint;
+
+    if (!endpoint) {
+      return res.status(400).json({ message: 'Invalid subscription object' });
+    }
+
+    const user = await User.findById(req.user.id);
+
+    // Build updated array: remove any existing entry for this endpoint, then add the new one
+    const existing = (user.pushSubscriptions || []).filter(s => s.endpoint !== endpoint);
+    existing.push(subscription);
+
     await User.findByIdAndUpdate(req.user.id, {
-      pushSubscription: subscription
+      pushSubscriptions: existing,
+      pushSubscription: subscription  // keep legacy field in sync for 2FA / other references
     });
-    
+
     res.json({ success: true, message: 'Subscribed to push notifications' });
   } catch (error) {
     console.error('Push subscription error:', error);
@@ -58,13 +69,41 @@ router.post('/subscribe', auth, async (req, res) => {
   }
 });
 
-// Unsubscribe from push notifications
+// Unsubscribe from push notifications — removes only this device
 router.post('/unsubscribe', auth, async (req, res) => {
   try {
+    const user = await User.findById(req.user.id);
+
+    // Try to identify which device is unsubscribing via its current subscription endpoint
+    let endpoint = null;
+    try {
+      if ('serviceWorker' in (global || {})) {
+        // server-side — skip
+      }
+    } catch {}
+
+    // Client sends endpoint in body optionally; otherwise clear all
+    const { endpoint: bodyEndpoint } = req.body || {};
+    endpoint = bodyEndpoint;
+
+    let updatedSubscriptions;
+    let updatedLegacy = null;
+
+    if (endpoint) {
+      // Remove just this device
+      updatedSubscriptions = (user.pushSubscriptions || []).filter(s => s.endpoint !== endpoint);
+      updatedLegacy = updatedSubscriptions.length > 0 ? updatedSubscriptions[updatedSubscriptions.length - 1] : null;
+    } else {
+      // No endpoint provided — clear all
+      updatedSubscriptions = [];
+      updatedLegacy = null;
+    }
+
     await User.findByIdAndUpdate(req.user.id, {
-      pushSubscription: null
+      pushSubscriptions: updatedSubscriptions,
+      pushSubscription: updatedLegacy
     });
-    
+
     res.json({ success: true, message: 'Unsubscribed from push notifications' });
   } catch (error) {
     console.error('Push unsubscribe error:', error);
@@ -72,24 +111,33 @@ router.post('/unsubscribe', auth, async (req, res) => {
   }
 });
 
-// Send push notification to a user
+// Send push notification to ALL of a user's devices
 async function sendPushNotification(userId, payload) {
   try {
     const user = await User.findById(userId);
 
-    if (!user || !user.pushSubscription) {
+    if (!user) {
+      return { success: false, message: 'User not found' };
+    }
+
+    // Build list of subscriptions — prefer new array, fall back to legacy single field
+    const subscriptions = (user.pushSubscriptions && user.pushSubscriptions.length > 0)
+      ? user.pushSubscriptions
+      : user.pushSubscription
+        ? [user.pushSubscription]
+        : [];
+
+    if (subscriptions.length === 0) {
       return { success: false, message: 'User not subscribed to push notifications' };
     }
 
     // Check notification type and user preferences
     const notificationType = payload.data?.type;
 
-    // Check if user has disabled this type of notification
     if (notificationType === 'login_approval' && user.loginAlerts?.enabled === false) {
       return { success: false, message: 'User has disabled login alert notifications' };
     }
 
-    // Check if user is in Quiet Mode and notification is not critical
     const criticalTypes = ['login_approval', 'security_alert', 'account_warning'];
     if (user.privacySettings?.quietModeEnabled && !criticalTypes.includes(notificationType)) {
       return { success: false, message: 'User is in Quiet Mode - non-critical notifications suppressed' };
@@ -103,17 +151,38 @@ async function sendPushNotification(userId, payload) {
       data: payload.data || {}
     });
 
-    await webpush.sendNotification(user.pushSubscription, notificationPayload);
+    // Send to all devices, collecting which ones are expired
+    const expiredEndpoints = [];
+    let anySuccess = false;
 
-    return { success: true, message: 'Push notification sent' };
-  } catch (error) {
-    console.error('Send push notification error:', error);
+    await Promise.all(subscriptions.map(async (sub) => {
+      try {
+        await webpush.sendNotification(sub, notificationPayload);
+        anySuccess = true;
+      } catch (err) {
+        if (err.statusCode === 410) {
+          expiredEndpoints.push(sub.endpoint);
+        } else {
+          console.error('Push send error for endpoint:', sub.endpoint?.substring(0, 40), err.message);
+        }
+      }
+    }));
 
-    // If subscription is invalid, remove it
-    if (error.statusCode === 410) {
-      await User.findByIdAndUpdate(userId, { pushSubscription: null });
+    // Clean up any expired subscriptions
+    if (expiredEndpoints.length > 0) {
+      const cleaned = subscriptions.filter(s => !expiredEndpoints.includes(s.endpoint));
+      await User.findByIdAndUpdate(userId, {
+        pushSubscriptions: cleaned,
+        pushSubscription: cleaned.length > 0 ? cleaned[cleaned.length - 1] : null
+      });
     }
 
+    return anySuccess
+      ? { success: true, message: 'Push notification sent' }
+      : { success: false, message: 'All subscriptions failed or expired' };
+
+  } catch (error) {
+    console.error('Send push notification error:', error);
     return { success: false, message: error.message };
   }
 }
@@ -123,8 +192,8 @@ router.post('/test', auth, async (req, res) => {
   try {
     const user = await User.findById(req.user.id);
 
-    // Check if user has push subscription
-    if (!user.pushSubscription) {
+    const hasAny = (user.pushSubscriptions && user.pushSubscriptions.length > 0) || !!user.pushSubscription;
+    if (!hasAny) {
       return res.status(400).json({
         success: false,
         message: 'No push subscription found. Please enable notifications first.',
@@ -132,7 +201,6 @@ router.post('/test', auth, async (req, res) => {
       });
     }
 
-    // Get custom message from request or use default
     const { title, body, testType } = req.body;
 
     let notificationConfig = {
@@ -142,55 +210,38 @@ router.post('/test', auth, async (req, res) => {
         url: '/notifications',
         type: 'test',
         timestamp: new Date().toISOString()
-      },
-      tag: 'test-notification',
-      requireInteraction: false
+      }
     };
 
-    // Different test types
     if (testType === 'login_approval') {
       notificationConfig = {
         title: '🔐 Test Login Approval',
         body: 'New login from Chrome on Windows. Code: 42',
-        data: {
-          type: 'login_approval',
-          verificationCode: '42',
-          deviceInfo: 'Chrome on Windows',
-          url: '/notifications'
-        },
-        tag: 'login-approval-test',
-        requireInteraction: true
+        data: { type: 'login_approval', verificationCode: '42', deviceInfo: 'Chrome on Windows', url: '/notifications' }
       };
     } else if (testType === 'message') {
       notificationConfig = {
         title: '💬 Test Message',
         body: 'You have a new message from Test User',
-        data: {
-          type: 'message',
-          url: '/messages'
-        },
-        tag: 'message-test'
+        data: { type: 'message', url: '/messages' }
       };
     } else if (testType === 'friend_request') {
       notificationConfig = {
         title: '👋 Test Friend Request',
         body: 'Test User sent you a friend request',
-        data: {
-          type: 'friend_request',
-          url: '/friends'
-        },
-        tag: 'friend-request-test'
+        data: { type: 'friend_request', url: '/friends' }
       };
     }
 
     const result = await sendPushNotification(req.user.id, notificationConfig);
+    const deviceCount = (user.pushSubscriptions?.length || 0) || (user.pushSubscription ? 1 : 0);
 
     if (result.success) {
       res.json({
         success: true,
-        message: 'Test notification sent successfully! Check your device.',
+        message: `Test notification sent to ${deviceCount} device(s). Check your device(s).`,
         hasSubscription: true,
-        subscriptionEndpoint: user.pushSubscription.endpoint.substring(0, 50) + '...',
+        deviceCount,
         testType: testType || 'default'
       });
     } else {
@@ -202,10 +253,7 @@ router.post('/test', auth, async (req, res) => {
     }
   } catch (error) {
     console.error('Test push error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error sending test push notification: ' + error.message
-    });
+    res.status(500).json({ success: false, message: 'Error sending test push notification: ' + error.message });
   }
 });
 
@@ -213,12 +261,12 @@ router.post('/test', auth, async (req, res) => {
 router.get('/status', auth, async (req, res) => {
   try {
     const user = await User.findById(req.user.id);
+    const deviceCount = user.pushSubscriptions?.length || (user.pushSubscription ? 1 : 0);
 
     res.json({
-      enabled: !!user.pushSubscription,
-      hasSubscription: !!user.pushSubscription,
-      subscriptionEndpoint: user.pushSubscription ?
-        user.pushSubscription.endpoint.substring(0, 50) + '...' : null,
+      enabled: deviceCount > 0,
+      hasSubscription: deviceCount > 0,
+      deviceCount,
       pushTwoFactorEnabled: user.pushTwoFactorEnabled || false,
       preferPushTwoFactor: user.preferPushTwoFactor || false
     });
