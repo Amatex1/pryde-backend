@@ -541,6 +541,54 @@ async function layer5_humanOverride(userId, action, overrideReason, adminId) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
+// IDENTITY HARM DETECTION (PRE-CHECK — runs before weighted scoring)
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Returns an array of blocked words for a given category from ModerationSettings.
+ * Returns null if unavailable — callers must use `|| []` fallback.
+ * Loading is asynchronous; this synchronous stub lets detectIdentityHarm
+ * stay fast while the regex patterns below handle the primary detection.
+ */
+function getBlockedWords(/* category */) {
+  return null;
+}
+
+/**
+ * IDENTITY_HARM_PRECHECK: Fast pattern scan for identity-based attacks.
+ * Runs BEFORE layers 1–4 so identity harm is caught and hidden immediately.
+ *
+ * Actions:
+ *   - AUTO_HIDE content
+ *   - riskScore +5
+ *   - ModerationEvent logged
+ *
+ * Does NOT: auto-mute, auto-block.
+ */
+function detectIdentityHarm(content) {
+  const lower = content.toLowerCase();
+
+  const slurList = getBlockedWords("slurs") || [];
+
+  const identityPatterns = [
+    "gay people are",
+    "trans people are",
+    "lgbt people are",
+    "lgbt is a disease",
+    "your kind should",
+    "you people should",
+    "people like you should",
+    "being gay is",
+    "being trans is"
+  ];
+
+  if (slurList.some(word => lower.includes(word))) return true;
+  if (identityPatterns.some(pattern => lower.includes(pattern))) return true;
+
+  return false;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
 // CONTEXTUAL SAFETY CLASSIFICATION
 // ═══════════════════════════════════════════════════════════════════════════
 
@@ -675,6 +723,59 @@ export async function moderateContentV2(content, userId, options = {}) {
     }
 
     const isShadowMode = moderationMode === 'SHADOW';
+    const LIVE_MODE = !isShadowMode;
+
+    // ── IDENTITY HARM PRE-CHECK (before weighted scoring) ──────────────────
+    if (detectIdentityHarm(content)) {
+      if (emitEvent && userId) {
+        try {
+          await ModerationEvent.create({
+            userId,
+            contentType: contentType === 'chat' ? 'global_chat' : contentType,
+            contentId,
+            contentPreview: typeof content === 'string' ? content.substring(0, 500) : '',
+            intent: { category: 'identity_harm', score: 95, targetDetected: true },
+            expression: { classification: 'normal', expressiveRatio: 0, realWordRatio: 0 },
+            behavior: { score: 0, trend: 'stable', accountAgeDays: 0 },
+            response: { action: 'REVIEW', durationMinutes: 0, automated: true },
+            confidence: 95,
+            explanationCode: 'CONTENT_BLOCKED',
+            contextualSafetyCategory: 'identity_harm',
+            shadowMode: isShadowMode
+          });
+        } catch (eventError) {
+          logger.error('Failed to create ModerationEvent for identity_harm:', eventError);
+        }
+      }
+
+      if (LIVE_MODE && userId) {
+        try {
+          const updated = await User.findByIdAndUpdate(
+            userId,
+            { $inc: { 'moderation.riskScore': 5 } },
+            { new: true, select: 'moderation' }
+          );
+          if (updated?.moderation) {
+            const newScore = updated.moderation.riskScore || 0;
+            const newLevel = newScore >= 20 ? 'high' : newScore >= 10 ? 'moderate' : 'low';
+            await User.findByIdAndUpdate(userId, { 'moderation.riskLevel': newLevel });
+          }
+        } catch (riskErr) {
+          logger.warn('Failed to update riskScore for identity_harm:', riskErr);
+        }
+      }
+
+      return {
+        decision: 'AUTO_HIDE',
+        action: LIVE_MODE ? 'AUTO_HIDE' : 'ALLOW',
+        blocked: false,
+        intent_category: 'identity_harm',
+        reason: 'Identity-based attack detected — content hidden pending review',
+        confidence: 95,
+        shadowMode: isShadowMode
+      };
+    }
+    // ── END IDENTITY HARM PRE-CHECK ────────────────────────────────────────
 
     // LAYER 1: Expression Filter (always runs, classification only)
     const layer1 = layer1_expressionFilter(content);

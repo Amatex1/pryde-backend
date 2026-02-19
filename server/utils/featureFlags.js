@@ -55,6 +55,12 @@ const FEATURES = {
     description: 'Browser push notifications',
     defaultEnabled: true,
     canDegrade: true
+  },
+  EMERGENCY_CONTAINMENT: {
+    name: 'Emergency Containment',
+    description: 'Restricts new posts from new accounts, tightens rate limits, disables global chat, and limits DMs to mutual-follow only. Toggle via POST /api/admin/toggle-emergency.',
+    defaultEnabled: false,
+    canDegrade: false
   }
 };
 

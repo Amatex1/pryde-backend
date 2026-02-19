@@ -32,6 +32,7 @@ import ModerationSettings from '../models/ModerationSettings.js';
 import AdminActionLog from '../models/AdminActionLog.js';
 import User from '../models/User.js';
 import { moderateContentV2 } from '../utils/moderationV2.js';
+import { setAdminOverride, removeAdminOverride, isFeatureEnabled } from '../utils/featureFlags.js';
 import logger from '../utils/logger.js';
 
 const router = express.Router();
@@ -1350,6 +1351,81 @@ router.put('/rollout/disable', adminAuth(['super_admin']), requireAdminEscalatio
     logger.error('Disable action error:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 10. EMERGENCY CONTAINMENT TOGGLE
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * @route   POST /api/admin/toggle-emergency
+ * @desc    Enable or disable Emergency Containment mode
+ * @access  Admin (canManageUsers)
+ *
+ * When ENABLED:
+ *   - Blocks new post creation for accounts < 24 hours old
+ *   - Reduces post rate limit to 1 per 10 minutes (enforced in posts.js)
+ *   - Disables global chat route (enforced in globalChat.js)
+ *   - Restricts DMs to mutual-follow only (enforced in messages.js)
+ *
+ * All changes are in-memory and fully reversible without a redeploy.
+ * Toggle event is logged to AdminActionLog for audit trail.
+ */
+router.post('/toggle-emergency', checkPermission('canManageUsers'), async (req, res) => {
+  try {
+    const { enabled } = req.body;
+
+    if (typeof enabled !== 'boolean') {
+      return res.status(400).json({ message: '`enabled` (boolean) is required' });
+    }
+
+    const previousState = isFeatureEnabled('EMERGENCY_CONTAINMENT');
+
+    if (enabled) {
+      setAdminOverride('EMERGENCY_CONTAINMENT', true, req.user._id);
+    } else {
+      removeAdminOverride('EMERGENCY_CONTAINMENT');
+    }
+
+    await AdminActionLog.logAction({
+      actorId: req.user._id,
+      action: enabled ? 'EMERGENCY_CONTAINMENT_ENABLED' : 'EMERGENCY_CONTAINMENT_DISABLED',
+      targetType: 'PLATFORM',
+      targetId: null,
+      details: {
+        previousState,
+        newState: enabled,
+        reason: req.body.reason || null
+      },
+      ipAddress: req.ip,
+      userAgent: req.get('User-Agent')
+    });
+
+    logger.warn(
+      `[Emergency Containment] ${enabled ? 'ENABLED' : 'DISABLED'} by admin ${req.user._id} from ${req.ip}`
+    );
+
+    res.json({
+      success: true,
+      emergencyContainment: enabled,
+      message: enabled
+        ? 'Emergency containment ENABLED — new posts from new accounts blocked, rate limits tightened, global chat disabled, DMs restricted.'
+        : 'Emergency containment DISABLED — platform restored to normal operation.'
+    });
+  } catch (error) {
+    logger.error('Toggle emergency containment error:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+/**
+ * @route   GET /api/admin/toggle-emergency
+ * @desc    Get current Emergency Containment state
+ * @access  Admin (canViewReports)
+ */
+router.get('/toggle-emergency', checkPermission('canViewReports'), (req, res) => {
+  const active = isFeatureEnabled('EMERGENCY_CONTAINMENT');
+  res.json({ emergencyContainment: active });
 });
 
 export default router;

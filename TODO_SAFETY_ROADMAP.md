@@ -69,3 +69,31 @@ Fields added inside `moderation` subdocument:
 - Integrate V5 enforcement authority once shadow mode exits
 - Admin dashboard for risk score visibility
 - Bulk risk review tooling
+
+---
+
+## Phase 1 Locked
+- [x] Removed hardcoded tokens
+- [x] Identity auto-hide branch added
+- [x] Feed identity banner added
+- [x] Community Guidelines updated
+- [x] Founder Welcome post pinned
+
+---
+
+## Phase 1A – Identity Shield
+- [ ] Add identity_harm hard branch before scoring
+- [ ] Auto-hide identity harm content (no auto-ban)
+- [ ] Log ModerationEvent
+- [ ] Notify admin
+
+## Phase 1B – Emergency Containment
+- [ ] Add EMERGENCY_CONTAINMENT toggle
+- [ ] Restrict new posts when enabled
+- [ ] Tighten rate limits
+- [ ] Disable global chat when active
+
+## Phase 2 – Cultural Clarity
+- [ ] Add identity banner to feed
+- [ ] Add founder pinned post
+- [ ] Seed community-centre example posts

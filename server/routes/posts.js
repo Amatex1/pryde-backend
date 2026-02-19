@@ -23,6 +23,7 @@ import { getBlockedUserIds } from '../utils/blockHelper.js';
 import { emitNotificationCreated } from '../utils/notificationEmitter.js'; // ✅ Socket.IO notifications
 import { deleteFromGridFS } from './upload.js'; // For deleting images from storage
 import { MutationTrace, verifyWrite } from '../utils/mutationTrace.js';
+import { isFeatureEnabled } from '../utils/featureFlags.js';
 import { asyncHandler, requireAuth, requireValidId, sendError, HttpStatus } from '../utils/errorHandler.js';
 import { processUserBadgesById } from '../services/autoBadgeService.js';
 import { populatePostBadges, populateSinglePostBadges } from '../utils/populateBadges.js';
@@ -290,6 +291,22 @@ router.post('/', auth, requireActiveUser, requireEmailVerification, postLimiter,
   res.setHeader('X-Mutation-Id', mutation.mutationId);
 
   try {
+    // ── EMERGENCY CONTAINMENT CHECK ──────────────────────────────────────────
+    if (isFeatureEnabled('EMERGENCY_CONTAINMENT')) {
+      const user = await User.findById(userId).select('createdAt');
+      if (user) {
+        const accountAgeMs = Date.now() - new Date(user.createdAt).getTime();
+        const twentyFourHoursMs = 24 * 60 * 60 * 1000;
+        if (accountAgeMs < twentyFourHoursMs) {
+          return res.status(403).json({
+            message: 'New accounts cannot post during emergency containment. Please try again later.',
+            code: 'EMERGENCY_CONTAINMENT'
+          });
+        }
+      }
+    }
+    // ── END EMERGENCY CONTAINMENT CHECK ─────────────────────────────────────
+
     // REMOVED 2025-12-26: hiddenFrom, sharedWith, tags, tagOnly deleted (Phase 5)
     const { content, images, media, visibility, contentWarning, hideMetrics, poll, gifUrl } = req.body;
 

@@ -1,5 +1,12 @@
+// SECURITY: GitHub token must be provided via environment variable.
 const https = require('https');
-const token = '11BZZFGRY0l046baxghptq_917sJ2EB34omNUchwCnzIoAf6npT9muCvqyhT4RjLjaN4DN6JGCwMCNWPQR';
+const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
+
+if (!GITHUB_TOKEN) {
+  console.error('Error: GITHUB_TOKEN environment variable is not set.');
+  process.exit(1);
+}
+
 const data = JSON.stringify({
   title: 'Backend Phase 4: Production Readiness (Redis, Health, Logging)',
   head: 'phase4-backend-prod-readiness',
@@ -11,7 +18,7 @@ const options = {
   path: '/repos/Amatex1/pryde-backend/pulls',
   method: 'POST',
   headers: {
-    'Authorization': 'token ' + token,
+    'Authorization': 'token ' + GITHUB_TOKEN,
     'User-Agent': 'PrydeBackend',
     'Accept': 'application/vnd.github+json',
     'Content-Type': 'application/json',
