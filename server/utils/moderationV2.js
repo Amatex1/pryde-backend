@@ -2,6 +2,8 @@ import User from '../models/User.js';
 import ModerationEvent from '../models/ModerationEvent.js';
 import ModerationSettings from '../models/ModerationSettings.js';
 import logger from './logger.js';
+import simulateStrike from './strikeSimulator.js';
+import { SIMULATE_STRIKES } from '../config/governanceConfig.js';
 
 /**
  * PRYDE_MODERATION_PLATFORM_V3 - 5-Layer Intent-Driven Moderation System
@@ -835,6 +837,28 @@ export async function moderateContentV2(content, userId, options = {}) {
     const effectiveBlocked = isShadowMode ? false : ['TEMP_MUTE', 'HARD_BLOCK'].includes(resolvedAction);
     const effectiveDampening = isShadowMode ? 0 : layer4.dampening_duration;
 
+    // ── GOVERNANCE V1: STRIKE SIMULATION ──────────────────────────────────
+    // Runs when SIMULATE_STRIKES=true and a violation was detected.
+    // SAFETY: reads user fields only — nothing is written to the user document.
+    let strikeSimulation = null;
+    if (SIMULATE_STRIKES && resolvedAction !== 'ALLOW' && userId) {
+      try {
+        const simUser = await User.findById(userId).select(
+          'postStrikes commentStrikes dmStrikes globalStrikes lastViolationAt'
+        ).lean();
+        if (simUser) {
+          // Map contentType → strike category
+          const strikeCategory =
+            contentType === 'comment'  ? 'comment' :
+            contentType === 'message'  ? 'dm'      : 'post';
+          strikeSimulation = simulateStrike(simUser, strikeCategory, resolvedAction);
+        }
+      } catch (simErr) {
+        logger.warn('[SIMULATION] simulateStrike error (non-fatal):', simErr);
+      }
+    }
+    // ── END STRIKE SIMULATION ──────────────────────────────────────────────
+
     // Prepare result
     const result = {
       action: effectiveAction,
@@ -953,7 +977,15 @@ export async function moderateContentV2(content, userId, options = {}) {
           dampeningDuration: layer4.dampening_duration,
           dampeningExpires,
           queuePriority: layer4.queue_priority,
-          overrideStatus: layer4.action === 'QUEUE_FOR_REVIEW' ? 'pending_review' : 'none'
+          overrideStatus: layer4.action === 'QUEUE_FOR_REVIEW' ? 'pending_review' : 'none',
+
+          // GOVERNANCE V1: Simulation fields — purely predictive, no enforcement
+          ...(strikeSimulation && {
+            simulatedCategoryLevel: strikeSimulation.simulatedCategoryLevel,
+            simulatedGlobalLevel:   strikeSimulation.simulatedGlobalLevel,
+            simulatedAction:        strikeSimulation.simulatedAction,
+            enforcementState:       'SIMULATION_ONLY'
+          })
         });
 
         // Attach event ID to result for reference

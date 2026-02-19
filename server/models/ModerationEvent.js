@@ -218,6 +218,39 @@ const moderationEventSchema = new mongoose.Schema({
     default: 0
   },
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // GOVERNANCE V1 — STRIKE SIMULATION FIELDS
+  // Written only when SIMULATE_STRIKES=true. No enforcement is applied.
+  // These describe what the escalation engine *would* do, not what it did.
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  // Simulated per-category strike count after this event (1, 2, 3…)
+  simulatedCategoryLevel: {
+    type: Number,
+    default: null
+  },
+
+  // Simulated global strike total after this event
+  simulatedGlobalLevel: {
+    type: Number,
+    default: null
+  },
+
+  // What action the escalation engine would have taken
+  // NONE = first strike, no restriction triggered
+  simulatedAction: {
+    type: String,
+    enum: ['NONE', 'WOULD_48_HOUR_RESTRICTION', 'WOULD_30_DAY_SHADOW', 'WOULD_PERMANENT_BAN', null],
+    default: null
+  },
+
+  // Whether enforcement was applied or this is simulation-only
+  enforcementState: {
+    type: String,
+    enum: ['SIMULATION_ONLY', 'LIVE'],
+    default: 'SIMULATION_ONLY'
+  },
+
   // Timestamps
   createdAt: {
     type: Date,
@@ -275,7 +308,12 @@ moderationEventSchema.methods.toV3Contract = function() {
     confidence: this.confidence,
     explanationCode: this.explanationCode,
     shadowMode: this.shadowMode,
-    overridden: this.overrideStatus === 'overridden'
+    overridden: this.overrideStatus === 'overridden',
+    // Simulation fields
+    simulatedCategoryLevel: this.simulatedCategoryLevel ?? null,
+    simulatedGlobalLevel: this.simulatedGlobalLevel ?? null,
+    simulatedAction: this.simulatedAction ?? null,
+    enforcementState: this.enforcementState || 'SIMULATION_ONLY'
   };
 };
 
@@ -302,7 +340,12 @@ moderationEventSchema.statics.toV3ContractArray = function(events) {
       confidence: event.confidence,
       explanationCode: event.explanationCode,
       shadowMode: event.shadowMode,
-      overridden: event.overrideStatus === 'overridden'
+      overridden: event.overrideStatus === 'overridden',
+      // Simulation fields
+      simulatedCategoryLevel: event.simulatedCategoryLevel ?? null,
+      simulatedGlobalLevel: event.simulatedGlobalLevel ?? null,
+      simulatedAction: event.simulatedAction ?? null,
+      enforcementState: event.enforcementState || 'SIMULATION_ONLY'
     };
   });
 };
