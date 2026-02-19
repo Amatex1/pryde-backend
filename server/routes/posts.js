@@ -14,7 +14,7 @@ import requireActiveUser from '../middleware/requireActiveUser.js';
 import requireEmailVerification from '../middleware/requireEmailVerification.js';
 import { cacheShort, cacheMedium } from '../middleware/caching.js';
 import { postLimiter, commentLimiter, reactionLimiter } from '../middleware/rateLimiter.js';
-import { checkMuted, moderateContent } from '../middleware/moderation.js';
+import { checkMuted, moderateContent, checkProbation } from '../middleware/moderation.js';
 import { guardComment, guardReply, guardReact } from '../middleware/systemAccountGuard.js';
 import { sanitizeFields } from '../utils/sanitize.js';
 import { sendPushNotification } from './pushNotifications.js';
@@ -281,7 +281,7 @@ router.get('/:id', auth, requireActiveUser, cacheShort, asyncHandler(async (req,
 // @route   POST /api/posts
 // @desc    Create a new post
 // @access  Private (requires email verification)
-router.post('/', auth, requireActiveUser, requireEmailVerification, postLimiter, sanitizeFields(['content', 'contentWarning']), checkMuted, moderateContent, async (req, res) => {
+router.post('/', auth, requireActiveUser, requireEmailVerification, postLimiter, sanitizeFields(['content', 'contentWarning']), checkMuted, checkProbation, moderateContent, async (req, res) => {
   // Initialize mutation trace for end-to-end tracking
   const mutationId = req.headers['x-mutation-id'] || req.body?._mutationId;
   const userId = req.userId || req.user._id;
@@ -388,6 +388,72 @@ router.post('/', auth, requireActiveUser, requireEmailVerification, postLimiter,
 
     // CALM ONBOARDING: Track activity for quiet return detection (non-blocking)
     setImmediate(() => updateLastActivityDate(userId));
+
+    // @EVERYONE BROADCAST: If a super_admin used @everyone, notify all active users (fire-and-forget)
+    if (content && /@everyone\b/i.test(content)) {
+      setImmediate(async () => {
+        try {
+          const author = await User.findById(userId).select('username displayName role').lean();
+          if (!author || author.role !== 'super_admin') return;
+
+          const recipients = await User.find({
+            isActive: true,
+            isBanned: { $ne: true },
+            _id: { $ne: userId }
+          }).select('_id').lean();
+
+          if (recipients.length === 0) return;
+
+          const now = new Date();
+          const notifDocs = recipients.map(r => ({
+            recipient: r._id,
+            sender: userId,
+            type: 'announcement',
+            message: `${author.displayName || author.username} (@everyone) posted an important announcement`,
+            link: `/feed?post=${post._id}`,
+            postId: post._id,
+            read: false,
+            batchCount: 1,
+            createdAt: now,
+            updatedAt: now
+          }));
+
+          const CHUNK = 500;
+          const saved = [];
+          for (let i = 0; i < notifDocs.length; i += CHUNK) {
+            const chunk = await Notification.insertMany(notifDocs.slice(i, i + CHUNK), { ordered: false });
+            chunk.forEach(n => saved.push(n));
+          }
+
+          if (req.io) {
+            const senderInfo = {
+              _id: author._id || userId,
+              username: author.username,
+              displayName: author.displayName
+            };
+            for (const notif of saved) {
+              req.io.to(`user_${notif.recipient.toString()}`).emit('notification:new', {
+                notification: {
+                  _id: notif._id,
+                  recipient: notif.recipient,
+                  sender: senderInfo,
+                  type: 'announcement',
+                  message: notif.message,
+                  read: false,
+                  link: notif.link,
+                  postId: post._id,
+                  createdAt: notif.createdAt
+                }
+              });
+            }
+          }
+
+          logger.info(`[Post @everyone] Broadcast sent to ${saved.length} users by ${author.username}`);
+        } catch (err) {
+          logger.error('[Post @everyone] Broadcast failed:', err.message);
+        }
+      });
+    }
 
     res.status(201).json({ ...post.toObject(), _mutationId: mutation.mutationId });
   } catch (error) {
@@ -921,7 +987,7 @@ router.delete('/:id/share', auth, requireActiveUser, (req, res) => {
 // @route   POST /api/posts/:id/comment
 // @desc    Add a comment to a post
 // @access  Private (System accounts with PROMPTS/ANNOUNCEMENTS roles cannot comment, requires email verification)
-router.post('/:id/comment', auth, requireActiveUser, requireEmailVerification, commentLimiter, guardComment, sanitizeFields(['content']), checkMuted, moderateContent, async (req, res) => {
+router.post('/:id/comment', auth, requireActiveUser, requireEmailVerification, commentLimiter, guardComment, sanitizeFields(['content']), checkMuted, checkProbation, moderateContent, async (req, res) => {
   try {
     const { content, gifUrl } = req.body;
 
@@ -1018,7 +1084,7 @@ router.post('/:id/comment', auth, requireActiveUser, requireEmailVerification, c
 // @route   POST /api/posts/:id/comment/:commentId/reply
 // @desc    Reply to a comment
 // @access  Private (System accounts with PROMPTS/MODERATION/ANNOUNCEMENTS roles cannot reply)
-router.post('/:id/comment/:commentId/reply', auth, requireActiveUser, commentLimiter, guardReply, sanitizeFields(['content']), checkMuted, moderateContent, async (req, res) => {
+router.post('/:id/comment/:commentId/reply', auth, requireActiveUser, commentLimiter, guardReply, sanitizeFields(['content']), checkMuted, checkProbation, moderateContent, async (req, res) => {
   try {
     const { content, gifUrl } = req.body;
 

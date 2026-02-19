@@ -483,6 +483,11 @@ router.post('/signup', validateAgeBeforeRateLimit, signupLimiter, validateSignup
     user.emailVerificationToken = verificationToken;
     user.emailVerificationExpires = Date.now() + 24 * 60 * 60 * 1000; // 24 hours
 
+    // PRYDE_SAFETY_HARDENING_V1: New accounts start in 48h probation mode
+    // Prevents coordinated abuse from throwaway accounts
+    user.moderation = user.moderation || {};
+    user.moderation.probationUntil = new Date(Date.now() + 48 * 60 * 60 * 1000);
+
     await user.save();
 
     // Send verification email (don't block registration if email fails)

@@ -24,6 +24,7 @@ export const SOCIAL_NOTIFICATION_TYPES = Object.freeze({
   GROUP_MENTION_DIRECT: 'group_mention',
   SYSTEM_NOTICE: 'system',
   MODERATION_RESULT: 'moderation',
+  ANNOUNCEMENT: 'announcement',   // Super Admin @everyone broadcast
   // Legacy types still in use
   RESONANCE: 'resonance',
   CIRCLE_INVITE: 'circle_invite',
@@ -51,6 +52,7 @@ export const ALL_NOTIFICATION_TYPES = Object.freeze([
   'group_post',
   'system',
   'moderation',
+  'announcement',
   'resonance',
   'circle_invite',
   'circle_post',
@@ -90,7 +92,7 @@ export const FORBIDDEN_NOTIFICATION_TYPES = Object.freeze([
 export function isSocialNotificationType(type) {
   const socialTypes = [
     'like', 'comment', 'mention', 'group_mention', 'group_post',
-    'system', 'moderation', 'resonance', 'circle_invite', 'circle_post',
+    'system', 'moderation', 'announcement', 'resonance', 'circle_invite', 'circle_post',
     'login_approval', 'friend_request', 'friend_accept', 'share'
   ];
   return socialTypes.includes(type);

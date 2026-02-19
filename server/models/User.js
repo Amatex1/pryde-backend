@@ -911,6 +911,21 @@ const userSchema = new mongoose.Schema({
       default: 100,
       min: 0,
       max: 100
+    },
+    // PRYDE_SAFETY_HARDENING_V1: Risk scoring system
+    riskScore: {
+      type: Number,
+      default: 0,
+      min: 0
+    },
+    riskLevel: {
+      type: String,
+      enum: ['low', 'moderate', 'high'],
+      default: 'low'
+    },
+    probationUntil: {
+      type: Date,
+      default: null
     }
   },
   moderationHistory: {

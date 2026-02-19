@@ -17,6 +17,8 @@ import { sendPasswordResetEmail, sendPasswordChangedEmail } from '../utils/email
 import config from '../config/config.js';
 import logger from '../utils/logger.js';
 import { escapeRegex } from '../utils/sanitize.js';
+import Notification from '../models/Notification.js';
+import { emitNotificationCreated } from '../utils/notificationEmitter.js';
 
 /**
  * Helper to resolve badge IDs to full badge objects for admin user listing
@@ -1773,6 +1775,95 @@ router.get('/system-accounts', checkPermission('canViewAnalytics'), async (req, 
     });
   } catch (error) {
     logger.error('Get system accounts error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   POST /api/admin/broadcast
+// @desc    Broadcast an @everyone announcement to all active users
+// @access  Super Admin only
+router.post('/broadcast', checkPermission('canBroadcastAnnouncement'), async (req, res) => {
+  try {
+    const { message, link } = req.body;
+    const sender = req.adminUser;
+
+    if (!message || typeof message !== 'string' || message.trim().length === 0) {
+      return res.status(400).json({ message: 'Announcement message is required' });
+    }
+    if (message.trim().length > 500) {
+      return res.status(400).json({ message: 'Announcement message must be 500 characters or fewer' });
+    }
+
+    // Only super_admin may broadcast
+    if (sender.role !== 'super_admin') {
+      return res.status(403).json({ message: 'Only Super Admins can send @everyone announcements' });
+    }
+
+    const trimmedMessage = message.trim();
+    const trimmedLink = link?.trim() || '/feed';
+
+    // Fetch all active, non-banned user IDs (exclude the sender)
+    const recipients = await User.find({
+      isActive: true,
+      isBanned: { $ne: true },
+      _id: { $ne: sender._id }
+    }).select('_id').lean();
+
+    if (recipients.length === 0) {
+      return res.json({ success: true, notified: 0 });
+    }
+
+    // Build notification documents in bulk
+    const now = new Date();
+    const notifDocs = recipients.map(r => ({
+      recipient: r._id,
+      sender: sender._id,
+      type: 'announcement',
+      message: `${sender.displayName || sender.username} (@everyone): ${trimmedMessage}`,
+      link: trimmedLink,
+      read: false,
+      batchCount: 1,
+      createdAt: now,
+      updatedAt: now
+    }));
+
+    // insertMany in chunks to avoid document-size limits on very large userbases
+    const CHUNK = 500;
+    const savedIds = [];
+    for (let i = 0; i < notifDocs.length; i += CHUNK) {
+      const chunk = await Notification.insertMany(notifDocs.slice(i, i + CHUNK), { ordered: false });
+      chunk.forEach(n => savedIds.push(n));
+    }
+
+    // Emit real-time events (fire-and-forget per user room)
+    const io = req.io;
+    if (io) {
+      const populatedSender = {
+        _id: sender._id,
+        username: sender.username,
+        displayName: sender.displayName,
+        profilePhoto: sender.profilePhoto
+      };
+      for (const notif of savedIds) {
+        const sanitized = {
+          _id: notif._id,
+          recipient: notif.recipient,
+          sender: populatedSender,
+          type: 'announcement',
+          message: notif.message,
+          read: false,
+          link: notif.link,
+          createdAt: notif.createdAt
+        };
+        io.to(`user_${notif.recipient.toString()}`).emit('notification:new', { notification: sanitized });
+      }
+    }
+
+    logger.info(`[Broadcast] @everyone announcement sent by ${sender.username} to ${savedIds.length} users`);
+
+    res.json({ success: true, notified: savedIds.length, message: trimmedMessage });
+  } catch (error) {
+    logger.error('Broadcast announcement error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });

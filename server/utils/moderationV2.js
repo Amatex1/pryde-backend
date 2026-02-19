@@ -80,9 +80,9 @@ function layer1_expressionFilter(content) {
   const real_word_ratio = words.length > 0 ? realWords.length / words.length : 0;
 
   // Formatting signals (for context, not penalties)
+  // NOTE: caps_streak intentionally removed — users should be free to express themselves how they want
   const formatting_signals = [];
   if (content.includes('!!!') || content.includes('???')) formatting_signals.push('multiple_exclamation');
-  if (content.match(/[A-Z]{5,}/)) formatting_signals.push('caps_streak');
   if ((content.match(/[\u{1F600}-\u{1F64F}]/gu) || []).length > 3) formatting_signals.push('emoji_rich');
   if (content.match(/(.)\1{4,}/)) formatting_signals.push('repeated_chars');
 
@@ -541,6 +541,98 @@ async function layer5_humanOverride(userId, action, overrideReason, adminId) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
+// CONTEXTUAL SAFETY CLASSIFICATION
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * CONTEXTUAL_SAFETY: Classifies content into actionable safety categories.
+ *
+ * Categories (in priority order):
+ *   identity_attack     — slurs targeting identity (race, gender, sexuality, disability)
+ *   targeted_harassment — personal attacks directed at a specific person
+ *   general_profanity   — swearing without specific target or identity attack
+ *   self_expression     — emotional outburst without target or harm intent
+ *   neutral             — no safety concern
+ *
+ * Enforcement tiers:
+ *   identity_attack     → auto-hide + riskScore +5 + ModerationEvent
+ *   targeted_harassment → auto-hide + riskScore +3 + ModerationEvent
+ *   general_profanity   → log only (no action, no riskScore change)
+ *   self_expression     → allow + log only (no riskScore change)
+ *   neutral             → pass through
+ */
+function classifyContextualSafety(content) {
+  if (!content || typeof content !== 'string') {
+    return { category: 'neutral', confidence: 100, markers: [] };
+  }
+
+  const lower = content.toLowerCase();
+  const markers = [];
+
+  // ── Identity attack patterns ──────────────────────────────────────────────
+  // Slurs or hate-directed language targeting protected characteristics.
+  // Requires: slur/hate term AND at least one identity-group reference or direction marker.
+  const identityTerms = [
+    /\b(f[a4]gg[o0]t|dyke|tr[a4]nn[y|ie]|she[- ]male|h[e3]rm[a4]phrod[i1]te)\b/i,
+    /\b(n[i1]gg[e3]r|ch[i1]nk|sp[i1][ck]|w[e3]tb[a4]ck|g[o0][o0]k|k[i1]ke|cr[a4]ck[e3]r|h[a4]jj[i1])\b/i,
+    /\b(r[e3]t[a4]rd|sp[a4]z|cr[i1]ppl[e3])\b.*\b(you|u|they|those)\b/i,
+    /\b(go\s+back|your\s+kind|people\s+like\s+you)\b.*\b(gay|trans|black|asian|jew|muslim|disabled)\b/i,
+    /\b(gay|trans|lesbian|bi|queer|jewish|muslim|black|asian)\b.*\b(should|deserve|need\s+to)\b.*\b(die|suffer|leave|go\s+away)\b/i,
+    /\b(all\s+)?(gay|trans|lesbian|bi|queer|jews|muslims|blacks|asians)\b.*\b(are|were|will\s+be)\b.*\b(evil|disgusting|wrong|sick|perverts|animals)\b/i,
+  ];
+
+  for (const pattern of identityTerms) {
+    if (pattern.test(lower)) {
+      markers.push(pattern.source);
+      return { category: 'identity_attack', confidence: 90, markers };
+    }
+  }
+
+  // ── Targeted harassment patterns ──────────────────────────────────────────
+  // Personal attacks directed at a specific person ("you"). Requires: direct address + attack.
+  const harassmentPatterns = [
+    /\b(you|ur|u)\b.*\b(are|r|look|sound|seem)\b.*\b(disgusting|pathetic|worthless|ugly|stupid|trash|garbage|cancer|disease)\b/i,
+    /\b(disgusting|pathetic|worthless|ugly|stupid|trash|garbage|cancer|disease)\b.*\b(you|ur|u)\b/i,
+    /\b(nobody|no\s+one)\b.*\b(likes|loves|wants|cares\s+about)\b.*\b(you|u)\b/i,
+    /\b(you|u)\b.*\b(should\s+)?(kill|hurt|harm|end)\b.*\b(yourself|urself|yourself)\b/i,
+    /\b(go\s+)?(kill|hang|shoot)\b.*\b(yourself|urself)\b/i,
+    /\b(i|we)\b.*\b(hate|despise|loathe)\b.*\b(you|u|your|ur)\b/i,
+    /\b(you|u)\b.*\b(will|are\s+gonna)\b.*\b(regret|pay|suffer)\b/i,
+    /\b(shut\s+up|shut\s+the\s+fuck\s+up|stfu)\b.*\b(you|u|bitch|idiot|moron)\b/i,
+  ];
+
+  for (const pattern of harassmentPatterns) {
+    if (pattern.test(lower)) {
+      markers.push(pattern.source);
+      return { category: 'targeted_harassment', confidence: 80, markers };
+    }
+  }
+
+  // ── General profanity patterns ─────────────────────────────────────────────
+  // Swearing without a clear target or identity attack — expressive use.
+  const profanityPatterns = [
+    /\b(fuck|shit|bitch|bastard|asshole|ass|crap|damn|piss|cock|dick|cunt|twat|wanker)\b/i,
+  ];
+
+  for (const pattern of profanityPatterns) {
+    if (pattern.test(lower)) {
+      markers.push(pattern.source);
+
+      // Distinguish self_expression from general_profanity by checking for emphasis words
+      // e.g. "fucking hell", "oh shit", "that's so damn good" → self_expression
+      const selfExpressionContext = /\b(oh|wow|holy|omg|so|very|really|that('?s)?|this|what\s+the|for\s+the|jesus|god|damn)\b/i;
+      if (selfExpressionContext.test(lower)) {
+        return { category: 'self_expression', confidence: 70, markers };
+      }
+
+      return { category: 'general_profanity', confidence: 75, markers };
+    }
+  }
+
+  return { category: 'neutral', confidence: 95, markers: [] };
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
 // MAIN MODERATION FUNCTION
 // ═══════════════════════════════════════════════════════════════════════════
 
@@ -596,10 +688,50 @@ export async function moderateContentV2(content, userId, options = {}) {
     // LAYER 4: Response Engine
     const layer4 = layer4_responseEngine(layer1, layer2, layer3);
 
+    // CONTEXTUAL SAFETY: Classify content into actionable safety categories
+    const contextualSafety = classifyContextualSafety(content);
+
+    // Apply contextual safety enforcement tiers (outside shadow mode)
+    // identity_attack / targeted_harassment → auto-hide + riskScore bump
+    let contextualAction = null;
+    let contextualRiskDelta = 0;
+
+    if (!isShadowMode && userId) {
+      if (contextualSafety.category === 'identity_attack') {
+        contextualAction = 'HARD_BLOCK';
+        contextualRiskDelta = 5;
+      } else if (contextualSafety.category === 'targeted_harassment') {
+        contextualAction = 'HARD_BLOCK';
+        contextualRiskDelta = 3;
+      }
+      // general_profanity and self_expression → log only, no action, no riskScore change
+
+      if (contextualRiskDelta > 0) {
+        try {
+          const updated = await User.findByIdAndUpdate(
+            userId,
+            { $inc: { 'moderation.riskScore': contextualRiskDelta } },
+            { new: true, select: 'moderation' }
+          );
+          // Recalculate riskLevel based on new riskScore
+          if (updated?.moderation) {
+            const newScore = updated.moderation.riskScore || 0;
+            const newLevel = newScore >= 20 ? 'high' : newScore >= 10 ? 'moderate' : 'low';
+            await User.findByIdAndUpdate(userId, { 'moderation.riskLevel': newLevel });
+          }
+        } catch (riskErr) {
+          logger.warn('Failed to update riskScore for contextual safety event:', riskErr);
+        }
+      }
+    }
+
+    // Contextual action overrides layer4 action for identity_attack / targeted_harassment
+    const resolvedAction = contextualAction || layer4.action;
+
     // V3: In shadow mode, don't apply user-facing penalties
     // All layers still execute and events are logged
-    const effectiveAction = isShadowMode ? 'ALLOW' : layer4.action;
-    const effectiveBlocked = isShadowMode ? false : ['TEMP_MUTE', 'HARD_BLOCK'].includes(layer4.action);
+    const effectiveAction = isShadowMode ? 'ALLOW' : resolvedAction;
+    const effectiveBlocked = isShadowMode ? false : ['TEMP_MUTE', 'HARD_BLOCK'].includes(resolvedAction);
     const effectiveDampening = isShadowMode ? 0 : layer4.dampening_duration;
 
     // Prepare result
@@ -623,7 +755,8 @@ export async function moderateContentV2(content, userId, options = {}) {
           confidence: layer4.confidence,
           dampening_duration: layer4.dampening_duration,
           queue_priority: layer4.queue_priority
-        }
+        },
+        contextualSafety
       }
     };
 
@@ -682,13 +815,14 @@ export async function moderateContentV2(content, userId, options = {}) {
 
           // V3 Contract: Response layer
           response: {
-            action: ACTION_MAP_V3[layer4.action] || 'ALLOW',
+            action: ACTION_MAP_V3[resolvedAction] || 'ALLOW',
             durationMinutes: layer4.dampening_duration || 0,
             automated: true
           },
 
           confidence: layer4.confidence,
-          explanationCode: EXPLANATION_CODES[layer4.action] || 'ALLOWED',
+          explanationCode: EXPLANATION_CODES[resolvedAction] || 'ALLOWED',
+          contextualSafetyCategory: contextualSafety.category,
           shadowMode: isShadowMode,
 
           // Legacy fields (kept for backward compatibility)
@@ -783,8 +917,11 @@ export async function getModerationHistory(userId, limit = 50) {
   }
 }
 
+export { classifyContextualSafety };
+
 export default {
   moderateContentV2,
   adminOverride,
-  getModerationHistory
+  getModerationHistory,
+  classifyContextualSafety
 };

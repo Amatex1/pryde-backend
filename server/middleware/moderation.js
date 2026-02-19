@@ -1,4 +1,5 @@
 import User from '../models/User.js';
+import Post from '../models/Post.js';
 import {
   checkBlockedWords,
   checkSpam,
@@ -306,6 +307,72 @@ export const moderateContent = async (req, res, next) => {
 
   } catch (error) {
     logger.error('Moderate content V2 error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+/**
+ * PRYDE_SAFETY_HARDENING_V1: Probation mode enforcement
+ *
+ * Applies restrictions to users whose probationUntil has not yet expired:
+ *   - 3 posts/day maximum (top-level posts only, not comments/replies)
+ *   - No external links in post content
+ *
+ * Attach AFTER checkMuted in the middleware chain for posts and comments.
+ * The DM restriction (no DMs unless mutual follow) is enforced at the DM route.
+ */
+export const checkProbation = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.userId).select('moderation');
+
+    if (!user?.moderation?.probationUntil) {
+      return next();
+    }
+
+    // Check if probation has expired
+    if (new Date() >= user.moderation.probationUntil) {
+      return next();
+    }
+
+    const probationExpiresIn = Math.ceil(
+      (user.moderation.probationUntil - Date.now()) / (1000 * 60 * 60)
+    );
+
+    // Determine if this is a top-level post (not a comment or reply)
+    const isTopLevelPost = !req.params.id && !req.body.postId;
+
+    if (isTopLevelPost) {
+      // Enforce 3 posts/day limit during probation
+      const startOfDay = new Date();
+      startOfDay.setHours(0, 0, 0, 0);
+
+      const todayPostCount = await Post.countDocuments({
+        author: req.userId,
+        createdAt: { $gte: startOfDay }
+      });
+
+      if (todayPostCount >= 3) {
+        return res.status(429).json({
+          message: 'You can post a maximum of 3 times per day during your account probation period.',
+          probationExpiresIn: `${probationExpiresIn} hours`,
+          reason: 'probation_post_limit'
+        });
+      }
+
+      // Block external links during probation
+      const content = req.body.content || req.body.text || '';
+      if (/https?:\/\/[^\s]+/i.test(content)) {
+        return res.status(400).json({
+          message: 'Sharing external links is not allowed during your account probation period.',
+          probationExpiresIn: `${probationExpiresIn} hours`,
+          reason: 'probation_link_restriction'
+        });
+      }
+    }
+
+    next();
+  } catch (error) {
+    logger.error('checkProbation error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 };

@@ -88,6 +88,15 @@ router.post('/request/:userId', auth, friendRequestLimiter, checkFriendRequestPe
     req.io.to(`user:${senderId}`).emit('friend:request_sent', { receiverId });
     req.io.to(`user:${receiverId}`).emit('friend:request_received', { senderId });
 
+    // ✅ Push notification for receiver (app may be closed/backgrounded)
+    const senderName = sender.displayName || sender.username;
+    sendPushNotification(receiverId, {
+      title: '👋 New Friend Request',
+      body: `${senderName} sent you a friend request`,
+      data: { type: 'friend_request', url: '/friends' },
+      tag: `friend-request-${senderId}`
+    }).catch(err => logger.error('Push notification error:', err));
+
     res.status(201).json({ message: 'Friend request sent', friendRequest });
   } catch (error) {
     console.error('Send friend request error:', error);
@@ -171,6 +180,15 @@ router.post('/accept/:requestId', auth, async (req, res) => {
     req.io.to(`user:${friendRequest.receiver}`).emit('friend:added', {
       friendId: friendRequest.sender
     });
+
+    // ✅ Push notification for original sender (app may be closed/backgrounded)
+    const accepterName = notification.sender.displayName || notification.sender.username;
+    sendPushNotification(friendRequest.sender, {
+      title: '🎉 Friend Request Accepted',
+      body: `${accepterName} accepted your friend request`,
+      data: { type: 'friend_accept', url: '/friends' },
+      tag: `friend-accept-${req.userId}`
+    }).catch(err => logger.error('Push notification error:', err));
 
     res.json({ message: 'Friend request accepted' });
   } catch (error) {

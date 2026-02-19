@@ -22,12 +22,14 @@ export const ROLE_MATRIX = {
     manage_users: true,
     view_analytics: true,
     manage_admins: true,
+    broadcast_announcement: true,  // @everyone broadcast to all users
     // Permission flags
     canViewReports: true,
     canResolveReports: true,
     canManageUsers: true,
     canViewAnalytics: true,
     canManageAdmins: true,
+    canBroadcastAnnouncement: true,
   },
   admin: {
     // Feature capabilities
@@ -45,12 +47,14 @@ export const ROLE_MATRIX = {
     manage_users: true,
     view_analytics: true,
     manage_admins: false,
+    broadcast_announcement: false,
     // Permission flags
     canViewReports: true,
     canResolveReports: true,
     canManageUsers: true,
     canViewAnalytics: true,
     canManageAdmins: false,
+    canBroadcastAnnouncement: false,
   },
   moderator: {
     // Feature capabilities
@@ -68,12 +72,14 @@ export const ROLE_MATRIX = {
     manage_users: false,
     view_analytics: true,
     manage_admins: false,
+    broadcast_announcement: false,
     // Permission flags
     canViewReports: true,
     canResolveReports: true,
     canManageUsers: false,
     canViewAnalytics: true,
     canManageAdmins: false,
+    canBroadcastAnnouncement: false,
   },
   user: {
     // Feature capabilities
@@ -91,12 +97,14 @@ export const ROLE_MATRIX = {
     manage_users: false,
     view_analytics: false,
     manage_admins: false,
+    broadcast_announcement: false,
     // Permission flags
     canViewReports: false,
     canResolveReports: false,
     canManageUsers: false,
     canViewAnalytics: false,
     canManageAdmins: false,
+    canBroadcastAnnouncement: false,
   },
 };
 

@@ -17,6 +17,7 @@ import { getModerationConfig, getCurrentPhase } from '../config/moderation.confi
 import { ACTION_MAP_V2_TO_V4 } from '../contracts/moderation.contract.js';
 import { isV5Primary } from '../config/moderationModes.js';
 import ModerationSettings from '../models/ModerationSettings.js';
+import User from '../models/User.js';
 import logger from './logger.js';
 
 /**
@@ -194,9 +195,78 @@ export async function wouldEnforce(action, settings = null) {
   return { wouldEnforce: true, reason: 'ACTION_ENABLED' };
 }
 
+/**
+ * PRYDE_SAFETY_HARDENING_V1: Risk threshold enforcement
+ *
+ * Called after riskScore updates to apply escalating consequences:
+ *   riskScore >= 10 → temporary 24h posting restriction (probationUntil)
+ *   riskScore >= 20 → auto-suspend account + flag for admin review
+ *
+ * @param {string} userId - The user whose riskScore to check
+ * @returns {Object} { action: 'none'|'restrict'|'suspend', riskScore, riskLevel }
+ */
+export async function enforceRiskThreshold(userId) {
+  if (!userId) return { action: 'none' };
+
+  try {
+    const user = await User.findById(userId).select('moderation username');
+    if (!user?.moderation) return { action: 'none' };
+
+    const riskScore = user.moderation.riskScore || 0;
+
+    if (riskScore >= 20) {
+      // Auto-suspend: set isMuted indefinitely + flag for admin review
+      await User.findByIdAndUpdate(userId, {
+        'moderation.isMuted': true,
+        'moderation.muteExpires': null, // indefinite until admin reviews
+        'moderation.muteReason': 'Auto-suspended: risk score threshold exceeded (≥20). Admin review required.',
+        'moderation.riskLevel': 'high'
+      });
+
+      logger.warn('RISK_THRESHOLD: User auto-suspended (riskScore >= 20)', {
+        userId,
+        username: user.username,
+        riskScore
+      });
+
+      return { action: 'suspend', riskScore, riskLevel: 'high' };
+    }
+
+    if (riskScore >= 10) {
+      // Temporary 24h posting restriction via probationUntil
+      const probationUntil = new Date(Date.now() + 24 * 60 * 60 * 1000);
+      await User.findByIdAndUpdate(userId, {
+        'moderation.probationUntil': probationUntil,
+        'moderation.riskLevel': 'moderate'
+      });
+
+      logger.info('RISK_THRESHOLD: User posting restricted 24h (riskScore >= 10)', {
+        userId,
+        username: user.username,
+        riskScore,
+        probationUntil
+      });
+
+      return { action: 'restrict', riskScore, riskLevel: 'moderate', probationUntil };
+    }
+
+    // Below threshold — ensure riskLevel stays 'low'
+    if (user.moderation.riskLevel !== 'low') {
+      await User.findByIdAndUpdate(userId, { 'moderation.riskLevel': 'low' });
+    }
+
+    return { action: 'none', riskScore, riskLevel: 'low' };
+
+  } catch (err) {
+    logger.error('enforceRiskThreshold error:', err);
+    return { action: 'none' };
+  }
+}
+
 export default {
   enforceModeration,
   enforceV2Action,
-  wouldEnforce
+  wouldEnforce,
+  enforceRiskThreshold
 };
 
