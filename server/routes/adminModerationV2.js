@@ -1428,5 +1428,130 @@ router.get('/toggle-emergency', checkPermission('canViewReports'), (req, res) =>
   res.json({ emergencyContainment: active });
 });
 
+// ═══════════════════════════════════════════════════════════════════════════
+// GOVERNANCE V1: ADMIN OVERRIDE — RESTORE & FULL RESET
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * @route   POST /api/admin/moderation-v2/restore-user/:userId
+ * @desc    Fully restore a user: clear governanceStatus, restrictedUntil, and all strike counters.
+ *          Works for permanently banned users (overrideable by design).
+ * @access  Admin (canManageUsers)
+ *
+ * Body (optional):
+ *   reason {string} - Admin reason for the restore (logged for audit)
+ *
+ * Logs a ModerationEvent with action RESTORE_AND_RESET and a ModerationOverride record.
+ */
+router.post('/restore-user/:userId', checkPermission('canManageUsers'), async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { reason = 'Admin restore and reset' } = req.body;
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    const previousStatus = user.governanceStatus;
+
+    // ── Full reset ──────────────────────────────────────────────────────────
+    user.governanceStatus = 'active';
+    user.restrictedUntil  = null;
+    user.postStrikes      = 0;
+    user.commentStrikes   = 0;
+    user.dmStrikes        = 0;
+    user.globalStrikes    = 0;
+
+    await user.save();
+
+    // ── Log ModerationEvent ─────────────────────────────────────────────────
+    let moderationEventId = null;
+    try {
+      const event = await ModerationEvent.create({
+        userId: user._id,
+        contentType: 'other',
+        contentId: null,
+        contentPreview: '',
+        expression: { classification: 'normal', expressiveRatio: 0, realWordRatio: 0 },
+        intent:     { category: 'neutral', score: 0, targetDetected: false },
+        behavior:   { score: 0, trend: 'stable', accountAgeDays: 0 },
+        response: {
+          action:          'RESTORE_AND_RESET',
+          durationMinutes: 0,
+          automated:       false
+        },
+        confidence:      100,
+        explanationCode: 'RESTORE_AND_RESET',
+        shadowMode:      false,
+        strikeCategory:  null,
+        strikeLevel:     null,
+        globalStrikeCount: 0,
+        restrictionDurationMs: 0,
+        overrideStatus: 'overridden'
+      });
+      moderationEventId = event._id;
+    } catch (eventErr) {
+      logger.error('[GOVERNANCE] restore-user: failed to create ModerationEvent:', eventErr);
+    }
+
+    // ── Log ModerationOverride ──────────────────────────────────────────────
+    if (moderationEventId) {
+      try {
+        await ModerationOverride.create({
+          eventId:        moderationEventId,
+          userId:         user._id,
+          adminId:        req.user._id,
+          overrideAction: 'CLEAR_STRIKES',
+          reason,
+          originalDecision: { action: previousStatus },
+          newDecision:      { action: 'RESTORE_AND_RESET' },
+          trainSystem:      false,
+          applied:          true
+        });
+      } catch (overrideErr) {
+        logger.error('[GOVERNANCE] restore-user: failed to create ModerationOverride:', overrideErr);
+      }
+    }
+
+    // ── Log AdminActionLog ──────────────────────────────────────────────────
+    try {
+      await AdminActionLog.logAction({
+        actorId:    req.user._id,
+        action:     'RESTORE_AND_RESET',
+        targetType: 'USER',
+        targetId:   user._id,
+        details: {
+          previousStatus,
+          newStatus:      'active',
+          strikesCleared: true,
+          reason
+        },
+        ipAddress:  req.ip,
+        userAgent:  req.get('User-Agent')
+      });
+    } catch (logErr) {
+      logger.warn('[GOVERNANCE] restore-user: failed to log AdminActionLog:', logErr);
+    }
+
+    logger.info(
+      `[GOVERNANCE] Admin ${req.user._id} restored user ${user._id} (was: ${previousStatus})`
+    );
+
+    return res.json({
+      success:        true,
+      userId:         user._id,
+      previousStatus,
+      newStatus:      'active',
+      strikesCleared: true,
+      message:        'User fully restored and all strike counters reset.'
+    });
+
+  } catch (error) {
+    logger.error('restore-user error:', error);
+    return res.status(500).json({ success: false, message: 'Server error', error: error.message });
+  }
+});
+
 export default router;
 

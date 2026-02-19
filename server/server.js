@@ -66,6 +66,7 @@ import devVerifyRoutes from './routes/devVerify.js';
 import adminDebugRoutes from './routes/adminDebug.js';
 import adminHealthRoutes from './routes/adminHealth.js';
 import adminModerationV2Routes from './routes/adminModerationV2.js'; // PRYDE_MODERATION_ADMIN_V2
+import restrictionMiddleware from './middleware/restrictionMiddleware.js'; // GOVERNANCE V1
 import stabilityControlsRoutes from './routes/stabilityControls.js';
 import safeModeRoutes from './routes/safeMode.js';
 import sessionInspectorRoutes from './routes/sessionInspector.js';
@@ -461,21 +462,21 @@ const requireDatabaseReady = (req, res, next) => {
 // Routes with specific rate limiters
 app.use('/api/auth', requireDatabaseReady, authRoutes);
 app.use('/api/refresh', refreshRoutes);
-app.use('/api/users', usersRoutes);
+app.use('/api/users', restrictionMiddleware, usersRoutes); // GOVERNANCE V1
 // PHASE 1 REFACTOR: Friends routes kept for backward compatibility
 app.use('/api/friends', friendsRoutes);
 app.use('/api/follow', followRoutes);
-app.use('/api/posts', postsRoutes);
+app.use('/api/posts', restrictionMiddleware, postsRoutes); // GOVERNANCE V1
 app.use('/api/feed', feedRoutes); // PHASE 2: Global and Following feeds
 app.use('/api/journals', journalsRoutes); // PHASE 3: Journaling
 app.use('/api/longform', longformRoutes); // PHASE 3: Longform posts
 app.use('/api/tags', tagsRoutes); // Phase 2B: Tags deprecated - returns 410 Gone
 app.use('/api/groups', groupsRoutes); // Migration Phase: TAGS → GROUPS (Phase 0 - Foundation)
 app.use('/api/photo-essays', photoEssaysRoutes); // PHASE 5: Photo essays
-app.use('/api/upload', uploadRoutes);
+app.use('/api/upload', restrictionMiddleware, uploadRoutes); // GOVERNANCE V1 (profile-photo, cover-photo)
 app.use('/api/notifications', notificationsRoutes);
 app.use('/api/test-notifications', testNotificationsRoutes);
-app.use('/api/messages', messagesRoutes);
+app.use('/api/messages', restrictionMiddleware, messagesRoutes); // GOVERNANCE V1
 app.use('/api/groupchats', groupChatsRoutes);
 app.use('/api/global-chat', globalChatRoutes);
 app.use('/api/push', pushNotificationsRouter);
@@ -493,8 +494,8 @@ app.use('/api/events', eventsRoutes);
 app.use('/api/login-approval', loginApprovalRoutes);
 app.use('/api/drafts', draftsRoutes);
 app.use('/api/recovery-contacts', recoveryContactsRoutes);
-app.use('/api', commentsRoutes); // Comment routes (handles /api/posts/:postId/comments and /api/comments/:commentId)
-app.use('/api/reactions', reactionsRoutes); // Universal reaction system
+app.use('/api', restrictionMiddleware, commentsRoutes); // Comment routes + GOVERNANCE V1
+app.use('/api/reactions', restrictionMiddleware, reactionsRoutes); // Universal reaction system + GOVERNANCE V1
 app.use('/api/backup', backupRoutes); // Backup download routes
 app.use('/api/audit', auditRoutes); // Admin audit routes
 app.use('/api/version', versionRoutes); // Version endpoint for update detection

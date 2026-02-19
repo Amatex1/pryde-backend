@@ -980,6 +980,31 @@ const userSchema = new mongoose.Schema({
     }],
     default: []
   },
+  // ============================================================================
+  // GOVERNANCE V1: Per-category strikes, global counter, and account status
+  // ============================================================================
+
+  // Per-category strike counts (rolling 30-day window)
+  postStrikes: { type: Number, default: 0 },
+  commentStrikes: { type: Number, default: 0 },
+  dmStrikes: { type: Number, default: 0 },
+  globalStrikes: { type: Number, default: 0 },
+
+  // Timestamp of most recent violation (drives rolling window + decay)
+  lastViolationAt: { type: Date, default: null },
+
+  // Null = no active restriction; Date = restricted until this time
+  restrictedUntil: { type: Date, default: null },
+
+  // Account governance status (does not replace existing isBanned / isSuspended)
+  governanceStatus: {
+    type: String,
+    enum: ['active', 'restricted', 'banned'],
+    default: 'active'
+  },
+
+  // ============================================================================
+
   // Soft Deletion & Account Recovery
   isDeleted: {
     type: Boolean,

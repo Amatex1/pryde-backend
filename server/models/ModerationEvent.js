@@ -92,7 +92,12 @@ const moderationEventSchema = new mongoose.Schema({
   response: {
     action: {
       type: String,
-      enum: ['ALLOW', 'NOTE', 'DAMPEN', 'REVIEW', 'MUTE', 'BLOCK'],
+      enum: [
+        'ALLOW', 'NOTE', 'DAMPEN', 'REVIEW', 'MUTE', 'BLOCK',
+        // GOVERNANCE V1 actions
+        'STRIKE_RECORDED', 'TEMP_RESTRICT_48H', 'TEMP_RESTRICT_30D',
+        'PERMANENT_BAN', 'RESTORE_AND_RESET'
+      ],
       default: 'ALLOW'
     },
     durationMinutes: { type: Number, default: 0 },
@@ -181,6 +186,36 @@ const moderationEventSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'ModerationOverride',
     default: null
+  },
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // GOVERNANCE V1: Strike tracking fields (Security & Moderation page support)
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  // Which content category triggered the strike: 'post' | 'comment' | 'dm' | 'severe'
+  strikeCategory: {
+    type: String,
+    enum: ['post', 'comment', 'dm', 'severe', null],
+    default: null,
+    index: true
+  },
+
+  // Per-category strike count AT TIME OF EVENT (1, 2, 3…)
+  strikeLevel: {
+    type: Number,
+    default: null
+  },
+
+  // Global strike total AT TIME OF EVENT
+  globalStrikeCount: {
+    type: Number,
+    default: null
+  },
+
+  // Duration of the triggered restriction in milliseconds (0 = no restriction / permanent ban)
+  restrictionDurationMs: {
+    type: Number,
+    default: 0
   },
 
   // Timestamps

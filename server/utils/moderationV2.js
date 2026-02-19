@@ -1020,9 +1020,72 @@ export async function getModerationHistory(userId, limit = 50) {
 
 export { classifyContextualSafety };
 
+// ═══════════════════════════════════════════════════════════════════════════
+// GOVERNANCE V1: SEVERE TRACK
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * applySevereViolation — immediate permanent ban, no progressive ladder.
+ *
+ * Called when a moderation route explicitly classifies a violation as "severe"
+ * (e.g. CSAM signal, credible threat, doxxing).
+ *
+ * Actions:
+ *   1. Sets user.governanceStatus = 'banned', clears restrictedUntil
+ *   2. Creates ModerationEvent with action PERMANENT_BAN, category 'severe'
+ *   3. Returns immediately — caller should not apply further strikes
+ *
+ * All permanent bans are overrideable by admin via POST /api/admin/moderation-v2/restore-user/:userId
+ *
+ * @param {string} userId
+ * @param {object} [meta] - contentType, contentId, contentPreview
+ * @returns {Promise<{ status: 'banned', action: 'PERMANENT_BAN' }>}
+ */
+export async function applySevereViolation(userId, meta = {}) {
+  try {
+    const user = await User.findById(userId);
+    if (!user) throw new Error(`User ${userId} not found`);
+
+    user.governanceStatus = 'banned';
+    user.restrictedUntil  = null;
+    user.lastViolationAt  = new Date();
+    await user.save();
+
+    await ModerationEvent.create({
+      userId,
+      contentType:    meta.contentType    || 'other',
+      contentId:      meta.contentId      || null,
+      contentPreview: meta.contentPreview || '',
+      expression: { classification: 'normal', expressiveRatio: 0, realWordRatio: 0 },
+      intent:     { category: 'dangerous', score: 100, targetDetected: true },
+      behavior:   { score: 0, trend: 'stable', accountAgeDays: 0 },
+      response: {
+        action:          'PERMANENT_BAN',
+        durationMinutes: 0,
+        automated:       true
+      },
+      confidence:       100,
+      explanationCode:  'PERMANENT_BAN',
+      shadowMode:       false,
+      strikeCategory:   'severe',
+      strikeLevel:      null,
+      globalStrikeCount: (user.globalStrikes || 0),
+      restrictionDurationMs: 0
+    });
+
+    logger.warn(`[GOVERNANCE] Severe violation — user ${userId} permanently banned`);
+
+    return { status: 'banned', action: 'PERMANENT_BAN' };
+  } catch (err) {
+    logger.error('[GOVERNANCE] applySevereViolation error:', err);
+    throw err;
+  }
+}
+
 export default {
   moderateContentV2,
   adminOverride,
   getModerationHistory,
-  classifyContextualSafety
+  classifyContextualSafety,
+  applySevereViolation
 };
