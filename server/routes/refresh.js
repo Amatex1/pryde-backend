@@ -308,7 +308,8 @@ router.post('/', async (req, res) => {
     logger.info(`✅ Token refresh successful for ${user.username}`);
 
     // Set refresh token in httpOnly cookie (ONLY source of truth)
-    const cookieOptions = getRefreshTokenCookieOptions();
+    // Pass request to determine sameSite based on request origin
+    const cookieOptions = getRefreshTokenCookieOptions(req);
     res.cookie('refreshToken', newRefreshToken, cookieOptions);
 
     // 🔐 SECURITY: Access token returned ONLY in JSON body, NOT as cookie
@@ -353,4 +354,3 @@ router.post('/', async (req, res) => {
 });
 
 export default router;
-

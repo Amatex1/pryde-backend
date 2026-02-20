@@ -88,7 +88,7 @@ export default {
     // Default invite expiry (in milliseconds) - 30 days default
     inviteExpiryMs: parseInt(process.env.INVITE_EXPIRY_MS || '2592000000', 10),
     // Maximum active (unused) invites per user
-    maxActiveInvitesPerUser: parseInt(process.env.MAX_ACTIVE_INVITES_PER_USER || '1', 10),
+    maxActiveInvivesPerUser: parseInt(process.env.MAX_ACTIVE_INVITES_PER_USER || '1', 10),
   },
 
   // Server Configuration
@@ -96,6 +96,7 @@ export default {
   baseURL: process.env.BASE_URL || 'https://pryde-social.onrender.com',
   frontendURL: process.env.FRONTEND_URL || 'http://localhost:5173',
   cloudflareURL: process.env.CLOUDFLARE_URL || 'https://pryde-social.pages.dev',
+  apiDomain: process.env.API_DOMAIN || null, // Custom domain for backend (e.g., api.prydeapp.com)
   nodeEnv: process.env.NODE_ENV || 'development',
 
   // Logging and Monitoring
