@@ -222,12 +222,42 @@ router.post('/', async (req, res) => {
     const newRefreshToken = tokens.refreshToken;
 
     // Update Session collection if we have a session document
+    // 🔧 RACE CONDITION FIX: Use atomic findOneAndUpdate with aggregation pipeline
+    // so previousRefreshTokenHash is set from the DB's current value, not a stale in-memory read.
+    // This prevents two concurrent tabs rotating the same token from corrupting each other's
+    // previousRefreshTokenHash and producing an immediately-invalid cookie.
     if (session) {
-      // 🔧 FIX: Pass the current token so grace period works for legacy sessions
-      session.rotateToken(newRefreshToken, refreshToken);
-      session.refreshTokenExpiry = getRefreshTokenExpiry();
-      session.lastActiveAt = new Date();
-      await session.save();
+      const providedHash = crypto.createHash('sha256').update(refreshToken).digest('hex');
+      const newHash = crypto.createHash('sha256').update(newRefreshToken).digest('hex');
+
+      await Session.findOneAndUpdate(
+        {
+          sessionId: decoded.sessionId,
+          userId: user._id,
+          isActive: true,
+          // Only update if the token we just verified is still current or in grace period
+          $or: [
+            { refreshTokenHash: providedHash },
+            {
+              previousRefreshTokenHash: providedHash,
+              previousTokenExpiry: { $gt: new Date() }
+            }
+          ]
+        },
+        [
+          // Aggregation pipeline: allows $set to reference current field values atomically
+          {
+            $set: {
+              previousRefreshTokenHash: '$refreshTokenHash',
+              previousTokenExpiry: new Date(Date.now() + 30 * 60 * 1000),
+              refreshTokenHash: newHash,
+              refreshTokenExpiry: getRefreshTokenExpiry(),
+              lastActiveAt: new Date(),
+              lastTokenRotation: new Date()
+            }
+          }
+        ]
+      );
     }
 
     // Update User.activeSessions cache (non-authoritative, for compatibility)
