@@ -4,6 +4,7 @@ import User from '../models/User.js';
 import Session from '../models/Session.js'; // 🔐 PHASE 3: Session collection is authoritative
 import jwt from 'jsonwebtoken';
 import logger from '../utils/logger.js';
+import { getClearCookieOptions } from '../utils/cookieUtils.js';
 
 const router = express.Router();
 
@@ -85,15 +86,9 @@ router.delete('/:sessionId', authenticateToken, async (req, res) => {
       }
     }
 
-    // Clear refresh token cookie if this is the current session
+    // Clear refresh token cookie if this is the current session - use helper to match set cookie options
     if (sessionId === req.sessionId) {
-      const isProduction = process.env.NODE_ENV === 'production';
-      res.clearCookie('refreshToken', {
-        httpOnly: true,
-        secure: isProduction,
-        sameSite: isProduction ? 'none' : 'lax',
-        path: '/'
-      });
+      res.clearCookie('refreshToken', getClearCookieOptions());
     }
 
     logger.debug(`[Sessions] Session ${sessionId} revoked for user ${req.user.id}`);
@@ -196,14 +191,8 @@ router.post('/logout-all', authenticateToken, async (req, res) => {
       }
     }
 
-    // Clear refresh token cookie
-    const isProduction = process.env.NODE_ENV === 'production';
-    res.clearCookie('refreshToken', {
-      httpOnly: true,
-      secure: isProduction,
-      sameSite: isProduction ? 'none' : 'lax',
-      path: '/'
-    });
+    // Clear refresh token cookie - use helper to match set cookie options
+    res.clearCookie('refreshToken', getClearCookieOptions());
 
     logger.info(`[Sessions] Revoked ALL ${sessionCount} sessions for user ${req.user.id}`);
 
@@ -244,4 +233,3 @@ router.put('/activity', authenticateToken, async (req, res) => {
 });
 
 export default router;
-

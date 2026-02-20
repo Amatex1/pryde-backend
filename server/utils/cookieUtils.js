@@ -65,3 +65,36 @@ export const getRefreshTokenCookieOptions = () => {
   return options;
 };
 
+/**
+ * Get cookie options for clearing refresh token
+ * CRITICAL: Must match the options used when setting the cookie
+ * including the domain attribute, otherwise browsers (especially Safari)
+ * may not properly clear the cookie
+ * @returns {Object} Cookie options for clearing
+ */
+export const getClearCookieOptions = () => {
+  const isProduction = config.nodeEnv === 'production';
+
+  // ROOT_DOMAIN should be set to your apex domain, e.g. 'prydeapp.com'
+  // This must match what's used when setting the cookie
+  const rootDomain = isProduction ? (process.env.ROOT_DOMAIN || null) : null;
+
+  // SameSite must match what was used when setting the cookie
+  const sameSite = isProduction ? (rootDomain ? 'lax' : 'none') : 'lax';
+
+  const options = {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite,
+    path: '/',
+    ...(rootDomain && { domain: `.${rootDomain}` })
+  };
+
+  logger.debug('Clear cookie options generated:', {
+    ...options,
+    environment: isProduction ? 'production' : 'development'
+  });
+
+  return options;
+};
+

@@ -30,7 +30,7 @@ import { validateSignup, validateLogin } from '../middleware/validation.js';
 import logger from '../utils/logger.js';
 import { incCounter } from '../utils/authMetrics.js'; // Phase 4A
 import { generateTokenPair, getRefreshTokenExpiry } from '../utils/tokenUtils.js';
-import { getRefreshTokenCookieOptions } from '../utils/cookieUtils.js';
+import { getRefreshTokenCookieOptions, getClearCookieOptions } from '../utils/cookieUtils.js';
 import { decryptObject, isEncrypted } from '../utils/encryption.js';
 // 🔧 BADGE CHURN FIX: Badge processing removed from login (now event-driven + daily sweep)
 
@@ -1798,14 +1798,8 @@ router.post('/logout', auth, async (req, res) => {
       }
     }
 
-    // Clear refresh token cookie
-    const isProduction = config.nodeEnv === 'production';
-    res.clearCookie('refreshToken', {
-      httpOnly: true,
-      secure: isProduction,
-      sameSite: isProduction ? 'none' : 'lax',
-      path: '/'
-    });
+    // Clear refresh token cookie - use helper to match set cookie options (including domain)
+    res.clearCookie('refreshToken', getClearCookieOptions());
 
     // Clear admin escalation cookie
     res.clearCookie('pryde_admin_escalated', {
