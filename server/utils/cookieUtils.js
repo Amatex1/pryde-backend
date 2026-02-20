@@ -40,20 +40,12 @@ export const getRefreshTokenCookieOptions = () => {
   // This prevents cookie from outliving the token
   const maxAge = parseExpiryToMs(config.refreshTokenExpiry);
 
-  // ROOT_DOMAIN should be set to your apex domain, e.g. 'prydesocial.com'
-  // This allows the cookie to be shared between prydesocial.com (Vercel) and
-  // api.prydesocial.com (Render), making it first-party so Safari ITP won't block it.
-  const rootDomain = isProduction ? (process.env.ROOT_DOMAIN || null) : null;
-
   const options = {
     httpOnly: true,
     secure: isProduction,
-    // 'lax' works when frontend and API share the same root domain (same-site)
-    // Falls back to 'none' if ROOT_DOMAIN is not configured (cross-site, legacy behavior)
-    sameSite: isProduction ? (rootDomain ? 'lax' : 'none') : 'lax',
+    sameSite: isProduction ? 'none' : 'lax',
     maxAge,
-    path: '/',
-    ...(rootDomain && { domain: `.${rootDomain}` })
+    path: '/'
   };
 
   logger.debug('Cookie options generated:', {
