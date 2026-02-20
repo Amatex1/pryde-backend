@@ -751,7 +751,10 @@ router.patch('/me/settings', auth, requireActiveUser, async (req, res) => {
       // BADGE SYSTEM V1: Hide badges option
       hideBadges,
       // CURSOR CUSTOMIZATION: Optional cursor styles
-      cursorStyle
+      cursorStyle,
+      // THEME PERSISTENCE: light/dark and galaxy layer
+      theme,
+      galaxyMode
     } = req.body;
     const user = await User.findById(req.userId);
 
@@ -791,6 +794,14 @@ router.patch('/me/settings', auth, requireActiveUser, async (req, res) => {
       user.privacySettings.cursorStyle = cursorStyle;
     }
 
+    // THEME PERSISTENCE: Save theme and galaxy preference so it survives Safari/cross-device
+    if (theme === 'light' || theme === 'dark') {
+      user.privacySettings.theme = theme;
+    }
+    if (typeof galaxyMode === 'boolean') {
+      user.privacySettings.galaxyMode = galaxyMode;
+    }
+
     user.markModified('privacySettings');
     await user.save();
 
@@ -801,7 +812,9 @@ router.patch('/me/settings', auth, requireActiveUser, async (req, res) => {
       quietWriting: user.privacySettings.quietWriting ?? true,
       quietMetrics: user.privacySettings.quietMetrics ?? false,
       hideBadges: user.privacySettings.hideBadges ?? false,
-      cursorStyle: user.privacySettings.cursorStyle ?? 'system'
+      cursorStyle: user.privacySettings.cursorStyle ?? 'system',
+      theme: user.privacySettings.theme ?? 'dark',
+      galaxyMode: user.privacySettings.galaxyMode ?? true
     });
   } catch (error) {
     console.error('Update settings error:', error);

@@ -755,6 +755,16 @@ const userSchema = new mongoose.Schema({
       enum: ['system', 'soft-rounded', 'calm-dot', 'high-contrast', 'reduced-motion'],
       default: 'system'
     },
+    // THEME PERSISTENCE: Stored in DB so Safari/cross-device preserves user choice
+    theme: {
+      type: String,
+      enum: ['light', 'dark'],
+      default: 'dark'
+    },
+    galaxyMode: {
+      type: Boolean,
+      default: true // Galaxy ON by default (core identity)
+    },
     whoCanSeeMyPosts: {
       type: String,
       enum: ['public', 'followers', 'only-me'], // REMOVED: 'friends'
