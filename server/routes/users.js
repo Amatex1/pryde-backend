@@ -618,7 +618,9 @@ router.put('/profile', auth, requireActiveUser, sanitizeFields([
       user.coverPhotoPosition = {
         x: coverPhotoPosition.x ?? currentCover.x ?? 50,
         y: coverPhotoPosition.y ?? currentCover.y ?? 50,
-        scale: coverPhotoPosition.scale ?? currentCover.scale ?? 1
+        scale: coverPhotoPosition.scale ?? currentCover.scale ?? 1,
+        bgX: coverPhotoPosition.bgX ?? currentCover.bgX ?? null,
+        bgY: coverPhotoPosition.bgY ?? currentCover.bgY ?? null
       };
       user.markModified('coverPhotoPosition');
     }
@@ -628,7 +630,9 @@ router.put('/profile', auth, requireActiveUser, sanitizeFields([
       user.profilePhotoPosition = {
         x: profilePhotoPosition.x ?? currentProfile.x ?? 50,
         y: profilePhotoPosition.y ?? currentProfile.y ?? 50,
-        scale: profilePhotoPosition.scale ?? currentProfile.scale ?? 1
+        scale: profilePhotoPosition.scale ?? currentProfile.scale ?? 1,
+        bgX: profilePhotoPosition.bgX ?? currentProfile.bgX ?? null,
+        bgY: profilePhotoPosition.bgY ?? currentProfile.bgY ?? null
       };
       user.markModified('profilePhotoPosition');
     }
