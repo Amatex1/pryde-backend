@@ -195,10 +195,7 @@ const allowedOrigins = [
   'https://pryde-frontend.onrender.com',
   'https://pryde-backend.onrender.com',
   'https://pryde-1flx.onrender.com',
-  // Cloudflare Pages URLs (explicit only - no regex)
-  'https://pryde-social.pages.dev',
-  config.frontendURL,
-  config.cloudflareURL
+  config.frontendURL
 ].filter(Boolean); // Remove any undefined values
 
 // OPTIMIZATION: In-memory cache for online user details
@@ -334,8 +331,6 @@ app.use(helmet({
         "https://www.prydeapp.com",
         "https://prydesocial.com",
         "https://www.prydesocial.com",
-        // Cloudflare Pages
-        "https://pryde-social.pages.dev",
         // External APIs
         "https://tenor.googleapis.com",
         "https://media.tenor.com",

@@ -95,7 +95,6 @@ export default {
   port: process.env.PORT || 9000,
   baseURL: process.env.BASE_URL || 'https://pryde-social.onrender.com',
   frontendURL: process.env.FRONTEND_URL || 'http://localhost:5173',
-  cloudflareURL: process.env.CLOUDFLARE_URL || 'https://pryde-social.pages.dev',
   apiDomain: process.env.API_DOMAIN || null, // Custom domain for backend (e.g., api.prydeapp.com)
   nodeEnv: process.env.NODE_ENV || 'development',
 
