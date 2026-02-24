@@ -13,7 +13,8 @@ export const deletionIPLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   keyGenerator: (req) => {
-    return req.ip;
+    // Normalize IPv6-mapped IPv4 addresses (e.g. ::ffff:1.2.3.4 → 1.2.3.4)
+    return (req.ip || 'unknown').replace(/^::ffff:/, '');
   },
   skip: (req) => {
     // Skip rate limiting for development/testing
