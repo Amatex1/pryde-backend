@@ -1,10 +1,41 @@
 /**
  * Environment-based logging utility for backend
  * Only logs debug/info in development mode
+ * Production error logs are redacted to prevent PII leakage
  */
 
 const isDev = process.env.NODE_ENV === 'development';
 const isProd = process.env.NODE_ENV === 'production';
+
+// Patterns that may contain PII — redacted in production error logs
+const PII_PATTERNS = [
+  { pattern: /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g, replacement: '[email]' },
+  { pattern: /Bearer\s+[A-Za-z0-9\-_]+\.[A-Za-z0-9\-_]+\.[A-Za-z0-9\-_]*/g, replacement: 'Bearer [token]' },
+  { pattern: /"password"\s*:\s*"[^"]*"/g, replacement: '"password":"[redacted]"' },
+  { pattern: /'password'\s*:\s*'[^']*'/g, replacement: "'password':'[redacted]'" },
+  { pattern: /password=[^&\s]*/gi, replacement: 'password=[redacted]' },
+  { pattern: /token=[^&\s]*/gi, replacement: 'token=[redacted]' },
+];
+
+function redact(value) {
+  if (!isProd) return value;
+  if (typeof value === 'string') {
+    return PII_PATTERNS.reduce((str, { pattern, replacement }) => str.replace(pattern, replacement), value);
+  }
+  if (value instanceof Error) {
+    const redacted = new Error(redact(value.message));
+    redacted.stack = value.stack ? redact(value.stack) : undefined;
+    return redacted;
+  }
+  if (value && typeof value === 'object') {
+    try {
+      return JSON.parse(redact(JSON.stringify(value)));
+    } catch {
+      return '[unserializable object]';
+    }
+  }
+  return value;
+}
 
 /**
  * Log levels
@@ -52,17 +83,17 @@ class Logger {
   }
 
   /**
-   * Warning logs - always shown
+   * Warning logs - always shown, redacted in production
    */
   warn(message, ...args) {
-    console.warn(...this._formatMessage(message, ...args));
+    console.warn(...this._formatMessage(redact(message), ...args.map(redact)));
   }
 
   /**
-   * Error logs - always shown
+   * Error logs - always shown, redacted in production
    */
   error(message, ...args) {
-    console.error(...this._formatMessage(message, ...args));
+    console.error(...this._formatMessage(redact(message), ...args.map(redact)));
   }
 
   /**
@@ -111,10 +142,10 @@ class Logger {
   }
 
   /**
-   * Security logs - always shown
+   * Security logs - always shown, redacted in production
    */
   security(message, ...args) {
-    console.log('🔒', ...this._formatMessage(message, ...args));
+    console.log('🔒', ...this._formatMessage(redact(message), ...args.map(redact)));
   }
 }
 
