@@ -46,5 +46,17 @@ services:
         sync: false
       - key: EMAIL_FROM
         sync: false
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: pryde-redis
+          property: internalConnectionString
     healthCheckPath: /api/health
 
+  # Redis — distributed rate limiting (co-located with backend in Oregon)
+  - type: redis
+    name: pryde-redis
+    region: oregon
+    plan: free
+    maxmemoryPolicy: allkeys-lru
+    ipAllowList: []  # Empty = private network only (most secure)
