@@ -191,6 +191,13 @@ const auth = async (req, res, next) => {
     req.user = user;
     req.userId = decoded.userId;
     req.sessionId = decoded.sessionId; // Extract session ID from token
+
+    // Tag Sentry scope with userId only (no PII)
+    if (process.env.SENTRY_DSN && process.env.NODE_ENV === 'production') {
+      const { Sentry } = await import('../utils/sentryInit.js');
+      Sentry.setUser({ id: decoded.userId });
+    }
+
     next();
   } catch (error) {
     // 🔥 CRITICAL FIX: NEVER return 500 on auth failures - always return 401

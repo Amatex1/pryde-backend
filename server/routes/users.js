@@ -968,16 +968,28 @@ router.put('/reactivate', auth, async (req, res) => {
 });
 
 // @route   POST /api/users/account/delete-request
-// @desc    Request account deletion (sends confirmation email)
+// @desc    Request account deletion — requires password confirmation, then sends email token
 // @access  Private
 router.post('/account/delete-request', auth, requireActiveUser, deletionIPLimiter, deletionUserLimiter, async (req, res) => {
   try {
-    const { reason, message } = req.body; // Optional deletion reason
+    const { password, reason, message } = req.body;
     const userId = req.userId;
-    const user = await User.findById(userId);
+
+    // Password confirmation is required
+    if (!password) {
+      return res.status(400).json({ message: 'Password confirmation is required to delete your account.' });
+    }
+
+    const user = await User.findById(userId).select('+password');
 
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Verify password before proceeding
+    const passwordValid = await user.comparePassword(password);
+    if (!passwordValid) {
+      return res.status(401).json({ message: 'Incorrect password. Please try again.' });
     }
 
     // Store deletion reason if provided
@@ -1135,6 +1147,44 @@ router.post('/account/delete-confirm', deletionIPLimiter, async (req, res) => {
     });
   } catch (error) {
     console.error('Delete confirm error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   POST /api/users/account/cancel-deletion
+// @desc    Cancel a pending account deletion (within the 30-day recovery window)
+// @access  Private (user must log in to cancel)
+router.post('/account/cancel-deletion', auth, async (req, res) => {
+  try {
+    const user = await User.findById(req.userId);
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    if (!user.isDeleted) {
+      return res.status(400).json({ message: 'No pending deletion found for this account.' });
+    }
+
+    // Check recovery window
+    if (user.deletionScheduledFor && new Date() > user.deletionScheduledFor) {
+      return res.status(410).json({ message: 'Recovery window has expired. Account cannot be restored.' });
+    }
+
+    // Restore account
+    user.isDeleted = false;
+    user.deletedAt = null;
+    user.deletionScheduledFor = null;
+    user.deletionConfirmationToken = null;
+    user.deletionConfirmationExpires = null;
+    user.deletedReason = undefined;
+    await user.save();
+
+    logger.info(`[AccountDeletion] User ${req.userId} cancelled their pending deletion`);
+
+    res.json({ message: 'Account deletion cancelled. Your account has been restored.' });
+  } catch (error) {
+    logger.error('Cancel deletion error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });

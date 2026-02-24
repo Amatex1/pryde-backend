@@ -19,6 +19,7 @@
     "audit-fix": "npm audit fix"
   },
   "dependencies": {
+    "@sentry/node": "^10.39.0",
     "@simplewebauthn/browser": "^13.2.2",
     "@simplewebauthn/server": "^13.2.2",
     "bcryptjs": "^2.4.3",

@@ -1,6 +1,10 @@
 import dotenv from "dotenv";
 dotenv.config();
 
+// Sentry must be initialised early, before other app code
+import { initSentry, Sentry } from "./utils/sentryInit.js";
+initSentry();
+
 // Build: 2025-12-27-v1 (GitHub Action deploy test)
 // Only log in development
 if (process.env.NODE_ENV === 'development') {
@@ -1599,6 +1603,11 @@ setInterval(() => {
   }
 }, 10 * 60 * 1000); // Every 10 minutes
 
+// Sentry Express error handler — must be before 404 and other error handlers
+if (process.env.SENTRY_DSN && process.env.NODE_ENV === 'production') {
+  Sentry.setupExpressErrorHandler(app);
+}
+
 // 404 handler - must be BEFORE error handler
 app.use((req, res, next) => {
   // Log 404s for debugging (helps identify missing routes)
@@ -1793,6 +1802,25 @@ if (!isVercel) {
           console.log('[Cleanup] 🕐 Daily cleanup job scheduled (runs at 02:00 UTC)');
         })
         .catch(err => console.error('[Cleanup] ❌ Failed to schedule daily cleanup:', err));
+
+      // ========================================
+      // PERMANENT ACCOUNT DELETION JOB
+      // Runs daily at 03:30 UTC — purges accounts whose 30-day recovery window has expired
+      // ========================================
+      import('./scripts/permanentDeletionJob.js')
+        .then(({ runPermanentDeletionJob }) => {
+          schedule.scheduleJob('30 3 * * *', async () => {
+            logger.info('[PermanentDeletion] 🕐 Running permanent account deletion job...');
+            try {
+              const result = await runPermanentDeletionJob();
+              logger.info(`[PermanentDeletion] ✅ Complete: ${result.deleted} accounts permanently deleted`);
+            } catch (err) {
+              logger.error('[PermanentDeletion] ❌ Job failed:', err);
+            }
+          });
+          logger.info('[PermanentDeletion] 🕐 Scheduled (runs daily at 03:30 UTC)');
+        })
+        .catch(err => logger.error('[PermanentDeletion] ❌ Failed to schedule job:', err));
 
       // ========================================
       // FOUNDING MEMBER BADGE

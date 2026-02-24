@@ -62,6 +62,8 @@ cloudflare-*.py
 /public/
 /scripts/*
 !/scripts/update-version.js
+!/scripts/permanentDeletionJob.js
+!/scripts/verifyIndexes.js
 vite.config.js
 vite-plugin-build-version.js
 index.html
