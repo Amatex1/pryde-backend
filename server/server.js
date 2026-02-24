@@ -755,46 +755,40 @@ io.on('connection', (socket) => {
    * it WILL show up here.
    */
 
-  // 🔥 DEBUG: Log ALL incoming events from this socket (NO FILTERING)
-  socket.onAny((eventName, ...args) => {
-    try {
-      let preview = '(no args)';
-      if (args && args.length > 0 && args[0] !== undefined) {
-        const firstArg = args[0];
-        // Handle functions (callbacks) specially
-        if (typeof firstArg === 'function') {
-          preview = '(callback function)';
-        } else {
-          const str = JSON.stringify(firstArg);
-          preview = str ? str.slice(0, 300) : '(empty)';
+  // Socket diagnostics — only active when DEBUG=true in environment
+  if (process.env.DEBUG === 'true') {
+    socket.onAny((eventName, ...args) => {
+      try {
+        let preview = '(no args)';
+        if (args && args.length > 0 && args[0] !== undefined) {
+          const firstArg = args[0];
+          if (typeof firstArg === 'function') {
+            preview = '(callback function)';
+          } else {
+            const str = JSON.stringify(firstArg);
+            preview = str ? str.slice(0, 300) : '(empty)';
+          }
         }
-      }
-
-      console.log(
-        `📥 [Socket ${socket.id}] Event: "${eventName}" from user ${userId}`,
-        eventName === 'send_message' ? '🔥 SEND_MESSAGE RECEIVED!' : '',
-        preview
-      );
-    } catch (err) {
-      console.warn(
-        `⚠️ [Socket ${socket.id}] Failed to log event "${eventName}":`,
-        err.message
-      );
-    }
-  });
-
-  // 🧬 Engine.IO-level (raw packet) - catches events before Socket.IO parses them
-  if (socket.conn) {
-    socket.conn.on('packet', (packet) => {
-      // Only log message packets (type 4 = message in Engine.IO)
-      if (packet?.type === 'message' && packet?.data) {
-        const dataStr = typeof packet.data === 'string' ? packet.data : JSON.stringify(packet.data);
-        // Check if this is a send_message event
-        if (dataStr.includes('send_message')) {
-          console.log(`🧬 [Engine.IO PACKET] socket=${socket.id} user=${userId} 🔥 SEND_MESSAGE IN RAW PACKET!`, dataStr.substring(0, 500));
-        }
+        console.log(
+          `📥 [Socket ${socket.id}] Event: "${eventName}" from user ${userId}`,
+          eventName === 'send_message' ? '🔥 SEND_MESSAGE RECEIVED!' : '',
+          preview
+        );
+      } catch (err) {
+        console.warn(`⚠️ [Socket ${socket.id}] Failed to log event "${eventName}":`, err.message);
       }
     });
+
+    if (socket.conn) {
+      socket.conn.on('packet', (packet) => {
+        if (packet?.type === 'message' && packet?.data) {
+          const dataStr = typeof packet.data === 'string' ? packet.data : JSON.stringify(packet.data);
+          if (dataStr.includes('send_message')) {
+            console.log(`🧬 [Engine.IO PACKET] socket=${socket.id} user=${userId} 🔥 SEND_MESSAGE IN RAW PACKET!`, dataStr.substring(0, 500));
+          }
+        }
+      });
+    }
   }
 
   // Store user's socket connection
@@ -1827,6 +1821,11 @@ if (!isVercel) {
   logger.info('Running on Vercel serverless - skipping server.listen()');
   logger.info('Socket.IO and scheduled tasks disabled on serverless');
 }
+
+// Catch unhandled promise rejections so they don't silently crash a worker
+process.on('unhandledRejection', (reason) => {
+  logger.error('Unhandled promise rejection:', reason);
+});
 
 // Export app for testing and Vercel
 export default app;

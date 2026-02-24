@@ -4,7 +4,7 @@ services:
     name: pryde-backend
     env: node
     region: oregon
-    plan: starter
+    plan: standard
     buildCommand: node scripts/update-version.js && cd server && npm install
     startCommand: cd server && npm start
     envVars:
