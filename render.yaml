@@ -3,7 +3,7 @@ services:
   - type: web
     name: pryde-backend
     env: node
-    region: oregon
+    region: singapore
     plan: standard
     buildCommand: node scripts/update-version.js && cd server && npm install
     startCommand: cd server && npm start
@@ -53,10 +53,10 @@ services:
           property: internalConnectionString
     healthCheckPath: /api/health
 
-  # Redis — distributed rate limiting (co-located with backend in Oregon)
+  # Redis — distributed rate limiting (co-located with backend in Singapore)
   - type: redis
     name: pryde-redis
-    region: oregon
+    region: singapore
     plan: free
     maxmemoryPolicy: allkeys-lru
     ipAllowList: []  # Empty = private network only (most secure)
