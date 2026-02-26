@@ -13,6 +13,7 @@ import Post from '../models/Post.js';
 import Notification from '../models/Notification.js';
 import User from '../models/User.js';
 import { authenticateToken } from '../middleware/auth.js';
+import { sendPushNotification } from './pushNotifications.js';
 
 const router = express.Router();
 
@@ -117,8 +118,15 @@ async function maybeSendResonanceNotification(authorId, postId) {
       type: 'resonance',
       message,
       postId,
-      link: `/post/${postId}`
+      link: `/feed?post=${postId}`
     });
+
+    // Send push notification (fire-and-forget)
+    sendPushNotification(authorId, {
+      title: 'Someone felt this too',
+      body: message,
+      data: { type: 'resonance', url: `/feed?post=${postId}` }
+    }).catch(() => {});
   } catch (error) {
     console.error('Send resonance notification error:', error);
     // Don't throw - this is a background operation

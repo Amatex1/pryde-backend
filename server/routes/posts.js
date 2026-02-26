@@ -466,6 +466,18 @@ router.post('/', auth, requireActiveUser, requireEmailVerification, postLimiter,
           }
 
           logger.info(`[Post @everyone] Broadcast sent to ${saved.length} users by ${author.username}`);
+
+          // Send push notifications to all recipients (chunked, fire-and-forget)
+          const pushPayload = {
+            title: 'Announcement',
+            body: `${author.displayName || author.username}: ${(content || '').substring(0, 80)}`,
+            data: { type: 'announcement', url: `/feed?post=${post._id}` }
+          };
+          const PUSH_CHUNK = 50;
+          for (let i = 0; i < recipients.length; i += PUSH_CHUNK) {
+            const chunk = recipients.slice(i, i + PUSH_CHUNK);
+            await Promise.all(chunk.map(r => sendPushNotification(r._id, pushPayload).catch(() => {})));
+          }
         } catch (err) {
           logger.error('[Post @everyone] Broadcast failed:', err.message);
         }

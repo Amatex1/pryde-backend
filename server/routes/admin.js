@@ -19,6 +19,7 @@ import logger from '../utils/logger.js';
 import { escapeRegex } from '../utils/sanitize.js';
 import Notification from '../models/Notification.js';
 import { emitNotificationCreated } from '../utils/notificationEmitter.js';
+import { sendPushNotification } from './pushNotifications.js';
 
 /**
  * Helper to resolve badge IDs to full badge objects for admin user listing
@@ -1784,7 +1785,7 @@ router.get('/system-accounts', checkPermission('canViewAnalytics'), async (req, 
 // @access  Super Admin only
 router.post('/broadcast', checkPermission('canBroadcastAnnouncement'), async (req, res) => {
   try {
-    const { message, link } = req.body;
+    const { message } = req.body;
     const sender = req.adminUser;
 
     if (!message || typeof message !== 'string' || message.trim().length === 0) {
@@ -1800,7 +1801,23 @@ router.post('/broadcast', checkPermission('canBroadcastAnnouncement'), async (re
     }
 
     const trimmedMessage = message.trim();
-    const trimmedLink = link?.trim() || '/feed';
+
+    // Create a public post so the announcement appears in the timeline
+    const announcementPost = new Post({
+      author: sender._id,
+      content: `@everyone ${trimmedMessage}`,
+      visibility: 'public',
+      media: [],
+      images: []
+    });
+    await announcementPost.save();
+    await announcementPost.populate('author', 'username displayName profilePhoto isVerified pronouns badges');
+
+    // Emit post_created so all connected users see it in their feed immediately
+    const io = req.io;
+    if (io) {
+      io.emit('post_created', { post: announcementPost.toObject() });
+    }
 
     // Fetch all active, non-banned user IDs (exclude the sender)
     const recipients = await User.find({
@@ -1810,17 +1827,19 @@ router.post('/broadcast', checkPermission('canBroadcastAnnouncement'), async (re
     }).select('_id').lean();
 
     if (recipients.length === 0) {
-      return res.json({ success: true, notified: 0 });
+      return res.json({ success: true, notified: 0, postId: announcementPost._id });
     }
 
-    // Build notification documents in bulk
+    // Build notification documents linking to the announcement post
     const now = new Date();
+    const postLink = `/feed?post=${announcementPost._id}`;
     const notifDocs = recipients.map(r => ({
       recipient: r._id,
       sender: sender._id,
       type: 'announcement',
       message: `${sender.displayName || sender.username} (@everyone): ${trimmedMessage}`,
-      link: trimmedLink,
+      link: postLink,
+      postId: announcementPost._id,
       read: false,
       batchCount: 1,
       createdAt: now,
@@ -1835,8 +1854,7 @@ router.post('/broadcast', checkPermission('canBroadcastAnnouncement'), async (re
       chunk.forEach(n => savedIds.push(n));
     }
 
-    // Emit real-time events (fire-and-forget per user room)
-    const io = req.io;
+    // Emit real-time notification events per user room
     if (io) {
       const populatedSender = {
         _id: sender._id,
@@ -1853,15 +1871,34 @@ router.post('/broadcast', checkPermission('canBroadcastAnnouncement'), async (re
           message: notif.message,
           read: false,
           link: notif.link,
+          postId: announcementPost._id,
           createdAt: notif.createdAt
         };
         io.to(`user_${notif.recipient.toString()}`).emit('notification:new', { notification: sanitized });
       }
     }
 
+    // Send push notifications to all recipients (fire-and-forget)
+    setImmediate(async () => {
+      try {
+        const PUSH_CHUNK = 50;
+        const pushPayload = {
+          title: 'Announcement',
+          body: `${sender.displayName || sender.username}: ${trimmedMessage.substring(0, 80)}`,
+          data: { type: 'announcement', url: postLink }
+        };
+        for (let i = 0; i < recipients.length; i += PUSH_CHUNK) {
+          const chunk = recipients.slice(i, i + PUSH_CHUNK);
+          await Promise.all(chunk.map(r => sendPushNotification(r._id, pushPayload).catch(() => {})));
+        }
+      } catch (err) {
+        logger.error('[Broadcast] Push notification error:', err.message);
+      }
+    });
+
     logger.info(`[Broadcast] @everyone announcement sent by ${sender.username} to ${savedIds.length} users`);
 
-    res.json({ success: true, notified: savedIds.length, message: trimmedMessage });
+    res.json({ success: true, notified: savedIds.length, postId: announcementPost._id, message: trimmedMessage });
   } catch (error) {
     logger.error('Broadcast announcement error:', error);
     res.status(500).json({ message: 'Server error' });
