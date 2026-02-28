@@ -8,6 +8,7 @@ import mongoose from 'mongoose';
 import Longform from '../models/Longform.js';
 import User from '../models/User.js';
 import { authenticateToken } from '../middleware/auth.js';
+import requireEmailVerification from '../middleware/requireEmailVerification.js';
 import { sanitizeFields } from '../middleware/sanitize.js';
 
 const router = express.Router();
@@ -15,7 +16,7 @@ const router = express.Router();
 // @route   POST /api/longform
 // @desc    Create a new longform post
 // @access  Private
-router.post('/', authenticateToken, sanitizeFields(['title', 'body']), async (req, res) => {
+router.post('/', authenticateToken, requireEmailVerification, sanitizeFields(['title', 'body']), async (req, res) => {
   try {
     const { title, body, coverImage, visibility, tags } = req.body;
 
@@ -173,7 +174,7 @@ router.get('/user/:userId', authenticateToken, async (req, res) => {
 // @route   PATCH /api/longform/:id
 // @desc    Update a longform post
 // @access  Private
-router.patch('/:id', authenticateToken, sanitizeFields(['title', 'body']), async (req, res) => {
+router.patch('/:id', authenticateToken, requireEmailVerification, sanitizeFields(['title', 'body']), async (req, res) => {
   try {
     const { id } = req.params;
     const { title, body, coverImage, visibility, tags } = req.body;

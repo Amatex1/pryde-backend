@@ -8,6 +8,7 @@ import mongoose from 'mongoose';
 import Journal from '../models/Journal.js';
 import User from '../models/User.js';
 import { authenticateToken } from '../middleware/auth.js';
+import requireEmailVerification from '../middleware/requireEmailVerification.js';
 import { sanitizeFields } from '../middleware/sanitize.js';
 
 const router = express.Router();
@@ -22,7 +23,7 @@ router.get('/health', (req, res) => {
 // @route   POST /api/journals
 // @desc    Create a new journal entry
 // @access  Private
-router.post('/', authenticateToken, sanitizeFields(['title', 'body']), async (req, res) => {
+router.post('/', authenticateToken, requireEmailVerification, sanitizeFields(['title', 'body']), async (req, res) => {
   try {
     console.log('[Journals] POST request received');
     console.log('[Journals] User ID:', req.user?.id);
@@ -155,7 +156,7 @@ router.get('/user/:userId', authenticateToken, async (req, res) => {
 // @route   PATCH /api/journals/:id
 // @desc    Update a journal entry
 // @access  Private
-router.patch('/:id', authenticateToken, sanitizeFields(['title', 'body']), async (req, res) => {
+router.patch('/:id', authenticateToken, requireEmailVerification, sanitizeFields(['title', 'body']), async (req, res) => {
   try {
     const { id } = req.params;
     const { title, body, visibility, mood, tags } = req.body;

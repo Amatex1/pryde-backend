@@ -2,6 +2,7 @@ import express from 'express';
 const router = express.Router();
 import multer from 'multer';
 import mongoose from 'mongoose';
+import { spawn } from 'child_process';
 import auth from '../middleware/auth.js';
 import User from '../models/User.js';
 import TempMedia from '../models/TempMedia.js';
@@ -9,6 +10,46 @@ import config from '../config/config.js';
 import { uploadLimiter } from '../middleware/rateLimiter.js';
 import { stripExifData } from '../middleware/imageProcessing.js';
 import { Readable } from 'stream';
+
+// PART 12: Strip video/audio metadata via ffmpeg (fail gracefully if unavailable)
+// Uses -c copy (stream copy) so no re-encode — metadata-only strip
+const stripAVMetadata = (inputBuffer, mimetype) => {
+  return new Promise((resolve) => {
+    const formatMap = {
+      'video/mp4': 'mp4', 'video/quicktime': 'mp4',
+      'video/webm': 'webm', 'video/ogg': 'ogg',
+      'audio/mpeg': 'mp3', 'audio/mp3': 'mp3',
+      'audio/wav': 'wav', 'audio/ogg': 'ogg',
+      'audio/webm': 'webm', 'audio/m4a': 'ipod'
+    };
+    const format = formatMap[mimetype];
+    if (!format) return resolve(inputBuffer);
+
+    const chunks = [];
+    let settled = false;
+    const done = (buf) => { if (!settled) { settled = true; resolve(buf); } };
+
+    try {
+      const ff = spawn('ffmpeg', [
+        '-v', 'quiet', '-i', 'pipe:0',
+        '-map_metadata', '-1',
+        '-c', 'copy',
+        '-f', format, 'pipe:1'
+      ], { stdio: ['pipe', 'pipe', 'ignore'] });
+
+      ff.on('error', () => done(inputBuffer)); // ffmpeg not found — pass through
+      ff.stdout.on('data', (chunk) => chunks.push(chunk));
+      ff.on('close', (code) => {
+        done(code === 0 && chunks.length > 0 ? Buffer.concat(chunks) : inputBuffer);
+      });
+
+      ff.stdin.write(inputBuffer);
+      ff.stdin.end();
+    } catch {
+      done(inputBuffer); // spawn threw — pass through
+    }
+  });
+};
 
 // Use memory storage to process images before saving to GridFS
 const storage = multer.memoryStorage();
@@ -36,6 +77,40 @@ const upload = multer({
   },
   fileFilter: fileFilter
 });
+
+// PART 8: Magic byte signatures for video/audio validation
+// Client-supplied Content-Type (mimetype) is untrusted — verify actual file content
+const MAGIC_BYTE_CHECKS = {
+  'video/mp4':       { offset: 4, bytes: [0x66, 0x74, 0x79, 0x70] }, // ftyp box
+  'video/quicktime': { offset: 4, bytes: [0x66, 0x74, 0x79, 0x70] }, // ftyp box
+  'audio/m4a':       { offset: 4, bytes: [0x66, 0x74, 0x79, 0x70] }, // ftyp box
+  'video/webm':      { offset: 0, bytes: [0x1A, 0x45, 0xDF, 0xA3] }, // EBML
+  'audio/webm':      { offset: 0, bytes: [0x1A, 0x45, 0xDF, 0xA3] }, // EBML
+  'video/ogg':       { offset: 0, bytes: [0x4F, 0x67, 0x67, 0x53] }, // OggS
+  'audio/ogg':       { offset: 0, bytes: [0x4F, 0x67, 0x67, 0x53] }, // OggS
+  'audio/wav':       { offset: 0, bytes: [0x52, 0x49, 0x46, 0x46] }, // RIFF
+};
+
+// MP3 has multiple valid sync word patterns
+const MP3_SIGNATURES = [
+  [0xFF, 0xFB], [0xFF, 0xF3], [0xFF, 0xF2], // MPEG sync words
+  [0x49, 0x44, 0x33]                          // ID3 tag
+];
+
+const validateMagicBytes = (buffer, mimetype) => {
+  if (!buffer || buffer.length < 12) return false;
+
+  if (mimetype === 'audio/mpeg' || mimetype === 'audio/mp3') {
+    return MP3_SIGNATURES.some(sig => sig.every((byte, i) => buffer[i] === byte));
+  }
+
+  const check = MAGIC_BYTE_CHECKS[mimetype];
+  if (!check) return true; // No known signature — pass through
+
+  const { offset, bytes } = check;
+  if (buffer.length < offset + bytes.length) return false;
+  return bytes.every((byte, i) => buffer[offset + i] === byte);
+};
 
 // Init GridFSBucket (modern API)
 let gridfsBucket;
@@ -97,6 +172,7 @@ const saveToGridFS = async (file, generateSizes = false) => {
       let sizes = null;
 
       // Process and optimize images (strip EXIF, convert to WebP, compress)
+      // Sharp decode implicitly validates magic bytes for images — non-images will throw
       if (file.mimetype.startsWith('image/')) {
         console.log('🔒 Processing and optimizing image...');
         const result = await stripExifData(buffer, file.mimetype, { generateSizes });
@@ -104,6 +180,15 @@ const saveToGridFS = async (file, generateSizes = false) => {
         contentType = result.mimetype;
         sizes = result.sizes;
         console.log('✅ Image optimized and saved as', contentType);
+      }
+
+      // PART 8: Validate magic bytes for video/audio (no Sharp protection for these types)
+      if (file.mimetype.startsWith('video/') || file.mimetype.startsWith('audio/')) {
+        if (!validateMagicBytes(buffer, file.mimetype)) {
+          return reject(new Error(`File content does not match declared MIME type: ${file.mimetype}`));
+        }
+        // PART 12: Strip video/audio metadata via ffmpeg (no-op if ffmpeg unavailable)
+        buffer = await stripAVMetadata(buffer, file.mimetype);
       }
 
       // Update filename extension if converted to WebP

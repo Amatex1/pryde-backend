@@ -25,7 +25,7 @@ import {
   enforceMaxSessions
 } from '../utils/sessionUtils.js';
 import { logEmailVerification, logPasswordChange } from '../utils/securityLogger.js';
-import { loginLimiter, signupLimiter, passwordResetLimiter } from '../middleware/rateLimiter.js';
+import { loginLimiter, signupLimiter, passwordResetLimiter, resendVerificationLimiter, checkUsernameLimiter, resetPasswordConfirmLimiter } from '../middleware/rateLimiter.js';
 import { validateSignup, validateLogin } from '../middleware/validation.js';
 import logger from '../utils/logger.js';
 import { incCounter } from '../utils/authMetrics.js'; // Phase 4A
@@ -110,7 +110,7 @@ router.get('/status', async (req, res) => {
 // @route   GET /api/auth/check-username/:username
 // @desc    Check if username is available
 // @access  Public
-router.get('/check-username/:username', async (req, res) => {
+router.get('/check-username/:username', checkUsernameLimiter, async (req, res) => {
   try {
     const { username } = req.params;
 
@@ -323,37 +323,46 @@ router.post('/signup', validateAgeBeforeRateLimit, signupLimiter, validateSignup
         logger.warn('⚠️ Validation order violation: CAPTCHA ran before age check');
       }
 
-      if (process.env.HCAPTCHA_SECRET && captchaToken) {
-        try {
-          const verifyUrl = 'https://hcaptcha.com/siteverify';
-          const verifyResponse = await fetch(verifyUrl, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/x-www-form-urlencoded'
-            },
-            body: `secret=${process.env.HCAPTCHA_SECRET}&response=${captchaToken}`
-          });
+      if (!process.env.HCAPTCHA_SECRET) {
+        // Fail closed: CAPTCHA secret not configured means signup is misconfigured
+        logger.error('HCAPTCHA_SECRET is not set in production — signup blocked');
+        return res.status(500).json({
+          message: 'Signup is temporarily unavailable due to a configuration issue.',
+          reason: 'captcha_not_configured'
+        });
+      }
 
-          const verifyData = await verifyResponse.json();
-
-          if (!verifyData.success) {
-            return res.status(400).json({
-              message: 'CAPTCHA verification failed. Please try again.',
-              reason: 'captcha_failed'
-            });
-          }
-        } catch (captchaError) {
-          logger.error('CAPTCHA verification error:', captchaError);
-          return res.status(400).json({
-            message: 'CAPTCHA verification failed. Please try again.',
-            error: 'captcha_error'
-          });
-        }
-      } else if (!captchaToken) {
+      if (!captchaToken) {
         // In production, CAPTCHA is required
         return res.status(400).json({
           message: 'CAPTCHA verification is required.',
           reason: 'captcha_required'
+        });
+      }
+
+      try {
+        const verifyUrl = 'https://hcaptcha.com/siteverify';
+        const verifyResponse = await fetch(verifyUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded'
+          },
+          body: `secret=${process.env.HCAPTCHA_SECRET}&response=${captchaToken}`
+        });
+
+        const verifyData = await verifyResponse.json();
+
+        if (!verifyData.success) {
+          return res.status(400).json({
+            message: 'CAPTCHA verification failed. Please try again.',
+            reason: 'captcha_failed'
+          });
+        }
+      } catch (captchaError) {
+        logger.error('CAPTCHA verification error:', captchaError);
+        return res.status(400).json({
+          message: 'CAPTCHA verification failed. Please try again.',
+          error: 'captcha_error'
         });
       }
     } else {
@@ -478,9 +487,10 @@ router.post('/signup', validateAgeBeforeRateLimit, signupLimiter, validateSignup
       privacyVersion: config.privacyVersion
     });
 
-    // Generate email verification token
-    const verificationToken = crypto.randomBytes(32).toString('hex');
-    user.emailVerificationToken = verificationToken;
+    // Generate email verification token — store SHA-256 hash, email raw token
+    const rawVerificationToken = crypto.randomBytes(32).toString('hex');
+    const hashedVerificationToken = crypto.createHash('sha256').update(rawVerificationToken).digest('hex');
+    user.emailVerificationToken = hashedVerificationToken;
     user.emailVerificationExpires = Date.now() + 24 * 60 * 60 * 1000; // 24 hours
 
     // PRYDE_SAFETY_HARDENING_V1: New accounts start in 48h probation mode
@@ -491,7 +501,7 @@ router.post('/signup', validateAgeBeforeRateLimit, signupLimiter, validateSignup
     await user.save();
 
     // Send verification email (don't block registration if email fails)
-    sendVerificationEmail(email, verificationToken, username).catch(err => {
+    sendVerificationEmail(email, rawVerificationToken, username).catch(err => {
       logger.error('Failed to send verification email:', err);
     });
 
@@ -1563,7 +1573,7 @@ router.post('/forgot-password', passwordResetLimiter, async (req, res) => {
 // @route   POST /api/auth/reset-password
 // @desc    Reset password with token
 // @access  Public
-router.post('/reset-password', async (req, res) => {
+router.post('/reset-password', resetPasswordConfirmLimiter, async (req, res) => {
   try {
     const { token, newPassword } = req.body;
 
@@ -1638,9 +1648,12 @@ router.get('/verify-email/:token', async (req, res) => {
   try {
     const { token } = req.params;
 
+    // Hash the incoming token to compare against stored hash
+    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+
     // Find user with this verification token
     const user = await User.findOne({
-      emailVerificationToken: token,
+      emailVerificationToken: hashedToken,
       emailVerificationExpires: { $gt: Date.now() }
     });
 
@@ -1682,7 +1695,7 @@ router.get('/verify-email/:token', async (req, res) => {
 // @route   POST /api/auth/resend-verification
 // @desc    Resend verification email
 // @access  Private
-router.post('/resend-verification', auth, async (req, res) => {
+router.post('/resend-verification', auth, resendVerificationLimiter, async (req, res) => {
   try {
     const user = await User.findById(req.userId);
 
@@ -1700,14 +1713,15 @@ router.post('/resend-verification', auth, async (req, res) => {
       });
     }
 
-    // Generate new verification token
-    const verificationToken = crypto.randomBytes(32).toString('hex');
-    user.emailVerificationToken = verificationToken;
+    // Generate new verification token — store SHA-256 hash, email raw token
+    const rawVerificationToken = crypto.randomBytes(32).toString('hex');
+    const hashedVerificationToken = crypto.createHash('sha256').update(rawVerificationToken).digest('hex');
+    user.emailVerificationToken = hashedVerificationToken;
     user.emailVerificationExpires = Date.now() + 24 * 60 * 60 * 1000; // 24 hours
     await user.save();
 
     // Send verification email
-    const emailResult = await sendVerificationEmail(user.email, verificationToken, user.username);
+    const emailResult = await sendVerificationEmail(user.email, rawVerificationToken, user.username);
 
     if (!emailResult.success) {
       return res.status(500).json({

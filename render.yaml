@@ -18,12 +18,20 @@ services:
         sync: false
       - key: JWT_SECRET
         sync: false
+      - key: JWT_REFRESH_SECRET
+        sync: false
       - key: CSRF_SECRET
         sync: false
       - key: MESSAGE_ENCRYPTION_KEY
         sync: false
+      - key: HCAPTCHA_SECRET
+        sync: false
+      - key: BACKUP_API_KEY
+        sync: false
+      - key: RESEND_API_KEY
+        sync: false
       - key: BASE_URL
-        value: https://pryde-social.onrender.com
+        value: https://pryde-backend.onrender.com
       - key: FRONTEND_URL
         value: https://prydeapp.com
       - key: VAPID_PUBLIC_KEY
@@ -31,7 +39,7 @@ services:
       - key: VAPID_PRIVATE_KEY
         sync: false
       - key: RP_ID
-        value: pryde-social.onrender.com
+        value: prydeapp.com
       - key: ORIGIN
         value: https://prydeapp.com
       - key: EMAIL_HOST

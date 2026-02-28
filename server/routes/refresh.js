@@ -8,11 +8,12 @@ import { getClientIp, parseUserAgent } from '../utils/sessionUtils.js';
 import { getRefreshTokenCookieOptions } from '../utils/cookieUtils.js';
 import logger from '../utils/logger.js';
 import { incCounter, logRefreshFailure, logRevokedSessionAccess } from '../utils/authMetrics.js'; // Phase 4A
+import { refreshLimiter } from '../middleware/rateLimiter.js';
 
 // @route   POST /api/refresh
 // @desc    Refresh access token using refresh token
 // @access  Public (but requires valid refresh token)
-router.post('/', async (req, res) => {
+router.post('/', refreshLimiter, async (req, res) => {
   try {
     // Debug: Log all cookies received
     logger.debug('Refresh endpoint - Cookies received:', req.cookies);

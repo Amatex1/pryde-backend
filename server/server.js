@@ -499,7 +499,10 @@ app.use('/api/reactions', restrictionMiddleware, reactionsRoutes); // Universal 
 app.use('/api/backup', backupRoutes); // Backup download routes
 app.use('/api/audit', auditRoutes); // Admin audit routes
 app.use('/api/version', versionRoutes); // Version endpoint for update detection
-app.use('/api/dev', devVerifyRoutes); // Dev-only verification endpoints
+// PART 13: Dev routes only available in development — never in production
+if (process.env.NODE_ENV === 'development') {
+  app.use('/api/dev', devVerifyRoutes);
+}
 app.use('/api/admin/debug', adminDebugRoutes); // Admin-only PWA debug tools
 app.use('/api/admin/health', adminHealthRoutes); // Admin-only health & incident dashboard
 app.use('/api/admin/moderation-v2', adminModerationV2Routes); // PRYDE_MODERATION_ADMIN_V2

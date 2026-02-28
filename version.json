@@ -1,5 +1,5 @@
 {
-  "version": "2026.02.14-1445",
-  "buildTime": "2026-02-14T03:45:00.000Z",
-  "notes": "Backend build 2026.02.14-1445 - Fix: Handle raw hex encrypted strings in messages"
+  "version": "2026.02.28-1744",
+  "buildTime": "2026-02-28T07:14:56.432Z",
+  "notes": "Backend build 2026.02.28-1744"
 }

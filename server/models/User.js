@@ -1205,7 +1205,8 @@ userSchema.methods.hashRefreshToken = function (token) {
   return crypto.createHash('sha256').update(token).digest('hex');
 };
 
-// Verify refresh token against stored hash OR legacy plaintext
+// Verify refresh token against stored hash
+// PART 11: Legacy plaintext fallback removed — all tokens must be hashed
 userSchema.methods.verifyRefreshToken = function (session, token) {
   const hashed = this.hashRefreshToken(token);
 
@@ -1219,11 +1220,6 @@ userSchema.methods.verifyRefreshToken = function (session, token) {
       session.previousTokenExpiry &&
       new Date() < session.previousTokenExpiry &&
       session.previousRefreshTokenHash === hashed) {
-    return true;
-  }
-
-  // Legacy fallback (plaintext) — allows safe migration
-  if (session.refreshToken === token) {
     return true;
   }
 

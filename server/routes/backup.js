@@ -2,23 +2,44 @@ import express from 'express';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import crypto from 'crypto';
 
 const router = express.Router();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Simple API key authentication middleware
-const apiKeyAuth = (req, res, next) => {
-  const apiKey = req.headers['x-api-key'] || req.query.apiKey;
-  const validApiKey = process.env.BACKUP_API_KEY || 'your-secure-backup-api-key-change-this';
-  
-  if (!apiKey || apiKey !== validApiKey) {
-    return res.status(401).json({ 
-      success: false, 
-      message: 'Unauthorized: Invalid or missing API key' 
-    });
+// Fail fast on startup if BACKUP_API_KEY is not configured in production
+if (!process.env.BACKUP_API_KEY) {
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('BACKUP_API_KEY must be set in production. Refusing to start with backup route unprotected.');
+  } else {
+    console.warn('[backup] WARNING: BACKUP_API_KEY is not set. Backup routes will return 503 until configured.');
   }
-  
+}
+
+const safeCompare = (a, b) => {
+  const bufA = Buffer.from(String(a));
+  const bufB = Buffer.from(String(b));
+  if (bufA.length !== bufB.length) {
+    // Still run a comparison to prevent timing leak on length
+    crypto.timingSafeEqual(bufA.slice(0, 1), bufA.slice(0, 1));
+    return false;
+  }
+  return crypto.timingSafeEqual(bufA, bufB);
+};
+
+// API key authentication middleware — header only, no query param to avoid log exposure
+const apiKeyAuth = (req, res, next) => {
+  if (!process.env.BACKUP_API_KEY) {
+    return res.status(503).json({ success: false, message: 'Backup service is not configured' });
+  }
+  const apiKey = req.headers['x-api-key'];
+  if (!apiKey) {
+    return res.status(401).json({ success: false, message: 'Unauthorized: Missing API key' });
+  }
+  if (!safeCompare(apiKey, process.env.BACKUP_API_KEY)) {
+    return res.status(401).json({ success: false, message: 'Unauthorized: Invalid API key' });
+  }
   next();
 };
 

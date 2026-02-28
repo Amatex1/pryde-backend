@@ -11,7 +11,8 @@ import User from '../models/User.js';
 import Notification from '../models/Notification.js';
 import auth from '../middleware/auth.js';
 import requireActiveUser from '../middleware/requireActiveUser.js';
-import { reactionLimiter } from '../middleware/rateLimiter.js';
+import requireEmailVerification from '../middleware/requireEmailVerification.js';
+import { reactionLimiter, commentWriteLimiter } from '../middleware/rateLimiter.js';
 import logger from '../utils/logger.js';
 import {
   trackMutation,
@@ -143,7 +144,7 @@ router.get('/comments/:commentId/replies', auth, requireActiveUser, asyncHandler
 // @route   POST /api/posts/:postId/comments
 // @desc    Add a comment to a post (or reply to a comment)
 // @access  Private
-router.post('/posts/:postId/comments', auth, requireActiveUser, asyncHandler(async (req, res) => {
+router.post('/posts/:postId/comments', auth, requireActiveUser, requireEmailVerification, commentWriteLimiter, asyncHandler(async (req, res) => {
   // SAFETY: Guard clause for auth
   const userId = requireAuth(req, res);
   if (!userId) return;

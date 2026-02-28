@@ -16,12 +16,26 @@ let redisClient = null;
 let RedisStore = null;
 
 // Only initialize Redis if configuration is available
+// Supports both REDIS_URL (Render/Upstash connection string) and REDIS_HOST/REDIS_PORT (explicit)
 const initializeRedis = async () => {
   try {
-    if (config.redis && config.redis.host && config.redis.port) {
-      const Redis = (await import('ioredis')).default;
-      RedisStore = (await import('rate-limit-redis')).default;
+    const redisUrl = process.env.REDIS_URL;
+    // Only treat REDIS_URL as usable if it's an actual connection string
+    // Render may set REDIS_URL to a service ID (e.g. "red-abc123") rather than a real URL
+    const isValidRedisUrl = redisUrl && /^rediss?:\/\//i.test(redisUrl);
+    const hasHostPort = config.redis && config.redis.host && config.redis.port;
 
+    if (!isValidRedisUrl && !hasHostPort) {
+      logger.warn('Redis not configured - using in-memory rate limiting (not recommended for production)');
+      return;
+    }
+
+    const Redis = (await import('ioredis')).default;
+    RedisStore = (await import('rate-limit-redis')).default;
+
+    if (isValidRedisUrl) {
+      redisClient = new Redis(redisUrl, { enableOfflineQueue: false, lazyConnect: true });
+    } else {
       const redisOptions = {
         host: config.redis.host,
         port: config.redis.port,
@@ -29,24 +43,16 @@ const initializeRedis = async () => {
         enableOfflineQueue: false,
         lazyConnect: true
       };
-
-      // Add TLS support if configured (required for Upstash and other cloud Redis providers)
-      if (config.redis.tls) {
-        redisOptions.tls = config.redis.tls;
-      }
-
+      if (config.redis.tls) redisOptions.tls = config.redis.tls;
       redisClient = new Redis(redisOptions);
-      // Test connection
-      await redisClient.connect();
-      console.log('✅ Redis connected for rate limiting');
-      logger.info('✅ Redis connected for rate limiting');
-      // Handle Redis errors gracefully
-      redisClient.on('error', (err) => {
-        logger.error('Redis error:', err);
-      });
-    } else {
-      logger.warn('Redis not configured - using in-memory rate limiting (not recommended for production)');
     }
+
+    await redisClient.connect();
+    console.log('✅ Redis connected for rate limiting');
+    logger.info('✅ Redis connected for rate limiting');
+    redisClient.on('error', (err) => {
+      logger.error('Redis error:', err);
+    });
   } catch (error) {
     logger.error('Failed to initialize Redis, falling back to in-memory rate limiting:', error);
     redisClient = null;
@@ -56,6 +62,13 @@ const initializeRedis = async () => {
 // Initialize Redis and wait for it to be ready
 // Using top-level await (ES modules support this)
 await initializeRedis();
+
+// PART 7: In production, Redis is required for distributed rate limiting.
+// In-memory fallback is NOT safe for multi-instance deployments.
+if (process.env.NODE_ENV === 'production' && !redisClient) {
+  console.error('FATAL: Redis is required in production for distributed rate limiting. Set REDIS_URL and ensure Redis is reachable. Exiting.');
+  process.exit(1);
+}
 
 // Advanced rate limiting configuration
 // Updated for express-rate-limit v7 compatibility
@@ -85,25 +98,23 @@ const createAdvancedLimiter = (options) => {
     });
   };
 
+  // PART 9: Admins get 5× threshold instead of full exemption
+  const adminRoles = ['admin', 'super_admin', 'system'];
+  const adminMax = (req) => {
+    if (adminRoles.includes(req.user?.role)) return max * 5;
+    return max;
+  };
+
   const limiterConfig = {
     windowMs,
-    max,
+    max: adminMax,
     message,
     skipFailedRequests,
     standardHeaders,
     legacyHeaders,
     handler: customHandler,
-    // Dynamic scaling based on user role and environment
-    skip: (req) => {
-      // Skip rate limiting in test environment
-      if (process.env.NODE_ENV === 'test') {
-        return true;
-      }
-      // Exempt admin and system users from rate limiting
-      const userRole = req.user?.role;
-      const exemptRoles = ['admin', 'super_admin', 'system'];
-      return exemptRoles.includes(userRole);
-    },
+    // Skip only in test environment — admins are subject to limits (at 5× threshold above)
+    skip: (req) => process.env.NODE_ENV === 'test',
     // Disable validation warnings for keyGenerator (we're handling it correctly)
     validate: {
       xForwardedForHeader: false,
@@ -135,7 +146,7 @@ const createAdvancedLimiter = (options) => {
 // Specialized rate limiters for different endpoints
 export const globalLimiter = createAdvancedLimiter({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 2000, // 2000 requests per 15 minutes (increased for testing)
+  max: 800, // 800 requests per 15 minutes
   prefix: 'global'
 });
 
@@ -237,6 +248,42 @@ export const writeLimiter = createAdvancedLimiter({
   prefix: 'write'
 });
 
+// PART 5: Missing rate limiters
+export const resendVerificationLimiter = createAdvancedLimiter({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 5, // 5 resend attempts per hour
+  prefix: 'resend_verification',
+  message: 'Too many verification email requests, please try again later.'
+});
+
+export const checkUsernameLimiter = createAdvancedLimiter({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 30, // 30 username checks per 15 minutes
+  prefix: 'check_username',
+  message: 'Too many username checks, please slow down.'
+});
+
+export const refreshLimiter = createAdvancedLimiter({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 30, // 30 refresh attempts per 15 minutes
+  prefix: 'refresh',
+  message: 'Too many token refresh attempts, please try again later.'
+});
+
+export const resetPasswordConfirmLimiter = createAdvancedLimiter({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 5, // 5 password reset confirmations per hour
+  prefix: 'reset_password_confirm',
+  message: 'Too many password reset attempts, please try again later.'
+});
+
+export const commentWriteLimiter = createAdvancedLimiter({
+  windowMs: 10 * 60 * 1000, // 10 minutes
+  max: 20, // 20 comment writes per 10 minutes
+  prefix: 'comment_write',
+  message: 'You are commenting too quickly, please slow down.'
+});
+
 // Cleanup Redis connection on process exit
 process.on('SIGINT', async () => {
   try {
@@ -263,5 +310,10 @@ export default {
   reactionLimiter,
   reportLimiter,
   eventLimiter,
-  writeLimiter
+  writeLimiter,
+  resendVerificationLimiter,
+  checkUsernameLimiter,
+  refreshLimiter,
+  resetPasswordConfirmLimiter,
+  commentWriteLimiter
 };

@@ -6,6 +6,7 @@ import Comment from '../models/Comment.js';
 import User from '../models/User.js';
 import auth, { optionalAuth } from '../middleware/auth.js';
 import requireActiveUser from '../middleware/requireActiveUser.js';
+import requireEmailVerification from '../middleware/requireEmailVerification.js';
 import { reactionLimiter } from '../middleware/rateLimiter.js';
 import logger from '../utils/logger.js';
 import { emitValidated } from '../utils/emitValidated.js';
@@ -33,7 +34,7 @@ const updateLastActivityDate = async (userId) => {
  * - If user clicks same emoji: Remove reaction (toggle off)
  * - If user clicks different emoji: Update to new emoji
  */
-router.post('/', auth, requireActiveUser, reactionLimiter, async (req, res) => {
+router.post('/', auth, requireActiveUser, requireEmailVerification, reactionLimiter, async (req, res) => {
   try {
     const { targetType, targetId, emoji } = req.body;
     const userId = req.userId || req.user._id;

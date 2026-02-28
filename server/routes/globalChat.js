@@ -4,6 +4,7 @@ import GlobalMessage from '../models/GlobalMessage.js';
 import User from '../models/User.js';
 import authMiddleware from '../middleware/auth.js';
 import adminAuth from '../middleware/adminAuth.js';
+import requireEmailVerification from '../middleware/requireEmailVerification.js';
 import { messageLimiter } from '../middleware/rateLimiter.js';
 import { moderateContentV2 } from '../utils/moderationV2.js';
 
@@ -102,7 +103,7 @@ router.get('/messages', authMiddleware, async (req, res) => {
 });
 
 // POST /api/global-chat/messages - Create a new global message
-router.post('/messages', authMiddleware, messageLimiter, async (req, res) => {
+router.post('/messages', authMiddleware, requireEmailVerification, messageLimiter, async (req, res) => {
   try {
     const { text, gifUrl, contentWarning } = req.body;
     const currentUserId = req.userId;
