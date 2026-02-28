@@ -339,38 +339,62 @@ router.get('/debug/user/:userIdOrUsername', async (req, res) => {
 });
 
 // @route   GET /api/badges/user/:userId
-// @desc    Get badges for a specific user (shows ALL badges, respects hideBadges toggle)
+// @desc    Get badges for a specific user, structured by visibility
 // @access  Public
+// Returns: { core: [], visible: [], all: [] }
+//   core    - CORE_ROLE badges, always returned regardless of privacy settings
+//   visible - up to 3 STATUS/COSMETIC badges the user has chosen to show
+//             (auto-selects first 3 by priority if publicBadges is empty)
+//   all     - every non-CORE_ROLE badge the user holds (for "View all" modal)
 router.get('/user/:userId', async (req, res) => {
   try {
     const user = await User.findById(req.params.userId)
-      .select('badges privacySettings.hideBadges')
+      .select('badges publicBadges hiddenBadges privacySettings.hideBadges')
       .lean();
 
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // If user has hidden badges, return empty array
-    if (user.privacySettings?.hideBadges) {
-      return res.json([]);
-    }
-
-    // Check if user has any badges assigned
     if (!user.badges || user.badges.length === 0) {
-      return res.json([]);
+      return res.json({ core: [], visible: [], all: [] });
     }
 
-    // Get full badge details for ALL user's badges
-    const allBadges = await Badge.find({
+    // Fetch all active badge definitions for this user's assigned badges
+    const allBadgeDefs = await Badge.find({
       id: { $in: user.badges },
       isActive: true
-    }).lean();
+    }).sort({ priority: 1 }).lean();
 
-    // Sort by priority (lower = more important)
-    allBadges.sort((a, b) => (a.priority || 100) - (b.priority || 100));
+    // Split into core and non-core
+    const coreBadges = allBadgeDefs.filter(b => b.category === 'CORE_ROLE');
+    const otherBadges = allBadgeDefs.filter(b => b.category !== 'CORE_ROLE');
 
-    res.json(allBadges);
+    // If global hide is enabled, suppress non-core badges entirely
+    if (user.privacySettings?.hideBadges) {
+      return res.json({ core: coreBadges, visible: [], all: otherBadges });
+    }
+
+    const otherBadgeIds = new Set(otherBadges.map(b => b.id));
+    const hiddenSet = new Set(user.hiddenBadges || []);
+
+    // Migration safety: strip invalid refs and enforce the 3-badge cap
+    const cleanPublicBadges = (user.publicBadges || [])
+      .filter(id => otherBadgeIds.has(id))
+      .slice(0, 3);
+
+    let visibleBadges;
+    if (cleanPublicBadges.length > 0) {
+      // Show only user-selected public badges, minus any they've since hidden
+      visibleBadges = otherBadges.filter(
+        b => cleanPublicBadges.includes(b.id) && !hiddenSet.has(b.id)
+      );
+    } else {
+      // No selection yet — auto-show first 3 non-hidden badges by priority
+      visibleBadges = otherBadges.filter(b => !hiddenSet.has(b.id)).slice(0, 3);
+    }
+
+    res.json({ core: coreBadges, visible: visibleBadges, all: otherBadges });
   } catch (error) {
     console.error('Get user badges error:', error);
     res.status(500).json({ message: 'Server error' });
@@ -590,7 +614,7 @@ router.post('/', auth, adminAuth(['admin', 'super_admin']), async (req, res) => 
 // @access  Admin
 router.put('/:id', auth, adminAuth(['admin', 'super_admin']), async (req, res) => {
   try {
-    const { label, type, icon, tooltip, priority, color, isActive, description, assignmentType, automaticRule } = req.body;
+    const { label, type, icon, tooltip, priority, color, isActive, description, assignmentType, automaticRule, category } = req.body;
 
     const badge = await Badge.findOne({ id: req.params.id });
     if (!badge) {
@@ -608,6 +632,7 @@ router.put('/:id', auth, adminAuth(['admin', 'super_admin']), async (req, res) =
     if (isActive !== undefined) badge.isActive = isActive;
     if (assignmentType) badge.assignmentType = assignmentType;
     if (automaticRule !== undefined) badge.automaticRule = automaticRule;
+    if (category) badge.category = category;
 
     await badge.save();
     res.json(badge);

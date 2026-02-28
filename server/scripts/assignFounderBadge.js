@@ -43,12 +43,12 @@ async function assignFounderBadge() {
 
     console.log('✅ Found user:', user.username);
 
-    // Check if user already has the badge
-    if (user.badges.includes(founderBadge._id.toString())) {
+    // Check if user already has the badge (compare against string id, not ObjectId)
+    if (user.badges.includes(founderBadge.id)) {
       console.log('⏭️  User already has Founder badge');
     } else {
-      // Add badge to user
-      user.badges.push(founderBadge._id);
+      // Add badge string id to user (not the ObjectId)
+      user.badges.push(founderBadge.id);
       await user.save();
       console.log('✅ Assigned Founder badge to', user.username);
     }
