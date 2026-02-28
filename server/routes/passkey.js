@@ -189,15 +189,32 @@ router.post('/login-start', async (req, res) => {
 
     let passkeys = [];
 
-    // If email provided, get user's passkeys
+    // If email provided, look up that user's passkeys specifically.
+    // IMPORTANT: if the user has NO passkeys we must return early.
+    // Falling through with an empty allowCredentials list triggers a
+    // "discoverable credential" flow — the browser then offers every
+    // passkey stored on the device for this RP ID, including ones
+    // belonging to completely different accounts.
     if (email) {
       const user = await User.findOne({ email });
-      if (user && user.passkeys) {
-        passkeys = user.passkeys;
-        console.log('   Found', passkeys.length, 'passkey(s) for user');
-      } else {
-        console.log('   No user or passkeys found for email');
+      if (!user) {
+        console.log('   No user found for email');
+        return res.status(200).json({ hasPasskeys: false });
       }
+      if (!user.passkeys || user.passkeys.length === 0) {
+        console.log('   User has no passkeys registered');
+        return res.status(200).json({ hasPasskeys: false });
+      }
+      passkeys = user.passkeys;
+      console.log('   Found', passkeys.length, 'passkey(s) for user');
+    } else {
+      // No email — refuse to start a discoverable-credential flow that
+      // would expose all passkeys on the device across accounts.
+      console.log('   No email provided, refusing discoverable credential flow');
+      return res.status(400).json({
+        message: 'Please enter your email before using a passkey.',
+        code: 'EMAIL_REQUIRED'
+      });
     }
 
     // Generate authentication options
