@@ -13,11 +13,15 @@ dist/
 build/
 *.zip
 
-# Backups
+# Backups — JSON backup files are excluded from version control.
+# The /server/backups/ directory exists on disk for operational use only.
+# To archive: move files to a separate storage system (S3, local archive).
 server/backups/*
 !server/backups/README.md
 *.backup
 *-backup-*.json
+full-backup-*.json
+incremental-backup-*.json
 
 # Logs
 *.log
