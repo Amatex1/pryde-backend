@@ -347,17 +347,21 @@ router.post('/signup', validateAgeBeforeRateLimit, signupLimiter, validateSignup
           headers: {
             'Content-Type': 'application/x-www-form-urlencoded'
           },
-          body: `secret=${process.env.HCAPTCHA_SECRET}&response=${captchaToken}`
+          body: `secret=${process.env.HCAPTCHA_SECRET}&response=${captchaToken}${process.env.HCAPTCHA_SITE_KEY ? `&sitekey=${process.env.HCAPTCHA_SITE_KEY}` : ''}`
         });
 
         const verifyData = await verifyResponse.json();
 
         if (!verifyData.success) {
+          // Log error-codes from hCaptcha to help diagnose mismatches
+          logger.error('hCaptcha verification failed. Error codes:', verifyData['error-codes'], '| hostname:', verifyData.hostname);
           return res.status(400).json({
             message: 'CAPTCHA verification failed. Please try again.',
             reason: 'captcha_failed'
           });
         }
+
+        logger.info('hCaptcha verification succeeded for hostname:', verifyData.hostname);
       } catch (captchaError) {
         logger.error('CAPTCHA verification error:', captchaError);
         return res.status(400).json({

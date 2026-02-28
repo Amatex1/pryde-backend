@@ -23,7 +23,8 @@ const rpName = 'Pryde Social';
 // FORCE CORRECT RP ID & ORIGIN FOR PRODUCTION
 // RP ID must be the domain only (no protocol, no port, no path)
 const RP_ID = 'prydeapp.com';
-const ORIGIN = 'https://prydeapp.com';
+// Accept both www and non-www to prevent origin-mismatch failures
+const ORIGINS = ['https://prydeapp.com', 'https://www.prydeapp.com'];
 
 // Use environment variables ONLY in development
 const rpID = process.env.NODE_ENV === 'production'
@@ -31,7 +32,7 @@ const rpID = process.env.NODE_ENV === 'production'
   : (process.env.RP_ID || 'localhost');
 
 const origin = process.env.NODE_ENV === 'production'
-  ? ORIGIN
+  ? ORIGINS
   : (process.env.ORIGIN || 'http://localhost:3000');
 
 // Log configuration on startup

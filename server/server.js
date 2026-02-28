@@ -24,67 +24,11 @@ import compression from "compression";
 import schedule from "node-schedule";
 import { initializeSocket } from './socket/index.js';
 
-// Import routes
-import authRoutes from './routes/auth.js';
-import refreshRoutes from './routes/refresh.js';
-import usersRoutes from './routes/users.js';
-// PHASE 1 REFACTOR: Friends system kept for backward compatibility
-import friendsRoutes from './routes/friends.js';
-import followRoutes from './routes/follow.js';
-import postsRoutes from './routes/posts.js';
-import feedRoutes from './routes/feed.js'; // PHASE 2: Global and Following feeds
-import journalsRoutes from './routes/journals.js'; // PHASE 3: Journaling
-import longformRoutes from './routes/longform.js'; // PHASE 3: Longform posts
-import tagsRoutes, { initializeTags } from './routes/tags.js'; // Phase 2B: Tags deprecated - returns 410 Gone
-import groupsRoutes from './routes/groups.js'; // Migration Phase: TAGS → GROUPS (Phase 0)
-import photoEssaysRoutes from './routes/photoEssays.js'; // PHASE 5: Photo essays
-import uploadRoutes from './routes/upload.js';
-import notificationsRoutes from './routes/notifications.js';
-import messagesRoutes from './routes/messages.js';
-import groupChatsRoutes from './routes/groupChats.js';
-import globalChatRoutes from './routes/globalChat.js';
-import pushNotificationsRouter from './routes/pushNotifications.js';
-import reportsRoutes from './routes/reports.js';
-import blocksRoutes from './routes/blocks.js';
-import adminRoutes from './routes/admin.js';
-import adminPostsRoutes from './routes/adminPosts.js'; // PHASE C: Admin posting as system accounts
-import adminEscalationRoutes from './routes/adminEscalation.js'; // Privileged Admin Escalation
-import searchRoutes from './routes/search.js';
-import twoFactorRoutes from './routes/twoFactor.js';
-import sessionsRoutes, { setSocketIO } from './routes/sessions.js';
-import privacyRoutes from './routes/privacy.js';
-import bookmarksRoutes from './routes/bookmarks.js';
-import passkeyRoutes from './routes/passkey.js';
-import eventsRoutes from './routes/events.js';
-import loginApprovalRoutes from './routes/loginApproval.js';
-import draftsRoutes from './routes/drafts.js';
-import recoveryContactsRoutes from './routes/recoveryContacts.js';
-import commentsRoutes from './routes/comments.js';
-import reactionsRoutes from './routes/reactions.js';
-import backupRoutes from './routes/backup.js';
-import auditRoutes from './routes/audit.js';
-import versionRoutes from './routes/version.js';
-import devVerifyRoutes from './routes/devVerify.js';
-import adminDebugRoutes from './routes/adminDebug.js';
-import adminHealthRoutes from './routes/adminHealth.js';
-import adminModerationV2Routes from './routes/adminModerationV2.js'; // PRYDE_MODERATION_ADMIN_V2
-import restrictionMiddleware from './middleware/restrictionMiddleware.js'; // GOVERNANCE V1
-import stabilityControlsRoutes from './routes/stabilityControls.js';
-import safeModeRoutes from './routes/safeMode.js';
-import sessionInspectorRoutes from './routes/sessionInspector.js';
-import bugReportsRoutes from './routes/bugReports.js';
-import invitesRoutes from './routes/invites.js'; // Phase 7B: Invite-only growth
-import profileSlugRoutes from './routes/profileSlug.js'; // Custom profile URLs
-import badgesRoutes from './routes/badges.js'; // Badge system (added 2025-12-28)
 
-// Life-Signal Features (added 2025-12-31)
-import promptsRoutes from './routes/prompts.js'; // Feature 1: Reflection Prompts
-import collectionsRoutes from './routes/collections.js'; // Feature 2: Personal Collections
-import resonanceRoutes from './routes/resonance.js'; // Feature 3: Resonance Signals
-import circlesRoutes from './routes/circles.js'; // Feature 4: Small Circles
-import presenceRoutes from './routes/presence.js'; // Feature 5: Soft Presence States
-import systemPromptsRoutes from './routes/systemPrompts.js'; // Rotating system prompt posts
-import testNotificationsRoutes from './routes/testNotifications.js'; // Test notification endpoint
+// Routes — all mounts are handled by routeRegistry.js
+import { mountRoutes } from './routeRegistry.js';
+// sessionsRoutes is imported separately because setSocketIO must be called with io
+import sessionsRoutes, { setSocketIO } from './routes/sessions.js';
 
 // Import middleware
 import auth from './middleware/auth.js';
@@ -423,95 +367,8 @@ const requireDatabaseReady = (req, res, next) => {
 // app.use(checkSessionTimeout);
 // app.use(trackActivity);
 
-// Routes with specific rate limiters
-app.use('/api/auth', requireDatabaseReady, authRoutes);
-app.use('/api/refresh', refreshRoutes);
-app.use('/api/users', restrictionMiddleware, usersRoutes); // GOVERNANCE V1
-// PHASE 1 REFACTOR: Friends routes kept for backward compatibility
-app.use('/api/friends', friendsRoutes);
-app.use('/api/follow', followRoutes);
-app.use('/api/posts', restrictionMiddleware, postsRoutes); // GOVERNANCE V1
-app.use('/api/feed', feedRoutes); // PHASE 2: Global and Following feeds
-app.use('/api/journals', journalsRoutes); // PHASE 3: Journaling
-app.use('/api/longform', longformRoutes); // PHASE 3: Longform posts
-app.use('/api/tags', tagsRoutes); // Phase 2B: Tags deprecated - returns 410 Gone
-app.use('/api/groups', groupsRoutes); // Migration Phase: TAGS → GROUPS (Phase 0 - Foundation)
-app.use('/api/photo-essays', photoEssaysRoutes); // PHASE 5: Photo essays
-app.use('/api/upload', restrictionMiddleware, uploadRoutes); // GOVERNANCE V1 (profile-photo, cover-photo)
-app.use('/api/notifications', notificationsRoutes);
-app.use('/api/test-notifications', testNotificationsRoutes);
-app.use('/api/messages', restrictionMiddleware, messagesRoutes); // GOVERNANCE V1
-app.use('/api/groupchats', groupChatsRoutes);
-app.use('/api/global-chat', globalChatRoutes);
-app.use('/api/push', pushNotificationsRouter);
-app.use('/api/reports', reportsRoutes);
-app.use('/api/blocks', blocksRoutes);
-app.use('/api/admin', adminRoutes);
-app.use('/api/admin/posts', adminPostsRoutes); // PHASE C: Admin posting as system accounts
-app.use('/api/admin/escalate', adminEscalationRoutes); // Privileged Admin Escalation
-app.use('/api/search', searchRoutes);
-app.use('/api/2fa', twoFactorRoutes);
-app.use('/api/sessions', sessionsRoutes);
-app.use('/api/privacy', privacyRoutes);
-app.use('/api/bookmarks', bookmarksRoutes);
-app.use('/api/events', eventsRoutes);
-app.use('/api/login-approval', loginApprovalRoutes);
-app.use('/api/drafts', draftsRoutes);
-app.use('/api/recovery-contacts', recoveryContactsRoutes);
-app.use('/api', restrictionMiddleware, commentsRoutes); // Comment routes + GOVERNANCE V1
-app.use('/api/reactions', restrictionMiddleware, reactionsRoutes); // Universal reaction system + GOVERNANCE V1
-app.use('/api/backup', backupRoutes); // Backup download routes
-app.use('/api/audit', auditRoutes); // Admin audit routes
-app.use('/api/version', versionRoutes); // Version endpoint for update detection
-// PART 13: Dev routes only available in development — never in production
-if (process.env.NODE_ENV === 'development') {
-  app.use('/api/dev', devVerifyRoutes);
-}
-app.use('/api/admin/debug', adminDebugRoutes); // Admin-only PWA debug tools
-app.use('/api/admin/health', adminHealthRoutes); // Admin-only health & incident dashboard
-app.use('/api/admin/moderation-v2', adminModerationV2Routes); // PRYDE_MODERATION_ADMIN_V2
-app.use('/api/safe-mode', safeModeRoutes); // User-controlled Safe Mode
-app.use('/api/session-inspector', sessionInspectorRoutes); // Session state inspector
-app.use('/api/stability', stabilityControlsRoutes); // User-visible stability controls
-app.use('/api/bug-reports', bugReportsRoutes); // Bug reporting with state snapshots
-app.use('/api/invites', invitesRoutes); // Phase 7B: Invite-only growth
-app.use('/api/profile-slug', profileSlugRoutes); // Custom profile URLs
-app.use('/api/badges', badgesRoutes); // Badge system (added 2025-12-28)
-
-// Life-Signal Features (added 2025-12-31)
-app.use('/api/prompts', promptsRoutes); // Feature 1: Reflection Prompts
-app.use('/api/collections', collectionsRoutes); // Feature 2: Personal Collections
-app.use('/api/resonance', resonanceRoutes); // Feature 3: Resonance Signals
-app.use('/api/circles', circlesRoutes); // Feature 4: Small Circles
-app.use('/api/presence', presenceRoutes); // Feature 5: Soft Presence States
-app.use('/api/system-prompts', systemPromptsRoutes); // Rotating system prompt posts (admin)
-
-// Debug: Log the passkey router before registering
-console.log('🔍 Passkey router type:', typeof passkeyRoutes);
-console.log('🔍 Passkey router stack length:', passkeyRoutes?.stack?.length);
-
-app.use('/api/passkey', passkeyRoutes);
-
-// Log passkey routes registration
-console.log('✅ Passkey routes registered at /api/passkey');
-console.log('   Available routes:');
-console.log('   - GET  /api/passkey/test');
-console.log('   - POST /api/passkey/register-start');
-console.log('   - POST /api/passkey/register-finish');
-console.log('   - POST /api/passkey/login-start');
-console.log('   - POST /api/passkey/login-finish');
-console.log('   - GET  /api/passkey/list');
-console.log('   - DELETE /api/passkey/:credentialId');
-
-// Debug: List all registered routes
-console.log('\n🔍 All registered /api routes:');
-app._router.stack.forEach((middleware) => {
-  if (middleware.route) {
-    console.log(`   ${Object.keys(middleware.route.methods)} ${middleware.route.path}`);
-  } else if (middleware.name === 'router') {
-    console.log(`   Router: ${middleware.regexp}`);
-  }
-});
+// Mount all routes via route registry
+mountRoutes(app, { restrictionMiddleware, requireDatabaseReady });
 
 // Health check and status endpoints
 app.get('/api/health', async (req, res) => {
