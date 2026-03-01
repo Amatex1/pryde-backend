@@ -223,7 +223,7 @@ const postSchema = new mongoose.Schema({
   poll: {
     question: {
       type: String,
-      maxlength: 200
+      maxlength: 5000
     },
     options: [{
       text: {

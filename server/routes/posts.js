@@ -488,9 +488,12 @@ router.post('/', auth, requireActiveUser, requireEmailVerification, postLimiter,
 
     res.status(201).json({ ...post.toObject(), _mutationId: mutation.mutationId });
   } catch (error) {
-    mutation.fail(error.message, 500);
+    // Return 400 for Mongoose validation errors instead of 500
+    const isValidationError = error.name === 'ValidationError';
+    const statusCode = isValidationError ? 400 : 500;
+    mutation.fail(error.message, statusCode);
     logger.error('Create post error:', error);
-    res.status(500).json({ message: 'Server error', error: error.message, _mutationId: mutation.mutationId });
+    res.status(statusCode).json({ message: isValidationError ? 'Validation error' : 'Server error', error: error.message, _mutationId: mutation.mutationId });
   }
 });
 

@@ -1820,17 +1820,18 @@ router.post('/logout', auth, async (req, res) => {
     res.clearCookie('refreshToken', getClearCookieOptions());
 
     // Clear admin escalation cookie
+    const isProd = config.nodeEnv === 'production';
     res.clearCookie('pryde_admin_escalated', {
       httpOnly: true,
-      secure: isProduction,
-      sameSite: isProduction ? 'none' : 'lax',
+      secure: isProd,
+      sameSite: isProd ? 'none' : 'lax',
       path: '/'
     });
 
     // Clear CSRF token cookie
     res.clearCookie('XSRF-TOKEN', {
-      secure: isProduction,
-      sameSite: isProduction ? 'none' : 'lax',
+      secure: isProd,
+      sameSite: isProd ? 'none' : 'lax',
       path: '/'
     });
 

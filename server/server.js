@@ -646,7 +646,7 @@ if (!isVercel) {
       // PERMANENT ACCOUNT DELETION JOB
       // Runs daily at 03:30 UTC — purges accounts whose 30-day recovery window has expired
       // ========================================
-      import('./scripts/permanentDeletionJob.js')
+      import('../scripts/permanentDeletionJob.js')
         .then(({ runPermanentDeletionJob }) => {
           schedule.scheduleJob('30 3 * * *', async () => {
             logger.info('[PermanentDeletion] 🕐 Running permanent account deletion job...');
