@@ -217,28 +217,44 @@ async function sendPushNotification(userId, payload, options = {}) {
         data: payload.data || {}
       });
 
-      const expiredEndpoints = [];
+      const deadEndpoints = [];
+      let lastSendError = null;
 
       await Promise.all(subscriptions.map(async (sub) => {
         try {
           await webpush.sendNotification(sub, notificationPayload);
           anySuccess = true;
         } catch (err) {
-          if (err.statusCode === 410) {
-            expiredEndpoints.push(sub.endpoint);
-          } else {
-            console.error('Push send error for endpoint:', sub.endpoint?.substring(0, 40), err.message);
+          const status = err.statusCode;
+          console.error(`Push send error [${status}] for endpoint ${sub.endpoint?.substring(0, 40)}:`, err.message);
+          lastSendError = { status, message: err.message };
+          // 410 Gone + 404 Not Found both mean the subscription is permanently invalid
+          if (status === 410 || status === 404) {
+            deadEndpoints.push(sub.endpoint);
           }
         }
       }));
 
-      // Clean up expired web push subscriptions
-      if (expiredEndpoints.length > 0) {
-        const cleaned = subscriptions.filter(s => !expiredEndpoints.includes(s.endpoint));
+      // Clean up dead web push subscriptions
+      if (deadEndpoints.length > 0) {
+        const allUserSubs = (user.pushSubscriptions && user.pushSubscriptions.length > 0)
+          ? user.pushSubscriptions
+          : user.pushSubscription ? [user.pushSubscription] : [];
+        const cleaned = allUserSubs.filter(s => !deadEndpoints.includes(s.endpoint));
         await User.findByIdAndUpdate(userId, {
           pushSubscriptions: cleaned,
           pushSubscription: cleaned.length > 0 ? cleaned[cleaned.length - 1] : null
         });
+      }
+
+      // Expose the send error so callers can return a meaningful message
+      if (!anySuccess && lastSendError) {
+        const hint = lastSendError.status === 401
+          ? 'VAPID auth failed — check VAPID_PUBLIC_KEY / VAPID_PRIVATE_KEY on the server.'
+          : lastSendError.status === 400
+          ? 'Bad push request — the subscription may be corrupted. Try re-enabling notifications.'
+          : `Push service returned ${lastSendError.status}. Try re-enabling notifications.`;
+        return { success: false, message: hint, sendStatus: lastSendError.status };
       }
     }
 
