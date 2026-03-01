@@ -34,12 +34,17 @@ import { checkAnonBurst } from '../utils/anonymousBurstLimiter.js';
 // Staff roles (moderator, admin, super_admin) always see real author.
 const STAFF_ROLES = ['moderator', 'admin', 'super_admin'];
 
-function sanitizeAnonymousPost(postObj, viewerRole) {
+function sanitizeAnonymousPost(postObj, viewerRole, currentUserId) {
   if (!postObj?.isAnonymous) return postObj;
   if (STAFF_ROLES.includes(viewerRole)) {
     // Staff see real author + anonymous indicator
     postObj._staffAnonymousView = true;
     return postObj;
+  }
+  // Preserve ownership flag BEFORE wiping author — author can still edit/delete their own post
+  const realAuthorId = postObj.author?._id;
+  if (currentUserId && realAuthorId && String(realAuthorId) === String(currentUserId)) {
+    postObj.isOwnPost = true;
   }
   // Regular user: hide real author info
   postObj.author = {
@@ -54,10 +59,10 @@ function sanitizeAnonymousPost(postObj, viewerRole) {
   return postObj;
 }
 
-function sanitizeAnonymousPosts(posts, viewerRole) {
+function sanitizeAnonymousPosts(posts, viewerRole, currentUserId) {
   return posts.map(p => {
     const obj = typeof p.toObject === 'function' ? p.toObject() : { ...p };
-    return sanitizeAnonymousPost(obj, viewerRole);
+    return sanitizeAnonymousPost(obj, viewerRole, currentUserId);
   });
 }
 
@@ -204,7 +209,7 @@ router.get('/', auth, requireActiveUser, asyncHandler(async (req, res) => {
   const sanitizedPosts = posts.map(post => sanitizePostForPrivateLikes(post, userId));
 
   // Sanitize anonymous posts — strip author for non-staff viewers
-  const finalPosts = sanitizeAnonymousPosts(sanitizedPosts, req.user?.role);
+  const finalPosts = sanitizeAnonymousPosts(sanitizedPosts, req.user?.role, userId);
 
   res.json({
     posts: finalPosts,
@@ -285,7 +290,7 @@ router.get('/user/:identifier', auth, requireActiveUser, asyncHandler(async (req
   // Sanitize anonymous posts — strip author for non-staff; exclude anonymous from non-own profiles
   const viewerRole = req.user?.role;
   const isOwnProfileView = currentUserId === profileUserId?.toString();
-  let finalPosts = sanitizeAnonymousPosts(sanitizedPosts, viewerRole);
+  let finalPosts = sanitizeAnonymousPosts(sanitizedPosts, viewerRole, currentUserId);
   // Phase 9: Hide anonymous posts on other users' profiles (non-staff)
   if (!isOwnProfileView && !STAFF_ROLES.includes(viewerRole)) {
     finalPosts = finalPosts.filter(p => !p.isAnonymous);
