@@ -138,8 +138,9 @@ export function mountRoutes(app, { restrictionMiddleware, requireDatabaseReady }
   app.use('/api/groupchats', groupChatsRoutes);
   app.use('/api/global-chat', globalChatRoutes);
 
-  // Media
-  app.use('/api/upload', restrictionMiddleware, uploadRoutes);
+  // Media — GET image/file routes are public (img tags don't send auth headers).
+  // POST/DELETE routes within uploadRoutes each apply their own auth middleware.
+  app.use('/api/upload', uploadRoutes);
 
   // Notifications
   app.use('/api/notifications', notificationsRoutes);
