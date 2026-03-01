@@ -366,6 +366,7 @@ router.post('/test', auth, async (req, res) => {
 });
 
 // Get push notification status
+// Optional query param ?endpoint=<url> to check if a specific device is subscribed
 router.get('/status', auth, async (req, res) => {
   try {
     const user = await User.findById(req.user.id);
@@ -373,9 +374,20 @@ router.get('/status', auth, async (req, res) => {
     const fcmCount = user.fcmTokens?.length || 0;
     const totalDevices = webPushCount + fcmCount;
 
+    // Per-device check: is the requesting device specifically subscribed?
+    let thisDeviceEnabled = null;
+    const { endpoint } = req.query;
+    if (endpoint) {
+      const allSubs = user.pushSubscriptions?.length > 0
+        ? user.pushSubscriptions
+        : user.pushSubscription ? [user.pushSubscription] : [];
+      thisDeviceEnabled = allSubs.some(s => s.endpoint === endpoint);
+    }
+
     res.json({
       enabled: totalDevices > 0,
       hasSubscription: totalDevices > 0,
+      thisDeviceEnabled,
       deviceCount: totalDevices,
       webPushDevices: webPushCount,
       fcmDevices: fcmCount,
