@@ -114,7 +114,7 @@ export function mountRoutes(app, { restrictionMiddleware, requireDatabaseReady }
   // Content
   app.use('/api/posts', restrictionMiddleware, postsRoutes);
   app.use('/api/feed', feedRoutes);
-  app.use('/api', restrictionMiddleware, commentsRoutes);
+  app.use('/api', commentsRoutes);
   app.use('/api/reactions', restrictionMiddleware, reactionsRoutes);
   app.use('/api/bookmarks', bookmarksRoutes);
   app.use('/api/drafts', draftsRoutes);
