@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+import logger from './logger.js';
 
 /**
  * Recovery Data Encryption Utility
@@ -106,17 +107,15 @@ export function isEncrypted(data) {
       data.encryptedData) {
     return true;
   }
-  
+
   // Check if it's a string that looks like encrypted data (hex string of significant length)
   // Raw encrypted strings from MongoDB are long hex strings (IV + AuthTag + Ciphertext)
   if (typeof data === 'string' && data.length > 64 && /^[a-f0-9]+$/i.test(data)) {
     return true;
   }
-  
+
   return false;
 }
-
-
 
 /**
  * Encrypt a string message using AES-256-GCM
@@ -142,7 +141,6 @@ export function encryptMessage(message) {
   return iv.toString('hex') + authTag.toString('hex') + encrypted;
 }
 
-
 /**
  * Decrypt an encrypted message back to string
  * @param {Object|string} encryptedBlob - { iv, authTag, encryptedData } or raw encrypted string
@@ -161,11 +159,11 @@ export function decryptMessage(encryptedBlob) {
       try {
         const parsed = JSON.parse(encryptedBlob);
         if (parsed.iv && parsed.authTag && parsed.encryptedData) {
-          console.log('🔄 Detected JSON stringified object format, parsing...');
+          logger.debug('Detected JSON stringified object format in decryptMessage, parsing');
           return decryptMessage(parsed); // Recursively call with parsed object
         }
       } catch (e) {
-        console.error('⚠️ Failed to parse JSON string:', e.message);
+        logger.warn('Failed to parse JSON string in decryptMessage:', e.message);
       }
     }
 
@@ -187,10 +185,10 @@ export function decryptMessage(encryptedBlob) {
           let decrypted = decipher.update(encryptedData, 'hex', 'utf8');
           decrypted += decipher.final('utf8');
 
-          console.log('✅ Successfully decrypted NEW format (IV+AuthTag+Data)');
+          logger.debug('Decrypted message using new format (IV+AuthTag+Data)');
           return decrypted;
         } catch (e) {
-          console.log('⚠️ NEW format decryption failed, trying OLD format...');
+          logger.debug('New format decryption failed, trying old format');
         }
       }
 
@@ -207,7 +205,6 @@ export function decryptMessage(encryptedBlob) {
           const TAG_POSITION = SALT_LENGTH + IV_LENGTH;
           const ENCRYPTED_POSITION = TAG_POSITION + TAG_LENGTH;
 
-          const salt = data.subarray(0, SALT_LENGTH);
           const iv = data.subarray(SALT_LENGTH, TAG_POSITION);
           const tag = data.subarray(TAG_POSITION, ENCRYPTED_POSITION);
           const encrypted = data.subarray(ENCRYPTED_POSITION);
@@ -222,17 +219,16 @@ export function decryptMessage(encryptedBlob) {
             decipher.final()
           ]);
 
-          console.log('✅ Successfully decrypted OLD format (Salt+IV+AuthTag+Data)');
+          logger.debug('Decrypted message using old format (Salt+IV+AuthTag+Data)');
           return decrypted.toString('utf8');
         } catch (e) {
-          console.error('⚠️ OLD format decryption also failed:', e.message);
-          // Both formats failed - return error message
+          logger.error('Old format decryption failed:', e.message);
           return '[Encrypted message - unable to decrypt]';
         }
       }
 
       // Hex string but too short for either format
-      console.error('⚠️ Hex string too short for any known format:', encryptedBlob.length);
+      logger.error('Encrypted hex string too short for any known format, length:', encryptedBlob.length);
       return '[Encrypted message - invalid length]';
     }
 
@@ -246,7 +242,7 @@ export function decryptMessage(encryptedBlob) {
 
     // Validate object has required fields
     if (!iv || !authTag || !encryptedData) {
-      console.error('⚠️ Invalid encrypted blob structure:', encryptedBlob);
+      logger.warn('Invalid encrypted blob structure in decryptMessage');
       return '[Encrypted message - invalid format]';
     }
 
@@ -260,21 +256,18 @@ export function decryptMessage(encryptedBlob) {
       let decrypted = decipher.update(encryptedData, 'hex', 'utf8');
       decrypted += decipher.final('utf8');
 
-      console.log('✅ Successfully decrypted OLD format object');
+      logger.debug('Decrypted message using old object format');
       return decrypted;
     } catch (error) {
-      console.error('❌ Failed to decrypt message (object format):', error.message);
+      logger.error('Failed to decrypt message (object format):', error.message);
       return '[Encrypted message - decryption failed]';
     }
   }
 
   // Unknown format
-  console.error('⚠️ Unknown encrypted message format:', typeof encryptedBlob);
+  logger.warn('Unknown encrypted message format:', typeof encryptedBlob);
   return '[Encrypted message - unknown format]';
 }
-
-
-
 
 export default {
   encryptObject,

@@ -220,13 +220,15 @@ router.get('/user/:identifier', auth, requireActiveUser, asyncHandler(async (req
 
   if (!isOwnProfile) {
     // Not viewing own profile - apply privacy filters
+    // Build $or conditions explicitly to avoid fragile { _id: null } hack
+    const visibilityConditions = [{ visibility: 'public' }];
+    if (isFollowing) {
+      visibilityConditions.push({ visibility: 'followers' });
+    }
     query = {
       author: profileUserId,
       groupId: null, // Phase 2: Exclude group posts
-      $or: [
-        { visibility: 'public' },
-        { visibility: 'followers', ...(isFollowing ? {} : { _id: null }) } // Only if following
-      ]
+      $or: visibilityConditions
     };
   }
 
@@ -354,7 +356,7 @@ router.post('/', auth, requireActiveUser, requireEmailVerification, postLimiter,
       images: images || [],
       media: media || [],
       gifUrl: gifUrl || null, // Include GIF URL if provided
-      visibility: visibility || 'public',
+      visibility: visibility || 'followers',
       // REMOVED 2025-12-26: hiddenFrom, sharedWith, tags, tagOnly deleted (Phase 5)
       contentWarning: contentWarning || '',
       hideMetrics: hideMetrics || false
