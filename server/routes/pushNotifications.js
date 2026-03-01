@@ -207,6 +207,7 @@ async function sendPushNotification(userId, payload) {
         body: payload.body || 'You have a new notification',
         icon: payload.icon || '/pryde-logo-small.webp',
         badge: '/pryde-logo-small.webp',
+        tag: payload.tag,
         data: payload.data || {}
       });
 
