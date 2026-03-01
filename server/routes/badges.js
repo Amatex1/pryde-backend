@@ -200,8 +200,8 @@ router.put('/me/visibility', auth, async (req, res) => {
       });
     }
 
-    // HARDENED: Validate that all publicBadges belong to user
-    // Normalize both arrays to strings to prevent type mismatch failures
+    // HARDENED: Auto-strip invalid badge IDs instead of rejecting
+    // This handles stale publicBadges/hiddenBadges after badge revocation
     if (publicBadges && publicBadges.length > 0) {
       const invalidBadges = publicBadges.filter(
         badgeId => !userBadgeIds.includes(String(badgeId))
@@ -209,19 +209,18 @@ router.put('/me/visibility', auth, async (req, res) => {
 
       // Debug logging for invalid badges (non-production only)
       if (process.env.NODE_ENV !== 'production' && invalidBadges.length > 0) {
-        console.log('[BadgeVisibility] Invalid badges detected:', {
+        console.log('[BadgeVisibility] Auto-stripping invalid public badges:', {
           invalidBadges,
           userBadgeIds,
           requestedPublic: publicBadges
         });
       }
 
+      // Auto-clean: remove invalid badge IDs instead of rejecting
       if (invalidBadges.length > 0) {
-        return res.status(400).json({
-          message: 'You can only make your own badges public',
-          code: 'BADGE_NOT_OWNED',
-          invalidBadges // Include for debugging
-        });
+        publicBadges = publicBadges.filter(
+          badgeId => userBadgeIds.includes(String(badgeId))
+        );
       }
 
       // Validate publicBadges array (excluding CORE_ROLE badges from the 3-badge limit)
