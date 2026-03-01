@@ -172,7 +172,8 @@ router.get('/fcm-status', (req, res) => {
 // ============================================
 
 // Send push notification to ALL of a user's devices via both Web Push and FCM
-async function sendPushNotification(userId, payload) {
+// Pass options.targetEndpoint to send only to a specific device subscription
+async function sendPushNotification(userId, payload, options = {}) {
   try {
     const user = await User.findById(userId);
 
@@ -195,11 +196,16 @@ async function sendPushNotification(userId, payload) {
     let anySuccess = false;
 
     // ---- CHANNEL 1: Web Push (VAPID) ----
-    const subscriptions = (user.pushSubscriptions && user.pushSubscriptions.length > 0)
+    let subscriptions = (user.pushSubscriptions && user.pushSubscriptions.length > 0)
       ? user.pushSubscriptions
       : user.pushSubscription
         ? [user.pushSubscription]
         : [];
+
+    // If targeting a specific device, filter to just that subscription
+    if (options.targetEndpoint) {
+      subscriptions = subscriptions.filter(s => s.endpoint === options.targetEndpoint);
+    }
 
     if (subscriptions.length > 0) {
       const notificationPayload = JSON.stringify({
@@ -275,7 +281,16 @@ router.post('/test', auth, async (req, res) => {
   try {
     const user = await User.findById(req.user.id);
 
-    const hasAny = (user.pushSubscriptions && user.pushSubscriptions.length > 0) || !!user.pushSubscription;
+    const { title, body, testType, endpoint } = req.body;
+
+    // All subscriptions for this user
+    const allSubs = (user.pushSubscriptions && user.pushSubscriptions.length > 0)
+      ? user.pushSubscriptions
+      : user.pushSubscription
+        ? [user.pushSubscription]
+        : [];
+
+    const hasAny = allSubs.length > 0;
     if (!hasAny) {
       return res.status(400).json({
         success: false,
@@ -284,7 +299,17 @@ router.post('/test', auth, async (req, res) => {
       });
     }
 
-    const { title, body, testType } = req.body;
+    // If a specific device endpoint was provided, verify it is subscribed
+    if (endpoint) {
+      const deviceSub = allSubs.find(s => s.endpoint === endpoint);
+      if (!deviceSub) {
+        return res.status(400).json({
+          success: false,
+          message: 'This device is not subscribed to notifications. Enable notifications on this device first.',
+          hasSubscription: false
+        });
+      }
+    }
 
     let notificationConfig = {
       title: title || '🔔 Test Notification',
@@ -316,8 +341,8 @@ router.post('/test', auth, async (req, res) => {
       };
     }
 
-    const result = await sendPushNotification(req.user.id, notificationConfig);
-    const deviceCount = (user.pushSubscriptions?.length || 0) || (user.pushSubscription ? 1 : 0);
+    const result = await sendPushNotification(req.user.id, notificationConfig, { targetEndpoint: endpoint || null });
+    const deviceCount = endpoint ? 1 : ((user.pushSubscriptions?.length || 0) || (user.pushSubscription ? 1 : 0));
 
     if (result.success) {
       res.json({
@@ -328,7 +353,7 @@ router.post('/test', auth, async (req, res) => {
         testType: testType || 'default'
       });
     } else {
-      res.status(500).json({
+      res.status(422).json({
         success: false,
         message: result.message || 'Failed to send test notification',
         hasSubscription: true
