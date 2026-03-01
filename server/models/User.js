@@ -321,13 +321,7 @@ const userSchema = new mongoose.Schema({
       type: String,
       ref: 'Badge'
     }],
-    default: [],
-    validate: {
-      validator: function(v) {
-        return v.length <= 3; // Max 3 public badges
-      },
-      message: 'You can only display up to 3 public badges'
-    }
+    default: []
   },
   // Badges user has chosen to hide (only STATUS and COSMETIC badges can be hidden)
   hiddenBadges: {
