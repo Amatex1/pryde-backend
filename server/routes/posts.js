@@ -27,6 +27,7 @@ import { isFeatureEnabled } from '../utils/featureFlags.js';
 import { asyncHandler, requireAuth, requireValidId, sendError, HttpStatus } from '../utils/errorHandler.js';
 import { processUserBadgesById } from '../services/autoBadgeService.js';
 import { populatePostBadges, populateSinglePostBadges } from '../utils/populateBadges.js';
+import { checkAnonBurst } from '../utils/anonymousBurstLimiter.js';
 
 // ── Anonymous Post Sanitization ──────────────────────────────────────────────
 // Strip real author data from anonymous posts for non-staff users.
@@ -420,6 +421,17 @@ router.post('/', auth, requireActiveUser, requireEmailVerification, postLimiter,
       if (anonUser?.privacy?.allowAnonymousPosts === false) {
         mutation.fail('User has disabled anonymous posting', 403);
         return res.status(403).json({ message: 'Anonymous posting is disabled in your settings', _mutationId: mutation.mutationId });
+      }
+      // Anonymous burst cooldown — no strikes, fail-open if Redis down
+      const burstResult = await checkAnonBurst(userId.toString(), anonUser?.role);
+      if (!burstResult.allowed) {
+        mutation.fail('Anonymous burst cooldown', 429);
+        return res.status(429).json({
+          code: 'ANON_COOLDOWN',
+          message: "You've shared a lot anonymously in a short time. You can post again shortly.",
+          retryAfter: burstResult.retryAfterSeconds,
+          _mutationId: mutation.mutationId
+        });
       }
       anonymousFields = {
         isAnonymous: true,

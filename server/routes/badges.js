@@ -155,7 +155,7 @@ router.get('/me', auth, async (req, res) => {
 // @access  Authenticated
 router.put('/me/visibility', auth, async (req, res) => {
   try {
-    const { publicBadges, hiddenBadges } = req.body;
+    let { publicBadges, hiddenBadges } = req.body;
 
     // Get user's current badges
     const user = await User.findById(req.userId).select('badges');

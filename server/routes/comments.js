@@ -24,6 +24,7 @@ import { asyncHandler, requireAuth, requireValidId, requireParams, sendError, Ht
 import { notifyMentionsInComment } from '../services/mentionNotificationService.js';
 import { emitNotificationCreated } from '../utils/notificationEmitter.js';
 import { sendPushNotification } from './pushNotifications.js';
+import { checkAnonBurst } from '../utils/anonymousBurstLimiter.js';
 
 const router = express.Router();
 
@@ -259,6 +260,17 @@ router.post('/posts/:postId/comments', auth, requireActiveUser, requireEmailVeri
       if (!user?.privacy?.allowAnonymousPosts) {
         failMutation(mutationId, new Error('Anonymous posting not enabled in user settings'));
         return sendError(res, HttpStatus.FORBIDDEN, 'Enable anonymous posting in your Safety & Privacy settings first');
+      }
+
+      // Anonymous burst cooldown — no strikes, fail-open if Redis down
+      const burstResult = await checkAnonBurst(userId.toString(), user?.role);
+      if (!burstResult.allowed) {
+        failMutation(mutationId, new Error('Anonymous burst cooldown'));
+        return res.status(429).json({
+          code: 'ANON_COOLDOWN',
+          message: "You've shared a lot anonymously in a short time. You can post again shortly.",
+          retryAfter: burstResult.retryAfterSeconds
+        });
       }
 
       commentIsAnonymous = true;
