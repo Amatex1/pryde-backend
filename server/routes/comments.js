@@ -27,6 +27,32 @@ import { sendPushNotification } from './pushNotifications.js';
 
 const router = express.Router();
 
+// ── Anonymous comment sanitization ──────────────────────────────────────
+const STAFF_ROLES = ['moderator', 'admin', 'super_admin'];
+
+function sanitizeAnonymousComment(commentObj, viewerRole) {
+  if (!commentObj?.isAnonymous) return commentObj;
+  if (STAFF_ROLES.includes(viewerRole)) {
+    commentObj._staffAnonymousView = true;
+    return commentObj;
+  }
+  // Regular user: hide real author info
+  commentObj.authorId = {
+    _id: null,
+    username: 'anonymous',
+    displayName: commentObj.anonymousDisplayName || 'Anonymous Member',
+    profilePhoto: '',
+    isVerified: false,
+    pronouns: null,
+    badges: []
+  };
+  return commentObj;
+}
+
+function sanitizeAnonymousComments(comments, viewerRole) {
+  return comments.map(c => sanitizeAnonymousComment({ ...c }, viewerRole));
+}
+
 // @route   GET /api/posts/:postId/comments
 // @desc    Get all comments for a post (top-level only, sorted oldest first)
 // @access  Private
@@ -107,7 +133,10 @@ router.get('/posts/:postId/comments', auth, requireActiveUser, asyncHandler(asyn
 
   logger.debug(`✅ Found ${commentsWithReplyCounts.length} comments for post ${postId}`);
 
-  res.json(commentsWithReplyCounts);
+  // Sanitize anonymous comments for non-staff viewers
+  const viewerRole = req.user?.role;
+  const sanitized = sanitizeAnonymousComments(commentsWithReplyCounts, viewerRole);
+  res.json(sanitized);
 }));
 
 // @route   GET /api/comments/:commentId/replies
@@ -138,7 +167,10 @@ router.get('/comments/:commentId/replies', auth, requireActiveUser, asyncHandler
     .sort({ createdAt: 1 })
     .lean();
 
-  res.json(replies);
+  // Sanitize anonymous replies for non-staff viewers
+  const viewerRole = req.user?.role;
+  const sanitizedReplies = sanitizeAnonymousComments(replies, viewerRole);
+  res.json(sanitizedReplies);
 }));
 
 // @route   POST /api/posts/:postId/comments
@@ -161,7 +193,7 @@ router.post('/posts/:postId/comments', auth, requireActiveUser, requireEmailVeri
   });
 
   try {
-    const { content, gifUrl, parentCommentId } = req.body;
+    const { content, gifUrl, parentCommentId, isAnonymous } = req.body;
 
     // Either content or gifUrl must be provided
     if ((!content || content.trim() === '') && !gifUrl) {
@@ -207,20 +239,58 @@ router.post('/posts/:postId/comments', auth, requireActiveUser, requireEmailVeri
       }
     }
 
+    // ── Anonymous comment handling ──────────────────────────────────────
+    let commentIsAnonymous = false;
+    let anonymousDisplayName = null;
+    let authorHiddenFromPublic = false;
+
+    if (isAnonymous === true) {
+      const ANONYMOUS_POSTING_ENABLED = process.env.ANONYMOUS_POSTING_ENABLED !== 'false';
+      if (!ANONYMOUS_POSTING_ENABLED) {
+        failMutation(mutationId, new Error('Anonymous posting is disabled'));
+        return sendError(res, HttpStatus.FORBIDDEN, 'Anonymous posting is currently disabled');
+      }
+
+      const user = await User.findById(userId).select('privacy role');
+      if (user?.role === 'banned') {
+        failMutation(mutationId, new Error('Banned users cannot post anonymously'));
+        return sendError(res, HttpStatus.FORBIDDEN, 'You cannot post anonymously');
+      }
+      if (!user?.privacy?.allowAnonymousPosts) {
+        failMutation(mutationId, new Error('Anonymous posting not enabled in user settings'));
+        return sendError(res, HttpStatus.FORBIDDEN, 'Enable anonymous posting in your Safety & Privacy settings first');
+      }
+
+      commentIsAnonymous = true;
+      anonymousDisplayName = 'Anonymous Member';
+      authorHiddenFromPublic = true;
+
+      logger.info('🕵️ Anonymous comment created', {
+        postId,
+        authorId: userId,
+        parentCommentId: parentCommentId || null,
+        isAnonymous: true
+      });
+    }
+
     // Create comment
     const comment = new Comment({
       postId,
       authorId: userId,
       content: content || '',
       gifUrl: gifUrl || null,
-      parentCommentId: parentCommentId || null
+      parentCommentId: parentCommentId || null,
+      isAnonymous: commentIsAnonymous,
+      anonymousDisplayName,
+      authorHiddenFromPublic
     });
 
     logger.debug('💬 Creating comment:', {
       postId,
       authorId: userId,
       content: content?.substring(0, 50),
-      parentCommentId
+      parentCommentId,
+      isAnonymous: commentIsAnonymous
     });
 
     await comment.save();

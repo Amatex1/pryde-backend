@@ -51,6 +51,19 @@ const commentSchema = new mongoose.Schema({
   isPinned: {
     type: Boolean,
     default: false
+  },
+  // Anonymous comment support (mirrors Post schema pattern)
+  isAnonymous: {
+    type: Boolean,
+    default: false
+  },
+  anonymousDisplayName: {
+    type: String,
+    default: null
+  },
+  authorHiddenFromPublic: {
+    type: Boolean,
+    default: false
   }
 }, {
   timestamps: true // Automatically adds createdAt and updatedAt

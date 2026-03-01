@@ -33,6 +33,7 @@ import sessionsRoutes, { setSocketIO } from './routes/sessions.js';
 // Import middleware
 import auth from './middleware/auth.js';
 import requireActiveUser from './middleware/requireActiveUser.js';
+const restrictionMiddleware = [auth, requireActiveUser];
 // DISABLED 2026-01-17: In-memory session timeout was causing logout on server restart
 // import { trackActivity, checkSessionTimeout } from './middleware/sessionTimeout.js';
 import { setCsrfToken, enforceCsrf } from './middleware/csrf.js';
