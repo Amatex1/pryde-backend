@@ -194,6 +194,7 @@ async function sendPushNotification(userId, payload, options = {}) {
     }
 
     let anySuccess = false;
+    let lastSendError = null;
 
     // ---- CHANNEL 1: Web Push (VAPID) ----
     let subscriptions = (user.pushSubscriptions && user.pushSubscriptions.length > 0)
@@ -218,7 +219,6 @@ async function sendPushNotification(userId, payload, options = {}) {
       });
 
       const deadEndpoints = [];
-      let lastSendError = null;
 
       await Promise.all(subscriptions.map(async (sub) => {
         try {
@@ -246,20 +246,12 @@ async function sendPushNotification(userId, payload, options = {}) {
           pushSubscription: cleaned.length > 0 ? cleaned[cleaned.length - 1] : null
         });
       }
-
-      // Expose the send error so callers can return a meaningful message
-      if (!anySuccess && lastSendError) {
-        const hint = lastSendError.status === 401
-          ? 'VAPID auth failed — check VAPID_PUBLIC_KEY / VAPID_PRIVATE_KEY on the server.'
-          : lastSendError.status === 400
-          ? 'Bad push request — the subscription may be corrupted. Try re-enabling notifications.'
-          : `Push service returned ${lastSendError.status}. Try re-enabling notifications.`;
-        return { success: false, message: hint, sendStatus: lastSendError.status };
-      }
     }
 
     // ---- CHANNEL 2: Firebase Cloud Messaging (FCM) ----
-    const fcmTokens = (user.fcmTokens || []).map(t => t.token);
+    // Skip FCM when targeting a specific device via VAPID endpoint — sending to all
+    // FCM tokens would cause duplicate notifications on other devices.
+    const fcmTokens = options.targetEndpoint ? [] : (user.fcmTokens || []).map(t => t.token);
 
     if (fcmTokens.length > 0 && isFirebaseConfigured()) {
       const fcmResult = await sendFCMNotification(fcmTokens, payload);
@@ -282,9 +274,23 @@ async function sendPushNotification(userId, payload, options = {}) {
       return { success: false, message: 'User not subscribed to push notifications' };
     }
 
-    return anySuccess
-      ? { success: true, message: 'Push notification sent' }
-      : { success: false, message: 'All subscriptions failed or expired' };
+    if (anySuccess) {
+      return { success: true, message: 'Push notification sent' };
+    }
+
+    // Build a useful error message from the last webpush failure
+    if (lastSendError) {
+      const hint = lastSendError.status === 401
+        ? 'VAPID auth failed — check VAPID_PUBLIC_KEY / VAPID_PRIVATE_KEY on the server.'
+        : (lastSendError.status === 410 || lastSendError.status === 404)
+        ? 'Subscription expired — please re-enable notifications on this device.'
+        : lastSendError.status === 400
+        ? 'Bad push request (status 400) — try disabling and re-enabling notifications.'
+        : `Push service rejected the notification (status ${lastSendError.status}).`;
+      return { success: false, message: hint, sendStatus: lastSendError.status };
+    }
+
+    return { success: false, message: 'All subscriptions failed or expired' };
 
   } catch (error) {
     console.error('Send push notification error:', error);
