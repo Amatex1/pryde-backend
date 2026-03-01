@@ -189,8 +189,12 @@ router.put('/me/visibility', auth, async (req, res) => {
       const updatedUser = await User.findByIdAndUpdate(
         req.userId,
         { $set: { publicBadges: [], hiddenBadges: [] } },
-        { new: true, runValidators: true }
+        { new: true }
       ).select('badges publicBadges hiddenBadges');
+
+      if (!updatedUser) {
+        return res.status(404).json({ message: 'User not found' });
+      }
 
       return res.json({
         message: 'Badge visibility updated',
@@ -266,8 +270,12 @@ router.put('/me/visibility', auth, async (req, res) => {
     const updatedUser = await User.findByIdAndUpdate(
       req.userId,
       { $set: updateData },
-      { new: true, runValidators: true }
+      { new: true }
     ).select('badges publicBadges hiddenBadges');
+
+    if (!updatedUser) {
+      return res.status(404).json({ message: 'User not found' });
+    }
 
     res.json({
       message: 'Badge visibility updated successfully',
