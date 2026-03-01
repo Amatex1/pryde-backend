@@ -235,6 +235,10 @@ const sanitizePostForPrivateLikes = (post, currentUserId) => {
   postObj.hasLiked = hasLiked;
   delete postObj.likes;
 
+  // Set isOwnPost so the client can show edit/delete without relying on client-side ID comparison
+  const authorId = postObj.author?._id ?? postObj.author;
+  postObj.isOwnPost = !!(currentUserId && authorId && String(authorId) === String(currentUserId));
+
   // REMOVED 2025-12-26: originalPost handling deleted (Phase 5 - share system removed)
 
   return postObj;

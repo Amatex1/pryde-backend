@@ -92,6 +92,10 @@ const sanitizePostForPrivateLikes = (post, currentUserId) => {
   postObj.hasLiked = hasLiked;
   delete postObj.likes;
 
+  // Set isOwnPost so the client can show edit/delete without relying on client-side ID comparison
+  const ownAuthorId = postObj.author?._id ?? postObj.author;
+  postObj.isOwnPost = !!(currentUserId && ownAuthorId && String(ownAuthorId) === String(currentUserId));
+
   // Do the same for reactions - keep them but remove counts from UI later
   // For now, keep reactions as they show different emotions, not just counts
 
