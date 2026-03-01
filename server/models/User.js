@@ -242,6 +242,15 @@ const userSchema = new mongoose.Schema({
     type: [Object],
     default: []
   },
+  // Firebase Cloud Messaging tokens for native Android/iOS push notifications
+  fcmTokens: {
+    type: [{
+      token: { type: String, required: true },
+      device: { type: String, default: 'unknown' },  // e.g. 'android', 'ios', 'web'
+      createdAt: { type: Date, default: Date.now }
+    }],
+    default: []
+  },
   isActive: {
     type: Boolean,
     default: true

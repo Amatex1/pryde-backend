@@ -16,7 +16,7 @@ function getDecrypted2FASecret(user) {
 
   // Check if secret is encrypted (hex string of sufficient length)
   if (isEncrypted(user.twoFactorSecret)) {
-    return decryptString(user.twoFactorSecret);
+    return decryptMessage(user.twoFactorSecret);
   }
 
   // Legacy: return as-is (base32 encoded TOTP secret)
@@ -57,7 +57,7 @@ router.post('/setup', authenticateToken, async (req, res) => {
 
     // Save ENCRYPTED secret and backup codes (but don't enable 2FA yet)
     // SECURITY: 2FA secrets are encrypted at rest
-    user.twoFactorSecret = encryptString(secret.base32);
+    user.twoFactorSecret = encryptMessage(secret.base32);
     user.twoFactorBackupCodes = backupCodes;
     await user.save();
 

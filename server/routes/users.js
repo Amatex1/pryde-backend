@@ -571,7 +571,8 @@ router.put('/profile', auth, requireActiveUser, sanitizeFields([
       profilePhoto,
       coverPhoto,
       coverPhotoPosition,
-      profilePhotoPosition
+      profilePhotoPosition,
+      loginAlerts
     } = req.body;
 
     const user = await User.findById(req.userId);
@@ -606,6 +607,13 @@ router.put('/profile', auth, requireActiveUser, sanitizeFields([
     if (lookingFor !== undefined) user.lookingFor = lookingFor;
     if (communicationStyle !== undefined) user.communicationStyle = communicationStyle;
     if (safetyPreferences !== undefined) user.safetyPreferences = safetyPreferences;
+    if (loginAlerts !== undefined) {
+      user.loginAlerts = {
+        enabled: loginAlerts.enabled ?? user.loginAlerts?.enabled ?? true,
+        emailOnNewDevice: loginAlerts.emailOnNewDevice ?? user.loginAlerts?.emailOnNewDevice ?? true,
+        emailOnSuspiciousLogin: loginAlerts.emailOnSuspiciousLogin ?? user.loginAlerts?.emailOnSuspiciousLogin ?? true
+      };
+    }
 
     // Update photo URLs
     if (profilePhoto !== undefined) user.profilePhoto = profilePhoto;

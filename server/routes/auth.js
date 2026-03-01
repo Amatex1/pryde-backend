@@ -32,7 +32,7 @@ import logger from '../utils/logger.js';
 import { incCounter } from '../utils/authMetrics.js'; // Phase 4A
 import { generateTokenPair, getRefreshTokenExpiry } from '../utils/tokenUtils.js';
 import { getRefreshTokenCookieOptions, getClearCookieOptions } from '../utils/cookieUtils.js';
-import { decryptObject, isEncrypted } from '../utils/encryption.js';
+import { decryptObject, decryptMessage, isEncrypted } from '../utils/encryption.js';
 // 🔧 BADGE CHURN FIX: Badge processing removed from login (now event-driven + daily sweep)
 
 /**
@@ -44,7 +44,7 @@ function getDecrypted2FASecret(user) {
 
   // Check if secret is encrypted (hex string of sufficient length)
   if (isEncrypted(user.twoFactorSecret)) {
-    return decryptString(user.twoFactorSecret);
+    return decryptMessage(user.twoFactorSecret);
   }
 
   // Legacy: return as-is (base32 encoded TOTP secret)

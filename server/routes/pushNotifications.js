@@ -3,6 +3,7 @@ const router = express.Router();
 import webpush from 'web-push';
 import User from '../models/User.js';
 import auth from '../middleware/auth.js';
+import { sendFCMNotification, isFirebaseConfigured } from '../utils/firebaseAdmin.js';
 
 // VAPID keys MUST be set in environment variables
 // Generate keys with: npx web-push generate-vapid-keys
@@ -111,24 +112,72 @@ router.post('/unsubscribe', auth, async (req, res) => {
   }
 });
 
-// Send push notification to ALL of a user's devices
+// ============================================
+// FCM TOKEN MANAGEMENT ROUTES
+// ============================================
+
+// Register FCM device token
+router.post('/fcm-register', auth, async (req, res) => {
+  try {
+    const { token, device } = req.body;
+
+    if (!token) {
+      return res.status(400).json({ message: 'FCM token is required' });
+    }
+
+    const user = await User.findById(req.user.id);
+    const existingTokens = user.fcmTokens || [];
+
+    // Remove any existing entry for this token (to update device info / timestamp)
+    const filtered = existingTokens.filter(t => t.token !== token);
+    filtered.push({ token, device: device || 'web', createdAt: new Date() });
+
+    await User.findByIdAndUpdate(req.user.id, { fcmTokens: filtered });
+
+    res.json({ success: true, message: 'FCM token registered' });
+  } catch (error) {
+    console.error('FCM token register error:', error);
+    res.status(500).json({ message: 'Error registering FCM token' });
+  }
+});
+
+// Unregister FCM device token
+router.post('/fcm-unregister', auth, async (req, res) => {
+  try {
+    const { token } = req.body;
+
+    if (!token) {
+      return res.status(400).json({ message: 'FCM token is required' });
+    }
+
+    const user = await User.findById(req.user.id);
+    const updatedTokens = (user.fcmTokens || []).filter(t => t.token !== token);
+
+    await User.findByIdAndUpdate(req.user.id, { fcmTokens: updatedTokens });
+
+    res.json({ success: true, message: 'FCM token unregistered' });
+  } catch (error) {
+    console.error('FCM token unregister error:', error);
+    res.status(500).json({ message: 'Error unregistering FCM token' });
+  }
+});
+
+// Get FCM status
+router.get('/fcm-status', (req, res) => {
+  res.json({ configured: isFirebaseConfigured() });
+});
+
+// ============================================
+// SEND PUSH NOTIFICATION (Web Push + FCM)
+// ============================================
+
+// Send push notification to ALL of a user's devices via both Web Push and FCM
 async function sendPushNotification(userId, payload) {
   try {
     const user = await User.findById(userId);
 
     if (!user) {
       return { success: false, message: 'User not found' };
-    }
-
-    // Build list of subscriptions — prefer new array, fall back to legacy single field
-    const subscriptions = (user.pushSubscriptions && user.pushSubscriptions.length > 0)
-      ? user.pushSubscriptions
-      : user.pushSubscription
-        ? [user.pushSubscription]
-        : [];
-
-    if (subscriptions.length === 0) {
-      return { success: false, message: 'User not subscribed to push notifications' };
     }
 
     // Check notification type and user preferences
@@ -143,38 +192,71 @@ async function sendPushNotification(userId, payload) {
       return { success: false, message: 'User is in Quiet Mode - non-critical notifications suppressed' };
     }
 
-    const notificationPayload = JSON.stringify({
-      title: payload.title || 'Pryde Social',
-      body: payload.body || 'You have a new notification',
-      icon: payload.icon || '/favicon.svg',
-      badge: '/favicon.svg',
-      data: payload.data || {}
-    });
-
-    // Send to all devices, collecting which ones are expired
-    const expiredEndpoints = [];
     let anySuccess = false;
 
-    await Promise.all(subscriptions.map(async (sub) => {
-      try {
-        await webpush.sendNotification(sub, notificationPayload);
-        anySuccess = true;
-      } catch (err) {
-        if (err.statusCode === 410) {
-          expiredEndpoints.push(sub.endpoint);
-        } else {
-          console.error('Push send error for endpoint:', sub.endpoint?.substring(0, 40), err.message);
-        }
-      }
-    }));
+    // ---- CHANNEL 1: Web Push (VAPID) ----
+    const subscriptions = (user.pushSubscriptions && user.pushSubscriptions.length > 0)
+      ? user.pushSubscriptions
+      : user.pushSubscription
+        ? [user.pushSubscription]
+        : [];
 
-    // Clean up any expired subscriptions
-    if (expiredEndpoints.length > 0) {
-      const cleaned = subscriptions.filter(s => !expiredEndpoints.includes(s.endpoint));
-      await User.findByIdAndUpdate(userId, {
-        pushSubscriptions: cleaned,
-        pushSubscription: cleaned.length > 0 ? cleaned[cleaned.length - 1] : null
+    if (subscriptions.length > 0) {
+      const notificationPayload = JSON.stringify({
+        title: payload.title || 'Pryde Social',
+        body: payload.body || 'You have a new notification',
+        icon: payload.icon || '/pryde-logo-small.webp',
+        badge: '/pryde-logo-small.webp',
+        data: payload.data || {}
       });
+
+      const expiredEndpoints = [];
+
+      await Promise.all(subscriptions.map(async (sub) => {
+        try {
+          await webpush.sendNotification(sub, notificationPayload);
+          anySuccess = true;
+        } catch (err) {
+          if (err.statusCode === 410) {
+            expiredEndpoints.push(sub.endpoint);
+          } else {
+            console.error('Push send error for endpoint:', sub.endpoint?.substring(0, 40), err.message);
+          }
+        }
+      }));
+
+      // Clean up expired web push subscriptions
+      if (expiredEndpoints.length > 0) {
+        const cleaned = subscriptions.filter(s => !expiredEndpoints.includes(s.endpoint));
+        await User.findByIdAndUpdate(userId, {
+          pushSubscriptions: cleaned,
+          pushSubscription: cleaned.length > 0 ? cleaned[cleaned.length - 1] : null
+        });
+      }
+    }
+
+    // ---- CHANNEL 2: Firebase Cloud Messaging (FCM) ----
+    const fcmTokens = (user.fcmTokens || []).map(t => t.token);
+
+    if (fcmTokens.length > 0 && isFirebaseConfigured()) {
+      const fcmResult = await sendFCMNotification(fcmTokens, payload);
+
+      if (fcmResult.successCount > 0) {
+        anySuccess = true;
+      }
+
+      // Clean up invalid FCM tokens
+      if (fcmResult.invalidTokens.length > 0) {
+        const cleanedFcmTokens = (user.fcmTokens || []).filter(
+          t => !fcmResult.invalidTokens.includes(t.token)
+        );
+        await User.findByIdAndUpdate(userId, { fcmTokens: cleanedFcmTokens });
+      }
+    }
+
+    // Check if user has any push channels at all
+    if (subscriptions.length === 0 && fcmTokens.length === 0) {
+      return { success: false, message: 'User not subscribed to push notifications' };
     }
 
     return anySuccess
@@ -261,12 +343,17 @@ router.post('/test', auth, async (req, res) => {
 router.get('/status', auth, async (req, res) => {
   try {
     const user = await User.findById(req.user.id);
-    const deviceCount = user.pushSubscriptions?.length || (user.pushSubscription ? 1 : 0);
+    const webPushCount = user.pushSubscriptions?.length || (user.pushSubscription ? 1 : 0);
+    const fcmCount = user.fcmTokens?.length || 0;
+    const totalDevices = webPushCount + fcmCount;
 
     res.json({
-      enabled: deviceCount > 0,
-      hasSubscription: deviceCount > 0,
-      deviceCount,
+      enabled: totalDevices > 0,
+      hasSubscription: totalDevices > 0,
+      deviceCount: totalDevices,
+      webPushDevices: webPushCount,
+      fcmDevices: fcmCount,
+      fcmConfigured: isFirebaseConfigured(),
       pushTwoFactorEnabled: user.pushTwoFactorEnabled || false,
       preferPushTwoFactor: user.preferPushTwoFactor || false
     });

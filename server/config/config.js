@@ -98,6 +98,12 @@ export default {
   apiDomain: process.env.API_DOMAIN || null, // Custom domain for backend (e.g., api.prydeapp.com)
   nodeEnv: process.env.NODE_ENV || 'development',
 
+  // Firebase Cloud Messaging (FCM) — for native Android/iOS push notifications
+  firebase: {
+    serviceAccountJSON: process.env.FIREBASE_SERVICE_ACCOUNT_JSON || null,
+    serviceAccountPath: process.env.FIREBASE_SERVICE_ACCOUNT_PATH || null,
+  },
+
   // Logging and Monitoring
   logging: {
     level: process.env.LOG_LEVEL || (process.env.NODE_ENV === 'production' ? 'error' : 'debug'),

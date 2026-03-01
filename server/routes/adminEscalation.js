@@ -8,7 +8,7 @@ import adminAuth from '../middleware/adminAuth.js';
 import { getClientIp } from '../utils/sessionUtils.js';
 import logger from '../utils/logger.js';
 import speakeasy from 'speakeasy';
-import { decryptObject, isEncrypted } from '../utils/encryption.js';
+import { decryptObject, decryptMessage, isEncrypted } from '../utils/encryption.js';
 import {
   generatePasskeyAuthenticationOptions,
   verifyPasskeyAuthentication
@@ -30,7 +30,7 @@ const getDecrypted2FASecret = (user) => {
   }
   
   if (isEncrypted(user.twoFactorSecret)) {
-    return decryptString(user.twoFactorSecret);
+    return decryptMessage(user.twoFactorSecret);
   }
   
   return user.twoFactorSecret;
