@@ -15,8 +15,34 @@ import { cacheShort, cacheConditional } from '../middleware/caching.js';
 import { getBlockedUserIds } from '../utils/blockHelper.js';
 import { asyncHandler, requireAuth, sendError, HttpStatus } from '../utils/errorHandler.js';
 import logger from '../utils/logger.js';
+import User from '../models/User.js';
 
 const router = express.Router();
+
+// ── Anonymous Post Sanitization (shared logic) ─────────────────────────────
+const STAFF_ROLES = ['moderator', 'admin', 'super_admin'];
+
+function sanitizeAnonymousPost(postObj, viewerRole) {
+  if (!postObj?.isAnonymous) return postObj;
+  if (STAFF_ROLES.includes(viewerRole)) {
+    postObj._staffAnonymousView = true;
+    return postObj;
+  }
+  postObj.author = {
+    _id: null,
+    username: 'anonymous',
+    displayName: postObj.anonymousDisplayName || 'Anonymous Member',
+    profilePhoto: '',
+    isVerified: false,
+    pronouns: null,
+    badges: []
+  };
+  return postObj;
+}
+
+function sanitizeAnonymousPosts(posts, viewerRole) {
+  return posts.map(p => sanitizeAnonymousPost({ ...p }, viewerRole));
+}
 
 // Feed cache config: first page cached 30s, other pages 15s
 const feedCache = cacheConditional({ firstPage: 'short', otherPages: 15 });
@@ -66,8 +92,9 @@ router.get('/', auth, requireActiveUser, feedCache, asyncHandler(async (req, res
 
   // Apply post sanitization (hide likes, etc.)
   const sanitizedPosts = posts.map(post => sanitizePostForPrivateLikes(post, currentUserId));
+  const finalPosts = sanitizeAnonymousPosts(sanitizedPosts, req.user?.role);
 
-  res.json({ posts: sanitizedPosts });
+  res.json({ posts: finalPosts });
 }));
 
 /**
@@ -119,8 +146,9 @@ router.get('/global', auth, requireActiveUser, cacheShort, asyncHandler(async (r
 
   // Apply post sanitization (hide likes, etc.)
   const sanitizedPosts = posts.map(post => sanitizePostForPrivateLikes(post, currentUserId));
+  const finalPosts = sanitizeAnonymousPosts(sanitizedPosts, req.user?.role);
 
-  res.json(sanitizedPosts);
+  res.json(finalPosts);
 }));
 
 /**
@@ -183,8 +211,9 @@ router.get('/following', auth, requireActiveUser, cacheShort, asyncHandler(async
 
   // Apply post sanitization
   const sanitizedPosts = posts.map(post => sanitizePostForPrivateLikes(post, currentUserId));
+  const finalPosts = sanitizeAnonymousPosts(sanitizedPosts, req.user?.role);
 
-  res.json(sanitizedPosts);
+  res.json(finalPosts);
 }));
 
 // Helper function to sanitize posts (same as in posts.js)

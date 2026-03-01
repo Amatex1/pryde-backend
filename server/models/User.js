@@ -808,6 +808,35 @@ const userSchema = new mongoose.Schema({
       default: false
     }
   },
+  // ── Safety & Privacy Panel (added 2026-03-01) ──────────────────────────────
+  // Structured privacy controls separate from privacySettings (UI-facing toggles).
+  // These control safety/hardening features — not cosmetic preferences.
+  privacy: {
+    showRealName: {
+      type: Boolean,
+      default: true
+    },
+    allowAnonymousPosts: {
+      type: Boolean,
+      default: true
+    },
+    hideProfileFromSearch: {
+      type: Boolean,
+      default: false
+    },
+    hideOnlineStatus: {
+      type: Boolean,
+      default: false
+    },
+    friendOnlyProfile: {
+      type: Boolean,
+      default: false
+    },
+    showBadgesPublicly: {
+      type: Boolean,
+      default: true
+    }
+  },
   // PHASE 5: Creator Mode (DEPRECATED - removed 2025-12-25)
   // isCreator, creatorTagline, creatorBio, featuredPosts removed
   // Use regular posts and profile bio instead

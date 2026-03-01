@@ -28,6 +28,38 @@ import { asyncHandler, requireAuth, requireValidId, sendError, HttpStatus } from
 import { processUserBadgesById } from '../services/autoBadgeService.js';
 import { populatePostBadges, populateSinglePostBadges } from '../utils/populateBadges.js';
 
+// ── Anonymous Post Sanitization ──────────────────────────────────────────────
+// Strip real author data from anonymous posts for non-staff users.
+// Staff roles (moderator, admin, super_admin) always see real author.
+const STAFF_ROLES = ['moderator', 'admin', 'super_admin'];
+
+function sanitizeAnonymousPost(postObj, viewerRole) {
+  if (!postObj?.isAnonymous) return postObj;
+  if (STAFF_ROLES.includes(viewerRole)) {
+    // Staff see real author + anonymous indicator
+    postObj._staffAnonymousView = true;
+    return postObj;
+  }
+  // Regular user: hide real author info
+  postObj.author = {
+    _id: null,
+    username: 'anonymous',
+    displayName: postObj.anonymousDisplayName || 'Anonymous Member',
+    profilePhoto: '',
+    isVerified: false,
+    pronouns: null,
+    badges: []
+  };
+  return postObj;
+}
+
+function sanitizeAnonymousPosts(posts, viewerRole) {
+  return posts.map(p => {
+    const obj = typeof p.toObject === 'function' ? p.toObject() : { ...p };
+    return sanitizeAnonymousPost(obj, viewerRole);
+  });
+}
+
 // CALM ONBOARDING: Helper to update lastActivityDate for quiet return detection
 // Updates user's lastActivityDate when they post, react, or comment
 const updateLastActivityDate = async (userId) => {
@@ -170,8 +202,11 @@ router.get('/', auth, requireActiveUser, asyncHandler(async (req, res) => {
   // Sanitize posts to hide like counts
   const sanitizedPosts = posts.map(post => sanitizePostForPrivateLikes(post, userId));
 
+  // Sanitize anonymous posts — strip author for non-staff viewers
+  const finalPosts = sanitizeAnonymousPosts(sanitizedPosts, req.user?.role);
+
   res.json({
-    posts: sanitizedPosts,
+    posts: finalPosts,
     totalPages: Math.ceil(count / limitNum),
     currentPage: pageNum
   });
@@ -246,7 +281,16 @@ router.get('/user/:identifier', auth, requireActiveUser, asyncHandler(async (req
   // Sanitize posts to hide like counts
   const sanitizedPosts = posts.map(post => sanitizePostForPrivateLikes(post, currentUserId));
 
-  res.json(sanitizedPosts);
+  // Sanitize anonymous posts — strip author for non-staff; exclude anonymous from non-own profiles
+  const viewerRole = req.user?.role;
+  const isOwnProfileView = currentUserId === profileUserId?.toString();
+  let finalPosts = sanitizeAnonymousPosts(sanitizedPosts, viewerRole);
+  // Phase 9: Hide anonymous posts on other users' profiles (non-staff)
+  if (!isOwnProfileView && !STAFF_ROLES.includes(viewerRole)) {
+    finalPosts = finalPosts.filter(p => !p.isAnonymous);
+  }
+
+  res.json(finalPosts);
 }));
 
 // @route   GET /api/posts/:id
@@ -278,7 +322,13 @@ router.get('/:id', auth, requireActiveUser, cacheShort, asyncHandler(async (req,
   // Sanitize post to hide like counts
   const sanitizedPost = sanitizePostForPrivateLikes(post, userId);
 
-  res.json(sanitizedPost);
+  // Sanitize anonymous post — strip author for non-staff viewers
+  const finalPost = sanitizeAnonymousPost(
+    typeof sanitizedPost.toObject === 'function' ? sanitizedPost.toObject() : { ...sanitizedPost },
+    req.user?.role
+  );
+
+  res.json(finalPost);
 }));
 
 // @route   POST /api/posts
@@ -310,7 +360,7 @@ router.post('/', auth, requireActiveUser, requireEmailVerification, postLimiter,
     // ── END EMERGENCY CONTAINMENT CHECK ─────────────────────────────────────
 
     // REMOVED 2025-12-26: hiddenFrom, sharedWith, tags, tagOnly deleted (Phase 5)
-    const { content, images, media, visibility, contentWarning, hideMetrics, poll, gifUrl } = req.body;
+    const { content, images, media, visibility, contentWarning, hideMetrics, poll, gifUrl, isAnonymous } = req.body;
 
     // Require either content, media, poll, or GIF
     if ((!content || content.trim() === '') && (!media || media.length === 0) && !poll && !gifUrl) {
@@ -350,6 +400,35 @@ router.post('/', auth, requireActiveUser, requireEmailVerification, postLimiter,
       mutation.addStep('POLL_PREPARED', { optionCount: transformedOptions.length });
     }
 
+    // ── Anonymous Post Logic ───────────────────────────────────────────────
+    // Phase 8: Server ALWAYS controls anonymousDisplayName — never trust client
+    let anonymousFields = {};
+    if (isAnonymous === true) {
+      // Check global feature flag
+      const anonEnabled = process.env.ANONYMOUS_POSTING_ENABLED !== 'false'; // default true
+      if (!anonEnabled) {
+        mutation.fail('Anonymous posting is disabled', 403);
+        return res.status(403).json({ message: 'Anonymous posting is currently disabled', _mutationId: mutation.mutationId });
+      }
+      // Check user permission
+      const anonUser = await User.findById(userId).select('role privacy');
+      if (anonUser?.role === 'banned') {
+        mutation.fail('Banned users cannot post anonymously', 403);
+        return res.status(403).json({ message: 'You cannot post anonymously', _mutationId: mutation.mutationId });
+      }
+      // Check user privacy setting (Phase 5: privacy.allowAnonymousPosts)
+      if (anonUser?.privacy?.allowAnonymousPosts === false) {
+        mutation.fail('User has disabled anonymous posting', 403);
+        return res.status(403).json({ message: 'Anonymous posting is disabled in your settings', _mutationId: mutation.mutationId });
+      }
+      anonymousFields = {
+        isAnonymous: true,
+        authorHiddenFromPublic: true,
+        anonymousDisplayName: 'Anonymous Member' // Phase 8: Server-controlled string only
+      };
+      mutation.addStep('ANONYMOUS_POST_SET');
+    }
+
     const postData = {
       author: userId,
       content: content || '',
@@ -359,7 +438,8 @@ router.post('/', auth, requireActiveUser, requireEmailVerification, postLimiter,
       visibility: visibility || 'followers',
       // REMOVED 2025-12-26: hiddenFrom, sharedWith, tags, tagOnly deleted (Phase 5)
       contentWarning: contentWarning || '',
-      hideMetrics: hideMetrics || false
+      hideMetrics: hideMetrics || false,
+      ...anonymousFields
     };
 
     // Only add poll field if there's actual poll data (avoids validation error for null poll)
@@ -373,6 +453,16 @@ router.post('/', auth, requireActiveUser, requireEmailVerification, postLimiter,
 
     await post.save();
     mutation.addStep('DOCUMENT_SAVED');
+
+    // Phase 10: Audit log for anonymous posts
+    if (post.isAnonymous) {
+      logger.info('anonymous_post_created', {
+        postId: post._id.toString(),
+        authorId: userId.toString(),
+        isAnonymous: true,
+        timestamp: new Date().toISOString()
+      });
+    }
 
     // CRITICAL: Verify write succeeded - never assume MongoDB write worked silently
     await verifyWrite(Post, post._id, mutation, { author: userId });

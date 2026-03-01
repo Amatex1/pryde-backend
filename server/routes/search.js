@@ -47,7 +47,8 @@ router.get('/', auth, searchLimiter, async (req, res) => {
         ],
         _id: { $nin: blockedUserIds }, // Exclude blocked users
         isActive: true, // Only show active accounts
-        isBanned: { $ne: true } // Exclude banned users
+        isBanned: { $ne: true }, // Exclude banned users
+        'privacy.hideProfileFromSearch': { $ne: true } // Phase 9: Respect hide-from-search setting
       })
       .select('username displayName profilePhoto bio')
       .limit(10);
@@ -67,6 +68,10 @@ router.get('/', auth, searchLimiter, async (req, res) => {
         postQuery.visibility = 'public';
         postQuery.hiddenFrom = { $ne: req.userId };
         postQuery.author = { $nin: blockedUserIds }; // Exclude blocked users
+        // Phase 9: Exclude anonymous posts from search for non-staff
+        if (!['moderator', 'admin', 'super_admin'].includes(req.user.role)) {
+          postQuery.isAnonymous = { $ne: true };
+        }
       }
 
       results.posts = await Post.find(postQuery)

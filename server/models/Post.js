@@ -200,6 +200,20 @@ const postSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
+  // ── Anonymous Post Architecture (added 2026-03-01) ─────────────────────────
+  // authorId is ALWAYS stored. Anonymous only hides identity from public rendering.
+  isAnonymous: {
+    type: Boolean,
+    default: false
+  },
+  anonymousDisplayName: {
+    type: String,
+    default: null
+  },
+  authorHiddenFromPublic: {
+    type: Boolean,
+    default: false
+  },
   /**
    * Phase 6A: Post locking (disable replies)
    * Locked posts can be viewed but not replied to

@@ -102,6 +102,77 @@ router.patch('/settings', auth, async (req, res) => {
   }
 });
 
+// ── Safety & Privacy Panel (Phase 5) ────────────────────────────────────────
+// Separate from privacySettings — these control safety/hardening features.
+
+// GET /api/privacy/safety
+router.get('/safety', auth, async (req, res) => {
+  try {
+    const user = await User.findById(req.userId).select('privacy');
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    res.json({
+      showRealName: user.privacy?.showRealName ?? true,
+      allowAnonymousPosts: user.privacy?.allowAnonymousPosts ?? true,
+      hideProfileFromSearch: user.privacy?.hideProfileFromSearch ?? false,
+      hideOnlineStatus: user.privacy?.hideOnlineStatus ?? false,
+      friendOnlyProfile: user.privacy?.friendOnlyProfile ?? false,
+      showBadgesPublicly: user.privacy?.showBadgesPublicly ?? true,
+    });
+  } catch (error) {
+    logger.error('Get safety settings error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// PATCH /api/privacy/safety
+router.patch('/safety', auth, async (req, res) => {
+  try {
+    const user = await User.findById(req.userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const allowedSafetyFields = [
+      'showRealName',
+      'allowAnonymousPosts',
+      'hideProfileFromSearch',
+      'hideOnlineStatus',
+      'friendOnlyProfile',
+      'showBadgesPublicly'
+    ];
+
+    if (!user.privacy) {
+      user.privacy = {};
+    }
+
+    allowedSafetyFields.forEach(field => {
+      if (req.body[field] !== undefined) {
+        user.privacy[field] = Boolean(req.body[field]);
+      }
+    });
+
+    user.markModified('privacy');
+    await user.save();
+
+    res.json({
+      message: 'Safety settings updated',
+      privacy: {
+        showRealName: user.privacy.showRealName ?? true,
+        allowAnonymousPosts: user.privacy.allowAnonymousPosts ?? true,
+        hideProfileFromSearch: user.privacy.hideProfileFromSearch ?? false,
+        hideOnlineStatus: user.privacy.hideOnlineStatus ?? false,
+        friendOnlyProfile: user.privacy.friendOnlyProfile ?? false,
+        showBadgesPublicly: user.privacy.showBadgesPublicly ?? true,
+      }
+    });
+  } catch (error) {
+    logger.error('Update safety settings error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // GET /api/privacy/blocked-users
 router.get('/blocked-users', auth, async (req, res) => {
   try {
