@@ -8,6 +8,9 @@ import auth, { optionalAuth } from '../middleware/auth.js';
 import requireActiveUser from '../middleware/requireActiveUser.js';
 import requireEmailVerification from '../middleware/requireEmailVerification.js';
 import { reactionLimiter } from '../middleware/rateLimiter.js';
+import Notification from '../models/Notification.js';
+import { emitNotificationCreated } from '../utils/notificationEmitter.js';
+import { sendPushNotification } from './pushNotifications.js';
 import logger from '../utils/logger.js';
 import { emitValidated } from '../utils/emitValidated.js';
 
@@ -138,6 +141,41 @@ router.post('/', auth, requireActiveUser, requireEmailVerification, reactionLimi
       await newReaction.save();
 
       logger.debug('✅ Reaction added:', { targetType, targetId, userId, emoji });
+
+      // 🔔 Notify target owner of the new reaction
+      try {
+        const ownerId = targetType === 'post' ? target.author : target.authorId;
+        if (ownerId && ownerId.toString() !== userId.toString()) {
+          const reactor = await User.findById(userId).select('username displayName');
+          const reactorName = reactor?.displayName || reactor?.username || 'Someone';
+          const targetPostId = targetType === 'post' ? targetId : target.postId?.toString();
+
+          const notification = new Notification({
+            recipient: ownerId,
+            sender: userId,
+            type: 'like',
+            message: `reacted ${emoji} to your ${targetType}`,
+            postId: targetPostId,
+            ...(targetType === 'comment' && { commentId: targetId })
+          });
+          await notification.save();
+          await notification.populate('sender', 'username displayName profilePhoto');
+          emitNotificationCreated(req.io, ownerId.toString(), notification);
+
+          sendPushNotification(ownerId, {
+            title: 'New Reaction',
+            body: `${reactorName} reacted ${emoji} to your ${targetType}`,
+            data: {
+              type: 'like',
+              postId: targetPostId || '',
+              url: `/post/${targetPostId}`
+            },
+            tag: `reaction-${targetType}-${targetId}`
+          }).catch(err => logger.error('Reaction push notification error:', err.message));
+        }
+      } catch (notificationErr) {
+        logger.error('Failed to create reaction notification:', notificationErr);
+      }
 
       // Get updated aggregated reactions
       const reactions = await getAggregatedReactions(targetType, targetId);

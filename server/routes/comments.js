@@ -611,6 +611,43 @@ router.post('/comments/:commentId/react', auth, requireActiveUser, reactionLimit
   await comment.save();
   await comment.populate('authorId', 'username displayName profilePhoto isVerified pronouns');
 
+  // 🔔 Notify comment author of the reaction (only for new reactions, not toggles)
+  if (!hadThisReaction) {
+    try {
+      const commentAuthorId = comment.authorId?._id;
+      if (commentAuthorId && commentAuthorId.toString() !== userId.toString()) {
+        const reactor = await User.findById(userId).select('username displayName');
+        const reactorName = reactor?.displayName || reactor?.username || 'Someone';
+
+        const notification = new Notification({
+          recipient: commentAuthorId,
+          sender: userId,
+          type: 'like',
+          message: `reacted ${emoji} to your comment`,
+          postId: comment.postId,
+          commentId: comment._id
+        });
+        await notification.save();
+        await notification.populate('sender', 'username displayName profilePhoto');
+        emitNotificationCreated(req.io, commentAuthorId.toString(), notification);
+
+        sendPushNotification(commentAuthorId, {
+          title: 'New Reaction',
+          body: `${reactorName} reacted ${emoji} to your comment`,
+          data: {
+            type: 'like',
+            postId: comment.postId.toString(),
+            commentId,
+            url: `/post/${comment.postId}?comment=${commentId}`
+          },
+          tag: `reaction-comment-${commentId}`
+        }).catch(err => logger.error('Comment reaction push error:', err.message));
+      }
+    } catch (notificationErr) {
+      logger.error('Failed to create comment reaction notification:', notificationErr);
+    }
+  }
+
   // SAFETY: Optional chaining for io
   req.io?.emit('comment_reaction_added', {
     postId: comment.postId,
