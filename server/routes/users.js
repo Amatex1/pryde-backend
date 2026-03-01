@@ -821,8 +821,34 @@ router.patch('/me/settings', auth, requireActiveUser, async (req, res) => {
       galaxyMode: user.privacySettings.galaxyMode ?? true
     });
   } catch (error) {
-    console.error('Update settings error:', error);
-    console.error('Error details:', error.message);
+    logger.error('Update settings error:', error.message);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+// @route   POST /api/users/safety-acknowledge
+// @desc    Persist safety warning acknowledgement (replaces localStorage dismissal)
+// @access  Private
+router.post('/safety-acknowledge', auth, requireActiveUser, async (req, res) => {
+  try {
+    const user = await User.findById(req.userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    user.safetyAcknowledgedAt = new Date();
+    user.safetyAcknowledgedCountry = user.lastCountryCode || null;
+    await user.save();
+
+    logger.info(`[Safety] User ${user.username} acknowledged safety warning (country: ${user.lastCountryCode})`);
+
+    res.json({
+      success: true,
+      safetyAcknowledgedAt: user.safetyAcknowledgedAt,
+      safetyAcknowledgedCountry: user.safetyAcknowledgedCountry
+    });
+  } catch (error) {
+    logger.error('Safety acknowledge error:', error.message);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });

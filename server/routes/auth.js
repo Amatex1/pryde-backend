@@ -24,6 +24,7 @@ import {
   getIpGeolocation,
   enforceMaxSessions
 } from '../utils/sessionUtils.js';
+import { getCountryFromRequest, requiresSafetyCheck as checkSafetyRequired, HIGH_RISK_COUNTRIES } from '../utils/geoService.js';
 import { logEmailVerification, logPasswordChange } from '../utils/securityLogger.js';
 import { loginLimiter, signupLimiter, passwordResetLimiter, resendVerificationLimiter, checkUsernameLimiter, resetPasswordConfirmLimiter } from '../middleware/rateLimiter.js';
 import { validateSignup, validateLogin } from '../middleware/validation.js';
@@ -504,6 +505,18 @@ router.post('/signup', validateAgeBeforeRateLimit, signupLimiter, validateSignup
 
     await user.save();
 
+    // ── Geo Detection on Signup ─────────────────────────────────────────
+    const countryCode = await getCountryFromRequest(req);
+    if (countryCode) {
+      user.lastCountryCode = countryCode;
+      // Privacy nudge: default to nickname in high-risk countries
+      if (HIGH_RISK_COUNTRIES.includes(countryCode) && user.displayNameType === 'fullName') {
+        user.displayNameType = 'nickname';
+      }
+      await user.save();
+    }
+    const signupSafetyCheck = checkSafetyRequired(countryCode, user);
+
     // Send verification email (don't block registration if email fails)
     sendVerificationEmail(email, rawVerificationToken, username).catch(err => {
       logger.error('Failed to send verification email:', err);
@@ -639,7 +652,10 @@ router.post('/signup', validateAgeBeforeRateLimit, signupLimiter, validateSignup
         hasCompletedTour: user.hasCompletedTour,
         hasSkippedTour: user.hasSkippedTour,
         showTour: true // New signup always shows tour
-      }
+      },
+      // ── Geo Safety ──
+      countryCode: countryCode || null,
+      requiresSafetyCheck: signupSafetyCheck
     });
   } catch (error) {
     logger.error('Signup error:', error.message);
@@ -892,6 +908,20 @@ router.post('/login', loginLimiter, validateLogin, async (req, res) => {
     // Get IP geolocation (async, but don't block login if it fails)
     const location = await getIpGeolocation(ipAddress);
 
+    // ── Enterprise Geo Detection (CF header → Redis → ipapi fallback) ──
+    const countryCode = await getCountryFromRequest(req);
+
+    // Country-change detection: reset safety acknowledgement if country changed
+    if (user.lastCountryCode && countryCode && user.lastCountryCode !== countryCode) {
+      user.safetyAcknowledgedAt = null;
+      user.safetyAcknowledgedCountry = null;
+      logger.info(`[GeoService] Country change detected for ${user.username}: ${user.lastCountryCode} → ${countryCode}`);
+    }
+    if (countryCode) {
+      user.lastCountryCode = countryCode;
+    }
+    const loginSafetyCheck = checkSafetyRequired(countryCode, user);
+
     // Check for login after prolonged inactivity (90+ days)
     const INACTIVITY_THRESHOLD_DAYS = 90;
     const INACTIVITY_THRESHOLD_MS = INACTIVITY_THRESHOLD_DAYS * 24 * 60 * 60 * 1000;
@@ -1100,8 +1130,9 @@ router.post('/login', loginLimiter, validateLogin, async (req, res) => {
       accessToken,
       // 🔐 SECURITY: refreshToken no longer returned in body - cookie is sole source
       suspicious,
-      // 🌍 Country code for SafetyWarning (avoids CORS issues with frontend geolocation APIs)
-      countryCode: location.countryCode || null,
+      // 🌍 Enterprise geo detection — uses CF header / Redis / ipapi fallback
+      countryCode: countryCode || location.countryCode || null,
+      requiresSafetyCheck: loginSafetyCheck,
       user: {
         id: user._id,
         _id: user._id,  // Include both for backward compatibility
@@ -1226,6 +1257,17 @@ router.post('/verify-2fa-login', loginLimiter, async (req, res) => {
 
     // Get IP geolocation (async, but don't block login if it fails)
     const location = await getIpGeolocation(ipAddress);
+
+    // ── Enterprise Geo Detection for 2FA login ──
+    const countryCode = await getCountryFromRequest(req);
+    if (user.lastCountryCode && countryCode && user.lastCountryCode !== countryCode) {
+      user.safetyAcknowledgedAt = null;
+      user.safetyAcknowledgedCountry = null;
+    }
+    if (countryCode) {
+      user.lastCountryCode = countryCode;
+    }
+    const loginSafetyCheck2FA = checkSafetyRequired(countryCode, user);
 
     // Check for login after prolonged inactivity (90+ days)
     const INACTIVITY_THRESHOLD_DAYS = 90;
@@ -1402,6 +1444,9 @@ router.post('/verify-2fa-login', loginLimiter, async (req, res) => {
       message: 'Login successful',
       accessToken,
       // 🔐 SECURITY: refreshToken no longer returned in body - cookie is sole source
+      // 🌍 Enterprise geo detection
+      countryCode: countryCode || location.countryCode || null,
+      requiresSafetyCheck: loginSafetyCheck2FA,
       user: {
         id: user._id,
         _id: user._id,  // Include both for backward compatibility

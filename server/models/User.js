@@ -813,6 +813,22 @@ const userSchema = new mongoose.Schema({
   // Use regular posts and profile bio instead
 
   // REMOVED 2025-12-26: isAlly deleted (Phase 5) - use identity field instead
+
+  // ── Geo Safety Fields (added 2026-03-01) ───────────────────────────────────
+  // Enterprise geo detection + safety acknowledgement hardening
+  lastCountryCode: {
+    type: String,
+    default: null
+  },
+  safetyAcknowledgedAt: {
+    type: Date,
+    default: null
+  },
+  safetyAcknowledgedCountry: {
+    type: String,
+    default: null
+  },
+
   onboardingCompleted: {
     type: Boolean,
     default: false

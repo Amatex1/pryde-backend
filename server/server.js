@@ -61,7 +61,11 @@ import {
 import { connectDB } from './utils/dbManager.js';
 import config from "./config/config.js";
 let redisClient = null;
-(async () => { redisClient = await initRedis(config, logger); })();
+(async () => {
+  redisClient = await initRedis(config, logger);
+  // Expose Redis client on app for geoService and other utilities
+  if (redisClient) app.set('redis', redisClient);
+})();
 
 // Connect to DB (skip auto-connect during tests to avoid double connections)
 if (process.env.NODE_ENV !== 'test') {

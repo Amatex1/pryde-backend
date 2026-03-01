@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+import logger from './logger.js';
 
 // Generate unique session ID
 export function generateSessionId() {
@@ -34,7 +35,7 @@ export async function getIpGeolocation(ipAddress) {
     });
 
     if (!response.ok) {
-      console.warn(`IP geolocation API returned ${response.status} for IP ${ipAddress}`);
+      logger.warn(`[Geo] ipapi returned ${response.status}`);
       return { country: '', countryCode: '', region: '', city: '' };
     }
 
@@ -42,7 +43,7 @@ export async function getIpGeolocation(ipAddress) {
 
     // Check for API error response
     if (data.error) {
-      console.warn(`IP geolocation API error for IP ${ipAddress}:`, data.reason);
+      logger.warn(`[Geo] ipapi error: ${data.reason}`);
       return { country: '', countryCode: '', region: '', city: '' };
     }
 
@@ -54,7 +55,7 @@ export async function getIpGeolocation(ipAddress) {
     };
   } catch (error) {
     // Don't fail login if geolocation fails
-    console.warn(`Failed to get geolocation for IP ${ipAddress}:`, error.message);
+    logger.warn(`[Geo] ipapi fetch failed: ${error.message}`);
     return {
       country: '',
       countryCode: '',
