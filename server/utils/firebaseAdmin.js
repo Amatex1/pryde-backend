@@ -61,10 +61,14 @@ export const sendFCMNotification = async (tokens, payload) => {
     return { successCount: 0, failureCount: 0, invalidTokens: [] };
   }
 
+  const frontendURL = process.env.FRONTEND_URL || 'https://prydeapp.com';
+  const logoUrl = `${frontendURL}/pryde-logo-small.png`;
+
   const message = {
     notification: {
       title: payload.title || 'Pryde Social',
       body: payload.body || 'You have a new notification',
+      imageUrl: logoUrl,
     },
     data: {
       ...(payload.data || {}),
@@ -74,17 +78,23 @@ export const sendFCMNotification = async (tokens, payload) => {
       timestamp: new Date().toISOString(),
     },
     webpush: {
+      headers: {
+        Urgency: 'high',
+      },
       notification: {
-        icon: payload.icon || '/pryde-logo-small.webp',
-        badge: '/pryde-logo-small.webp',
+        icon: logoUrl,
+        badge: logoUrl,
         click_action: payload.data?.url || '/',
       },
       fcmOptions: {
         link: payload.data?.url || '/',
       },
     },
-    // APNs config for iOS
+    // APNs config for iOS — priority 10 = immediate delivery
     apns: {
+      headers: {
+        'apns-priority': '10',
+      },
       payload: {
         aps: {
           alert: {
@@ -96,7 +106,7 @@ export const sendFCMNotification = async (tokens, payload) => {
         },
       },
     },
-    // Android config
+    // Android config — high priority wakes the device immediately
     android: {
       priority: 'high',
       notification: {

@@ -209,11 +209,13 @@ async function sendPushNotification(userId, payload, options = {}) {
     }
 
     if (subscriptions.length > 0) {
+      const frontendURL = process.env.FRONTEND_URL || 'https://prydeapp.com';
+      const logoUrl = `${frontendURL}/pryde-logo-small.png`;
       const notificationPayload = JSON.stringify({
         title: payload.title || 'Pryde Social',
         body: payload.body || 'You have a new notification',
-        icon: payload.icon || '/pryde-logo-small.webp',
-        badge: '/pryde-logo-small.webp',
+        icon: logoUrl,
+        badge: logoUrl,
         tag: payload.tag,
         data: payload.data || {}
       });
