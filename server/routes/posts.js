@@ -582,7 +582,7 @@ router.post('/', auth, requireActiveUser, requireEmailVerification, postLimiter,
 
           // Send push notifications to all recipients (chunked, fire-and-forget)
           const pushPayload = {
-            title: 'Announcement',
+            title: 'Pryde Social',
             body: `${author.displayName || author.username}: ${(content || '').substring(0, 80)}`,
             data: { type: 'announcement', url: `/feed?post=${post._id}` }
           };
@@ -847,7 +847,7 @@ router.post('/:id/like', auth, requireActiveUser, reactionLimiter, guardReact, a
         const likerName = liker.displayName || liker.username;
 
         sendPushNotification(post.author, {
-          title: `❤️ New Like`,
+          title: 'Pryde Social',
           body: `${likerName} liked your post`,
           data: {
             type: 'like',
@@ -941,8 +941,8 @@ router.post('/:id/react', auth, requireActiveUser, reactionLimiter, async (req, 
         const reactorName = reactor.displayName || reactor.username;
 
         sendPushNotification(post.author, {
-          title: `${emoji} New Reaction`,
-          body: `${reactorName} reacted ${emoji} to your post`,
+          title: 'Pryde Social',
+          body: `${reactorName} reacted to your post`,
           data: {
             type: 'reaction',
             postId: post._id.toString(),
@@ -1062,8 +1062,8 @@ router.post('/:id/comment/:commentId/react', auth, requireActiveUser, reactionLi
         const reactorName = reactor.displayName || reactor.username;
 
         sendPushNotification(comment.user, {
-          title: `${emoji} New Reaction`,
-          body: `${reactorName} reacted ${emoji} to your comment`,
+          title: 'Pryde Social',
+          body: `${reactorName} reacted to your comment`,
           data: {
             type: 'reaction',
             postId: post._id.toString(),
@@ -1183,7 +1183,7 @@ router.post('/:id/comment', auth, requireActiveUser, requireEmailVerification, c
       const commenterName = commenter.displayName || commenter.username;
 
       sendPushNotification(post.author, {
-        title: `💬 New Comment`,
+        title: 'Pryde Social',
         body: `${commenterName} commented on your post`,
         data: {
           type: 'comment',
@@ -1290,7 +1290,7 @@ router.post('/:id/comment/:commentId/reply', auth, requireActiveUser, commentLim
       const replierName = replier.displayName || replier.username;
 
       sendPushNotification(parentComment.user, {
-        title: `💬 New Reply`,
+        title: 'Pryde Social',
         body: `${replierName} replied to your comment`,
         data: {
           type: 'reply',

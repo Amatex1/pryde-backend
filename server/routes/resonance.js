@@ -123,7 +123,7 @@ async function maybeSendResonanceNotification(authorId, postId) {
 
     // Send push notification (fire-and-forget)
     sendPushNotification(authorId, {
-      title: 'Someone felt this too',
+      title: 'Pryde Social',
       body: message,
       data: { type: 'resonance', url: `/feed?post=${postId}` }
     }).catch(() => {});

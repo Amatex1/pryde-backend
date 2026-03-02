@@ -664,8 +664,8 @@ router.post('/', auth, requireActiveUser, requireEmailVerification, messageLimit
         const senderName = sender.displayName || sender.username;
 
         sendPushNotification(recipient, {
-          title: `💬 New Message`,
-          body: `${senderName}: ${content ? content.substring(0, 50) : 'Sent an attachment'}`,
+          title: 'Pryde Social',
+          body: `${senderName} sent you a message`,
           data: {
             type: 'message',
             userId: req.userId.toString(),

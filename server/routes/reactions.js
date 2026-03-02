@@ -163,8 +163,8 @@ router.post('/', auth, requireActiveUser, requireEmailVerification, reactionLimi
           emitNotificationCreated(req.io, ownerId.toString(), notification);
 
           sendPushNotification(ownerId, {
-            title: 'New Reaction',
-            body: `${reactorName} reacted ${emoji} to your ${targetType}`,
+            title: 'Pryde Social',
+            body: `${reactorName} reacted to your ${targetType}`,
             data: {
               type: 'like',
               postId: targetPostId || '',

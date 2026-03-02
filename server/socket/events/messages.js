@@ -158,8 +158,8 @@ export function registerMessageEvents(socket, { io, onlineUsers, getRedis }) {
         : (sanitizedContent || (data.attachment ? '📎 Attachment' : '🎤 Voice note'));
 
       sendPushNotification(data.recipientId, {
-        title: `💬 ${senderName}`,
-        body: messagePreview,
+        title: 'Pryde Social',
+        body: `${senderName} sent you a message`,
         data: { type: 'message', senderId: userId, url: `/messages?user=${userId}` },
         tag: `message-${userId}`
       }).catch(err => logger.error('Push notification error:', err.message));

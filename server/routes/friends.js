@@ -91,7 +91,7 @@ router.post('/request/:userId', auth, friendRequestLimiter, checkFriendRequestPe
     // ✅ Push notification for receiver (app may be closed/backgrounded)
     const senderName = sender.displayName || sender.username;
     sendPushNotification(receiverId, {
-      title: '👋 New Friend Request',
+      title: 'Pryde Social',
       body: `${senderName} sent you a friend request`,
       data: { type: 'friend_request', url: '/friends' },
       tag: `friend-request-${senderId}`
@@ -184,7 +184,7 @@ router.post('/accept/:requestId', auth, async (req, res) => {
     // ✅ Push notification for original sender (app may be closed/backgrounded)
     const accepterName = notification.sender.displayName || notification.sender.username;
     sendPushNotification(friendRequest.sender, {
-      title: '🎉 Friend Request Accepted',
+      title: 'Pryde Social',
       body: `${accepterName} accepted your friend request`,
       data: { type: 'friend_accept', url: '/friends' },
       tag: `friend-accept-${req.userId}`

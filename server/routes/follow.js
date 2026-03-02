@@ -96,7 +96,7 @@ router.post('/:userId', auth, requireActiveUser, requireEmailVerification, guard
         const requesterName = requester.displayName || requester.username;
 
         sendPushNotification(targetUserId, {
-          title: `👤 Follow Request`,
+          title: 'Pryde Social',
           body: `${requesterName} wants to follow you`,
           data: {
             type: 'follow_request',
@@ -142,7 +142,7 @@ router.post('/:userId', auth, requireActiveUser, requireEmailVerification, guard
         const followerName = follower.displayName || follower.username;
 
         sendPushNotification(targetUserId, {
-          title: `👤 New Follower`,
+          title: 'Pryde Social',
           body: `${followerName} started following you`,
           data: {
             type: 'follow',
@@ -356,7 +356,7 @@ router.post('/requests/:requestId/accept', auth, requireActiveUser, async (req, 
       const accepterName = accepter.displayName || accepter.username;
 
       sendPushNotification(followRequest.sender, {
-        title: `✅ Follow Request Accepted`,
+        title: 'Pryde Social',
         body: `${accepterName} accepted your follow request`,
         data: {
           type: 'follow_accepted',

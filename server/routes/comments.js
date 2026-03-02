@@ -344,7 +344,7 @@ router.post('/posts/:postId/comments', auth, requireActiveUser, requireEmailVeri
           const replierName = replier.displayName || replier.username;
 
           sendPushNotification(parentComment.authorId, {
-            title: `💬 New Reply`,
+            title: 'Pryde Social',
             body: `${replierName} replied to your comment`,
             data: {
               type: 'reply',
@@ -380,7 +380,7 @@ router.post('/posts/:postId/comments', auth, requireActiveUser, requireEmailVeri
           const commenterName = commenter.displayName || commenter.username;
 
           sendPushNotification(post.author, {
-            title: `💬 New Comment`,
+            title: 'Pryde Social',
             body: `${commenterName} commented on your post`,
             data: {
               type: 'comment',
@@ -632,8 +632,8 @@ router.post('/comments/:commentId/react', auth, requireActiveUser, reactionLimit
         emitNotificationCreated(req.io, commentAuthorId.toString(), notification);
 
         sendPushNotification(commentAuthorId, {
-          title: 'New Reaction',
-          body: `${reactorName} reacted ${emoji} to your comment`,
+          title: 'Pryde Social',
+          body: `${reactorName} reacted to your comment`,
           data: {
             type: 'like',
             postId: comment.postId.toString(),
