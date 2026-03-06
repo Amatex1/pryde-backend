@@ -1,310 +1,275 @@
 # Production Setup Guide - Pryde Social
 
-This guide walks you through deploying the three critical production services:
-1. **Redis** - Already configured via Render! ✅
-2. **Firebase** - For push notifications
-3. **Load Testing** - Using Artillery
+This guide covers the critical infrastructure configurations needed for production deployment.
 
 ---
 
-## 1. REDIS SETUP ✅ ALREADY CONFIGURED
-
-Your Redis is already set up via Render! The configuration in `render.yaml` provides:
-- Redis service: `pryde-redis` (free tier, Singapore region)
-- Internal connection string automatically passed as `REDIS_URL`
-- Both rate limiting and feed caching use this Redis
-
-**Verification:**
-After deploying, check your server logs for:
-```
-✅ Redis rate limiting active
-✅ Feed cache initialized with Redis
-```
-
-**Or test manually:**
-```
-bash
-curl https://pryde-backend.onrender.com/api/health
-```
-Should return: `{"status":"ok", "redis":"OK", ...}`
-
-**If you need to change Redis:**
-- Upgrade plan in Render dashboard
-- Or switch to Upstash/Redis Cloud and update `REDIS_URL` env var
-
----
-
-## 2. FIREBASE SETUP
-
-### Step 1: Create Firebase Project
-
-1. Go to https://console.firebase.google.com
-2. Click "Add project"
-3. Enter name: `pryde-social`
-4. Disable Google Analytics (optional)
-5. Click "Create project"
-
-### Step 2: Enable Cloud Messaging
-
-1. In Firebase console, go to **Project Settings**
-2. Scroll to **Your apps** → Click the web icon (`</>`)
-3. Register app: `Pryde Social Web`
-4. Copy the `firebaseConfig` object (we'll use it later)
-
-### Step 3: Get Service Account JSON
-
-1. In Project Settings → **Service accounts**
-2. Click "Generate new private key"
-3. Save the JSON file securely
-
-### Step 4: Add Environment Variables
-
-**Option A: JSON directly (for small configs)**
-```
-FIREBASE_SERVICE_ACCOUNT_JSON={"type":"service_account","project_id":"..."}
-```
-
-**Option B: File path (recommended)**
-```
-FIREBASE_SERVICE_ACCOUNT_PATH=./firebase-service-account.json
-```
-Place the JSON file in your server directory and add to `.gitignore`!
-
-### Step 5: Generate VAPID Keys (Web Push)
-
-Run this command:
-```
-bash
-npx web-push generate-vapid-keys
-```
-
-You'll get:
-- Public key (share with frontend)
-- Private key (keep secret)
-
-Add to environment:
-```
-VAPID_PUBLIC_KEY=your-public-key
-VAPID_PRIVATE_KEY=your-private-key
-VAPID_SUBJECT=mailto:contact@prydesocial.com
-```
-
-### Step 6: Configure Frontend
-
-Update your Firebase config in frontend:
-```
-javascript
-// In your firebase initialization file
-const firebaseConfig = {
-  apiKey: "your-api-key",
-  authDomain: "pryde-social.firebaseapp.com",
-  projectId: "pryde-social",
-  storageBucket: "pryde-social.appspot.com",
-  messagingSenderId: "123456789",
-  appId: "1:123456789:web:abc123"
-};
-```
-
----
-
-## 3. LOAD TESTING (Artillery)
+## 1. Cloudflare R2 + CDN Configuration
 
 ### Prerequisites
+- Cloudflare account with R2 storage enabled
+- Custom domain for media (e.g., `media.prydeapp.com`)
+
+### Step 1: Create R2 Bucket
+1. Log into Cloudflare Dashboard → R2
+2. Create bucket: `pryde-social-media`
+3. Note your R2 credentials
+
+### Step 2: Configure Custom Domain
+1. In R2 bucket settings, add custom domain
+2. Example: `media.prydeapp.com`
+3. Cloudflare will provision an SSL certificate
+
+### Step 3: Set Environment Variables
 
 ```
 bash
-# Install Artillery globally
-npm install -g artillery
+# R2 Storage
+R2_ENABLED=true
+R2_ACCOUNT_ID=your_account_id
+R2_ACCESS_KEY_ID=your_access_key
+R2_SECRET_ACCESS_KEY=your_secret_key
+R2_BUCKET_NAME=pryde-social-media
 
-# Or use local installation
-cd pryde-backend
-npm install
+# CDN URL (pointing to your custom domain)
+R2_PUBLIC_URL=https://media.prydeapp.com
 ```
 
-### Create Test Configuration
+### Step 4: Verify Configuration
 
-Create `tests/load/feed-load.yml`:
+The R2 storage is already integrated in:
+- `pryde-backend/server/utils/r2Storage.js`
+- `pryde-backend/server/routes/upload.js`
+
+---
+
+## 2. Redis Configuration for Production
+
+### Why Redis is Required
+- **Rate Limiting**: Distributed rate limiting across instances
+- **Feed Caching**: Reduces DB load by ~70%
+- **Session Storage**: Sticky sessions alternative
+
+### Environment Variables
 
 ```
-yaml
-config:
-  target: "https://your-production-api.prydesocial.com"
-  phases:
-    - duration: 60
-      arrivalRate: 10
-      name: "Warm up"
-    - duration: 120
-      arrivalRate: 50
-      name: "Sustained load"
-    - duration: 60
-      arrivalRate: 100
-      name: "Stress test"
-  processor: "./load-processor.js"
-  
-scenarios:
-  - name: "Feed browsing"
-    flow:
-      - post:
-          url: "/api/auth/login"
-          json:
-            username: "testuser"
-            password: "testpass"
-          capture:
-            - json: "$.token"
-              as: "authToken"
-      
-      - get:
-          url: "/api/feed?page=1&limit=20"
-          headers:
-            Authorization: "Bearer {{ authToken }}"
-          
-      - get:
-          url: "/api/users/profile"
-          headers:
-            Authorization: "Bearer {{ authToken }}"
+bash
+# Option A: REDIS_URL (Render, Railway, Upstash)
+REDIS_URL=rediss://username:password@host:port
+
+# Option B: Individual components
+REDIS_HOST=your-redis-host
+REDIS_PORT=6379
+REDIS_PASSWORD=your_password
+
+# Optional: TLS for cloud Redis
+REDIS_TLS=true
 ```
 
-### Create Load Test Processor
+### Production Validation
 
-Create `tests/load/load-processor.js`:
+The server will warn if Redis is not configured in production:
+
+```
+WARNING: Redis not configured - rate limiting will use in-memory store 
+(not recommended for multi-instance deployments)
+```
+
+### Redis Connection Details
+
+| Component | File Location |
+|-----------|---------------|
+| Rate Limiting | `pryde-backend/server/middleware/rateLimiter.js` |
+| Feed Caching | `pryde-backend/server/utils/redisCache.js` |
+| User Caching | `pryde-backend/server/utils/userCache.js` |
+
+---
+
+## 3. Feed Query Indexes
+
+### Purpose
+Optimize MongoDB queries for feed loading:
+- Reduce feed load time by 40-60%
+- Support pagination efficiently
+- Enable real-time sorting
+
+### Indexes Already Created
+
+The migration `add_feed_indexes.js` creates:
+
+| Index Name | Fields | Purpose |
+|------------|--------|---------|
+| `feed_home_following` | author, visibility, groupId, createdAt | Home/Following feed |
+| `feed_global` | visibility, createdAt, groupId | Public global feed |
+| `feed_user_profile` | author, createdAt | User profile posts |
+| `feed_trending` | likesCount, createdAt | Trending posts |
+| `comments_by_post` | parentPost, createdAt | Post comments |
+| `invalidation_author` | author, createdAt | Cache invalidation |
+
+### Verify Indexes
+
+Run the verification script:
+
+```
+bash
+node server/migrations/scripts/verifyIndexes.js
+```
+
+Or check manually in MongoDB shell:
 
 ```
 javascript
-const { faker } = require('@faker-js/faker');
-
-module.exports = {
-  generateUser: () => {
-    return {
-      username: faker.internet.userName(),
-      email: faker.internet.email(),
-      password: 'TestPass123!'
-    };
-  }
-};
+db.posts.getIndexes()
 ```
 
-### Run Load Tests
+---
+
+## 4. Image Optimization
+
+### Current Implementation
+
+The platform already implements:
+
+| Feature | Status | Location |
+|---------|--------|----------|
+| EXIF Stripping | ✅ | `middleware/imageProcessing.js` |
+| WebP Conversion | ✅ | Same |
+| AVIF Support | ✅ | `OptimizedImage.jsx` |
+| Responsive Sizes | ✅ | `upload.js` (thumbnail, small, medium) |
+| Lazy Loading | ✅ | `OptimizedImage.jsx` |
+
+### Responsive Size Mapping
+
+| Size | Dimensions | Use Case |
+|------|------------|----------|
+| `thumbnail` | Avatar optimized | Profile pictures |
+| `small` | ~300px | Feed thumbnails |
+| `medium` | ~600px | Full post view |
+| `full` | Original | Lightbox view |
+
+---
+
+## 5. Multi-Instance Deployment
+
+### Requirements for Horizontal Scaling
+
+1. **Redis Required**:
+   - Session management
+   - Rate limiting
+   - Feed cache
+
+2. **Sticky Sessions**:
+   - Or Redis adapter for Socket.IO
+   - See `pryde-backend/server/socket/index.js`
+
+3. **Load Balancer Health Checks**:
+   - `/api/admin/health` endpoint
+   - See `pryde-backend/server/routes/adminHealth.js`
+
+### Scaling Estimates
+
+| Configuration | Max Users |
+|---------------|-----------|
+| Single instance | 10,000 |
+| 2 instances + Redis | 25,000 |
+| 5 instances + Redis + CDN | 100,000+ |
+
+---
+
+## 6. Environment Checklist
+
+### Required in Production
 
 ```
 bash
-# Basic load test
-artillery run tests/load/feed-load.yml
+# Database
+MONGODB_URI=mongodb+srv://...
 
-# With reporting
-artillery run tests/load/feed-load.yml --report json --output test-results.json
+# Authentication
+JWT_SECRET=secure_random_string
+JWT_REFRESH_SECRET=secure_random_string
+CSRF_SECRET=secure_random_string
 
-# Socket.IO load test (if you have socket tests)
-artillery run tests/load/socket-load.yml
+# Redis (REQUIRED for multi-instance)
+REDIS_URL=rediss://...
+
+# R2 Storage
+R2_ENABLED=true
+R2_ACCOUNT_ID=...
+R2_ACCESS_KEY_ID=...
+R2_SECRET_ACCESS_KEY=...
+R2_BUCKET_NAME=pryde-social-media
+R2_PUBLIC_URL=https://media.yourdomain.com
 ```
 
-### Interpreting Results
+### Optional but Recommended
 
-**Key Metrics to Watch:**
-- `p95 response time` - Should be < 500ms
-- `p99 response time` - Should be < 1000ms  
-- `error rate` - Should be < 1%
-- `throughput` - Requests per second
-
-**Recommended Thresholds:**
-| Metric | Good | Warning | Critical |
-|--------|------|---------|----------|
-| p95 latency | < 200ms | 200-500ms | > 500ms |
-| Error rate | < 0.1% | 0.1-1% | > 1% |
-| Throughput | > 100 rps | 50-100 rps | < 50 rps |
-
----
-
-## 4. VERIFICATION CHECKLIST
-
-After completing setup, verify each service:
-
-### Redis Verification
-
-Check your server logs for:
-```
-✅ Redis connected successfully for feed caching
-✅ Redis rate limiting active
-```
-
-Or test manually:
 ```
 bash
-# Connect to Redis and ping
-redis-cli -h your-redis-host -p your-port -a your-password ping
-# Should return: PONG
+# Firebase (Push Notifications)
+FIREBASE_SERVICE_ACCOUNT_JSON={...}
+
+# External Services
+SMTP_HOST=smtp.example.com
+SMTP_PORT=587
+SMTP_USER=...
+SMTP_PASSWORD=...
 ```
 
-### Firebase Verification
+---
 
-Check your server logs for:
-```
-✅ Firebase initialized successfully
-```
+## 7. Verification Commands
 
-Test push notifications via API:
+### Check Redis Connection
 ```
 bash
-curl -X POST https://your-api.com/api/push/send \
-  -H "Authorization: Bearer YOUR_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"userId":"TARGET_USER_ID","title":"Test","body":"Push works!"}'
+# In server console, look for:
+✅ Redis connected for rate limiting
+✅ Redis connected for feed caching
 ```
 
-### Load Test Verification
-
-Expected results for 100 concurrent users:
-- Feed API: < 300ms p95
-- No 5xx errors
-- Redis cache hit rate: > 70%
-
----
-
-## 5. ENVIRONMENT VARIABLES SUMMARY
-
-Add these to your production environment:
-
+### Check R2 Storage
 ```
-env
-# Redis
-REDIS_HOST=your-redis-host
-REDIS_PORT=443
-REDIS_PASSWORD=your-password
-REDIS_TLS=true
+bash
+# Upload a test image
+# Verify URL is: https://media.yourdomain.com/{filename}
+```
 
-# Firebase
-FIREBASE_SERVICE_ACCOUNT_JSON={"type":"service_account",...}
-VAPID_PUBLIC_KEY=your-vapid-public-key
-VAPID_PRIVATE_KEY=your-vapid-private-key
-VAPID_SUBJECT=mailto:contact@prydesocial.com
+### Check Indexes
+```
+bash
+node server/migrations/scripts/verifyIndexes.js
+# Expected output: All indexes created successfully
 ```
 
 ---
 
-## 6. MONITORING RECOMMENDATIONS
+## 8. Troubleshooting
 
-### Redis Monitoring
-- Set up Upstash/Redis Cloud dashboard alerts
-- Monitor: memory usage, connection count, hit rate
+### Redis Connection Failed
+```
+Error: Redis connection failed
+```
+**Solution**: Verify REDIS_URL or REDIS_HOST/PORT in environment
 
-### Firebase Monitoring  
-- Firebase Console → Cloud Messaging → Analytics
-- Monitor: delivery rate, open rate
+### R2 Upload Failed
+```
+Error: R2 not initialized
+```
+**Solution**: Verify R2_ENABLED=true and credentials
 
-### Application Monitoring
-- Use Render's built-in metrics
-- Consider: Datadog, New Relic, or PM2 Plus
+### Slow Feed Queries
+```
+Warning: Feed query took > 500ms
+```
+**Solution**: Run index migration `node server/migrations/add_feed_indexes.js`
+
+### Missing Image Sizes
+```
+Error: Cannot read properties of undefined (reading 'webp')
+```
+**Solution**: Regenerate images via re-upload (responsive sizes created on upload)
 
 ---
 
-## NEED HELP?
-
-If you encounter issues:
-
-1. **Redis connection fails**: Check firewall rules, ensure correct port
-2. **Firebase not working**: Verify service account JSON is valid
-3. **Load tests fail**: Ensure API is accessible, check rate limits
-
----
-
-*Generated: 2025-01-01*
-*Pryde Social Platform v1.0*
+*Last Updated: Platform Feature Audit*

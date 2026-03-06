@@ -317,4 +317,48 @@ const sanitizePostForPrivateLikes = (post, currentUserId) => {
   return postObj;
 };
 
+/**
+ * GET /api/feed/conversations
+ * Returns suggested conversations - posts with 4+ comments in last 24 hours
+ */
+router.get('/conversations', auth, requireActiveUser, cacheShort, asyncHandler(async (req, res) => {
+  const currentUserId = requireAuth(req, res);
+  if (!currentUserId) return;
+
+  const cacheKey = 'feed:suggested:conversations';
+  const cachedData = await getCache(cacheKey);
+  
+  if (cachedData) {
+    logger.debug('[Feed/Conversations] Cache HIT');
+    return res.json(cachedData);
+  }
+
+  const blockedUserIds = await getBlockedUserIds(currentUserId);
+  const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+
+  const query = {
+    visibility: 'public',
+    author: { $nin: blockedUserIds },
+    groupId: null,
+    commentCount: { $gte: 4 },
+    createdAt: { $gte: twentyFourHoursAgo }
+  };
+
+  const posts = await Post.find(query)
+    .populate('author', 'username displayName profilePhoto isVerified role')
+    .sort({ commentCount: -1, createdAt: -1 })
+    .limit(3)
+    .lean();
+
+  const sanitizedPosts = posts.map(post => sanitizePostForPrivateLikes(post, currentUserId));
+  const finalPosts = sanitizeAnonymousPosts(sanitizedPosts, req.user?.role, currentUserId);
+
+  const responseData = { suggestedConversations: finalPosts };
+
+  await setCache(cacheKey, responseData, 300);
+  logger.debug('[Feed/Conversations] Cached suggested conversations');
+
+  res.json(responseData);
+}));
+
 export default router;

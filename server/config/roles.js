@@ -3,7 +3,7 @@
  * Centralized role matrix for the audit system
  */
 
-export const ROLES = ['user', 'moderator', 'admin', 'super_admin'];
+export const ROLES = ['user', 'founder', 'moderator', 'admin', 'super_admin'];
 
 export const ROLE_MATRIX = {
   super_admin: {
@@ -81,6 +81,31 @@ export const ROLE_MATRIX = {
     canManageAdmins: false,
     canBroadcastAnnouncement: false,
   },
+  founder: {
+    // Feature capabilities (same as super_admin for founding team)
+    post: true,
+    message: true,
+    upload: true,
+    reply: true,
+    chat: true,
+    comment: true,
+    // Role-based permissions
+    edit_any_post: true,
+    delete_any_post: true,
+    view_reports: true,
+    resolve_reports: true,
+    manage_users: true,
+    view_analytics: true,
+    manage_admins: true,
+    broadcast_announcement: true,
+    // Permission flags
+    canViewReports: true,
+    canResolveReports: true,
+    canManageUsers: true,
+    canViewAnalytics: true,
+    canManageAdmins: true,
+    canBroadcastAnnouncement: true,
+  },
   user: {
     // Feature capabilities
     post: true,
@@ -112,4 +137,3 @@ export default {
   ROLES,
   ROLE_MATRIX,
 };
-

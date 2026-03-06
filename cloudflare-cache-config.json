@@ -1,0 +1,111 @@
+{
+  "name": "Pryde Social Media CDN",
+  "description": "Cloudflare Cache Rules for R2 Media CDN",
+  "version": 1,
+  "rules": [
+    {
+      "name": "Media Files Cache",
+      "description": "Cache images, videos, and audio from R2",
+      "phase": "http_response",
+      "action": {
+        "type": "set_cache_settings",
+        "parameters": {
+          "cache": true,
+          "edge_ttl": 2592000,
+          "browser_ttl": 86400,
+          "cache_level": "cache_everything"
+        }
+      },
+      "condition": {
+        "and": {
+          "conditions": [
+            {
+              "field": "http.host",
+              "operator": "matches",
+              "value": "media.prydeapp.com"
+            },
+            {
+              "or": {
+                "conditions": [
+                  {
+                    "field": "url.extension",
+                    "operator": "matches",
+                    "value": "jpg|jpeg|png|gif|webp|avif|svg"
+                  },
+                  {
+                    "field": "url.extension",
+                    "operator": "matches",
+                    "value": "mp4|webm|ogg|quicktime"
+                  },
+                  {
+                    "field": "url.extension",
+                    "operator": "matches",
+                    "value": "mp3|wav|ogg|m4a"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Image Variants Cache",
+      "description": "Longer cache for optimized image variants",
+      "phase": "http_response",
+      "action": {
+        "type": "set_cache_settings",
+        "parameters": {
+          "cache": true,
+          "edge_ttl": 604800,
+          "browser_ttl": 43200,
+          "cache_level": "cache_everything"
+        }
+      },
+      "condition": {
+        "and": {
+          "conditions": [
+            {
+              "field": "http.host",
+              "operator": "matches",
+              "value": "media.prydeapp.com"
+            },
+            {
+              "field": "url.extension",
+              "operator": "matches",
+              "value": "webp|avif"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Origin Headers",
+      "description": "Set proper CORS headers for media CDN",
+      "phase": "http_response",
+      "action": {
+        "type": "set_response_header",
+        "parameters": {
+          "headers": {
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "GET, OPTIONS",
+            "Cross-Origin-Resource-Policy": "cross-origin",
+            "Cache-Control": "public, max-age=2592000"
+          }
+        }
+      },
+      "condition": {
+        "field": "http.host",
+        "operator": "matches",
+        "value": "media.prydeapp.com"
+      }
+    }
+  ],
+  "setup_guide": {
+    "step1": "Go to Cloudflare Dashboard > Rules > Cache Rules",
+    "step2": "Create new cache rule using the JSON above",
+    "step3": "Replace media.prydeapp.com with your actual CDN domain",
+    "step4": "Ensure your R2 bucket is connected to a Custom Domain",
+    "step5": "Test by uploading an image and checking cache headers"
+  }
+}
