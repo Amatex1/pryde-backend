@@ -41,7 +41,16 @@ export default {
   refreshTokenExpiry: process.env.REFRESH_TOKEN_EXPIRY || '30d',
 
   // Redis Configuration (optional - falls back to in-memory if not configured)
-  redis: process.env.REDIS_HOST && process.env.REDIS_PORT ? {
+  // Supports both:
+  // 1. REDIS_URL (Render, Railway, etc.) - single connection string
+  // 2. REDIS_HOST + REDIS_PORT (custom Redis deployments)
+  redis: process.env.REDIS_URL ? {
+    url: process.env.REDIS_URL,
+    // Also expose individual components for compatibility
+    host: null,
+    port: null,
+    password: null
+  } : (process.env.REDIS_HOST && process.env.REDIS_PORT ? {
     host: process.env.REDIS_HOST,
     port: parseInt(process.env.REDIS_PORT, 10),
     password: process.env.REDIS_PASSWORD || null,
@@ -50,7 +59,7 @@ export default {
     // Additional Redis connection options
     connectionTimeout: parseInt(process.env.REDIS_CONNECT_TIMEOUT || '5000', 10),
     maxRetriesPerRequest: parseInt(process.env.REDIS_MAX_RETRIES || '3', 10)
-  } : null,
+  } : null),
 
   // Security Configurations
   security: {

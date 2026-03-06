@@ -18,28 +18,42 @@ const memoryCacheExpiry = new Map();
 /**
  * Initialize Redis connection for feed caching
  * Uses a separate connection from rate limiting
+ * Supports both REDIS_URL (Render, Railway) and REDIS_HOST+REDIS_PORT
  */
 export const initFeedCache = async () => {
   try {
-    // Check if Redis is configured
-    if (!config.redis) {
+    // Check if Redis is configured via REDIS_URL (Render, Railway, etc.)
+    const redisUrl = process.env.REDIS_URL || (config?.redis?.url);
+    
+    // Also check for individual host/port configuration
+    const hasRedisConfig = redisUrl || (config?.redis?.host && config?.redis?.port);
+    
+    if (!hasRedisConfig) {
       logger.warn('[FeedCache] Redis not configured - using in-memory cache');
       return false;
     }
 
     const Redis = (await import('ioredis')).default;
     
-    redisClient = new Redis({
-      host: config.redis.host,
-      port: config.redis.port,
-      password: config.redis.password,
-      tls: config.redis.tls,
-      lazyConnect: true,
-      maxRetriesPerRequest: 3,
-      retryDelayOnFailover: 100,
-      enableReadyCheck: true,
-      connectionTimeout: 5000,
-    });
+    // Use REDIS_URL if available (Render, Railway, etc.)
+    if (redisUrl) {
+      redisClient = new Redis(redisUrl);
+      logger.info('[FeedCache] Using REDIS_URL for connection');
+    } else {
+      // Fall back to individual host/port config
+      redisClient = new Redis({
+        host: config.redis.host,
+        port: config.redis.port,
+        password: config.redis.password,
+        tls: config.redis.tls,
+        lazyConnect: true,
+        maxRetriesPerRequest: 3,
+        retryDelayOnFailover: 100,
+        enableReadyCheck: true,
+        connectionTimeout: 5000,
+      });
+      logger.info(`[FeedCache] Using host/port config: ${config.redis.host}:${config.redis.port}`);
+    }
 
     await redisClient.connect();
     useRedis = true;
