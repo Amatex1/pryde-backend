@@ -109,5 +109,16 @@ export default {
     level: process.env.LOG_LEVEL || (process.env.NODE_ENV === 'production' ? 'error' : 'debug'),
     enableSecurityLogs: process.env.ENABLE_SECURITY_LOGS === 'true',
     logRotationMaxFiles: parseInt(process.env.LOG_ROTATION_MAX_FILES || '5', 10)
+  },
+
+  // Cloudflare R2 Configuration (for media storage)
+  // R2 provides S3-compatible API with no egress fees
+  r2: {
+    enabled: process.env.R2_ENABLED === 'true',
+    accountId: process.env.R2_ACCOUNT_ID || null,
+    accessKeyId: process.env.R2_ACCESS_KEY_ID || null,
+    secretAccessKey: process.env.R2_SECRET_ACCESS_KEY || null,
+    bucketName: process.env.R2_BUCKET_NAME || 'pryde-social-media',
+    publicUrl: process.env.R2_PUBLIC_URL || null, // Custom CDN URL (e.g., https://media.prydeapp.com)
   }
 };

@@ -10,6 +10,11 @@ import config from '../config/config.js';
 import { uploadLimiter } from '../middleware/rateLimiter.js';
 import { stripExifData } from '../middleware/imageProcessing.js';
 import { Readable } from 'stream';
+// R2 Storage import
+import { initR2, uploadToR2, deleteFromR2, getPublicUrl, isR2Enabled, generateUploadKey } from '../utils/r2Storage.js';
+
+// Initialize R2 on module load
+initR2();
 
 // PART 12: Strip video/audio metadata via ffmpeg (fail gracefully if unavailable)
 // Uses -c copy (stream copy) so no re-encode — metadata-only strip
@@ -122,44 +127,56 @@ mongoose.connection.once('open', () => {
 });
 
 /**
- * Delete a file from GridFS by filename
+ * Delete a file from storage (R2 or GridFS)
  * Handles both full URLs and just filenames
  * @param {string} fileUrl - The file URL or filename to delete
  * @returns {Promise<boolean>} - True if deleted, false if not found
  */
 export const deleteFromGridFS = async (fileUrl) => {
   try {
+    // Extract key from URL if needed
+    let key = fileUrl;
+    if (fileUrl.includes('/')) {
+      key = fileUrl.split('/').pop();
+    }
+
+    // Try R2 first if enabled
+    if (isR2Enabled()) {
+      try {
+        await deleteFromR2(key);
+        console.log(`🗑️ Deleted file from R2: ${key}`);
+        return true;
+      } catch (r2Error) {
+        console.warn('[R2] Delete failed, falling back to GridFS:', r2Error.message);
+      }
+    }
+
+    // Fallback to GridFS
     if (!gridfsBucket) {
       console.error('❌ GridFS not initialized');
       return false;
     }
 
-    // Extract filename from URL if needed (e.g., /upload/file/1234-image.webp -> 1234-image.webp)
-    let filename = fileUrl;
-    if (fileUrl.includes('/')) {
-      filename = fileUrl.split('/').pop();
-    }
-
     // Find the file in GridFS
-    const files = await gridfsBucket.find({ filename }).toArray();
+    const files = await gridfsBucket.find({ filename: key }).toArray();
 
     if (!files || files.length === 0) {
-      console.log(`⚠️ File not found in GridFS: ${filename}`);
+      console.log(`⚠️ File not found in GridFS: ${key}`);
       return false;
     }
 
     // Delete the file
     await gridfsBucket.delete(files[0]._id);
-    console.log(`🗑️ Deleted file from GridFS: ${filename}`);
+    console.log(`🗑️ Deleted file from GridFS: ${key}`);
     return true;
   } catch (error) {
-    console.error(`❌ Error deleting file from GridFS: ${fileUrl}`, error);
+    console.error(`❌ Error deleting file: ${fileUrl}`, error);
     return false;
   }
 };
 
 /**
- * Save processed file to GridFS
+ * Save processed file to storage (R2 or GridFS)
  * Strips EXIF data from images before saving
  * @param {Object} file - Multer file object
  * @param {boolean|Object} generateSizes - Whether to generate responsive sizes, or options object
@@ -198,7 +215,64 @@ const saveToGridFS = async (file, generateSizes = false) => {
         filename = filename.replace(/\.(jpg|jpeg|png)$/i, '.webp');
       }
 
-      // Save main image
+      // Try R2 first if enabled
+      if (isR2Enabled()) {
+        try {
+          console.log('📤 Uploading to R2...');
+          const r2Result = await uploadToR2(buffer, filename, contentType);
+          
+          const result = {
+            filename: r2Result.key,
+            id: r2Result.key,
+            url: r2Result.url
+          };
+
+          // Save responsive sizes to R2 if generated
+          if (sizes) {
+            try {
+              const sizeIds = {};
+              const baseName = file.originalname.replace(/\.(jpg|jpeg|png)$/i, '');
+
+              // Helper function to save a size variant to R2
+              const saveSizeVariant = async (buf, sizeName, format) => {
+                const ext = format === 'avif' ? '.avif' : '.webp';
+                const variantKey = `${timestamp}-${sizeName}-${baseName}${ext}`;
+                const r2Res = await uploadToR2(buf, variantKey, `image/${format}`);
+                return variantKey;
+              };
+
+              // Save small size (thumbnail)
+              if (sizes.small?.webp) {
+                sizeIds.small = {
+                  webp: await saveSizeVariant(sizes.small.webp, 'small', 'webp')
+                };
+              }
+
+              // Save medium size (full view)
+              if (sizes.medium?.webp) {
+                sizeIds.medium = {
+                  webp: await saveSizeVariant(sizes.medium.webp, 'medium', 'webp')
+                };
+              }
+
+              result.sizes = sizeIds;
+              console.log('✅ Saved responsive sizes to R2:', Object.keys(sizeIds));
+            } catch (sizeError) {
+              console.error('❌ Error saving responsive sizes to R2:', sizeError);
+              // Continue without sizes
+            }
+          }
+
+          console.log('✅ File uploaded to R2:', r2Result.url);
+          resolve(result);
+          return;
+        } catch (r2Error) {
+          console.warn('[R2] Upload failed, falling back to GridFS:', r2Error.message);
+        }
+      }
+
+      // Fallback to GridFS
+      console.log('📤 Uploading to GridFS...');
       const readableStream = Readable.from(buffer);
       const uploadStream = gridfsBucket.openUploadStream(filename, {
         contentType: contentType
@@ -219,10 +293,10 @@ const saveToGridFS = async (file, generateSizes = false) => {
             const baseName = file.originalname.replace(/\.(jpg|jpeg|png)$/i, '');
 
             // Helper function to save a size variant
-            const saveSizeVariant = async (buffer, sizeName, format) => {
+            const saveSizeVariant = async (buf, sizeName, format) => {
               const ext = format === 'avif' ? '.avif' : '.webp';
               const variantFilename = `${timestamp}-${sizeName}-${baseName}${ext}`;
-              const variantStream = Readable.from(buffer);
+              const variantStream = Readable.from(buf);
               const variantUpload = gridfsBucket.openUploadStream(variantFilename, {
                 contentType: `image/${format}`
               });

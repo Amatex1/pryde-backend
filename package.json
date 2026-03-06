@@ -30,6 +30,8 @@
     "create-indexes": "cd server && node scripts/create-indexes.js"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.500.0",
+    "@aws-sdk/s3-request-presigner": "^3.500.0",
     "express-rate-limit": "^8.2.1",
     "node-fetch": "^3.3.2"
   }

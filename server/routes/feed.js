@@ -1,10 +1,21 @@
 /**
  * PHASE 2: Feed Routes - Global and Following Feeds
  *
- * Implements slow, chronological feeds with no algorithmic ranking.
- * Only time-based sorting with optional manual promotion.
+ * Implements chronological feeds with CALM ranking.
+ * Uses calm feed ranking system for gentle community activity signals.
  *
  * PHASE 2 SAFETY: All routes use guard clauses and optional chaining
+ * 
+ * FEED CACHING: Redis caching added for improved performance
+ * - First page cached for 30 seconds
+ * - Other pages cached for 15 seconds
+ * 
+ * CALM FEED SYSTEM:
+ * - Active Conversations: 3+ comments in last 6 hours
+ * - Ongoing Discussions: 5+ comments spread over time
+ * - New Member Boost: Gentle boost for accounts < 7 days
+ * - Community Moments: Fill gaps with active older posts
+ * - Activity Tags: Visual indicators (no algorithmic pressure)
  */
 
 import express from 'express';
@@ -16,8 +27,24 @@ import { getBlockedUserIds } from '../utils/blockHelper.js';
 import { asyncHandler, requireAuth, sendError, HttpStatus } from '../utils/errorHandler.js';
 import logger from '../utils/logger.js';
 import User from '../models/User.js';
+import { 
+  getGlobalFeedKey, 
+  getFollowingFeedKey, 
+  getCache, 
+  setCache
+} from '../utils/redisCache.js';
+import { rankPosts, getFeedHeader, injectCommunityMoments } from '../utils/feedRanking.js';
 
 const router = express.Router();
+
+// Cache TTL settings (in seconds)
+const FEED_CACHE_TTL = {
+  firstPage: 30,
+  otherPages: 15
+};
+
+// Enable/disable ranking (can be toggled via env)
+const ENABLE_CALM_RANKING = process.env.FEED_RANKING !== 'false';
 
 // ── Anonymous Post Sanitization (shared logic) ─────────────────────────────
 const STAFF_ROLES = ['moderator', 'admin', 'super_admin'];
@@ -28,7 +55,6 @@ function sanitizeAnonymousPost(postObj, viewerRole, currentUserId) {
     postObj._staffAnonymousView = true;
     return postObj;
   }
-  // Preserve ownership flag BEFORE wiping author — author can still edit/delete their own post
   const realAuthorId = postObj.author?._id;
   if (currentUserId && realAuthorId && String(realAuthorId) === String(currentUserId)) {
     postObj.isOwnPost = true;
@@ -53,196 +79,242 @@ function sanitizeAnonymousPosts(posts, viewerRole, currentUserId) {
 const feedCache = cacheConditional({ firstPage: 'short', otherPages: 15 });
 
 /**
+ * Apply CALM ranking if enabled
+ */
+const applyRanking = (posts, currentUser) => {
+  if (!ENABLE_CALM_RANKING || !posts || posts.length === 0) {
+    return { posts: posts, feedHeader: null };
+  }
+  
+  // First pass: calculate activity tags and rank
+  const rankedPosts = rankPosts(posts, currentUser);
+  
+  // Second pass: inject community moments if feed is small
+  const finalPosts = injectCommunityMoments(rankedPosts, posts);
+  
+  // Get header for conversation section
+  const feedHeader = getFeedHeader(finalPosts);
+  
+  return { posts: finalPosts, feedHeader };
+};
+
+/**
  * GET /api/feed
  * Root feed endpoint - defaults to global feed
- * Supports page/limit params for backward compatibility
  */
 router.get('/', auth, requireActiveUser, feedCache, asyncHandler(async (req, res) => {
-  // SAFETY: Guard clause for auth
   const currentUserId = requireAuth(req, res);
   if (!currentUserId) return;
 
   const { page = 1, limit = 20 } = req.query;
-
-  // SAFETY: Validate pagination params
   const pageNum = Math.max(1, parseInt(page) || 1);
   const limitNum = Math.min(100, Math.max(1, parseInt(limit) || 20));
 
-  // Get blocked user IDs to filter them out
+  const isFirstPage = pageNum === 1;
+  const cacheTtl = isFirstPage ? FEED_CACHE_TTL.firstPage : FEED_CACHE_TTL.otherPages;
+
+  // Try cache first
+  const cacheKey = getGlobalFeedKey(pageNum);
+  const cachedData = await getCache(cacheKey);
+  
+  if (cachedData) {
+    logger.debug(`[Feed] Cache HIT for page ${pageNum}`);
+    return res.json(cachedData);
+  }
+
+  // Get blocked users
   const blockedUserIds = await getBlockedUserIds(currentUserId);
 
   // Build query
-  // Phase 2: Exclude group posts (groupId !== null) from global feed
-  // Group posts are intentionally isolated from global feeds
   const query = {
     visibility: 'public',
-    author: { $nin: blockedUserIds }, // Exclude blocked users
-    groupId: null // Phase 2: Exclude group posts
-    // REMOVED 2025-12-26: tagOnly filter deleted (Phase 5)
+    author: { $nin: blockedUserIds },
+    groupId: null
   };
 
-  // REMOVED 2025-12-26: Tag filter deleted (Phase 5 - hashtags removed)
-
-  // Calculate skip for pagination
   const skip = (pageNum - 1) * limitNum;
 
-  // Fetch posts
+  // Fetch posts with comment stats
   const posts = await Post.find(query)
-    .populate('author', 'username displayName profilePhoto isVerified')
-    // REMOVED 2025-12-26: originalPost population deleted (Phase 5)
+    .populate('author', 'username displayName profilePhoto isVerified createdAt')
     .sort({ createdAt: -1 })
     .skip(skip)
     .limit(limitNum)
     .lean();
 
-  // Apply post sanitization (hide likes, etc.)
-  const sanitizedPosts = posts.map(post => sanitizePostForPrivateLikes(post, currentUserId));
+  // Get current user for ranking
+  const currentUser = await User.findById(currentUserId).lean();
+  
+  // Apply CALM ranking
+  const { posts: rankedPosts, feedHeader } = applyRanking(posts, currentUser);
+
+  // Apply sanitization
+  const sanitizedPosts = rankedPosts.map(post => sanitizePostForPrivateLikes(post, currentUserId));
   const finalPosts = sanitizeAnonymousPosts(sanitizedPosts, req.user?.role, currentUserId);
 
-  res.json({ posts: finalPosts });
+  const responseData = { 
+    posts: finalPosts,
+    feedHeader: feedHeader
+  };
+
+  // Cache the response
+  await setCache(cacheKey, responseData, cacheTtl);
+  logger.debug(`[Feed] Cached page ${pageNum} for ${cacheTtl}s`);
+
+  res.json(responseData);
 }));
 
 /**
  * GET /api/feed/global
- * Returns public posts in reverse chronological order
- * Optional slow weighting for promoted posts
+ * Returns public posts with CALM ranking
  */
 router.get('/global', auth, requireActiveUser, cacheShort, asyncHandler(async (req, res) => {
-  // SAFETY: Guard clause for auth
   const currentUserId = requireAuth(req, res);
   if (!currentUserId) return;
 
-  const { before, limit = 20 } = req.query;
-
-  // SAFETY: Validate limit param
+  const { before, limit = 20, page = 1 } = req.query;
   const limitNum = Math.min(100, Math.max(1, parseInt(limit) || 20));
+  const pageNum = Math.max(1, parseInt(page) || 1);
 
-  // Get blocked user IDs to filter them out
+  const cacheKey = before 
+    ? `feed:global:before:${before}:limit${limitNum}`
+    : getGlobalFeedKey(pageNum);
+
+  if (!before) {
+    const cachedData = await getCache(cacheKey);
+    if (cachedData) {
+      logger.debug(`[Feed/Global] Cache HIT for page ${pageNum}`);
+      return res.json(cachedData);
+    }
+  }
+
   const blockedUserIds = await getBlockedUserIds(currentUserId);
 
-  // Build query
-  // Phase 2: Exclude group posts (groupId !== null) from global feed
-  // Group posts are intentionally isolated from global feeds
   const query = {
     visibility: 'public',
-    author: { $nin: blockedUserIds }, // Exclude blocked users
-    groupId: null // Phase 2: Exclude group posts
-    // REMOVED 2025-12-26: tagOnly filter deleted (Phase 5)
+    author: { $nin: blockedUserIds },
+    groupId: null
   };
 
-  // Pagination: posts before a certain timestamp
   if (before) {
     const beforeDate = new Date(before);
-    // SAFETY: Validate date
     if (!isNaN(beforeDate.getTime())) {
       query.createdAt = { $lt: beforeDate };
     }
   }
 
-  // REMOVED 2025-12-26: Tag filter deleted (Phase 5 - hashtags removed)
-
-  // Fetch posts with slow weighting
   const posts = await Post.find(query)
-    .populate('author', 'username displayName profilePhoto isVerified')
-    // REMOVED 2025-12-26: originalPost population deleted (Phase 5)
+    .populate('author', 'username displayName profilePhoto isVerified createdAt')
     .sort({ createdAt: -1 })
     .limit(limitNum)
     .lean();
 
-  // Apply post sanitization (hide likes, etc.)
-  const sanitizedPosts = posts.map(post => sanitizePostForPrivateLikes(post, currentUserId));
+  const currentUser = await User.findById(currentUserId).lean();
+  const { posts: rankedPosts, feedHeader } = applyRanking(posts, currentUser);
+
+  const sanitizedPosts = rankedPosts.map(post => sanitizePostForPrivateLikes(post, currentUserId));
   const finalPosts = sanitizeAnonymousPosts(sanitizedPosts, req.user?.role, currentUserId);
 
-  res.json(finalPosts);
+  const responseData = { 
+    posts: finalPosts,
+    feedHeader: feedHeader
+  };
+
+  if (!before) {
+    await setCache(cacheKey, responseData, FEED_CACHE_TTL.firstPage);
+    logger.debug(`[Feed/Global] Cached page ${pageNum}`);
+  }
+
+  res.json(responseData);
 }));
 
 /**
  * GET /api/feed/following
- * Returns posts only from users the current user follows
- * Same slow sorting logic as global feed
+ * Returns posts from followed users with CALM ranking
  */
 router.get('/following', auth, requireActiveUser, cacheShort, asyncHandler(async (req, res) => {
-  // SAFETY: Guard clause for auth
   const currentUserId = requireAuth(req, res);
   if (!currentUserId) return;
 
-  const { before, limit = 20 } = req.query;
-
-  // SAFETY: Validate limit param
+  const { before, limit = 20, page = 1 } = req.query;
   const limitNum = Math.min(100, Math.max(1, parseInt(limit) || 20));
+  const pageNum = Math.max(1, parseInt(page) || 1);
 
-  // Get user's following list
-  const User = (await import('../models/User.js')).default;
+  const cacheKey = before
+    ? `feed:following:${currentUserId}:before:${before}:limit${limitNum}`
+    : getFollowingFeedKey(currentUserId, pageNum);
+
+  if (!before) {
+    const cachedData = await getCache(cacheKey);
+    if (cachedData) {
+      logger.debug(`[Feed/Following] Cache HIT for user ${currentUserId} page ${pageNum}`);
+      return res.json(cachedData);
+    }
+  }
+
   const currentUser = await User.findById(currentUserId).select('following');
 
   if (!currentUser) {
     return sendError(res, HttpStatus.NOT_FOUND, 'User not found');
   }
 
-  // Get blocked user IDs to filter them out
   const blockedUserIds = await getBlockedUserIds(currentUserId);
 
-  // Build query - posts from followed users (excluding blocked users)
-  // Phase 2: Exclude group posts (groupId !== null) from following feed
-  // Group posts are intentionally isolated from global feeds
   const query = {
     author: {
       $in: currentUser.following || [],
-      $nin: blockedUserIds // Exclude blocked users
+      $nin: blockedUserIds
     },
     visibility: { $in: ['public', 'followers'] },
-    groupId: null // Phase 2: Exclude group posts
-    // REMOVED 2025-12-26: tagOnly filter deleted (Phase 5)
+    groupId: null
   };
 
-  // Pagination
   if (before) {
     const beforeDate = new Date(before);
-    // SAFETY: Validate date
     if (!isNaN(beforeDate.getTime())) {
       query.createdAt = { $lt: beforeDate };
     }
   }
 
-  // REMOVED 2025-12-26: Tag filter deleted (Phase 5 - hashtags removed)
-
-  // Fetch posts
   const posts = await Post.find(query)
-    .populate('author', 'username displayName profilePhoto isVerified')
-    // REMOVED 2025-12-26: originalPost population deleted (Phase 5)
+    .populate('author', 'username displayName profilePhoto isVerified createdAt')
     .sort({ createdAt: -1 })
     .limit(limitNum)
     .lean();
 
-  // Apply post sanitization
-  const sanitizedPosts = posts.map(post => sanitizePostForPrivateLikes(post, currentUserId));
+  const { posts: rankedPosts, feedHeader } = applyRanking(posts, currentUser);
+
+  const sanitizedPosts = rankedPosts.map(post => sanitizePostForPrivateLikes(post, currentUserId));
   const finalPosts = sanitizeAnonymousPosts(sanitizedPosts, req.user?.role, currentUserId);
 
-  res.json(finalPosts);
+  const responseData = { 
+    posts: finalPosts,
+    feedHeader: feedHeader
+  };
+
+  if (!before) {
+    await setCache(cacheKey, responseData, FEED_CACHE_TTL.firstPage);
+    logger.debug(`[Feed/Following] Cached user ${currentUserId} page ${pageNum}`);
+  }
+
+  res.json(responseData);
 }));
 
-// Helper function to sanitize posts (same as in posts.js)
+// Helper function to sanitize posts
 const sanitizePostForPrivateLikes = (post, currentUserId) => {
-  // CRITICAL: Convert Mongoose document to plain object to remove .on() and other methods
   const postObj = post.toObject ? post.toObject() : { ...post };
 
-  // Check if current user liked this post
   const hasLiked = postObj.likes?.some(like =>
     (like._id || like).toString() === currentUserId.toString()
   );
 
-  // Replace likes array with just a boolean
   postObj.hasLiked = hasLiked;
   delete postObj.likes;
 
-  // Set isOwnPost so the client can show edit/delete without relying on client-side ID comparison
   const authorId = postObj.author?._id ?? postObj.author;
   postObj.isOwnPost = !!(currentUserId && authorId && String(authorId) === String(currentUserId));
-
-  // REMOVED 2025-12-26: originalPost handling deleted (Phase 5 - share system removed)
 
   return postObj;
 };
 
 export default router;
-

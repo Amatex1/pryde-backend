@@ -59,6 +59,11 @@ import {
   reportLimiter
 } from './middleware/rateLimiter.js';
 
+// Import feed cache for Redis feed caching
+import { initFeedCache } from './utils/redisCache.js';
+// Import R2 storage
+import { initR2 } from './utils/r2Storage.js';
+
 import { connectDB } from './utils/dbManager.js';
 import config from "./config/config.js";
 let redisClient = null;
@@ -66,6 +71,22 @@ let redisClient = null;
   redisClient = await initRedis(config, logger);
   // Expose Redis client on app for geoService and other utilities
   if (redisClient) app.set('redis', redisClient);
+  
+  // Initialize feed cache (uses same Redis connection)
+  const feedCacheReady = await initFeedCache();
+  if (feedCacheReady) {
+    console.log('✅ Feed cache initialized with Redis');
+  } else {
+    console.log('⚠️ Feed cache initialized with in-memory fallback');
+  }
+  
+  // Initialize R2 storage (Cloudflare R2 for media)
+  const r2Ready = await initR2();
+  if (r2Ready) {
+    console.log('✅ R2 storage initialized (Cloudflare R2)');
+  } else {
+    console.log('⚠️ R2 not configured - using GridFS fallback for media storage');
+  }
 })();
 
 // Connect to DB (skip auto-connect during tests to avoid double connections)
