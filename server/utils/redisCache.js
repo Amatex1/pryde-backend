@@ -6,9 +6,11 @@
  * - Feed caching with TTL
  * - Cache invalidation on new posts/likes
  * - User-scoped cache keys
+ * 
+ * Uses ioredis for Redis connection (already in dependencies)
  */
 
-import { createClient } from 'redis';
+import Redis from 'ioredis';
 import config from '../config/config.js';
 import logger from './logger.js';
 
@@ -16,29 +18,33 @@ let redisClient = null;
 let isConnected = false;
 
 /**
- * Initialize Redis client
+ * Initialize Redis client - exported as both names for compatibility
  */
-export const initRedisCache = async () => {
-  if (!config.redis) {
+export const initFeedCache = async () => {
+  if (!config.redis?.url) {
     logger.warn('[RedisCache] Redis not configured - feed caching disabled');
     return null;
   }
 
   try {
-    redisClient = createClient({
-      url: config.redis.url || `redis://${config.redis.host}:${config.redis.port}`,
-      password: config.redis.password || undefined,
-      socket: {
-        tls: config.redis.tls ? {} : undefined,
-        reconnectStrategy: (retries) => {
-          if (retries > 10) {
-            logger.error('[RedisCache] Max reconnection attempts reached');
-            return new Error('Max reconnection attempts reached');
-          }
-          return Math.min(retries * 100, 3000);
+    const redisUrl = config.redis.url;
+    
+    // Connection options for ioredis
+    let redisOptions = {
+      maxRetriesPerRequest: 3,
+      retryStrategy: (retries) => {
+        if (retries > 10) {
+          logger.error('[RedisCache] Max reconnection attempts reached');
+          return new Error('Max reconnection attempts reached');
         }
-      }
-    });
+        return Math.min(retries * 100, 3000);
+      },
+      enableReadyCheck: true,
+      connectTimeout: 10000,
+    };
+
+    // If URL provided, use it directly
+    redisClient = new Redis(redisUrl, redisOptions);
 
     redisClient.on('error', (err) => {
       logger.error('[RedisCache] Redis error:', err.message);
@@ -50,18 +56,33 @@ export const initRedisCache = async () => {
       isConnected = true;
     });
 
+    redisClient.on('ready', () => {
+      logger.info('[RedisCache] Redis ready for commands');
+      isConnected = true;
+    });
+
     redisClient.on('disconnect', () => {
       logger.warn('[RedisCache] Redis disconnected');
       isConnected = false;
     });
 
-    await redisClient.connect();
+    // Wait for initial connection
+    await new Promise((resolve, reject) => {
+      redisClient.once('ready', resolve);
+      redisClient.once('error', reject);
+      // Timeout after 10 seconds
+      setTimeout(() => reject(new Error('Redis connection timeout')), 10000);
+    });
+    
     return redisClient;
   } catch (error) {
     logger.error('[RedisCache] Failed to initialize Redis:', error.message);
     return null;
   }
 };
+
+// Alias for backwards compatibility
+export const initRedisCache = initFeedCache;
 
 /**
  * Get Redis client instance
@@ -328,6 +349,7 @@ export const closeRedisCache = async () => {
 };
 
 export default {
+  initFeedCache,
   initRedisCache,
   getRedisClient,
   isRedisConnected,
