@@ -1,47 +1,36 @@
 # Production Setup Guide - Pryde Social
 
 This guide walks you through deploying the three critical production services:
-1. **Redis** - For caching and rate limiting
+1. **Redis** - Already configured via Render! ✅
 2. **Firebase** - For push notifications
 3. **Load Testing** - Using Artillery
 
 ---
 
-## 1. REDIS SETUP (Free Tier Available)
+## 1. REDIS SETUP ✅ ALREADY CONFIGURED
 
-### Option A: Upstash (Recommended - Free Tier)
+Your Redis is already set up via Render! The configuration in `render.yaml` provides:
+- Redis service: `pryde-redis` (free tier, Singapore region)
+- Internal connection string automatically passed as `REDIS_URL`
+- Both rate limiting and feed caching use this Redis
 
-1. **Sign up at** https://upstash.com
-2. **Create a new Redis database:**
-   - Name: `pryde-social`
-   - Region: Choose closest to your server
-   - Enable "Eviction" if needed
-3. **Copy the connection details** from the dashboard:
-   - `REDIS_HOST` = Endpoint (e.g., `xxx.upstash.io`)
-   - `REDIS_PORT` = `443` (for TLS) or `6379` (non-TLS)
-   - `REDIS_PASSWORD` = Your password
-   - `REDIS_TLS` = `true`
-
-4. **Add to your Render/Render dashboard environment variables:**
-
+**Verification:**
+After deploying, check your server logs for:
 ```
-REDIS_HOST=your-upstash-host.upstash.io
-REDIS_PORT=443
-REDIS_PASSWORD=your-password
-REDIS_TLS=true
+✅ Redis rate limiting active
+✅ Feed cache initialized with Redis
 ```
 
-### Option B: Redis Cloud (Free Tier)
+**Or test manually:**
+```
+bash
+curl https://pryde-backend.onrender.com/api/health
+```
+Should return: `{"status":"ok", "redis":"OK", ...}`
 
-1. **Sign up at** https://redis.com/cloud
-2. **Create free database** (30MB limit)
-3. **Get connection string** and parse into env vars
-
-### Option C: Railway (Has Free Tier)
-
-1. **Sign up at** https://railway.app
-2. **Create new project** → Add Redis plugin
-3. **Get connection details** from Railway dashboard
+**If you need to change Redis:**
+- Upgrade plan in Render dashboard
+- Or switch to Upstash/Redis Cloud and update `REDIS_URL` env var
 
 ---
 
