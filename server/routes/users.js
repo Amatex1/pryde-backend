@@ -395,8 +395,8 @@ router.get('/download-data', auth, async (req, res) => {
 
     // Fetch friend requests
     try {
-      if (FriendRequest) {
-        const friendRequests = await FriendRequest.find({
+      if (FollowRequest) {
+        const friendRequests = await FollowRequest.find({
           $or: [{ sender: userId }, { receiver: userId }]
         }).lean();
         userData.friendRequests = friendRequests || [];

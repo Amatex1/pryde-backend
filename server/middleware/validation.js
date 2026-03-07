@@ -40,7 +40,7 @@ export const validateSignup = [
   body('password')
     .isLength({ min: 12 })
     .withMessage('Password must be at least 12 characters long')
-    .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#^()_+\-=\[\]{};':"\\|,.<>\/])/)
+    .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#^()_+\-={};':"\\|,.<>])/)
     .withMessage('Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character (@$!%*?&#^()_+-=[]{};:\\"|,.<>/)'),
   body('birthday')
     .isISO8601()

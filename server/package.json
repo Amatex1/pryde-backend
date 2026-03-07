@@ -9,6 +9,7 @@
     "start": "node server.js",
     "dev": "node --watch server.js",
     "prebuild": "node scripts/update-version.js",
+    "lint": "eslint .",
     "test": "mocha --require test/setup.js test/**/*.test.js --timeout 10000 --exit",
     "test:watch": "mocha --require test/setup.js test/**/*.test.js --timeout 10000 --watch --exit",
     "migrate:creator-privacy": "node migrations/add-creator-and-privacy-fields.js",
@@ -55,6 +56,7 @@
   },
   "devDependencies": {
     "chai": "^6.2.2",
+    "eslint": "^8.57.0",
     "mocha": "^11.7.5",
     "nodemon": "^3.0.1",
     "supertest": "^7.1.4"

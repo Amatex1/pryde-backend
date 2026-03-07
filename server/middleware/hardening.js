@@ -32,7 +32,7 @@ export const requestId = (req, res, next) => {
   // PART 10: Validate client-supplied X-Request-Id to prevent log injection
   // Only accept the header if it passes strict validation (max 50 chars, alphanumeric + hyphens only)
   const clientId = req.headers['x-request-id'];
-  if (clientId && typeof clientId === 'string' && /^[a-zA-Z0-9\-]{1,50}$/.test(clientId)) {
+  if (clientId && typeof clientId === 'string' && /^[a-zA-Z0-9-]{1,50}$/.test(clientId)) {
     req.requestId = clientId;
   } else {
     req.requestId = generateRequestId();

@@ -19,7 +19,7 @@ const SYSTEM_ROLE_PERMISSIONS = {
   GUIDE: {
     canCreatePosts: true,
     canComment: true, // Only predefined informational responses
-    canReply: true,   // Only predefined informational responses
+    canReply: true, // Only predefined informational responses
     canReact: false,
     canSendDM: false,
     canJoinGroups: false,
@@ -64,7 +64,7 @@ export function getSystemRolePermissions(role) {
 
 /**
  * Guard middleware factory - blocks system accounts from specific actions
- * 
+ *
  * @param {string} action - The action to guard (createPost, comment, reply, react, sendDM, etc.)
  * @returns {Function} Express middleware
  */
@@ -73,13 +73,13 @@ export function guardSystemAccountAction(action) {
     try {
       const userId = req.userId || req.user?._id;
       if (!userId) return next();
-      
+
       // Fetch user with system fields
       const user = await User.findById(userId).select('isSystemAccount systemRole username');
       if (!user || !user.isSystemAccount) {
         return next(); // Regular users pass through
       }
-      
+
       const permissions = SYSTEM_ROLE_PERMISSIONS[user.systemRole];
       if (!permissions) {
         logger.warn(`System account ${user.username} has no valid systemRole`);
@@ -88,7 +88,7 @@ export function guardSystemAccountAction(action) {
           code: 'SYSTEM_ACCOUNT_INVALID_ROLE'
         });
       }
-      
+
       // Check if action is allowed for this role
       const permissionKey = `can${action.charAt(0).toUpperCase() + action.slice(1)}`;
       if (!permissions[permissionKey]) {
@@ -100,11 +100,11 @@ export function guardSystemAccountAction(action) {
           role: user.systemRole
         });
       }
-      
+
       // Mark request as from system account (for logging/auditing)
       req.isSystemAccountRequest = true;
       req.systemAccountRole = user.systemRole;
-      
+
       next();
     } catch (error) {
       logger.error('System account guard error:', error);
