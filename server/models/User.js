@@ -1156,6 +1156,21 @@ const userSchema = new mongoose.Schema({
   },
 
   // ============================================================================
+  // Trust Score System (added 2026-03-01)
+  // User trust score (0-100) for content prioritization and moderation
+  // ============================================================================
+  trustScore: {
+    type: Number,
+    default: 50,
+    min: 0,
+    max: 100
+  },
+  trustScoreLastUpdated: {
+    type: Date,
+    default: null
+  },
+
+  // ============================================================================
   // Life-Signal Feature 1: Reflection Prompt Preferences
   // ============================================================================
 

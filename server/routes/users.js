@@ -22,6 +22,8 @@ import logger from '../utils/logger.js';
 import { escapeRegex } from '../utils/sanitize.js';
 import { sendAccountDeletionEmail } from '../utils/emailService.js';
 import { encryptObject, decryptObject } from '../utils/encryption.js';
+import { calculateTrustScore } from '../utils/trustScore.js';
+import { getTrustLevel } from '../utils/trustLevel.js';
 
 /**
  * Helper to resolve badge IDs to full badge objects
@@ -882,6 +884,41 @@ router.get('/me/stability', auth, async (req, res) => {
     res.json(report);
   } catch (error) {
     console.error('Get stability score error:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+// @route   GET /api/users/me/trust
+// @desc    Get user trust level
+// @access  Private
+router.get('/me/trust', auth, async (req, res) => {
+  try {
+    const user = await User.findById(req.userId).select('trustScore trustScoreLastUpdated');
+    
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Calculate trust score if not set
+    let trustScore = user.trustScore;
+    if (trustScore === undefined || trustScore === null) {
+      trustScore = await calculateTrustScore(user);
+      // Save the calculated score
+      await User.updateOne(
+        { _id: req.userId },
+        { $set: { trustScore, trustScoreLastUpdated: new Date() } }
+      );
+    }
+
+    const trustLevel = getTrustLevel(trustScore);
+
+    res.json({
+      trustScore,
+      trustLevel,
+      lastUpdated: user.trustScoreLastUpdated
+    });
+  } catch (error) {
+    console.error('Get trust level error:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });

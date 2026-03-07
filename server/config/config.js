@@ -137,5 +137,22 @@ export default {
     secretAccessKey: process.env.R2_SECRET_ACCESS_KEY || null,
     bucketName: process.env.R2_BUCKET_NAME || 'pryde-social-media',
     publicUrl: process.env.R2_PUBLIC_URL || null, // Custom CDN URL (e.g., https://media.prydeapp.com)
+  },
+
+  // Email Configuration (SMTP)
+  email: {
+    host: process.env.SMTP_HOST || null,
+    port: parseInt(process.env.SMTP_PORT || '587', 10),
+    secure: process.env.SMTP_SECURE === 'true',
+    auth: {
+      user: process.env.SMTP_USER || null,
+      pass: process.env.SMTP_PASS || null,
+    },
+    from: process.env.SMTP_FROM || 'noreply@prydeapp.com',
+  },
+
+  // App URL for email links
+  app: {
+    url: process.env.APP_URL || 'https://prydeapp.com',
   }
 };
