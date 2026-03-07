@@ -277,6 +277,49 @@ if (config.nodeEnv === 'production') {
 // Security middleware - Helmet for security headers
 // CSP is ENFORCED in production, report-only in development
 const isProd = config.nodeEnv === 'production';
+
+// Build dynamic CSP connect-src based on configured API domain
+const getConnectSrc = () => {
+  const sources = [
+    "'self'",
+    "blob:", // Allow blob URLs for file uploads
+    // Backend API endpoints - always include render.com as fallback
+    "https://pryde-backend.onrender.com",
+    "wss://pryde-backend.onrender.com",
+    "ws://pryde-backend.onrender.com",
+    // Frontend domains
+    "https://prydeapp.com",
+    "https://www.prydeapp.com",
+    "https://prydesocial.com",
+    "https://www.prydesocial.com",
+    // External APIs
+    "https://tenor.googleapis.com",
+    "https://media.tenor.com",
+    "https://*.tenor.com",
+    "https://hcaptcha.com",
+    "https://*.hcaptcha.com",
+    // Development
+    "http://localhost:3000",
+    "http://localhost:5173",
+    "http://localhost:9000",
+    "ws://localhost:9000",
+    "http://127.0.0.1:5173",
+    "http://127.0.0.1:9000",
+    // Vercel preview URLs
+    "https://pryde-frontend-*.vercel.app"
+  ];
+
+  // Add custom API domain if configured (e.g., api.prydeapp.com)
+  if (config.apiDomain) {
+    const cleanDomain = config.apiDomain.replace(/^https?:\/\//, '').replace(/\/$/, '');
+    sources.push(`https://${cleanDomain}`);
+    sources.push(`wss://${cleanDomain}`);
+    sources.push(`ws://${cleanDomain}`);
+  }
+
+  return sources;
+};
+
 app.use(helmet({
   contentSecurityPolicy: {
     reportOnly: !isProd, // Enforce in production, report-only in dev
@@ -286,36 +329,7 @@ app.use(helmet({
       scriptSrcElem: ["'self'", "'unsafe-inline'", "blob:"], // For Workbox service worker
       styleSrc: ["'self'", "'unsafe-inline'"],
       imgSrc: ["'self'", "data:", "blob:", "https://media.tenor.com", "https://*.tenor.com"],
-      connectSrc: [
-        "'self'",
-        "blob:", // Allow blob URLs for file uploads
-        // Backend API endpoints
-        "https://pryde-backend.onrender.com",
-        "wss://pryde-backend.onrender.com",
-        "ws://pryde-backend.onrender.com",
-        "https://api.prydeapp.com",
-        "wss://api.prydeapp.com",
-        // Frontend domains
-        "https://prydeapp.com",
-        "https://www.prydeapp.com",
-        "https://prydesocial.com",
-        "https://www.prydesocial.com",
-        // External APIs
-        "https://tenor.googleapis.com",
-        "https://media.tenor.com",
-        "https://*.tenor.com",
-        "https://hcaptcha.com",
-        "https://*.hcaptcha.com",
-        // Development
-        "http://localhost:3000",
-        "http://localhost:5173",
-        "http://localhost:9000",
-        "ws://localhost:9000",
-        "http://127.0.0.1:5173",
-        "http://127.0.0.1:9000",
-        // Vercel preview URLs
-        "https://pryde-frontend-*.vercel.app"
-      ],
+      connectSrc: getConnectSrc(),
       fontSrc: ["'self'", "data:"],
       mediaSrc: ["'self'", "blob:", "https://media.tenor.com", "https://*.tenor.com"],
       workerSrc: ["'self'", "blob:"], // For Workbox service worker

@@ -122,6 +122,7 @@ export default {
   baseURL: process.env.BASE_URL || 'https://pryde-social.onrender.com',
   frontendURL: process.env.FRONTEND_URL || 'http://localhost:5173',
   apiDomain: process.env.API_DOMAIN || null, // Custom domain for backend (e.g., api.prydeapp.com)
+  rootDomain: process.env.ROOT_DOMAIN || null, // Root domain for cookie sharing (e.g., prydeapp.com)
   nodeEnv: process.env.NODE_ENV || 'development',
 
   // Firebase Cloud Messaging (FCM) — for native Android/iOS push notifications
