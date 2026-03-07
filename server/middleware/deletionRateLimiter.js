@@ -19,6 +19,11 @@ export const deletionIPLimiter = rateLimit({
   skip: (req) => {
     // Skip rate limiting for development/testing
     return process.env.NODE_ENV === 'development';
+  },
+  // Disable IPv6 validation warning - we handle IPv6 correctly above
+  validate: {
+    xForwardedForHeader: false,
+    keyGeneratorIpFallback: false
   }
 });
 
