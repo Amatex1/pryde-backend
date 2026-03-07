@@ -27,7 +27,7 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [18.x, 20.x]
+        node-version: [20.x]
 
     steps:
       - name: Checkout code
@@ -159,4 +159,3 @@ jobs:
           echo "🎉 CI Pipeline completed successfully"
           echo "✅ All tests passed"
           echo "✅ Code is ready for deployment"
-
