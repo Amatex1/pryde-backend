@@ -1,14 +1,10 @@
 import User from '../models/User.js';
 import Post from '../models/Post.js';
 import {
-  checkBlockedWords,
-  checkSpam,
-  calculateToxicityScore,
   getAutoMuteSettings,
   getViolationDecaySettings,
   getEnforcementSettings,
   getWarningMessages,
-  getWarningTier,
   applyViolationDecay
 } from '../utils/moderation.js';
 import { moderateContentV2 } from '../utils/moderationV2.js';
@@ -92,7 +88,7 @@ export const moderateContent = async (req, res, next) => {
     }
 
     // Get all settings for backward compatibility
-    const [autoMuteSettings, decaySettings, enforcementSettings, warningMessages] = await Promise.all([
+    const [autoMuteSettings, decaySettings, _enforcementSettings, warningMessages] = await Promise.all([
       getAutoMuteSettings(),
       getViolationDecaySettings(),
       getEnforcementSettings(),

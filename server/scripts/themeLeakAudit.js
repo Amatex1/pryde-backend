@@ -101,7 +101,7 @@ if (fs.existsSync(freezePath)) {
   try {
     const freeze = JSON.parse(fs.readFileSync(freezePath, "utf8"));
     isRCFreeze = freeze.status === "RELEASE_CANDIDATE";
-  } catch (e) {}
+  } catch { /* ignore parse error */ }
 }
 
 if (leaks.length > 0) {

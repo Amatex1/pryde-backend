@@ -11,7 +11,7 @@ import { uploadLimiter } from '../middleware/rateLimiter.js';
 import { stripExifData } from '../middleware/imageProcessing.js';
 import { Readable } from 'stream';
 // R2 Storage import
-import { initR2, uploadToR2, deleteFromR2, getPublicUrl, getObjectStream, isR2Enabled, generateUploadKey } from '../utils/r2Storage.js';
+import { initR2, uploadToR2, deleteFromR2, getObjectStream, isR2Enabled } from '../utils/r2Storage.js';
 
 // Initialize R2 on module load
 initR2();
@@ -182,163 +182,160 @@ export const deleteFromGridFS = async (fileUrl) => {
  * @param {boolean|Object} generateSizes - Whether to generate responsive sizes, or options object
  */
 const saveToGridFS = async (file, generateSizes = false) => {
-  return new Promise(async (resolve, reject) => {
+  let buffer = file.buffer;
+  let contentType = file.mimetype;
+  let sizes = null;
+
+  // Process and optimize images (strip EXIF, convert to WebP, compress)
+  // Sharp decode implicitly validates magic bytes for images — non-images will throw
+  if (file.mimetype.startsWith('image/')) {
+    console.log('🔒 Processing and optimizing image...');
+    const result = await stripExifData(buffer, file.mimetype, { generateSizes });
+    buffer = result.buffer;
+    contentType = result.mimetype;
+    sizes = result.sizes;
+    console.log('✅ Image optimized and saved as', contentType);
+  }
+
+  // PART 8: Validate magic bytes for video/audio (no Sharp protection for these types)
+  if (file.mimetype.startsWith('video/') || file.mimetype.startsWith('audio/')) {
+    if (!validateMagicBytes(buffer, file.mimetype)) {
+      throw new Error(`File content does not match declared MIME type: ${file.mimetype}`);
+    }
+    // PART 12: Strip video/audio metadata via ffmpeg (no-op if ffmpeg unavailable)
+    buffer = await stripAVMetadata(buffer, file.mimetype);
+  }
+
+  // Update filename extension if converted to WebP
+  const timestamp = Date.now();
+  let filename = `${timestamp}-${file.originalname}`;
+  if (contentType === 'image/webp' && !filename.endsWith('.webp')) {
+    filename = filename.replace(/\.(jpg|jpeg|png)$/i, '.webp');
+  }
+
+  // Try R2 first if enabled
+  if (isR2Enabled()) {
     try {
-      let buffer = file.buffer;
-      let contentType = file.mimetype;
-      let sizes = null;
+      console.log('📤 Uploading to R2...');
+      const r2Result = await uploadToR2(buffer, filename, contentType);
 
-      // Process and optimize images (strip EXIF, convert to WebP, compress)
-      // Sharp decode implicitly validates magic bytes for images — non-images will throw
-      if (file.mimetype.startsWith('image/')) {
-        console.log('🔒 Processing and optimizing image...');
-        const result = await stripExifData(buffer, file.mimetype, { generateSizes });
-        buffer = result.buffer;
-        contentType = result.mimetype;
-        sizes = result.sizes;
-        console.log('✅ Image optimized and saved as', contentType);
-      }
+      const result = {
+        filename: r2Result.key,
+        id: r2Result.key,
+        url: r2Result.url
+      };
 
-      // PART 8: Validate magic bytes for video/audio (no Sharp protection for these types)
-      if (file.mimetype.startsWith('video/') || file.mimetype.startsWith('audio/')) {
-        if (!validateMagicBytes(buffer, file.mimetype)) {
-          return reject(new Error(`File content does not match declared MIME type: ${file.mimetype}`));
-        }
-        // PART 12: Strip video/audio metadata via ffmpeg (no-op if ffmpeg unavailable)
-        buffer = await stripAVMetadata(buffer, file.mimetype);
-      }
-
-      // Update filename extension if converted to WebP
-      const timestamp = Date.now();
-      let filename = `${timestamp}-${file.originalname}`;
-      if (contentType === 'image/webp' && !filename.endsWith('.webp')) {
-        filename = filename.replace(/\.(jpg|jpeg|png)$/i, '.webp');
-      }
-
-      // Try R2 first if enabled
-      if (isR2Enabled()) {
+      // Save responsive sizes to R2 if generated
+      if (sizes) {
         try {
-          console.log('📤 Uploading to R2...');
-          const r2Result = await uploadToR2(buffer, filename, contentType);
-          
-          const result = {
-            filename: r2Result.key,
-            id: r2Result.key,
-            url: r2Result.url
+          const sizeIds = {};
+          const baseName = file.originalname.replace(/\.(jpg|jpeg|png)$/i, '');
+
+          // Helper function to save a size variant to R2
+          const saveSizeVariant = async (buf, sizeName, format) => {
+            const ext = format === 'avif' ? '.avif' : '.webp';
+            const variantKey = `${timestamp}-${sizeName}-${baseName}${ext}`;
+            await uploadToR2(buf, variantKey, `image/${format}`);
+            return variantKey;
           };
 
-          // Save responsive sizes to R2 if generated
-          if (sizes) {
-            try {
-              const sizeIds = {};
-              const baseName = file.originalname.replace(/\.(jpg|jpeg|png)$/i, '');
-
-              // Helper function to save a size variant to R2
-              const saveSizeVariant = async (buf, sizeName, format) => {
-                const ext = format === 'avif' ? '.avif' : '.webp';
-                const variantKey = `${timestamp}-${sizeName}-${baseName}${ext}`;
-                const r2Res = await uploadToR2(buf, variantKey, `image/${format}`);
-                return variantKey;
-              };
-
-              // Save small size (thumbnail)
-              if (sizes.small?.webp) {
-                sizeIds.small = {
-                  webp: await saveSizeVariant(sizes.small.webp, 'small', 'webp')
-                };
-              }
-
-              // Save medium size (full view)
-              if (sizes.medium?.webp) {
-                sizeIds.medium = {
-                  webp: await saveSizeVariant(sizes.medium.webp, 'medium', 'webp')
-                };
-              }
-
-              result.sizes = sizeIds;
-              console.log('✅ Saved responsive sizes to R2:', Object.keys(sizeIds));
-            } catch (sizeError) {
-              console.error('❌ Error saving responsive sizes to R2:', sizeError);
-              // Continue without sizes
-            }
+          // Save small size (thumbnail)
+          if (sizes.small?.webp) {
+            sizeIds.small = {
+              webp: await saveSizeVariant(sizes.small.webp, 'small', 'webp')
+            };
           }
 
-          console.log('✅ File uploaded to R2:', r2Result.url);
-          resolve(result);
-          return;
-        } catch (r2Error) {
-          console.warn('[R2] Upload failed, falling back to GridFS:', r2Error.message);
+          // Save medium size (full view)
+          if (sizes.medium?.webp) {
+            sizeIds.medium = {
+              webp: await saveSizeVariant(sizes.medium.webp, 'medium', 'webp')
+            };
+          }
+
+          result.sizes = sizeIds;
+          console.log('✅ Saved responsive sizes to R2:', Object.keys(sizeIds));
+        } catch (sizeError) {
+          console.error('❌ Error saving responsive sizes to R2:', sizeError);
+          // Continue without sizes
         }
       }
 
-      // Fallback to GridFS
-      console.log('📤 Uploading to GridFS...');
-      const readableStream = Readable.from(buffer);
-      const uploadStream = gridfsBucket.openUploadStream(filename, {
-        contentType: contentType
-      });
-
-      readableStream.pipe(uploadStream);
-
-      uploadStream.on('finish', async () => {
-        const result = {
-          filename: filename,
-          id: uploadStream.id
-        };
-
-        // Save responsive sizes if generated (WebP + AVIF formats)
-        if (sizes) {
-          try {
-            const sizeIds = {};
-            const baseName = file.originalname.replace(/\.(jpg|jpeg|png)$/i, '');
-
-            // Helper function to save a size variant
-            const saveSizeVariant = async (buf, sizeName, format) => {
-              const ext = format === 'avif' ? '.avif' : '.webp';
-              const variantFilename = `${timestamp}-${sizeName}-${baseName}${ext}`;
-              const variantStream = Readable.from(buf);
-              const variantUpload = gridfsBucket.openUploadStream(variantFilename, {
-                contentType: `image/${format}`
-              });
-              await new Promise((res, rej) => {
-                variantStream.pipe(variantUpload);
-                variantUpload.on('finish', () => res());
-                variantUpload.on('error', rej);
-              });
-              return variantFilename;
-            };
-
-            // Save small size (thumbnail)
-            if (sizes.small?.webp) {
-              sizeIds.small = {
-                webp: await saveSizeVariant(sizes.small.webp, 'small', 'webp')
-              };
-            }
-
-            // Save medium size (full view)
-            if (sizes.medium?.webp) {
-              sizeIds.medium = {
-                webp: await saveSizeVariant(sizes.medium.webp, 'medium', 'webp')
-              };
-            }
-
-            result.sizes = sizeIds;
-            console.log('✅ Saved responsive sizes:', Object.keys(sizeIds));
-          } catch (sizeError) {
-            console.error('❌ Error saving responsive sizes:', sizeError);
-            // Continue without sizes
-          }
-        }
-
-        resolve(result);
-      });
-
-      uploadStream.on('error', (error) => {
-        reject(error);
-      });
-    } catch (error) {
-      reject(error);
+      console.log('✅ File uploaded to R2:', r2Result.url);
+      return result;
+    } catch (r2Error) {
+      console.warn('[R2] Upload failed, falling back to GridFS:', r2Error.message);
     }
+  }
+
+  // Fallback to GridFS
+  console.log('📤 Uploading to GridFS...');
+  return new Promise((resolve, reject) => {
+    const readableStream = Readable.from(buffer);
+    const uploadStream = gridfsBucket.openUploadStream(filename, {
+      contentType: contentType
+    });
+
+    readableStream.pipe(uploadStream);
+
+    uploadStream.on('finish', () => {
+      const result = {
+        filename: filename,
+        id: uploadStream.id
+      };
+
+      if (!sizes) {
+        resolve(result);
+        return;
+      }
+
+      // Save responsive sizes if generated (WebP + AVIF formats)
+      (async () => {
+        try {
+          const sizeIds = {};
+          const baseName = file.originalname.replace(/\.(jpg|jpeg|png)$/i, '');
+
+          // Helper function to save a size variant
+          const saveSizeVariant = async (buf, sizeName, format) => {
+            const ext = format === 'avif' ? '.avif' : '.webp';
+            const variantFilename = `${timestamp}-${sizeName}-${baseName}${ext}`;
+            const variantStream = Readable.from(buf);
+            const variantUpload = gridfsBucket.openUploadStream(variantFilename, {
+              contentType: `image/${format}`
+            });
+            await new Promise((res, rej) => {
+              variantStream.pipe(variantUpload);
+              variantUpload.on('finish', () => res());
+              variantUpload.on('error', rej);
+            });
+            return variantFilename;
+          };
+
+          // Save small size (thumbnail)
+          if (sizes.small?.webp) {
+            sizeIds.small = {
+              webp: await saveSizeVariant(sizes.small.webp, 'small', 'webp')
+            };
+          }
+
+          // Save medium size (full view)
+          if (sizes.medium?.webp) {
+            sizeIds.medium = {
+              webp: await saveSizeVariant(sizes.medium.webp, 'medium', 'webp')
+            };
+          }
+
+          result.sizes = sizeIds;
+          console.log('✅ Saved responsive sizes:', Object.keys(sizeIds));
+        } catch (sizeError) {
+          console.error('❌ Error saving responsive sizes:', sizeError);
+          // Continue without sizes
+        }
+        resolve(result);
+      })();
+    });
+
+    uploadStream.on('error', reject);
   });
 };
 

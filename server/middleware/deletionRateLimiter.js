@@ -16,7 +16,7 @@ export const deletionIPLimiter = rateLimit({
     // Normalize IPv6-mapped IPv4 addresses (e.g. ::ffff:1.2.3.4 → 1.2.3.4)
     return (req.ip || 'unknown').replace(/^::ffff:/, '');
   },
-  skip: (req) => {
+  skip: (_req) => {
     // Skip rate limiting for development/testing
     return process.env.NODE_ENV === 'development';
   },
@@ -39,7 +39,7 @@ export const deletionUserLimiter = rateLimit({
   keyGenerator: (req) => {
     return req.userId || req.user?._id?.toString();
   },
-  skip: (req) => {
+  skip: (_req) => {
     // Skip rate limiting for development/testing
     return process.env.NODE_ENV === 'development';
   }

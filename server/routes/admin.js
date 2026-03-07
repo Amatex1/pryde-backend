@@ -717,13 +717,13 @@ router.get('/security-logs', checkPermission('canViewAnalytics'), async (req, re
 
     // Map aggregation results to stats object
     statsAggregation[0].byType.forEach(item => {
-      if (stats.byType.hasOwnProperty(item._id)) {
+      if (Object.hasOwn(stats.byType, item._id)) {
         stats.byType[item._id] = item.count;
       }
     });
 
     statsAggregation[0].bySeverity.forEach(item => {
-      if (stats.bySeverity.hasOwnProperty(item._id)) {
+      if (Object.hasOwn(stats.bySeverity, item._id)) {
         stats.bySeverity[item._id] = item.count;
       }
     });

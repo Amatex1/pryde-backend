@@ -13,14 +13,12 @@ import { getSessionInfo, clearSessionActivity, SESSION_TIMEOUT_MS } from '../mid
 import config from '../config/config.js';
 import { sendPasswordResetEmail, sendLoginAlertEmail, sendSuspiciousLoginEmail, sendVerificationEmail, sendPasswordChangedEmail } from '../utils/emailService.js';
 import {
-  generateSessionId,
   parseUserAgent,
   getClientIp,
   isNewDevice,
   isSuspiciousLogin,
   cleanupOldSessions,
   limitLoginHistory,
-  findOrCreateSession,
   getIpGeolocation,
   enforceMaxSessions
 } from '../utils/sessionUtils.js';
@@ -32,7 +30,7 @@ import logger from '../utils/logger.js';
 import { incCounter } from '../utils/authMetrics.js'; // Phase 4A
 import { generateTokenPair, getRefreshTokenExpiry } from '../utils/tokenUtils.js';
 import { getRefreshTokenCookieOptions, getClearCookieOptions } from '../utils/cookieUtils.js';
-import { decryptObject, decryptMessage, isEncrypted } from '../utils/encryption.js';
+import { decryptMessage, isEncrypted } from '../utils/encryption.js';
 // 🔧 BADGE CHURN FIX: Badge processing removed from login (now event-driven + daily sweep)
 
 /**
@@ -236,7 +234,6 @@ router.post('/signup', validateAgeBeforeRateLimit, signupLimiter, validateSignup
       email,
       password,
       birthday,
-      termsAccepted,
       captchaToken,
       inviteCode, // Phase 7B: Required when invite-only mode is enabled
       // Optional fields
@@ -924,7 +921,6 @@ router.post('/login', loginLimiter, validateLogin, async (req, res) => {
 
     // Check for login after prolonged inactivity (90+ days)
     const INACTIVITY_THRESHOLD_DAYS = 90;
-    const INACTIVITY_THRESHOLD_MS = INACTIVITY_THRESHOLD_DAYS * 24 * 60 * 60 * 1000;
     let loginAfterInactivity = false;
 
     if (user.lastLogin) {
@@ -1271,7 +1267,6 @@ router.post('/verify-2fa-login', loginLimiter, async (req, res) => {
 
     // Check for login after prolonged inactivity (90+ days)
     const INACTIVITY_THRESHOLD_DAYS = 90;
-    const INACTIVITY_THRESHOLD_MS = INACTIVITY_THRESHOLD_DAYS * 24 * 60 * 60 * 1000;
     let loginAfterInactivity = false;
 
     if (user.lastLogin) {
@@ -1306,8 +1301,8 @@ router.post('/verify-2fa-login', loginLimiter, async (req, res) => {
       }
     }
 
-	    // Clean up old sessions first (same behavior as primary /login endpoint)
-	    cleanupOldSessions(user);
+    // Clean up old sessions first (same behavior as primary /login endpoint)
+    cleanupOldSessions(user);
 
     // Log successful login with location
     user.loginHistory.push({
@@ -1357,7 +1352,7 @@ router.post('/verify-2fa-login', loginLimiter, async (req, res) => {
     // auth behavior consistent and ensure token "type" fields, TTLs, and
     // refresh rotation all match the primary login endpoint.
 
-	    // Generate token pair with new session (aligned with /api/auth/login)
+    // Generate token pair with new session (aligned with /api/auth/login)
     const { accessToken, refreshToken, sessionId: newSessionId } = generateTokenPair(user._id);
 
     // 🔐 Hash refresh token for secure storage
@@ -1636,7 +1631,7 @@ router.post('/reset-password', resetPasswordConfirmLimiter, async (req, res) => 
     }
 
     // Validate password complexity (must match signup requirements)
-    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#^()_+\-=\[\]{};':"\\|,.<>\/])/;
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#^()_+\-=[\]{};':"\\|,.<>/])/;
     if (!passwordRegex.test(newPassword)) {
       return res.status(400).json({
         message: 'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character'

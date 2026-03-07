@@ -76,13 +76,6 @@ export default async function runUiAudit() {
     report.pass++;
 
     // Check for performance optimizations
-    const performanceFeatures = [
-      'lazy-loading',
-      'code-splitting',
-      'image-optimization',
-      'caching-strategy',
-    ];
-
     report.pass++;
 
     logger.debug(`UI audit: ${report.pass} pass, ${report.warn} warn, ${report.fail} fail`);

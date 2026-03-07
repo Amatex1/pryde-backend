@@ -81,7 +81,7 @@ router.post('/unsubscribe', auth, async (req, res) => {
       if ('serviceWorker' in (global || {})) {
         // server-side — skip
       }
-    } catch {}
+    } catch { /* skip server-side */ }
 
     // Client sends endpoint in body optionally; otherwise clear all
     const { endpoint: bodyEndpoint } = req.body || {};

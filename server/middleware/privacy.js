@@ -78,7 +78,7 @@ export const checkProfileVisibility = async (req, res, next) => {
 
 // PHASE 1 REFACTOR: Friend request permission check deprecated
 // This middleware is no longer used as friends system is removed
-export const checkFriendRequestPermission = async (req, res, next) => {
+export const checkFriendRequestPermission = async (req, res, _next) => {
   // Friends system removed - return error
   return res.status(410).json({
     message: 'Friend requests are no longer supported. Please use the follow system instead.',

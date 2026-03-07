@@ -4,7 +4,7 @@
  * Helps identify why users can't access certain features
  */
 
-import { canPost, canMessage, canUploadMedia, canReply, canChat } from '../utils/featureCapability.js';
+import { canPost, canMessage, canUploadMedia, canReply } from '../utils/featureCapability.js';
 import User from '../models/User.js';
 import logger from '../utils/logger.js';
 
