@@ -48,18 +48,36 @@ jobs:
       - name: Run tests
         run: |
           cd server
-          npm test
+          npm run test:ci
         env:
           NODE_ENV: test
           MONGODB_URI: mongodb://localhost:27017/pryde-test
           MONGODB_URI_TEST: mongodb://localhost:27017/pryde-test
-      
+
+      - name: Run coverage
+        run: |
+          cd server
+          npm run test:coverage
+        env:
+          NODE_ENV: test
+          MONGODB_URI: mongodb://localhost:27017/pryde-test
+          MONGODB_URI_TEST: mongodb://localhost:27017/pryde-test
+        continue-on-error: true
+
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: test-results-${{ matrix.node-version }}
           path: server/test-results/
+          retention-days: 30
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report-${{ matrix.node-version }}
+          path: server/coverage/
           retention-days: 30
   
   lint:
@@ -82,14 +100,10 @@ jobs:
           cd server
           npm ci
       
-      - name: Run ESLint (if configured)
+      - name: Run ESLint
         run: |
           cd server
-          if [ -f ".eslintrc.js" ] || [ -f ".eslintrc.json" ]; then
-            npm run lint || echo "No lint script found, skipping"
-          else
-            echo "No ESLint config found, skipping"
-          fi
+          npm run lint
         continue-on-error: true
   
   security:

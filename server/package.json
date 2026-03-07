@@ -6,7 +6,7 @@
   "main": "server.js",
   "type": "module",
   "engines": {
-    "node": ">=20.0.0"
+    "node": ">=22.0.0"
   },
   "scripts": {
     "start": "node server.js",
@@ -15,6 +15,8 @@
     "lint": "eslint .",
     "test": "mocha --require test/setup.js test/**/*.test.js --timeout 10000 --exit",
     "test:watch": "mocha --require test/setup.js test/**/*.test.js --timeout 10000 --watch --exit",
+    "test:ci": "mocha --require test/setup.js test/**/*.test.js --timeout 10000 --exit --reporter mocha-junit-reporter --reporter-options mochaFile=./test-results/results.xml",
+    "test:coverage": "c8 --reporter=text --reporter=lcov mocha --require test/setup.js test/**/*.test.js --timeout 10000 --exit",
     "migrate:creator-privacy": "node migrations/add-creator-and-privacy-fields.js",
     "migrate:fullname": "node migrations/add-fullname-and-identity-fields.js",
     "migrate:tag-group-bridge": "node migrations/activate-tag-group-bridge.js",
@@ -58,9 +60,11 @@
     "xss": "^1.0.15"
   },
   "devDependencies": {
+    "c8": "^11.0.0",
     "chai": "^6.2.2",
     "eslint": "^8.57.0",
     "mocha": "^11.7.5",
+    "mocha-junit-reporter": "^2.2.1",
     "nodemon": "^3.0.1",
     "supertest": "^7.1.4"
   }
