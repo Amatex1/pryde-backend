@@ -27,6 +27,9 @@ let app;
 let testUser;
 let authToken;
 
+// Import User model for cleanup
+import User from '../models/User.js';
+
 describe('Feed Load Safety', function() {
   this.timeout(30000);
 
@@ -42,8 +45,22 @@ describe('Feed Load Safety', function() {
     app = serverModule.default || serverModule.app;
   });
 
+  // Cleanup function to remove test users
+  const cleanupTestUser = async () => {
+    if (testUser && testUser.email) {
+      try {
+        await User.deleteOne({ email: testUser.email });
+      } catch (e) {
+        // Ignore cleanup errors
+      }
+    }
+  };
+
   // Create a test user and get auth token before running tests
   beforeEach(async function() {
+    // Clean up any existing test user from previous runs
+    await cleanupTestUser();
+    
     // Generate unique username for this test run
     const uniqueId = Date.now();
     
@@ -80,6 +97,11 @@ describe('Feed Load Safety', function() {
         testUser = { email: 'testuser_load_' + uniqueId + '@example.com' };
       }
     }
+  });
+
+  // Cleanup after each test
+  afterEach(async function() {
+    await cleanupTestUser();
   });
 
   describe('GET /api/posts (Feed)', function() {
