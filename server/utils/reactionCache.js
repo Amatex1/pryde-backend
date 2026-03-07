@@ -18,6 +18,15 @@
 const cache = new Map();
 
 /**
+ * Cache statistics for hit/miss tracking
+ */
+const stats = {
+  hits: 0,
+  misses: 0,
+  sets: 0
+};
+
+/**
  * Cache TTL in milliseconds (5 minutes)
  */
 const CACHE_TTL = 5 * 60 * 1000;

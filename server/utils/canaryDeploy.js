@@ -1,4 +1,3 @@
-/**
  * Canary PWA Deploys (Staged Rollout)
  * 
  * Deploy rollout strategy:
@@ -306,9 +305,26 @@ function triggerRollback(deploy) {
   console.log(`[Canary Deploy] 🚨 ROLLBACK TRIGGERED for ${deploy.version}`);
   console.log(`[Canary Deploy] Reason: ${deploy.rollbackReason}`);
 
-  // TODO: Notify admins
-  // TODO: Disable PWA for this version
-  // TODO: Force clients to reload to stable version
+  // Notify admins via console for now (in production, this would integrate with admin notification system)
+  console.log(`[Canary Deploy] 📧 Admin notification: Rollback triggered for version ${deploy.version}`);
+  
+  // Disable PWA for this version - set forceReload flag
+  // This will cause clients to reload and fetch a stable version
+  deploy.forceReload = true;
+  
+  // Log to external monitoring if available
+  if (process.env.CANARY_MONITORING_WEBHOOK) {
+    fetch(process.env.CANARY_MONITORING_WEBHOOK, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        event: 'rollback_triggered',
+        version: deploy.version,
+        reason: deploy.rollbackReason,
+        metrics: deploy.getHealthReport()
+      })
+    }).catch(err => console.error('[Canary Deploy] Failed to send monitoring webhook:', err));
+  }
 }
 
 /**

@@ -17,6 +17,51 @@ import logger from './logger.js';
 let redisClient = null;
 let isConnected = false;
 
+// Cache metrics for hit rate monitoring
+const cacheMetrics = {
+  hits: 0,
+  misses: 0,
+  errors: 0,
+  sets: 0,
+  deletes: 0,
+  lastReset: Date.now(),
+  
+  /**
+   * Get current hit rate percentage
+   */
+  getHitRate() {
+    const total = this.hits + this.misses;
+    return total > 0 ? ((this.hits / total) * 100).toFixed(2) : 0;
+  },
+  
+  /**
+   * Get metrics summary
+   */
+  getMetrics() {
+    return {
+      hits: this.hits,
+      misses: this.misses,
+      errors: this.errors,
+      sets: this.sets,
+      deletes: this.deletes,
+      hitRate: this.getHitRate() + '%',
+      uptimeMs: Date.now() - this.lastReset
+    };
+  },
+  
+  /**
+   * Reset metrics
+   */
+  reset() {
+    this.hits = 0;
+    this.misses = 0;
+    this.errors = 0;
+    this.sets = 0;
+    this.deletes = 0;
+    this.lastReset = Date.now();
+  }
+};
+
 /**
  * Initialize Redis client - exported as both names for compatibility
  */
@@ -134,18 +179,22 @@ export const getUserFeedKey = (userId, page = 1) => {
  */
 export const getCache = async (key) => {
   if (!isRedisConnected()) {
+    cacheMetrics.misses++;
     return null;
   }
 
   try {
     const cached = await redisClient.get(key);
     if (cached) {
+      cacheMetrics.hits++;
       logger.debug(`[RedisCache] Cache HIT: ${key}`);
       return JSON.parse(cached);
     }
+    cacheMetrics.misses++;
     logger.debug(`[RedisCache] Cache MISS: ${key}`);
     return null;
   } catch (error) {
+    cacheMetrics.errors++;
     logger.error('[RedisCache] Get cache error:', error.message);
     return null;
   }
@@ -335,6 +384,132 @@ export const onContentInteraction = async (postId, authorId) => {
   await invalidateGlobalFeedCache();
   
   logger.info(`[RedisCache] Feed invalidated for interaction on post ${postId}`);
+};
+
+/**
+ * Feed Cache Warming
+ * Pre-warms cache for popular feeds to improve response times
+ */
+
+const WARMUP_CONFIG = {
+  // Pages to pre-warm per feed type
+  pagesToWarm: [1, 2],
+  // TTL for warmed cache (slightly shorter than regular cache)
+  warmupTtlSeconds: 45,
+  // Maximum time to spend warming (ms)
+  maxWarmupTimeMs: 5000,
+  // Batch size for warming
+  batchSize: 10
+};
+
+/**
+ * Warm cache for a specific user's feed
+ * Call this after user logs in or when their feed is likely to be requested
+ */
+export const warmUserFeed = async (userId, fetchFeedFn) => {
+  if (!isRedisConnected() || !fetchFeedFn) {
+    return false;
+  }
+
+  try {
+    for (const page of WARMUP_CONFIG.pagesToWarm) {
+      const key = getFeedCacheKey('following', userId, page);
+      
+      // Check if already cached
+      const existing = await redisClient.get(key);
+      if (existing) {
+        continue; // Skip if already cached
+      }
+
+      // Fetch fresh data
+      const feedData = await fetchFeedFn(userId, page);
+      if (feedData) {
+        await redisClient.setEx(key, WARMUP_CONFIG.warmupTtlSeconds, JSON.stringify(feedData));
+        logger.debug(`[RedisCache] Warmed feed for user ${userId}, page ${page}`);
+      }
+    }
+    return true;
+  } catch (error) {
+    logger.error('[RedisCache] Feed warmup error:', error.message);
+    return false;
+  }
+};
+
+/**
+ * Warm global feed cache
+ * Call this periodically or after significant content changes
+ */
+export const warmGlobalFeed = async (fetchFeedFn) => {
+  if (!isRedisConnected() || !fetchFeedFn) {
+    return false;
+  }
+
+  try {
+    for (const page of WARMUP_CONFIG.pagesToWarm) {
+      const key = getFeedCacheKey('global', null, page);
+      
+      const existing = await redisClient.get(key);
+      if (existing) {
+        continue;
+      }
+
+      const feedData = await fetchFeedFn(page);
+      if (feedData) {
+        await redisClient.setEx(key, WARMUP_CONFIG.warmupTtlSeconds, JSON.stringify(feedData));
+        logger.debug(`[RedisCache] Warmed global feed, page ${page}`);
+      }
+    }
+    return true;
+  } catch (error) {
+    logger.error('[RedisCache] Global feed warmup error:', error.message);
+    return false;
+  }
+};
+
+/**
+ * Scheduled feed cache warming
+ * Should be called periodically (e.g., every 5 minutes)
+ */
+export const scheduledFeedWarmup = async (services) => {
+  if (!isRedisConnected()) {
+    return;
+  }
+
+  const startTime = Date.now();
+  logger.info('[RedisCache] Starting scheduled feed warmup...');
+
+  try {
+    // Warm trending feed
+    if (services?.trendingService) {
+      for (const page of WARMUP_CONFIG.pagesToWarm) {
+        const key = getTrendingFeedKey(page);
+        const trendingData = await services.trendingService.getTrendingPosts(page);
+        if (trendingData) {
+          await redisClient.setEx(key, WARMUP_CONFIG.warmupTtlSeconds, JSON.stringify(trendingData));
+        }
+      }
+    }
+
+    // Warm global feed
+    if (services?.feedService) {
+      await warmGlobalFeed(services.feedService.getGlobalFeed.bind(services.feedService));
+    }
+
+    const elapsed = Date.now() - startTime;
+    logger.info(`[RedisCache] Scheduled feed warmup completed in ${elapsed}ms`);
+  } catch (error) {
+    logger.error('[RedisCache] Scheduled warmup error:', error.message);
+  }
+};
+
+/**
+ * Get cache warming status
+ */
+export const getWarmupStatus = () => {
+  return {
+    config: WARMUP_CONFIG,
+    redisConnected: isRedisConnected()
+  };
 };
 
 /**

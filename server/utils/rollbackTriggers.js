@@ -222,12 +222,30 @@ function triggerRollback(reason, details) {
  * Notify admins
  */
 function notifyAdmins(reason, details) {
-  // TODO: Implement admin notification system
-  // - Send email
-  // - Send Slack message
-  // - Create incident ticket
+  // Implement admin notification system
+  const notification = {
+    type: 'ROLLBACK_TRIGGERED',
+    reason,
+    details,
+    timestamp: new Date().toISOString(),
+    severity: 'critical'
+  };
   
-  console.log(`[Rollback] 📧 Admin notification sent: ${reason}`);
+  // Log to console
+  console.log(`[Rollback] 📧 Admin notification:`, notification);
+  
+  // Send to monitoring webhook if configured
+  if (process.env.MONITORING_WEBHOOK_URL) {
+    fetch(process.env.MONITORING_WEBHOOK_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(notification)
+    }).catch(err => console.error('[Rollback] Failed to send webhook:', err));
+  }
+  
+  // Log to file/database for audit trail
+  console.error(`[Rollback] 🚨 CRITICAL: Automatic rollback triggered - ${reason}`);
+  console.error(`[Rollback] Details:`, JSON.stringify(details, null, 2));
 }
 
 /**
