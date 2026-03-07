@@ -1,0 +1,12 @@
+{
+  "lines": 50,
+  "functions": 50,
+  "branches": 40,
+  "statements": 50,
+  "exclude": [
+    "test/**",
+    "scripts/**",
+    "migrations/**",
+    "node_modules/**"
+  ]
+}

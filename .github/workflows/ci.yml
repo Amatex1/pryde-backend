@@ -62,7 +62,6 @@ jobs:
           NODE_ENV: test
           MONGODB_URI: mongodb://localhost:27017/pryde-test
           MONGODB_URI_TEST: mongodb://localhost:27017/pryde-test
-        continue-on-error: true
 
       - name: Upload test results
         if: always()

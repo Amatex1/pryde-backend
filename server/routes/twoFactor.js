@@ -1,6 +1,7 @@
 import express from 'express';
-import speakeasy from 'speakeasy';
+import * as OTPAuth from 'otpauth';
 import QRCode from 'qrcode';
+import crypto from 'crypto';
 import { authenticateToken } from '../middleware/auth.js';
 import User from '../models/User.js';
 import { encryptMessage, decryptMessage, isEncrypted } from '../utils/encryption.js';
@@ -36,19 +37,23 @@ router.post('/setup', authenticateToken, async (req, res) => {
       return res.status(400).json({ message: '2FA is already enabled' });
     }
 
-    // Generate secret
-    const secret = speakeasy.generateSecret({
-      name: `Pryde Social (${user.email})`,
-      issuer: 'Pryde Social'
+    // Generate TOTP secret and URI
+    const totp = new OTPAuth.TOTP({
+      issuer: 'Pryde Social',
+      label: user.email,
+      algorithm: 'SHA1',
+      digits: 6,
+      period: 30,
+      secret: new OTPAuth.Secret(),
     });
 
     // Generate QR code
-    const qrCodeUrl = await QRCode.toDataURL(secret.otpauth_url);
+    const qrCodeUrl = await QRCode.toDataURL(totp.toString());
 
-    // Generate backup codes (10 codes)
+    // Generate backup codes (10 codes) using secure random bytes
     const backupCodes = [];
     for (let i = 0; i < 10; i++) {
-      const code = speakeasy.generateSecret({ length: 8 }).base32.substring(0, 8);
+      const code = crypto.randomBytes(4).toString('hex').toUpperCase();
       backupCodes.push({
         code: code,
         used: false
@@ -57,7 +62,7 @@ router.post('/setup', authenticateToken, async (req, res) => {
 
     // Save ENCRYPTED secret and backup codes (but don't enable 2FA yet)
     // SECURITY: 2FA secrets are encrypted at rest
-    user.twoFactorSecret = encryptMessage(secret.base32);
+    user.twoFactorSecret = encryptMessage(totp.secret.base32);
     user.twoFactorBackupCodes = backupCodes;
     await user.save();
 
@@ -96,12 +101,11 @@ router.post('/verify', authenticateToken, async (req, res) => {
     const decryptedSecret = getDecrypted2FASecret(user);
 
     // Verify token
-    const verified = speakeasy.totp.verify({
-      secret: decryptedSecret,
-      encoding: 'base32',
-      token: token,
-      window: 2 // Allow 2 time steps before/after for clock drift
+    const setupTotp = new OTPAuth.TOTP({
+      algorithm: 'SHA1', digits: 6, period: 30,
+      secret: OTPAuth.Secret.fromBase32(decryptedSecret),
     });
+    const verified = setupTotp.validate({ token, window: 2 }) !== null;
 
     if (!verified) {
       return res.status(400).json({ message: 'Invalid verification code' });
@@ -161,12 +165,11 @@ router.post('/verify-login', async (req, res) => {
     const decryptedSecret = getDecrypted2FASecret(user);
 
     // Verify TOTP token
-    const verified = speakeasy.totp.verify({
-      secret: decryptedSecret,
-      encoding: 'base32',
-      token: token,
-      window: 2
+    const loginTotp = new OTPAuth.TOTP({
+      algorithm: 'SHA1', digits: 6, period: 30,
+      secret: OTPAuth.Secret.fromBase32(decryptedSecret),
     });
+    const verified = loginTotp.validate({ token, window: 2 }) !== null;
 
     if (!verified) {
       return res.status(400).json({ message: 'Invalid verification code' });
@@ -264,10 +267,10 @@ router.post('/regenerate-backup-codes', authenticateToken, async (req, res) => {
       return res.status(401).json({ message: 'Invalid password' });
     }
 
-    // Generate new backup codes
+    // Generate new backup codes using secure random bytes
     const backupCodes = [];
     for (let i = 0; i < 10; i++) {
-      const code = speakeasy.generateSecret({ length: 8 }).base32.substring(0, 8);
+      const code = crypto.randomBytes(4).toString('hex').toUpperCase();
       backupCodes.push({
         code: code,
         used: false

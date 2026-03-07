@@ -27,6 +27,15 @@ const validateConfig = () => {
     // R2/CDN Validation - RECOMMENDED for production
     if (process.env.R2_ENABLED !== 'true') {
       console.warn('WARNING: R2 storage not enabled - media will use GridFS (slower, no CDN). Set R2_ENABLED=true for production.');
+    } else if (!process.env.R2_PUBLIC_URL) {
+      console.warn(
+        'WARNING: R2_PUBLIC_URL is not set. Media will be served directly from R2 without a CDN.\n' +
+        '  To enable Cloudflare CDN:\n' +
+        '  1. In Cloudflare dashboard, go to R2 > your bucket > Settings > Custom Domains\n' +
+        '  2. Add a custom domain (e.g. media.prydeapp.com) — Cloudflare CDN is applied automatically\n' +
+        '  3. Set R2_PUBLIC_URL=https://media.prydeapp.com in your environment\n' +
+        '  This enables global edge caching with no egress fees.'
+      );
     }
   }
 };

@@ -15,15 +15,22 @@ import express from "express";
 import cors from "cors";
 import http from "http";
 import { initRedis } from "./utils/redisInit.js";
-import logger from "./utils/logger.js";
+import logger, { pinoLogger } from "./utils/logger.js";
+import pinoHttp from 'pino-http';
 import mongoose from "mongoose";
 import helmet from "helmet";
 import mongoSanitize from "express-mongo-sanitize";
 import cookieParser from "cookie-parser";
 import compression from "compression";
-import schedule from "node-schedule";
+import cron from 'node-cron';
 import { initializeSocket } from './socket/index.js';
 
+
+// OpenAPI documentation
+import { setupSwagger } from './swagger.js';
+
+// BullMQ job queues
+import { initQueues, startWorkers, shutdownQueues } from './queues/index.js';
 
 // Routes — all mounts are handled by routeRegistry.js
 import { mountRoutes } from './routeRegistry.js';
@@ -86,6 +93,17 @@ let redisClient = null;
     console.log('✅ R2 storage initialized (Cloudflare R2)');
   } else {
     console.log('⚠️ R2 not configured - using GridFS fallback for media storage');
+  }
+
+  // Initialize BullMQ job queues (requires Redis)
+  if (process.env.NODE_ENV !== 'test') {
+    const queuesReady = initQueues();
+    if (queuesReady) {
+      startWorkers();
+      console.log('✅ BullMQ job queues and workers started');
+    } else {
+      console.log('⚠️ BullMQ queues disabled (Redis not configured)');
+    }
   }
 })();
 
@@ -225,6 +243,16 @@ const corsOptions = {
 
 // Trust proxy - required for Render and rate limiting
 app.set('trust proxy', 1);
+
+// ============================================================================
+// STRUCTURED REQUEST LOGGING (Pino HTTP)
+// ============================================================================
+app.use(pinoHttp({
+  logger: pinoLogger,
+  // Skip health checks to reduce log noise
+  autoLogging: { ignore: (req) => req.url === '/api/health' },
+  customProps: (req) => ({ requestId: req.headers['x-request-id'] }),
+}));
 
 // ============================================================================
 // HARDENING MIDDLEWARE (Phase 2 - Backend Failure Safety)
@@ -395,6 +423,9 @@ const requireDatabaseReady = (req, res, next) => {
 
 // Mount all routes via route registry
 mountRoutes(app, { restrictionMiddleware, requireDatabaseReady });
+
+// API documentation (Swagger UI — dev only unless ENABLE_SWAGGER_DOCS=true)
+setupSwagger(app);
 
 // Health check and status endpoints
 app.get('/api/health', async (req, res) => {
@@ -653,7 +684,7 @@ if (!isVercel) {
       import('./scripts/cleanupOldData.js')
         .then(() => {
           // Schedule daily cleanup at 02:00 UTC
-          const cleanupJob = schedule.scheduleJob('0 2 * * *', async () => {
+          cron.schedule('0 2 * * *', async () => {
             console.log('[Cleanup] 🕐 Running daily data cleanup...');
             try {
               // Import and run the cleanup script
@@ -674,7 +705,7 @@ if (!isVercel) {
       // ========================================
       import('../scripts/permanentDeletionJob.js')
         .then(({ runPermanentDeletionJob }) => {
-          schedule.scheduleJob('30 3 * * *', async () => {
+          cron.schedule('30 3 * * *', async () => {
             logger.info('[PermanentDeletion] 🕐 Running permanent account deletion job...');
             try {
               const result = await runPermanentDeletionJob();
@@ -719,6 +750,15 @@ if (!isVercel) {
 process.on('unhandledRejection', (reason) => {
   logger.error('Unhandled promise rejection:', reason);
 });
+
+// Graceful shutdown — close queues before exiting
+async function gracefulShutdown(signal) {
+  logger.info(`${signal} received — shutting down gracefully`);
+  await shutdownQueues().catch(() => {});
+  process.exit(0);
+}
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
 // Export app for testing and Vercel
 export default app;

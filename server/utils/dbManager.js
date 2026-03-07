@@ -11,8 +11,10 @@ export async function connectDB(uri) {
 
   if (!connectionPromise) {
     connectionPromise = mongoose.connect(uri, {
-      maxPoolSize: 10,
+      maxPoolSize: 50,
+      minPoolSize: 5,
       serverSelectionTimeoutMS: 5000,
+      readPreference: 'secondaryPreferred',
     });
   }
 

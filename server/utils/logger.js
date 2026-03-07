@@ -1,8 +1,13 @@
 /**
- * Environment-based logging utility for backend
- * Only logs debug/info in development mode
- * Production error logs are redacted to prevent PII leakage
+ * Structured logging utility
+ *
+ * - Production: outputs structured JSON via Pino (machine-readable for log aggregators)
+ * - Development: human-readable console output with context labels
+ *
+ * PII redaction applies in production for error/warn messages.
  */
+
+import pino from 'pino';
 
 const isDev = process.env.NODE_ENV === 'development';
 const isProd = process.env.NODE_ENV === 'production';
@@ -37,135 +42,95 @@ function redact(value) {
   return value;
 }
 
-/**
- * Log levels
- */
-const LogLevel = {
+// Pino instance — JSON in production, pretty in development
+const pinoLogger = pino({
+  level: process.env.LOG_LEVEL || (isProd ? 'warn' : 'debug'),
+  ...(isDev && {
+    transport: {
+      target: 'pino/file',
+      options: { destination: 1 }, // stdout
+    },
+  }),
+  redact: {
+    paths: ['req.headers.authorization', 'req.headers.cookie', '*.password', '*.token'],
+    censor: '[redacted]',
+  },
+  base: {
+    pid: process.pid,
+    env: process.env.NODE_ENV,
+  },
+  timestamp: pino.stdTimeFunctions.isoTime,
+});
+
+export const LogLevel = {
   DEBUG: 'debug',
   INFO: 'info',
   WARN: 'warn',
-  ERROR: 'error'
+  ERROR: 'error',
 };
 
 /**
- * Logger class with environment-aware logging
+ * Logger class — same interface as before, backed by Pino in production.
  */
 class Logger {
   constructor(context = '') {
     this.context = context;
+    this._pino = context ? pinoLogger.child({ context }) : pinoLogger;
   }
 
-  /**
-   * Format log message with context and timestamp
-   */
-  _formatMessage(message, ...args) {
-    const timestamp = new Date().toISOString();
-    const prefix = this.context ? `[${timestamp}] [${this.context}]` : `[${timestamp}]`;
-    return [prefix, message, ...args].filter(Boolean);
+  _fmt(message, args) {
+    const extra = args.length === 1 && typeof args[0] === 'object' ? args[0] : args.length ? { args } : {};
+    return [extra, String(message)];
   }
 
-  /**
-   * Debug logs - only in development
-   */
   debug(message, ...args) {
-    if (isDev) {
-      console.log(...this._formatMessage(message, ...args));
-    }
+    if (isDev) this._pino.debug(...this._fmt(message, args));
   }
 
-  /**
-   * Info logs - only in development
-   */
   info(message, ...args) {
-    if (isDev) {
-      console.info(...this._formatMessage(message, ...args));
-    }
+    if (isDev) this._pino.info(...this._fmt(message, args));
   }
 
-  /**
-   * Warning logs - always shown, redacted in production
-   */
   warn(message, ...args) {
-    console.warn(...this._formatMessage(redact(message), ...args.map(redact)));
+    this._pino.warn(...this._fmt(redact(message), args.map(redact)));
   }
 
-  /**
-   * Error logs - always shown, redacted in production
-   */
   error(message, ...args) {
-    console.error(...this._formatMessage(redact(message), ...args.map(redact)));
+    this._pino.error(...this._fmt(redact(message), args.map(redact)));
   }
 
-  /**
-   * Socket-specific logs with emoji
-   */
   socket(message, ...args) {
-    if (isDev) {
-      console.log('🔌', ...this._formatMessage(message, ...args));
-    }
+    if (isDev) this._pino.debug({ subsystem: 'socket' }, String(message));
   }
 
-  /**
-   * API-specific logs with emoji
-   */
   api(message, ...args) {
-    if (isDev) {
-      console.log('📡', ...this._formatMessage(message, ...args));
-    }
+    if (isDev) this._pino.debug({ subsystem: 'api' }, String(message));
   }
 
-  /**
-   * Database-specific logs with emoji
-   */
   db(message, ...args) {
-    if (isDev) {
-      console.log('💾', ...this._formatMessage(message, ...args));
-    }
+    if (isDev) this._pino.debug({ subsystem: 'db' }, String(message));
   }
 
-  /**
-   * Auth-specific logs with emoji
-   */
   auth(message, ...args) {
-    if (isDev) {
-      console.log('🔐', ...this._formatMessage(message, ...args));
-    }
+    if (isDev) this._pino.debug({ subsystem: 'auth' }, String(message));
   }
 
-  /**
-   * Success logs with emoji
-   */
   success(message, ...args) {
-    if (isDev) {
-      console.log('✅', ...this._formatMessage(message, ...args));
-    }
+    if (isDev) this._pino.info({ subsystem: 'success' }, String(message));
   }
 
-  /**
-   * Security logs - always shown, redacted in production
-   */
   security(message, ...args) {
-    console.log('🔒', ...this._formatMessage(redact(message), ...args.map(redact)));
+    this._pino.warn({ subsystem: 'security' }, String(redact(message)));
   }
 }
 
-/**
- * Create logger instance with optional context
- */
 export const createLogger = (context) => new Logger(context);
-
-/**
- * Default logger instance
- */
 export const logger = new Logger();
 
 /**
- * Export log level constants
+ * pino-http middleware for request-level structured logging.
+ * Mount early in server.js: app.use(httpLogger)
  */
-export { LogLevel };
+export { pinoLogger };
 
-/**
- * Convenience exports for common use cases
- */
 export default logger;
-

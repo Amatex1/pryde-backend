@@ -7,7 +7,7 @@ import auth from '../middleware/auth.js';
 import adminAuth from '../middleware/adminAuth.js';
 import { getClientIp } from '../utils/sessionUtils.js';
 import logger from '../utils/logger.js';
-import speakeasy from 'speakeasy';
+import * as OTPAuth from 'otpauth';
 import { decryptObject, decryptMessage, isEncrypted } from '../utils/encryption.js';
 import {
   generatePasskeyAuthenticationOptions,
@@ -265,12 +265,11 @@ router.post('/finish/totp', async (req, res) => {
     }
 
     // Verify TOTP token
-    const verified = speakeasy.totp.verify({
-      secret: decryptedSecret,
-      encoding: 'base32',
-      token: token,
-      window: 2
+    const adminTotp = new OTPAuth.TOTP({
+      algorithm: 'SHA1', digits: 6, period: 30,
+      secret: OTPAuth.Secret.fromBase32(decryptedSecret),
     });
+    const verified = adminTotp.validate({ token, window: 2 }) !== null;
 
     if (!verified) {
       return res.status(400).json({ message: 'Invalid TOTP code' });
