@@ -11,7 +11,7 @@ import { uploadLimiter } from '../middleware/rateLimiter.js';
 import { stripExifData } from '../middleware/imageProcessing.js';
 import { Readable } from 'stream';
 // R2 Storage import
-import { initR2, uploadToR2, deleteFromR2, getPublicUrl, isR2Enabled, generateUploadKey } from '../utils/r2Storage.js';
+import { initR2, uploadToR2, deleteFromR2, getPublicUrl, getObjectStream, isR2Enabled, generateUploadKey } from '../utils/r2Storage.js';
 
 // Initialize R2 on module load
 initR2();
@@ -890,47 +890,54 @@ router.delete('/post-media/by-url', auth, async (req, res) => {
   }
 });
 
+// Helper: set standard media response headers
+const setMediaHeaders = (res, contentType) => {
+  res.set('Access-Control-Allow-Origin', '*');
+  res.set('Access-Control-Allow-Methods', 'GET');
+  res.set('Cross-Origin-Resource-Policy', 'cross-origin');
+  res.set('Content-Type', contentType);
+  res.set('Cache-Control', 'public, max-age=31536000');
+};
+
+// Helper: try to serve a key from R2, returns true if served
+const tryServeFromR2 = async (key, res) => {
+  if (!isR2Enabled()) return false;
+  try {
+    const { stream, contentType } = await getObjectStream(key);
+    setMediaHeaders(res, contentType);
+    stream.pipe(res);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
 // @route   GET /api/upload/image/:filename
-// @desc    Get image
+// @desc    Get image — serves from GridFS or R2
 // @access  Public
 router.get('/image/:filename', async (req, res) => {
   try {
-    if (!gridfsBucket) {
-      return res.status(500).json({ message: 'GridFS not initialized' });
-    }
-
-    // URL-decode the filename for GridFS lookup (browser encodes spaces as %20)
     const filename = decodeURIComponent(req.params.filename);
-    console.log(`📷 Image request - raw: "${req.params.filename}", decoded: "${filename}"`);
 
-    const files = await gridfsBucket.find({ filename }).toArray();
-
-    if (!files || files.length === 0) {
-      console.log(`❌ Image not found: "${filename}"`);
-      return res.status(404).json({ message: 'File not found' });
+    // 1. Try GridFS first (legacy storage)
+    if (gridfsBucket) {
+      const files = await gridfsBucket.find({ filename }).toArray();
+      if (files && files.length > 0) {
+        const file = files[0];
+        const imageTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/gif', 'image/webp'];
+        if (!imageTypes.includes(file.contentType)) {
+          return res.status(404).json({ message: 'Not an image' });
+        }
+        setMediaHeaders(res, file.contentType);
+        gridfsBucket.openDownloadStreamByName(filename).pipe(res);
+        return;
+      }
     }
 
-    const file = files[0];
+    // 2. Fallback to R2
+    if (await tryServeFromR2(filename, res)) return;
 
-    // Check if image
-    if (file.contentType === 'image/jpeg' ||
-        file.contentType === 'image/png' ||
-        file.contentType === 'image/jpg' ||
-        file.contentType === 'image/gif' ||
-        file.contentType === 'image/webp') {
-
-      // Set CORS headers to prevent CORB
-      res.set('Access-Control-Allow-Origin', '*');
-      res.set('Access-Control-Allow-Methods', 'GET');
-      res.set('Cross-Origin-Resource-Policy', 'cross-origin');
-      res.set('Content-Type', file.contentType);
-      res.set('Cache-Control', 'public, max-age=31536000');
-
-      const downloadStream = gridfsBucket.openDownloadStreamByName(filename);
-      downloadStream.pipe(res);
-    } else {
-      res.status(404).json({ message: 'Not an image' });
-    }
+    res.status(404).json({ message: 'File not found' });
   } catch (error) {
     console.error('Get image error:', error);
     res.status(500).json({ message: 'Error retrieving image' });
@@ -938,35 +945,26 @@ router.get('/image/:filename', async (req, res) => {
 });
 
 // @route   GET /api/upload/file/:filename
-// @desc    Get any file (image, video, gif)
+// @desc    Get any file (image, video, gif) — serves from GridFS or R2
 // @access  Public
 router.get('/file/:filename', async (req, res) => {
   try {
-    if (!gridfsBucket) {
-      return res.status(500).json({ message: 'GridFS not initialized' });
-    }
-
-    // URL-decode the filename for GridFS lookup (browser encodes spaces as %20)
     const filename = decodeURIComponent(req.params.filename);
 
-    const files = await gridfsBucket.find({ filename }).toArray();
-
-    if (!files || files.length === 0) {
-      return res.status(404).json({ message: 'File not found' });
+    // 1. Try GridFS first (legacy storage)
+    if (gridfsBucket) {
+      const files = await gridfsBucket.find({ filename }).toArray();
+      if (files && files.length > 0) {
+        setMediaHeaders(res, files[0].contentType);
+        gridfsBucket.openDownloadStreamByName(filename).pipe(res);
+        return;
+      }
     }
 
-    const file = files[0];
+    // 2. Fallback to R2
+    if (await tryServeFromR2(filename, res)) return;
 
-    // Set CORS headers to prevent CORB
-    res.set('Access-Control-Allow-Origin', '*');
-    res.set('Access-Control-Allow-Methods', 'GET');
-    res.set('Cross-Origin-Resource-Policy', 'cross-origin');
-    res.set('Content-Type', file.contentType);
-    res.set('Cache-Control', 'public, max-age=31536000');
-
-    // Stream the file
-    const downloadStream = gridfsBucket.openDownloadStreamByName(filename);
-    downloadStream.pipe(res);
+    res.status(404).json({ message: 'File not found' });
   } catch (error) {
     console.error('Get file error:', error);
     res.status(500).json({ message: 'Error retrieving file' });

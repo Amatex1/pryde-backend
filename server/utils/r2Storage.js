@@ -13,7 +13,7 @@
  * - R2_PUBLIC_URL (optional, for CDN)
  */
 
-import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand, HeadObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import config from '../config/config.js';
 import logger from './logger.js';
@@ -81,10 +81,8 @@ export const uploadToR2 = async (buffer, key, contentType) => {
 
   await s3Client.send(command);
 
-  // Generate public URL using CDN base if configured
-  const url = r2.publicUrl 
-    ? `${r2.publicUrl}/${key}`
-    : `https://${r2.bucketName}.${r2.accountId}.r2.cloudflarestorage.com/${key}`;
+  // Only return a URL if a public CDN is configured — private R2 URLs require auth
+  const url = r2.publicUrl ? `${r2.publicUrl}/${key}` : null;
 
   return { key, url };
 };
@@ -154,6 +152,46 @@ export const getPublicUrl = (key) => {
 };
 
 /**
+ * Stream a file from R2 directly to a response
+ * @param {string} key - Object key
+ * @returns {Promise<{stream: ReadableStream, contentType: string, contentLength: number}>}
+ */
+export const getObjectStream = async (key) => {
+  if (!useR2 || !s3Client) {
+    throw new Error('R2 not initialized');
+  }
+
+  const { r2 } = config;
+  const command = new GetObjectCommand({
+    Bucket: r2.bucketName,
+    Key: key,
+  });
+
+  const response = await s3Client.send(command);
+  return {
+    stream: response.Body,
+    contentType: response.ContentType || 'application/octet-stream',
+    contentLength: response.ContentLength,
+  };
+};
+
+/**
+ * Check if a key exists in R2
+ * @param {string} key - Object key
+ * @returns {Promise<boolean>}
+ */
+export const existsInR2 = async (key) => {
+  if (!useR2 || !s3Client) return false;
+  try {
+    const { r2 } = config;
+    await s3Client.send(new HeadObjectCommand({ Bucket: r2.bucketName, Key: key }));
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+/**
  * Check if R2 is available
  * @returns {boolean}
  */
@@ -176,6 +214,8 @@ export default {
   getSignedDownloadUrl,
   deleteFromR2,
   getPublicUrl,
+  getObjectStream,
+  existsInR2,
   isR2Enabled,
   generateUploadKey,
 };
