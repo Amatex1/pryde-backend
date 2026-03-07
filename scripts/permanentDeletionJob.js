@@ -16,7 +16,6 @@
  * It does NOT auto-create anything. It only removes expired data.
  */
 
-import mongoose from 'mongoose';
 import User from '../server/models/User.js';
 import logger from '../server/utils/logger.js';
 
@@ -109,7 +108,8 @@ if (process.argv[1].endsWith('permanentDeletionJob.js')) {
     process.exit(1);
   }
 
-  mongoose.connect(mongoURI)
+  import('mongoose')
+    .then(({ default: mongoose }) => mongoose.connect(mongoURI))
     .then(() => loadModels())
     .then(() => runPermanentDeletionJob())
     .then(result => {
