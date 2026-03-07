@@ -393,7 +393,8 @@ router.post('/profile-photo', auth, uploadLimiter, (req, res) => {
         throw new Error('Failed to save profile photo to storage');
       }
 
-      const photoUrl = `/upload/image/${fileInfo.filename}`;
+      // Use R2 URL if available, otherwise fall back to local path
+      const photoUrl = fileInfo.url || `/upload/image/${fileInfo.filename}`;
       console.log('✅ Photo URL:', photoUrl);
 
       // Update user profile photo
@@ -467,7 +468,7 @@ router.post('/cover-photo', auth, uploadLimiter, (req, res) => {
         throw new Error('Failed to save cover photo to storage');
       }
 
-      const photoUrl = `/upload/image/${fileInfo.filename}`;
+      const photoUrl = fileInfo.url || `/upload/image/${fileInfo.filename}`;
       console.log('✅ Photo URL:', photoUrl);
 
       // Update user cover photo
