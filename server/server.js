@@ -283,10 +283,12 @@ const getConnectSrc = () => {
   const sources = [
     "'self'",
     "blob:", // Allow blob URLs for file uploads
-    // Backend API endpoints - always include render.com as fallback
+    // Backend API endpoints - always include all known backend domains
     "https://pryde-backend.onrender.com",
     "wss://pryde-backend.onrender.com",
     "ws://pryde-backend.onrender.com",
+    "https://api.prydeapp.com",
+    "wss://api.prydeapp.com",
     // Frontend domains
     "https://prydeapp.com",
     "https://www.prydeapp.com",
