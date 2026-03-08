@@ -25,12 +25,32 @@ export let pwaControlState = {
   pwaEnabled: process.env.PWA_ENABLED !== 'false',
   forceReload: process.env.FORCE_RELOAD === 'true',
   forceReloadTimestamp: null, // Timestamp when force reload was triggered
-  maintenanceMessage: process.env.MAINTENANCE_MESSAGE || null
+  maintenanceMessage: process.env.MAINTENANCE_MESSAGE || null,
+  maintenanceMode: process.env.MAINTENANCE_MODE === 'true', // Full site maintenance mode
+  maintenanceETA: null // Optional ETA for when maintenance will end
 };
 
 // Export function to update PWA control state (used by admin debug routes)
 export function updatePWAControlState(newState) {
   pwaControlState = { ...pwaControlState, ...newState };
+}
+
+// Export maintenance mode specific functions
+export function setMaintenanceMode(enabled, message = null, eta = null) {
+  pwaControlState = {
+    ...pwaControlState,
+    maintenanceMode: enabled,
+    maintenanceMessage: message || (enabled ? 'Site is under maintenance' : null),
+    maintenanceETA: eta
+  };
+}
+
+export function getMaintenanceMode() {
+  return {
+    enabled: pwaControlState.maintenanceMode,
+    message: pwaControlState.maintenanceMessage,
+    eta: pwaControlState.maintenanceETA
+  };
 }
 
 /**
@@ -94,7 +114,9 @@ router.get('/status', (req, res) => {
     forceReload: shouldForceReload,
     message: pwaControlState.maintenanceMessage,
     backendVersion: BACKEND_VERSION,
-    timestamp: now
+    timestamp: now,
+    maintenanceMode: pwaControlState.maintenanceMode,
+    maintenanceETA: pwaControlState.maintenanceETA
   });
 });
 

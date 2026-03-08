@@ -16,7 +16,7 @@
 import express from 'express';
 import auth from '../middleware/auth.js';
 import adminAuth from '../middleware/adminAuth.js';
-import { pwaControlState, updatePWAControlState } from './version.js';
+import { pwaControlState, updatePWAControlState, setMaintenanceMode, getMaintenanceMode } from './version.js';
 import {
   getAllMutations,
   getMutationsByStatus,
@@ -200,6 +200,95 @@ router.post('/pwa/cancel-force-reload', (req, res) => {
   res.json({
     success: true,
     message: 'Force reload cancelled',
+    state: { ...pwaControlState, ...adminMetadata }
+  });
+});
+
+// ===========================================
+// MAINTENANCE MODE ENDPOINTS
+// ===========================================
+
+// @route   GET /api/admin/debug/maintenance/status
+// @desc    Get current maintenance mode status
+// @access  Admin only
+router.get('/maintenance/status', (req, res) => {
+  const maintenanceStatus = getMaintenanceMode();
+  
+  res.json({
+    ...maintenanceStatus,
+    ...adminMetadata,
+    state: { ...pwaControlState }
+  });
+});
+
+// @route   POST /api/admin/debug/maintenance/enable
+// @desc    Enable maintenance mode (shows maintenance page to all users)
+// @access  Admin only
+router.post('/maintenance/enable', (req, res) => {
+  const { message, eta } = req.body;
+
+  setMaintenanceMode(true, message, eta);
+
+  adminMetadata = {
+    lastUpdated: new Date(),
+    updatedBy: req.user.username
+  };
+
+  console.log(`🔧 [Admin Debug] Maintenance mode ENABLED by ${req.user.username}`);
+  console.log(`   Message: ${message || 'Site is under maintenance'}`);
+  if (eta) console.log(`   ETA: ${eta}`);
+
+  res.json({
+    success: true,
+    message: 'Maintenance mode enabled',
+    maintenanceMode: true,
+    state: { ...pwaControlState, ...adminMetadata }
+  });
+});
+
+// @route   POST /api/admin/debug/maintenance/disable
+// @desc    Disable maintenance mode (restore normal operation)
+// @access  Admin only
+router.post('/maintenance/disable', (req, res) => {
+  setMaintenanceMode(false);
+
+  adminMetadata = {
+    lastUpdated: new Date(),
+    updatedBy: req.user.username
+  };
+
+  console.log(`✅ [Admin Debug] Maintenance mode DISABLED by ${req.user.username}`);
+
+  res.json({
+    success: true,
+    message: 'Maintenance mode disabled',
+    maintenanceMode: false,
+    state: { ...pwaControlState, ...adminMetadata }
+  });
+});
+
+// @route   POST /api/admin/debug/maintenance/toggle
+// @desc    Toggle maintenance mode
+// @access  Admin only
+router.post('/maintenance/toggle', (req, res) => {
+  const { message, eta } = req.body;
+  const currentStatus = getMaintenanceMode();
+  const newStatus = !currentStatus.enabled;
+
+  setMaintenanceMode(newStatus, message, eta);
+
+  adminMetadata = {
+    lastUpdated: new Date(),
+    updatedBy: req.user.username
+  };
+
+  console.log(`🔄 [Admin Debug] Maintenance mode toggled to ${newStatus ? 'ON' : 'OFF'} by ${req.user.username}`);
+  if (newStatus && message) console.log(`   Message: ${message}`);
+
+  res.json({
+    success: true,
+    message: newStatus ? 'Maintenance mode enabled' : 'Maintenance mode disabled',
+    maintenanceMode: newStatus,
     state: { ...pwaControlState, ...adminMetadata }
   });
 });
