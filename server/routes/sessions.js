@@ -88,7 +88,7 @@ router.delete('/:sessionId', authenticateToken, async (req, res) => {
 
     // Clear refresh token cookie if this is the current session - use helper to match set cookie options
     if (sessionId === req.sessionId) {
-      res.clearCookie('refreshToken', getClearCookieOptions());
+      res.clearCookie('refreshToken', getClearCookieOptions(req));
     }
 
     logger.debug(`[Sessions] Session ${sessionId} revoked for user ${req.user.id}`);
@@ -192,7 +192,7 @@ router.post('/logout-all', authenticateToken, async (req, res) => {
     }
 
     // Clear refresh token cookie - use helper to match set cookie options
-    res.clearCookie('refreshToken', getClearCookieOptions());
+    res.clearCookie('refreshToken', getClearCookieOptions(req));
 
     logger.info(`[Sessions] Revoked ALL ${sessionCount} sessions for user ${req.user.id}`);
 

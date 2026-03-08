@@ -478,7 +478,7 @@ router.post('/login-finish', async (req, res) => {
     challenges.delete(challengeKey);
 
     // Set refresh token in httpOnly cookie (ONLY source of truth for refresh tokens)
-    const cookieOptions = getRefreshTokenCookieOptions();
+    const cookieOptions = getRefreshTokenCookieOptions(req);
 
     logger.debug('Setting refresh token cookie (passkey) with options:', cookieOptions);
     res.cookie('refreshToken', refreshToken, cookieOptions);
