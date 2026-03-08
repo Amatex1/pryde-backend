@@ -1,6 +1,8 @@
 import config from '../config/config.js';
 import logger from './logger.js';
 
+const DOMAIN_LABEL_REGEX = /^[a-z0-9-]+$/i;
+
 /**
  * Parse token expiry string (e.g., '30d', '24h', '60m') to milliseconds
  * @param {string} expiry - Token expiry string from config
@@ -28,6 +30,81 @@ const parseExpiryToMs = (expiry) => {
 };
 
 /**
+ * Normalize a configured cookie domain.
+ * Accepts either a bare domain (prydeapp.com) or a full URL
+ * (https://prydeapp.com) and returns a safe hostname for cookie usage.
+ * Returns null if the value is invalid or unsafe.
+ * @param {string|null|undefined} value
+ * @returns {string|null}
+ */
+export const normalizeCookieDomain = (value) => {
+  if (typeof value !== 'string') {
+    return null;
+  }
+
+  let candidate = value.trim();
+  if (!candidate) {
+    return null;
+  }
+
+  if (/^[a-z][a-z0-9+.-]*:\/\//i.test(candidate)) {
+    try {
+      candidate = new URL(candidate).hostname;
+    } catch {
+      return null;
+    }
+  }
+
+  candidate = candidate
+    .replace(/\/.*$/, '')
+    .replace(/:\d+$/, '')
+    .replace(/^[.]+/, '')
+    .replace(/[.]+$/, '')
+    .trim()
+    .toLowerCase();
+
+  if (!candidate || candidate === 'localhost') {
+    return null;
+  }
+
+  // Avoid setting a Domain attribute for IP addresses or malformed hostnames.
+  if (/^[0-9.]+$/.test(candidate) || candidate.includes(':')) {
+    return null;
+  }
+
+  const labels = candidate.split('.');
+  if (labels.length < 2) {
+    return null;
+  }
+
+  const isValid = labels.every(label => (
+    label &&
+    label.length <= 63 &&
+    DOMAIN_LABEL_REGEX.test(label) &&
+    !label.startsWith('-') &&
+    !label.endsWith('-')
+  ));
+
+  return isValid ? candidate : null;
+};
+
+const getCookieDomainAttribute = (isProduction) => {
+  if (!isProduction || !config.rootDomain) {
+    return null;
+  }
+
+  const normalizedRootDomain = normalizeCookieDomain(config.rootDomain);
+  if (!normalizedRootDomain) {
+    logger.warn('Invalid ROOT_DOMAIN configuration for refresh-token cookies; omitting domain attribute.', {
+      configuredRootDomain: config.rootDomain
+    });
+    return null;
+  }
+
+  return `.${normalizedRootDomain}`;
+};
+
+/**
  * Get cookie options for refresh token
  * Automatically adjusts secure flag based on environment
  * Cookie maxAge is aligned with JWT refresh token expiry
@@ -44,7 +121,7 @@ export const getRefreshTokenCookieOptions = (req = null) => {
   // ROOT_DOMAIN should be set to your apex domain, e.g. 'prydeapp.com'
   // This allows the cookie to be shared between prydeapp.com (Vercel) and
   // api.prydeapp.com (Render), making it first-party so Safari ITP won't block it.
-  const rootDomain = isProduction ? (config.rootDomain || null) : null;
+  const cookieDomain = getCookieDomainAttribute(isProduction);
 
   // Always use sameSite: 'none' in production because:
   // - Frontend is on prydeapp.com
@@ -53,7 +130,7 @@ export const getRefreshTokenCookieOptions = (req = null) => {
   // In development, use 'lax' for easier testing
   const sameSite = isProduction ? 'none' : 'lax';
   
-  const shouldSetDomain = !!rootDomain;
+  const shouldSetDomain = !!cookieDomain;
 
   const options = {
     httpOnly: true,
@@ -62,13 +139,14 @@ export const getRefreshTokenCookieOptions = (req = null) => {
     maxAge,
     path: '/',
     // Set domain for cookie sharing across subdomains
-    ...(shouldSetDomain && { domain: `.${rootDomain}` })
+    ...(shouldSetDomain && { domain: cookieDomain })
   };
 
   logger.debug('Cookie options generated:', {
     ...options,
     shouldSetDomain,
-    rootDomain,
+    configuredRootDomain: config.rootDomain || null,
+    cookieDomain,
     environment: isProduction ? 'production' : 'development',
     refreshTokenExpiry: config.refreshTokenExpiry
   });
@@ -89,24 +167,26 @@ export const getClearCookieOptions = (req = null) => {
 
   // ROOT_DOMAIN should be set to your apex domain, e.g. 'prydeapp.com'
   // This must match what's used when setting the cookie
-  const rootDomain = isProduction ? (config.rootDomain || null) : null;
+  const cookieDomain = getCookieDomainAttribute(isProduction);
 
   // SameSite must match what was used when setting the cookie
   const sameSite = isProduction ? 'none' : 'lax';
   
-  const shouldSetDomain = !!rootDomain;
+  const shouldSetDomain = !!cookieDomain;
 
   const options = {
     httpOnly: true,
     secure: isProduction,
     sameSite,
     path: '/',
-    ...(shouldSetDomain && { domain: `.${rootDomain}` })
+    ...(shouldSetDomain && { domain: cookieDomain })
   };
 
   logger.debug('Clear cookie options generated:', {
     ...options,
     shouldSetDomain,
+    configuredRootDomain: config.rootDomain || null,
+    cookieDomain,
     environment: isProduction ? 'production' : 'development'
   });
 

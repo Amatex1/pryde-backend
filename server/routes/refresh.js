@@ -6,6 +6,7 @@ import Session from '../models/Session.js'; // Phase 3B-A: First-class sessions
 import { verifyRefreshToken, generateTokenPair, getRefreshTokenExpiry } from '../utils/tokenUtils.js';
 import { getClientIp, parseUserAgent } from '../utils/sessionUtils.js';
 import { getRefreshTokenCookieOptions } from '../utils/cookieUtils.js';
+import { rotateAuthoritativeSession, SESSION_ROTATION_CONFLICT } from '../utils/refreshRotation.js';
 import logger from '../utils/logger.js';
 import { incCounter, logRefreshFailure, logRevokedSessionAccess } from '../utils/authMetrics.js'; // Phase 4A
 import { refreshLimiter } from '../middleware/rateLimiter.js';
@@ -228,37 +229,12 @@ router.post('/', refreshLimiter, async (req, res) => {
     // This prevents two concurrent tabs rotating the same token from corrupting each other's
     // previousRefreshTokenHash and producing an immediately-invalid cookie.
     if (session) {
-      const providedHash = crypto.createHash('sha256').update(refreshToken).digest('hex');
-      const newHash = crypto.createHash('sha256').update(newRefreshToken).digest('hex');
-
-      await Session.findOneAndUpdate(
-        {
-          sessionId: decoded.sessionId,
-          userId: user._id,
-          isActive: true,
-          // Only update if the token we just verified is still current or in grace period
-          $or: [
-            { refreshTokenHash: providedHash },
-            {
-              previousRefreshTokenHash: providedHash,
-              previousTokenExpiry: { $gt: new Date() }
-            }
-          ]
-        },
-        [
-          // Aggregation pipeline: allows $set to reference current field values atomically
-          {
-            $set: {
-              previousRefreshTokenHash: '$refreshTokenHash',
-              previousTokenExpiry: new Date(Date.now() + 30 * 60 * 1000),
-              refreshTokenHash: newHash,
-              refreshTokenExpiry: getRefreshTokenExpiry(),
-              lastActiveAt: new Date(),
-              lastTokenRotation: new Date()
-            }
-          }
-        ]
-      );
+      await rotateAuthoritativeSession({
+        sessionId: decoded.sessionId,
+        userId: user._id,
+        refreshToken,
+        newRefreshToken
+      });
     }
 
     // Update User.activeSessions cache (non-authoritative, for compatibility)
@@ -345,6 +321,14 @@ router.post('/', refreshLimiter, async (req, res) => {
       }
     });
   } catch (error) {
+    if (error.code === SESSION_ROTATION_CONFLICT) {
+      logger.warn(`⚠️ Refresh rotation conflict for session ${req.cookies?.refreshToken ? 'present-cookie' : 'missing-cookie'}`);
+      return res.status(409).json({
+        success: false,
+        message: 'Refresh already completed elsewhere. Please retry.'
+      });
+    }
+
     logger.error('Token refresh error:', error.message);
     res.status(500).json({ 
       success: false,
