@@ -2223,4 +2223,350 @@ router.post('/onboarding/quiet-return-shown', auth, async (req, res) => {
   }
 });
 
+// ============================================
+// ADDITIONAL AUTH ENDPOINTS (for API compatibility)
+// ============================================
+
+// @route   POST /api/auth/logout-all
+// @desc    Logout all sessions
+// @access  Private
+router.post('/logout-all', auth, async (req, res) => {
+  try {
+    const user = await User.findById(req.userId);
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const io = req.app.get('io');
+
+    // Revoke all sessions in Session collection
+    if (user.activeSessions && user.activeSessions.length > 0) {
+      const sessionIds = user.activeSessions.map(s => s.sessionId);
+      
+      try {
+        await Session.updateMany(
+          { sessionId: { $in: sessionIds }, userId: user._id },
+          { $set: { isActive: false, revokedAt: new Date() } }
+        );
+        logger.debug(`[Phase 3B-A] Revoked ${sessionIds.length} sessions in Session collection`);
+      } catch (sessionError) {
+        logger.error('[Phase 3B-A] Failed to revoke sessions:', sessionError.message);
+      }
+
+      // Disconnect all sockets for this user
+      if (io) {
+        try {
+          const sockets = await io.fetchSockets();
+          for (const socket of sockets) {
+            if (socket.userId === user._id.toString()) {
+              socket.emit('force_logout', {
+                reason: 'All sessions logged out',
+                final: true
+              });
+              socket.disconnect(true);
+            }
+          }
+        } catch (socketError) {
+          logger.warn('Socket disconnect error:', socketError);
+        }
+      }
+    }
+
+    // Clear all sessions from user
+    user.activeSessions = [];
+    await user.save();
+
+    // Clear refresh token cookie
+    const isProd = config.nodeEnv === 'production';
+    res.clearCookie('refreshToken', {
+      httpOnly: true,
+      secure: isProd,
+      sameSite: isProd ? 'none' : 'lax',
+      path: '/'
+    });
+    res.clearCookie('refreshToken', getClearCookieOptions(req));
+
+    // Clear admin escalation cookie
+    res.clearCookie('pryde_admin_escalated', {
+      httpOnly: true,
+      secure: isProd,
+      sameSite: isProd ? 'none' : 'lax',
+      path: '/'
+    });
+
+    // Clear CSRF token cookie
+    res.clearCookie('XSRF-TOKEN', {
+      secure: isProd,
+      sameSite: isProd ? 'none' : 'lax',
+      path: '/'
+    });
+
+    // Clear session activity
+    clearSessionActivity(req.userId);
+
+    logger.info(`User ${user.username} logged out of all sessions`);
+
+    return res.status(200).json({
+      message: 'Logged out of all sessions successfully',
+      success: true
+    });
+  } catch (error) {
+    logger.error('Logout all error:', error);
+    return res.status(500).json({
+      message: 'Logout failed',
+      success: false
+    });
+  }
+});
+
+// @route   POST /api/auth/change-password
+// @desc    Change password while logged in
+// @access  Private
+router.post('/change-password', auth, async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        message: 'Current password and new password are required'
+      });
+    }
+
+    const user = await User.findById(req.userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Verify current password
+    const isMatch = await user.comparePassword(currentPassword);
+    if (!isMatch) {
+      return res.status(401).json({
+        success: false,
+        message: 'Current password is incorrect'
+      });
+    }
+
+    // Validate new password length
+    if (newPassword.length < 12) {
+      return res.status(400).json({
+        success: false,
+        message: 'New password must be at least 12 characters'
+      });
+    }
+
+    // Validate new password complexity
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#^()_+\-=[\]{};':"\\|,.<>/])/;
+    if (!passwordRegex.test(newPassword)) {
+      return res.status(400).json({
+        success: false,
+        message: 'New password must contain at least one uppercase letter, one lowercase letter, one number, and one special character'
+      });
+    }
+
+    // Update password
+    user.password = newPassword;
+    await user.save();
+
+    // Log security event
+    const ipAddress = getClientIp(req);
+    const userAgent = req.headers['user-agent'] || 'Unknown';
+    logPasswordChange(user, ipAddress, userAgent).catch(err => {
+      logger.error('Failed to log password change:', err);
+    });
+
+    // Send password changed notification email
+    sendPasswordChangedEmail(user.email, user.username).catch(err => {
+      logger.error('Failed to send password changed email:', err);
+    });
+
+    logger.info(`User ${user.username} changed their password`);
+
+    res.json({
+      success: true,
+      message: 'Password changed successfully'
+    });
+  } catch (error) {
+    logger.error('Change password error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error changing password'
+    });
+  }
+});
+
+// @route   POST /api/auth/deactivate
+// @desc    Deactivate account (soft delete - can be reactivated)
+// @access  Private
+router.post('/deactivate', auth, async (req, res) => {
+  try {
+    const user = await User.findById(req.userId);
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Check if already deactivated
+    if (!user.isActive) {
+      return res.status(400).json({
+        success: false,
+        message: 'Account is already deactivated'
+      });
+    }
+
+    // Deactivate account
+    user.isActive = false;
+    user.deactivatedAt = new Date();
+    await user.save();
+
+    // Revoke all sessions
+    if (user.activeSessions && user.activeSessions.length > 0) {
+      const sessionIds = user.activeSessions.map(s => s.sessionId);
+      
+      try {
+        await Session.updateMany(
+          { sessionId: { $in: sessionIds }, userId: user._id },
+          { $set: { isActive: false, revokedAt: new Date() } }
+        );
+      } catch (sessionError) {
+        logger.error('Failed to revoke sessions:', sessionError.message);
+      }
+
+      // Disconnect all sockets
+      const io = req.app.get('io');
+      if (io) {
+        try {
+          const sockets = await io.fetchSockets();
+          for (const socket of sockets) {
+            if (socket.userId === user._id.toString()) {
+              socket.disconnect(true);
+            }
+          }
+        } catch (socketError) {
+          logger.warn('Socket disconnect error:', socketError);
+        }
+      }
+
+      user.activeSessions = [];
+      await user.save();
+    }
+
+    // Clear cookies
+    const isProd = config.nodeEnv === 'production';
+    res.clearCookie('refreshToken', {
+      httpOnly: true,
+      secure: isProd,
+      sameSite: isProd ? 'none' : 'lax',
+      path: '/'
+    });
+    res.clearCookie('refreshToken', getClearCookieOptions(req));
+
+    // Log security event
+    try {
+      await SecurityLog.create({
+        type: 'account_deactivated',
+        severity: 'medium',
+        userId: user._id,
+        username: user.username,
+        ipAddress: getClientIp(req),
+        userAgent: req.headers['user-agent'],
+        action: 'completed'
+      });
+    } catch (logError) {
+      logger.error('Failed to log account deactivation:', logError);
+    }
+
+    logger.info(`User ${user.username} deactivated their account`);
+
+    res.json({
+      success: true,
+      message: 'Account deactivated successfully',
+      canReactivate: true,
+      reactivateEndpoint: '/api/auth/reactivate'
+    });
+  } catch (error) {
+    logger.error('Deactivate account error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error deactivating account'
+    });
+  }
+});
+
+// @route   POST /api/auth/reactivate
+// @desc    Reactivate a deactivated account
+// @access  Public (requires email and password)
+router.post('/reactivate', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email and password are required'
+      });
+    }
+
+    const user = await User.findOne({ email: email.toLowerCase() });
+
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid email or password'
+      });
+    }
+
+    // Check if account is actually deactivated
+    if (user.isActive) {
+      return res.status(400).json({
+        success: false,
+        message: 'Account is already active'
+      });
+    }
+
+    // Verify password
+    const isMatch = await user.comparePassword(password);
+    if (!isMatch) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid email or password'
+      });
+    }
+
+    // Reactivate account
+    user.isActive = true;
+    user.deactivatedAt = null;
+    await user.save();
+
+    // Log security event
+    try {
+      await SecurityLog.create({
+        type: 'account_reactivated',
+        severity: 'medium',
+        userId: user._id,
+        username: user.username,
+        ipAddress: getClientIp(req),
+        userAgent: req.headers['user-agent'],
+        action: 'completed'
+      });
+    } catch (logError) {
+      logger.error('Failed to log account reactivation:', logError);
+    }
+
+    logger.info(`User ${user.username} reactivated their account`);
+
+    res.json({
+      success: true,
+      message: 'Account reactivated successfully'
+    });
+  } catch (error) {
+    logger.error('Reactivate account error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error reactivating account'
+    });
+  }
+});
+
 export default router;
