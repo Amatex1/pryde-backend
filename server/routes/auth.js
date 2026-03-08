@@ -1879,12 +1879,23 @@ router.post('/logout', auth, async (req, res) => {
       }
     }
 
-    // Clear refresh token cookie - use helper to match set cookie options (including domain)
-    // 🔧 FIX: Pass `req` so clear matches the cookie attributes that were set
+    // 🔥 CRITICAL: Clear refresh token cookie in ALL possible domains
+    // This handles the migration from api.prydeapp.com to .prydeapp.com
+    // Clear both the old cookie (no domain) and new cookie (.prydeapp.com)
+    const isProd = config.nodeEnv === 'production';
+    
+    // Clear old cookie (no domain attribute - defaults to current host)
+    res.clearCookie('refreshToken', {
+      httpOnly: true,
+      secure: isProd,
+      sameSite: isProd ? 'none' : 'lax',
+      path: '/'
+    });
+    
+    // Clear new cookie with domain attribute (.prydeapp.com)
     res.clearCookie('refreshToken', getClearCookieOptions(req));
 
     // Clear admin escalation cookie
-    const isProd = config.nodeEnv === 'production';
     res.clearCookie('pryde_admin_escalated', {
       httpOnly: true,
       secure: isProd,

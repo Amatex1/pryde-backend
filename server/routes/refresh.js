@@ -10,6 +10,7 @@ import { rotateAuthoritativeSession, SESSION_ROTATION_CONFLICT } from '../utils/
 import logger from '../utils/logger.js';
 import { incCounter, logRefreshFailure, logRevokedSessionAccess } from '../utils/authMetrics.js'; // Phase 4A
 import { refreshLimiter } from '../middleware/rateLimiter.js';
+import config from '../config/config.js';
 
 // @route   POST /api/refresh
 // @desc    Refresh access token using refresh token
@@ -285,8 +286,20 @@ router.post('/', refreshLimiter, async (req, res) => {
     logger.info(`✅ Token refresh successful for ${user.username}`);
 
     // Set refresh token in httpOnly cookie (ONLY source of truth)
-    // Pass request to determine sameSite based on request origin
+    // 🔧 FIX: Pass request to determine sameSite based on request origin
     const cookieOptions = getRefreshTokenCookieOptions(req);
+    
+    // 🔥 CRITICAL: Also clear any old cookie without domain attribute
+    // This handles the migration from api.prydeapp.com to .prydeapp.com
+    const isProd = config.nodeEnv === 'production';
+    res.clearCookie('refreshToken', {
+      httpOnly: true,
+      secure: isProd,
+      sameSite: isProd ? 'none' : 'lax',
+      path: '/'
+    });
+    
+    // Set new cookie with domain attribute
     res.cookie('refreshToken', newRefreshToken, cookieOptions);
 
     // 🔐 SECURITY: Access token returned ONLY in JSON body, NOT as cookie
