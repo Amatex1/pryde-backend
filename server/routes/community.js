@@ -11,7 +11,7 @@
  */
 
 import express from 'express';
-import { auth } from '../middleware/auth.js';
+import auth from '../middleware/auth.js';
 import { requireActiveUser } from '../middleware/requireActiveUser.js';
 import { runConversationResurfaceJob } from '../jobs/conversationResurfaceJob.js';
 import { runMemberSpotlight, getUpcomingThemes } from '../jobs/weeklyThemesJob.js';
