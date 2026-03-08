@@ -29,6 +29,7 @@ import privacyRoutes from './routes/privacy.js';
 // ── Content ─────────────────────────────────────────────────────────────────
 import postsRoutes from './routes/posts.js';
 import feedRoutes from './routes/feed.js';
+import feedPersonalRoutes from './routes/feedPersonal.js';
 import commentsRoutes from './routes/comments.js';
 import reactionsRoutes from './routes/reactions.js';
 import bookmarksRoutes from './routes/bookmarks.js';
@@ -47,6 +48,7 @@ import tagsRoutes from './routes/tags.js'; // deprecated — returns 410 Gone
 import invitesRoutes from './routes/invites.js';
 import badgesRoutes from './routes/badges.js';
 import presenceRoutes from './routes/presence.js';
+import communityRoutes from './routes/community.js';
 
 // ── Messaging ────────────────────────────────────────────────────────────────
 import messagesRoutes from './routes/messages.js';
@@ -114,6 +116,7 @@ export function mountRoutes(app, { restrictionMiddleware, requireDatabaseReady }
   // Content
   app.use('/api/posts', restrictionMiddleware, postsRoutes);
   app.use('/api/feed', feedRoutes);
+  app.use('/api/feed/personal', feedPersonalRoutes);
   app.use('/api', commentsRoutes);
   app.use('/api/reactions', restrictionMiddleware, reactionsRoutes);
   app.use('/api/bookmarks', bookmarksRoutes);
@@ -132,6 +135,7 @@ export function mountRoutes(app, { restrictionMiddleware, requireDatabaseReady }
   app.use('/api/invites', invitesRoutes);
   app.use('/api/badges', badgesRoutes);
   app.use('/api/presence', presenceRoutes);
+  app.use('/api/community', communityRoutes);
 
   // Messaging
   app.use('/api/messages', restrictionMiddleware, messagesRoutes);

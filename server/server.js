@@ -747,10 +747,113 @@ if (!isVercel) {
                 console.log(`[FoundingMember] 🌟 Assigned badge to ${result.assigned} new founding members`);
               } else {
                 console.log('[FoundingMember] ✅ All founding members already have badge');
-              }            })
+              }            
+            })
             .catch(err => console.error('[FoundingMember] ❌ Seed failed:', err));
         })
         .catch(err => console.error('[FoundingMember] ❌ Failed to import seed script:', err));
+
+      // ========================================
+      // WEEKLY DIGEST EMAIL JOB
+      // ========================================
+      // Sends weekly digest emails to users every Sunday at 10:00 AM UTC
+      import('./jobs/weeklyDigestJob.js')
+        .then(({ runWeeklyDigestJob }) => {
+          cron.schedule('0 10 * * 0', async () => {
+            logger.info('[WeeklyDigest] 🕐 Starting weekly digest job...');
+            try {
+              const result = await runWeeklyDigestJob();
+              logger.info(`[WeeklyDigest] ✅ Complete: ${result.sent} emails sent`);
+            } catch (err) {
+              logger.error('[WeeklyDigest] ❌ Job failed:', err);
+            }
+          });
+          logger.info('[WeeklyDigest] 🕐 Scheduled (runs every Sunday at 10:00 AM UTC)');
+        })
+        .catch(err => logger.error('[WeeklyDigest] ❌ Failed to schedule job:', err));
+
+      // ========================================
+      // INACTIVITY EMAIL JOB ("Pryde misses you")
+      // ========================================
+      // Sends "Pryde misses you" emails to users after 14 days of inactivity
+      import('./jobs/inactivityEmailJob.js')
+        .then(({ runInactivityEmailJob }) => {
+          cron.schedule('0 9 * * *', async () => {
+            logger.info('[InactivityEmail] 🕐 Starting inactivity email job...');
+            try {
+              const result = await runInactivityEmailJob();
+              logger.info(`[InactivityEmail] ✅ Complete: ${result.sent} emails sent`);
+            } catch (err) {
+              logger.error('[InactivityEmail] ❌ Job failed:', err);
+            }
+          });
+          logger.info('[InactivityEmail] 🕐 Scheduled (runs daily at 09:00 UTC)');
+        })
+        .catch(err => logger.error('[InactivityEmail] ❌ Failed to schedule job:', err));
+
+      // ========================================
+      // MEMBER SPOTLIGHT JOB
+      // ========================================
+      // Features a community member weekly
+      import('./jobs/memberSpotlightJob.js')
+        .then(({ runMemberSpotlight }) => {
+          cron.schedule('0 11 * * 1', async () => {
+            logger.info('[MemberSpotlight] 🕐 Starting member spotlight job...');
+            try {
+              const result = await runMemberSpotlight();
+              if (result) {
+                logger.info(`[MemberSpotlight] ✅ New spotlight: ${result.user?.username}`);
+              } else {
+                logger.info('[MemberSpotlight] ⏭️ No eligible member for spotlight');
+              }
+            } catch (err) {
+              logger.error('[MemberSpotlight] ❌ Job failed:', err);
+            }
+          });
+          logger.info('[MemberSpotlight] 🕐 Scheduled (runs every Monday at 11:00 UTC)');
+        })
+        .catch(err => logger.error('[MemberSpotlight] ❌ Failed to schedule job:', err));
+
+      // ========================================
+      // WEEKLY THEMES JOB
+      // ========================================
+      // Posts weekly themed discussion prompts
+      import('./jobs/weeklyThemesJob.js')
+        .then(({ runWeeklyThemesJob }) => {
+          cron.schedule('0 10 * * 1', async () => {
+            logger.info('[WeeklyThemes] 🕐 Starting weekly themes job...');
+            try {
+              const result = await runWeeklyThemesJob();
+              logger.info(`[WeeklyThemes] ✅ Complete: ${result.posted?.length || 0} themes posted`);
+            } catch (err) {
+              logger.error('[WeeklyThemes] ❌ Job failed:', err);
+            }
+          });
+          logger.info('[WeeklyThemes] 🕐 Scheduled (runs every Monday at 10:00 UTC)');
+        })
+        .catch(err => logger.error('[WeeklyThemes] ❌ Failed to schedule job:', err));
+
+      // ========================================
+      // CONVERSATION RESURFACE JOB
+      // ========================================
+      // Finds and resurfacing old conversations that are getting attention
+      import('./jobs/conversationResurfaceJob.js')
+        .then(({ runConversationResurfaceJob }) => {
+          cron.schedule('*/30 * * * *', async () => {
+            // Run every 30 minutes
+            logger.info('[ConversationResurface] 🕐 Checking for resurfacing conversations...');
+            try {
+              const result = await runConversationResurfaceJob();
+              if (result.resurfaced?.length > 0) {
+                logger.info(`[ConversationResurface] ✅ ${result.resurfaced.length} conversations marked for resurfacing`);
+              }
+            } catch (err) {
+              logger.error('[ConversationResurface] ❌ Job failed:', err);
+            }
+          });
+          logger.info('[ConversationResurface] 🕐 Scheduled (runs every 30 minutes)');
+        })
+        .catch(err => logger.error('[ConversationResurface] ❌ Failed to schedule job:', err));
     }
     });
   }).catch((err) => {

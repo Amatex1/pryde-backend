@@ -5,6 +5,7 @@ import crypto from 'crypto';
 import User from '../models/User.js';
 import Badge from '../models/Badge.js';
 import SecurityLog from '../models/SecurityLog.js';
+import ActivityEvent from '../models/ActivityEvent.js'; // Community Activity Layer
 import AdminEscalationToken from '../models/AdminEscalationToken.js'; // PHASE G: Auto-revoke escalation on security events
 import Invite from '../models/Invite.js'; // Phase 7B: Invite-only growth
 import Session from '../models/Session.js'; // Phase 3B-A: First-class sessions
@@ -594,6 +595,25 @@ router.post('/signup', validateAgeBeforeRateLimit, signupLimiter, validateSignup
     }
 
     logger.debug(`New user registered: ${username} (${email})`);
+
+    // ── COMMUNITY ACTIVITY LAYER: Create new_member event ─────────────────────
+    // Generate activity feed event for new user join (non-blocking)
+    setImmediate(async () => {
+      try {
+        await ActivityEvent.create({
+          type: 'new_member',
+          userId: user._id,
+          meta: {
+            username: user.username,
+            displayName: user.displayName || user.username
+          },
+          createdAt: new Date()
+        });
+        logger.debug(`[ActivityLayer] Created new_member event for ${user.username}`);
+      } catch (activityError) {
+        logger.warn('[ActivityLayer] Failed to create new_member event:', activityError.message);
+      }
+    });
 
     // Emit real-time event for new user registration (for admin panel)
     if (req.io) {

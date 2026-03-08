@@ -9,6 +9,7 @@ import mongoose from 'mongoose';
 import Post from '../models/Post.js';
 import User from '../models/User.js';
 import Notification from '../models/Notification.js';
+import ActivityEvent from '../models/ActivityEvent.js'; // Community Activity Layer
 import auth from '../middleware/auth.js';
 import requireActiveUser from '../middleware/requireActiveUser.js';
 import requireEmailVerification from '../middleware/requireEmailVerification.js';
@@ -28,6 +29,7 @@ import { asyncHandler, requireAuth, requireValidId, sendError, HttpStatus } from
 import { processUserBadgesById } from '../services/autoBadgeService.js';
 import { populatePostBadges, populateSinglePostBadges } from '../utils/populateBadges.js';
 import { checkAnonBurst } from '../utils/anonymousBurstLimiter.js';
+import { handlePostCreated } from '../services/feedBuilder.js';
 
 // ── Anonymous Post Sanitization ──────────────────────────────────────────────
 // Strip real author data from anonymous posts for non-staff users.
@@ -504,7 +506,37 @@ router.post('/', auth, requireActiveUser, requireEmailVerification, postLimiter,
       mutation.addStep('SOCKET_EMITTED', { event: 'post_created' });
     }
 
+    // ── FEED BUILDER: Build personalized feed entries (non-blocking) ───────────
+    // Fan-out-on-write: Create feed entries for all followers
+    // Runs asynchronously via setImmediate to not block post creation response
+    setImmediate(() => handlePostCreated(post));
+
     mutation.success({ postId: post._id.toString() });
+
+    // ── COMMUNITY ACTIVITY LAYER: First Post Event ───────────────────────────────
+    // Check if this is the user's first post (non-blocking)
+    setImmediate(async () => {
+      try {
+        const postCount = await Post.countDocuments({ author: userId });
+        if (postCount === 1) {
+          // This is the user's first post - create activity event
+          const user = await User.findById(userId).select('username displayName').lean();
+          await ActivityEvent.create({
+            type: 'first_post',
+            userId: userId,
+            postId: post._id,
+            meta: {
+              username: user?.username,
+              displayName: user?.displayName || user?.username
+            },
+            createdAt: new Date()
+          });
+          logger.debug(`[ActivityLayer] Created first_post event for user ${user?.username}`);
+        }
+      } catch (err) {
+        logger.warn('[ActivityLayer] Failed to create first_post event:', err.message);
+      }
+    });
 
     // BADGE SYSTEM: Process automatic badges after post creation (non-blocking)
     // This checks for active_this_month badge
@@ -1215,6 +1247,35 @@ router.post('/:id/comment', auth, requireActiveUser, requireEmailVerification, c
         post: sanitizedPost
       });
     }
+
+    // ── COMMUNITY ACTIVITY LAYER: First Comment Event ───────────────────────────
+    // Check if this is the user's first comment (non-blocking)
+    setImmediate(async () => {
+      try {
+        // Count comments by this user (check all posts for comments by user)
+        const userCommentCount = await Post.countDocuments({
+          'comments.user': userId
+        });
+        if (userCommentCount === 1) {
+          // This is the user's first comment - create activity event
+          const user = await User.findById(userId).select('username displayName').lean();
+          await ActivityEvent.create({
+            type: 'first_comment',
+            userId: userId,
+            postId: post._id,
+            commentId: newComment._id,
+            meta: {
+              username: user?.username,
+              displayName: user?.displayName || user?.username
+            },
+            createdAt: new Date()
+          });
+          logger.debug(`[ActivityLayer] Created first_comment event for user ${user?.username}`);
+        }
+      } catch (err) {
+        logger.warn('[ActivityLayer] Failed to create first_comment event:', err.message);
+      }
+    });
 
     // CALM ONBOARDING: Track activity for quiet return detection (non-blocking)
     setImmediate(() => updateLastActivityDate(userId));
