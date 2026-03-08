@@ -124,6 +124,3 @@ activityEventSchema.statics.getRecentEvents = async function(options = {}) {
 };
 
 export default mongoose.model('ActivityEvent', activityEventSchema);
-</parameter>
-</invoke>
-</minimax:tool_call>
