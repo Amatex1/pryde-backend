@@ -253,7 +253,8 @@ router.delete('/:id', auth, async (req, res) => {
     mutation.addStep('AUTHORIZATION_PASSED');
 
     const draftId = draft._id;
-    await draft.deleteOne();
+    // FIX: Use findByIdAndDelete for reliable deletion instead of deleteOne()
+    await Draft.findByIdAndDelete(draftId);
     mutation.addStep('DOCUMENT_DELETED');
 
     // CRITICAL: Verify delete succeeded
@@ -275,4 +276,3 @@ router.delete('/:id', auth, async (req, res) => {
 });
 
 export default router;
-
