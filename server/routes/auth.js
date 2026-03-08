@@ -613,7 +613,8 @@ router.post('/signup', validateAgeBeforeRateLimit, signupLimiter, validateSignup
     }
 
     // Set refresh token in httpOnly cookie (ONLY source of truth for refresh tokens)
-    const cookieOptions = getRefreshTokenCookieOptions();
+    // 🔧 FIX: Pass `req` so cookie domain/sameSite matches what /refresh will set
+    const cookieOptions = getRefreshTokenCookieOptions(req);
 
     logger.debug('Setting refresh token cookie (register) with options:', cookieOptions);
     res.cookie('refreshToken', refreshToken, cookieOptions);
@@ -1102,7 +1103,8 @@ router.post('/login', loginLimiter, validateLogin, async (req, res) => {
     logger.debug(`User logged in: ${email} from ${ipAddress}`);
 
     // Set refresh token in httpOnly cookie (ONLY source of truth for refresh tokens)
-    const cookieOptions = getRefreshTokenCookieOptions();
+    // 🔧 FIX: Pass `req` so cookie domain/sameSite matches what /refresh will set
+    const cookieOptions = getRefreshTokenCookieOptions(req);
 
     logger.debug('Setting refresh token cookie (login) with options:', cookieOptions);
     res.cookie('refreshToken', refreshToken, cookieOptions);
@@ -1415,7 +1417,8 @@ router.post('/verify-2fa-login', loginLimiter, async (req, res) => {
     await user.save();
 
     // Set refresh token in httpOnly cookie (ONLY source of truth for refresh tokens)
-    const cookieOptions = getRefreshTokenCookieOptions();
+    // 🔧 FIX: Pass `req` so cookie domain/sameSite matches what /refresh will set
+    const cookieOptions = getRefreshTokenCookieOptions(req);
     logger.debug('Setting refresh token cookie (2FA login) with options:', cookieOptions);
     res.cookie('refreshToken', refreshToken, cookieOptions);
 
@@ -1857,7 +1860,8 @@ router.post('/logout', auth, async (req, res) => {
     }
 
     // Clear refresh token cookie - use helper to match set cookie options (including domain)
-    res.clearCookie('refreshToken', getClearCookieOptions());
+    // 🔧 FIX: Pass `req` so clear matches the cookie attributes that were set
+    res.clearCookie('refreshToken', getClearCookieOptions(req));
 
     // Clear admin escalation cookie
     const isProd = config.nodeEnv === 'production';
