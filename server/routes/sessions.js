@@ -1,10 +1,14 @@
 import express from 'express';
 import { authenticateToken } from '../middleware/auth.js';
-import User from '../models/User.js';
-import Session from '../models/Session.js'; // 🔐 PHASE 3: Session collection is authoritative
-import jwt from 'jsonwebtoken';
 import logger from '../utils/logger.js';
 import { getClearCookieOptions } from '../utils/cookieUtils.js';
+import {
+  listActiveSessionsForUser,
+  revokeSession,
+  revokeOtherSessions,
+  revokeAllSessions,
+  touchSessionActivity
+} from '../services/sessionService.js';
 
 const router = express.Router();
 
@@ -18,34 +22,14 @@ export const setSocketIO = (socketIO) => {
 // 🔐 PHASE 3: Query Session collection directly (authoritative source)
 router.get('/', authenticateToken, async (req, res) => {
   try {
-    // Query Session collection - the SOLE source of truth
-    const sessions = await Session.find({
+    const result = await listActiveSessionsForUser({
       userId: req.user.id,
-      isActive: true
-    }).select('sessionId deviceInfo browser os ipAddress location createdAt lastActiveAt')
-      .sort({ lastActiveAt: -1 }); // Most recent first
-
-    // Mark current session
-    const currentSessionId = req.sessionId;
-    const sessionsWithCurrent = sessions.map(session => ({
-      sessionId: session.sessionId,
-      deviceInfo: session.deviceInfo || '',
-      browser: session.browser || '',
-      os: session.os || '',
-      ipAddress: session.ipAddress || '',
-      location: session.location || {},
-      createdAt: session.createdAt,
-      lastActive: session.lastActiveAt, // Alias for frontend compatibility
-      lastActiveAt: session.lastActiveAt,
-      isCurrent: session.sessionId === currentSessionId
-    }));
-
-    logger.debug(`[Sessions] Retrieved ${sessions.length} active sessions for user ${req.user.id}`);
-
-    res.json({
-      sessions: sessionsWithCurrent,
-      total: sessions.length
+      currentSessionId: req.sessionId
     });
+
+    logger.debug(`[Sessions] Retrieved ${result.total} active sessions for user ${req.user.id}`);
+
+    res.json(result);
   } catch (error) {
     logger.error('Get sessions error:', error);
     res.status(500).json({ message: 'Server error' });
@@ -58,22 +42,15 @@ router.delete('/:sessionId', authenticateToken, async (req, res) => {
   try {
     const { sessionId } = req.params;
 
-    // 🔐 AUTHORITATIVE: Revoke in Session collection first
-    const session = await Session.findOneAndUpdate(
-      { sessionId, userId: req.user.id, isActive: true },
-      { $set: { isActive: false, revokedAt: new Date() } },
-      { new: true }
-    );
+    const session = await revokeSession({
+      userId: req.user.id,
+      sessionId,
+      requireActive: true
+    });
 
     if (!session) {
       return res.status(404).json({ message: 'Session not found' });
     }
-
-    // 🔥 CACHE SYNC: Also remove from User.activeSessions for backward compatibility
-    await User.updateOne(
-      { _id: req.user.id },
-      { $pull: { activeSessions: { sessionId } } }
-    );
 
     // Force disconnect Socket.IO connections for this session
     if (io) {
@@ -108,49 +85,27 @@ router.delete('/:sessionId', authenticateToken, async (req, res) => {
 router.post('/logout-others', authenticateToken, async (req, res) => {
   try {
     const currentSessionId = req.sessionId;
-
-    // 🔐 AUTHORITATIVE: Count and revoke other sessions in Session collection
-    const otherSessions = await Session.find({
+    const result = await revokeOtherSessions({
       userId: req.user.id,
-      isActive: true,
-      sessionId: { $ne: currentSessionId }
+      currentSessionId
     });
-    const otherSessionsCount = otherSessions.length;
-
-    // Revoke all other sessions
-    await Session.updateMany(
-      { userId: req.user.id, isActive: true, sessionId: { $ne: currentSessionId } },
-      { $set: { isActive: false, revokedAt: new Date() } }
-    );
-
-    // 🔥 CACHE SYNC: Also update User.activeSessions
-    await User.updateOne(
-      { _id: req.user.id },
-      { $pull: { activeSessions: { sessionId: { $ne: currentSessionId } } } }
-    );
 
     // Force disconnect Socket.IO connections for other sessions
     if (io) {
       const sockets = await io.fetchSockets();
       for (const socket of sockets) {
-        if (socket.userId === req.user.id.toString() && socket.sessionId !== currentSessionId) {
+        if (result.revokedSessionIds.includes(socket.sessionId)) {
           socket.emit('force_logout', { reason: 'Logged out from another device' });
           socket.disconnect(true);
         }
       }
     }
 
-    logger.debug(`[Sessions] Revoked ${otherSessionsCount} other sessions for user ${req.user.id}`);
-
-    // Get remaining count from Session collection
-    const remainingSessions = await Session.countDocuments({
-      userId: req.user.id,
-      isActive: true
-    });
+    logger.debug(`[Sessions] Revoked ${result.otherSessionsCount} other sessions for user ${req.user.id}`);
 
     res.json({
-      message: `Logged out ${otherSessionsCount} other session(s)`,
-      remainingSessions
+      message: `Logged out ${result.otherSessionsCount} other session(s)`,
+      remainingSessions: result.remainingSessions
     });
   } catch (error) {
     logger.error('Logout others error:', error);
@@ -162,23 +117,7 @@ router.post('/logout-others', authenticateToken, async (req, res) => {
 // 🔐 PHASE 4: Revoke ALL sessions in Session collection + emit force_logout
 router.post('/logout-all', authenticateToken, async (req, res) => {
   try {
-    // 🔐 AUTHORITATIVE: Count and revoke all sessions in Session collection
-    const sessionCount = await Session.countDocuments({
-      userId: req.user.id,
-      isActive: true
-    });
-
-    // Revoke all sessions
-    await Session.updateMany(
-      { userId: req.user.id, isActive: true },
-      { $set: { isActive: false, revokedAt: new Date() } }
-    );
-
-    // 🔥 CACHE SYNC: Also clear User.activeSessions
-    await User.updateOne(
-      { _id: req.user.id },
-      { $set: { activeSessions: [] } }
-    );
+    const result = await revokeAllSessions({ userId: req.user.id });
 
     // Force disconnect all Socket.IO connections for this user
     if (io) {
@@ -194,10 +133,10 @@ router.post('/logout-all', authenticateToken, async (req, res) => {
     // Clear refresh token cookie - use helper to match set cookie options
     res.clearCookie('refreshToken', getClearCookieOptions(req));
 
-    logger.info(`[Sessions] Revoked ALL ${sessionCount} sessions for user ${req.user.id}`);
+    logger.info(`[Sessions] Revoked ALL ${result.sessionCount} sessions for user ${req.user.id}`);
 
     res.json({
-      message: `Logged out all ${sessionCount} session(s)`,
+      message: `Logged out all ${result.sessionCount} session(s)`,
       note: 'You will need to log in again'
     });
   } catch (error) {
@@ -210,20 +149,11 @@ router.post('/logout-all', authenticateToken, async (req, res) => {
 // 🔐 PHASE 3: Update Session collection (authoritative) and User cache
 router.put('/activity', authenticateToken, async (req, res) => {
   try {
-    const currentSessionId = req.sessionId;
-    const now = new Date();
-
-    // 🔐 AUTHORITATIVE: Update Session collection first
-    await Session.updateOne(
-      { sessionId: currentSessionId, userId: req.user.id, isActive: true },
-      { $set: { lastActiveAt: now } }
-    );
-
-    // 🔥 CACHE SYNC: Also update User.activeSessions for compatibility
-    await User.updateOne(
-      { _id: req.user.id, 'activeSessions.sessionId': currentSessionId },
-      { $set: { 'activeSessions.$.lastActive': now } }
-    );
+    await touchSessionActivity({
+      userId: req.user.id,
+      sessionId: req.sessionId,
+      now: new Date()
+    });
 
     res.json({ message: 'Session activity updated' });
   } catch (error) {

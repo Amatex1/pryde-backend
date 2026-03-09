@@ -1,9 +1,7 @@
 import express from 'express';
 const router = express.Router();
 import jwt from 'jsonwebtoken';
-import crypto from 'crypto';
 import User from '../models/User.js';
-import Session from '../models/Session.js'; // Phase 3B-A: First-class sessions
 import auth from '../middleware/auth.js';
 import config from '../config/config.js';
 import logger from '../utils/logger.js';
@@ -17,13 +15,11 @@ import {
 import {
   parseUserAgent,
   getClientIp,
-  cleanupOldSessions,
   findOrCreateSession,
-  getIpGeolocation,
-  enforceMaxSessions
+  getIpGeolocation
 } from '../utils/sessionUtils.js';
-import { generateTokenPair, getRefreshTokenExpiry } from '../utils/tokenUtils.js';
 import { getRefreshTokenCookieOptions } from '../utils/cookieUtils.js';
+import { createPasskeySession } from '../services/sessionService.js';
 import { passkeyLimiter } from '../middleware/rateLimiter.js';
 
 // Fallback in-memory challenge store (used when Redis is unavailable)
@@ -442,59 +438,14 @@ router.post('/login-finish', passkeyLimiter, async (req, res) => {
     // Get IP geolocation (async, but don't block login if it fails)
     const location = await getIpGeolocation(ipAddress);
 
-    // Clean up old sessions first
-    cleanupOldSessions(user);
-
-    // Generate token pair with new session
-    const { accessToken, refreshToken, sessionId } = generateTokenPair(user._id);
-
-    // 🔐 Hash refresh token for secure storage (aligned with auth.js)
-    const refreshTokenHash = crypto.createHash('sha256').update(refreshToken).digest('hex');
-
-    // Create session with refresh token hash (no plaintext storage)
-    const sessionData = {
-      sessionId,
-      refreshToken: null,    // 🔐 Don't store plaintext
-      refreshTokenHash,      // 🔐 Store hash for secure verification
-      refreshTokenExpiry: getRefreshTokenExpiry(),
+    const { accessToken, refreshToken } = await createPasskeySession({
+      user,
       deviceInfo,
       browser,
       os,
       ipAddress,
-      location,
-      createdAt: new Date(),
-      lastActive: new Date()
-    };
-
-    // Phase 3B-A: Dual-write - create first-class session (authoritative)
-    try {
-      await Session.create({
-        userId: user._id,
-        sessionId,
-        refreshTokenHash,
-        refreshTokenExpiry: sessionData.refreshTokenExpiry,
-        deviceInfo,
-        browser,
-        os,
-        ipAddress,
-        location,
-        createdAt: sessionData.createdAt,
-        lastActiveAt: sessionData.lastActive, // 🔧 FIX: Use correct field name (was 'lastActive')
-        isActive: true // 🔧 FIX: Explicitly set (aligns with auth.js)
-      });
-      logger.debug(`[Phase 3B-A] Created first-class session ${sessionId} for user ${user.username} (passkey)`);
-    } catch (sessionError) {
-      logger.error('Failed to create Session document (passkey):', sessionError.message);
-      // Continue with legacy storage - don't fail the login
-    }
-
-    // Add to legacy activeSessions array (backward compatibility)
-    user.activeSessions.push(sessionData);
-
-    // Enforce max concurrent sessions (removes oldest if limit exceeded)
-    enforceMaxSessions(user);
-
-    await user.save();
+      location
+    });
 
     // Clean up challenge
     challenges.delete(challengeKey);

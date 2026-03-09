@@ -65,7 +65,7 @@ export const sanitizeObject = (obj) => {
   const sanitized = Array.isArray(obj) ? [] : {};
 
   for (const key in obj) {
-    if (obj.hasOwnProperty(key)) {
+    if (Object.prototype.hasOwnProperty.call(obj, key)) {
       const value = obj[key];
       
       if (typeof value === 'string') {

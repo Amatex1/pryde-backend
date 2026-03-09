@@ -1,4 +1,4 @@
-pease/**
+/**
  * Input Validation & Sanitization Middleware
  * Provides request body validation and sanitization
  */
@@ -238,6 +238,9 @@ export const validateObjectId = (paramName = 'id') => {
   };
 };
 
+// Backward-compatible alias used across older route modules.
+export const validateParamId = validateObjectId;
+
 /**
  * Pre-built middleware for the login endpoint
  * Validates email format and presence of password before the handler runs
@@ -257,8 +260,8 @@ export const validateLogin = validate({
 
 /**
  * Pre-built middleware for the signup endpoint
- * Validates required fields and basic format before the handler runs
- * Note: birthday age check and password strength are enforced in the route handler
+ * Validates required fields and signup password policy before the handler runs
+ * Note: birthday age check is still enforced in the route handler
  */
 export const validateSignup = validate({
   fullName: {
@@ -280,8 +283,10 @@ export const validateSignup = validate({
   password: {
     required: true,
     type: 'string',
-    minLength: 8,
-    maxLength: 128
+    minLength: 12,
+    maxLength: 128,
+    custom: (v) => /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#^()_+\-=[\]{};':"\\|,.<>/])/.test(v)
+      || 'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character'
   },
   birthday: {
     required: true,
@@ -298,6 +303,7 @@ export default {
   validate,
   sanitize,
   sanitizeAll,
+  validateParamId,
   validateObjectId,
   validateLogin,
   validateSignup

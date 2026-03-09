@@ -27,11 +27,11 @@ const userSchema = new mongoose.Schema({
   password: {
     type: String,
     required: true,
-    minlength: 8,
+    minlength: 12,
     validate: {
       validator: function(password) {
-        // Password must be at least 8 characters
-        if (password.length < 8) return false;
+        // Password must be at least 12 characters
+        if (password.length < 12) return false;
 
         // Password must contain at least one uppercase letter
         if (!/[A-Z]/.test(password)) return false;
@@ -42,9 +42,12 @@ const userSchema = new mongoose.Schema({
         // Password must contain at least one number
         if (!/[0-9]/.test(password)) return false;
 
+        // Password must contain at least one special character
+        if (!/[@$!%*?&#^()_+\-=[\]{};':"\\|,.<>/]/.test(password)) return false;
+
         return true;
       },
-      message: 'Password must be at least 8 characters and contain uppercase, lowercase, and numbers'
+      message: 'Password must be at least 12 characters and contain uppercase, lowercase, numbers, and special characters'
     }
   },
   fullName: {

@@ -26,7 +26,9 @@ const TEST_USER = {
   username: `poststest_${Date.now()}`,
   email: `poststest_${Date.now()}@test.pryde`,
   password: 'TestPass123!@#Secure',
+  fullName: 'Posts Test User',
   displayName: 'Posts Test User',
+  birthday: '1990-01-01',
 };
 
 describe('Posts API (/api/posts)', function () {
@@ -37,6 +39,7 @@ describe('Posts API (/api/posts)', function () {
       const uri = process.env.MONGODB_URI_TEST || process.env.MONGODB_URI;
       await mongoose.connect(uri);
     }
+	    const User = (await import('../models/User.js')).default;
     const mod = await import('../server.js');
     app = mod.default || mod.app;
 
@@ -48,6 +51,17 @@ describe('Posts API (/api/posts)', function () {
     if (signupRes.status !== 201 && signupRes.status !== 200) {
       throw new Error(`Signup failed: ${JSON.stringify(signupRes.body)}`);
     }
+
+	    await User.updateOne(
+	      { email: TEST_USER.email },
+	      {
+	        $set: {
+	          emailVerified: true,
+	          emailVerificationToken: null,
+	          emailVerificationExpires: null,
+	        },
+	      }
+	    );
 
     const loginRes = await request(app)
       .post('/api/auth/login')

@@ -160,7 +160,7 @@ export async function processInactivityEmailJob(job) {
     logger.error(`[InactivityEmail] Error: ${error.message}`);
     throw error;
   }
-};
+}
 
 /**
  * Find users eligible for inactivity emails

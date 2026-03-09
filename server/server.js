@@ -31,6 +31,20 @@ import { setupSwagger } from './swagger.js';
 
 // BullMQ job queues
 import { initQueues, startWorkers, shutdownQueues } from './queues/index.js';
+import { startDailyBackupService } from './scripts/dailyBackup.js';
+import { cleanupTempMedia } from './scripts/cleanupTempMedia.js';
+import { seedSystemPrompts } from './scripts/seedSystemPrompts.js';
+import { startScheduler as startSystemPromptScheduler } from './scripts/systemPromptScheduler.js';
+import { startBadgeSweepScheduler } from './scripts/dailyBadgeSweep.js';
+import { seedReflectionPrompts } from './scripts/seedReflectionPrompts.js';
+import cleanupOldData from './scripts/cleanupOldData.js';
+import { seedFoundingMemberBadge } from './scripts/seedFoundingMemberBadge.js';
+import { runPermanentDeletionJob } from '../scripts/permanentDeletionJob.js';
+import { sendWeeklyDigestsToAllUsers as runWeeklyDigestJob } from './jobs/weeklyDigestJob.js';
+import { queueInactivityEmails as runInactivityEmailJob } from './jobs/inactivityEmailJob.js';
+import { runMemberSpotlight } from './jobs/memberSpotlightJob.js';
+import { runWeeklyTheme } from './jobs/weeklyThemesJob.js';
+import { runConversationResurfaceJob } from './jobs/conversationResurfaceJob.js';
 
 // Routes — all mounts are handled by routeRegistry.js
 import { mountRoutes } from './routeRegistry.js';
@@ -580,9 +594,12 @@ if (!isVercel) {
     // Backups run once per day at 3:00 AM UTC and keep 30 days of history
     // Or run manual backups with: npm run backup
     if (process.env.ENABLE_AUTO_BACKUP === 'true') {
-      import('./scripts/dailyBackup.js')
-        .then(() => console.log('✅ Daily backup system started (3:00 AM UTC, 30-day retention)'))
-        .catch(err => console.error('❌ Failed to start backup system:', err));
+      try {
+        startDailyBackupService();
+        console.log('✅ Daily backup system started (3:00 AM UTC, 30-day retention)');
+      } catch (err) {
+        console.error('❌ Failed to start backup system:', err);
+      }
     } else {
       console.log('ℹ️  Automatic backups disabled (set ENABLE_AUTO_BACKUP=true to enable)');
       console.log('ℹ️  For manual backups: npm run backup');
@@ -602,35 +619,35 @@ if (!isVercel) {
     if (process.env.NODE_ENV === 'test') {
       console.log('[Cleanup] Disabled in test environment');
     } else {
-      import('./scripts/cleanupTempMedia.js')
-        .then(({ cleanupTempMedia }) => {
-          // Run cleanup on startup (after 5 minutes to allow server to stabilize)
-          // The cleanup function will check DB readiness before running
-          setTimeout(() => {
-            cleanupTempMedia()
-              .then(result => {
-                if (!result.skipped) {
-                  console.log('🧹 Initial temp media cleanup:', result);
-                }
-              })
-              .catch(err => console.error('❌ Temp media cleanup failed:', err));
-          }, 5 * 60 * 1000); // 5 minutes after startup
+      try {
+        // Run cleanup on startup (after 5 minutes to allow server to stabilize)
+        // The cleanup function will check DB readiness before running
+        setTimeout(() => {
+          cleanupTempMedia()
+            .then(result => {
+              if (!result.skipped) {
+                console.log('🧹 Initial temp media cleanup:', result);
+              }
+            })
+            .catch(err => console.error('❌ Temp media cleanup failed:', err));
+        }, 5 * 60 * 1000); // 5 minutes after startup
 
-          // Run cleanup every hour
-          // The cleanup function will check DB readiness before running
-          setInterval(() => {
-            cleanupTempMedia()
-              .then(result => {
-                if (!result.skipped && result.deleted > 0) {
-                  console.log('🧹 Hourly temp media cleanup:', result);
-                }
-              })
-              .catch(err => console.error('❌ Temp media cleanup failed:', err));
-          }, 60 * 60 * 1000); // Every hour
+        // Run cleanup every hour
+        // The cleanup function will check DB readiness before running
+        setInterval(() => {
+          cleanupTempMedia()
+            .then(result => {
+              if (!result.skipped && result.deleted > 0) {
+                console.log('🧹 Hourly temp media cleanup:', result);
+              }
+            })
+            .catch(err => console.error('❌ Temp media cleanup failed:', err));
+        }, 60 * 60 * 1000); // Every hour
 
-          console.log('🧹 Temp media cleanup scheduled (hourly, cleans uploads older than 60 min)');
-        })
-        .catch(err => console.error('❌ Failed to start temp media cleanup:', err));
+        console.log('🧹 Temp media cleanup scheduled (hourly, cleans uploads older than 60 min)');
+      } catch (err) {
+        console.error('❌ Failed to start temp media cleanup:', err);
+      }
     }
 
     // ========================================
@@ -647,213 +664,171 @@ if (!isVercel) {
     if (process.env.NODE_ENV === 'test') {
       console.log('[SystemPrompts] Disabled in test environment');
     } else {
-      import('./scripts/seedSystemPrompts.js')
-        .then(({ seedSystemPrompts }) => {
-          // Seed system account and prompts (idempotent)
-          seedSystemPrompts()
-            .then(result => {
-              console.log('[SystemPrompts] ✅ System setup complete:', result);
-            })
-            .catch(err => console.error('[SystemPrompts] ❌ Seed failed:', err));
+      // Seed system account and prompts (idempotent)
+      seedSystemPrompts()
+        .then(result => {
+          console.log('[SystemPrompts] ✅ System setup complete:', result);
         })
-        .catch(err => console.error('[SystemPrompts] ❌ Failed to import seed script:', err));
+        .catch(err => console.error('[SystemPrompts] ❌ Seed failed:', err));
 
-      import('./scripts/systemPromptScheduler.js')
-        .then(({ startScheduler }) => {
-          startScheduler();
-          console.log('[SystemPrompts] 🕐 Scheduler started (posts daily at 10:00 AM UTC)');
-        })
-        .catch(err => console.error('[SystemPrompts] ❌ Failed to start scheduler:', err));
+      try {
+        startSystemPromptScheduler();
+        console.log('[SystemPrompts] 🕐 Scheduler started (posts daily at 10:00 AM UTC)');
+      } catch (err) {
+        console.error('[SystemPrompts] ❌ Failed to start scheduler:', err);
+      }
 
       // ========================================
       // BADGE SWEEP SCHEDULER (Daily)
       // ========================================
       // 🔧 BADGE CHURN FIX: Runs daily to revoke badges with grace period
       // Prevents badge flapping for active_this_month and similar badges
-      import('./scripts/dailyBadgeSweep.js')
-        .then(({ startBadgeSweepScheduler }) => {
-          startBadgeSweepScheduler();
-          console.log('[BadgeSweep] 🕐 Scheduler started (runs daily at 04:00 UTC)');
-        })
-        .catch(err => console.error('[BadgeSweep] ❌ Failed to start scheduler:', err));
+      try {
+        startBadgeSweepScheduler();
+        console.log('[BadgeSweep] 🕐 Scheduler started (runs daily at 04:00 UTC)');
+      } catch (err) {
+        console.error('[BadgeSweep] ❌ Failed to start scheduler:', err);
+      }
 
       // ========================================
       // REFLECTION PROMPTS (Private per-user)
       // ========================================
       // Seeds private reflection prompts shown to users
       // Different from System Prompts (which are public feed posts)
-      import('./scripts/seedReflectionPrompts.js')
-        .then(({ seedReflectionPrompts }) => {
-          seedReflectionPrompts()
-            .then(result => {
-              console.log('[ReflectionPrompts] ✅ Seed complete:', result);
-            })
-            .catch(err => console.error('[ReflectionPrompts] ❌ Seed failed:', err));
+      seedReflectionPrompts()
+        .then(result => {
+          console.log('[ReflectionPrompts] ✅ Seed complete:', result);
         })
-        .catch(err => console.error('[ReflectionPrompts] ❌ Failed to import seed script:', err));
+        .catch(err => console.error('[ReflectionPrompts] ❌ Seed failed:', err));
 
       // ========================================
       // DAILY DATA CLEANUP (Account Deletion, Notifications, etc.)
       // ========================================
       // Runs daily cleanup of old data including permanent account deletion
       // This ensures deleted accounts are permanently removed after 30 days
-      import('./scripts/cleanupOldData.js')
-        .then(() => {
-          // Schedule daily cleanup at 02:00 UTC
-          cron.schedule('0 2 * * *', async () => {
-            console.log('[Cleanup] 🕐 Running daily data cleanup...');
-            try {
-              // Import and run the cleanup script
-              const cleanupModule = await import('./scripts/cleanupOldData.js');
-              await cleanupModule.default();
-              console.log('[Cleanup] ✅ Daily cleanup completed successfully');
-            } catch (err) {
-              console.error('[Cleanup] ❌ Daily cleanup failed:', err);
-            }
-          });
-          console.log('[Cleanup] 🕐 Daily cleanup job scheduled (runs at 02:00 UTC)');
-        })
-        .catch(err => console.error('[Cleanup] ❌ Failed to schedule daily cleanup:', err));
+      // Schedule daily cleanup at 02:00 UTC
+      cron.schedule('0 2 * * *', async () => {
+        console.log('[Cleanup] 🕐 Running daily data cleanup...');
+        try {
+          await cleanupOldData();
+          console.log('[Cleanup] ✅ Daily cleanup completed successfully');
+        } catch (err) {
+          console.error('[Cleanup] ❌ Daily cleanup failed:', err);
+        }
+      });
+      console.log('[Cleanup] 🕐 Daily cleanup job scheduled (runs at 02:00 UTC)');
 
       // ========================================
       // PERMANENT ACCOUNT DELETION JOB
       // Runs daily at 03:30 UTC — purges accounts whose 30-day recovery window has expired
       // ========================================
-      import('../scripts/permanentDeletionJob.js')
-        .then(({ runPermanentDeletionJob }) => {
-          cron.schedule('30 3 * * *', async () => {
-            logger.info('[PermanentDeletion] 🕐 Running permanent account deletion job...');
-            try {
-              const result = await runPermanentDeletionJob();
-              logger.info(`[PermanentDeletion] ✅ Complete: ${result.deleted} accounts permanently deleted`);
-            } catch (err) {
-              logger.error('[PermanentDeletion] ❌ Job failed:', err);
-            }
-          });
-          logger.info('[PermanentDeletion] 🕐 Scheduled (runs daily at 03:30 UTC)');
-        })
-        .catch(err => logger.error('[PermanentDeletion] ❌ Failed to schedule job:', err));
+      cron.schedule('30 3 * * *', async () => {
+        logger.info('[PermanentDeletion] 🕐 Running permanent account deletion job...');
+        try {
+          const result = await runPermanentDeletionJob();
+          logger.info(`[PermanentDeletion] ✅ Complete: ${result.deleted} accounts permanently deleted`);
+        } catch (err) {
+          logger.error('[PermanentDeletion] ❌ Job failed:', err);
+        }
+      });
+      logger.info('[PermanentDeletion] 🕐 Scheduled (runs daily at 03:30 UTC)');
 
       // ========================================
       // FOUNDING MEMBER BADGE
       // ========================================
       // Assigns badge to first 100 members (idempotent)
       // Excludes system accounts, test accounts, and Pryde bots
-      import('./scripts/seedFoundingMemberBadge.js')
-        .then(({ seedFoundingMemberBadge }) => {
-          seedFoundingMemberBadge()
-            .then(result => {
-              if (result.assigned > 0) {
-                console.log(`[FoundingMember] 🌟 Assigned badge to ${result.assigned} new founding members`);
-              } else {
-                console.log('[FoundingMember] ✅ All founding members already have badge');
-              }            
-            })
-            .catch(err => console.error('[FoundingMember] ❌ Seed failed:', err));
+      seedFoundingMemberBadge()
+        .then(result => {
+          if (result.assigned > 0) {
+            console.log(`[FoundingMember] 🌟 Assigned badge to ${result.assigned} new founding members`);
+          } else {
+            console.log('[FoundingMember] ✅ All founding members already have badge');
+          }
         })
-        .catch(err => console.error('[FoundingMember] ❌ Failed to import seed script:', err));
+        .catch(err => console.error('[FoundingMember] ❌ Seed failed:', err));
 
       // ========================================
       // WEEKLY DIGEST EMAIL JOB
       // ========================================
       // Sends weekly digest emails to users every Sunday at 10:00 AM UTC
-      import('./jobs/weeklyDigestJob.js')
-        .then(({ runWeeklyDigestJob }) => {
-          cron.schedule('0 10 * * 0', async () => {
-            logger.info('[WeeklyDigest] 🕐 Starting weekly digest job...');
-            try {
-              const result = await runWeeklyDigestJob();
-              logger.info(`[WeeklyDigest] ✅ Complete: ${result.sent} emails sent`);
-            } catch (err) {
-              logger.error('[WeeklyDigest] ❌ Job failed:', err);
-            }
-          });
-          logger.info('[WeeklyDigest] 🕐 Scheduled (runs every Sunday at 10:00 AM UTC)');
-        })
-        .catch(err => logger.error('[WeeklyDigest] ❌ Failed to schedule job:', err));
+      cron.schedule('0 10 * * 0', async () => {
+        logger.info('[WeeklyDigest] 🕐 Starting weekly digest job...');
+        try {
+          const result = await runWeeklyDigestJob();
+          logger.info(`[WeeklyDigest] ✅ Complete: ${result.sent} emails sent`);
+        } catch (err) {
+          logger.error('[WeeklyDigest] ❌ Job failed:', err);
+        }
+      });
+      logger.info('[WeeklyDigest] 🕐 Scheduled (runs every Sunday at 10:00 AM UTC)');
 
       // ========================================
       // INACTIVITY EMAIL JOB ("Pryde misses you")
       // ========================================
       // Sends "Pryde misses you" emails to users after 14 days of inactivity
-      import('./jobs/inactivityEmailJob.js')
-        .then(({ runInactivityEmailJob }) => {
-          cron.schedule('0 9 * * *', async () => {
-            logger.info('[InactivityEmail] 🕐 Starting inactivity email job...');
-            try {
-              const result = await runInactivityEmailJob();
-              logger.info(`[InactivityEmail] ✅ Complete: ${result.sent} emails sent`);
-            } catch (err) {
-              logger.error('[InactivityEmail] ❌ Job failed:', err);
-            }
-          });
-          logger.info('[InactivityEmail] 🕐 Scheduled (runs daily at 09:00 UTC)');
-        })
-        .catch(err => logger.error('[InactivityEmail] ❌ Failed to schedule job:', err));
+      cron.schedule('0 9 * * *', async () => {
+        logger.info('[InactivityEmail] 🕐 Starting inactivity email job...');
+        try {
+          const result = await runInactivityEmailJob();
+          logger.info(`[InactivityEmail] ✅ Complete: ${(result.sent ?? result.queued) ?? 0} emails queued`);
+        } catch (err) {
+          logger.error('[InactivityEmail] ❌ Job failed:', err);
+        }
+      });
+      logger.info('[InactivityEmail] 🕐 Scheduled (runs daily at 09:00 UTC)');
 
       // ========================================
       // MEMBER SPOTLIGHT JOB
       // ========================================
       // Features a community member weekly
-      import('./jobs/memberSpotlightJob.js')
-        .then(({ runMemberSpotlight }) => {
-          cron.schedule('0 11 * * 1', async () => {
-            logger.info('[MemberSpotlight] 🕐 Starting member spotlight job...');
-            try {
-              const result = await runMemberSpotlight();
-              if (result) {
-                logger.info(`[MemberSpotlight] ✅ New spotlight: ${result.user?.username}`);
-              } else {
-                logger.info('[MemberSpotlight] ⏭️ No eligible member for spotlight');
-              }
-            } catch (err) {
-              logger.error('[MemberSpotlight] ❌ Job failed:', err);
-            }
-          });
-          logger.info('[MemberSpotlight] 🕐 Scheduled (runs every Monday at 11:00 UTC)');
-        })
-        .catch(err => logger.error('[MemberSpotlight] ❌ Failed to schedule job:', err));
+      cron.schedule('0 11 * * 1', async () => {
+        logger.info('[MemberSpotlight] 🕐 Starting member spotlight job...');
+        try {
+          const result = await runMemberSpotlight();
+          if (result) {
+            logger.info(`[MemberSpotlight] ✅ New spotlight: ${result.user?.username}`);
+          } else {
+            logger.info('[MemberSpotlight] ⏭️ No eligible member for spotlight');
+          }
+        } catch (err) {
+          logger.error('[MemberSpotlight] ❌ Job failed:', err);
+        }
+      });
+      logger.info('[MemberSpotlight] 🕐 Scheduled (runs every Monday at 11:00 UTC)');
 
       // ========================================
       // WEEKLY THEMES JOB
       // ========================================
       // Posts weekly themed discussion prompts
-      import('./jobs/weeklyThemesJob.js')
-        .then(({ runWeeklyTheme }) => {
-          cron.schedule('0 10 * * 1', async () => {
-            logger.info('[WeeklyThemes] 🕐 Starting weekly themes job...');
-            try {
-              const result = await runWeeklyTheme();
-              logger.info(`[WeeklyThemes] ✅ Complete: ${result.success ? result.theme?.title : 'already posted this week'}`);
-            } catch (err) {
-              logger.error('[WeeklyThemes] ❌ Job failed:', err);
-            }
-          });
-          logger.info('[WeeklyThemes] 🕐 Scheduled (runs every Monday at 10:00 UTC)');
-        })
-        .catch(err => logger.error('[WeeklyThemes] ❌ Failed to schedule job:', err));
+      cron.schedule('0 10 * * 1', async () => {
+        logger.info('[WeeklyThemes] 🕐 Starting weekly themes job...');
+        try {
+          const result = await runWeeklyTheme();
+          logger.info(`[WeeklyThemes] ✅ Complete: ${result.success ? result.theme?.title : 'already posted this week'}`);
+        } catch (err) {
+          logger.error('[WeeklyThemes] ❌ Job failed:', err);
+        }
+      });
+      logger.info('[WeeklyThemes] 🕐 Scheduled (runs every Monday at 10:00 UTC)');
 
       // ========================================
       // CONVERSATION RESURFACE JOB
       // ========================================
       // Finds and resurfacing old conversations that are getting attention
-      import('./jobs/conversationResurfaceJob.js')
-        .then(({ runConversationResurfaceJob }) => {
-          cron.schedule('*/30 * * * *', async () => {
-            // Run every 30 minutes
-            logger.info('[ConversationResurface] 🕐 Checking for resurfacing conversations...');
-            try {
-              const result = await runConversationResurfaceJob();
-              if (result.resurfaced?.length > 0) {
-                logger.info(`[ConversationResurface] ✅ ${result.resurfaced.length} conversations marked for resurfacing`);
-              }
-            } catch (err) {
-              logger.error('[ConversationResurface] ❌ Job failed:', err);
-            }
-          });
-          logger.info('[ConversationResurface] 🕐 Scheduled (runs every 30 minutes)');
-        })
-        .catch(err => logger.error('[ConversationResurface] ❌ Failed to schedule job:', err));
+      cron.schedule('*/30 * * * *', async () => {
+        // Run every 30 minutes
+        logger.info('[ConversationResurface] 🕐 Checking for resurfacing conversations...');
+        try {
+          const result = await runConversationResurfaceJob();
+          if (result.resurfaced?.length > 0) {
+            logger.info(`[ConversationResurface] ✅ ${result.resurfaced.length} conversations marked for resurfacing`);
+          }
+        } catch (err) {
+          logger.error('[ConversationResurface] ❌ Job failed:', err);
+        }
+      });
+      logger.info('[ConversationResurface] 🕐 Scheduled (runs every 30 minutes)');
     }
     });
   }).catch((err) => {

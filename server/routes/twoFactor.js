@@ -68,7 +68,7 @@ router.post('/setup', authenticateToken, async (req, res) => {
     await user.save();
 
     res.json({
-      secret: secret.base32,
+      secret: totp.secret.base32,
       qrCode: qrCodeUrl,
       backupCodes: backupCodes.map(bc => bc.code),
       message: 'Scan the QR code with your authenticator app (Google Authenticator, Authy, etc.)'

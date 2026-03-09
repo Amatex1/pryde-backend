@@ -24,7 +24,9 @@ const TEST_USER = {
   username: `feedtest_${Date.now()}`,
   email: `feedtest_${Date.now()}@test.pryde`,
   password: 'TestPass123!@#Secure',
+  fullName: 'Feed Test User',
   displayName: 'Feed Test User',
+  birthday: '1990-01-01',
 };
 
 describe('Feed API (/api/feed)', function () {

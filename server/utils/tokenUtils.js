@@ -53,15 +53,11 @@ export const generateTokenPair = (userId, sessionId = null) => {
  * @throws {Error} If token is invalid or expired
  */
 export const verifyAccessToken = (token) => {
-  try {
-    const decoded = jwt.verify(token, config.jwtSecret);
-    if (decoded.type !== 'access') {
-      throw new Error('Invalid token type');
-    }
-    return decoded;
-  } catch (error) {
-    throw error;
+  const decoded = jwt.verify(token, config.jwtSecret);
+  if (decoded.type !== 'access') {
+    throw new Error('Invalid token type');
   }
+  return decoded;
 };
 
 /**
@@ -71,15 +67,11 @@ export const verifyAccessToken = (token) => {
  * @throws {Error} If token is invalid or expired
  */
 export const verifyRefreshToken = (token) => {
-  try {
-    const decoded = jwt.verify(token, config.jwtRefreshSecret);
-    if (decoded.type !== 'refresh') {
-      throw new Error('Invalid token type');
-    }
-    return decoded;
-  } catch (error) {
-    throw error;
+  const decoded = jwt.verify(token, config.jwtRefreshSecret);
+  if (decoded.type !== 'refresh') {
+    throw new Error('Invalid token type');
   }
+  return decoded;
 };
 
 /**

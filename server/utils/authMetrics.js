@@ -43,7 +43,7 @@ const failureWindow = {
  * @param {number} value - Value to add (default: 1)
  */
 export function incCounter(metric, value = 1) {
-  if (counters.hasOwnProperty(metric)) {
+  if (Object.prototype.hasOwnProperty.call(counters, metric)) {
     counters[metric] += value;
   }
 }

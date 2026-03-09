@@ -7,16 +7,18 @@
 import cron from 'node-cron';
 import { exec } from 'child_process';
 import path from 'path';
-import { fileURLToPath } from 'url';
+import { fileURLToPath, pathToFileURL } from 'url';
 import fs from 'fs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+let backupTask = null;
+let sigintHandlerRegistered = false;
 
-console.log('🕐 Starting DAILY backup service...');
-console.log('📅 Backups will run ONCE PER DAY at 3:00 AM UTC');
-console.log('📅 Current time:', new Date().toISOString());
-console.log('📅 Retention: 30 days');
+const handleSigint = () => {
+  console.log('\n👋 Stopping daily backup service...');
+  process.exit(0);
+};
 
 // Clean up old backups (keep last 30 days)
 const cleanupOldBackups = () => {
@@ -76,30 +78,47 @@ const runBackup = () => {
   });
 };
 
-// Schedule backup to run DAILY at 3:00 AM UTC
-// Cron format: minute hour day month weekday
-// '0 3 * * *' = At 3:00 AM every day
-cron.schedule('0 3 * * *', () => {
-  console.log('\n⏰ Daily backup triggered (3:00 AM UTC)...');
-  runBackup();
-});
+export const startDailyBackupService = () => {
+  if (backupTask) {
+    return backupTask;
+  }
 
-console.log('✅ Daily backup service started!');
-console.log('📅 Schedule: Every day at 3:00 AM UTC');
-console.log('📅 Retention: 30 days (~30 backups max)');
-console.log('📅 Estimated disk usage: ~23 MB');
-console.log('💡 Tip: Set BACKUP_WEBHOOK_URL to get notifications');
-console.log('💡 For manual backups: npm run backup\n');
+  console.log('🕐 Starting DAILY backup service...');
+  console.log('📅 Backups will run ONCE PER DAY at 3:00 AM UTC');
+  console.log('📅 Current time:', new Date().toISOString());
+  console.log('📅 Retention: 30 days');
 
-// Skip initial backup on startup to prevent database connection conflicts
-// Backups will run on the scheduled time (3:00 AM UTC daily)
-// This prevents connection pool exhaustion during server startup
-console.log('ℹ️  Skipping initial backup on startup (will run at 3:00 AM UTC)');
-console.log('💡 Manual backup: npm run backup');
+  // Schedule backup to run DAILY at 3:00 AM UTC
+  // Cron format: minute hour day month weekday
+  // '0 3 * * *' = At 3:00 AM every day
+  backupTask = cron.schedule('0 3 * * *', () => {
+    console.log('\n⏰ Daily backup triggered (3:00 AM UTC)...');
+    runBackup();
+  });
 
-// Keep the process running
-process.on('SIGINT', () => {
-  console.log('\n👋 Stopping daily backup service...');
-  process.exit(0);
-});
+  console.log('✅ Daily backup service started!');
+  console.log('📅 Schedule: Every day at 3:00 AM UTC');
+  console.log('📅 Retention: 30 days (~30 backups max)');
+  console.log('📅 Estimated disk usage: ~23 MB');
+  console.log('💡 Tip: Set BACKUP_WEBHOOK_URL to get notifications');
+  console.log('💡 For manual backups: npm run backup\n');
+
+  // Skip initial backup on startup to prevent database connection conflicts
+  // Backups will run on the scheduled time (3:00 AM UTC daily)
+  // This prevents connection pool exhaustion during server startup
+  console.log('ℹ️  Skipping initial backup on startup (will run at 3:00 AM UTC)');
+  console.log('💡 Manual backup: npm run backup');
+
+  if (!sigintHandlerRegistered) {
+    process.on('SIGINT', handleSigint);
+    sigintHandlerRegistered = true;
+  }
+
+  return backupTask;
+};
+
+const entrypoint = process.argv[1];
+if (entrypoint && import.meta.url === pathToFileURL(entrypoint).href) {
+  startDailyBackupService();
+}
 
