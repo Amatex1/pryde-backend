@@ -37,10 +37,10 @@ export const checkProfileVisibility = async (req, res, next) => {
 
     if (mongoose.Types.ObjectId.isValid(profileIdentifier) && profileIdentifier.length === 24) {
       profileUser = await User.findById(profileIdentifier)
-        .select('_id privacySettings friends followers');
+        .select('_id privacySettings privacy friends followers');
     } else {
       profileUser = await User.findOne({ username: profileIdentifier })
-        .select('_id privacySettings friends followers');
+        .select('_id privacySettings privacy friends followers');
     }
 
     if (!profileUser) {
@@ -60,15 +60,23 @@ export const checkProfileVisibility = async (req, res, next) => {
     if (visibility === 'private') {
       return res.status(403).json({ message: 'This profile is private' });
     }
+
+    // Check followers membership (used by both visibility and friendOnlyProfile)
+    const isFollower = profileUser.followers?.some(followerId => followerId.toString() === currentUserId);
+    const isFriend = profileUser.friends?.some(friendId => friendId.toString() === currentUserId);
+
     // Check for both 'friends' and 'followers' for backward compatibility
     if (visibility === 'friends' || visibility === 'followers') {
-      // Check followers first (new system), then friends (legacy)
-      const isFollower = profileUser.followers?.some(followerId => followerId.toString() === currentUserId);
-      const isFriend = profileUser.friends?.some(friendId => friendId.toString() === currentUserId);
       if (!isFollower && !isFriend) {
         return res.status(403).json({ message: 'This profile is only visible to followers' });
       }
     }
+
+    // friendOnlyProfile: enforce follower-only access even when profileVisibility is 'public'
+    if (profileUser.privacy?.friendOnlyProfile && !isFollower && !isFriend) {
+      return res.status(403).json({ message: 'This profile is only visible to followers' });
+    }
+
     next();
   } catch (error) {
     console.error('Check profile visibility error:', error);

@@ -98,7 +98,7 @@ import devVerifyRoutes from './routes/devVerify.js';
 export function mountRoutes(app, { restrictionMiddleware, requireDatabaseReady }) {
   // Auth
   app.use('/api/auth', requireDatabaseReady, authRoutes);
-  app.use('/api/refresh', refreshRoutes);
+  app.use('/api/refresh', requireDatabaseReady, refreshRoutes);
   app.use('/api/sessions', sessionsRoutes);
   app.use('/api/2fa', twoFactorRoutes);
   app.use('/api/passkey', passkeyRoutes);

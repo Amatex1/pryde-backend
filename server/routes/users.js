@@ -534,6 +534,37 @@ router.get('/:identifier', auth, checkProfileVisibility, async (req, res) => {
     const hasBlockedCurrentUser = await hasBlocked(user._id.toString(), currentUserId.toString());
     sanitizedUser.hasBlockedCurrentUser = hasBlockedCurrentUser;
 
+    const isOwnProfile = user._id.toString() === currentUserId.toString();
+
+    if (!isOwnProfile) {
+      // PRIVACY: showRealName — hide fullName if disabled
+      if (user.privacy?.showRealName === false) {
+        delete sanitizedUser.fullName;
+      }
+
+      // PRIVACY: showLastSeen — hide lastSeen timestamp if disabled
+      if (user.privacySettings?.showLastSeen === false) {
+        delete sanitizedUser.lastSeen;
+      }
+
+      // PRIVACY: onlineStatusVisibility — granular online indicator control
+      // Falls back to legacy hideOnlineStatus boolean for existing users
+      const onlineVis = user.privacy?.onlineStatusVisibility ||
+        (user.privacy?.hideOnlineStatus ? 'no-one' : 'everyone');
+      if (onlineVis === 'no-one') {
+        delete sanitizedUser.isOnline;
+        delete sanitizedUser.lastSeen;
+      } else if (onlineVis === 'followers') {
+        const isFollower = user.followers?.some(
+          f => (f._id || f).toString() === currentUserId.toString()
+        );
+        if (!isFollower) {
+          delete sanitizedUser.isOnline;
+          delete sanitizedUser.lastSeen;
+        }
+      }
+    }
+
     res.json(sanitizedUser);
   } catch (error) {
     console.error('Get user error:', error);

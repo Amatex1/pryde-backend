@@ -27,10 +27,62 @@ router.get('/settings', auth, async (req, res) => {
       profileVisibility,
       whoCanMessage: user.privacySettings?.whoCanMessage || 'followers',
       quietModeEnabled: user.privacySettings?.quietModeEnabled || false,
+      // Quiet Mode V2 sub-toggles
+      quietVisuals: user.privacySettings?.quietVisuals ?? true,
+      quietWriting: user.privacySettings?.quietWriting ?? true,
+      quietMetrics: user.privacySettings?.quietMetrics ?? false,
       // BADGE SYSTEM V1: Hide badges setting
       hideBadges: user.privacySettings?.hideBadges || false,
+      // Last seen timestamp visibility
+      showLastSeen: user.privacySettings?.showLastSeen ?? true,
       // Default post visibility derived from profile visibility
-      defaultPostVisibility
+      defaultPostVisibility,
+      // =========================================
+      // QUIET MODE ENHANCEMENTS (All 10 Improvements)
+      // =========================================
+      
+      // IMPROVEMENT 1: Scheduled/Automatic Quiet Hours
+      quietHoursEnabled: user.privacySettings?.quietHoursEnabled ?? false,
+      quietHoursStart: user.privacySettings?.quietHoursStart ?? '22:00',
+      quietHoursEnd: user.privacySettings?.quietHoursEnd ?? '08:00',
+      quietOnWorkFocus: user.privacySettings?.quietOnWorkFocus ?? false,
+      
+      // IMPROVEMENT 2: Granular Content Filtering
+      quietContentFilter: user.privacySettings?.quietContentFilter ?? 'all',
+      quietHideViral: user.privacySettings?.quietHideViral ?? false,
+      quietFollowedOnly: user.privacySettings?.quietFollowedOnly ?? false,
+      
+      // IMPROVEMENT 4: Visual Improvements
+      quietGentleTransitions: user.privacySettings?.quietGentleTransitions ?? true,
+      quietColorScheme: user.privacySettings?.quietColorScheme ?? 'default',
+      quietHideStories: user.privacySettings?.quietHideStories ?? false,
+      
+      // IMPROVEMENT 5: Deep Quiet Mode
+      quietDeepQuiet: user.privacySettings?.quietDeepQuiet ?? false,
+      quietDisableAnimations: user.privacySettings?.quietDisableAnimations ?? false,
+      quietMinimalUI: user.privacySettings?.quietMinimalUI ?? false,
+      quietHideTrending: user.privacySettings?.quietHideTrending ?? false,
+      
+      // IMPROVEMENT 6: Smart Triggers
+      quietAutoTrigger: user.privacySettings?.quietAutoTrigger ?? false,
+      quietNegativeThreshold: user.privacySettings?.quietNegativeThreshold ?? 5,
+      quietKeywordTriggers: user.privacySettings?.quietKeywordTriggers ?? [],
+      
+      // IMPROVEMENT 7: Better User Feedback
+      quietShowHiddenCount: user.privacySettings?.quietShowHiddenCount ?? true,
+      quietSessionOverride: user.privacySettings?.quietSessionOverride ?? false,
+      
+      // IMPROVEMENT 8: Persistence & Context
+      quietFeedSettings: user.privacySettings?.quietFeedSettings ?? 'default',
+      quietMessageSettings: user.privacySettings?.quietMessageSettings ?? 'default',
+      
+      // IMPROVEMENT 9: Accessibility
+      quietHighContrast: user.privacySettings?.quietHighContrast ?? false,
+      
+      // IMPROVEMENT 10: Communication Features
+      quietHideMentions: user.privacySettings?.quietHideMentions ?? false,
+      quietMuteGroupSummary: user.privacySettings?.quietMuteGroupSummary ?? false,
+      quietReduceStoryNotifications: user.privacySettings?.quietReduceStoryNotifications ?? false,
     };
 
     res.json(settings);
@@ -39,7 +91,6 @@ router.get('/settings', auth, async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 });
-
 // PATCH /api/privacy/settings
 router.patch('/settings', auth, async (req, res) => {
   try {
@@ -60,14 +111,92 @@ router.patch('/settings', auth, async (req, res) => {
       'quietMetrics',
       // BADGE SYSTEM V1: Hide badges option
       'hideBadges',
+      // Last seen timestamp visibility
+      'showLastSeen',
       // CURSOR CUSTOMIZATION: Optional cursor styles
-      'cursorStyle'
+      'cursorStyle',
+      // =========================================
+      // QUIET MODE ENHANCEMENTS (All 10 Improvements)
+      // =========================================
+      
+      // IMPROVEMENT 1: Scheduled/Automatic Quiet Hours
+      'quietHoursEnabled',
+      'quietHoursStart',
+      'quietHoursEnd',
+      'quietOnWorkFocus',
+      
+      // IMPROVEMENT 2: Granular Content Filtering
+      'quietContentFilter',
+      'quietHideViral',
+      'quietFollowedOnly',
+      
+      // IMPROVEMENT 4: Visual Improvements
+      'quietGentleTransitions',
+      'quietColorScheme',
+      'quietHideStories',
+      
+      // IMPROVEMENT 5: Deep Quiet Mode
+      'quietDeepQuiet',
+      'quietDisableAnimations',
+      'quietMinimalUI',
+      'quietHideTrending',
+      
+      // IMPROVEMENT 6: Smart Triggers
+      'quietAutoTrigger',
+      'quietNegativeThreshold',
+      'quietKeywordTriggers',
+      
+      // IMPROVEMENT 7: Better User Feedback
+      'quietShowHiddenCount',
+      'quietSessionOverride',
+      
+      // IMPROVEMENT 8: Persistence & Context
+      'quietFeedSettings',
+      'quietMessageSettings',
+      
+      // IMPROVEMENT 9: Accessibility
+      'quietHighContrast',
+      
+      // IMPROVEMENT 10: Communication Features
+      'quietHideMentions',
+      'quietMuteGroupSummary',
+      'quietReduceStoryNotifications',
     ];
 
     // Validate cursorStyle if provided
     const validCursorStyles = ['system', 'soft-rounded', 'calm-dot', 'high-contrast', 'reduced-motion'];
     if (req.body.cursorStyle && !validCursorStyles.includes(req.body.cursorStyle)) {
       return res.status(400).json({ message: 'Invalid cursor style' });
+    }
+
+    // Validate quietContentFilter if provided
+    const validContentFilters = ['all', 'videos-only', 'images-only', 'text-only', 'no-polls', 'low-engagement'];
+    if (req.body.quietContentFilter && !validContentFilters.includes(req.body.quietContentFilter)) {
+      return res.status(400).json({ message: 'Invalid content filter' });
+    }
+
+    // Validate quietColorScheme if provided
+    const validColorSchemes = ['default', 'monochrome', 'sepia'];
+    if (req.body.quietColorScheme && !validColorSchemes.includes(req.body.quietColorScheme)) {
+      return res.status(400).json({ message: 'Invalid color scheme' });
+    }
+
+    // Validate quietFeedSettings/quietMessageSettings if provided
+    const validContextSettings = ['default', 'calm', 'deep', 'minimal'];
+    if (req.body.quietFeedSettings && !validContextSettings.includes(req.body.quietFeedSettings)) {
+      return res.status(400).json({ message: 'Invalid feed settings' });
+    }
+    if (req.body.quietMessageSettings && !validContextSettings.includes(req.body.quietMessageSettings)) {
+      return res.status(400).json({ message: 'Invalid message settings' });
+    }
+
+    // Validate quietHoursStart/quietHoursEnd format (HH:MM)
+    const timeRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
+    if (req.body.quietHoursStart && !timeRegex.test(req.body.quietHoursStart)) {
+      return res.status(400).json({ message: 'Invalid quiet hours start format. Use HH:MM' });
+    }
+    if (req.body.quietHoursEnd && !timeRegex.test(req.body.quietHoursEnd)) {
+      return res.status(400).json({ message: 'Invalid quiet hours end format. Use HH:MM' });
     }
 
     // Update only allowed fields
@@ -93,7 +222,33 @@ router.patch('/settings', auth, async (req, res) => {
         quietWriting: user.privacySettings?.quietWriting ?? true,
         quietMetrics: user.privacySettings?.quietMetrics ?? false,
         hideBadges: user.privacySettings?.hideBadges ?? false,
-        cursorStyle: user.privacySettings?.cursorStyle ?? 'system'
+        cursorStyle: user.privacySettings?.cursorStyle ?? 'system',
+        // Quiet Mode Enhancements
+        quietHoursEnabled: user.privacySettings?.quietHoursEnabled ?? false,
+        quietHoursStart: user.privacySettings?.quietHoursStart ?? '22:00',
+        quietHoursEnd: user.privacySettings?.quietHoursEnd ?? '08:00',
+        quietOnWorkFocus: user.privacySettings?.quietOnWorkFocus ?? false,
+        quietContentFilter: user.privacySettings?.quietContentFilter ?? 'all',
+        quietHideViral: user.privacySettings?.quietHideViral ?? false,
+        quietFollowedOnly: user.privacySettings?.quietFollowedOnly ?? false,
+        quietGentleTransitions: user.privacySettings?.quietGentleTransitions ?? true,
+        quietColorScheme: user.privacySettings?.quietColorScheme ?? 'default',
+        quietHideStories: user.privacySettings?.quietHideStories ?? false,
+        quietDeepQuiet: user.privacySettings?.quietDeepQuiet ?? false,
+        quietDisableAnimations: user.privacySettings?.quietDisableAnimations ?? false,
+        quietMinimalUI: user.privacySettings?.quietMinimalUI ?? false,
+        quietHideTrending: user.privacySettings?.quietHideTrending ?? false,
+        quietAutoTrigger: user.privacySettings?.quietAutoTrigger ?? false,
+        quietNegativeThreshold: user.privacySettings?.quietNegativeThreshold ?? 5,
+        quietKeywordTriggers: user.privacySettings?.quietKeywordTriggers ?? [],
+        quietShowHiddenCount: user.privacySettings?.quietShowHiddenCount ?? true,
+        quietSessionOverride: user.privacySettings?.quietSessionOverride ?? false,
+        quietFeedSettings: user.privacySettings?.quietFeedSettings ?? 'default',
+        quietMessageSettings: user.privacySettings?.quietMessageSettings ?? 'default',
+        quietHighContrast: user.privacySettings?.quietHighContrast ?? false,
+        quietHideMentions: user.privacySettings?.quietHideMentions ?? false,
+        quietMuteGroupSummary: user.privacySettings?.quietMuteGroupSummary ?? false,
+        quietReduceStoryNotifications: user.privacySettings?.quietReduceStoryNotifications ?? false,
       }
     });
   } catch (error) {
@@ -101,7 +256,6 @@ router.patch('/settings', auth, async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 });
-
 // ── Safety & Privacy Panel (Phase 5) ────────────────────────────────────────
 // Separate from privacySettings — these control safety/hardening features.
 
@@ -117,6 +271,7 @@ router.get('/safety', auth, async (req, res) => {
       allowAnonymousPosts: user.privacy?.allowAnonymousPosts ?? true,
       hideProfileFromSearch: user.privacy?.hideProfileFromSearch ?? false,
       hideOnlineStatus: user.privacy?.hideOnlineStatus ?? false,
+      onlineStatusVisibility: user.privacy?.onlineStatusVisibility || 'everyone',
       friendOnlyProfile: user.privacy?.friendOnlyProfile ?? false,
       showBadgesPublicly: user.privacy?.showBadgesPublicly ?? true,
     });
@@ -139,9 +294,16 @@ router.patch('/safety', auth, async (req, res) => {
       'allowAnonymousPosts',
       'hideProfileFromSearch',
       'hideOnlineStatus',
+      'onlineStatusVisibility',
       'friendOnlyProfile',
       'showBadgesPublicly'
     ];
+
+    // Validate onlineStatusVisibility if provided
+    const validOnlineVisibility = ['everyone', 'followers', 'no-one'];
+    if (req.body.onlineStatusVisibility && !validOnlineVisibility.includes(req.body.onlineStatusVisibility)) {
+      return res.status(400).json({ message: 'Invalid onlineStatusVisibility value' });
+    }
 
     if (!user.privacy) {
       user.privacy = {};
@@ -163,6 +325,7 @@ router.patch('/safety', auth, async (req, res) => {
         allowAnonymousPosts: user.privacy.allowAnonymousPosts ?? true,
         hideProfileFromSearch: user.privacy.hideProfileFromSearch ?? false,
         hideOnlineStatus: user.privacy.hideOnlineStatus ?? false,
+        onlineStatusVisibility: user.privacy.onlineStatusVisibility || 'everyone',
         friendOnlyProfile: user.privacy.friendOnlyProfile ?? false,
         showBadgesPublicly: user.privacy.showBadgesPublicly ?? true,
       }

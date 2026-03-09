@@ -1,199 +1,251 @@
-import { body, param, query, validationResult } from 'express-validator';
+pease/**
+ * Input Validation & Sanitization Middleware
+ * Provides request body validation and sanitization
+ */
+
+import validator from 'validator';
+import logger from '../utils/logger.js';
 
 /**
- * Middleware to handle validation errors
+ * Sanitize a string value - removes potentially dangerous characters
+ * @param {string} value - Value to sanitize
+ * @returns {string} Sanitized value
  */
-export const handleValidationErrors = (req, res, next) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(400).json({ 
-      message: 'Validation failed',
-      errors: errors.array().map(err => ({
-        field: err.path || err.param,
-        message: err.msg
-      }))
-    });
-  }
-  next();
+export const sanitizeString = (value) => {
+  if (typeof value !== 'string') return value;
+  
+  // Trim whitespace
+  let sanitized = value.trim();
+  
+  // Remove null bytes
+  sanitized = sanitized.replace(/\0/g, '');
+  
+  // Escape HTML entities to prevent XSS
+  sanitized = validator.escape(sanitized);
+  
+  return sanitized;
 };
 
 /**
- * Auth validation rules
+ * Validate email format
+ * @param {string} email - Email to validate
+ * @returns {boolean} True if valid
  */
-export const validateSignup = [
-  body('fullName')
-    .trim()
-    .isLength({ min: 2 })
-    .withMessage('Full name must be at least 2 characters'),
-  body('username')
-    .trim()
-    .isLength({ min: 3, max: 30 })
-    .withMessage('Username must be between 3 and 30 characters')
-    .matches(/^[a-zA-Z0-9_]+$/)
-    .withMessage('Username can only contain letters, numbers, and underscores')
-    .toLowerCase(),
-  body('email')
-    .trim()
-    .isEmail()
-    .withMessage('Must be a valid email address')
-    .normalizeEmail(),
-  body('password')
-    .isLength({ min: 12 })
-    .withMessage('Password must be at least 12 characters long')
-    .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#^()_+\-={};':"\\|,.<>])/)
-    .withMessage('Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character (@$!%*?&#^()_+-=[]{};:\\"|,.<>/)'),
-  body('birthday')
-    .isISO8601()
-    .withMessage('Birthday must be a valid date'),
-  body('termsAccepted')
-    .isBoolean()
-    .equals('true')
-    .withMessage('You must accept the terms and conditions'),
-  // Optional fields - no validation if not provided
-  body('displayName').optional().trim(),
-  body('identity').optional().isIn(['LGBTQ+', 'Ally']),
-  body('pronouns').optional().trim(),
-  body('bio').optional().trim().isLength({ max: 500 }),
-  handleValidationErrors
-];
-
-export const validateLogin = [
-  body('email')
-    .trim()
-    .isEmail()
-    .withMessage('Must be a valid email address')
-    .normalizeEmail(),
-  body('password')
-    .notEmpty()
-    .withMessage('Password is required'),
-  handleValidationErrors
-];
+export const isValidEmail = (email) => {
+  return validator.isEmail(email);
+};
 
 /**
- * Post validation rules
+ * Validate username format
+ * @param {string} username - Username to validate
+ * @returns {boolean} True if valid
  */
-export const validatePost = [
-  body('content')
-    .optional()
-    .trim()
-    .isLength({ max: 5000 })
-    .withMessage('Post content must not exceed 5000 characters'),
-  body('visibility')
-    .optional()
-    .isIn(['public', 'friends', 'private', 'custom'])
-    .withMessage('Invalid visibility setting'),
-  handleValidationErrors
-];
-
-export const validateComment = [
-  body('content')
-    .trim()
-    .notEmpty()
-    .withMessage('Comment content is required')
-    .isLength({ max: 2000 })
-    .withMessage('Comment must not exceed 2000 characters'),
-  handleValidationErrors
-];
+export const isValidUsername = (username) => {
+  if (!username || typeof username !== 'string') return false;
+  
+  // Username: 3-30 chars, alphanumeric + underscore only
+  return /^[a-zA-Z0-9_]{3,30}$/.test(username);
+};
 
 /**
- * Message validation rules
+ * Validate MongoDB ObjectId format
+ * @param {string} id - ID to validate
+ * @returns {boolean} True if valid
  */
-export const validateMessage = [
-  body('content')
-    .trim()
-    .notEmpty()
-    .withMessage('Message content is required')
-    .isLength({ max: 5000 })
-    .withMessage('Message must not exceed 5000 characters'),
-  body('recipient')
-    .optional()
-    .isMongoId()
-    .withMessage('Invalid recipient ID'),
-  handleValidationErrors
-];
+export const isValidObjectId = (id) => {
+  return validator.isMongoId(id);
+};
 
 /**
- * User profile validation rules
+ * Validate URL format
+ * @param {string} url - URL to validate
+ * @returns {boolean} True if valid
  */
-export const validateProfileUpdate = [
-  body('displayName')
-    .optional()
-    .trim()
-    .isLength({ min: 1, max: 50 })
-    .withMessage('Display name must be between 1 and 50 characters'),
-  body('bio')
-    .optional()
-    .trim()
-    .isLength({ max: 500 })
-    .withMessage('Bio must not exceed 500 characters'),
-  body('location')
-    .optional()
-    .trim()
-    .isLength({ max: 100 })
-    .withMessage('Location must not exceed 100 characters'),
-  body('website')
-    .optional()
-    .trim()
-    .isURL()
-    .withMessage('Must be a valid URL'),
-  handleValidationErrors
-];
+export const isValidUrl = (url) => {
+  return validator.isURL(url, {
+    protocols: ['http', 'https'],
+    require_protocol: true
+  });
+};
 
 /**
- * ID parameter validation (for :id routes)
+ * Middleware factory for validating request body fields
+ * @param {Object} schema - Validation schema
+ * @param {string} source - 'body' | 'query' | 'params'
+ * @returns {Function} Express middleware
  */
-export const validateMongoId = [
-  param('id')
-    .isMongoId()
-    .withMessage('Invalid ID format'),
-  handleValidationErrors
-];
-
-/**
- * Factory function for custom param name validation
- * @param {string} paramName - The route parameter name to validate
- * @returns {Array} - Express middleware array
- */
-export const validateParamId = (paramName = 'id') => [
-  param(paramName)
-    .custom((value) => {
-      // 🔥 CRITICAL: Reject temp_* optimistic IDs
-      if (typeof value === 'string' && value.startsWith('temp_')) {
-        throw new Error('Optimistic IDs not allowed - please wait for message confirmation');
+export const validate = (schema, source = 'body') => {
+  return (req, res, next) => {
+    const data = req[source];
+    const errors = [];
+    
+    for (const [field, rules] of Object.entries(schema)) {
+      const value = data[field];
+      
+      // Required check
+      if (rules.required && (value === undefined || value === null || value === '')) {
+        errors.push({ field, message: `${field} is required` });
+        continue;
       }
-      // Validate as MongoDB ObjectId
-      if (!value.match(/^[0-9a-fA-F]{24}$/)) {
-        throw new Error('Invalid ID format');
+      
+      // Skip further validation if empty and not required
+      if (value === undefined || value === null || value === '') {
+        continue;
       }
-      return true;
-    }),
-  handleValidationErrors
-];
+      
+      // Type validation
+      if (rules.type) {
+        if (rules.type === 'string' && typeof value !== 'string') {
+          errors.push({ field, message: `${field} must be a string` });
+          continue;
+        }
+        if (rules.type === 'number' && typeof value !== 'number') {
+          errors.push({ field, message: `${field} must be a number` });
+          continue;
+        }
+        if (rules.type === 'boolean' && typeof value !== 'boolean') {
+          errors.push({ field, message: `${field} must be a boolean` });
+          continue;
+        }
+        if (rules.type === 'array' && !Array.isArray(value)) {
+          errors.push({ field, message: `${field} must be an array` });
+          continue;
+        }
+      }
+      
+      // String validations
+      if (typeof value === 'string') {
+        if (rules.minLength && value.length < rules.minLength) {
+          errors.push({ field, message: `${field} must be at least ${rules.minLength} characters` });
+        }
+        
+        if (rules.maxLength && value.length > rules.maxLength) {
+          errors.push({ field, message: `${field} must be at most ${rules.maxLength} characters` });
+        }
+        
+        if (rules.pattern && !rules.pattern.test(value)) {
+          errors.push({ field, message: rules.patternMessage || `${field} has invalid format` });
+        }
+        
+        if (rules.isEmail && !isValidEmail(value)) {
+          errors.push({ field, message: `${field} must be a valid email` });
+        }
+        
+        if (rules.isUrl && !isValidUrl(value)) {
+          errors.push({ field, message: `${field} must be a valid URL` });
+        }
+        
+        if (rules.custom && typeof rules.custom === 'function') {
+          const result = rules.custom(value);
+          if (result !== true) {
+            errors.push({ field, message: result || `${field} is invalid` });
+          }
+        }
+      }
+      
+      // Array validations
+      if (Array.isArray(value)) {
+        if (rules.minItems && value.length < rules.minItems) {
+          errors.push({ field, message: `${field} must have at least ${rules.minItems} items` });
+        }
+        if (rules.maxItems && value.length > rules.maxItems) {
+          errors.push({ field, message: `${field} must have at most ${rules.maxItems} items` });
+        }
+      }
+    }
+    
+    if (errors.length > 0) {
+      logger.warn(`Validation failed for ${source}:`, errors);
+      return res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors
+      });
+    }
+    
+    next();
+  };
+};
 
 /**
- * Pagination validation
+ * Middleware factory for sanitizing request body fields
+ * @param {Array|string} fields - Fields to sanitize
+ * @param {string} source - 'body' | 'query' | 'params'
+ * @returns {Function} Express middleware
  */
-export const validatePagination = [
-  query('page')
-    .optional()
-    .isInt({ min: 1 })
-    .withMessage('Page must be a positive integer'),
-  query('limit')
-    .optional()
-    .isInt({ min: 1, max: 100 })
-    .withMessage('Limit must be between 1 and 100'),
-  handleValidationErrors
-];
+export const sanitize = (fields, source = 'body') => {
+  return (req, res, next) => {
+    const data = req[source];
+    const fieldList = Array.isArray(fields) ? fields : [fields];
+    
+    for (const field of fieldList) {
+      if (data[field] && typeof data[field] === 'string') {
+        data[field] = sanitizeString(data[field]);
+      }
+    }
+    
+    next();
+  };
+};
+
+/**
+ * Sanitize all string fields in request
+ * @param {string} source - 'body' | 'query' | 'params'
+ * @returns {Function} Express middleware
+ */
+export const sanitizeAll = (source = 'body') => {
+  return (req, res, next) => {
+    const data = req[source];
+    
+    const sanitizeObject = (obj) => {
+      if (!obj || typeof obj !== 'object') return obj;
+      
+      for (const key of Object.keys(obj)) {
+        if (typeof obj[key] === 'string') {
+          obj[key] = sanitizeString(obj[key]);
+        } else if (Array.isArray(obj[key])) {
+          obj[key] = obj[key].map(item => 
+            typeof item === 'string' ? sanitizeString(item) : item
+          );
+        } else if (typeof obj[key] === 'object') {
+          sanitizeObject(obj[key]);
+        }
+      }
+    };
+    
+    sanitizeObject(data);
+    next();
+  };
+};
+
+/**
+ * Validate MongoDB ObjectId in route parameters
+ * @param {string} paramName - Parameter name to validate
+ * @returns {Function} Express middleware
+ */
+export const validateObjectId = (paramName = 'id') => {
+  return (req, res, next) => {
+    const id = req.params[paramName];
+    
+    if (!id || !isValidObjectId(id)) {
+      return res.status(400).json({
+        success: false,
+        message: `Invalid ${paramName} format`
+      });
+    }
+    
+    next();
+  };
+};
 
 export default {
-  handleValidationErrors,
-  validateSignup,
-  validateLogin,
-  validatePost,
-  validateComment,
-  validateMessage,
-  validateProfileUpdate,
-  validateMongoId,
-  validateParamId,
-  validatePagination
+  sanitizeString,
+  isValidEmail,
+  isValidUsername,
+  isValidObjectId,
+  isValidUrl,
+  validate,
+  sanitize,
+  sanitizeAll,
+  validateObjectId
 };

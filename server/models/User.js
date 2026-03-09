@@ -735,6 +735,153 @@ const userSchema = new mongoose.Schema({
       type: Boolean,
       default: false // Opt-in, not on by default
     },
+    // =========================================
+    // QUIET MODE ENHANCEMENTS (All 10 Improvements)
+    // =========================================
+    
+    // IMPROVEMENT 1: Scheduled/Automatic Quiet Hours
+    // Custom quiet hours schedule
+    quietHoursEnabled: {
+      type: Boolean,
+      default: false
+    },
+    quietHoursStart: {
+      type: String, // "22:00" format
+      default: '22:00'
+    },
+    quietHoursEnd: {
+      type: String, // "08:00" format
+      default: '08:00'
+    },
+    // Auto-enable on work/focus mode detection
+    quietOnWorkFocus: {
+      type: Boolean,
+      default: false
+    },
+    
+    // IMPROVEMENT 2: Granular Content Filtering
+    // Filter content types
+    quietContentFilter: {
+      type: String,
+      enum: ['all', 'videos-only', 'images-only', 'text-only', 'no-polls', 'low-engagement'],
+      default: 'all'
+    },
+    // Filter by engagement level (hide viral posts)
+    quietHideViral: {
+      type: Boolean,
+      default: false
+    },
+    // Show only followed users' content
+    quietFollowedOnly: {
+      type: Boolean,
+      default: false
+    },
+    
+    // IMPROVEMENT 4: Visual Improvements
+    // Mute button on individual posts (temporary quiet per post)
+    // Gentle transitions
+    quietGentleTransitions: {
+      type: Boolean,
+      default: true
+    },
+    // Monochrome/sepia color scheme
+    quietColorScheme: {
+      type: String,
+      enum: ['default', 'monochrome', 'sepia'],
+      default: 'default'
+    },
+    // Hide Stories section entirely
+    quietHideStories: {
+      type: Boolean,
+      default: false
+    },
+    
+    // IMPROVEMENT 5: Deep Quiet Mode
+    // Hide ALL metrics (likes, comments, shares, views)
+    quietDeepQuiet: {
+      type: Boolean,
+      default: false
+    },
+    // Disable animations and autoplay
+    quietDisableAnimations: {
+      type: Boolean,
+      default: false
+    },
+    // Reduce UI elements to essential
+    quietMinimalUI: {
+      type: Boolean,
+      default: false
+    },
+    // Hide trending/suggested content
+    quietHideTrending: {
+      type: Boolean,
+      default: false
+    },
+    
+    // IMPROVEMENT 6: Smart Triggers
+    // Auto-enable after consecutive negative interactions
+    quietAutoTrigger: {
+      type: Boolean,
+      default: false
+    },
+    quietNegativeThreshold: {
+      type: Number,
+      default: 5 // consecutive negative interactions before triggering
+    },
+    // Custom keyword triggers
+    quietKeywordTriggers: {
+      type: [String],
+      default: []
+    },
+    
+    // IMPROVEMENT 7: Better User Feedback
+    // Show hidden posts count
+    quietShowHiddenCount: {
+      type: Boolean,
+      default: true
+    },
+    // Session override (temporary disable)
+    quietSessionOverride: {
+      type: Boolean,
+      default: false
+    },
+    
+    // IMPROVEMENT 8: Persistence & Context
+    // Different settings for different contexts (feed vs messages)
+    quietFeedSettings: {
+      type: String,
+      enum: ['default', 'calm', 'deep', 'minimal'],
+      default: 'default'
+    },
+    quietMessageSettings: {
+      type: String,
+      enum: ['default', 'calm', 'deep', 'minimal'],
+      default: 'default'
+    },
+    
+    // IMPROVEMENT 9: Accessibility
+    // High contrast option within quiet mode
+    quietHighContrast: {
+      type: Boolean,
+      default: false
+    },
+    
+    // IMPROVEMENT 10: Communication Features
+    // Hide @mentions counts
+    quietHideMentions: {
+      type: Boolean,
+      default: false
+    },
+    // Mute group chat activity summaries
+    quietMuteGroupSummary: {
+      type: Boolean,
+      default: false
+    },
+    // Reduce story reply notifications
+    quietReduceStoryNotifications: {
+      type: Boolean,
+      default: false
+    },
     // Automatic Quiet Hours (21:00-06:00 local time)
     autoQuietHoursEnabled: {
       type: Boolean,
@@ -830,6 +977,13 @@ const userSchema = new mongoose.Schema({
     hideOnlineStatus: {
       type: Boolean,
       default: false
+    },
+    // Granular online status visibility: who can see when you're online
+    // 'everyone' = all users (default), 'followers' = followers only, 'no-one' = fully hidden
+    onlineStatusVisibility: {
+      type: String,
+      enum: ['everyone', 'followers', 'no-one'],
+      default: 'everyone'
     },
     friendOnlyProfile: {
       type: Boolean,
