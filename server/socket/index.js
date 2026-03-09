@@ -146,31 +146,34 @@ export function initializeSocket(httpServer, allowedOrigins, getRedisOrGetter = 
 
     // ── Presence ─────────────────────────────────────────────────────────────
     // Load granular online status visibility before broadcasting
-    let onlineStatusVisibility = 'everyone';
-    try {
-      const presenceUser = await User.findById(userId).select('privacy').lean();
-      if (presenceUser?.privacy?.onlineStatusVisibility) {
-        onlineStatusVisibility = presenceUser.privacy.onlineStatusVisibility;
-      } else if (presenceUser?.privacy?.hideOnlineStatus) {
-        onlineStatusVisibility = 'no-one'; // legacy fallback
-      }
-    } catch (err) {
-      logger.warn('Failed to check onlineStatusVisibility for user:', userId);
-    }
-    socket.onlineStatusVisibility = onlineStatusVisibility;
-
     onlineUsers.set(userId, socket.id);
-    // 'no-one' = fully hidden; 'followers' broadcasts to all (REST enforces per-viewer filtering)
-    if (onlineStatusVisibility !== 'no-one') {
-      emitValidated(io, 'presence:update', { userId, online: true });
-    }
-    // Filter 'no-one' users from the initial online_users list
-    const visibleOnlineUsers = Array.from(onlineUsers.keys()).filter(uid => {
-      const sid = onlineUsers.get(uid);
-      const otherSocket = io.sockets.sockets.get(sid);
-      return otherSocket?.onlineStatusVisibility !== 'no-one';
-    });
-    emitValidated(socket, 'online_users', visibleOnlineUsers);
+    socket.onlineStatusVisibility = 'everyone'; // default until DB check completes
+
+    (async () => {
+      try {
+        const presenceUser = await User.findById(userId).select('privacy').lean();
+        if (presenceUser?.privacy?.onlineStatusVisibility) {
+          socket.onlineStatusVisibility = presenceUser.privacy.onlineStatusVisibility;
+        } else if (presenceUser?.privacy?.hideOnlineStatus) {
+          socket.onlineStatusVisibility = 'no-one'; // legacy fallback
+        }
+      } catch (err) {
+        logger.warn('Failed to check onlineStatusVisibility for user:', userId);
+      }
+
+      const onlineStatusVisibility = socket.onlineStatusVisibility;
+      // 'no-one' = fully hidden; 'followers' broadcasts to all (REST enforces per-viewer filtering)
+      if (onlineStatusVisibility !== 'no-one') {
+        emitValidated(io, 'presence:update', { userId, online: true });
+      }
+      // Filter 'no-one' users from the initial online_users list
+      const visibleOnlineUsers = Array.from(onlineUsers.keys()).filter(uid => {
+        const sid = onlineUsers.get(uid);
+        const otherSocket = io.sockets.sockets.get(sid);
+        return otherSocket?.onlineStatusVisibility !== 'no-one';
+      });
+      emitValidated(socket, 'online_users', visibleOnlineUsers);
+    })();
 
     socket.join(`user_${userId}`);
     emitValidated(socket, 'room:joined', {
