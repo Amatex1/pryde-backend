@@ -819,12 +819,12 @@ if (!isVercel) {
       // ========================================
       // Posts weekly themed discussion prompts
       import('./jobs/weeklyThemesJob.js')
-        .then(({ runWeeklyThemesJob }) => {
+        .then(({ runWeeklyTheme }) => {
           cron.schedule('0 10 * * 1', async () => {
             logger.info('[WeeklyThemes] 🕐 Starting weekly themes job...');
             try {
-              const result = await runWeeklyThemesJob();
-              logger.info(`[WeeklyThemes] ✅ Complete: ${result.posted?.length || 0} themes posted`);
+              const result = await runWeeklyTheme();
+              logger.info(`[WeeklyThemes] ✅ Complete: ${result.success ? result.theme?.title : 'already posted this week'}`);
             } catch (err) {
               logger.error('[WeeklyThemes] ❌ Job failed:', err);
             }
