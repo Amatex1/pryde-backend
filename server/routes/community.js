@@ -14,7 +14,7 @@ import express from 'express';
 import auth from '../middleware/auth.js';
 import requireActiveUser from '../middleware/requireActiveUser.js';
 import { runConversationResurfaceJob } from '../jobs/conversationResurfaceJob.js';
-import { getUpcomingThemes } from '../jobs/weeklyThemesJob.js';
+import weeklyThemesJob, { getUpcomingThemes } from '../jobs/weeklyThemesJob.js';
 import { runMemberSpotlight } from '../jobs/memberSpotlightJob.js';
 import User from '../models/User.js';
 import logger from '../utils/logger.js';
@@ -121,10 +121,11 @@ router.post('/spotlight/trigger', auth, requireActiveUser, async (req, res) => {
  */
 router.get('/themes', async (req, res) => {
   try {
-    const themes = getUpcomingThemes(4);
+    const current = weeklyThemesJob.getWeeklyTheme();
+    const upcoming = getUpcomingThemes(3);
     res.json({
       success: true,
-      themes
+      themes: [current, ...upcoming]
     });
   } catch (error) {
     logger.error('[Community] Error getting themes:', error.message);
