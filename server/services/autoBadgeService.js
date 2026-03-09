@@ -17,6 +17,7 @@ import BadgeAssignmentLog from '../models/BadgeAssignmentLog.js';
 import User from '../models/User.js';
 import Group from '../models/Group.js';
 import Post from '../models/Post.js';
+import Comment from '../models/Comment.js';
 import logger from '../utils/logger.js';
 
 // Configuration for automatic badges
@@ -35,6 +36,8 @@ const AUTO_BADGE_CONFIG = {
   profile_complete: {
     // Required fields for profile completion
     requiredFields: ['displayName', 'bio', 'profilePhoto', 'pronouns'],
+    // Grace period prevents badge flickering when users temporarily clear a field while editing
+    gracePeriodDays: 3,
     description: 'All core profile fields filled'
   },
   active_this_month: {
@@ -54,7 +57,7 @@ const AUTO_BADGE_CONFIG = {
 
 // 🔧 CHURN FIX: Badges that should only be assigned (never auto-revoked)
 // Revocation for these badges happens only in the daily sweep job with grace period
-const ASSIGN_ONLY_BADGES = ['active_this_month'];
+const ASSIGN_ONLY_BADGES = ['active_this_month', 'profile_complete'];
 
 // Helper: Calculate days since a date
 function daysSince(date) {
@@ -101,15 +104,22 @@ async function checkActiveThisMonth(user) {
   const config = AUTO_BADGE_CONFIG.active_this_month;
   const periodStart = new Date();
   periodStart.setDate(periodStart.getDate() - config.periodDays);
-  
-  // Count posts in the period
-  const postCount = await Post.countDocuments({
-    author: user._id,
-    createdAt: { $gte: periodStart },
-    isDeleted: { $ne: true }
-  });
-  
-  return postCount >= config.minActivity;
+
+  // Count posts or comments in the period
+  const [postCount, commentCount] = await Promise.all([
+    Post.countDocuments({
+      author: user._id,
+      createdAt: { $gte: periodStart },
+      isDeleted: { $ne: true }
+    }),
+    Comment.countDocuments({
+      authorId: user._id,
+      createdAt: { $gte: periodStart },
+      isDeleted: { $ne: true }
+    })
+  ]);
+
+  return (postCount + commentCount) >= config.minActivity;
 }
 
 /**
@@ -178,22 +188,52 @@ async function processUserBadges(user, autoBadges, options = {}) {
       }
 
       // 🔧 CHURN FIX: Check grace period before revocation
-      if (withGracePeriod && badge.automaticRule === 'active_this_month') {
-        const gracePeriodDays = AUTO_BADGE_CONFIG.active_this_month.gracePeriodDays || 7;
+      // For active_this_month: grace period measured from last post/comment date.
+      // For profile_complete: grace period measured from last badge assignment date
+      //   (prevents badge flickering when users temporarily clear a field while saving).
+      if (withGracePeriod && badge.automaticRule === 'profile_complete') {
+        const gracePeriodDays = AUTO_BADGE_CONFIG.profile_complete.gracePeriodDays || 3;
         const lastAssignment = await BadgeAssignmentLog.findOne({
           userId: user._id,
           badgeId: badge.id,
           action: 'assigned'
         }).sort({ createdAt: -1 }).lean();
 
-        if (lastAssignment) {
-          const daysSinceAssignment = daysSince(lastAssignment.createdAt);
-          const totalWindowDays = AUTO_BADGE_CONFIG.active_this_month.periodDays + gracePeriodDays;
+        if (lastAssignment && daysSince(lastAssignment.createdAt) < gracePeriodDays) {
+          results.skipped.push(badge.id);
+          logger.debug(`[Badge] Skipping revocation for ${badge.id} - profile grace period`);
+          continue;
+        }
+      }
 
-          if (daysSinceAssignment < totalWindowDays) {
-            // Still within grace period, skip revocation
+      if (withGracePeriod && badge.automaticRule === 'active_this_month') {
+        const gracePeriodDays = AUTO_BADGE_CONFIG.active_this_month.gracePeriodDays || 7;
+        const config = AUTO_BADGE_CONFIG.active_this_month;
+        const lookbackStart = new Date();
+        lookbackStart.setDate(lookbackStart.getDate() - (config.periodDays + gracePeriodDays));
+
+        // Find the most recent post or comment to determine when they became inactive
+        const [lastPost, lastComment] = await Promise.all([
+          Post.findOne({ author: user._id, isDeleted: { $ne: true } })
+            .sort({ createdAt: -1 }).select('createdAt').lean(),
+          Comment.findOne({ authorId: user._id, isDeleted: { $ne: true } })
+            .sort({ createdAt: -1 }).select('createdAt').lean()
+        ]);
+
+        const lastPostDate = lastPost?.createdAt || null;
+        const lastCommentDate = lastComment?.createdAt || null;
+        const lastActivityDate = lastPostDate && lastCommentDate
+          ? (lastPostDate > lastCommentDate ? lastPostDate : lastCommentDate)
+          : (lastPostDate || lastCommentDate);
+
+        if (lastActivityDate) {
+          const daysSinceActivity = daysSince(lastActivityDate);
+          const graceWindowDays = config.periodDays + gracePeriodDays; // 37 days from last activity
+
+          if (daysSinceActivity < graceWindowDays) {
+            // User became inactive less than 37 days ago — still in grace window
             results.skipped.push(badge.id);
-            logger.debug(`[Badge] Skipping revocation for ${badge.id} - grace period (${daysSinceAssignment.toFixed(1)} days < ${totalWindowDays} days)`);
+            logger.debug(`[Badge] Skipping revocation for ${badge.id} - grace period (last active ${daysSinceActivity.toFixed(1)} days ago, window is ${graceWindowDays} days)`);
             continue;
           }
         }
