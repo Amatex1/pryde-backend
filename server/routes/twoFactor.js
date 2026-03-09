@@ -3,6 +3,7 @@ import * as OTPAuth from 'otpauth';
 import QRCode from 'qrcode';
 import crypto from 'crypto';
 import { authenticateToken } from '../middleware/auth.js';
+import { twoFactorLimiter } from '../middleware/rateLimiter.js';
 import User from '../models/User.js';
 import { encryptMessage, decryptMessage, isEncrypted } from '../utils/encryption.js';
 
@@ -126,7 +127,7 @@ router.post('/verify', authenticateToken, async (req, res) => {
 });
 
 // Verify 2FA token during login
-router.post('/verify-login', async (req, res) => {
+router.post('/verify-login', twoFactorLimiter, async (req, res) => {
   try {
     const { userId, token } = req.body;
 

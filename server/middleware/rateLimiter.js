@@ -284,6 +284,22 @@ export const commentWriteLimiter = createAdvancedLimiter({
   message: 'You are commenting too quickly, please slow down.'
 });
 
+// 2FA verification limiter — brute-force protection for TOTP codes
+export const twoFactorLimiter = createAdvancedLimiter({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10, // 10 attempts per 15 minutes
+  prefix: 'two_factor',
+  message: 'Too many 2FA attempts, please try again later.'
+});
+
+// Passkey limiter — enumeration and abuse protection for login flow
+export const passkeyLimiter = createAdvancedLimiter({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 20, // 20 attempts per 15 minutes
+  prefix: 'passkey',
+  message: 'Too many passkey attempts, please try again later.'
+});
+
 // Cleanup Redis connection on process exit
 process.on('SIGINT', async () => {
   try {
@@ -315,5 +331,7 @@ export default {
   checkUsernameLimiter,
   refreshLimiter,
   resetPasswordConfirmLimiter,
-  commentWriteLimiter
+  commentWriteLimiter,
+  twoFactorLimiter,
+  passkeyLimiter
 };

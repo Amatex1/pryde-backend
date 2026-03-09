@@ -24,9 +24,37 @@ import {
 } from '../utils/sessionUtils.js';
 import { generateTokenPair, getRefreshTokenExpiry } from '../utils/tokenUtils.js';
 import { getRefreshTokenCookieOptions } from '../utils/cookieUtils.js';
+import { passkeyLimiter } from '../middleware/rateLimiter.js';
 
-// Store challenges temporarily (in production, use Redis)
+// Fallback in-memory challenge store (used when Redis is unavailable)
 const challenges = new Map();
+
+// Store a challenge — Redis when available, Map as fallback
+async function storeChallenge(redis, key, challenge) {
+  if (redis) {
+    await redis.set(`passkey:challenge:${key}`, challenge, 'EX', 300);
+  } else {
+    challenges.set(key, challenge);
+    setTimeout(() => challenges.delete(key), 5 * 60 * 1000);
+  }
+}
+
+// Retrieve a challenge
+async function getChallenge(redis, key) {
+  if (redis) {
+    return await redis.get(`passkey:challenge:${key}`);
+  }
+  return challenges.get(key) ?? null;
+}
+
+// Delete a challenge after use
+async function deleteChallenge(redis, key) {
+  if (redis) {
+    await redis.del(`passkey:challenge:${key}`);
+  } else {
+    challenges.delete(key);
+  }
+}
 
 // @route   GET /api/passkey/test
 // @desc    Test endpoint to verify passkey routes are working
@@ -66,13 +94,9 @@ router.post('/register-start', auth, async (req, res) => {
 
     console.log('✅ Registration options generated successfully');
 
-    // Store challenge for verification
-    challenges.set(user._id.toString(), options.challenge);
-
-    // Set challenge to expire in 5 minutes
-    setTimeout(() => {
-      challenges.delete(user._id.toString());
-    }, 5 * 60 * 1000);
+    // Store challenge for verification (Redis when available, Map as fallback)
+    const redis = req.app.get('redis');
+    await storeChallenge(redis, user._id.toString(), options.challenge);
 
     res.json(options);
   } catch (error) {
@@ -103,7 +127,8 @@ router.post('/register-finish', auth, async (req, res) => {
     console.log('   Credential type:', typeof credential);
 
     // Get stored challenge
-    const expectedChallenge = challenges.get(user._id.toString());
+    const redis = req.app.get('redis');
+    const expectedChallenge = await getChallenge(redis, user._id.toString());
     if (!expectedChallenge) {
       console.error('❌ Challenge not found or expired');
       return res.status(400).json({ message: 'Challenge expired or not found' });
@@ -155,7 +180,8 @@ router.post('/register-finish', auth, async (req, res) => {
     console.log('✅ Passkey saved successfully');
 
     // Clean up challenge
-    challenges.delete(user._id.toString());
+    const redisForCleanup = req.app.get('redis');
+    await deleteChallenge(redisForCleanup, user._id.toString());
 
     res.json({
       success: true,
@@ -181,7 +207,7 @@ router.post('/register-finish', auth, async (req, res) => {
 // @route   POST /api/passkey/login-start
 // @desc    Start passkey login process
 // @access  Public
-router.post('/login-start', async (req, res) => {
+router.post('/login-start', passkeyLimiter, async (req, res) => {
   try {
     console.log('🔐 Starting passkey login...');
     const { email } = req.body;
@@ -234,14 +260,9 @@ router.post('/login-start', async (req, res) => {
 
     // Store challenge (use email or 'anonymous' as key)
     const challengeKey = email || `anonymous-${Date.now()}`;
-    challenges.set(challengeKey, options.challenge);
+    const redis = req.app.get('redis');
+    await storeChallenge(redis, challengeKey, options.challenge);
     console.log('✅ Challenge stored with key:', challengeKey);
-
-    // Set challenge to expire in 5 minutes
-    setTimeout(() => {
-      challenges.delete(challengeKey);
-      console.log('🗑️ Challenge expired and deleted:', challengeKey);
-    }, 5 * 60 * 1000);
 
     res.json({ ...options, challengeKey });
   } catch (error) {
@@ -267,7 +288,7 @@ router.post('/login-start', async (req, res) => {
 // @route   POST /api/passkey/login-finish
 // @desc    Complete passkey login
 // @access  Public
-router.post('/login-finish', async (req, res) => {
+router.post('/login-finish', passkeyLimiter, async (req, res) => {
   try {
     console.log('🔐 Starting passkey login finish...');
     const { credential, challengeKey } = req.body;
@@ -288,7 +309,8 @@ router.post('/login-finish', async (req, res) => {
     console.log('   Credential ID:', credential?.id);
 
     // Get stored challenge
-    const expectedChallenge = challenges.get(challengeKey);
+    const redis = req.app.get('redis');
+    const expectedChallenge = await getChallenge(redis, challengeKey);
     if (!expectedChallenge) {
       console.error('❌ Challenge not found or expired');
       return res.status(400).json({
@@ -314,7 +336,7 @@ router.post('/login-finish', async (req, res) => {
     if (!user) {
       console.error('❌ User not found for credential ID:', credential.id);
       // Clean up challenge
-      challenges.delete(challengeKey);
+      await deleteChallenge(redis, challengeKey);
       return res.status(404).json({
         message: 'Passkey not found. It may have been removed.',
         code: 'PASSKEY_NOT_FOUND'
@@ -327,7 +349,7 @@ router.post('/login-finish', async (req, res) => {
       const suspendedUntil = user.suspendedUntil ? new Date(user.suspendedUntil) : null;
       if (suspendedUntil && suspendedUntil > new Date()) {
         // Clean up challenge
-        challenges.delete(challengeKey);
+        await deleteChallenge(redis, challengeKey);
         return res.status(403).json({
           message: `Account suspended until ${suspendedUntil.toLocaleDateString()}`,
           reason: user.suspensionReason,
@@ -338,7 +360,7 @@ router.post('/login-finish', async (req, res) => {
 
     if (user.isBanned) {
       // Clean up challenge
-      challenges.delete(challengeKey);
+      await deleteChallenge(redis, challengeKey);
       return res.status(403).json({
         message: 'Account has been permanently banned',
         reason: user.bannedReason,
@@ -351,7 +373,7 @@ router.post('/login-finish', async (req, res) => {
     if (!passkey) {
       console.error('❌ Passkey not found in user passkeys');
       // Clean up challenge
-      challenges.delete(challengeKey);
+      await deleteChallenge(redis, challengeKey);
       return res.status(404).json({
         message: 'Passkey not found in user account',
         code: 'PASSKEY_MISMATCH'
@@ -367,7 +389,7 @@ router.post('/login-finish', async (req, res) => {
     } catch (verifyError) {
       console.error('❌ Verification error:', verifyError);
       // Clean up challenge
-      challenges.delete(challengeKey);
+      await deleteChallenge(redis, challengeKey);
       return res.status(400).json({
         message: 'Passkey verification failed. Please try again.',
         code: 'VERIFICATION_ERROR',
@@ -378,7 +400,7 @@ router.post('/login-finish', async (req, res) => {
     if (!verification.verified) {
       console.error('❌ Verification failed');
       // Clean up challenge
-      challenges.delete(challengeKey);
+      await deleteChallenge(redis, challengeKey);
       return res.status(400).json({
         message: 'Passkey verification failed. The signature did not match.',
         code: 'VERIFICATION_FAILED'

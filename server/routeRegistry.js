@@ -99,83 +99,83 @@ export function mountRoutes(app, { restrictionMiddleware, requireDatabaseReady }
   // Auth
   app.use('/api/auth', requireDatabaseReady, authRoutes);
   app.use('/api/refresh', requireDatabaseReady, refreshRoutes);
-  app.use('/api/sessions', sessionsRoutes);
-  app.use('/api/2fa', twoFactorRoutes);
-  app.use('/api/passkey', passkeyRoutes);
-  app.use('/api/login-approval', loginApprovalRoutes);
-  app.use('/api/recovery-contacts', recoveryContactsRoutes);
+  app.use('/api/sessions', requireDatabaseReady, sessionsRoutes);
+  app.use('/api/2fa', requireDatabaseReady, twoFactorRoutes);
+  app.use('/api/passkey', requireDatabaseReady, passkeyRoutes);
+  app.use('/api/login-approval', requireDatabaseReady, loginApprovalRoutes);
+  app.use('/api/recovery-contacts', requireDatabaseReady, recoveryContactsRoutes);
 
   // User & social graph
-  app.use('/api/users', restrictionMiddleware, usersRoutes);
-  app.use('/api/profile-slug', profileSlugRoutes);
-  app.use('/api/friends', friendsRoutes); // backward compat
-  app.use('/api/follow', followRoutes);
-  app.use('/api/blocks', blocksRoutes);
-  app.use('/api/privacy', privacyRoutes);
+  app.use('/api/users', requireDatabaseReady, restrictionMiddleware, usersRoutes);
+  app.use('/api/profile-slug', requireDatabaseReady, profileSlugRoutes);
+  app.use('/api/friends', requireDatabaseReady, friendsRoutes); // backward compat
+  app.use('/api/follow', requireDatabaseReady, followRoutes);
+  app.use('/api/blocks', requireDatabaseReady, blocksRoutes);
+  app.use('/api/privacy', requireDatabaseReady, privacyRoutes);
 
   // Content
-  app.use('/api/posts', restrictionMiddleware, postsRoutes);
-  app.use('/api/feed', feedRoutes);
-  app.use('/api/feed/personal', feedPersonalRoutes);
-  app.use('/api', commentsRoutes);
-  app.use('/api/reactions', restrictionMiddleware, reactionsRoutes);
-  app.use('/api/bookmarks', bookmarksRoutes);
-  app.use('/api/drafts', draftsRoutes);
-  app.use('/api/journals', journalsRoutes);
-  app.use('/api/longform', longformRoutes);
-  app.use('/api/photo-essays', photoEssaysRoutes);
-  app.use('/api/collections', collectionsRoutes);
-  app.use('/api/resonance', resonanceRoutes);
+  app.use('/api/posts', requireDatabaseReady, restrictionMiddleware, postsRoutes);
+  app.use('/api/feed', requireDatabaseReady, feedRoutes);
+  app.use('/api/feed/personal', requireDatabaseReady, feedPersonalRoutes);
+  app.use('/api', requireDatabaseReady, commentsRoutes);
+  app.use('/api/reactions', requireDatabaseReady, restrictionMiddleware, reactionsRoutes);
+  app.use('/api/bookmarks', requireDatabaseReady, bookmarksRoutes);
+  app.use('/api/drafts', requireDatabaseReady, draftsRoutes);
+  app.use('/api/journals', requireDatabaseReady, journalsRoutes);
+  app.use('/api/longform', requireDatabaseReady, longformRoutes);
+  app.use('/api/photo-essays', requireDatabaseReady, photoEssaysRoutes);
+  app.use('/api/collections', requireDatabaseReady, collectionsRoutes);
+  app.use('/api/resonance', requireDatabaseReady, resonanceRoutes);
 
   // Community
-  app.use('/api/groups', groupsRoutes);
-  app.use('/api/circles', circlesRoutes);
-  app.use('/api/events', eventsRoutes);
-  app.use('/api/tags', tagsRoutes); // 410 Gone
-  app.use('/api/invites', invitesRoutes);
-  app.use('/api/badges', badgesRoutes);
-  app.use('/api/presence', presenceRoutes);
-  app.use('/api/community', communityRoutes);
+  app.use('/api/groups', requireDatabaseReady, groupsRoutes);
+  app.use('/api/circles', requireDatabaseReady, circlesRoutes);
+  app.use('/api/events', requireDatabaseReady, eventsRoutes);
+  app.use('/api/tags', tagsRoutes); // 410 Gone — no DB access
+  app.use('/api/invites', requireDatabaseReady, invitesRoutes);
+  app.use('/api/badges', requireDatabaseReady, badgesRoutes);
+  app.use('/api/presence', requireDatabaseReady, presenceRoutes);
+  app.use('/api/community', requireDatabaseReady, communityRoutes);
 
   // Messaging
-  app.use('/api/messages', restrictionMiddleware, messagesRoutes);
-  app.use('/api/groupchats', groupChatsRoutes);
-  app.use('/api/global-chat', globalChatRoutes);
+  app.use('/api/messages', requireDatabaseReady, restrictionMiddleware, messagesRoutes);
+  app.use('/api/groupchats', requireDatabaseReady, groupChatsRoutes);
+  app.use('/api/global-chat', requireDatabaseReady, globalChatRoutes);
 
   // Media — GET image/file routes are public (img tags don't send auth headers).
   // POST/DELETE routes within uploadRoutes each apply their own auth middleware.
-  app.use('/api/upload', uploadRoutes);
+  app.use('/api/upload', requireDatabaseReady, uploadRoutes);
 
   // Notifications
-  app.use('/api/notifications', notificationsRoutes);
-  app.use('/api/push', pushNotificationsRouter);
-  app.use('/api/test-notifications', testNotificationsRoutes);
+  app.use('/api/notifications', requireDatabaseReady, notificationsRoutes);
+  app.use('/api/push', requireDatabaseReady, pushNotificationsRouter);
+  app.use('/api/test-notifications', requireDatabaseReady, testNotificationsRoutes);
 
   // Discovery
-  app.use('/api/search', searchRoutes);
+  app.use('/api/search', requireDatabaseReady, searchRoutes);
 
   // Reports & moderation
-  app.use('/api/reports', reportsRoutes);
-  app.use('/api/admin', adminRoutes);
-  app.use('/api/admin/posts', adminPostsRoutes);
-  app.use('/api/admin/escalate', adminEscalationRoutes);
-  app.use('/api/admin/debug', adminDebugRoutes);
-  app.use('/api/admin/health', adminHealthRoutes);
-  app.use('/api/admin/moderation-v2', adminModerationV2Routes);
+  app.use('/api/reports', requireDatabaseReady, reportsRoutes);
+  app.use('/api/admin', requireDatabaseReady, adminRoutes);
+  app.use('/api/admin/posts', requireDatabaseReady, adminPostsRoutes);
+  app.use('/api/admin/escalate', requireDatabaseReady, adminEscalationRoutes);
+  app.use('/api/admin/debug', requireDatabaseReady, adminDebugRoutes);
+  app.use('/api/admin/health', requireDatabaseReady, adminHealthRoutes);
+  app.use('/api/admin/moderation-v2', requireDatabaseReady, adminModerationV2Routes);
 
   // System
-  app.use('/api/version', versionRoutes);
-  app.use('/api/audit', auditRoutes);
-  app.use('/api/backup', backupRoutes);
-  app.use('/api/bug-reports', bugReportsRoutes);
-  app.use('/api/safe-mode', safeModeRoutes);
-  app.use('/api/stability', stabilityControlsRoutes);
-  app.use('/api/session-inspector', sessionInspectorRoutes);
-  app.use('/api/system-prompts', systemPromptsRoutes);
-  app.use('/api/prompts', promptsRoutes);
+  app.use('/api/version', versionRoutes); // static — no DB access
+  app.use('/api/audit', requireDatabaseReady, auditRoutes);
+  app.use('/api/backup', requireDatabaseReady, backupRoutes);
+  app.use('/api/bug-reports', requireDatabaseReady, bugReportsRoutes);
+  app.use('/api/safe-mode', requireDatabaseReady, safeModeRoutes);
+  app.use('/api/stability', requireDatabaseReady, stabilityControlsRoutes);
+  app.use('/api/session-inspector', requireDatabaseReady, sessionInspectorRoutes);
+  app.use('/api/system-prompts', requireDatabaseReady, systemPromptsRoutes);
+  app.use('/api/prompts', requireDatabaseReady, promptsRoutes);
 
   // Dev-only routes (never in production)
   if (process.env.NODE_ENV === 'development') {
-    app.use('/api/dev', devVerifyRoutes);
+    app.use('/api/dev', requireDatabaseReady, devVerifyRoutes);
   }
 }

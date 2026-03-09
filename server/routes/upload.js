@@ -208,7 +208,9 @@ const saveToGridFS = async (file, generateSizes = false) => {
 
   // Update filename extension if converted to WebP
   const timestamp = Date.now();
-  let filename = `${timestamp}-${file.originalname}`;
+  // Sanitize originalname: strip path traversal chars, keep only safe chars, cap length
+  const safeName = file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 100);
+  let filename = `${timestamp}-${safeName}`;
   if (contentType === 'image/webp' && !filename.endsWith('.webp')) {
     filename = filename.replace(/\.(jpg|jpeg|png)$/i, '.webp');
   }
@@ -229,7 +231,7 @@ const saveToGridFS = async (file, generateSizes = false) => {
       if (sizes) {
         try {
           const sizeIds = {};
-          const baseName = file.originalname.replace(/\.(jpg|jpeg|png)$/i, '');
+          const baseName = safeName.replace(/\.(jpg|jpeg|png)$/i, '');
 
           // Helper function to save a size variant to R2
           const saveSizeVariant = async (buf, sizeName, format) => {
@@ -293,7 +295,7 @@ const saveToGridFS = async (file, generateSizes = false) => {
       (async () => {
         try {
           const sizeIds = {};
-          const baseName = file.originalname.replace(/\.(jpg|jpeg|png)$/i, '');
+          const baseName = safeName.replace(/\.(jpg|jpeg|png)$/i, '');
 
           // Helper function to save a size variant
           const saveSizeVariant = async (buf, sizeName, format) => {

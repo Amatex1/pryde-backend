@@ -238,6 +238,57 @@ export const validateObjectId = (paramName = 'id') => {
   };
 };
 
+/**
+ * Pre-built middleware for the login endpoint
+ * Validates email format and presence of password before the handler runs
+ */
+export const validateLogin = validate({
+  email: {
+    required: true,
+    type: 'string',
+    isEmail: true
+  },
+  password: {
+    required: true,
+    type: 'string',
+    minLength: 1
+  }
+});
+
+/**
+ * Pre-built middleware for the signup endpoint
+ * Validates required fields and basic format before the handler runs
+ * Note: birthday age check and password strength are enforced in the route handler
+ */
+export const validateSignup = validate({
+  fullName: {
+    required: true,
+    type: 'string',
+    minLength: 2,
+    maxLength: 100
+  },
+  username: {
+    required: true,
+    type: 'string',
+    custom: (v) => isValidUsername(v) || 'Username must be 3-30 characters, letters, numbers, and underscores only'
+  },
+  email: {
+    required: true,
+    type: 'string',
+    isEmail: true
+  },
+  password: {
+    required: true,
+    type: 'string',
+    minLength: 8,
+    maxLength: 128
+  },
+  birthday: {
+    required: true,
+    type: 'string'
+  }
+});
+
 export default {
   sanitizeString,
   isValidEmail,
@@ -247,5 +298,7 @@ export default {
   validate,
   sanitize,
   sanitizeAll,
-  validateObjectId
+  validateObjectId,
+  validateLogin,
+  validateSignup
 };
