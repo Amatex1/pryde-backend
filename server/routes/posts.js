@@ -1162,7 +1162,7 @@ router.delete('/:id/share', auth, requireActiveUser, (req, res) => {
 });
 
 // @route   POST /api/posts/:id/comment
-// @desc    Add a comment to a post
+// @desc    Legacy compatibility route for adding a comment to a post. Prefer POST /api/posts/:postId/comments in server/routes/comments.js for the maintained standalone comment flow.
 // @access  Private (System accounts with PROMPTS/ANNOUNCEMENTS roles cannot comment, requires email verification)
 router.post('/:id/comment', auth, requireActiveUser, requireEmailVerification, commentLimiter, guardComment, sanitizeFields(['content']), checkMuted, checkProbation, moderateContent, async (req, res) => {
   try {
