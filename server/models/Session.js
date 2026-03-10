@@ -1,6 +1,8 @@
 import mongoose from 'mongoose';
 import crypto from 'crypto';
 
+const PREVIOUS_TOKEN_GRACE_MS = 30 * 1000;
+
 /**
  * Phase 3B-A: First-Class Session Model
  * 
@@ -50,16 +52,28 @@ const sessionSchema = new mongoose.Schema({
     type: Date
   },
 
+  previousTokenGraceUntil: {
+    type: Date
+  },
+
   // Last rotation timestamp (for 4-hour rotation policy)
   lastTokenRotation: {
     type: Date
   },
 
   // Device information
+  device: { type: String, default: '' },
   deviceInfo: { type: String, default: '' },
   browser: { type: String, default: '' },
   os: { type: String, default: '' },
   ipAddress: { type: String, default: '' },
+  lastIp: { type: String, default: '' },
+  lastUserAgent: { type: String, default: '' },
+  lastCountry: { type: String, default: '' },
+  riskScore: {
+    type: Number,
+    default: 0
+  },
 
   location: {
     city: String,
@@ -114,6 +128,7 @@ sessionSchema.methods.verifyRefreshToken = function(providedToken) {
   if (!providedToken) return false;
   
   const providedHash = crypto.createHash('sha256').update(providedToken).digest('hex');
+  const previousTokenGraceUntil = this.previousTokenGraceUntil || this.previousTokenExpiry;
   
   // Check current hash first
   if (this.refreshTokenHash && this.refreshTokenHash === providedHash) {
@@ -122,8 +137,8 @@ sessionSchema.methods.verifyRefreshToken = function(providedToken) {
   
   // Check previous hash (grace period during rotation)
   if (this.previousRefreshTokenHash && 
-      this.previousTokenExpiry && 
-      new Date() < this.previousTokenExpiry &&
+      previousTokenGraceUntil && 
+      new Date() < previousTokenGraceUntil &&
       this.previousRefreshTokenHash === providedHash) {
     return true;
   }
@@ -148,7 +163,9 @@ sessionSchema.methods.rotateToken = function(newToken, currentToken = null) {
   }
   // Note: If both are null, previousRefreshTokenHash remains null (can't create grace period from nothing)
 
-  this.previousTokenExpiry = new Date(Date.now() + 30 * 60 * 1000); // 30 min grace
+  const graceUntil = new Date(Date.now() + PREVIOUS_TOKEN_GRACE_MS);
+  this.previousTokenExpiry = graceUntil;
+  this.previousTokenGraceUntil = graceUntil;
 
   // Set new hash
   this.refreshTokenHash = crypto.createHash('sha256').update(newToken).digest('hex');

@@ -27,7 +27,7 @@ import { validateSignup, validateLogin } from '../middleware/validation.js';
 import logger from '../utils/logger.js';
 import { incCounter } from '../utils/authMetrics.js'; // Phase 4A
 import { createLoginSession, revokeSession, revokeAllSessions } from '../services/sessionService.js';
-import { getRefreshTokenCookieOptions, getClearCookieOptions } from '../utils/cookieUtils.js';
+import { clearRefreshTokenCookies, getRefreshTokenCookieOptions } from '../utils/cookieUtils.js';
 import { decryptMessage, isEncrypted } from '../utils/encryption.js';
 // 🔧 BADGE CHURN FIX: Badge processing removed from login (now event-driven + daily sweep)
 
@@ -1733,21 +1733,10 @@ router.post('/logout', auth, async (req, res) => {
       }
     }
 
-    // 🔥 CRITICAL: Clear refresh token cookie in ALL possible domains
-    // This handles the migration from api.prydeapp.com to .prydeapp.com
-    // Clear both the old cookie (no domain) and new cookie (.prydeapp.com)
+    // 🔥 CRITICAL: Clear refresh token cookie in all supported scopes so any
+    // legacy host-only cookie and current shared-domain cookie are both removed.
     const isProd = config.nodeEnv === 'production';
-    
-    // Clear old cookie (no domain attribute - defaults to current host)
-    res.clearCookie('refreshToken', {
-      httpOnly: true,
-      secure: isProd,
-      sameSite: isProd ? 'none' : 'lax',
-      path: '/'
-    });
-    
-    // Clear new cookie with domain attribute (.prydeapp.com)
-    res.clearCookie('refreshToken', getClearCookieOptions(req));
+    clearRefreshTokenCookies(res, req);
 
     // Clear admin escalation cookie
     res.clearCookie('pryde_admin_escalated', {
@@ -2114,13 +2103,7 @@ router.post('/logout-all', auth, async (req, res) => {
 
     // Clear refresh token cookie
     const isProd = config.nodeEnv === 'production';
-    res.clearCookie('refreshToken', {
-      httpOnly: true,
-      secure: isProd,
-      sameSite: isProd ? 'none' : 'lax',
-      path: '/'
-    });
-    res.clearCookie('refreshToken', getClearCookieOptions(req));
+    clearRefreshTokenCookies(res, req);
 
     // Clear admin escalation cookie
     res.clearCookie('pryde_admin_escalated', {
@@ -2273,13 +2256,7 @@ router.post('/deactivate', auth, async (req, res) => {
 
     // Clear cookies
     const isProd = config.nodeEnv === 'production';
-    res.clearCookie('refreshToken', {
-      httpOnly: true,
-      secure: isProd,
-      sameSite: isProd ? 'none' : 'lax',
-      path: '/'
-    });
-    res.clearCookie('refreshToken', getClearCookieOptions(req));
+    clearRefreshTokenCookies(res, req);
 
     // Log security event
     try {

@@ -114,7 +114,12 @@ describe('Auth Safety Invariants (Phase 4C)', function() {
       // Force expire the previous token
       await Session.updateOne(
         { sessionId },
-        { $set: { previousTokenExpiry: new Date(Date.now() - 1000) } }
+        {
+          $set: {
+            previousTokenExpiry: new Date(Date.now() - 1000),
+            previousTokenGraceUntil: new Date(Date.now() - 1000)
+          }
+        }
       );
 
       // Reload and verify old token is rejected

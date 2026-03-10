@@ -3,13 +3,12 @@ const router = express.Router();
 import User from '../models/User.js';
 import { verifyRefreshToken } from '../utils/tokenUtils.js';
 import { getClientIp, parseUserAgent } from '../utils/sessionUtils.js';
-import { getRefreshTokenCookieOptions } from '../utils/cookieUtils.js';
+import { clearRefreshTokenCookies, getRefreshTokenCookieOptions } from '../utils/cookieUtils.js';
 import { SESSION_ROTATION_CONFLICT } from '../utils/refreshRotation.js';
 import { rotateRefreshSession, SESSION_SERVICE_STATUS } from '../services/sessionService.js';
 import logger from '../utils/logger.js';
 import { incCounter, logRefreshFailure, logRevokedSessionAccess } from '../utils/authMetrics.js'; // Phase 4A
 import { refreshLimiter } from '../middleware/rateLimiter.js';
-import config from '../config/config.js';
 
 // @route   POST /api/refresh
 // @desc    Refresh access token using refresh token
@@ -131,16 +130,10 @@ router.post('/', refreshLimiter, async (req, res) => {
     // Set refresh token in httpOnly cookie (ONLY source of truth)
     // 🔧 FIX: Pass request to determine sameSite based on request origin
     const cookieOptions = getRefreshTokenCookieOptions(req);
-    
-    // 🔥 CRITICAL: Also clear any old cookie without domain attribute
-    // This handles the migration from api.prydeapp.com to .prydeapp.com
-    const isProd = config.nodeEnv === 'production';
-    res.clearCookie('refreshToken', {
-      httpOnly: true,
-      secure: isProd,
-      sameSite: isProd ? 'none' : 'lax',
-      path: '/'
-    });
+
+    // 🔥 CRITICAL: Clear both the legacy host-only cookie and the current
+    // shared-domain cookie so refresh-token scope stays consistent.
+    clearRefreshTokenCookies(res, req);
     
     // Set new cookie with domain attribute
     res.cookie('refreshToken', rotation.refreshToken, cookieOptions);

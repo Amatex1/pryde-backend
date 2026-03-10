@@ -2,6 +2,7 @@ import { afterEach, describe, it } from 'mocha';
 import { strict as assert } from 'assert';
 import config from '../config/config.js';
 import {
+  clearRefreshTokenCookies,
   getClearCookieOptions,
   getRefreshTokenCookieOptions,
   normalizeCookieDomain
@@ -57,5 +58,45 @@ describe('cookieUtils', function() {
     const options = getRefreshTokenCookieOptions();
     assert.ok(!('domain' in options));
     assert.equal(options.sameSite, 'lax');
+  });
+
+  it('clears both legacy host-only and shared-domain refresh cookies in production', function() {
+    config.nodeEnv = 'production';
+    config.rootDomain = 'prydeapp.com';
+
+    const calls = [];
+    const res = {
+      clearCookie(name, options) {
+        calls.push({ name, options });
+      }
+    };
+
+    clearRefreshTokenCookies(res);
+
+    assert.equal(calls.length, 2);
+    assert.equal(calls[0].name, 'refreshToken');
+    assert.ok(!('domain' in calls[0].options));
+    assert.equal(calls[1].name, 'refreshToken');
+    assert.equal(calls[1].options.domain, '.prydeapp.com');
+    assert.equal(calls[1].options.sameSite, 'none');
+  });
+
+  it('only clears the host-only refresh cookie when no shared domain is configured', function() {
+    config.nodeEnv = 'test';
+    config.rootDomain = 'prydeapp.com';
+
+    const calls = [];
+    const res = {
+      clearCookie(name, options) {
+        calls.push({ name, options });
+      }
+    };
+
+    clearRefreshTokenCookies(res);
+
+    assert.equal(calls.length, 1);
+    assert.equal(calls[0].name, 'refreshToken');
+    assert.ok(!('domain' in calls[0].options));
+    assert.equal(calls[0].options.sameSite, 'lax');
   });
 });

@@ -192,3 +192,33 @@ export const getClearCookieOptions = (req = null) => {
 
   return options;
 };
+
+const getLegacyHostOnlyClearCookieOptions = () => {
+  const isProduction = config.nodeEnv === 'production';
+
+  return {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: isProduction ? 'none' : 'lax',
+    path: '/'
+  };
+};
+
+/**
+ * Clear refresh-token cookies across both the legacy host-only scope and the
+ * current shared-domain scope.
+ * This keeps logout/refresh cleanup behavior consistent during cookie-domain
+ * migrations and avoids duplicate refreshToken cookies under mixed scopes.
+ * @param {Object} res - Express response object
+ * @param {Object} req - Optional express request object
+ */
+export const clearRefreshTokenCookies = (res, req = null) => {
+  const legacyOptions = getLegacyHostOnlyClearCookieOptions();
+  const sharedOptions = getClearCookieOptions(req);
+
+  res.clearCookie('refreshToken', legacyOptions);
+
+  if ('domain' in sharedOptions) {
+    res.clearCookie('refreshToken', sharedOptions);
+  }
+};

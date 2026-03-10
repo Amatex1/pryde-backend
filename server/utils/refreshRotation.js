@@ -3,6 +3,7 @@ import Session from '../models/Session.js';
 import { getRefreshTokenExpiry } from './tokenUtils.js';
 
 export const SESSION_ROTATION_CONFLICT = 'SESSION_ROTATION_CONFLICT';
+export const PREVIOUS_TOKEN_GRACE_MS = 30 * 1000;
 
 export const hashRefreshToken = (token) => (
   crypto.createHash('sha256').update(token).digest('hex')
@@ -19,7 +20,7 @@ export const rotateAuthoritativeSession = async ({
 }) => {
   const providedHash = hashRefreshToken(refreshToken);
   const newHash = hashRefreshToken(newRefreshToken);
-  const graceExpiry = new Date(now.getTime() + 30 * 60 * 1000);
+  const graceExpiry = new Date(now.getTime() + PREVIOUS_TOKEN_GRACE_MS);
 
   const rotatedSession = await sessionModel.findOneAndUpdate(
     {
@@ -30,6 +31,10 @@ export const rotateAuthoritativeSession = async ({
         { refreshTokenHash: providedHash },
         {
           previousRefreshTokenHash: providedHash,
+          previousTokenGraceUntil: { $gt: now }
+        },
+        {
+          previousRefreshTokenHash: providedHash,
           previousTokenExpiry: { $gt: now }
         }
       ]
@@ -38,6 +43,7 @@ export const rotateAuthoritativeSession = async ({
       {
         $set: {
           previousRefreshTokenHash: '$refreshTokenHash',
+          previousTokenGraceUntil: graceExpiry,
           previousTokenExpiry: graceExpiry,
           refreshTokenHash: newHash,
           refreshTokenExpiry,
