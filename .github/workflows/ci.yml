@@ -25,26 +25,22 @@ jobs:
           --health-timeout 5s
           --health-retries 5
 
-    strategy:
-      matrix:
-        node-version: [22.x]
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
-      - name: Setup Node.js ${{ matrix.node-version }}
+
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version: '22.x'
           cache: 'npm'
           cache-dependency-path: server/package-lock.json
-      
+
       - name: Install dependencies
         run: |
           cd server
           npm ci
-      
+
       - name: Run tests
         run: |
           cd server
@@ -67,7 +63,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: test-results-${{ matrix.node-version }}
+          name: test-results
           path: server/test-results/
           retention-days: 30
 
@@ -75,100 +71,133 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: coverage-report-${{ matrix.node-version }}
+          name: coverage-report
           path: server/coverage/
           retention-days: 30
-  
+
   lint:
     name: Lint Code
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '22.x'
           cache: 'npm'
           cache-dependency-path: server/package-lock.json
-      
+
       - name: Install dependencies
         run: |
           cd server
           npm ci
-      
+
       - name: Run ESLint
         run: |
           cd server
           npm run lint
-        continue-on-error: true
-  
+
   security:
-    name: Security Audit
+    name: Security Audit (Advisory)
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '22.x'
           cache: 'npm'
           cache-dependency-path: server/package-lock.json
-      
-      - name: Run npm audit
-        run: |
-          cd server
-          npm audit --audit-level=high
-        continue-on-error: true
-  
-  build:
-    name: Build Check
-    runs-on: ubuntu-latest
-    needs: [test]
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22.x'
-          cache: 'npm'
-          cache-dependency-path: server/package-lock.json
-      
+
       - name: Install dependencies
         run: |
           cd server
           npm ci
-      
-      - name: Verify build
+
+      - id: audit
+        name: Run npm audit
+        continue-on-error: true
         run: |
           cd server
-          echo "✅ Build verification complete"
-  
-  status-check:
-    name: All Checks Passed
+          npm audit --audit-level=high
+
+      - name: Record advisory result
+        if: steps.audit.outcome == 'failure'
+        run: echo "::warning::High-severity npm audit findings remain. This job is advisory until the dependency backlog is remediated."
+
+  smoke:
+    name: Runtime Smoke Check
     runs-on: ubuntu-latest
-    needs: [test, lint, security, build]
-    if: always()
-    
+
     steps:
-      - name: Check test results
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.x'
+          cache: 'npm'
+          cache-dependency-path: server/package-lock.json
+
+      - name: Install dependencies
         run: |
-          if [ "${{ needs.test.result }}" != "success" ]; then
-            echo "❌ Tests failed"
+          cd server
+          npm ci
+
+      - name: Verify server entrypoint syntax
+        run: |
+          cd server
+          node --check server.js
+
+      - name: Verify critical runtime modules load
+        env:
+          NODE_ENV: test
+        run: |
+          cd server
+          node --input-type=module -e "const { default: config } = await import('./config/config.js'); if (!config?.frontendURL) throw new Error('Missing frontendURL in config'); const { initRedis } = await import('./utils/redisInit.js'); if (typeof initRedis !== 'function') throw new Error('initRedis export missing');"
+
+  status-check:
+    name: All Required Checks Passed
+    runs-on: ubuntu-latest
+    needs: [test, lint, security, smoke]
+    if: always()
+    env:
+      TEST_RESULT: ${{ needs.test.result }}
+      LINT_RESULT: ${{ needs.lint.result }}
+      SECURITY_RESULT: ${{ needs.security.result }}
+      SMOKE_RESULT: ${{ needs.smoke.result }}
+
+    steps:
+      - name: Enforce required results
+        run: |
+          failures=0
+          for item in "Run Tests:$TEST_RESULT" "Lint Code:$LINT_RESULT" "Runtime Smoke Check:$SMOKE_RESULT"; do
+            name="${item%%:*}"
+            result="${item##*:}"
+            if [ "$result" != "success" ]; then
+              echo "❌ $name did not succeed (result=$result)"
+              failures=1
+            else
+              echo "✅ $name passed"
+            fi
+          done
+
+          if [ "$SECURITY_RESULT" != "success" ]; then
+            echo "⚠️ Security Audit (Advisory) did not pass. Review the audit backlog before treating the branch as fully hardened."
+          else
+            echo "✅ Security Audit (Advisory) passed"
+          fi
+
+          if [ "$failures" -ne 0 ]; then
             exit 1
           fi
-          echo "✅ All checks passed"
-      
+
       - name: Success notification
-        run: |
-          echo "🎉 CI Pipeline completed successfully"
-          echo "✅ All tests passed"
-          echo "✅ Code is ready for deployment"
+        run: echo "🎉 Required CI checks passed"

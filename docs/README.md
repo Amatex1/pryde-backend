@@ -129,8 +129,8 @@ Backend runs on: `http://localhost:9000`
 
 ### Production Deployment
 
-**Frontend**: SiteGround (Apache hosting)
-**Backend**: Render.com (Node.js hosting)
+**Frontend**: Vercel
+**Backend**: Render.com (Node.js web service)
 **Database**: MongoDB Atlas (Cloud database)
 
 Follow the **[QUICK_START.md](./QUICK_START.md)** guide for deployment instructions.
@@ -139,8 +139,10 @@ Follow the **[QUICK_START.md](./QUICK_START.md)** guide for deployment instructi
 
 #### Frontend (.env.production)
 ```env
-VITE_API_URL=https://your-backend.onrender.com/api
-VITE_SOCKET_URL=https://your-backend.onrender.com
+VITE_API_DOMAIN=https://api.prydeapp.com
+# Optional emergency overrides only:
+# VITE_API_URL=https://api.prydeapp.com/api
+# VITE_SOCKET_URL=https://api.prydeapp.com
 ```
 
 #### Backend (Render.com)
@@ -151,10 +153,18 @@ MONGO_URL=mongodb+srv://...
 MONGODB_URI=mongodb+srv://...
 JWT_SECRET=your-secret-key
 BASE_URL=https://your-backend.onrender.com
-FRONTEND_URL=https://your-domain.com
+FRONTEND_URL=https://prydeapp.com
+API_DOMAIN=https://api.prydeapp.com
+ROOT_DOMAIN=prydeapp.com
 VAPID_PUBLIC_KEY=your-public-key
 VAPID_PRIVATE_KEY=your-private-key
 ```
+
+### Secret Hygiene
+
+- Keep secrets only in provider dashboards or untracked local env files.
+- Do **not** keep exported env snapshots such as `*.env`, `*.pem`, `*.key`, `*.p12`, or `.har` files in the repo or loose in the workspace.
+- If a plaintext env export is ever created outside the repo, rotate the exposed credentials instead of only deleting the file.
 
 ## 🔧 Available Scripts
 

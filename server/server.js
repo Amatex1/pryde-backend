@@ -87,6 +87,7 @@ import { initR2 } from './utils/r2Storage.js';
 
 import { connectDB } from './utils/dbManager.js';
 import config from "./config/config.js";
+const isTest = process.env.NODE_ENV === 'test';
 let redisClient = null;
 (async () => {
   redisClient = await initRedis(config, logger);
@@ -110,7 +111,7 @@ let redisClient = null;
   }
 
   // Initialize BullMQ job queues (requires Redis)
-  if (process.env.NODE_ENV !== 'test') {
+  if (!isTest) {
     const queuesReady = initQueues();
     if (queuesReady) {
       startWorkers();
@@ -122,7 +123,7 @@ let redisClient = null;
 })();
 
 // Connect to DB (skip auto-connect during tests to avoid double connections)
-if (process.env.NODE_ENV !== 'test') {
+if (!isTest) {
   connectDB(config.mongoURI).then(() => {
     console.log('✅ Database connection ready for operations');
   }).catch((err) => {
@@ -143,7 +144,7 @@ if (process.env.NODE_ENV !== 'test') {
 // Initialize server startup (async to wait for DB connection)
 const initializeServer = async () => {
   // Wait for database connection before starting server (prevents race condition)
-  if (process.env.NODE_ENV !== 'test') {
+  if (!isTest) {
     console.log('⏳ Waiting for database connection...');
 
     // Wait for mongoose connection to be fully ready (readyState === 1)
@@ -569,11 +570,12 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Start server (skip on Vercel - serverless functions don't need listen())
-const PORT = process.env.NODE_ENV === 'test' ? 0 : config.port;
+// Start server (skip on Vercel and in tests)
+const PORT = config.port;
 const isVercel = process.env.VERCEL === '1';
+const shouldStartHttpServer = !isTest && !isVercel;
 
-if (!isVercel) {
+if (shouldStartHttpServer) {
   // Initialize server and wait for database connection
   initializeServer().then(() => {
     server.listen(PORT, () => {
@@ -835,6 +837,8 @@ if (!isVercel) {
     console.error('❌ Failed to initialize server:', err);
     process.exit(1);
   });
+} else if (isTest) {
+  logger.info('Running in test mode - skipping server.listen() and scheduled tasks');
 } else {
   logger.info('Running on Vercel serverless - skipping server.listen()');
   logger.info('Socket.IO and scheduled tasks disabled on serverless');
@@ -855,4 +859,5 @@ process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
 // Export app for testing and Vercel
+export { app, server };
 export default app;

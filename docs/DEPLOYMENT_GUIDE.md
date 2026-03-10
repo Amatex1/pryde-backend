@@ -1,237 +1,117 @@
-# 🚀 Pryde Social - Deployment Guide
+# Pryde Social - Deployment Guide
 
-## Current Status
-✅ **Theme rebuild complete** - All CSS files updated  
-✅ **Build successful** - `dist/` folder ready  
-⏳ **Testing required** - Review theme before deploying  
-⏳ **Features pending** - 4 new features to implement after testing  
+## Production Architecture
 
----
+- **Frontend**: Vercel
+- **Backend API**: Render web service
+- **Database**: MongoDB Atlas
+- **Primary frontend origin**: `https://prydeapp.com`
+- **Primary API origin**: `https://api.prydeapp.com`
 
-## 📦 What's in the Build
+The frontend should call the backend **directly** on the API domain in production so auth cookies stay aligned with the `prydeapp.com` root domain.
 
-### Build Output (`dist/` folder)
+## Backend Source of Truth
+
+The checked-in Render blueprint lives at `render.yaml` and should include:
+
+- `BASE_URL=https://pryde-backend.onrender.com`
+- `FRONTEND_URL=https://prydeapp.com`
+- `API_DOMAIN=https://api.prydeapp.com`
+- `ROOT_DOMAIN=prydeapp.com`
+
+Important: the Render dashboard remains the live source of truth for secret values.
+
+## Frontend Source of Truth
+
+The frontend deployment is Vercel-based.
+
+Preferred production env:
+
+```env
+VITE_API_DOMAIN=https://api.prydeapp.com
 ```
-dist/
-├── index.html (0.48 kB)
-├── assets/
-│   ├── index-B7GKw82P.css (41.44 kB)
-│   └── index-Butyedy1.js (362.37 kB)
-```
 
-**Total size:** ~404 kB (uncompressed)  
-**Gzipped:** ~114 kB
+Only use `VITE_API_URL` or `VITE_SOCKET_URL` as temporary overrides.
 
----
+## Recommended Deployment Flow
 
-## 🧪 Step 1: Local Testing
+### 1. Validate locally
 
-### Start Development Server
-```bash
-npm run dev
-```
-
-### Test Checklist
-1. Open `http://localhost:5173` in browser
-2. Go through **TESTING_CHECKLIST.md**
-3. Check all pages for theme consistency
-4. Test on desktop and mobile
-5. Verify no gold colors remain
-6. Check all hover states work
-
-### Common Issues to Check
-- [ ] Any remaining black backgrounds
-- [ ] Any remaining gold colors
-- [ ] Text contrast (readability)
-- [ ] Button visibility
-- [ ] Gradient rendering
-- [ ] Shadow intensity
-- [ ] Mobile responsiveness
-
----
-
-## 🌐 Step 2: Deploy to SiteGround
-
-### Option A: Manual Upload (Recommended for now)
-
-1. **Locate your build files:**
-   ```
-   f:\Desktop\pryde-backend\dist\
-   ```
-
-2. **Login to SiteGround:**
-   - Go to your SiteGround control panel
-   - Navigate to File Manager
-   - Find your website's public directory (usually `public_html`)
-
-3. **Upload files:**
-   - Delete old files in `public_html` (backup first!)
-   - Upload all contents from `dist/` folder:
-     - `index.html`
-     - `assets/` folder (with CSS and JS files)
-
-4. **Verify deployment:**
-   - Visit your live site
-   - Check all pages
-   - Test on different devices
-
-### Option B: FTP Upload
-
-1. **Use FTP client** (FileZilla, WinSCP, etc.)
-2. **Connect to SiteGround:**
-   - Host: Your domain or FTP hostname
-   - Username: Your FTP username
-   - Password: Your FTP password
-   - Port: 21 (or 22 for SFTP)
-
-3. **Upload:**
-   - Navigate to `public_html`
-   - Upload all files from `dist/` folder
-
----
-
-## 🔄 Step 3: Backend Deployment (Render)
-
-### Current Backend Status
-- **Hosted on:** Render.com
-- **Auto-deploy:** Enabled (deploys on git push)
-- **Repository:** https://github.com/Amatex1/pryde-frontend---backend
-
-### No Backend Changes Yet
-Since we only updated CSS (frontend), the backend doesn't need redeployment yet.
-
-**Backend will need updates when we add:**
-- Delete post route
-- Friend request functionality
-- Group chat features
-
----
-
-## 📝 Step 4: Git Commit (After Testing)
-
-### Once you've tested and confirmed everything works:
+Backend:
 
 ```bash
-# Stage all changes
-git add .
-
-# Commit with descriptive message
-git commit -m "Complete theme rebuild: Replace black/gold with Pryde purple/blue color system
-
-- Update all CSS files with new color palette
-- Replace dark backgrounds with light theme
-- Change gold accents to purple/blue gradients
-- Update all hover states to lavender
-- Improve accessibility with better contrast
-- Add new utility classes for gradients"
-
-# Push to GitHub
-git push origin main
+cd server
+npm run lint
+npm test
 ```
 
-### This will:
-- ✅ Save your changes to GitHub
-- ✅ Trigger Render auto-deploy (backend)
-- ✅ Create backup of your work
+Frontend:
 
----
+```bash
+npm test
+npm run build
+```
 
-## 🎯 Step 5: Post-Deployment Testing
+### 2. Merge through GitHub with CI enabled
 
-### Test on Live Site
-1. Visit your live URL
-2. Test all pages again
-3. Check on different browsers:
-   - Chrome
-   - Firefox
-   - Safari
-   - Edge
-4. Test on different devices:
-   - Desktop
-   - Tablet
-   - Mobile (iOS and Android)
+- Backend required checks should include:
+  - `Run Tests`
+  - `Lint Code`
+  - `Runtime Smoke Check`
+  - `All Required Checks Passed`
+- Frontend required checks should include:
+  - `Run Frontend Tests`
+  - `Build Frontend`
+  - `All Required Frontend Checks Passed`
 
-### Performance Check
-1. Open browser DevTools
-2. Check Network tab
-3. Verify CSS and JS load correctly
-4. Check for 404 errors
-5. Test page load speed
+### 3. Let providers deploy from Git
 
----
+- Render auto-deploys the backend from the configured branch
+- Vercel auto-deploys the frontend from the configured branch
 
-## 🐛 Troubleshooting
+Avoid manual file upload workflows. They are no longer the supported production path.
 
-### Issue: Old theme still showing
-**Solution:** Clear browser cache (Ctrl+Shift+R or Cmd+Shift+R)
+## Post-Deploy Verification
 
-### Issue: CSS not loading
-**Solution:** Check file paths in `index.html`, ensure assets folder uploaded correctly
+### Backend
+- `GET https://pryde-backend.onrender.com/api/health`
+- `GET https://pryde-backend.onrender.com/api/version`
+- If `api.prydeapp.com` is configured, verify the same endpoints there
 
-### Issue: White screen / blank page
-**Solution:** Check browser console for errors, verify all files uploaded
+### Frontend
+- `https://prydeapp.com` loads cleanly
+- `https://www.prydeapp.com` behaves correctly if used
+- No critical console errors
 
-### Issue: Images not loading
-**Solution:** Check image paths, ensure images uploaded to correct directory
+### Auth/session checks
+- Login works from the production frontend origin
+- Refresh works without mixed cookie scope
+- Logout clears the refresh cookie
 
-### Issue: API errors
-**Solution:** Verify backend is running on Render, check CORS settings
+## Rollback Plan
 
----
+- Use the previous successful Render deploy if the backend regresses
+- Use the previous successful Vercel deployment if the frontend regresses
+- Keep database backups outside the app repos
 
-## 📊 Deployment Checklist
+## Secret Hygiene
 
-### Pre-Deployment
-- [x] Build completed successfully
-- [ ] Local testing complete
-- [ ] All pages reviewed
-- [ ] Mobile responsive verified
-- [ ] No console errors
-- [ ] Git committed
+- Never commit `.env`, exported provider env dumps, or certificate/key files
+- Avoid keeping plaintext env exports loose in the workspace
+- If a secret file is discovered, rotate the credentials rather than only deleting the file
 
-### Deployment
-- [ ] Files uploaded to SiteGround
-- [ ] Live site accessible
-- [ ] All pages load correctly
-- [ ] No 404 errors
-- [ ] CSS/JS loading properly
+## Troubleshooting
 
-### Post-Deployment
-- [ ] Cross-browser testing
-- [ ] Mobile device testing
-- [ ] Performance check
-- [ ] User acceptance testing
+### CORS failures
+- Confirm `FRONTEND_URL` matches the production frontend origin
+- Confirm the frontend is served over HTTPS
 
----
+### Cookie/session failures
+- Confirm `API_DOMAIN` is `https://api.prydeapp.com`
+- Confirm `ROOT_DOMAIN` is `prydeapp.com`
+- Confirm the frontend is using `VITE_API_DOMAIN`
 
-## 🎉 Next Steps After Successful Deployment
-
-Once the theme is live and tested:
-
-1. ✅ **Theme Complete** - Celebrate! 🎊
-2. ⏳ **Implement 4 New Features:**
-   - Delete button on posts
-   - Move upload buttons to profile page
-   - Add friend button on profiles
-   - Group chat functionality
-3. 🔄 **Build, test, and deploy again**
-4. 🚀 **Launch!**
-
----
-
-## 📞 Support
-
-### If you encounter issues:
-1. Check browser console for errors
-2. Review **TESTING_CHECKLIST.md**
-3. Check **THEME_BEFORE_AFTER.md** for expected appearance
-4. Verify all files uploaded correctly
-5. Clear cache and try again
-
----
-
-**You're ready to deploy!** 🚀
-
-**Current build:** Ready in `dist/` folder  
-**Next action:** Test locally, then upload to SiteGround  
+### Frontend can reach Render URL but auth is flaky
+- Remove reliance on proxy-based auth calls in production
+- Keep auth traffic pointed at `https://api.prydeapp.com`
 

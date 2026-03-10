@@ -7,6 +7,7 @@ server/node_modules/
 .env.local
 .env.production
 server/.env
+*.env
 
 # Build output
 dist/
@@ -27,6 +28,7 @@ incremental-backup-*.json
 *.log
 npm-debug.log*
 yarn-debug.log*
+*.har
 
 # OS files
 .DS_Store
@@ -77,6 +79,17 @@ check-deployment.html
 debug-auth.html
 test-cloudflare-token.js
 fix-and-deploy.ps1
+
+# Secret and certificate material
+*.pem
+*.key
+*.crt
+*.cer
+*.der
+*.p12
+*.pfx
+firebase-adminsdk*.json
+service-account*.json
 
 # Local model files
 TheBloke/

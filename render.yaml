@@ -34,6 +34,10 @@ services:
         value: https://pryde-backend.onrender.com
       - key: FRONTEND_URL
         value: https://prydeapp.com
+      - key: API_DOMAIN
+        value: https://api.prydeapp.com
+      - key: ROOT_DOMAIN
+        value: prydeapp.com
       - key: VAPID_PUBLIC_KEY
         sync: false
       - key: VAPID_PRIVATE_KEY
