@@ -1365,6 +1365,203 @@ router.post('/verify-2fa-login', loginLimiter, async (req, res) => {
   }
 });
 
+// @route   POST /api/auth/verify-push-login
+// @desc    Complete login with push approval verification
+// @access  Public (requires approved temp token)
+router.post('/verify-push-login', loginLimiter, async (req, res) => {
+  try {
+    const { tempToken } = req.body;
+
+    if (!tempToken) {
+      return res.status(400).json({ message: 'Temporary token is required' });
+    }
+
+    let decoded;
+    try {
+      decoded = jwt.verify(tempToken, config.jwtSecret);
+    } catch (error) {
+      return res.status(401).json({ message: 'Invalid or expired temporary token' });
+    }
+
+    if (!decoded.requiresApproval) {
+      return res.status(400).json({ message: 'Invalid token type' });
+    }
+
+    const user = await User.findById(decoded.userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Auto-reactivate deactivated accounts on successful push-approved login
+    if (!user.isActive) {
+      user.isActive = true;
+      user.deactivatedAt = null;
+      await user.save();
+
+      logger.info(`✅ Account auto-reactivated for user: ${user.username} (${user.email}) via push login`);
+
+      const io = req.app.get('io');
+      if (io) {
+        io.emit('user_reactivated', {
+          userId: user._id,
+          username: user.username,
+          automatic: true,
+          method: 'push_approval',
+          timestamp: new Date()
+        });
+      }
+    }
+
+    // Get device and IP info for the current login session
+    const ipAddress = getClientIp(req);
+    const { browser, os, deviceInfo } = parseUserAgent(req.headers['user-agent']);
+
+    // Get IP geolocation (async, but don't block login if it fails)
+    const location = await getIpGeolocation(ipAddress);
+
+    // ── Enterprise Geo Detection for push-approved login ──
+    const countryCode = await getCountryFromRequest(req);
+    if (user.lastCountryCode && countryCode && user.lastCountryCode !== countryCode) {
+      user.safetyAcknowledgedAt = null;
+      user.safetyAcknowledgedCountry = null;
+    }
+    if (countryCode) {
+      user.lastCountryCode = countryCode;
+    }
+    const pushLoginSafetyCheck = checkSafetyRequired(countryCode, user);
+
+    // Check for login after prolonged inactivity (90+ days)
+    const INACTIVITY_THRESHOLD_DAYS = 90;
+    let loginAfterInactivity = false;
+
+    if (user.lastLogin) {
+      const daysSinceLastLogin = (Date.now() - new Date(user.lastLogin).getTime()) / (24 * 60 * 60 * 1000);
+
+      if (daysSinceLastLogin > INACTIVITY_THRESHOLD_DAYS) {
+        loginAfterInactivity = true;
+
+        SecurityLog.create({
+          type: 'login_after_inactivity',
+          severity: 'medium',
+          username: user.username,
+          email: user.email,
+          userId: user._id,
+          ipAddress,
+          userAgent: req.headers['user-agent'],
+          details: {
+            daysSinceLastLogin: Math.floor(daysSinceLastLogin),
+            lastLoginDate: user.lastLogin,
+            currentLoginDate: new Date(),
+            deviceInfo,
+            browser,
+            os,
+            location
+          }
+        }).catch(err => {
+          logger.error('Failed to log login after inactivity event:', err);
+        });
+
+        logger.info(`Login after ${Math.floor(daysSinceLastLogin)} days of inactivity: ${user.username}`);
+      }
+    }
+
+    // Log successful login with location
+    user.loginHistory.push({
+      ipAddress,
+      deviceInfo,
+      location,
+      success: true,
+      timestamp: new Date()
+    });
+
+    user.lastLogin = new Date();
+
+    limitLoginHistory(user);
+    await user.save();
+
+    const isNew = isNewDevice(user, ipAddress, deviceInfo);
+    const suspicious = isSuspiciousLogin(user, ipAddress, deviceInfo, location) || loginAfterInactivity;
+
+    if (user.loginAlerts?.enabled) {
+      const loginInfo = {
+        deviceInfo,
+        browser,
+        os,
+        ipAddress,
+        location,
+        timestamp: new Date()
+      };
+
+      if (suspicious && user.loginAlerts?.emailOnSuspiciousLogin) {
+        sendSuspiciousLoginEmail(user.email, user.username, loginInfo).catch(err =>
+          logger.error('Failed to send suspicious login email:', err)
+        );
+      } else if (isNew && user.loginAlerts?.emailOnNewDevice) {
+        sendLoginAlertEmail(user.email, user.username, loginInfo).catch(err =>
+          logger.error('Failed to send login alert email:', err)
+        );
+      }
+    }
+
+    const { accessToken, refreshToken } = await createLoginSession({
+      user,
+      deviceInfo,
+      browser,
+      os,
+      ipAddress,
+      location,
+      upsert: true,
+      logLabel: `push login ${user.username}`
+    });
+
+    const cookieOptions = getRefreshTokenCookieOptions(req);
+    logger.debug('Setting refresh token cookie (push login) with options:', cookieOptions);
+    res.cookie('refreshToken', refreshToken, cookieOptions);
+
+    logger.debug(`User logged in with push approval: ${user.email} from ${ipAddress}`);
+
+    const showTour = !user.hasCompletedTour && !user.hasSkippedTour;
+
+    incCounter('auth.login.success');
+
+    res.json({
+      success: true,
+      message: 'Login successful',
+      accessToken,
+      countryCode: countryCode || location?.countryCode || null,
+      requiresSafetyCheck: pushLoginSafetyCheck,
+      user: {
+        id: user._id,
+        _id: user._id,
+        username: user.username,
+        email: user.email,
+        emailVerified: user.emailVerified || false,
+        fullName: user.fullName,
+        displayName: user.displayName,
+        nickname: user.nickname,
+        pronouns: user.pronouns,
+        customPronouns: user.customPronouns,
+        gender: user.gender,
+        customGender: user.customGender,
+        profilePhoto: user.profilePhoto,
+        coverPhoto: user.coverPhoto,
+        bio: user.bio,
+        location: user.location,
+        website: user.website,
+        socialLinks: user.socialLinks,
+        role: user.role,
+        permissions: user.permissions,
+        hasCompletedTour: user.hasCompletedTour,
+        hasSkippedTour: user.hasSkippedTour,
+        showTour
+      }
+    });
+  } catch (error) {
+    logger.error('Push login verification error:', error);
+    res.status(500).json({ message: 'Server error during push login verification' });
+  }
+});
+
 // @route   GET /api/auth/me
 // @desc    Get current user
 // @access  Private
