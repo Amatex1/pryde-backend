@@ -12,14 +12,25 @@ The frontend should call the backend **directly** on the API domain in productio
 
 ## Backend Source of Truth
 
-The checked-in Render blueprint lives at `render.yaml` and should include:
+The repo includes a Render blueprint at `render.yaml`, but the live Render dashboard service is the operational source of truth and should stay aligned with the repo.
+
+Current live backend service settings:
+
+- Branch: `main`
+- Root directory: `server`
+- Build command: `npm install && node scripts/update-version.js`
+- Start command: `node server.js`
+- Region: `singapore`
+- Public URL: `https://pryde-backend.onrender.com`
+
+Core env values that should remain consistent across docs, the dashboard, and the app:
 
 - `BASE_URL=https://pryde-backend.onrender.com`
 - `FRONTEND_URL=https://prydeapp.com`
 - `API_DOMAIN=https://api.prydeapp.com`
 - `ROOT_DOMAIN=prydeapp.com`
 
-Important: the Render dashboard remains the live source of truth for secret values.
+Important: the Render dashboard remains the live source of truth for secret values and service settings.
 
 ## Frontend Source of Truth
 
@@ -32,6 +43,16 @@ VITE_API_DOMAIN=https://api.prydeapp.com
 ```
 
 Only use `VITE_API_URL` or `VITE_SOCKET_URL` as temporary overrides.
+
+Optional media/CDN env alignment:
+
+```env
+VITE_CDN_URL=https://media.prydeapp.com
+R2_ENABLED=true
+R2_PUBLIC_URL=https://media.prydeapp.com
+```
+
+If `VITE_CDN_URL` is set in Vercel, keep it aligned with backend `R2_PUBLIC_URL` so media URLs resolve consistently.
 
 ## Recommended Deployment Flow
 
