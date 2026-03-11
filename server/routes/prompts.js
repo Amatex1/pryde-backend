@@ -19,7 +19,7 @@ const router = express.Router();
 const requireAdmin = async (req, res, next) => {
   try {
     const user = await User.findById(req.user.id).select('role');
-    if (!user || !['admin', 'superadmin'].includes(user.role)) {
+    if (!user || !['admin', 'super_admin'].includes(user.role)) {
       return res.status(403).json({ message: 'Admin access required' });
     }
     next();
