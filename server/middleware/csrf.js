@@ -1,5 +1,8 @@
 import crypto from 'crypto';
 import config from '../config/config.js';
+import { createLogger } from '../utils/logger.js';
+
+const logger = createLogger('csrf');
 
 /**
  * CSRF Protection Middleware
@@ -41,11 +44,15 @@ export const setCsrfToken = (req, res, next) => {
     res.cookie('XSRF-TOKEN', token, cookieOptions);
 
     if (config.nodeEnv === 'development') {
-      console.log('🍪 Generated new CSRF token:', token.substring(0, 10) + '...');
+      logger.debug('Generated new CSRF token', {
+        tokenPreview: `${token.substring(0, 10)}...`
+      });
     }
   } else {
     if (config.nodeEnv === 'development') {
-      console.log('✅ Reusing existing CSRF token:', token.substring(0, 10) + '...');
+      logger.debug('Reusing existing CSRF token', {
+        tokenPreview: `${token.substring(0, 10)}...`
+      });
     }
   }
 
@@ -84,7 +91,7 @@ export const verifyCsrfToken = (req, res, next) => {
 
   // In development, log CSRF attempts
   if (config.nodeEnv === 'development') {
-    console.log('🛡️ CSRF Check:', {
+    logger.debug('CSRF check', {
       method: req.method,
       path: req.path,
       hasCookie: !!cookieToken,
@@ -95,20 +102,20 @@ export const verifyCsrfToken = (req, res, next) => {
 
   // Reject if missing
   if (!cookieToken || !headerToken) {
+    const uploadRequest = req.path.includes('/upload');
+    logger.warn('CSRF token missing', {
+      method: req.method,
+      path: req.path,
+      hasCookie: !!cookieToken,
+      hasHeader: !!headerToken,
+      uploadRequest
+    });
+
     if (config.nodeEnv === 'development') {
-      console.log('❌ CSRF token missing:', {
+      logger.debug('CSRF token missing details', {
         cookieToken: cookieToken ? cookieToken.substring(0, 10) + '...' : 'MISSING',
         headerToken: headerToken ? headerToken.substring(0, 10) + '...' : 'MISSING'
       });
-
-      // DIAGNOSTIC: Special warning for upload routes
-      if (req.path.includes('/upload')) {
-        console.warn('[UPLOAD BLOCKED] CSRF middleware returned 403');
-        console.warn('[UPLOAD BLOCKED] Reason: CSRF token missing');
-        console.warn('[UPLOAD BLOCKED] Cookie present:', !!cookieToken);
-        console.warn('[UPLOAD BLOCKED] Header present:', !!headerToken);
-        console.warn('[UPLOAD BLOCKED] This is the exact cause of the 403 error');
-      }
     }
     return res.status(403).json({
       message: 'CSRF token missing',
@@ -119,20 +126,18 @@ export const verifyCsrfToken = (req, res, next) => {
 
   // Reject if mismatched
   if (cookieToken !== headerToken) {
+    const uploadRequest = req.path.includes('/upload');
+    logger.warn('CSRF token mismatch', {
+      method: req.method,
+      path: req.path,
+      uploadRequest
+    });
+
     if (config.nodeEnv === 'development') {
-      console.log('❌ CSRF token mismatch:', {
+      logger.debug('CSRF token mismatch details', {
         cookieToken: cookieToken.substring(0, 10) + '...',
         headerToken: headerToken.substring(0, 10) + '...'
       });
-
-      // DIAGNOSTIC: Special warning for upload routes
-      if (req.path.includes('/upload')) {
-        console.warn('[UPLOAD BLOCKED] CSRF middleware returned 403');
-        console.warn('[UPLOAD BLOCKED] Reason: CSRF token mismatch');
-        console.warn('[UPLOAD BLOCKED] Cookie token:', cookieToken.substring(0, 10) + '...');
-        console.warn('[UPLOAD BLOCKED] Header token:', headerToken.substring(0, 10) + '...');
-        console.warn('[UPLOAD BLOCKED] This is the exact cause of the 403 error');
-      }
     }
     return res.status(403).json({
       message: 'CSRF token mismatch',
@@ -143,7 +148,7 @@ export const verifyCsrfToken = (req, res, next) => {
 
   // Allow request if values match exactly
   if (config.nodeEnv === 'development') {
-    console.log('✅ CSRF token valid');
+    logger.debug('CSRF token valid');
   }
   next();
 };
@@ -194,11 +199,13 @@ export const enforceCsrf = (req, res, next) => {
 
   // DIAGNOSTIC: Log upload route CSRF check
   if (config.nodeEnv === 'development' && req.path.includes('/upload')) {
-    console.log('[CSRF DEBUG] Checking CSRF for upload:', req.path);
-    console.log('[CSRF DEBUG] Method:', req.method);
-    console.log('[CSRF DEBUG] Content-Type:', req.headers['content-type']);
-    console.log('[CSRF DEBUG] Has JWT Authorization:', req.headers['authorization'] ? 'Yes' : 'No');
-    console.log('[CSRF DEBUG] Has x-auth-token:', req.headers['x-auth-token'] ? 'Yes' : 'No');
+    logger.debug('CSRF upload route check', {
+      path: req.path,
+      method: req.method,
+      contentType: req.headers['content-type'],
+      hasJwtAuthorization: Boolean(req.headers['authorization']),
+      hasLegacyAuthHeader: Boolean(req.headers['x-auth-token'])
+    });
   }
 
   // For all other methods (POST, PUT, PATCH, DELETE), verify CSRF token

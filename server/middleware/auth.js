@@ -6,6 +6,9 @@ import SecurityLog from '../models/SecurityLog.js';
 import { getClientIp } from '../utils/sessionUtils.js';
 import { verifyAccessToken } from '../utils/tokenUtils.js';
 import { sendUnauthorizedError, ErrorCodes } from '../utils/errorResponse.js';
+import { createLogger } from '../utils/logger.js';
+
+const logger = createLogger('auth');
 
 const auth = async (req, res, next) => {
   try {
@@ -14,46 +17,40 @@ const auth = async (req, res, next) => {
     const authHeader = req.header('Authorization');
     const token = authHeader?.replace('Bearer ', '') || req.header('x-auth-token');
 
-    // Debug logging
-    if (config.nodeEnv === 'development') {
-      console.log('🔐 Auth middleware - Path:', req.path);
-      console.log('🔑 Token present:', token ? 'Yes' : 'No');
+    logger.debug('Auth middleware invoked', {
+      path: req.path,
+      hasToken: Boolean(token)
+    });
 
-      // Log token age if present
-      if (token) {
-        try {
-          const decoded = jwt.decode(token);
-          if (decoded && decoded.exp) {
-            const expiresIn = decoded.exp * 1000 - Date.now();
-            const minutesLeft = Math.floor(expiresIn / 1000 / 60);
-            console.log(`⏰ Token expires in: ${minutesLeft} minutes`);
-          }
-        } catch (e) {
-          // Ignore decode errors
+    if (token) {
+      try {
+        const decodedToken = jwt.decode(token);
+        if (decodedToken && decodedToken.exp) {
+          const expiresIn = decodedToken.exp * 1000 - Date.now();
+          const minutesLeft = Math.floor(expiresIn / 1000 / 60);
+          logger.debug('Access token expiry checked', { minutesLeft });
         }
+      } catch {
+        // Ignore decode errors
       }
     }
 
     if (!token) {
-      if (config.nodeEnv === 'development') {
-        console.log('❌ No token provided in Authorization header');
-        console.log('📍 Authorization header:', authHeader ? 'Present' : 'Missing');
-      }
+      logger.debug('No authentication token provided', {
+        hasAuthorizationHeader: Boolean(authHeader),
+        path: req.path
+      });
       return sendUnauthorizedError(res, 'No authentication token, access denied', ErrorCodes.UNAUTHORIZED);
     }
 
     // Verify token
     const decoded = verifyAccessToken(token);
-    if (config.nodeEnv === 'development') {
-      console.log('✅ Token decoded successfully');
-    }
+    logger.debug('Access token verified', { userId: decoded.userId });
 
     // Get user from database
     const user = await User.findById(decoded.userId).select('-password');
     if (!user) {
-      if (config.nodeEnv === 'development') {
-        console.log('❌ User not found in database');
-      }
+      logger.debug('Authenticated user not found', { userId: decoded.userId });
       return sendUnauthorizedError(res, 'User not found', ErrorCodes.UNAUTHORIZED);
     }
 
@@ -61,10 +58,11 @@ const auth = async (req, res, next) => {
     // System accounts can NEVER authenticate
     // They can only be used by admins via "Post As" functionality
     if (user.isSystemAccount === true) {
-      if (config.nodeEnv === 'development') {
-        console.log('❌ System account cannot authenticate');
-        console.log('🤖 System account:', user.username);
-      }
+      logger.debug('System account authentication blocked', {
+        userId: user._id,
+        username: user.username,
+        systemRole: user.systemRole
+      });
 
       // Log security event
       await SecurityLog.create({
@@ -88,9 +86,7 @@ const auth = async (req, res, next) => {
 
     // Check if user account is deleted
     if (user.isDeleted) {
-      if (config.nodeEnv === 'development') {
-        console.log('❌ Account has been deleted');
-      }
+      logger.debug('Deleted account denied during auth', { userId: user._id });
       return sendUnauthorizedError(res, 'Account deleted', ErrorCodes.ACCOUNT_DELETED);
     }
 
@@ -112,23 +108,23 @@ const auth = async (req, res, next) => {
         );
 
         if (!cacheHasSession) {
-          if (config.nodeEnv === 'development') {
-            console.log('❌ Session has been logged out (not found in Session collection or cache)');
-          }
+          logger.debug('Session not found in authoritative store or cache', {
+            userId: user._id,
+            sessionId: decoded.sessionId
+          });
           return sendUnauthorizedError(res, 'Session has been logged out. Please log in again.', ErrorCodes.UNAUTHORIZED);
         }
 
         // Session found in cache but not in collection - this is a legacy session
         // Allow it but log for monitoring
-        if (config.nodeEnv === 'development') {
-          console.log('⚠️ Session found in User.activeSessions cache but not in Session collection (legacy)');
-        }
+        logger.debug('Legacy session accepted from activeSessions cache', {
+          userId: user._id,
+          sessionId: decoded.sessionId
+        });
       }
     }
 
-    if (config.nodeEnv === 'development') {
-      console.log('✅ User authenticated:', user.username);
-    }
+    logger.debug('User authenticated', { userId: user._id, username: user.username });
 
     // Check age if birthday exists
     if (user.birthday) {
@@ -160,11 +156,17 @@ const auth = async (req, res, next) => {
             action: 'banned'
           });
         } catch (logError) {
-          console.error('Failed to log underage access attempt:', logError);
+          logger.error('Failed to log underage access attempt', {
+            error: logError,
+            userId: user._id,
+            path: req.path
+          });
         }
-        if (config.nodeEnv === 'development') {
-          console.log('❌ User is underage and has been banned:', user.username);
-        }
+        logger.warn('Underage user banned during authentication', {
+          userId: user._id,
+          age,
+          path: req.path
+        });
         return res.status(403).json({
           message: 'Your account has been banned. This platform is strictly 18+ only.',
           reason: 'underage'
@@ -174,17 +176,13 @@ const auth = async (req, res, next) => {
 
     // Check if user is banned
     if (user.isBanned) {
-      if (config.nodeEnv === 'development') {
-        console.log('❌ User is banned:', user.username);
-      }
+      logger.debug('Banned user denied during auth', { userId: user._id, username: user.username });
       return res.status(403).json({ message: 'Your account has been banned' });
     }
 
     // Check if user is suspended
     if (user.isSuspended && user.suspendedUntil > new Date()) {
-      if (config.nodeEnv === 'development') {
-        console.log('❌ User is suspended:', user.username);
-      }
+      logger.debug('Suspended user denied during auth', { userId: user._id, username: user.username });
       return res.status(403).json({ message: 'Your account is suspended' });
     }
 
@@ -201,9 +199,10 @@ const auth = async (req, res, next) => {
     next();
   } catch (error) {
     // 🔥 CRITICAL FIX: NEVER return 500 on auth failures - always return 401
-    if (config.nodeEnv === 'development') {
-      console.log('❌ Auth error:', error.message);
-    }
+    logger.debug('Authentication failed', {
+      name: error.name,
+      message: error.message
+    });
 
     // Determine specific error message
     let errorMessage = 'Token is not valid';

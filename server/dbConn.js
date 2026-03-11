@@ -1,5 +1,8 @@
 // server/dbConn.js
 import mongoose from "mongoose";
+import { createLogger } from './utils/logger.js';
+
+const logger = createLogger('dbConn');
 
 const connectDB = async () => {
   try {
@@ -7,11 +10,11 @@ const connectDB = async () => {
     const mongoURL = process.env.MONGO_URI || process.env.MONGO_URL || process.env.MONGODB_URI;
 
     if (!mongoURL) {
-      console.error("❌ MONGO_URL or MONGODB_URI is missing in environment variables");
+      logger.error('MONGO_URL or MONGODB_URI is missing in environment variables');
       process.exit(1);
     }
 
-    console.log("📡 Connecting to MongoDB...");
+    logger.info('Connecting to MongoDB');
 
     // OPTIMIZED: Enhanced connection options for production
     const connectionOptions = {
@@ -48,9 +51,11 @@ const connectDB = async () => {
 
     await mongoose.connect(mongoURL, connectionOptions);
 
-    console.log("✅ MongoDB Connected Successfully");
-    console.log(`📊 Connection Pool: ${connectionOptions.minPoolSize}-${connectionOptions.maxPoolSize} connections`);
-    console.log(`🔧 Environment: ${process.env.NODE_ENV || 'development'}`);
+    logger.info('MongoDB connected successfully', {
+      minPoolSize: connectionOptions.minPoolSize,
+      maxPoolSize: connectionOptions.maxPoolSize,
+      environment: process.env.NODE_ENV || 'development'
+    });
 
     // PHASE 4: Initialize core tags after DB connection
     const { initializeTags } = await import('./routes/tags.js');
@@ -61,10 +66,13 @@ const connectDB = async () => {
       const { seedAutomaticBadges } = await import('./services/autoBadgeService.js');
       const badgeResult = await seedAutomaticBadges();
       if (badgeResult.created > 0) {
-        console.log(`🏅 Badges seeded: ${badgeResult.created} created, ${badgeResult.existing} existing`);
+        logger.info('Automatic badges seeded', {
+          created: badgeResult.created,
+          existing: badgeResult.existing
+        });
       }
     } catch (badgeError) {
-      console.warn("⚠️ Badge seeding skipped:", badgeError.message);
+      logger.warn('Badge seeding skipped', { message: badgeError.message });
     }
 
     // 🔧 FIX: Drop legacy token_1 index on sessions collection (one-time cleanup)
@@ -77,17 +85,17 @@ const connectDB = async () => {
         const hasLegacyTokenIndex = indexes.some(idx => idx.name === 'token_1');
         if (hasLegacyTokenIndex) {
           await db.collection('sessions').dropIndex('token_1');
-          console.log('🔧 Dropped legacy token_1 index from sessions collection');
+          logger.info('Dropped legacy token_1 index from sessions collection');
         }
       }
     } catch (indexError) {
       // Ignore if index doesn't exist or other errors
       if (indexError.code !== 27 && indexError.codeName !== 'IndexNotFound') {
-        console.warn("⚠️ Index cleanup skipped:", indexError.message);
+        logger.warn('Index cleanup skipped', { message: indexError.message });
       }
     }
   } catch (error) {
-    console.error("❌ MongoDB connection error:", error);
+    logger.error('MongoDB connection error', error);
     process.exit(1);
   }
 };

@@ -14,7 +14,7 @@ import { checkMessagingPermission, checkBlocked } from '../middleware/privacy.js
 import { checkMuted, moderateContent } from '../middleware/moderation.js';
 import { guardSendDM } from '../middleware/systemAccountGuard.js';
 import { validateParamId } from '../middleware/validation.js';
-import { sanitizeFields } from '../utils/sanitize.js';
+import { sanitizeFields } from '../middleware/sanitize.js';
 import logger from '../utils/logger.js';
 import { emitNotificationCreated } from '../utils/notificationEmitter.js';
 import { sendPushNotification } from './pushNotifications.js';
@@ -701,7 +701,7 @@ router.post('/', auth, requireActiveUser, requireEmailVerification, messageLimit
 
 // Edit a message
 // 🔥 CRITICAL: validateParamId blocks temp_* optimistic IDs and validates ObjectId format
-router.put('/:id', auth, requireActiveUser, validateParamId('id'), async (req, res) => {
+router.put('/:id', auth, requireActiveUser, validateParamId('id'), sanitizeFields(['content']), async (req, res) => {
   try {
     const { content } = req.body;
 

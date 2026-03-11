@@ -18,12 +18,14 @@ import mongoose from 'mongoose';
 import { getUserStabilityReport } from '../utils/stabilityScore.js';
 import { processUserBadgesById } from '../services/autoBadgeService.js';
 import { hasBlocked } from '../utils/blockHelper.js';
-import logger from '../utils/logger.js';
+import { createLogger } from '../utils/logger.js';
 import { escapeRegex } from '../utils/sanitize.js';
 import { sendAccountDeletionEmail } from '../utils/emailService.js';
 import { encryptObject, decryptObject } from '../utils/encryption.js';
 import { calculateTrustScore } from '../utils/trustScore.js';
 import { getTrustLevel } from '../utils/trustLevel.js';
+
+const logger = createLogger('users');
 
 /**
  * Helper to resolve badge IDs to full badge objects
@@ -117,7 +119,7 @@ router.get('/search', auth, searchLimiter, cacheShort, async (req, res) => {
 
     res.json(users);
   } catch (error) {
-    console.error('Search error:', error);
+    logger.error('Search users error', { userId: req.userId, query: req.query?.q, error });
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -250,26 +252,31 @@ router.get('/suggested', auth, cacheMedium, async (req, res) => {
 
     let suggestedUsers = await User.aggregate(pipeline);
 
-    // Debug logging
-    console.log('🔍 Suggested users debug:');
-    console.log('  - Current user:', req.userId);
-    console.log('  - Excluded IDs count:', excludeIds.length);
-    console.log('  - Suggested users found:', suggestedUsers.length);
+    logger.debug('Suggested users query completed', {
+      userId: req.userId,
+      excludedIdCount: excludeIds.length,
+      suggestedCount: suggestedUsers.length
+    });
 
     // If no suggestions found, return random users (fallback)
     if (suggestedUsers.length === 0) {
-      console.log('  - No scored matches, fetching random users...');
+      logger.debug('No scored suggested users found, falling back to recent users', {
+        userId: req.userId
+      });
       suggestedUsers = await User.find(matchCriteria)
         .select('username displayName profilePhoto coverPhoto bio interests city sexualOrientation')
         .sort({ createdAt: -1 })
         .limit(20);
 
-      console.log('  - Random users found:', suggestedUsers.length);
+      logger.debug('Suggested users fallback completed', {
+        userId: req.userId,
+        suggestedCount: suggestedUsers.length
+      });
     }
 
     res.json(suggestedUsers);
   } catch (error) {
-    console.error('Suggested users error:', error);
+    logger.error('Suggested users error', { userId: req.userId, error });
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -305,21 +312,21 @@ router.get('/verification-status', auth, (req, res) => {
 router.get('/download-data', auth, async (req, res) => {
   try {
     const userId = req.userId;
-    console.log('📥 Download data request for user:', userId);
+    logger.debug('Download data request received', { userId });
 
     // Fetch user data
     const user = await User.findById(userId).select('-password').lean();
 
     if (!user) {
-      console.log('❌ User not found:', userId);
+      logger.warn('Download data requested for missing user', { userId });
       return res.status(404).json({ message: 'User not found' });
     }
 
-    console.log('✅ User found:', user.username);
-    console.log('📊 User object keys:', Object.keys(user));
-
     // Initialize data object with safe field access
-    console.log('📝 Building user profile data...');
+    logger.debug('Building user data export payload', {
+      userId,
+      username: user.username
+    });
 
     let userData;
     try {
@@ -354,9 +361,11 @@ router.get('/download-data', auth, async (req, res) => {
         notifications: [],
         exportDate: new Date().toISOString()
       };
-      console.log('✅ Profile data built successfully');
     } catch (profileError) {
-      console.error('❌ Error building profile data:', profileError);
+      logger.error('Failed to build profile data for export', {
+        userId,
+        error: profileError
+      });
       throw new Error('Failed to build profile data: ' + profileError.message);
     }
 
@@ -365,13 +374,18 @@ router.get('/download-data', auth, async (req, res) => {
       if (Post) {
         const posts = await Post.find({ author: userId }).lean();
         userData.posts = posts || [];
-        console.log('✅ Posts fetched:', posts?.length || 0);
+        logger.debug('Fetched posts for export', {
+          userId,
+          count: posts?.length || 0
+        });
       } else {
-        console.log('⚠️ Post model not available');
+        logger.warn('Post model unavailable during data export', { userId });
       }
     } catch (err) {
-      console.log('⚠️ Error fetching posts:', err.message);
-      console.error('⚠️ Posts error stack:', err.stack);
+      logger.warn('Failed to fetch posts for data export', {
+        userId,
+        error: err.message
+      });
       userData.posts = [];
     }
 
@@ -383,13 +397,18 @@ router.get('/download-data', auth, async (req, res) => {
         });
         // Convert to JSON to trigger decryption (don't use .lean())
         userData.messages = messages.map(msg => msg.toJSON()) || [];
-        console.log('✅ Messages fetched:', messages?.length || 0);
+        logger.debug('Fetched messages for export', {
+          userId,
+          count: messages?.length || 0
+        });
       } else {
-        console.log('⚠️ Message model not available');
+        logger.warn('Message model unavailable during data export', { userId });
       }
     } catch (err) {
-      console.log('⚠️ Error fetching messages:', err.message);
-      console.error('⚠️ Messages error stack:', err.stack);
+      logger.warn('Failed to fetch messages for data export', {
+        userId,
+        error: err.message
+      });
       userData.messages = [];
     }
 
@@ -400,13 +419,18 @@ router.get('/download-data', auth, async (req, res) => {
           $or: [{ sender: userId }, { receiver: userId }]
         }).lean();
         userData.friendRequests = friendRequests || [];
-        console.log('✅ Friend requests fetched:', friendRequests?.length || 0);
+        logger.debug('Fetched friend requests for export', {
+          userId,
+          count: friendRequests?.length || 0
+        });
       } else {
-        console.log('⚠️ FriendRequest model not available');
+        logger.warn('FollowRequest model unavailable during data export', { userId });
       }
     } catch (err) {
-      console.log('⚠️ Error fetching friend requests:', err.message);
-      console.error('⚠️ Friend requests error stack:', err.stack);
+      logger.warn('Failed to fetch friend requests for data export', {
+        userId,
+        error: err.message
+      });
       userData.friendRequests = [];
     }
 
@@ -415,13 +439,18 @@ router.get('/download-data', auth, async (req, res) => {
       if (GroupChat) {
         const groupChats = await GroupChat.find({ members: userId }).lean();
         userData.groupChats = groupChats || [];
-        console.log('✅ Group chats fetched:', groupChats?.length || 0);
+        logger.debug('Fetched group chats for export', {
+          userId,
+          count: groupChats?.length || 0
+        });
       } else {
-        console.log('⚠️ GroupChat model not available');
+        logger.warn('GroupChat model unavailable during data export', { userId });
       }
     } catch (err) {
-      console.log('⚠️ Error fetching group chats:', err.message);
-      console.error('⚠️ Group chats error stack:', err.stack);
+      logger.warn('Failed to fetch group chats for data export', {
+        userId,
+        error: err.message
+      });
       userData.groupChats = [];
     }
 
@@ -430,18 +459,23 @@ router.get('/download-data', auth, async (req, res) => {
       if (Notification) {
         const notifications = await Notification.find({ recipient: userId }).lean();
         userData.notifications = notifications || [];
-        console.log('✅ Notifications fetched:', notifications?.length || 0);
+        logger.debug('Fetched notifications for export', {
+          userId,
+          count: notifications?.length || 0
+        });
       } else {
-        console.log('⚠️ Notification model not available');
+        logger.warn('Notification model unavailable during data export', { userId });
       }
     } catch (err) {
-      console.log('⚠️ Error fetching notifications:', err.message);
-      console.error('⚠️ Notifications error stack:', err.stack);
+      logger.warn('Failed to fetch notifications for data export', {
+        userId,
+        error: err.message
+      });
       userData.notifications = [];
     }
 
-    console.log('✅ Data compiled successfully, sending response');
-    console.log('📊 Data summary:', {
+    logger.debug('Data export compiled successfully', {
+      userId,
       posts: userData.posts.length,
       messages: userData.messages.length,
       friendRequests: userData.friendRequests.length,
@@ -451,10 +485,12 @@ router.get('/download-data', auth, async (req, res) => {
 
     res.json(userData);
   } catch (error) {
-    console.error('❌ Download data error:', error);
-    console.error('❌ Error message:', error.message);
-    console.error('❌ Error stack:', error.stack);
-    console.error('❌ Error name:', error.name);
+    logger.error('Download data error', {
+      userId: req.userId,
+      name: error.name,
+      message: error.message,
+      stack: error.stack
+    });
     res.status(500).json({
       message: 'Server error',
       error: error.message,
@@ -567,7 +603,11 @@ router.get('/:identifier', auth, checkProfileVisibility, async (req, res) => {
 
     res.json(sanitizedUser);
   } catch (error) {
-    console.error('Get user error:', error);
+    logger.error('Get user error', {
+      userId: req.userId,
+      identifier: req.params.identifier,
+      error
+    });
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -719,12 +759,12 @@ router.put('/profile', auth, requireActiveUser, sanitizeFields([
           badges: user.badges
         }
       });
-      console.log(`📡 Emitted profile:updated to user_${user._id}`);
+      logger.debug('Emitted profile updated event', { userId: user._id.toString() });
     }
 
     res.json({ user });
   } catch (error) {
-    console.error('Update profile error:', error);
+    logger.error('Update profile error', { userId: req.userId, error });
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -777,7 +817,7 @@ router.put('/photo-position', auth, requireActiveUser, async (req, res) => {
       position: type === 'profile' ? user.profilePhotoPosition : user.coverPhotoPosition
     });
   } catch (error) {
-    console.error('Update photo position error:', error);
+    logger.error('Update photo position error', { userId: req.userId, error });
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -914,7 +954,7 @@ router.get('/me/stability', auth, async (req, res) => {
     const report = getUserStabilityReport(req.userId);
     res.json(report);
   } catch (error) {
-    console.error('Get stability score error:', error);
+    logger.error('Get stability score error', { userId: req.userId, error });
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
@@ -949,7 +989,7 @@ router.get('/me/trust', auth, async (req, res) => {
       lastUpdated: user.trustScoreLastUpdated
     });
   } catch (error) {
-    console.error('Get trust level error:', error);
+    logger.error('Get trust level error', { userId: req.userId, error });
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
@@ -994,7 +1034,10 @@ router.put('/deactivate', auth, async (req, res) => {
         const sockets = await io.fetchSockets();
         for (const socket of sockets) {
           if (socket.userId === user._id.toString()) {
-            console.log(`🔌 Force disconnecting socket for deactivated user ${user._id}`);
+            logger.debug('Force disconnecting socket for deactivated user', {
+              userId: user._id.toString(),
+              socketId: socket.id
+            });
             socket.emit('force_logout', {
               reason: 'Account deactivated',
               final: true
@@ -1003,7 +1046,10 @@ router.put('/deactivate', auth, async (req, res) => {
           }
         }
       } catch (socketError) {
-        console.error('Socket disconnect error (non-critical):', socketError);
+        logger.warn('Socket disconnect error during account deactivation', {
+          userId: user._id.toString(),
+          error: socketError.message
+        });
       }
 
       // Emit real-time event for user deactivation (for admin panel)
@@ -1019,7 +1065,7 @@ router.put('/deactivate', auth, async (req, res) => {
 
     res.json({ message: 'Account deactivated successfully' });
   } catch (error) {
-    console.error('Deactivate account error:', error);
+    logger.error('Deactivate account error', { userId: req.userId, error });
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -1064,7 +1110,7 @@ router.put('/reactivate', auth, async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Reactivate account error:', error);
+    logger.error('Reactivate account error', { userId: req.userId, error });
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -1072,7 +1118,7 @@ router.put('/reactivate', auth, async (req, res) => {
 // @route   POST /api/users/account/delete-request
 // @desc    Request account deletion — requires password confirmation, then sends email token
 // @access  Private
-router.post('/account/delete-request', auth, requireActiveUser, deletionIPLimiter, deletionUserLimiter, async (req, res) => {
+router.post('/account/delete-request', auth, requireActiveUser, deletionIPLimiter, deletionUserLimiter, sanitizeFields(['reason', 'message']), async (req, res) => {
   try {
     const { password, reason, message } = req.body;
     const userId = req.userId;
@@ -1115,7 +1161,10 @@ router.post('/account/delete-request', auth, requireActiveUser, deletionIPLimite
     const emailResult = await sendAccountDeletionEmail(user.email, user.username, deletionToken);
 
     if (!emailResult.success) {
-      console.warn('Failed to send deletion email, but token saved:', emailResult.error);
+      logger.warn('Failed to send deletion email, token saved for retry/recovery', {
+        userId,
+        error: emailResult.error
+      });
       // Don't fail the request - token is saved, user can still confirm via other means
     }
 
@@ -1124,7 +1173,7 @@ router.post('/account/delete-request', auth, requireActiveUser, deletionIPLimite
       expiresIn: '24 hours'
     });
   } catch (error) {
-    console.error('Delete request error:', error);
+    logger.error('Delete request error', { userId: req.userId, error });
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -1205,7 +1254,10 @@ router.post('/account/delete-confirm', deletionIPLimiter, async (req, res) => {
         const sockets = await io.fetchSockets();
         for (const socket of sockets) {
           if (socket.userId === user._id.toString()) {
-            console.log(`🔌 Force disconnecting socket for deleted user ${user._id}`);
+            logger.debug('Force disconnecting socket for deleted user', {
+              userId: user._id.toString(),
+              socketId: socket.id
+            });
             socket.emit('force_logout', {
               reason: 'Account deleted',
               final: true
@@ -1214,7 +1266,10 @@ router.post('/account/delete-confirm', deletionIPLimiter, async (req, res) => {
           }
         }
       } catch (socketError) {
-        console.error('Socket disconnect error (non-critical):', socketError);
+        logger.warn('Socket disconnect error during account deletion', {
+          userId: user._id.toString(),
+          error: socketError.message
+        });
       }
 
       // Emit real-time event for user deletion (for admin panel)
@@ -1248,7 +1303,7 @@ router.post('/account/delete-confirm', deletionIPLimiter, async (req, res) => {
       recoveryDeadline: user.deletionScheduledFor
     });
   } catch (error) {
-    console.error('Delete confirm error:', error);
+    logger.error('Delete confirm error', { error, tokenPresent: Boolean(req.body?.token) });
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -1358,7 +1413,7 @@ router.post('/account/recover', async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Account recovery error:', error);
+    logger.error('Account recovery error', { error, email: req.body?.email });
     res.status(500).json({ message: 'Server error' });
   }
 });

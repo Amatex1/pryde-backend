@@ -3,8 +3,11 @@ const router = express.Router();
 import Report from '../models/Report.js';
 import auth from '../middleware/auth.js';
 import { reportLimiter } from '../middleware/rateLimiter.js';
-import { sanitizeFields } from '../utils/sanitize.js';
+import { sanitizeFields } from '../middleware/sanitize.js';
 import { validateParamId } from '../middleware/validation.js';
+import { createLogger } from '../utils/logger.js';
+
+const logger = createLogger('reports');
 
 // @route   POST /api/reports
 // @desc    Create a new report
@@ -57,7 +60,7 @@ router.post('/', auth, reportLimiter, sanitizeFields(['description', 'reason']),
       report 
     });
   } catch (error) {
-    console.error('Create report error:', error);
+    logger.error('Create report error', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -76,7 +79,7 @@ router.get('/my-reports', auth, async (req, res) => {
 
     res.json(reports);
   } catch (error) {
-    console.error('Get reports error:', error);
+    logger.error('Get reports error', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -102,7 +105,7 @@ router.get('/:id', auth, validateParamId('id'), async (req, res) => {
 
     res.json(report);
   } catch (error) {
-    console.error('Get report error:', error);
+    logger.error('Get report error', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -132,7 +135,7 @@ router.delete('/:id', auth, validateParamId('id'), async (req, res) => {
 
     res.json({ message: 'Report cancelled successfully' });
   } catch (error) {
-    console.error('Delete report error:', error);
+    logger.error('Delete report error', error);
     res.status(500).json({ message: 'Server error' });
   }
 });

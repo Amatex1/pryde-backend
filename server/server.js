@@ -1,4 +1,5 @@
 import dotenv from "dotenv";
+import logger, { pinoLogger } from "./utils/logger.js";
 dotenv.config();
 
 // Sentry must be initialised early, before other app code
@@ -8,14 +9,15 @@ initSentry();
 // Build: 2025-12-27-v1 (GitHub Action deploy test)
 // Only log in development
 if (process.env.NODE_ENV === 'development') {
-  console.log('🔐 JWT_SECRET from env:', process.env.JWT_SECRET ? 'Set' : 'Not set');
+  logger.info('JWT secret environment status', {
+    configured: Boolean(process.env.JWT_SECRET)
+  });
 }
 
 import express from "express";
 import cors from "cors";
 import http from "http";
 import { initRedis } from "./utils/redisInit.js";
-import logger, { pinoLogger } from "./utils/logger.js";
 import pinoHttp from 'pino-http';
 import mongoose from "mongoose";
 import helmet from "helmet";
@@ -97,17 +99,17 @@ let redisClient = null;
   // Initialize feed cache (uses same Redis connection)
   const feedCacheReady = await initFeedCache();
   if (feedCacheReady) {
-    console.log('✅ Feed cache initialized with Redis');
+    logger.info('Feed cache initialized with Redis');
   } else {
-    console.log('⚠️ Feed cache initialized with in-memory fallback');
+    logger.warn('Feed cache initialized with in-memory fallback');
   }
   
   // Initialize R2 storage (Cloudflare R2 for media)
   const r2Ready = await initR2();
   if (r2Ready) {
-    console.log('✅ R2 storage initialized (Cloudflare R2)');
+    logger.info('R2 storage initialized (Cloudflare R2)');
   } else {
-    console.log('⚠️ R2 not configured - using GridFS fallback for media storage');
+    logger.warn('R2 not configured - using GridFS fallback for media storage');
   }
 
   // Initialize BullMQ job queues (requires Redis)
@@ -115,9 +117,9 @@ let redisClient = null;
     const queuesReady = initQueues();
     if (queuesReady) {
       startWorkers();
-      console.log('✅ BullMQ job queues and workers started');
+      logger.info('BullMQ job queues and workers started');
     } else {
-      console.log('⚠️ BullMQ queues disabled (Redis not configured)');
+      logger.warn('BullMQ queues disabled (Redis not configured)');
     }
   }
 })();
@@ -125,19 +127,19 @@ let redisClient = null;
 // Connect to DB (skip auto-connect during tests to avoid double connections)
 if (!isTest) {
   connectDB(config.mongoURI).then(() => {
-    console.log('✅ Database connection ready for operations');
+    logger.info('Database connection ready for operations');
   }).catch((err) => {
-    console.error('❌ Failed to connect to MongoDB:', err);
+    logger.error('Failed to connect to MongoDB', err);
     process.exit(1);
   });
 
   // Add connection event listeners
   mongoose.connection.on('disconnected', () => {
-    console.error('🚨 MongoDB disconnected unexpectedly!');
+    logger.error('MongoDB disconnected unexpectedly');
   });
 
   mongoose.connection.on('error', (err) => {
-    console.error('🚨 MongoDB error:', err);
+    logger.error('MongoDB error', err);
   });
 }
 
@@ -145,15 +147,22 @@ if (!isTest) {
 const initializeServer = async () => {
   // Wait for database connection before starting server (prevents race condition)
   if (!isTest) {
-    console.log('⏳ Waiting for database connection...');
+    logger.info('Waiting for database connection');
+    let lastReadyState = null;
 
     // Wait for mongoose connection to be fully ready (readyState === 1)
     while (mongoose.connection.readyState !== 1) {
-      console.log(`⏳ DB connection state: ${mongoose.connection.readyState} (waiting for 1)`);
+      if (mongoose.connection.readyState !== lastReadyState) {
+        lastReadyState = mongoose.connection.readyState;
+        logger.info('Database connection not ready yet', {
+          readyState: mongoose.connection.readyState,
+          waitingFor: 1
+        });
+      }
       await new Promise(resolve => setTimeout(resolve, 500)); // Check every 500ms
     }
 
-    console.log('✅ Database connected and ready for operations, starting server...');
+    logger.info('Database connected and ready for operations, starting server');
   }
 };
 
@@ -234,7 +243,7 @@ const corsOptions = {
     }
 
     // Block all other origins
-    console.log(`CORS blocked origin: ${origin}`);
+    logger.warn('CORS blocked origin', { origin });
     callback(new Error('Not allowed by CORS'));
   },
   credentials: true,
@@ -292,6 +301,12 @@ if (config.nodeEnv === 'production') {
 // Security middleware - Helmet for security headers
 // CSP is ENFORCED in production, report-only in development
 const isProd = config.nodeEnv === 'production';
+const cspScriptSrc = isProd
+  ? ["'self'", 'blob:']
+  : ["'self'", "'unsafe-inline'", "'unsafe-eval'", 'blob:'];
+const cspScriptSrcElem = isProd
+  ? ["'self'", 'blob:']
+  : ["'self'", "'unsafe-inline'", 'blob:'];
 
 // Build dynamic CSP connect-src based on configured API domain
 const getConnectSrc = () => {
@@ -342,8 +357,8 @@ app.use(helmet({
     reportOnly: !isProd, // Enforce in production, report-only in dev
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "blob:"], // unsafe-* needed for React, blob: for Workbox
-      scriptSrcElem: ["'self'", "'unsafe-inline'", "blob:"], // For Workbox service worker
+      scriptSrc: cspScriptSrc,
+      scriptSrcElem: cspScriptSrcElem,
       styleSrc: ["'self'", "'unsafe-inline'"],
       imgSrc: ["'self'", "data:", "blob:", "https://media.tenor.com", "https://*.tenor.com"],
       connectSrc: getConnectSrc(),
@@ -373,7 +388,11 @@ app.use(mongoSanitize({
   replaceWith: '_',
   onSanitize: ({ req, key }) => {
     if (config.nodeEnv === 'development') {
-      console.warn(`⚠️ Sanitized key: ${key}`);
+      logger.debug('Mongo sanitize adjusted request key', {
+        key,
+        path: req?.path,
+        method: req?.method
+      });
     }
   },
 }));
@@ -429,7 +448,7 @@ app.use((req, res, next) => {
 // This prevents "Client must be connected before running operations" errors
 const requireDatabaseReady = (req, res, next) => {
   if (mongoose.connection.readyState !== 1) {
-    console.error('❌ Database not ready - rejecting request:', {
+    logger.warn('Database not ready - rejecting request', {
       path: req.path,
       method: req.method,
       readyState: mongoose.connection.readyState
@@ -548,13 +567,13 @@ if (shouldStartHttpServer) {
     if (process.env.ENABLE_AUTO_BACKUP === 'true') {
       try {
         startDailyBackupService();
-        console.log('✅ Daily backup system started (3:00 AM UTC, 30-day retention)');
+        logger.info('Daily backup system started (3:00 AM UTC, 30-day retention)');
       } catch (err) {
-        console.error('❌ Failed to start backup system:', err);
+        logger.error('Failed to start backup system', err);
       }
     } else {
-      console.log('ℹ️  Automatic backups disabled (set ENABLE_AUTO_BACKUP=true to enable)');
-      console.log('ℹ️  For manual backups: npm run backup');
+      logger.info('Automatic backups disabled (set ENABLE_AUTO_BACKUP=true to enable)');
+      logger.info('Manual backups available via npm run backup');
     }
 
     // ========================================
@@ -569,7 +588,7 @@ if (shouldStartHttpServer) {
     // - Never crashes the process (best-effort operation)
     //
     if (process.env.NODE_ENV === 'test') {
-      console.log('[Cleanup] Disabled in test environment');
+      logger.info('[Cleanup] Disabled in test environment');
     } else {
       try {
         // Run cleanup on startup (after 5 minutes to allow server to stabilize)
@@ -578,10 +597,10 @@ if (shouldStartHttpServer) {
           cleanupTempMedia()
             .then(result => {
               if (!result.skipped) {
-                console.log('🧹 Initial temp media cleanup:', result);
+                logger.info('Initial temp media cleanup complete', result);
               }
             })
-            .catch(err => console.error('❌ Temp media cleanup failed:', err));
+            .catch(err => logger.error('Temp media cleanup failed', err));
         }, 5 * 60 * 1000); // 5 minutes after startup
 
         // Run cleanup every hour
@@ -590,15 +609,15 @@ if (shouldStartHttpServer) {
           cleanupTempMedia()
             .then(result => {
               if (!result.skipped && result.deleted > 0) {
-                console.log('🧹 Hourly temp media cleanup:', result);
+                logger.info('Hourly temp media cleanup complete', result);
               }
             })
-            .catch(err => console.error('❌ Temp media cleanup failed:', err));
+            .catch(err => logger.error('Temp media cleanup failed', err));
         }, 60 * 60 * 1000); // Every hour
 
-        console.log('🧹 Temp media cleanup scheduled (hourly, cleans uploads older than 60 min)');
+        logger.info('Temp media cleanup scheduled (hourly, cleans uploads older than 60 min)');
       } catch (err) {
-        console.error('❌ Failed to start temp media cleanup:', err);
+        logger.error('Failed to start temp media cleanup', err);
       }
     }
 
@@ -614,20 +633,20 @@ if (shouldStartHttpServer) {
     // - Idempotent (safe to restart)
     //
     if (process.env.NODE_ENV === 'test') {
-      console.log('[SystemPrompts] Disabled in test environment');
+      logger.info('[SystemPrompts] Disabled in test environment');
     } else {
       // Seed system account and prompts (idempotent)
       seedSystemPrompts()
         .then(result => {
-          console.log('[SystemPrompts] ✅ System setup complete:', result);
+          logger.info('[SystemPrompts] System setup complete', result);
         })
-        .catch(err => console.error('[SystemPrompts] ❌ Seed failed:', err));
+        .catch(err => logger.error('[SystemPrompts] Seed failed', err));
 
       try {
         startSystemPromptScheduler();
-        console.log('[SystemPrompts] 🕐 Scheduler started (posts daily at 10:00 AM UTC)');
+        logger.info('[SystemPrompts] Scheduler started (posts daily at 10:00 AM UTC)');
       } catch (err) {
-        console.error('[SystemPrompts] ❌ Failed to start scheduler:', err);
+        logger.error('[SystemPrompts] Failed to start scheduler', err);
       }
 
       // ========================================
@@ -637,9 +656,9 @@ if (shouldStartHttpServer) {
       // Prevents badge flapping for active_this_month and similar badges
       try {
         startBadgeSweepScheduler();
-        console.log('[BadgeSweep] 🕐 Scheduler started (runs daily at 04:00 UTC)');
+        logger.info('[BadgeSweep] Scheduler started (runs daily at 04:00 UTC)');
       } catch (err) {
-        console.error('[BadgeSweep] ❌ Failed to start scheduler:', err);
+        logger.error('[BadgeSweep] Failed to start scheduler', err);
       }
 
       // ========================================
@@ -649,9 +668,9 @@ if (shouldStartHttpServer) {
       // Different from System Prompts (which are public feed posts)
       seedReflectionPrompts()
         .then(result => {
-          console.log('[ReflectionPrompts] ✅ Seed complete:', result);
+          logger.info('[ReflectionPrompts] Seed complete', result);
         })
-        .catch(err => console.error('[ReflectionPrompts] ❌ Seed failed:', err));
+        .catch(err => logger.error('[ReflectionPrompts] Seed failed', err));
 
       // ========================================
       // DAILY DATA CLEANUP (Account Deletion, Notifications, etc.)
@@ -660,15 +679,15 @@ if (shouldStartHttpServer) {
       // This ensures deleted accounts are permanently removed after 30 days
       // Schedule daily cleanup at 02:00 UTC
       cron.schedule('0 2 * * *', async () => {
-        console.log('[Cleanup] 🕐 Running daily data cleanup...');
+        logger.info('[Cleanup] Running daily data cleanup');
         try {
           await cleanupOldData();
-          console.log('[Cleanup] ✅ Daily cleanup completed successfully');
+          logger.info('[Cleanup] Daily cleanup completed successfully');
         } catch (err) {
-          console.error('[Cleanup] ❌ Daily cleanup failed:', err);
+          logger.error('[Cleanup] Daily cleanup failed', err);
         }
       });
-      console.log('[Cleanup] 🕐 Daily cleanup job scheduled (runs at 02:00 UTC)');
+      logger.info('[Cleanup] Daily cleanup job scheduled (runs at 02:00 UTC)');
 
       // ========================================
       // PERMANENT ACCOUNT DELETION JOB
@@ -693,12 +712,12 @@ if (shouldStartHttpServer) {
       seedFoundingMemberBadge()
         .then(result => {
           if (result.assigned > 0) {
-            console.log(`[FoundingMember] 🌟 Assigned badge to ${result.assigned} new founding members`);
+            logger.info(`[FoundingMember] Assigned badge to ${result.assigned} new founding members`);
           } else {
-            console.log('[FoundingMember] ✅ All founding members already have badge');
+            logger.info('[FoundingMember] All founding members already have badge');
           }
         })
-        .catch(err => console.error('[FoundingMember] ❌ Seed failed:', err));
+        .catch(err => logger.error('[FoundingMember] Seed failed', err));
 
       // ========================================
       // WEEKLY DIGEST EMAIL JOB
@@ -784,7 +803,7 @@ if (shouldStartHttpServer) {
     }
     });
   }).catch((err) => {
-    console.error('❌ Failed to initialize server:', err);
+    logger.error('Failed to initialize server', err);
     process.exit(1);
   });
 } else if (isTest) {

@@ -48,8 +48,7 @@ const initializeRedis = async () => {
     }
 
     await redisClient.connect();
-    console.log('✅ Redis connected for rate limiting');
-    logger.info('✅ Redis connected for rate limiting');
+    logger.info('Redis connected for rate limiting');
     redisClient.on('error', (err) => {
       logger.error('Redis error:', err);
     });
@@ -66,7 +65,7 @@ await initializeRedis();
 // PART 7: In production, Redis is required for distributed rate limiting.
 // In-memory fallback is NOT safe for multi-instance deployments.
 if (process.env.NODE_ENV === 'production' && !redisClient) {
-  console.error('FATAL: Redis is required in production for distributed rate limiting. Set REDIS_URL and ensure Redis is reachable. Exiting.');
+  logger.error('Redis is required in production for distributed rate limiting. Set REDIS_URL and ensure Redis is reachable. Exiting.');
   process.exit(1);
 }
 

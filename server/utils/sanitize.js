@@ -1,4 +1,7 @@
 import xss from 'xss';
+import { createLogger } from './logger.js';
+
+const logger = createLogger('sanitize');
 
 /**
  * XSS sanitization utility
@@ -29,13 +32,13 @@ const xssOptions = {
   onIgnoreTag: (tag, html, options) => {
     // Log ignored tags in development
     if (process.env.NODE_ENV === 'development') {
-      console.warn(`⚠️ XSS: Removed tag: ${tag}`);
+      logger.debug('XSS removed tag', { tag });
     }
   },
   onIgnoreTagAttr: (tag, name, value, isWhiteAttr) => {
     // Log ignored attributes in development
     if (process.env.NODE_ENV === 'development' && !isWhiteAttr) {
-      console.warn(`⚠️ XSS: Removed attribute: ${name} from ${tag}`);
+      logger.debug('XSS removed attribute', { tag, name });
     }
   }
 };

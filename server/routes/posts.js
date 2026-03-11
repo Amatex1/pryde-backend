@@ -17,7 +17,7 @@ import { cacheShort, cacheMedium } from '../middleware/caching.js';
 import { postLimiter, commentLimiter, reactionLimiter } from '../middleware/rateLimiter.js';
 import { checkMuted, moderateContent, checkProbation } from '../middleware/moderation.js';
 import { guardComment, guardReply, guardReact } from '../middleware/systemAccountGuard.js';
-import { sanitizeFields } from '../utils/sanitize.js';
+import { sanitizeFields } from '../middleware/sanitize.js';
 import { sendPushNotification } from './pushNotifications.js';
 import logger from '../utils/logger.js';
 import { getBlockedUserIds } from '../utils/blockHelper.js';
@@ -1382,7 +1382,7 @@ router.post('/:id/comment/:commentId/reply', auth, requireActiveUser, commentLim
 // @route   PUT /api/posts/:id/comment/:commentId
 // @desc    Edit a comment on a post
 // @access  Private
-router.put('/:id/comment/:commentId', auth, requireActiveUser, async (req, res) => {
+router.put('/:id/comment/:commentId', auth, requireActiveUser, sanitizeFields(['content']), async (req, res) => {
   try {
     const { content } = req.body;
 

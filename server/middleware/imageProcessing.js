@@ -1,5 +1,8 @@
 import sharp from 'sharp';
 import { Readable } from 'stream';
+import { createLogger } from '../utils/logger.js';
+
+const logger = createLogger('imageProcessing');
 
 /**
  * Process and optimize uploaded images
@@ -101,11 +104,15 @@ export const stripExifData = async (imageBuffer, mimetype, options = {}) => {
     const newSize = processedBuffer.length;
     const savings = Math.round((1 - newSize / originalSize) * 100);
 
-    console.log(`✅ Image optimized: ${Math.round(originalSize / 1024)}KB → ${Math.round(newSize / 1024)}KB (${savings}% smaller)`);
+    logger.debug('Image optimized', {
+      originalKb: Math.round(originalSize / 1024),
+      optimizedKb: Math.round(newSize / 1024),
+      savingsPercent: savings
+    });
 
     return { buffer: processedBuffer, mimetype: newMimetype, sizes };
   } catch (error) {
-    console.error('❌ Error processing image:', error);
+    logger.error('Error processing image', error);
     return { buffer: imageBuffer, mimetype };
   }
 };
@@ -164,11 +171,14 @@ export const generateResponsiveSizes = async (imageBuffer, mimetype, quality = 8
       medium: { webp: mediumWebP }
     };
 
-    console.log(`✅ Responsive sizes: small (${Math.round(smallWebP.length / 1024)}KB), medium (${Math.round(mediumWebP.length / 1024)}KB)`);
+    logger.debug('Responsive image sizes generated', {
+      smallKb: Math.round(smallWebP.length / 1024),
+      mediumKb: Math.round(mediumWebP.length / 1024)
+    });
 
     return result;
   } catch (error) {
-    console.error('❌ Error generating responsive sizes:', error);
+    logger.error('Error generating responsive sizes', error);
     return null;
   }
 };
@@ -192,10 +202,12 @@ export const processUploadedImage = async (req, res, next) => {
       return next();
     }
 
-    console.log('🔒 Processing and optimizing image...');
-
     // Get the file buffer
     const originalBuffer = req.file.buffer;
+    logger.debug('Processing uploaded image', {
+      mimetype: req.file.mimetype,
+      originalKb: Math.round(originalBuffer.length / 1024)
+    });
 
     // Process image (strip EXIF, convert to WebP, compress)
     const { buffer: processedBuffer, mimetype: newMimetype } = await stripExifData(
@@ -208,10 +220,13 @@ export const processUploadedImage = async (req, res, next) => {
     req.file.size = processedBuffer.length;
     req.file.mimetype = newMimetype;
 
-    console.log('✅ Image processed successfully');
+    logger.debug('Uploaded image processed successfully', {
+      mimetype: newMimetype,
+      optimizedKb: Math.round(processedBuffer.length / 1024)
+    });
     next();
   } catch (error) {
-    console.error('❌ Error in image processing middleware:', error);
+    logger.error('Error in image processing middleware', error);
     // Continue even if processing fails
     next();
   }
@@ -248,7 +263,7 @@ export const processImageStream = async (imageStream, mimetype) => {
     // Convert back to stream
     return { stream: Readable.from(processedBuffer), mimetype: newMimetype };
   } catch (error) {
-    console.error('❌ Error processing image stream:', error);
+    logger.error('Error processing image stream', error);
     return { stream: imageStream, mimetype };
   }
 };

@@ -10,8 +10,10 @@ import User from '../models/User.js';
 import { authenticateToken } from '../middleware/auth.js';
 import requireEmailVerification from '../middleware/requireEmailVerification.js';
 import { sanitizeFields } from '../middleware/sanitize.js';
+import { createLogger } from '../utils/logger.js';
 
 const router = express.Router();
+const logger = createLogger('journals');
 
 // @route   GET /api/journals/health
 // @desc    Health check for journals route
@@ -25,18 +27,20 @@ router.get('/health', (req, res) => {
 // @access  Private
 router.post('/', authenticateToken, requireEmailVerification, sanitizeFields(['title', 'body']), async (req, res) => {
   try {
-    console.log('[Journals] POST request received');
-    console.log('[Journals] User ID:', req.user?.id);
-    console.log('[Journals] Request body keys:', Object.keys(req.body || {}));
+    logger.debug('Create journal request received', {
+      userId: req.user?.id,
+      bodyKeys: Object.keys(req.body || {})
+    });
 
     const { title, body, visibility, mood, tags } = req.body;
 
     if (!body || body.trim().length === 0) {
-      console.log('[Journals] Validation failed: body is required');
+      logger.debug('Create journal rejected: body is required', {
+        userId: req.user?.id
+      });
       return res.status(400).json({ message: 'Journal body is required' });
     }
 
-    console.log('[Journals] Creating journal document...');
     const journal = new Journal({
       user: req.user.id,
       title: title || null,
@@ -46,18 +50,17 @@ router.post('/', authenticateToken, requireEmailVerification, sanitizeFields(['t
       tags: tags || []
     });
 
-    console.log('[Journals] Saving journal...');
     await journal.save();
-    console.log('[Journals] Journal saved with ID:', journal._id);
+    logger.debug('Journal saved', { journalId: journal._id, userId: req.user?.id });
 
     const populatedJournal = await Journal.findById(journal._id)
       .populate('user', 'username displayName profilePhoto isVerified');
 
-    console.log('[Journals] Journal created successfully');
     res.status(201).json(populatedJournal);
   } catch (error) {
-    console.error('[Journals] Create journal error:', error);
-    console.error('[Journals] Error details:', {
+    logger.error('Create journal error', error);
+    logger.error('Create journal error details', {
+      userId: req.user?.id,
       name: error.name,
       message: error.message,
       code: error.code,
@@ -81,7 +84,7 @@ router.get('/me', authenticateToken, async (req, res) => {
 
     res.json(journals);
   } catch (error) {
-    console.error('Get my journals error:', error);
+    logger.error('Get my journals error', error);
     res.status(500).json({ message: 'Failed to fetch journal entries' });
   }
 });
@@ -103,7 +106,10 @@ router.get('/user/:userId', authenticateToken, async (req, res) => {
         targetUser = await User.findById(userId).select('_id');
       } catch (err) {
         // If findById fails, try username
-        console.log('FindById failed, trying username lookup:', err.message);
+        logger.debug('FindById failed, falling back to username lookup', {
+          userId,
+          error: err.message
+        });
       }
     }
 
@@ -112,7 +118,10 @@ router.get('/user/:userId', authenticateToken, async (req, res) => {
       try {
         targetUser = await User.findOne({ username: userId }).select('_id');
       } catch (err) {
-        console.error('Username lookup failed:', err.message);
+        logger.warn('Username lookup failed while fetching journals', {
+          userId,
+          error: err.message
+        });
       }
     }
 
@@ -148,7 +157,7 @@ router.get('/user/:userId', authenticateToken, async (req, res) => {
 
     res.json(journals);
   } catch (error) {
-    console.error('Get user journals error:', error);
+    logger.error('Get user journals error', error);
     res.status(500).json({ message: 'Failed to fetch journal entries' });
   }
 });
@@ -186,7 +195,7 @@ router.patch('/:id', authenticateToken, requireEmailVerification, sanitizeFields
 
     res.json(updatedJournal);
   } catch (error) {
-    console.error('Update journal error:', error);
+    logger.error('Update journal error', error);
     res.status(500).json({ message: 'Failed to update journal entry' });
   }
 });
@@ -213,7 +222,7 @@ router.delete('/:id', authenticateToken, async (req, res) => {
 
     res.json({ message: 'Journal entry deleted successfully' });
   } catch (error) {
-    console.error('Delete journal error:', error);
+    logger.error('Delete journal error', error);
     res.status(500).json({ message: 'Failed to delete journal entry' });
   }
 });

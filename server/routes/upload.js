@@ -12,6 +12,9 @@ import { stripExifData } from '../middleware/imageProcessing.js';
 import { Readable } from 'stream';
 // R2 Storage import
 import { initR2, uploadToR2, deleteFromR2, getObjectStream, isR2Enabled } from '../utils/r2Storage.js';
+import { createLogger } from '../utils/logger.js';
+
+const logger = createLogger('upload');
 
 // Initialize R2 on module load
 initR2();
@@ -123,7 +126,7 @@ mongoose.connection.once('open', () => {
   gridfsBucket = new mongoose.mongo.GridFSBucket(mongoose.connection.db, {
     bucketName: 'uploads'
   });
-  console.log('GridFS initialized successfully');
+  logger.info('GridFS initialized successfully');
 });
 
 /**
@@ -144,16 +147,19 @@ export const deleteFromGridFS = async (fileUrl) => {
     if (isR2Enabled()) {
       try {
         await deleteFromR2(key);
-        console.log(`🗑️ Deleted file from R2: ${key}`);
+        logger.debug('Deleted file from R2', { key });
         return true;
       } catch (r2Error) {
-        console.warn('[R2] Delete failed, falling back to GridFS:', r2Error.message);
+        logger.warn('R2 delete failed, falling back to GridFS', {
+          key,
+          error: r2Error.message
+        });
       }
     }
 
     // Fallback to GridFS
     if (!gridfsBucket) {
-      console.error('❌ GridFS not initialized');
+      logger.error('GridFS not initialized during delete', { key });
       return false;
     }
 
@@ -161,16 +167,16 @@ export const deleteFromGridFS = async (fileUrl) => {
     const files = await gridfsBucket.find({ filename: key }).toArray();
 
     if (!files || files.length === 0) {
-      console.log(`⚠️ File not found in GridFS: ${key}`);
+      logger.debug('File not found in GridFS during delete', { key });
       return false;
     }
 
     // Delete the file
     await gridfsBucket.delete(files[0]._id);
-    console.log(`🗑️ Deleted file from GridFS: ${key}`);
+    logger.debug('Deleted file from GridFS', { key });
     return true;
   } catch (error) {
-    console.error(`❌ Error deleting file: ${fileUrl}`, error);
+    logger.error('Error deleting file', { fileUrl, error });
     return false;
   }
 };
@@ -189,12 +195,18 @@ const saveToGridFS = async (file, generateSizes = false) => {
   // Process and optimize images (strip EXIF, convert to WebP, compress)
   // Sharp decode implicitly validates magic bytes for images — non-images will throw
   if (file.mimetype.startsWith('image/')) {
-    console.log('🔒 Processing and optimizing image...');
+    logger.debug('Processing and optimizing image', {
+      originalName: file.originalname,
+      contentType: file.mimetype
+    });
     const result = await stripExifData(buffer, file.mimetype, { generateSizes });
     buffer = result.buffer;
     contentType = result.mimetype;
     sizes = result.sizes;
-    console.log('✅ Image optimized and saved as', contentType);
+    logger.debug('Image optimized successfully', {
+      originalName: file.originalname,
+      contentType
+    });
   }
 
   // PART 8: Validate magic bytes for video/audio (no Sharp protection for these types)
@@ -218,7 +230,7 @@ const saveToGridFS = async (file, generateSizes = false) => {
   // Try R2 first if enabled
   if (isR2Enabled()) {
     try {
-      console.log('📤 Uploading to R2...');
+      logger.debug('Uploading file to R2', { filename, contentType });
       const r2Result = await uploadToR2(buffer, filename, contentType);
 
       const result = {
@@ -256,22 +268,34 @@ const saveToGridFS = async (file, generateSizes = false) => {
           }
 
           result.sizes = sizeIds;
-          console.log('✅ Saved responsive sizes to R2:', Object.keys(sizeIds));
+          logger.debug('Saved responsive sizes to R2', {
+            filename,
+            sizeKeys: Object.keys(sizeIds)
+          });
         } catch (sizeError) {
-          console.error('❌ Error saving responsive sizes to R2:', sizeError);
+          logger.warn('Failed to save responsive sizes to R2', {
+            filename,
+            error: sizeError.message
+          });
           // Continue without sizes
         }
       }
 
-      console.log('✅ File uploaded to R2:', r2Result.url);
+      logger.debug('File uploaded to R2', {
+        filename,
+        url: r2Result.url
+      });
       return result;
     } catch (r2Error) {
-      console.warn('[R2] Upload failed, falling back to GridFS:', r2Error.message);
+      logger.warn('R2 upload failed, falling back to GridFS', {
+        filename,
+        error: r2Error.message
+      });
     }
   }
 
   // Fallback to GridFS
-  console.log('📤 Uploading to GridFS...');
+  logger.debug('Uploading file to GridFS', { filename, contentType });
   return new Promise((resolve, reject) => {
     const readableStream = Readable.from(buffer);
     const uploadStream = gridfsBucket.openUploadStream(filename, {
@@ -328,9 +352,15 @@ const saveToGridFS = async (file, generateSizes = false) => {
           }
 
           result.sizes = sizeIds;
-          console.log('✅ Saved responsive sizes:', Object.keys(sizeIds));
+          logger.debug('Saved responsive sizes to GridFS', {
+            filename,
+            sizeKeys: Object.keys(sizeIds)
+          });
         } catch (sizeError) {
-          console.error('❌ Error saving responsive sizes:', sizeError);
+          logger.warn('Failed to save responsive sizes to GridFS', {
+            filename,
+            error: sizeError.message
+          });
           // Continue without sizes
         }
         resolve(result);
@@ -347,10 +377,14 @@ const saveToGridFS = async (file, generateSizes = false) => {
 router.post('/profile-photo', auth, uploadLimiter, (req, res) => {
   upload.single('photo')(req, res, async (err) => {
     try {
-      console.log('📸 Profile photo upload request received');
+      logger.debug('Profile photo upload request received', { userId: req.userId });
 
       if (err) {
-        console.error('❌ Multer error:', err);
+        logger.warn('Profile photo upload rejected by multer', {
+          userId: req.userId,
+          code: err.code,
+          error: err.message
+        });
 
         if (err.code === 'LIMIT_FILE_SIZE') {
           return res.status(400).json({
@@ -368,7 +402,7 @@ router.post('/profile-photo', auth, uploadLimiter, (req, res) => {
       }
 
       if (!req.file) {
-        console.log('⚠️ No file in request');
+        logger.warn('Profile photo upload missing file', { userId: req.userId });
         return res.status(400).json({
           error: 'No file received',
           message: 'No file uploaded. Please select an image and try again.'
@@ -377,7 +411,10 @@ router.post('/profile-photo', auth, uploadLimiter, (req, res) => {
 
       // Validate it's an image
       if (!req.file.mimetype.startsWith('image/')) {
-        console.error('❌ Invalid file type:', req.file.mimetype);
+        logger.warn('Invalid profile photo file type', {
+          userId: req.userId,
+          contentType: req.file.mimetype
+        });
         return res.status(400).json({
           error: 'Invalid image type',
           message: 'Only image files are allowed for profile photos.',
@@ -394,7 +431,6 @@ router.post('/profile-photo', auth, uploadLimiter, (req, res) => {
 
       // Use R2 URL if available, otherwise fall back to local path
       const photoUrl = fileInfo.url || `/upload/image/${fileInfo.filename}`;
-      console.log('✅ Photo URL:', photoUrl);
 
       // Update user profile photo
       const updatedUser = await User.findByIdAndUpdate(
@@ -403,10 +439,16 @@ router.post('/profile-photo', auth, uploadLimiter, (req, res) => {
         { new: true }
       );
 
-      console.log('✅ Profile photo updated for user:', req.userId);
+      logger.info('Profile photo updated successfully', {
+        userId: req.userId,
+        photoUrl
+      });
       res.json({ url: photoUrl, user: updatedUser });
     } catch (error) {
-      console.error('❌ Upload profile photo error:', error);
+      logger.error('Upload profile photo error', {
+        userId: req.userId,
+        error
+      });
       res.status(500).json({
         error: 'Image upload failed',
         message: 'Profile photo upload failed. Please try again or use a smaller image.',
@@ -422,10 +464,14 @@ router.post('/profile-photo', auth, uploadLimiter, (req, res) => {
 router.post('/cover-photo', auth, uploadLimiter, (req, res) => {
   upload.single('photo')(req, res, async (err) => {
     try {
-      console.log('🖼️ Cover photo upload request received');
+      logger.debug('Cover photo upload request received', { userId: req.userId });
 
       if (err) {
-        console.error('❌ Multer error:', err);
+        logger.warn('Cover photo upload rejected by multer', {
+          userId: req.userId,
+          code: err.code,
+          error: err.message
+        });
 
         if (err.code === 'LIMIT_FILE_SIZE') {
           return res.status(400).json({
@@ -443,7 +489,7 @@ router.post('/cover-photo', auth, uploadLimiter, (req, res) => {
       }
 
       if (!req.file) {
-        console.log('⚠️ No file in request');
+        logger.warn('Cover photo upload missing file', { userId: req.userId });
         return res.status(400).json({
           error: 'No file received',
           message: 'No file uploaded. Please select an image and try again.'
@@ -452,7 +498,10 @@ router.post('/cover-photo', auth, uploadLimiter, (req, res) => {
 
       // Validate it's an image
       if (!req.file.mimetype.startsWith('image/')) {
-        console.error('❌ Invalid file type:', req.file.mimetype);
+        logger.warn('Invalid cover photo file type', {
+          userId: req.userId,
+          contentType: req.file.mimetype
+        });
         return res.status(400).json({
           error: 'Invalid image type',
           message: 'Only image files are allowed for cover photos.',
@@ -468,7 +517,6 @@ router.post('/cover-photo', auth, uploadLimiter, (req, res) => {
       }
 
       const photoUrl = fileInfo.url || `/upload/image/${fileInfo.filename}`;
-      console.log('✅ Photo URL:', photoUrl);
 
       // Update user cover photo
       const updatedUser = await User.findByIdAndUpdate(
@@ -477,10 +525,16 @@ router.post('/cover-photo', auth, uploadLimiter, (req, res) => {
         { new: true }
       );
 
-      console.log('✅ Cover photo updated for user:', req.userId);
+      logger.info('Cover photo updated successfully', {
+        userId: req.userId,
+        photoUrl
+      });
       res.json({ url: photoUrl, user: updatedUser });
     } catch (error) {
-      console.error('❌ Upload cover photo error:', error);
+      logger.error('Upload cover photo error', {
+        userId: req.userId,
+        error
+      });
       res.status(500).json({
         error: 'Image upload failed',
         message: 'Cover photo upload failed. Please try again or use a smaller image.',
@@ -497,7 +551,11 @@ router.post('/chat-attachment', auth, uploadLimiter, (req, res) => {
   upload.single('file')(req, res, async (err) => {
     try {
       if (err) {
-        console.error('❌ Multer error:', err);
+        logger.warn('Chat attachment upload rejected by multer', {
+          userId: req.userId,
+          code: err.code,
+          error: err.message
+        });
 
         if (err.code === 'LIMIT_FILE_SIZE') {
           return res.status(400).json({
@@ -515,7 +573,7 @@ router.post('/chat-attachment', auth, uploadLimiter, (req, res) => {
       }
 
       if (!req.file) {
-        console.log('⚠️ No file in request');
+        logger.warn('Chat attachment upload missing file', { userId: req.userId });
         return res.status(400).json({
           error: 'No file received',
           message: 'No file uploaded. Please select a file and try again.'
@@ -531,10 +589,16 @@ router.post('/chat-attachment', auth, uploadLimiter, (req, res) => {
 
       const fileUrl = `/upload/image/${fileInfo.filename}`;
 
-      console.log('✅ Chat attachment uploaded successfully');
+      logger.info('Chat attachment uploaded successfully', {
+        userId: req.userId,
+        fileUrl
+      });
       res.json({ url: fileUrl });
     } catch (error) {
-      console.error('❌ Upload chat attachment error:', error);
+      logger.error('Upload chat attachment error', {
+        userId: req.userId,
+        error
+      });
       res.status(500).json({
         error: 'Upload failed',
         message: 'File upload failed. Please try again or use a smaller file.',
@@ -550,26 +614,33 @@ router.post('/chat-attachment', auth, uploadLimiter, (req, res) => {
 router.post('/post-media', auth, uploadLimiter, (req, res) => {
   // DIAGNOSTIC: Log middleware chain entry point
   if (config.nodeEnv === 'development') {
-    console.log('[UPLOAD DEBUG] /post-media route handler entered');
-    console.log('[UPLOAD DEBUG] Auth passed - req.userId:', req.userId);
-    console.log('[UPLOAD DEBUG] Content-Type:', req.headers['content-type']);
-    console.log('[UPLOAD DEBUG] Authorization header:', req.headers['authorization'] ? 'Present' : 'Missing');
-    console.log('[UPLOAD DEBUG] x-auth-token header:', req.headers['x-auth-token'] ? 'Present' : 'Missing');
-    console.log('[UPLOAD DEBUG] CSRF cookie:', req.cookies?.['XSRF-TOKEN'] ? 'Present' : 'Missing');
-    console.log('[UPLOAD DEBUG] CSRF header:', req.headers['x-xsrf-token'] || req.headers['x-csrf-token'] ? 'Present' : 'Missing');
+    logger.debug('Post media upload request received', {
+      userId: req.userId,
+      contentType: req.headers['content-type'],
+      hasAuthorizationHeader: Boolean(req.headers['authorization']),
+      hasLegacyAuthHeader: Boolean(req.headers['x-auth-token']),
+      hasCsrfCookie: Boolean(req.cookies?.['XSRF-TOKEN']),
+      hasCsrfHeader: Boolean(req.headers['x-xsrf-token'] || req.headers['x-csrf-token'])
+    });
   }
 
   upload.array('media', 3)(req, res, async (err) => {
     try {
       // DIAGNOSTIC: Log multer result
       if (config.nodeEnv === 'development') {
-        console.log('[UPLOAD DEBUG] Multer processing complete');
-        console.log('[UPLOAD DEBUG] Files received:', req.files?.length || 0);
+        logger.debug('Post media multer processing complete', {
+          userId: req.userId,
+          fileCount: req.files?.length || 0
+        });
       }
 
       // Enhanced error handling for multer errors
       if (err) {
-        console.error('❌ Multer error:', err);
+        logger.warn('Post media upload rejected by multer', {
+          userId: req.userId,
+          code: err.code,
+          error: err.message
+        });
 
         // Provide specific error messages
         if (err.code === 'LIMIT_FILE_SIZE') {
@@ -604,7 +675,7 @@ router.post('/post-media', auth, uploadLimiter, (req, res) => {
       }
 
       if (!req.files || req.files.length === 0) {
-        console.log('⚠️ No files in request');
+        logger.warn('Post media upload missing files', { userId: req.userId });
         return res.status(400).json({
           error: 'No file received',
           message: 'No files uploaded. Please select a file and try again.'
@@ -614,7 +685,10 @@ router.post('/post-media', auth, uploadLimiter, (req, res) => {
       // Validate file types
       for (const file of req.files) {
         if (!file.mimetype.startsWith('image/') && !file.mimetype.startsWith('video/')) {
-          console.error('❌ Invalid file type:', file.mimetype);
+          logger.warn('Invalid post media file type', {
+            userId: req.userId,
+            contentType: file.mimetype
+          });
           return res.status(400).json({
             error: 'Invalid file type',
             message: 'Only images and videos are allowed.',
@@ -623,7 +697,10 @@ router.post('/post-media', auth, uploadLimiter, (req, res) => {
         }
       }
 
-      console.log(`📤 Processing ${req.files.length} file(s)...`);
+      logger.debug('Processing post media files', {
+        userId: req.userId,
+        fileCount: req.files.length
+      });
 
       // Get draftId from request body (optional - for attaching to existing draft)
       const { draftId } = req.body;
@@ -685,21 +762,36 @@ router.post('/post-media', auth, uploadLimiter, (req, res) => {
           result.tempMediaId = tempMedia._id;
 
           if (config.nodeEnv === 'development') {
-            console.log(`[TEMP MEDIA] Created record: ${tempMedia._id} for ${url}`);
-            console.log(`[TEMP MEDIA] Status: ${tempMedia.status}, Owner: ${tempMedia.ownerType}:${tempMedia.ownerId || 'none'}`);
+            logger.debug('Created temp media record', {
+              tempMediaId: tempMedia._id,
+              url,
+              status: tempMedia.status,
+              ownerType: tempMedia.ownerType,
+              ownerId: tempMedia.ownerId || null
+            });
           }
         } catch (tempMediaError) {
           // Log but don't fail the upload - temp media tracking is non-critical
-          console.error('[TEMP MEDIA] Failed to create tracking record:', tempMediaError);
+          logger.warn('Failed to create temp media tracking record', {
+            userId: req.userId,
+            error: tempMediaError.message
+          });
         }
 
         return result;
       }));
 
-      console.log(`✅ Successfully uploaded ${mediaUrls.length} file(s)`);
+      logger.info('Post media uploaded successfully', {
+        userId: req.userId,
+        fileCount: mediaUrls.length,
+        draftId: draftId || null
+      });
       res.json({ media: mediaUrls });
     } catch (error) {
-      console.error('❌ Upload post media error:', error);
+      logger.error('Upload post media error', {
+        userId: req.userId,
+        error
+      });
       res.status(500).json({
         error: 'Image upload failed',
         message: 'Image upload failed. Please try again or use a smaller image.',
@@ -717,7 +809,10 @@ router.delete('/post-media/:mediaId', auth, async (req, res) => {
     const { mediaId } = req.params;
 
     if (config.nodeEnv === 'development') {
-      console.log(`[TEMP MEDIA DELETE] Request to delete: ${mediaId} by user: ${req.userId}`);
+      logger.debug('Temp media delete requested', {
+        mediaId,
+        userId: req.userId
+      });
     }
 
     // Find the temp media record
@@ -725,7 +820,7 @@ router.delete('/post-media/:mediaId', auth, async (req, res) => {
 
     if (!tempMedia) {
       if (config.nodeEnv === 'development') {
-        console.warn(`[TEMP MEDIA DELETE] Media not found: ${mediaId}`);
+        logger.debug('Temp media not found during delete', { mediaId });
       }
       return res.status(404).json({ message: 'Media not found' });
     }
@@ -733,7 +828,11 @@ router.delete('/post-media/:mediaId', auth, async (req, res) => {
     // Verify ownership
     if (tempMedia.userId.toString() !== req.userId.toString()) {
       if (config.nodeEnv === 'development') {
-        console.warn(`[TEMP MEDIA DELETE] User ${req.userId} not authorized to delete media owned by ${tempMedia.userId}`);
+        logger.warn('Unauthorized temp media delete attempt', {
+          mediaId,
+          userId: req.userId,
+          ownerUserId: tempMedia.userId.toString()
+        });
       }
       return res.status(403).json({ message: 'Not authorized to delete this media' });
     }
@@ -741,7 +840,7 @@ router.delete('/post-media/:mediaId', auth, async (req, res) => {
     // Don't allow deleting published media
     if (tempMedia.status === 'published') {
       if (config.nodeEnv === 'development') {
-        console.warn(`[TEMP MEDIA DELETE] Cannot delete published media: ${mediaId}`);
+        logger.warn('Attempted to delete published temp media', { mediaId });
       }
       return res.status(400).json({ message: 'Cannot delete published media' });
     }
@@ -750,7 +849,10 @@ router.delete('/post-media/:mediaId', auth, async (req, res) => {
     const mainFileDeleted = await deleteFromGridFS(tempMedia.url);
 
     if (config.nodeEnv === 'development') {
-      console.log(`[TEMP MEDIA DELETE] Main file deleted: ${mainFileDeleted}`);
+      logger.debug('Temp media main file delete completed', {
+        mediaId,
+        deleted: mainFileDeleted
+      });
     }
 
     // Delete responsive size files if they exist
@@ -776,7 +878,10 @@ router.delete('/post-media/:mediaId', auth, async (req, res) => {
       }
 
       if (config.nodeEnv === 'development') {
-        console.log(`[TEMP MEDIA DELETE] Deleted ${sizesToDelete.length} responsive sizes`);
+        logger.debug('Deleted temp media responsive sizes', {
+          mediaId,
+          sizeCount: sizesToDelete.length
+        });
       }
     }
 
@@ -784,7 +889,7 @@ router.delete('/post-media/:mediaId', auth, async (req, res) => {
     await tempMedia.deleteOne();
 
     if (config.nodeEnv === 'development') {
-      console.log(`[TEMP MEDIA DELETE] Successfully deleted media: ${mediaId}`);
+      logger.debug('Temp media deleted successfully', { mediaId });
     }
 
     res.json({
@@ -794,7 +899,11 @@ router.delete('/post-media/:mediaId', auth, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('[TEMP MEDIA DELETE] Error:', error);
+    logger.error('Temp media delete error', {
+      mediaId: req.params.mediaId,
+      userId: req.userId,
+      error
+    });
     res.status(500).json({
       message: 'Failed to delete media',
       error: error.message
@@ -814,7 +923,10 @@ router.delete('/post-media/by-url', auth, async (req, res) => {
     }
 
     if (config.nodeEnv === 'development') {
-      console.log(`[TEMP MEDIA DELETE BY URL] Request to delete: ${url} by user: ${req.userId}`);
+      logger.debug('Temp media delete-by-url requested', {
+        url,
+        userId: req.userId
+      });
     }
 
     // Find the temp media record by URL
@@ -827,7 +939,10 @@ router.delete('/post-media/by-url', auth, async (req, res) => {
 
       if (deleted) {
         if (config.nodeEnv === 'development') {
-          console.log(`[TEMP MEDIA DELETE BY URL] Deleted legacy file: ${url}`);
+          logger.debug('Deleted legacy temp media by URL', {
+            url,
+            userId: req.userId
+          });
         }
         return res.json({
           message: 'Media deleted successfully (legacy)',
@@ -836,7 +951,10 @@ router.delete('/post-media/by-url', auth, async (req, res) => {
       }
 
       if (config.nodeEnv === 'development') {
-        console.warn(`[TEMP MEDIA DELETE BY URL] Media not found: ${url}`);
+        logger.debug('Temp media not found during delete-by-url', {
+          url,
+          userId: req.userId
+        });
       }
       return res.status(404).json({ message: 'Media not found' });
     }
@@ -872,7 +990,10 @@ router.delete('/post-media/by-url', auth, async (req, res) => {
     await tempMedia.deleteOne();
 
     if (config.nodeEnv === 'development') {
-      console.log(`[TEMP MEDIA DELETE BY URL] Successfully deleted: ${url}`);
+      logger.debug('Temp media deleted by URL successfully', {
+        url,
+        userId: req.userId
+      });
     }
 
     res.json({
@@ -881,7 +1002,11 @@ router.delete('/post-media/by-url', auth, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('[TEMP MEDIA DELETE BY URL] Error:', error);
+    logger.error('Temp media delete-by-url error', {
+      url: req.body?.url,
+      userId: req.userId,
+      error
+    });
     res.status(500).json({
       message: 'Failed to delete media',
       error: error.message
@@ -938,7 +1063,10 @@ router.get('/image/:filename', async (req, res) => {
 
     res.status(404).json({ message: 'File not found' });
   } catch (error) {
-    console.error('Get image error:', error);
+    logger.error('Get image error', {
+      filename: req.params.filename,
+      error
+    });
     res.status(500).json({ message: 'Error retrieving image' });
   }
 });
@@ -965,7 +1093,10 @@ router.get('/file/:filename', async (req, res) => {
 
     res.status(404).json({ message: 'File not found' });
   } catch (error) {
-    console.error('Get file error:', error);
+    logger.error('Get file error', {
+      filename: req.params.filename,
+      error
+    });
     res.status(500).json({ message: 'Error retrieving file' });
   }
 });
@@ -977,7 +1108,11 @@ router.post('/voice-note', auth, uploadLimiter, (req, res) => {
   upload.single('audio')(req, res, async (err) => {
     try {
       if (err) {
-        console.error('Multer error:', err);
+        logger.warn('Voice note upload rejected by multer', {
+          userId: req.userId,
+          code: err.code,
+          error: err.message
+        });
         return res.status(500).json({ message: 'Upload failed', error: err.message });
       }
 
@@ -991,7 +1126,10 @@ router.post('/voice-note', auth, uploadLimiter, (req, res) => {
 
       res.json({ url: audioUrl, duration: req.body.duration || null });
     } catch (error) {
-      console.error('Upload voice note error:', error);
+      logger.error('Upload voice note error', {
+        userId: req.userId,
+        error
+      });
       res.status(500).json({ message: 'Server error' });
     }
   });
