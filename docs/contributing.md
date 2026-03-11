@@ -1,262 +1,78 @@
-# Contributing to Pryde Social
+# Contributing to Pryde Backend
 
-Welcome! This document is the **operator’s manual** for working on Pryde Social. It exists to reduce guesswork, protect quality, and keep the platform calm, stable, and boring (in the best way).
+This guide keeps backend changes consistent, reviewable, and safe to release.
 
-If you follow this guide, you won’t accidentally break auth, theme integrity, or release discipline.
+## Core rules
 
----
+- Protect auth, admin authorization, and user-impact paths first.
+- Prefer shared middleware/utilities over duplicated logic.
+- Do not commit secrets, provider exports, or ad hoc debug artifacts.
+- If you fix a security-sensitive bug, add or update a regression test.
 
-## 🧭 Core Principles
+## Common commands
 
-- **Audit before release** — no exceptions
-- **No silent regressions** (theme, auth, user paths)
-- **Structure over vibes**
-- **Fix once, lock forever**
+### Local development
 
----
+- `npm run dev`
+- `cd server && npm test`
+- `cd server && npm run lint`
 
-## 🚀 Daily Development
+### Security and release gates
 
-### Start development mode
-```bash
-npm run dev
-```
+- `npm run security:scan`
+- `npm run audit:final`
+- `npm run release:check`
 
-Starts frontend + backend with:
-- hot reload
-- dev-only logging rules
-- DOM order warnings
+### Git hook setup
 
----
+- `npm run hooks:install`
 
-### Production build (local test)
-```bash
-npm run build
-npm start
-```
+This repo tracks a pre-commit hook that runs the secret scan. Each clone must opt in locally by running the install command once.
 
-Use this to verify:
-- prod auth behaviour
-- console silence
-- dark mode correctness
+## Before opening a PR
 
----
+- Run the smallest relevant test scope first.
+- Re-run the broader affected suite if you touched auth, admin routes, cookies, CSRF, or shared middleware.
+- Run `npm run security:scan` if docs, config, or env-related code changed.
+- Confirm new logs do not emit tokens, cookies, or secret-like values.
 
-## 🔍 Audits & Quality Gates (Most Important)
+## Before merging to main
 
-### 🔐 Full Final Audit (Required before release)
-```bash
-npm run audit:final
-```
+- `npm run security:scan`
+- `cd server && npm run lint`
+- `cd server && npm test`
+- `npm run audit:final`
 
-Runs:
-- Security & auth checks
-- API structure audit
-- Theme leak detection
-- User-impact paths
-- Code health scan
-- Runtime auth & cookie verification
-- Generates `AUDIT_REPORT.md`
+Any failing release gate blocks the merge.
 
-**Rule:** Any ❌ FAIL blocks release.
+## Logging expectations
 
----
+- Use the shared logger on backend code you touch.
+- Avoid raw `console.*` calls in request handling, auth, or admin flows.
+- Log enough for debugging and auditing, but never log tokens, cookies, passwords, reset links, or provider secrets.
 
-### 🧱 Core structural audit (quick confidence check)
-```bash
-npm run audit:pryde
-```
+## Security-sensitive changes
 
-Checks:
-- Auth routes & middleware
-- Architecture presence
-- Feature existence
-- Backup scripts
+If you change any of the following, add focused regression coverage:
 
----
+- auth/session lifecycle
+- admin or moderator authorization
+- sanitization or validation utilities
+- request/response security helpers
+- error handling on privileged or public routes
 
-### 🎨 Theme leak audit (dark mode safety)
-```bash
-node scripts/themeLeakAudit.js
-```
+The current security regression suite lives under `server/test/unit/`.
 
-Scans for:
-- `#fff`, `#000`
-- `rgb()`, `rgba()`
-- `white`, `black`
+## Release notes
 
----
+If a change affects security posture, document:
 
-### 🎨 Auto-fix easy theme leaks
-```bash
-npm run polish:theme
-```
+- what changed
+- why it changed
+- how it was verified
+- any required operator follow-up
 
-- Converts obvious colors → CSS variables
-- Flags files needing manual review
-
-Safe to run repeatedly.
-
----
-
-### 🔍 Static code health scan
-```bash
-node scripts/codeHealthAudit.js
-```
-
-Finds:
-- `TODO:` / `FIXME:`
-- stray `console.log`
-- unfinished signals
-
----
-
-### 🔔 User-impact audit (critical paths)
-```bash
-node scripts/userImpactAudit.js
-```
-
-Verifies that real user journeys exist:
-- signup
-- login
-- profile
-- feed
-- posting
-- auth lifecycle
-
----
-
-### 🔐 Runtime auth & API audit (reality check)
-```bash
-node scripts/runtimeAuthAudit.js
-```
-
-Tests:
-- cookies are set
-- HttpOnly refresh token
-- access token issuance
-- refresh works
-- logout invalidates session
-
-This is the **Facebook-grade auth check**.
-
----
-
-## 🧪 Polish & Safety Tools
-
-### 🔇 Production console guard
-Automatically active in production.
-
-Test locally with:
-```bash
-NODE_ENV=production npm start
-```
-
-Confirms:
-- no stray logs
-- errors only
-- clean DevTools
-
----
-
-### 🧭 DOM order sanity warnings
-Runs automatically in dev:
-```bash
-npm run dev
-```
-
-Warnings appear if layout structure drifts.
-
----
-
-## 🚀 Release Management (Locked Mode)
-
-### 🧪 Release readiness check
-```bash
-npm run release:check
-```
-
-Blocks release if:
-- `AUDIT_REPORT.md` missing
-- version not bumped
-- changelog not updated
-
-No bypassing this step.
-
----
-
-### 📝 Changelog requirement
-
-Ensure `CHANGELOG.md` exists and includes the current version:
-
-```md
-## x.y.z
-- Summary of changes
-```
-
----
-
-## 🔄 Maintenance & Migrations
-
-### 👥 Friends → Followers migration (one-time)
-```bash
-node server/scripts/migrateFriendsToFollowers.js
-```
-
-⚠️ Run once only. Archive after execution.
-
----
-
-### 💾 Backup verification
-```bash
-node server/scripts/backupCheck.js
-```
-
-(if present)
-
----
-
-## 🧠 Debugging & Diagnostics
-
-### Logging rules (dev)
-Allowed output:
-- `console.warn`
-- `console.error`
-- `console.log('[Pryde] ...')`
-
-Everything else is suppressed.
-
----
-
-### Auth lifecycle sanity test
-
-Manual check:
-1. Log in
-2. Leave tab idle (30+ minutes)
-3. Refocus tab
-4. Create a post
-
-If this works, auth is healthy.
-
----
-
-## 🧭 Recommended Workflow
-
-### While developing
-```bash
-npm run dev
-```
-
-### Before committing
-```bash
-npm run audit:pryde
-```
-
-### Before releasing
-```bash
-npm run audit:final
-npm run release:check
-```
+Prefer small, auditable commits over sweeping mixed-purpose changes.
 
 If both pass → release calmly.
 

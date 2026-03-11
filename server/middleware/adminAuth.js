@@ -1,4 +1,5 @@
 import User from '../models/User.js';
+import logger from '../utils/logger.js';
 
 // Default admin roles
 const DEFAULT_ADMIN_ROLES = ['moderator', 'admin', 'super_admin'];
@@ -50,7 +51,7 @@ const adminAuthMiddleware = (allowedRoles) => {
       req.adminUser = user;
       next();
     } catch (error) {
-      console.error('Admin auth error:', error);
+      logger.error('Admin auth error:', error);
       res.status(500).json({ message: 'Server error' });
     }
   };
@@ -81,7 +82,7 @@ const checkPermission = (permission) => {
       }
       next();
     } catch (error) {
-      console.error('Permission check error:', error);
+      logger.error('Permission check error:', error);
       res.status(500).json({ message: 'Server error' });
     }
   };

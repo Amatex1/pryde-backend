@@ -77,8 +77,11 @@ import {
   canAccessDebugOverlay,
   logDebugOverlayAccess
 } from '../utils/debugOverlay.js';
+import logger from '../utils/logger.js';
 
 const router = express.Router();
+
+const getActorId = (req) => req.user?._id?.toString?.() || req.user?.id || null;
 
 // All debug routes require authentication + admin role
 router.use(auth);
@@ -119,8 +122,10 @@ router.post('/pwa/disable', (req, res) => {
     updatedBy: req.user.username
   };
 
-  console.log(`🔥 [Admin Debug] PWA disabled by ${req.user.username}`);
-  console.log(`   Message: ${pwaControlState.maintenanceMessage}`);
+  logger.warn('Admin debug PWA disabled', {
+    adminUserId: getActorId(req),
+    maintenanceMessage: pwaControlState.maintenanceMessage
+  });
 
   res.json({
     success: true,
@@ -143,7 +148,7 @@ router.post('/pwa/enable', (req, res) => {
     updatedBy: req.user.username
   };
 
-  console.log(`✅ [Admin Debug] PWA enabled by ${req.user.username}`);
+  logger.warn('Admin debug PWA enabled', { adminUserId: getActorId(req) });
 
   res.json({
     success: true,
@@ -169,9 +174,11 @@ router.post('/pwa/force-reload', (req, res) => {
     updatedBy: req.user.username
   };
 
-  console.log(`🔄 [Admin Debug] Force reload triggered by ${req.user.username}`);
-  console.log(`   Message: ${pwaControlState.maintenanceMessage}`);
-  console.log(`   Will auto-expire in 5 minutes`);
+  logger.warn('Admin debug force reload triggered', {
+    adminUserId: getActorId(req),
+    maintenanceMessage: pwaControlState.maintenanceMessage,
+    autoExpiresInMinutes: 5
+  });
 
   res.json({
     success: true,
@@ -195,7 +202,7 @@ router.post('/pwa/cancel-force-reload', (req, res) => {
     updatedBy: req.user.username
   };
 
-  console.log(`✅ [Admin Debug] Force reload cancelled by ${req.user.username}`);
+  logger.warn('Admin debug force reload cancelled', { adminUserId: getActorId(req) });
 
   res.json({
     success: true,
@@ -234,9 +241,11 @@ router.post('/maintenance/enable', (req, res) => {
     updatedBy: req.user.username
   };
 
-  console.log(`🔧 [Admin Debug] Maintenance mode ENABLED by ${req.user.username}`);
-  console.log(`   Message: ${message || 'Site is under maintenance'}`);
-  if (eta) console.log(`   ETA: ${eta}`);
+  logger.warn('Admin debug maintenance mode enabled', {
+    adminUserId: getActorId(req),
+    maintenanceMessage: message || 'Site is under maintenance',
+    eta: eta || null
+  });
 
   res.json({
     success: true,
@@ -257,7 +266,7 @@ router.post('/maintenance/disable', (req, res) => {
     updatedBy: req.user.username
   };
 
-  console.log(`✅ [Admin Debug] Maintenance mode DISABLED by ${req.user.username}`);
+  logger.warn('Admin debug maintenance mode disabled', { adminUserId: getActorId(req) });
 
   res.json({
     success: true,
@@ -282,8 +291,12 @@ router.post('/maintenance/toggle', (req, res) => {
     updatedBy: req.user.username
   };
 
-  console.log(`🔄 [Admin Debug] Maintenance mode toggled to ${newStatus ? 'ON' : 'OFF'} by ${req.user.username}`);
-  if (newStatus && message) console.log(`   Message: ${message}`);
+  logger.warn('Admin debug maintenance mode toggled', {
+    adminUserId: getActorId(req),
+    enabled: newStatus,
+    maintenanceMessage: newStatus ? (message || null) : null,
+    eta: eta || null
+  });
 
   res.json({
     success: true,
@@ -627,8 +640,14 @@ router.get('/overlay', (req, res) => {
 
     res.json(data);
   } catch (error) {
-    console.error('Get debug overlay data error:', error);
-    res.status(500).json({ message: 'Server error', error: error.message });
+    logger.error('Get debug overlay data error', { adminUserId: getActorId(req) }, error);
+
+    const response = { message: 'Server error' };
+    if (process.env.NODE_ENV === 'development') {
+      response.error = error.message;
+    }
+
+    res.status(500).json(response);
   }
 });
 

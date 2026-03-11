@@ -1,0 +1,5 @@
+#!/usr/bin/env sh
+set -eu
+
+echo "[pre-commit] Running backend secret scan"
+npm run security:scan

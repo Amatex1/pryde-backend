@@ -1,5 +1,7 @@
 import sanitizeHtml from 'sanitize-html';
 
+import logger from '../utils/logger.js';
+
 /**
  * Backend XSS Protection Middleware
  * Sanitizes user input before saving to database
@@ -67,7 +69,7 @@ export const sanitizeFields = (fields = [], options = DEFAULT_OPTIONS) => {
       });
       next();
     } catch (error) {
-      console.error('Sanitization error:', error);
+      logger.error('Sanitization error', error);
       res.status(500).json({ message: 'Error processing request' });
     }
   };
@@ -101,7 +103,7 @@ export const sanitizeAll = (options = DEFAULT_OPTIONS) => {
       sanitizeObject(req.body);
       next();
     } catch (error) {
-      console.error('Sanitization error:', error);
+      logger.error('Sanitization error', error);
       res.status(500).json({ message: 'Error processing request' });
     }
   };

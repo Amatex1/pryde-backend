@@ -11,22 +11,11 @@ import express from 'express';
 import ReflectionPrompt from '../models/ReflectionPrompt.js';
 import User from '../models/User.js';
 import { authenticateToken } from '../middleware/auth.js';
+import adminAuth from '../middleware/adminAuth.js';
 import { sanitizeFields } from '../middleware/sanitize.js';
+import logger from '../utils/logger.js';
 
 const router = express.Router();
-
-// Middleware to check admin role
-const requireAdmin = async (req, res, next) => {
-  try {
-    const user = await User.findById(req.user.id).select('role');
-    if (!user || !['admin', 'super_admin'].includes(user.role)) {
-      return res.status(403).json({ message: 'Admin access required' });
-    }
-    next();
-  } catch (error) {
-    res.status(500).json({ message: 'Authorization check failed' });
-  }
-};
 
 // @route   GET /api/prompts/active
 // @desc    Get the currently active prompt (if user has prompts enabled)
@@ -64,7 +53,7 @@ router.get('/active', authenticateToken, async (req, res) => {
       enabled: true
     });
   } catch (error) {
-    console.error('Get active prompt error:', error);
+    logger.error('Get active prompt error:', error);
     res.status(500).json({ message: 'Failed to fetch active prompt' });
   }
 });
@@ -87,7 +76,7 @@ router.post('/dismiss/:promptId', authenticateToken, async (req, res) => {
     
     res.json({ message: 'Prompt dismissed' });
   } catch (error) {
-    console.error('Dismiss prompt error:', error);
+    logger.error('Dismiss prompt error:', error);
     res.status(500).json({ message: 'Failed to dismiss prompt' });
   }
 });
@@ -105,7 +94,7 @@ router.patch('/preferences', authenticateToken, async (req, res) => {
     
     res.json({ message: 'Preferences updated', enabled });
   } catch (error) {
-    console.error('Update prompt preferences error:', error);
+    logger.error('Update prompt preferences error:', error);
     res.status(500).json({ message: 'Failed to update preferences' });
   }
 });
@@ -117,7 +106,7 @@ router.patch('/preferences', authenticateToken, async (req, res) => {
 // @route   GET /api/prompts/all
 // @desc    Get all prompts (admin only)
 // @access  Admin
-router.get('/all', authenticateToken, requireAdmin, async (req, res) => {
+router.get('/all', authenticateToken, adminAuth(['admin', 'super_admin']), async (req, res) => {
   try {
     const prompts = await ReflectionPrompt.find()
       .sort({ createdAt: -1 })
@@ -125,7 +114,7 @@ router.get('/all', authenticateToken, requireAdmin, async (req, res) => {
     
     res.json(prompts);
   } catch (error) {
-    console.error('Get all prompts error:', error);
+    logger.error('Get all prompts error:', error);
     res.status(500).json({ message: 'Failed to fetch prompts' });
   }
 });
@@ -133,7 +122,7 @@ router.get('/all', authenticateToken, requireAdmin, async (req, res) => {
 // @route   POST /api/prompts
 // @desc    Create a new prompt (admin only)
 // @access  Admin
-router.post('/', authenticateToken, requireAdmin, sanitizeFields(['text']), async (req, res) => {
+router.post('/', authenticateToken, adminAuth(['admin', 'super_admin']), sanitizeFields(['text']), async (req, res) => {
   try {
     const { text, cadence, active } = req.body;
 
@@ -152,7 +141,7 @@ router.post('/', authenticateToken, requireAdmin, sanitizeFields(['text']), asyn
 
     res.status(201).json(prompt);
   } catch (error) {
-    console.error('Create prompt error:', error);
+    logger.error('Create prompt error:', error);
     res.status(500).json({ message: 'Failed to create prompt' });
   }
 });
@@ -160,7 +149,7 @@ router.post('/', authenticateToken, requireAdmin, sanitizeFields(['text']), asyn
 // @route   PATCH /api/prompts/:id/activate
 // @desc    Activate a prompt (deactivates all others)
 // @access  Admin
-router.patch('/:id/activate', authenticateToken, requireAdmin, async (req, res) => {
+router.patch('/:id/activate', authenticateToken, adminAuth(['admin', 'super_admin']), async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -174,7 +163,7 @@ router.patch('/:id/activate', authenticateToken, requireAdmin, async (req, res) 
 
     res.json({ message: 'Prompt activated', prompt });
   } catch (error) {
-    console.error('Activate prompt error:', error);
+    logger.error('Activate prompt error:', error);
     res.status(500).json({ message: 'Failed to activate prompt' });
   }
 });
@@ -182,7 +171,7 @@ router.patch('/:id/activate', authenticateToken, requireAdmin, async (req, res) 
 // @route   DELETE /api/prompts/:id
 // @desc    Delete a prompt (admin only)
 // @access  Admin
-router.delete('/:id', authenticateToken, requireAdmin, async (req, res) => {
+router.delete('/:id', authenticateToken, adminAuth(['admin', 'super_admin']), async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -193,7 +182,7 @@ router.delete('/:id', authenticateToken, requireAdmin, async (req, res) => {
 
     res.json({ message: 'Prompt deleted' });
   } catch (error) {
-    console.error('Delete prompt error:', error);
+    logger.error('Delete prompt error:', error);
     res.status(500).json({ message: 'Failed to delete prompt' });
   }
 });

@@ -12,23 +12,12 @@ import User from '../models/User.js';
 import SystemPrompt from '../models/SystemPrompt.js';
 import SystemConfig from '../models/SystemConfig.js';
 import { authenticateToken } from '../middleware/auth.js';
+import adminAuth from '../middleware/adminAuth.js';
 import { sanitizeFields } from '../middleware/sanitize.js';
 import { postNextPrompt } from '../scripts/systemPromptScheduler.js';
+import logger from '../utils/logger.js';
 
 const router = express.Router();
-
-// Middleware to check admin role
-const requireAdmin = async (req, res, next) => {
-  try {
-    const user = await User.findById(req.user.id).select('role');
-    if (!user || !['admin', 'super_admin'].includes(user.role)) {
-      return res.status(403).json({ message: 'Admin access required' });
-    }
-    next();
-  } catch (error) {
-    res.status(500).json({ message: 'Authorization check failed' });
-  }
-};
 
 // ============================================================================
 // Public Endpoint (for feed display)
@@ -50,7 +39,7 @@ router.get('/account', authenticateToken, async (req, res) => {
     
     res.json({ account: systemUser });
   } catch (error) {
-    console.error('Get system account error:', error);
+    logger.error('Get system account error:', error);
     res.status(500).json({ message: 'Failed to fetch system account' });
   }
 });
@@ -62,7 +51,7 @@ router.get('/account', authenticateToken, async (req, res) => {
 // @route   GET /api/system-prompts
 // @desc    Get all system prompts (admin only)
 // @access  Admin
-router.get('/', authenticateToken, requireAdmin, async (req, res) => {
+router.get('/', authenticateToken, adminAuth(['admin', 'super_admin']), async (req, res) => {
   try {
     const prompts = await SystemPrompt.find()
       .sort({ createdAt: -1 })
@@ -82,7 +71,7 @@ router.get('/', authenticateToken, requireAdmin, async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Get system prompts error:', error);
+    logger.error('Get system prompts error:', error);
     res.status(500).json({ message: 'Failed to fetch prompts' });
   }
 });
@@ -90,7 +79,7 @@ router.get('/', authenticateToken, requireAdmin, async (req, res) => {
 // @route   POST /api/system-prompts
 // @desc    Create a new system prompt (admin only)
 // @access  Admin
-router.post('/', authenticateToken, requireAdmin, sanitizeFields(['text']), async (req, res) => {
+router.post('/', authenticateToken, adminAuth(['admin', 'super_admin']), sanitizeFields(['text']), async (req, res) => {
   try {
     const { text, category, isActive } = req.body;
 
@@ -108,7 +97,7 @@ router.post('/', authenticateToken, requireAdmin, sanitizeFields(['text']), asyn
     await prompt.save();
     res.status(201).json(prompt);
   } catch (error) {
-    console.error('Create system prompt error:', error);
+    logger.error('Create system prompt error:', error);
     res.status(500).json({ message: 'Failed to create prompt' });
   }
 });
@@ -116,7 +105,7 @@ router.post('/', authenticateToken, requireAdmin, sanitizeFields(['text']), asyn
 // @route   PATCH /api/system-prompts/:id
 // @desc    Update a system prompt (admin only)
 // @access  Admin
-router.patch('/:id', authenticateToken, requireAdmin, sanitizeFields(['text']), async (req, res) => {
+router.patch('/:id', authenticateToken, adminAuth(['admin', 'super_admin']), sanitizeFields(['text']), async (req, res) => {
   try {
     const { id } = req.params;
     const { text, category, isActive } = req.body;
@@ -133,7 +122,7 @@ router.patch('/:id', authenticateToken, requireAdmin, sanitizeFields(['text']), 
     await prompt.save();
     res.json(prompt);
   } catch (error) {
-    console.error('Update system prompt error:', error);
+    logger.error('Update system prompt error:', error);
     res.status(500).json({ message: 'Failed to update prompt' });
   }
 });
@@ -141,7 +130,7 @@ router.patch('/:id', authenticateToken, requireAdmin, sanitizeFields(['text']), 
 // @route   DELETE /api/system-prompts/:id
 // @desc    Delete a system prompt (admin only)
 // @access  Admin
-router.delete('/:id', authenticateToken, requireAdmin, async (req, res) => {
+router.delete('/:id', authenticateToken, adminAuth(['admin', 'super_admin']), async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -152,7 +141,7 @@ router.delete('/:id', authenticateToken, requireAdmin, async (req, res) => {
 
     res.json({ message: 'Prompt deleted' });
   } catch (error) {
-    console.error('Delete system prompt error:', error);
+    logger.error('Delete system prompt error:', error);
     res.status(500).json({ message: 'Failed to delete prompt' });
   }
 });
@@ -164,7 +153,7 @@ router.delete('/:id', authenticateToken, requireAdmin, async (req, res) => {
 // @route   POST /api/system-prompts/settings/pause
 // @desc    Pause system prompt posting globally
 // @access  Admin
-router.post('/settings/pause', authenticateToken, requireAdmin, async (req, res) => {
+router.post('/settings/pause', authenticateToken, adminAuth(['admin', 'super_admin']), async (req, res) => {
   try {
     await SystemConfig.setValue(
       'systemPrompts.enabled',
@@ -175,7 +164,7 @@ router.post('/settings/pause', authenticateToken, requireAdmin, async (req, res)
 
     res.json({ message: 'System prompts paused', enabled: false });
   } catch (error) {
-    console.error('Pause system prompts error:', error);
+    logger.error('Pause system prompts error:', error);
     res.status(500).json({ message: 'Failed to pause prompts' });
   }
 });
@@ -183,7 +172,7 @@ router.post('/settings/pause', authenticateToken, requireAdmin, async (req, res)
 // @route   POST /api/system-prompts/settings/resume
 // @desc    Resume system prompt posting globally
 // @access  Admin
-router.post('/settings/resume', authenticateToken, requireAdmin, async (req, res) => {
+router.post('/settings/resume', authenticateToken, adminAuth(['admin', 'super_admin']), async (req, res) => {
   try {
     await SystemConfig.setValue(
       'systemPrompts.enabled',
@@ -194,7 +183,7 @@ router.post('/settings/resume', authenticateToken, requireAdmin, async (req, res
 
     res.json({ message: 'System prompts resumed', enabled: true });
   } catch (error) {
-    console.error('Resume system prompts error:', error);
+    logger.error('Resume system prompts error:', error);
     res.status(500).json({ message: 'Failed to resume prompts' });
   }
 });
@@ -202,7 +191,7 @@ router.post('/settings/resume', authenticateToken, requireAdmin, async (req, res
 // @route   POST /api/system-prompts/settings/frequency
 // @desc    Update posting frequency (in hours)
 // @access  Admin
-router.post('/settings/frequency', authenticateToken, requireAdmin, async (req, res) => {
+router.post('/settings/frequency', authenticateToken, adminAuth(['admin', 'super_admin']), async (req, res) => {
   try {
     const { hours } = req.body;
 
@@ -219,7 +208,7 @@ router.post('/settings/frequency', authenticateToken, requireAdmin, async (req, 
 
     res.json({ message: 'Frequency updated', frequency: hours });
   } catch (error) {
-    console.error('Update frequency error:', error);
+    logger.error('Update frequency error:', error);
     res.status(500).json({ message: 'Failed to update frequency' });
   }
 });
@@ -227,7 +216,7 @@ router.post('/settings/frequency', authenticateToken, requireAdmin, async (req, 
 // @route   POST /api/system-prompts/post-now
 // @desc    Manually trigger a prompt post (for testing)
 // @access  Admin
-router.post('/post-now', authenticateToken, requireAdmin, async (req, res) => {
+router.post('/post-now', authenticateToken, adminAuth(['admin', 'super_admin']), async (req, res) => {
   try {
     // Temporarily enable if paused
     const wasEnabled = await SystemConfig.getValue('systemPrompts.enabled', true);
@@ -247,7 +236,7 @@ router.post('/post-now', authenticateToken, requireAdmin, async (req, res) => {
 
     res.json({ message: 'Manual post triggered', ...result });
   } catch (error) {
-    console.error('Manual post error:', error);
+    logger.error('Manual post error:', error);
     res.status(500).json({ message: 'Failed to post prompt' });
   }
 });

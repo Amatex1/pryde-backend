@@ -498,54 +498,27 @@ app.use('/api/*', (req, res) => {
   sendError(res, HttpStatus.NOT_FOUND, `API endpoint not found: ${req.method} ${req.originalUrl}`);
 });
 
-// Global Error Handler - Must be LAST middleware
+// Catch all non-API routes after route registration.
+app.use((req, res) => {
+  logger.warn(`404 Not Found: ${req.method} ${req.path}`);
+  sendError(res, HttpStatus.NOT_FOUND, 'Route not found', {
+    path: req.path,
+    method: req.method
+  });
+});
+
+// Sentry Express error handler — must run before the app's final error middleware.
+if (process.env.SENTRY_DSN && process.env.NODE_ENV === 'production') {
+  Sentry.setupExpressErrorHandler(app);
+}
+
+// Global Error Handler - Must be LAST error middleware
 // Catches all uncaught errors and returns safe responses (no stack traces)
 app.use(globalErrorHandler);
 
 // ============================================================================
 // End Error Handling
 // ============================================================================
-
-
-// Sentry Express error handler — must be before 404 and other error handlers
-if (process.env.SENTRY_DSN && process.env.NODE_ENV === 'production') {
-  Sentry.setupExpressErrorHandler(app);
-}
-
-// 404 handler - must be BEFORE error handler
-app.use((req, res, next) => {
-  // Log 404s for debugging (helps identify missing routes)
-  logger.warn(`404 Not Found: ${req.method} ${req.path}`);
-  res.status(404).json({
-    message: 'Route not found',
-    path: req.path,
-    method: req.method
-  });
-});
-
-// Error handling middleware - must be LAST
-app.use((err, req, res, next) => {
-  // Log error with context
-  logger.error('Unhandled error:', {
-    message: err.message,
-    stack: err.stack,
-    path: req.path,
-    method: req.method,
-    hasUser: !!req.user,
-    hasToken: !!req.headers.authorization,
-    hasCookies: !!req.headers.cookie
-  });
-
-  // Don't expose internal errors in production
-  const message = config.nodeEnv === 'production'
-    ? 'Internal server error'
-    : err.message || 'Something went wrong!';
-
-  res.status(err.status || 500).json({
-    message,
-    ...(config.nodeEnv === 'development' && { stack: err.stack })
-  });
-});
 
 // Start server (skip on Vercel and in tests)
 const PORT = config.port;

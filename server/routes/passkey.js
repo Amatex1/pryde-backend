@@ -1,6 +1,5 @@
 import express from 'express';
 const router = express.Router();
-import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
 import auth from '../middleware/auth.js';
 import config from '../config/config.js';
@@ -15,12 +14,13 @@ import {
 import {
   parseUserAgent,
   getClientIp,
-  findOrCreateSession,
   getIpGeolocation
 } from '../utils/sessionUtils.js';
 import { getRefreshTokenCookieOptions } from '../utils/cookieUtils.js';
 import { createPasskeySession } from '../services/sessionService.js';
 import { passkeyLimiter } from '../middleware/rateLimiter.js';
+
+const isDevelopment = config.nodeEnv === 'development';
 
 // Fallback in-memory challenge store (used when Redis is unavailable)
 const challenges = new Map();
@@ -80,15 +80,12 @@ router.post('/register-start', auth, async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    console.log('🔐 Starting passkey registration for user:', user.username);
-    console.log('   User ID:', user._id.toString());
-    console.log('   Email:', user.email);
-    console.log('   Existing passkeys:', user.passkeys?.length || 0);
+    logger.debug('Starting passkey registration');
 
     // Generate registration options
     const options = await generatePasskeyRegistrationOptions(user);
 
-    console.log('✅ Registration options generated successfully');
+    logger.debug('Passkey registration options generated');
 
     // Store challenge for verification (Redis when available, Map as fallback)
     const redis = req.app.get('redis');
@@ -96,13 +93,10 @@ router.post('/register-start', auth, async (req, res) => {
 
     res.json(options);
   } catch (error) {
-    console.error('❌ Passkey registration start error:', error);
-    console.error('   Error name:', error.name);
-    console.error('   Error message:', error.message);
-    console.error('   Error stack:', error.stack);
+    logger.error('Passkey registration start error', error);
     res.status(500).json({
       message: 'Failed to start passkey registration',
-      error: config.nodeEnv === 'development' ? error.message : undefined
+      ...(isDevelopment && { error: error.message })
     });
   }
 });
@@ -117,38 +111,31 @@ router.post('/register-finish', auth, async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    console.log('🔐 Finishing passkey registration for user:', user.username);
     const { credential, deviceName } = req.body;
-    console.log('   Device name:', deviceName);
-    console.log('   Credential type:', typeof credential);
+    logger.debug('Completing passkey registration');
 
     // Get stored challenge
     const redis = req.app.get('redis');
     const expectedChallenge = await getChallenge(redis, user._id.toString());
     if (!expectedChallenge) {
-      console.error('❌ Challenge not found or expired');
+      logger.warn('Passkey registration challenge missing or expired');
       return res.status(400).json({ message: 'Challenge expired or not found' });
     }
 
-    console.log('✅ Challenge found, verifying registration...');
+    logger.debug('Stored passkey registration challenge found');
 
     // Verify registration response
     const verification = await verifyPasskeyRegistration(credential, expectedChallenge);
 
-    console.log('   Verification result:', verification.verified);
-
     if (!verification.verified) {
-      console.error('❌ Passkey verification failed');
+      logger.warn('Passkey registration verification failed');
       return res.status(400).json({ message: 'Passkey verification failed' });
     }
 
     const { registrationInfo } = verification;
     const { credential: registeredCredential, credentialDeviceType, credentialBackedUp } = registrationInfo;
 
-    console.log('✅ Verification successful, saving passkey...');
-    console.log('   Credential ID:', registeredCredential.id);
-    console.log('   Device type:', credentialDeviceType);
-    console.log('   Backed up:', credentialBackedUp);
+    logger.debug('Passkey registration verified successfully');
 
     // Save passkey to user account
     // Note: @simplewebauthn v13+ structure
@@ -164,16 +151,13 @@ router.post('/register-finish', auth, async (req, res) => {
       lastUsedAt: new Date()
     };
 
-    console.log('   New passkey object:', {
-      credentialId: newPasskey.credentialId,
-      credentialIdType: typeof newPasskey.credentialId,
-      deviceName: newPasskey.deviceName
-    });
-
     user.passkeys.push(newPasskey);
     await user.save();
 
-    console.log('✅ Passkey saved successfully');
+    logger.debug('Passkey saved successfully', {
+      deviceType: credentialDeviceType,
+      backedUp: credentialBackedUp
+    });
 
     // Clean up challenge
     const redisForCleanup = req.app.get('redis');
@@ -189,13 +173,10 @@ router.post('/register-finish', auth, async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('❌ Passkey registration finish error:', error);
-    console.error('   Error name:', error.name);
-    console.error('   Error message:', error.message);
-    console.error('   Error stack:', error.stack);
+    logger.error('Passkey registration finish error', error);
     res.status(500).json({
       message: 'Failed to complete passkey registration',
-      error: config.nodeEnv === 'development' ? error.message : undefined
+      ...(isDevelopment && { error: error.message })
     });
   }
 });
@@ -205,9 +186,8 @@ router.post('/register-finish', auth, async (req, res) => {
 // @access  Public
 router.post('/login-start', passkeyLimiter, async (req, res) => {
   try {
-    console.log('🔐 Starting passkey login...');
     const { email } = req.body;
-    console.log('   Email:', email || 'none (discoverable credential)');
+    logger.debug('Starting passkey login');
 
     let passkeys = [];
 
@@ -220,19 +200,18 @@ router.post('/login-start', passkeyLimiter, async (req, res) => {
     if (email) {
       const user = await User.findOne({ email });
       if (!user) {
-        console.log('   No user found for email');
+        logger.debug('Passkey login requested for account without registered passkeys');
         return res.status(200).json({ hasPasskeys: false });
       }
       if (!user.passkeys || user.passkeys.length === 0) {
-        console.log('   User has no passkeys registered');
+        logger.debug('Passkey login requested for account without registered passkeys');
         return res.status(200).json({ hasPasskeys: false });
       }
       passkeys = user.passkeys;
-      console.log('   Found', passkeys.length, 'passkey(s) for user');
     } else {
       // No email — refuse to start a discoverable-credential flow that
       // would expose all passkeys on the device across accounts.
-      console.log('   No email provided, refusing discoverable credential flow');
+      logger.warn('Blocked passkey login start without email');
       return res.status(400).json({
         message: 'Please enter your email before using a passkey.',
         code: 'EMAIL_REQUIRED'
@@ -240,17 +219,16 @@ router.post('/login-start', passkeyLimiter, async (req, res) => {
     }
 
     // Generate authentication options
-    console.log('🔐 Generating authentication options...');
     let options;
     try {
       options = await generatePasskeyAuthenticationOptions(passkeys);
-      console.log('✅ Authentication options generated');
+      logger.debug('Passkey authentication options generated');
     } catch (optionsError) {
-      console.error('❌ Failed to generate authentication options:', optionsError);
+      logger.error('Failed to generate passkey authentication options', optionsError);
       return res.status(500).json({
         message: 'Failed to generate authentication options',
         code: 'OPTIONS_GENERATION_FAILED',
-        details: optionsError.message
+        ...(isDevelopment && { details: optionsError.message })
       });
     }
 
@@ -258,17 +236,11 @@ router.post('/login-start', passkeyLimiter, async (req, res) => {
     const challengeKey = email || `anonymous-${Date.now()}`;
     const redis = req.app.get('redis');
     await storeChallenge(redis, challengeKey, options.challenge);
-    console.log('✅ Challenge stored with key:', challengeKey);
+    logger.debug('Passkey login challenge stored');
 
     res.json({ ...options, challengeKey });
   } catch (error) {
-    console.error('❌ Passkey login start error:', error);
-    console.error('   Error name:', error.name);
-    console.error('   Error message:', error.message);
-    console.error('   Error stack:', error.stack);
-
-    // Return detailed error in development, generic in production
-    const isDevelopment = process.env.NODE_ENV !== 'production';
+    logger.error('Passkey login start error', error);
 
     res.status(500).json({
       message: 'Failed to start passkey login. Please try again.',
@@ -286,12 +258,12 @@ router.post('/login-start', passkeyLimiter, async (req, res) => {
 // @access  Public
 router.post('/login-finish', passkeyLimiter, async (req, res) => {
   try {
-    console.log('🔐 Starting passkey login finish...');
     const { credential, challengeKey } = req.body;
+    logger.debug('Completing passkey login');
 
     // Validate request body
     if (!credential || !challengeKey) {
-      console.error('❌ Missing required fields');
+      logger.warn('Passkey login finish missing required fields');
       return res.status(400).json({
         message: 'Missing required fields',
         details: {
@@ -301,24 +273,20 @@ router.post('/login-finish', passkeyLimiter, async (req, res) => {
       });
     }
 
-    console.log('   Challenge key:', challengeKey);
-    console.log('   Credential ID:', credential?.id);
-
     // Get stored challenge
     const redis = req.app.get('redis');
     const expectedChallenge = await getChallenge(redis, challengeKey);
     if (!expectedChallenge) {
-      console.error('❌ Challenge not found or expired');
+      logger.warn('Passkey login challenge missing or expired');
       return res.status(400).json({
         message: 'Challenge expired or not found. Please try logging in again.',
         code: 'CHALLENGE_EXPIRED'
       });
     }
-    console.log('✅ Challenge found');
 
     // Validate credential ID
     if (!credential.id) {
-      console.error('❌ Credential ID missing');
+      logger.warn('Passkey login finish missing credential id');
       return res.status(400).json({
         message: 'Invalid credential data',
         code: 'INVALID_CREDENTIAL'
@@ -326,11 +294,10 @@ router.post('/login-finish', passkeyLimiter, async (req, res) => {
     }
 
     // Find user by credential ID
-    console.log('🔍 Looking for user with credential ID:', credential.id);
     const user = await User.findOne({ 'passkeys.credentialId': credential.id });
 
     if (!user) {
-      console.error('❌ User not found for credential ID:', credential.id);
+      logger.warn('Passkey login attempted with unknown credential');
       // Clean up challenge
       await deleteChallenge(redis, challengeKey);
       return res.status(404).json({
@@ -338,7 +305,6 @@ router.post('/login-finish', passkeyLimiter, async (req, res) => {
         code: 'PASSKEY_NOT_FOUND'
       });
     }
-    console.log('✅ User found:', user.username);
 
     // Check if account is suspended or banned
     if (user.isSuspended) {
@@ -367,7 +333,7 @@ router.post('/login-finish', passkeyLimiter, async (req, res) => {
     // Find the specific passkey
     const passkey = user.passkeys.find(pk => pk.credentialId === credential.id);
     if (!passkey) {
-      console.error('❌ Passkey not found in user passkeys');
+      logger.warn('Passkey credential did not match any stored user passkey');
       // Clean up challenge
       await deleteChallenge(redis, challengeKey);
       return res.status(404).json({
@@ -375,26 +341,24 @@ router.post('/login-finish', passkeyLimiter, async (req, res) => {
         code: 'PASSKEY_MISMATCH'
       });
     }
-    console.log('✅ Passkey found:', passkey.deviceName);
 
     // Verify authentication response
-    console.log('🔐 Verifying authentication...');
     let verification;
     try {
       verification = await verifyPasskeyAuthentication(credential, expectedChallenge, passkey);
     } catch (verifyError) {
-      console.error('❌ Verification error:', verifyError);
+      logger.error('Passkey verification error', verifyError);
       // Clean up challenge
       await deleteChallenge(redis, challengeKey);
       return res.status(400).json({
         message: 'Passkey verification failed. Please try again.',
         code: 'VERIFICATION_ERROR',
-        details: verifyError.message
+        ...(isDevelopment && { details: verifyError.message })
       });
     }
 
     if (!verification.verified) {
-      console.error('❌ Verification failed');
+      logger.warn('Passkey verification failed');
       // Clean up challenge
       await deleteChallenge(redis, challengeKey);
       return res.status(400).json({
@@ -412,7 +376,7 @@ router.post('/login-finish', passkeyLimiter, async (req, res) => {
       user.isActive = true;
       user.deactivatedAt = null;
 
-      logger.info(`✅ Account auto-reactivated for user: ${user.username} (${user.email}) via passkey login`);
+      logger.info('Account auto-reactivated via passkey login', { userId: user._id.toString() });
 
       // Emit real-time event for admin panel
       const io = req.app?.get('io');
@@ -448,7 +412,7 @@ router.post('/login-finish', passkeyLimiter, async (req, res) => {
     });
 
     // Clean up challenge
-    challenges.delete(challengeKey);
+    await deleteChallenge(redis, challengeKey);
 
     // Set refresh token in httpOnly cookie (ONLY source of truth for refresh tokens)
     const cookieOptions = getRefreshTokenCookieOptions(req);
@@ -474,13 +438,7 @@ router.post('/login-finish', passkeyLimiter, async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('❌ Passkey login finish error:', error);
-    console.error('   Error name:', error.name);
-    console.error('   Error message:', error.message);
-    console.error('   Error stack:', error.stack);
-
-    // Return detailed error in development, generic in production
-    const isDevelopment = process.env.NODE_ENV !== 'production';
+    logger.error('Passkey login finish error', error);
 
     res.status(500).json({
       message: 'Failed to complete passkey login. Please try again.',
@@ -512,7 +470,7 @@ router.get('/list', auth, async (req, res) => {
 
     res.json({ passkeys });
   } catch (error) {
-    console.error('List passkeys error:', error);
+    logger.error('List passkeys error', error);
     res.status(500).json({ message: 'Failed to list passkeys' });
   }
 });
@@ -544,7 +502,7 @@ router.delete('/:credentialId', auth, async (req, res) => {
       message: 'Passkey deleted successfully'
     });
   } catch (error) {
-    console.error('Delete passkey error:', error);
+    logger.error('Delete passkey error', error);
     res.status(500).json({ message: 'Failed to delete passkey' });
   }
 });

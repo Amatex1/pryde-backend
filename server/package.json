@@ -13,6 +13,7 @@
     "dev": "node --watch server.js",
     "prebuild": "node scripts/update-version.js",
     "lint": "eslint .",
+    "security:scan": "node ../security-scan.js",
     "test": "mocha --require test/setup.js test/**/*.test.js --timeout 10000 --exit",
     "test:watch": "mocha --require test/setup.js test/**/*.test.js --timeout 10000 --watch --exit",
     "test:ci": "mocha --require test/setup.js test/**/*.test.js --timeout 10000 --exit --reporter mocha-junit-reporter --reporter-options mochaFile=./test-results/results.xml",
@@ -22,7 +23,8 @@
     "migrate:tag-group-bridge": "node migrations/activate-tag-group-bridge.js",
     "rollback:tag-group-bridge": "node migrations/rollback-tag-group-bridge.js",
     "audit": "npm audit",
-    "audit-fix": "npm audit fix"
+    "audit-fix": "npm audit fix",
+    "hooks:install": "git config core.hooksPath ../.githooks"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.500.0",

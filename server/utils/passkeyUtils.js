@@ -4,7 +4,7 @@ import {
   generateAuthenticationOptions,
   verifyAuthenticationResponse
 } from '@simplewebauthn/server';
-import config from '../config/config.js';
+import logger from './logger.js';
 
 /**
  * WebAuthn/Passkey Configuration
@@ -35,13 +35,13 @@ const origin = process.env.NODE_ENV === 'production'
   ? ORIGINS
   : (process.env.ORIGIN || 'http://localhost:3000');
 
-// Log configuration on startup
-console.log('🔐 Passkey Configuration:');
-console.log('   Environment:', process.env.NODE_ENV || 'development');
-console.log('   RP Name:', rpName);
-console.log('   RP ID:', rpID);
-console.log('   Origin:', origin);
-console.log('   RP ID Source:', process.env.NODE_ENV === 'production' ? 'FORCED (production)' : 'ENV/DEFAULT');
+logger.info('Passkey configuration initialized', {
+  environment: process.env.NODE_ENV || 'development',
+  rpName,
+  rpID,
+  originCount: Array.isArray(origin) ? origin.length : 1,
+  rpIdSource: process.env.NODE_ENV === 'production' ? 'forced-production' : 'env-or-default'
+});
 
 /**
  * Generate registration options for creating a new passkey
@@ -114,7 +114,7 @@ export const generatePasskeyAuthenticationOptions = async (passkeys = []) => {
     .filter(passkey => {
       // Skip passkeys with invalid credentialId
       if (!passkey.credentialId || typeof passkey.credentialId !== 'string') {
-        console.warn('⚠️ Skipping passkey with invalid credentialId:', passkey._id);
+        logger.warn('Skipping stored passkey with invalid credentialId during authentication option generation');
         return false;
       }
       return true;

@@ -8,6 +8,7 @@
     "prestart": "node scripts/update-version.js",
     "start": "cd server && npm start",
     "dev": "cd server && npm run dev",
+    "security:scan": "node security-scan.js",
     "test": "cd server && npm test",
     "test:watch": "cd server && npm run test:watch",
     "test:mongo": "node server/scripts/testMongoConnection.js",
@@ -21,13 +22,14 @@
     "audit:theme": "node server/scripts/themeLeakAudit.js",
     "audit:paths": "node server/scripts/userImpactAudit.js",
     "audit:health": "node server/scripts/codeHealthAudit.js",
-    "audit:final": "node server/scripts/prydeAudit.js && node server/scripts/themeLeakAudit.js && node server/scripts/userImpactAudit.js && node server/scripts/codeHealthAudit.js && node server/scripts/generateAuditReport.js",
+    "audit:final": "node security-scan.js && node server/scripts/prydeAudit.js && node server/scripts/themeLeakAudit.js && node server/scripts/userImpactAudit.js && node server/scripts/codeHealthAudit.js && node server/scripts/generateAuditReport.js",
     "audit:auth": "node server/scripts/runtimeAuthAudit.js",
     "release:check": "node server/scripts/releaseGuard.js",
     "freeze:check": "node server/scripts/freezeGuard.js",
     "polish:theme": "node server/scripts/themeLeakFixer.js",
     "polish:theme:dry": "node server/scripts/themeLeakFixer.js --dry-run",
-    "create-indexes": "cd server && node scripts/create-indexes.js"
+    "create-indexes": "cd server && node scripts/create-indexes.js",
+    "hooks:install": "git config core.hooksPath .githooks"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.500.0",

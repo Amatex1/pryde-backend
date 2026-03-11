@@ -100,6 +100,22 @@ jobs:
           cd server
           npm run lint
 
+  secret-scan:
+    name: Secret Scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.x'
+
+      - name: Run secret scan
+        run: npm run security:scan
+
   security:
     name: Security Audit (Advisory)
     runs-on: ubuntu-latest
@@ -166,11 +182,12 @@ jobs:
   status-check:
     name: All Required Checks Passed
     runs-on: ubuntu-latest
-    needs: [test, lint, security, smoke]
+    needs: [test, lint, secret-scan, security, smoke]
     if: always()
     env:
       TEST_RESULT: ${{ needs.test.result }}
       LINT_RESULT: ${{ needs.lint.result }}
+      SECRET_SCAN_RESULT: ${{ needs.secret-scan.result }}
       SECURITY_RESULT: ${{ needs.security.result }}
       SMOKE_RESULT: ${{ needs.smoke.result }}
 
@@ -178,7 +195,7 @@ jobs:
       - name: Enforce required results
         run: |
           failures=0
-          for item in "Run Tests:$TEST_RESULT" "Lint Code:$LINT_RESULT" "Runtime Smoke Check:$SMOKE_RESULT"; do
+          for item in "Run Tests:$TEST_RESULT" "Lint Code:$LINT_RESULT" "Secret Scan:$SECRET_SCAN_RESULT" "Runtime Smoke Check:$SMOKE_RESULT"; do
             name="${item%%:*}"
             result="${item##*:}"
             if [ "$result" != "success" ]; then

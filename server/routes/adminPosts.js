@@ -18,35 +18,13 @@ import User from '../models/User.js';
 import Post from '../models/Post.js';
 import AdminActionLog from '../models/AdminActionLog.js';
 import { authenticateToken } from '../middleware/auth.js';
+import adminAuth from '../middleware/adminAuth.js';
 import { sanitizeFields } from '../middleware/sanitize.js';
 import requireAdminEscalation from '../middleware/requireAdminEscalation.js';
 import { getClientIp } from '../utils/sessionUtils.js';
 import logger from '../utils/logger.js';
 
 const router = express.Router();
-
-/**
- * Middleware to check if user is admin
- */
-const requireAdmin = async (req, res, next) => {
-  try {
-    const user = await User.findById(req.user.id);
-    
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-    
-    if (user.role !== 'admin' && user.role !== 'super_admin') {
-      return res.status(403).json({ message: 'Admin access required' });
-    }
-    
-    req.adminUser = user;
-    next();
-  } catch (error) {
-    logger.error('Admin check error:', error);
-    res.status(500).json({ message: 'Server error' });
-  }
-};
 
 /**
  * @route   POST /api/admin/posts
@@ -60,7 +38,7 @@ const requireAdmin = async (req, res, next) => {
  *   visibility: string (optional) - 'public', 'friends', 'private'
  * }
  */
-router.post('/', authenticateToken, requireAdmin, requireAdminEscalation, sanitizeFields(['content']), async (req, res) => {
+router.post('/', authenticateToken, adminAuth(['admin', 'super_admin']), requireAdminEscalation, sanitizeFields(['content']), async (req, res) => {
   try {
     const { content, postAs, visibility = 'public' } = req.body;
     const actorId = req.adminUser._id;
@@ -137,7 +115,7 @@ router.post('/', authenticateToken, requireAdmin, requireAdminEscalation, saniti
     });
   } catch (error) {
     logger.error('Admin post creation error:', error);
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res.status(500).json({ message: 'Server error' });
   }
 });
 
@@ -146,7 +124,7 @@ router.post('/', authenticateToken, requireAdmin, requireAdminEscalation, saniti
  * @desc    Get list of available system accounts for posting
  * @access  Admin
  */
-router.get('/system-accounts', authenticateToken, requireAdmin, async (req, res) => {
+router.get('/system-accounts', authenticateToken, adminAuth(['admin', 'super_admin']), async (req, res) => {
   try {
     const systemAccounts = await User.find({ 
       isSystemAccount: true 

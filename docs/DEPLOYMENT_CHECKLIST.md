@@ -1,230 +1,65 @@
-# 🚀 Deployment Checklist - Lighthouse Optimization
+# Backend Deployment & Release Checklist
 
-## ✅ Changes Ready to Deploy
+Use this checklist for every backend release. It is intentionally security-first.
 
-### 1. **SEO Fix: robots.txt Serving** (92 → 100)
-- ✅ Updated `public/_redirects` to exclude static files
-- ✅ Build completed successfully
-- ⏳ **Needs deployment**
+## 1. Local release gates
 
-### 2. **Accessibility Fix: Button Contrast** (96 → 100)
-- ✅ Fixed all 10 button contrast issues
-- ✅ All buttons now meet WCAG AA (4.5:1 ratio)
-- ⏳ **Needs deployment**
+- [ ] `npm run security:scan`
+- [ ] `cd server && npm run lint`
+- [ ] `cd server && npm test`
+- [ ] `cd server && node --check server.js`
+- [ ] `npm run audit:final`
 
----
+## 2. Environment review
 
-## 📋 Deployment Steps
+- [ ] `NODE_ENV` is set to production.
+- [ ] Database, Redis, email, push, and storage credentials are set in provider-managed env vars.
+- [ ] Auth secrets are present and current.
+- [ ] `FRONTEND_URL`, `API_DOMAIN`, and `ROOT_DOMAIN` match the intended deployment.
+- [ ] Only required integrations are enabled.
+- [ ] Debug or local-only environment variables are absent.
 
-### Step 1: Commit and Push Changes
+## 3. Platform hardening checks
 
-```bash
-# Check what files changed
-git status
+- [ ] Provider access is limited to approved operators.
+- [ ] Database and cache access rules are intentionally restricted.
+- [ ] HTTPS termination is active.
+- [ ] Backups and provider audit logs are enabled where supported.
+- [ ] Unused provider keys have been revoked.
 
-# Add all changes
-git add .
+## 4. Application security checks
 
-# Commit with descriptive message
-git commit -m "Fix: Lighthouse optimizations - robots.txt serving and button contrast (SEO 92→100, A11y 96→100)"
+- [ ] Public, authenticated, privileged, and development-only routes are still intentionally separated.
+- [ ] Privileged route families use centralized authorization middleware.
+- [ ] Cookie, CSRF, CORS, and rate-limit settings match the current domain layout.
+- [ ] Request-size and upload limits remain enabled.
+- [ ] Error responses do not expose stack traces or internal details.
 
-# Push to GitHub
-git push origin main
-```
+## 5. Smoke tests after deploy
 
-### Step 2: Wait for Render Deployment
+- [ ] Health endpoint returns successfully.
+- [ ] Unauthenticated access to a privileged route is denied.
+- [ ] A privileged account can still access allowed admin paths.
+- [ ] Login, refresh, and logout flows work.
+- [ ] CSRF-protected mutations succeed from the real frontend and fail when the token is missing or invalid.
+- [ ] Logs do not contain raw tokens, cookies, or secrets.
 
-1. Go to [Render Dashboard](https://dashboard.render.com)
-2. Find your frontend service
-3. Wait for automatic deployment (2-3 minutes)
-4. Check deployment logs for errors
+## 6. Recommended manual checks
 
-### Step 3: Clear Cloudflare Cache
+- [ ] Review provider logs for startup errors.
+- [ ] Review auth/admin logs for unusual spikes after deploy.
+- [ ] Confirm background jobs and queues reconnect correctly.
+- [ ] Confirm media/storage integrations fail closed if credentials are removed.
 
-1. Go to [Cloudflare Dashboard](https://dash.cloudflare.com)
-2. Select your domain (prydeapp.com)
-3. Go to **Caching** → **Configuration**
-4. Click **Purge Everything**
-5. Confirm purge
+## 7. Rollback readiness
 
-### Step 4: Verify Deployment
+- [ ] Previous known-good deploy is identified.
+- [ ] Database backup / restore path is known.
+- [ ] The on-call owner knows how to rotate auth secrets quickly if rollback is auth-related.
 
-1. Visit https://prydeapp.com/robots.txt
-2. **Expected:** Plain text robots.txt file
-3. **Not:** HTML page
+## Notes
 
-### Step 5: Re-run Lighthouse Audit
-
-1. Open https://prydeapp.com/feed in Chrome
-2. Open DevTools (F12)
-3. Go to **Lighthouse** tab
-4. Select **Desktop** mode
-5. Click **Analyze page load**
-
----
-
-## 🎯 Expected Results After Deployment
-
-| Metric | Before | After | Change |
-|--------|--------|-------|--------|
-| **Performance** | 97 | 97 | ✅ No change |
-| **Accessibility** | 96 | **100** | 🎯 +4 points |
-| **Best Practices** | 81 | 81-100 | ⚠️ Depends on Cloudflare |
-| **SEO** | 92 | **100** | 🎯 +8 points |
-
----
-
-## ⚠️ Known Issues (Cannot Fix Now)
-
-### 1. **Image Optimization** (171 KiB savings)
-- **Issue:** User-uploaded images are too large
-- **Cause:** Backend doesn't resize images
-- **Solution:** Requires backend changes (see `IMAGE_OPTIMIZATION_PLAN.md`)
-- **Impact:** Would improve Performance from 97 to 98-99
-- **Priority:** Medium (performance already excellent)
-
-### 2. **Best Practices: Deprecated API** (81 score)
-- **Issue:** Cloudflare Rocket Loader uses deprecated API
-- **Cause:** Third-party script (Cloudflare)
-- **Solution:** Disable Rocket Loader OR wait for Cloudflare update
-- **Impact:** Could improve Best Practices from 81 to 100
-- **Priority:** Low (third-party issue)
-
-### 3. **Unused CSS** (16 KiB)
-- **Issue:** Some CSS not used on initial page load
-- **Cause:** Theme switching and dark mode styles
-- **Solution:** Code splitting (risky, may break themes)
-- **Impact:** Minimal (16 KiB is small)
-- **Priority:** Low (not worth the risk)
-
-### 4. **Unused JavaScript** (50 KiB)
-- **Issue:** Some JS not used on initial page load
-- **Cause:** Code for Register, Login, Home pages loaded on Feed
-- **Solution:** Already using code splitting (Vite lazy loading)
-- **Impact:** Minimal (already optimized)
-- **Priority:** Low (already using best practices)
-
----
-
-## 🎉 Success Criteria
-
-After deployment, you should see:
-
-### ✅ **Perfect Scores:**
-- Accessibility: **100/100** ✨
-- SEO: **100/100** ✨
-
-### ✅ **Excellent Scores:**
-- Performance: **97/100** 🚀
-- Best Practices: **81/100** (or 100 if Cloudflare fixed)
-
-### ✅ **Fixed Issues:**
-- ✅ robots.txt serves correctly
-- ✅ All button contrast ratios meet WCAG AA
-- ✅ Feed tabs readable
-- ✅ Action buttons readable
-- ✅ Comment buttons readable
-- ✅ Poll buttons readable
-- ✅ Content warning buttons readable
-- ✅ Glossy gold buttons readable
-
----
-
-## 🔍 Troubleshooting
-
-### If robots.txt still returns HTML:
-
-**Option 1: Check Render Configuration**
-1. Go to Render Dashboard
-2. Check if there's a custom redirect rule
-3. Remove any conflicting rules
-
-**Option 2: Check Cloudflare Page Rules**
-1. Go to Cloudflare Dashboard
-2. Check **Rules** → **Page Rules**
-3. Make sure no rule is redirecting `/robots.txt`
-
-**Option 3: Use Cloudflare Workers**
-Create a worker to serve robots.txt:
-```javascript
-addEventListener('fetch', event => {
-  if (event.request.url.endsWith('/robots.txt')) {
-    event.respondWith(new Response(ROBOTS_TXT, {
-      headers: { 'Content-Type': 'text/plain' }
-    }));
-  }
-});
-
-const ROBOTS_TXT = `# Pryde Social - Robots.txt
-User-agent: *
-Allow: /
-Disallow: /admin
-Disallow: /api/
-Disallow: /messages
-Disallow: /settings
-Sitemap: https://prydeapp.com/sitemap.xml`;
-```
-
-### If Accessibility score is still 96:
-
-1. Check browser console for errors
-2. Re-run Lighthouse in **Incognito mode** (disable extensions)
-3. Check if Cloudflare is caching old CSS
-4. Hard refresh (Ctrl+Shift+R)
-
----
-
-## 📊 Performance Monitoring
-
-After deployment, monitor these metrics:
-
-### Core Web Vitals:
-- **LCP:** Should stay under 1.2s ✅
-- **FID:** Should stay under 100ms ✅
-- **CLS:** Should stay under 0.1 ✅
-
-### Lighthouse Scores:
-- Run weekly audits to catch regressions
-- Test on both Desktop and Mobile
-- Test in Incognito mode (no extensions)
-
----
-
-## 📝 Files Modified in This Session
-
-1. ✅ `public/_redirects` - Fixed robots.txt serving
-2. ✅ `src/pages/Feed.css` - Fixed button contrast
-3. ✅ `src/styles/darkMode.css` - Fixed glossy-gold contrast
-
----
-
-## 📚 Documentation Created
-
-1. ✅ `ACCESSIBILITY_CONTRAST_FIXES.md` - Button contrast fixes
-2. ✅ `LIGHTHOUSE_FINAL_FIXES.md` - Summary of all fixes
-3. ✅ `IMAGE_OPTIMIZATION_PLAN.md` - Backend image optimization plan
-4. ✅ `DEPLOYMENT_CHECKLIST.md` - This file
-
----
-
-## 🎯 Next Steps
-
-1. **Deploy now** - Push changes to GitHub
-2. **Wait 3 minutes** - Let Render deploy
-3. **Clear Cloudflare cache** - Purge everything
-4. **Test robots.txt** - Visit https://prydeapp.com/robots.txt
-5. **Re-run Lighthouse** - Verify 100/100 scores
-6. **Celebrate!** 🎊
-
----
-
-**Ready to deploy?** Run these commands:
-
-```bash
-git add .
-git commit -m "Fix: Lighthouse SEO and Accessibility optimizations"
-git push origin main
-```
-
-Then wait for Render to deploy and re-run Lighthouse! 🚀
+- Do not use broad production admin/network access when a narrower rule is possible.
+- If any auth secret changes, plan for session invalidation and communicate the blast radius.
+- If a release changes auth, cookies, CSRF, or admin authorization, the smoke checks above are mandatory.
 

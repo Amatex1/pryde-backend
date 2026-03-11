@@ -1,182 +1,103 @@
-# 🔒 Security Checklist for Pryde Backend
+# Backend Security Runbook
 
-## ✅ Completed Actions
+This file is the maintained backend security runbook for Pryde. It replaces older notes that mixed real incident details with stale deployment guidance.
 
-- [x] Changed MongoDB password
-- [x] `.env` file is in `.gitignore`
-- [x] `.env` has never been committed to git
-- [x] Created `.env.example` with safe placeholders
-- [x] Created security scanner script
+## Repo-enforced controls
 
----
+- [x] Secrets are expected in managed environment variables, not tracked files.
+- [x] `npm run security:scan` scans the repo for likely leaked credentials.
+- [x] CI includes a required **Secret Scan** job before the overall status check passes.
+- [x] A tracked pre-commit hook is available via `npm run hooks:install`.
+- [x] Touched admin route families are centralized behind shared authorization middleware.
+- [x] Touched sanitization/error paths use the shared logger instead of raw console leakage.
+- [x] Privileged-route deny-path regression coverage exists in `server/test/unit/security-hardening.test.js`.
 
-## 🚨 IMMEDIATE ACTIONS REQUIRED
+## Secret ownership and storage rules
 
-### 1. Rotate ALL Credentials (Since .env was potentially exposed)
+- Store live secrets only in local untracked env files and the hosting provider's secret manager.
+- Use separate credentials for local, staging, and production.
+- Never paste live credentials into docs, issues, PRs, screenshots, or logs.
+- Treat JWT, refresh, CSRF, database, Redis, email, push, and storage credentials as rotation candidates.
+- If a credential might have been copied into a tracked file, rotate it even if the commit never reached production.
 
-Even though `.env` wasn't committed to git, you should rotate these credentials as a best practice:
+## Rotation procedure
 
-#### MongoDB (✅ Already Done)
-- [x] Changed MongoDB password
-- [ ] Update `MONGO_URI` in Render environment variables
-- [ ] Update local `.env` file with new connection string
+Use this order whenever a secret is rotated:
 
-#### Resend API Key
-- [ ] Go to https://resend.com/api-keys
-- [ ] Delete old API key: `re_iioho97D_CMaXhgXHHqV8JUNkGsSY2gTC`
-- [ ] Create new API key
-- [ ] Update in Render environment variables
-- [ ] Update in local `.env`
+1. Rotate the credential in the provider dashboard.
+2. Update the managed environment variable for every active environment.
+3. Update local untracked env files for authorized operators.
+4. Invalidate sessions or tokens if the rotated secret affects auth.
+5. Redeploy the backend.
+6. Run the smoke checks in `docs/DEPLOYMENT_CHECKLIST.md`.
+7. Record the date, owner, and reason for rotation.
 
-#### JWT Secrets
-- [ ] Generate new JWT_SECRET:
-  ```bash
-  node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
-  ```
-- [ ] Generate new JWT_REFRESH_SECRET
-- [ ] Generate new CSRF_SECRET
-- [ ] Generate new MESSAGE_ENCRYPTION_KEY
-- [ ] Update all in Render environment variables
-- [ ] Update all in local `.env`
+## Git and history review procedure
 
-#### VAPID Keys (Push Notifications)
-- [ ] Generate new VAPID keys:
-  ```bash
-  npx web-push generate-vapid-keys
-  ```
-- [ ] Update in Render environment variables
-- [ ] Update in local `.env`
+Run these checks whenever a secret-like file appears locally or before a sensitive release:
 
-#### Backup API Key
-- [ ] Generate new backup API key
-- [ ] Update in Render environment variables
-- [ ] Update in local `.env`
+- `npm run security:scan`
+- `git log --all --full-history -- .env`
+- `git log -p --all -- path/to/suspect-file`
 
----
+If anything sensitive appears in history:
 
-## 🛡️ Security Best Practices
+1. Rotate the affected credentials first.
+2. Review who had access during the exposure window.
+3. Clean the history only after rotation and communication are complete.
+4. Capture the incident in the internal ops log.
 
-### Environment Variables
-- ✅ Never commit `.env` files
-- ✅ Use `.env.example` for documentation
-- ✅ Keep `.env` in `.gitignore`
-- [ ] Use different credentials for dev/staging/production
-- [ ] Rotate credentials every 90 days
+## Provider hardening expectations
 
-### Git Security
-- [ ] Run security scan before every commit:
-  ```bash
-  node security-scan.js
-  ```
-- [ ] Review git history for leaked secrets:
-  ```bash
-  git log --all --full-history --source -- .env
-  ```
-- [ ] Use git hooks to prevent committing secrets
+### Database and cache
 
-### MongoDB Atlas Security
-- [ ] Enable IP whitelist (don't use 0.0.0.0/0 in production)
-- [ ] Use strong passwords (20+ characters)
-- [ ] Enable MongoDB Atlas encryption at rest
-- [ ] Enable audit logs
-- [ ] Set up automated backups
+- Restrict access to approved application and operator origins only.
+- Do not use overly broad network allowances for production administration.
+- Enable provider-side backups, encryption, and audit logging when available.
+- Use least-privilege database users.
 
-### API Keys
-- [ ] Use separate API keys for dev/production
-- [ ] Set up API key rotation schedule
-- [ ] Monitor API key usage
-- [ ] Revoke unused API keys
+### Email, push, and storage providers
 
----
+- Use separate keys per environment.
+- Remove unused keys and service accounts.
+- Prefer scoped or revocable credentials over long-lived general-purpose keys.
 
-## 🔍 Regular Security Checks
+## Recurring review cadence
 
-### Weekly
-- [ ] Run security scanner: `node security-scan.js`
-- [ ] Check for dependency vulnerabilities: `npm audit`
-- [ ] Review access logs
+### Before each merge to main
+
+- Run `npm run security:scan`.
+- Run the relevant backend tests.
+- Review changed docs/config for accidental credential disclosure.
 
 ### Monthly
-- [ ] Review and rotate API keys
-- [ ] Check MongoDB Atlas security settings
-- [ ] Review user permissions
-- [ ] Update dependencies: `npm update`
+
+- Review provider access lists and operator access.
+- Review auth/admin logs for unusual behavior.
+- Review dependency audit output and backlog.
 
 ### Quarterly
-- [ ] Rotate all credentials
-- [ ] Security audit
-- [ ] Penetration testing
-- [ ] Review and update security policies
 
----
+- Rotate high-impact credentials on schedule.
+- Review authorization surfaces and privileged route families.
+- Reconfirm incident response contacts and ownership.
 
-## 🚀 Quick Commands
+## Incident response checklist
 
-### Run Security Scan
-```bash
-node security-scan.js
-```
+If credentials or privileged access are suspected to be exposed:
 
-### Check for Vulnerabilities
-```bash
-npm audit
-npm audit fix
-```
+1. Rotate the affected credential set immediately.
+2. Revoke unused tokens, sessions, or provider keys.
+3. Review backend logs, provider audit logs, and recent admin actions.
+4. Assess whether user notification is required.
+5. Document the scope, timeline, and remediation.
+6. Add or update a regression control if the issue came from code or CI drift.
 
-### Generate New Secrets
-```bash
-# JWT Secret
-node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
+## Useful commands
 
-# VAPID Keys
-npx web-push generate-vapid-keys
-
-# Random API Key
-node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
-```
-
-### Check Git History for Secrets
-```bash
-# Check if .env was ever committed
-git log --all --full-history -- .env
-
-# Search for potential secrets in history
-git log -p | grep -i "password\|secret\|api_key"
-```
-
----
-
-## 📋 Deployment Checklist
-
-Before deploying to production:
-
-- [ ] All credentials rotated
-- [ ] Security scan passes: `node security-scan.js`
-- [ ] No vulnerabilities: `npm audit`
-- [ ] Environment variables set in Render
-- [ ] MongoDB IP whitelist configured
-- [ ] CORS configured correctly
-- [ ] Rate limiting enabled
-- [ ] HTTPS enforced
-- [ ] Security headers configured
-
----
-
-## 🆘 If Credentials Are Leaked
-
-1. **Immediately rotate ALL credentials**
-2. **Check access logs for unauthorized access**
-3. **Review recent database changes**
-4. **Notify users if data was compromised**
-5. **Document the incident**
-6. **Implement additional security measures**
-
----
-
-## 📞 Resources
-
-- MongoDB Atlas Security: https://docs.atlas.mongodb.com/security/
-- Resend API: https://resend.com/docs
-- OWASP Security Guide: https://owasp.org/
-- Node.js Security Best Practices: https://nodejs.org/en/docs/guides/security/
+- `npm run security:scan`
+- `npm run hooks:install`
+- `cd server && npm test`
+- `cd server && npm run lint`
+- `npm run audit:final`
 
