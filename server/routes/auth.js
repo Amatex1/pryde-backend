@@ -2,6 +2,7 @@ import express from 'express';
 const router = express.Router();
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
+import * as OTPAuth from 'otpauth';
 import User from '../models/User.js';
 import Badge from '../models/Badge.js';
 import SecurityLog from '../models/SecurityLog.js';
@@ -1134,11 +1135,12 @@ router.post('/verify-2fa-login', loginLimiter, async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // Import speakeasy for verification
-    const speakeasy = (await import('speakeasy')).default;
+    const backupCodes = Array.isArray(user.twoFactorBackupCodes)
+      ? user.twoFactorBackupCodes
+      : [];
 
     // Check if it's a backup code
-    const backupCodeIndex = user.twoFactorBackupCodes.findIndex(
+    const backupCodeIndex = backupCodes.findIndex(
       bc => bc.code === twoFactorToken && !bc.used
     );
 
@@ -1153,12 +1155,13 @@ router.post('/verify-2fa-login', loginLimiter, async (req, res) => {
       const decryptedSecret = getDecrypted2FASecret(user);
 
       // Verify TOTP token
-      verified = speakeasy.totp.verify({
-        secret: decryptedSecret,
-        encoding: 'base32',
-        token: twoFactorToken,
-        window: 2
+      const loginTotp = new OTPAuth.TOTP({
+        algorithm: 'SHA1',
+        digits: 6,
+        period: 30,
+        secret: OTPAuth.Secret.fromBase32(decryptedSecret),
       });
+      verified = loginTotp.validate({ token: String(twoFactorToken).trim(), window: 2 }) !== null;
     }
 
     if (!verified) {
