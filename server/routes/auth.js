@@ -1623,6 +1623,10 @@ router.get('/me', auth, async (req, res) => {
       friends: user.friends,
       privacySettings: user.privacySettings,
       notificationPreferences: user.notificationPreferences,
+      loginAlerts: user.loginAlerts,
+      pushTwoFactorEnabled: user.pushTwoFactorEnabled || false,
+      preferPushTwoFactor: user.preferPushTwoFactor !== false,
+      hasPushSubscription: !!user.pushSubscription,
       // Onboarding tour flags
       hasCompletedTour: user.hasCompletedTour,
       hasSkippedTour: user.hasSkippedTour,
