@@ -15,6 +15,7 @@
 import User from '../models/User.js';
 import Notification from '../models/Notification.js';
 import logger from '../utils/logger.js';
+import { emitNotificationCreated } from '../utils/notificationEmitter.js';
 
 /**
  * Thank you message templates
@@ -118,7 +119,7 @@ export const checkAndSendThankYou = async (userId, milestoneType, io = null) => 
       const populated = await Notification.findById(notification._id)
         .populate('sender', 'username displayName profilePhoto');
       
-      io.to(`user_${userId}`).emit('notification:new', populated);
+      emitNotificationCreated(io, userId, populated);
     }
     
     logger.info(`[ThankYou] Sent ${milestoneType} thank you to user ${userId}`);

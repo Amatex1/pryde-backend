@@ -18,6 +18,7 @@ import User from '../models/User.js';
 import Notification from '../models/Notification.js';
 import { shouldReceiveNotifications } from './groupNotificationService.js';
 import logger from '../utils/logger.js';
+import { emitNotificationCreated } from '../utils/notificationEmitter.js';
 
 // Forbidden mass mention patterns
 const FORBIDDEN_MENTIONS = ['all', 'everyone', 'here'];
@@ -156,7 +157,7 @@ export async function notifyMentionsInComment({ content, authorId, author, comme
             .lean();
 
           if (populatedNotification) {
-            io.to(`user_${notification.recipient.toString()}`).emit('notification:new', populatedNotification);
+            emitNotificationCreated(io, notification.recipient.toString(), populatedNotification);
             logger.debug('[Mention] Real-time notification emitted', {
               recipient: notification.recipient.toString(),
               type: 'mention'
@@ -230,7 +231,7 @@ export async function notifyMentionsInLounge({ content, authorId, author, messag
             .lean();
 
           if (populatedNotification) {
-            io.to(`user_${notification.recipient.toString()}`).emit('notification:new', populatedNotification);
+            emitNotificationCreated(io, notification.recipient.toString(), populatedNotification);
             logger.debug('[Mention] Real-time lounge notification emitted', {
               recipient: notification.recipient.toString(),
               type: 'mention'
