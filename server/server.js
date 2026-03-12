@@ -301,12 +301,17 @@ if (config.nodeEnv === 'production') {
 // Security middleware - Helmet for security headers
 // CSP is ENFORCED in production, report-only in development
 const isProd = config.nodeEnv === 'production';
+
+// Strict CSP for production - no unsafe-inline
 const cspScriptSrc = isProd
   ? ["'self'", 'blob:']
   : ["'self'", "'unsafe-inline'", "'unsafe-eval'", 'blob:'];
 const cspScriptSrcElem = isProd
   ? ["'self'", 'blob:']
   : ["'self'", "'unsafe-inline'", 'blob:'];
+const cspStyleSrc = isProd
+  ? ["'self'"]
+  : ["'self'", "'unsafe-inline'"];
 
 // Build dynamic CSP connect-src based on configured API domain
 const getConnectSrc = () => {
@@ -359,7 +364,7 @@ app.use(helmet({
       defaultSrc: ["'self'"],
       scriptSrc: cspScriptSrc,
       scriptSrcElem: cspScriptSrcElem,
-      styleSrc: ["'self'", "'unsafe-inline'"],
+      styleSrc: cspStyleSrc,
       imgSrc: ["'self'", "data:", "blob:", "https://media.tenor.com", "https://*.tenor.com"],
       connectSrc: getConnectSrc(),
       fontSrc: ["'self'", "data:"],

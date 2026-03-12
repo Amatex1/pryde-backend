@@ -112,7 +112,7 @@ router.get('/stats', checkPermission('canViewAnalytics'), async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Get stats error:', error);
+    logger.error('Get stats error', { error: error.message, stack: error.stack, requestId: req.requestId });
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -160,7 +160,7 @@ router.get('/reports', checkPermission('canViewReports'), async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Get reports error:', error);
+    logger.error('Get reports error', { error: error.message, requestId: req.requestId });
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -189,7 +189,7 @@ router.put('/reports/:id', checkPermission('canResolveReports'), async (req, res
 
     res.json({ message: 'Report updated successfully', report });
   } catch (error) {
-    console.error('Update report error:', error);
+    logger.error('Update report error', { error: error.message, requestId: req.requestId });
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -249,7 +249,7 @@ router.get('/users', checkPermission('canManageUsers'), async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Get users error:', error);
+    logger.error('Get users error', { error: error.message, requestId: req.requestId });
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -304,7 +304,7 @@ router.put('/users/:id/suspend', checkPermission('canManageUsers'), async (req, 
 
     res.json({ message: 'User suspended successfully', user: user.toJSON() });
   } catch (error) {
-    console.error('Suspend user error:', error);
+    logger.error('Suspend user error', { error: error.message, requestId: req.requestId });
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -335,7 +335,7 @@ router.put('/users/:id/unsuspend', checkPermission('canManageUsers'), async (req
 
     res.json({ message: 'User unsuspended successfully', user: user.toJSON() });
   } catch (error) {
-    console.error('Unsuspend user error:', error);
+    logger.error('Unsuspend user error', { error: error.message, requestId: req.requestId });
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -402,7 +402,7 @@ router.put('/users/:id/ban', checkPermission('canManageUsers'), requireAdminEsca
 
     res.json({ message: 'User banned successfully', user: user.toJSON() });
   } catch (error) {
-    console.error('Ban user error:', error);
+    logger.error('Ban user error', { error: error.message, requestId: req.requestId });
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -433,7 +433,7 @@ router.put('/users/:id/unban', checkPermission('canManageUsers'), requireAdminEs
 
     res.json({ message: 'User unbanned successfully', user: user.toJSON() });
   } catch (error) {
-    console.error('Unban user error:', error);
+    logger.error('Unban user error', { error: error.message, requestId: req.requestId });
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -525,7 +525,7 @@ router.put('/users/:id/role', checkPermission('canManageAdmins'), requireAdminEs
 
     res.json({ message: 'User role updated successfully', user: user.toJSON() });
   } catch (error) {
-    console.error('Update role error:', error);
+    logger.error('Update role error', { error: error.message, requestId: req.requestId });
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -556,7 +556,7 @@ router.get('/blocks', checkPermission('canViewAnalytics'), async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Get blocks error:', error);
+    logger.error('Get blocks error', { error: error.message, requestId: req.requestId });
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -607,7 +607,7 @@ router.get('/posts', checkPermission('canViewAnalytics'), async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Get admin posts error:', error);
+    logger.error('Get admin posts error', { error: error.message, requestId: req.requestId });
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -645,7 +645,7 @@ router.get('/activity', checkPermission('canViewAnalytics'), async (req, res) =>
       period: `Last ${days} days`
     });
   } catch (error) {
-    console.error('Get activity error:', error);
+    logger.error('Get activity error', { error: error.message, requestId: req.requestId });
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -735,7 +735,7 @@ router.get('/security-logs', checkPermission('canViewAnalytics'), async (req, re
       hasMore: total > parseInt(skip) + parseInt(limit)
     });
   } catch (error) {
-    console.error('Get security logs error:', error);
+    logger.error('Get security logs error', { error: error.message, requestId: req.requestId });
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -765,7 +765,7 @@ router.put('/security-logs/:id/resolve', checkPermission('canManageUsers'), asyn
 
     res.json(log);
   } catch (error) {
-    console.error('Resolve security log error:', error);
+    logger.error('Resolve security log error', { error: error.message, requestId: req.requestId });
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -827,14 +827,14 @@ router.post('/users/:id/send-reset-link', checkPermission('canManageUsers'), asy
       });
     }
 
-    // Log admin action
-    console.log('ADMIN ACTION:', {
+    // Log admin action using structured logger
+    logger.info({
+      message: 'ADMIN ACTION: PASSWORD_RESET_TRIGGERED',
       adminId: req.adminUser._id,
       adminUsername: req.adminUser.username,
       action: 'PASSWORD_RESET_TRIGGERED',
       targetUserId: user._id,
-      targetUsername: user.username,
-      timestamp: new Date()
+      targetUsername: user.username
     });
 
     res.json({
@@ -842,7 +842,7 @@ router.post('/users/:id/send-reset-link', checkPermission('canManageUsers'), asy
       email: user.email
     });
   } catch (error) {
-    console.error('Send reset link error:', error);
+    logger.error('Send reset link error', { error: error.message, requestId: req.requestId });
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -1002,21 +1002,21 @@ router.put('/users/:id/email', checkPermission('canManageUsers'), async (req, re
           `
         });
       } catch (emailError) {
-        console.error('Error sending email notifications:', emailError);
+        logger.error('Email notification error', { error: emailError.message, targetEmail: newEmail });
         // Don't fail the request if emails fail
       }
     }
 
-    // Log admin action
-    console.log('ADMIN ACTION:', {
+    // Log admin action using structured logger
+    logger.info({
+      message: 'ADMIN ACTION: EMAIL_UPDATED',
       adminId: req.adminUser._id,
       adminUsername: req.adminUser.username,
       action: 'EMAIL_UPDATED',
       targetUserId: user._id,
       targetUsername: user.username,
       oldEmail,
-      newEmail,
-      timestamp: new Date()
+      newEmail
     });
 
     res.json({
@@ -1025,7 +1025,7 @@ router.put('/users/:id/email', checkPermission('canManageUsers'), async (req, re
       newEmail
     });
   } catch (error) {
-    console.error('Update email error:', error);
+    logger.error('Update email error', { error: error.message, requestId: req.requestId });
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -1047,7 +1047,7 @@ router.get('/groups/pending', async (req, res) => {
 
     res.json({ groups: pendingGroups });
   } catch (error) {
-    console.error('Get pending groups error:', error);
+    logger.error('Get pending groups error', { error: error.message, requestId: req.requestId });
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -1081,7 +1081,7 @@ router.patch('/groups/:id/approve', async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Approve group error:', error);
+    logger.error('Approve group error', { error: error.message, requestId: req.requestId });
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -1115,7 +1115,7 @@ router.patch('/groups/:id/reject', async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Reject group error:', error);
+    logger.error('Reject group error', { error: error.message, requestId: req.requestId });
     res.status(500).json({ message: 'Server error' });
   }
 });

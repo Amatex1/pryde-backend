@@ -25,6 +25,7 @@ import { notifyMentionsInComment } from '../services/mentionNotificationService.
 import { emitNotificationCreated } from '../utils/notificationEmitter.js';
 import { sendPushNotification } from './pushNotifications.js';
 import { checkAnonBurst } from '../utils/anonymousBurstLimiter.js';
+import { sanitizeFields } from '../middleware/sanitize.js';
 
 const router = express.Router();
 
@@ -177,7 +178,7 @@ router.get('/comments/:commentId/replies', auth, requireActiveUser, asyncHandler
 // @route   POST /api/posts/:postId/comments
 // @desc    Add a comment to a post (or reply to a comment)
 // @access  Private
-router.post('/posts/:postId/comments', auth, requireActiveUser, requireEmailVerification, commentWriteLimiter, asyncHandler(async (req, res) => {
+router.post('/posts/:postId/comments', auth, requireActiveUser, requireEmailVerification, commentWriteLimiter, sanitizeFields(['content']), asyncHandler(async (req, res) => {
   // SAFETY: Guard clause for auth
   const userId = requireAuth(req, res);
   if (!userId) return;
@@ -429,7 +430,7 @@ router.post('/posts/:postId/comments', auth, requireActiveUser, requireEmailVeri
 // @route   PUT /api/comments/:commentId
 // @desc    Edit a comment
 // @access  Private
-router.put('/comments/:commentId', auth, requireActiveUser, asyncHandler(async (req, res) => {
+router.put('/comments/:commentId', auth, requireActiveUser, sanitizeFields(['content']), asyncHandler(async (req, res) => {
   // SAFETY: Guard clause for auth
   const userId = requireAuth(req, res);
   if (!userId) return;
