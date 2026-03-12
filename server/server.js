@@ -805,6 +805,20 @@ if (shouldStartHttpServer) {
         }
       });
       logger.info('[ConversationResurface] 🕐 Scheduled (runs every 30 minutes)');
+
+      // ========================================
+      // QUIET MODE NOTIFICATION RELEASE JOB
+      // ========================================
+      cron.schedule('*/5 * * * *', async () => {
+        logger.info('[QuietJob] Releasing queued notifications...');
+        try {
+          const { triggerManualRelease } = await import('./jobs/releaseQueuedNotifications.js');
+          await triggerManualRelease();
+        } catch (err) {
+          logger.error('[QuietJob] Release job failed:', err);
+        }
+      });
+      logger.info('[QuietJob] Notification release job started (every 5min)');
     }
     });
   }).catch((err) => {

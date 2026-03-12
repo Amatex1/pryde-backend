@@ -1,68 +1,52 @@
 /**
- * Quiet Mode — Notification Suppression Utility
- *
- * Determines whether the current time falls inside a user's configured
- * quiet hours, and computes when those hours end (so queued notifications
- * can be scheduled for release).
+ * Quiet Mode Time Check Utility
+ * Determines if current time falls within user's quiet hours.
+ * Supports overnight ranges (22:00-08:00).
  */
 
-/**
- * Returns true if right now is inside the user's quiet hours.
- * Handles overnight windows such as 22:00 – 08:00.
- *
- * @param {object} user – Mongoose lean doc or populated User
- * @returns {boolean}
- */
-export function isQuietHours(user) {
-  const ps = user?.privacySettings || {};
-  if (!ps.quietHoursEnabled) return false;
+function isQuietHours(user) {
+  if (!user.quietModeEnabled) return false;
 
   const now = new Date();
-  const nowMins = now.getHours() * 60 + now.getMinutes();
 
-  const [sh, sm] = (ps.quietHoursStart || '22:00').split(':').map(Number);
-  const [eh, em] = (ps.quietHoursEnd   || '08:00').split(':').map(Number);
+  const [startHour, startMinute] = user.quietModeStart.split(":").map(Number);
+  const [endHour, endMinute] = user.quietModeEnd.split(":").map(Number);
 
-  const startMins = sh * 60 + sm;
-  const endMins   = eh * 60 + em;
+  const start = new Date(now);
+  start.setHours(startHour, startMinute, 0, 0);
 
-  // Overnight window: start > end means the range crosses midnight
-  if (startMins > endMins) {
-    return nowMins >= startMins || nowMins <= endMins;
-  }
-  return nowMins >= startMins && nowMins <= endMins;
-}
-
-/**
- * Returns the Date when the user's quiet hours will end.
- * If the end time is earlier than now, returns the end time tomorrow.
- *
- * @param {object} user – Mongoose lean doc or populated User
- * @returns {Date}
- */
-export function nextQuietModeEnd(user) {
-  const ps = user?.privacySettings || {};
-  const [eh, em] = (ps.quietHoursEnd || '08:00').split(':').map(Number);
-
-  const now = new Date();
   const end = new Date(now);
-  end.setHours(eh, em, 0, 0);
+  end.setHours(endHour, endMinute, 0, 0);
 
-  // If that time has already passed today, aim for tomorrow
-  if (end <= now) end.setDate(end.getDate() + 1);
+  if (start > end) {
+    // Overnight quiet hours (e.g., 22:00 - 08:00)
+    return now >= start || now <= end;
+  }
 
-  return end;
+  return now >= start && now <= end;
 }
 
 /**
- * Returns the priority tier for a given notification type.
- * Used to decide whether quiet mode should suppress it.
- *
- * @param {string} type
- * @returns {'critical' | 'important' | 'passive'}
+ * Calculate next quiet mode end time for queued notifications
  */
-export function getNotifPriority(type) {
-  if (['login_approval', 'moderation', 'announcement'].includes(type)) return 'critical';
-  if (['comment', 'mention', 'group_mention', 'friend_request', 'circle_invite', 'circle_post'].includes(type)) return 'important';
-  return 'passive'; // like, resonance, group_post, system, friend_accept, …
+function getNextQuietEnd(user) {
+  if (!user.quietModeEnabled) return null;
+
+  const [endHour, endMinute] = user.quietModeEnd.split(":").map(Number);
+
+  const now = new Date();
+  const endToday = new Date(now);
+  endToday.setHours(endHour, endMinute, 0, 0);
+
+  if (endToday > now) {
+    return endToday;
+  }
+
+  // Tomorrow
+  const endTomorrow = new Date(endToday);
+  endTomorrow.setDate(endTomorrow.getDate() + 1);
+  return endTomorrow;
 }
+
+module.exports = { isQuietHours, getNextQuietEnd };
+

@@ -62,6 +62,7 @@ import uploadRoutes from './routes/upload.js';
 import notificationsRoutes from './routes/notifications.js';
 import pushNotificationsRouter from './routes/pushNotifications.js';
 import testNotificationsRoutes from './routes/testNotifications.js';
+import notificationSettingsRoutes from './routes/notificationSettings.js';
 
 // ── Discovery & search ───────────────────────────────────────────────────────
 import searchRoutes    from './routes/search.js';
@@ -151,6 +152,7 @@ export function mountRoutes(app, { restrictionMiddleware, requireDatabaseReady }
   app.use('/api/notifications', requireDatabaseReady, notificationsRoutes);
   app.use('/api/push', requireDatabaseReady, pushNotificationsRouter);
   app.use('/api/test-notifications', requireDatabaseReady, testNotificationsRoutes);
+  app.use('/api/notifications/settings', requireDatabaseReady, notificationSettingsRoutes);
 
   // Discovery
   app.use('/api/search',    requireDatabaseReady, searchRoutes);
