@@ -5,12 +5,12 @@
  */
 
 function isQuietHours(user) {
-  if (!user.quietModeEnabled) return false;
+  if (!user.privacySettings?.quietModeEnabled) return false;
 
   const now = new Date();
 
   const [startHour, startMinute] = user.privacySettings.quietHoursStart.split(":").map(Number);
-  const [endHour, endMinute] = user.quietModeEnd.split(":").map(Number);
+  const [endHour, endMinute] = user.privacySettings.quietHoursEnd.split(":").map(Number);
 
   const start = new Date(now);
   start.setHours(startHour, startMinute, 0, 0);

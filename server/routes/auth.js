@@ -820,7 +820,7 @@ router.post('/login', loginLimiter, validateLogin, async (req, res) => {
       incCounter('auth.login.failure');
 
       // Increment login attempts and potentially lock account
-      await user.incrementLoginAttempts();
+      await User.recordLoginAttempt(user._id, false);
 
       // Log failed login attempt
       const ipAddress = getClientIp(req);
@@ -856,7 +856,7 @@ router.post('/login', loginLimiter, validateLogin, async (req, res) => {
 
     // Password is correct - reset login attempts
     if (user.loginAttempts > 0 || user.lockoutUntil) {
-      await user.resetLoginAttempts();
+      await User.recordLoginAttempt(user._id, true);
     }
 
     // Auto-reactivate deactivated accounts on successful login

@@ -340,6 +340,31 @@ router.put('/users/:id/unsuspend', checkPermission('canManageUsers'), async (req
   }
 });
 
+// @route   PUT /api/admin/users/:id/unlock
+// @desc    Unlock a locked-out user account (clears failed login attempts)
+// @access  Admin (canManageUsers)
+router.put('/users/:id/unlock', checkPermission('canManageUsers'), async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    user.loginAttempts = 0;
+    user.lockoutUntil = null;
+
+    await user.save();
+
+    logger.info('Admin unlocked user account', { adminId: req.user._id, targetUserId: user._id, requestId: req.requestId });
+
+    res.json({ message: 'User account unlocked successfully', user: user.toJSON() });
+  } catch (error) {
+    logger.error('Unlock user error', { error: error.message, requestId: req.requestId });
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // @route   PUT /api/admin/users/:id/ban
 // @desc    Ban a user permanently
 // @access  Admin (canManageUsers) - PRIVILEGED (requires escalation)
