@@ -559,6 +559,30 @@ router.delete('/:slug', authenticateToken, async (req, res) => {
 });
 
 /**
+ * Community Gravity Recommendations
+ *
+ * @route   GET /api/groups/recommended
+ * @desc    Return up to 10 groups recommended for the authenticated user.
+ *          Scored by: friends who are members, shared community members,
+ *          recent post activity, and new-group boost.
+ *          Only returns groups the user has NOT already joined.
+ * @access  Private (authenticated)
+ *
+ * NOTE: Must remain above /:slug to avoid slug-param collision.
+ */
+router.get('/recommended', authenticateToken, async (req, res) => {
+  try {
+    const { recommendGroups } = await import('../services/groupRecommendationService.js');
+    const userId = req.user.id || req.user._id;
+    const recommendations = await recommendGroups(userId);
+    return res.json({ groups: recommendations });
+  } catch (err) {
+    console.error('groups/recommended error:', err);
+    return res.status(500).json({ message: 'Failed to load recommendations' });
+  }
+});
+
+/**
  * Phase 5A: Get group by slug
  *
  * @route   GET /api/groups/:slug

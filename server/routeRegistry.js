@@ -64,7 +64,8 @@ import pushNotificationsRouter from './routes/pushNotifications.js';
 import testNotificationsRoutes from './routes/testNotifications.js';
 
 // ── Discovery & search ───────────────────────────────────────────────────────
-import searchRoutes from './routes/search.js';
+import searchRoutes    from './routes/search.js';
+import discoveryRoutes from './routes/discovery.js';
 
 // ── Reports, moderation, admin ───────────────────────────────────────────────
 import reportsRoutes from './routes/reports.js';
@@ -152,7 +153,8 @@ export function mountRoutes(app, { restrictionMiddleware, requireDatabaseReady }
   app.use('/api/test-notifications', requireDatabaseReady, testNotificationsRoutes);
 
   // Discovery
-  app.use('/api/search', requireDatabaseReady, searchRoutes);
+  app.use('/api/search',    requireDatabaseReady, searchRoutes);
+  app.use('/api/discovery', requireDatabaseReady, discoveryRoutes);
 
   // Reports & moderation
   app.use('/api/reports', requireDatabaseReady, reportsRoutes);
