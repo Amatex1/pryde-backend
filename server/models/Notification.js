@@ -86,6 +86,35 @@ const notificationSchema = new mongoose.Schema({
     type: String
   },
 
+  // Quiet Mode — priority level determines whether this can be suppressed
+  priority: {
+    type: String,
+    enum: ['critical', 'important', 'passive'],
+    default: 'passive'
+  },
+  // When true the notification is held back until quiet hours end
+  queued: {
+    type: Boolean,
+    default: false,
+    index: true
+  },
+  // The time after which the notification should be surfaced
+  deliverAfter: {
+    type: Date,
+    default: null
+  },
+
+  // Bundling — groups repeated activity (e.g. multiple likes on same post)
+  bundleKey: {
+    type: String,
+    index: true
+  },
+  // All actors who contributed to this bundle (populated on read)
+  actorIds: {
+    type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+    default: []
+  },
+
   // Generic metadata field for additional context
   metadata: {
     type: mongoose.Schema.Types.Mixed,

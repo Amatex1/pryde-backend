@@ -756,6 +756,11 @@ const userSchema = new mongoose.Schema({
       type: String, // "08:00" format
       default: '08:00'
     },
+    // Allow security/critical notifications to bypass quiet hours
+    allowCriticalDuringQuiet: {
+      type: Boolean,
+      default: true
+    },
     // Auto-enable on work/focus mode detection
     quietOnWorkFocus: {
       type: Boolean,

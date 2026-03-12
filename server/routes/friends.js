@@ -8,6 +8,7 @@ import { friendRequestLimiter } from '../middleware/rateLimiter.js';
 import { checkFriendRequestPermission, checkBlocked } from '../middleware/privacy.js';
 import { sendPushNotification } from './pushNotifications.js';
 import { emitNotificationCreated } from '../utils/notificationEmitter.js';
+import { bundleNotification } from '../utils/bundleNotification.js';
 import logger from '../utils/logger.js';
 
 // @route   POST /api/friends/request/:userId
@@ -72,14 +73,17 @@ router.post('/request/:userId', auth, friendRequestLimiter, checkFriendRequestPe
     await friendRequest.save();
 
     // Create notification for receiver
-    const notification = new Notification({
-      recipient: receiverId,
-      sender: senderId,
+    const notification = await bundleNotification({
       type: 'friend_request',
-      message: 'sent you a friend request'
+      bundleKey: `friend_request:${receiverId}`,
+      actorId: senderId,
+      recipient: receiverId,
+      data: { message: 'sent you a friend request' },
     });
-    await notification.save();
-    await notification.populate('sender', 'username displayName profilePhoto');
+    await notification.populate([
+      { path: 'sender',   select: 'username displayName profilePhoto' },
+      { path: 'actorIds', select: 'username displayName profilePhoto' },
+    ]);
 
     // ✅ Emit real-time notification
     emitNotificationCreated(req.io, receiverId, notification);

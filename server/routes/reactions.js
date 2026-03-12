@@ -10,6 +10,7 @@ import requireEmailVerification from '../middleware/requireEmailVerification.js'
 import { reactionLimiter } from '../middleware/rateLimiter.js';
 import Notification from '../models/Notification.js';
 import { emitNotificationCreated } from '../utils/notificationEmitter.js';
+import { bundleNotification } from '../utils/bundleNotification.js';
 import { sendPushNotification } from './pushNotifications.js';
 import logger from '../utils/logger.js';
 import { emitValidated } from '../utils/emitValidated.js';
@@ -150,16 +151,24 @@ router.post('/', auth, requireActiveUser, requireEmailVerification, reactionLimi
           const reactorName = reactor?.displayName || reactor?.username || 'Someone';
           const targetPostId = targetType === 'post' ? targetId : target.postId?.toString();
 
-          const notification = new Notification({
-            recipient: ownerId,
-            sender: userId,
+          const reactionBundleKey = targetType === 'post'
+            ? `post_like:${targetId}`
+            : `reaction_comment:${targetId}`;
+          const notification = await bundleNotification({
             type: 'like',
-            message: `reacted ${emoji} to your ${targetType}`,
-            postId: targetPostId,
-            ...(targetType === 'comment' && { commentId: targetId })
+            bundleKey: reactionBundleKey,
+            actorId: userId,
+            recipient: ownerId,
+            data: {
+              message: `reacted ${emoji} to your ${targetType}`,
+              postId: targetPostId,
+              ...(targetType === 'comment' && { commentId: targetId }),
+            },
           });
-          await notification.save();
-          await notification.populate('sender', 'username displayName profilePhoto');
+          await notification.populate([
+            { path: 'sender',   select: 'username displayName profilePhoto' },
+            { path: 'actorIds', select: 'username displayName profilePhoto' },
+          ]);
           emitNotificationCreated(req.io, ownerId.toString(), notification);
 
           sendPushNotification(ownerId, {

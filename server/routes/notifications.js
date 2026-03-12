@@ -32,6 +32,7 @@ router.get('/', authMiddleware, requireActiveUser, asyncHandler(async (req, res)
   // PERFORMANCE: Add .lean() for read-only queries (30% faster, less memory)
   let notifications = await Notification.find({ recipient: userId })
     .populate('sender', 'username displayName profilePhoto')
+    .populate('actorIds', 'username displayName profilePhoto')
     .sort({ createdAt: -1 })
     .limit(50)
     .lean();

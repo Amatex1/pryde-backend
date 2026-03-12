@@ -18,10 +18,11 @@ import { postLimiter, commentLimiter, reactionLimiter } from '../middleware/rate
 import { checkMuted, moderateContent, checkProbation } from '../middleware/moderation.js';
 import { guardComment, guardReply, guardReact } from '../middleware/systemAccountGuard.js';
 import { sanitizeFields } from '../middleware/sanitize.js';
-import { sendPushNotification } from './pushNotifications.js';
+import { queuePush } from '../utils/queuePush.js';
 import logger from '../utils/logger.js';
 import { getBlockedUserIds } from '../utils/blockHelper.js';
 import { emitNotificationCreated } from '../utils/notificationEmitter.js'; // ✅ Socket.IO notifications
+import { bundleNotification } from '../utils/bundleNotification.js';
 import { deleteFromGridFS } from './upload.js'; // For deleting images from storage
 import { MutationTrace, verifyWrite } from '../utils/mutationTrace.js';
 import { isFeatureEnabled } from '../utils/featureFlags.js';
@@ -859,17 +860,17 @@ router.post('/:id/like', auth, requireActiveUser, reactionLimiter, guardReact, a
 
       // Create notification for post author (don't notify yourself)
       if (post.author.toString() !== userId.toString()) {
-        const notification = new Notification({
-          recipient: post.author,
-          sender: userId,
+        const notification = await bundleNotification({
           type: 'like',
-          message: 'liked your post',
-          postId: post._id
+          bundleKey: `post_like:${post._id}`,
+          actorId: userId,
+          recipient: post.author,
+          data: { message: 'liked your post', postId: post._id },
         });
-        await notification.save();
-
-        // Populate sender for Socket.IO emission
-        await notification.populate('sender', 'username displayName profilePhoto');
+        await notification.populate([
+          { path: 'sender',   select: 'username displayName profilePhoto' },
+          { path: 'actorIds', select: 'username displayName profilePhoto' },
+        ]);
 
         // ✅ Emit real-time notification
         emitNotificationCreated(req.io, post.author.toString(), notification);
@@ -878,7 +879,7 @@ router.post('/:id/like', auth, requireActiveUser, reactionLimiter, guardReact, a
         const liker = await User.findById(userId).select('username displayName');
         const likerName = liker.displayName || liker.username;
 
-        sendPushNotification(post.author, {
+        queuePush(post.author, {
           title: 'Pryde Social',
           body: `${likerName} liked your post`,
           data: {
@@ -887,7 +888,7 @@ router.post('/:id/like', auth, requireActiveUser, reactionLimiter, guardReact, a
             url: `/feed?post=${post._id}`
           },
           tag: `like-${post._id}`
-        }).catch(err => logger.error('Push notification error:', err));
+        }).catch(err => logger.error('Push queue error:', err));
       }
     }
 
@@ -972,7 +973,7 @@ router.post('/:id/react', auth, requireActiveUser, reactionLimiter, async (req, 
         const reactor = await User.findById(userId).select('username displayName');
         const reactorName = reactor.displayName || reactor.username;
 
-        sendPushNotification(post.author, {
+        queuePush(post.author, {
           title: 'Pryde Social',
           body: `${reactorName} reacted to your post`,
           data: {
@@ -981,7 +982,7 @@ router.post('/:id/react', auth, requireActiveUser, reactionLimiter, async (req, 
             url: `/feed?post=${post._id}`
           },
           tag: `reaction-${post._id}`
-        }).catch(err => logger.error('Push notification error:', err));
+        }).catch(err => logger.error('Push queue error:', err));
       }
     }
 
@@ -1093,7 +1094,7 @@ router.post('/:id/comment/:commentId/react', auth, requireActiveUser, reactionLi
         const reactor = await User.findById(userId).select('username displayName');
         const reactorName = reactor.displayName || reactor.username;
 
-        sendPushNotification(comment.user, {
+        queuePush(comment.user, {
           title: 'Pryde Social',
           body: `${reactorName} reacted to your comment`,
           data: {
@@ -1103,7 +1104,7 @@ router.post('/:id/comment/:commentId/react', auth, requireActiveUser, reactionLi
             url: `/feed?post=${post._id}&comment=${comment._id}`
           },
           tag: `reaction-comment-${comment._id}`
-        }).catch(err => logger.error('Push notification error:', err));
+        }).catch(err => logger.error('Push queue error:', err));
       }
     }
 
@@ -1196,16 +1197,17 @@ router.post('/:id/comment', auth, requireActiveUser, requireEmailVerification, c
 
     // Create notification for post author (don't notify yourself)
     if (post.author.toString() !== userId.toString()) {
-      const notification = new Notification({
-        recipient: post.author,
-        sender: userId,
+      const notification = await bundleNotification({
         type: 'comment',
-        message: 'commented on your post',
-        postId: post._id,
-        commentId: newComment._id
+        bundleKey: `post_comment:${post._id}`,
+        actorId: userId,
+        recipient: post.author,
+        data: { message: 'commented on your post', postId: post._id, commentId: newComment._id },
       });
-      await notification.save();
-      await notification.populate('sender', 'username displayName profilePhoto');
+      await notification.populate([
+        { path: 'sender',   select: 'username displayName profilePhoto' },
+        { path: 'actorIds', select: 'username displayName profilePhoto' },
+      ]);
 
       // ✅ Emit real-time notification
       emitNotificationCreated(req.io, post.author.toString(), notification);

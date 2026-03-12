@@ -23,6 +23,7 @@ import {
 import { asyncHandler, requireAuth, requireValidId, requireParams, sendError, HttpStatus } from '../utils/errorHandler.js';
 import { notifyMentionsInComment } from '../services/mentionNotificationService.js';
 import { emitNotificationCreated } from '../utils/notificationEmitter.js';
+import { bundleNotification } from '../utils/bundleNotification.js';
 import { sendPushNotification } from './pushNotifications.js';
 import { checkAnonBurst } from '../utils/anonymousBurstLimiter.js';
 import { sanitizeFields } from '../middleware/sanitize.js';
@@ -326,16 +327,17 @@ router.post('/posts/:postId/comments', auth, requireActiveUser, requireEmailVeri
 
         // Notify parent comment author (don't notify yourself)
         if (parentComment && parentComment.authorId.toString() !== userId.toString()) {
-          const notification = new Notification({
-            recipient: parentComment.authorId,
-            sender: userId,
+          const notification = await bundleNotification({
             type: 'comment',
-            message: 'replied to your comment',
-            postId,
-            commentId: comment._id
+            bundleKey: `reply_comment:${parentCommentId}`,
+            actorId: userId,
+            recipient: parentComment.authorId,
+            data: { message: 'replied to your comment', postId, commentId: comment._id },
           });
-          await notification.save();
-          await notification.populate('sender', 'username displayName profilePhoto');
+          await notification.populate([
+            { path: 'sender',   select: 'username displayName profilePhoto' },
+            { path: 'actorIds', select: 'username displayName profilePhoto' },
+          ]);
 
           // ✅ Emit real-time notification
           emitNotificationCreated(req.io, parentComment.authorId.toString(), notification);
@@ -362,16 +364,17 @@ router.post('/posts/:postId/comments', auth, requireActiveUser, requireEmailVeri
 
         // Notify post author (don't notify yourself)
         if (post && post.author.toString() !== userId.toString()) {
-          const notification = new Notification({
-            recipient: post.author,
-            sender: userId,
+          const notification = await bundleNotification({
             type: 'comment',
-            message: 'commented on your post',
-            postId,
-            commentId: comment._id
+            bundleKey: `post_comment:${postId}`,
+            actorId: userId,
+            recipient: post.author,
+            data: { message: 'commented on your post', postId, commentId: comment._id },
           });
-          await notification.save();
-          await notification.populate('sender', 'username displayName profilePhoto');
+          await notification.populate([
+            { path: 'sender',   select: 'username displayName profilePhoto' },
+            { path: 'actorIds', select: 'username displayName profilePhoto' },
+          ]);
 
           // ✅ Emit real-time notification
           emitNotificationCreated(req.io, post.author.toString(), notification);

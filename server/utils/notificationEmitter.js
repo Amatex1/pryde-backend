@@ -37,6 +37,8 @@ export function emitNotificationCreated(io, recipientId, notification) {
     groupName: notification.groupName,
     loginApprovalId: notification.loginApprovalId,
     loginApprovalData: notification.loginApprovalData,
+    bundleKey: notification.bundleKey,
+    actorIds: notification.actorIds || [],
     createdAt: notification.createdAt
   };
 

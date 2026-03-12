@@ -23,6 +23,16 @@ const validateConfig = () => {
     if (!process.env.CSRF_SECRET) {
       throw new Error('CRITICAL: CSRF_SECRET environment variable is required in production!');
     }
+
+    // Push Notifications — REQUIRED for production (VAPID keys)
+    if (!process.env.VAPID_PUBLIC_KEY || !process.env.VAPID_PRIVATE_KEY) {
+      throw new Error('CRITICAL: VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY are required in production! Generate with: npx web-push generate-vapid-keys');
+    }
+
+    // Firebase Cloud Messaging (FCM) — RECOMMENDED for native apps
+    if (!process.env.FIREBASE_SERVICE_ACCOUNT_JSON && !process.env.FIREBASE_SERVICE_ACCOUNT_PATH) {
+      console.warn('WARNING: Firebase not configured — native Android/iOS push notifications will not work. Set FIREBASE_SERVICE_ACCOUNT_JSON or FIREBASE_SERVICE_ACCOUNT_PATH.');
+    }
     
     // R2/CDN Validation - RECOMMENDED for production
     if (process.env.R2_ENABLED !== 'true') {
