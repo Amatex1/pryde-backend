@@ -9,7 +9,7 @@ function isQuietHours(user) {
 
   const now = new Date();
 
-  const [startHour, startMinute] = user.quietModeStart.split(":").map(Number);
+  const [startHour, startMinute] = user.privacySettings.quietHoursStart.split(":").map(Number);
   const [endHour, endMinute] = user.quietModeEnd.split(":").map(Number);
 
   const start = new Date(now);
@@ -30,9 +30,9 @@ function isQuietHours(user) {
  * Calculate next quiet mode end time for queued notifications
  */
 function getNextQuietEnd(user) {
-  if (!user.quietModeEnabled) return null;
+  if (!user.privacySettings.quietHoursEnabled) return null;
 
-  const [endHour, endMinute] = user.quietModeEnd.split(":").map(Number);
+  const [endHour, endMinute] = user.privacySettings.quietHoursEnd.split(":").map(Number);
 
   const now = new Date();
   const endToday = new Date(now);
