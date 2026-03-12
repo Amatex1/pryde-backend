@@ -14,7 +14,7 @@
 
 import Notification from '../models/Notification.js';
 import User          from '../models/User.js';
-import { isQuietHours, nextQuietModeEnd } from './quietModeCheck.js';
+import { isQuietHours, getNextQuietEnd as nextQuietModeEnd } from './quietModeCheck.js';
 
 /**
  * @param {object} opts
