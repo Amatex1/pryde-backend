@@ -9,7 +9,12 @@ const router = express.Router();
 // @route   POST /api/webhooks/resend/inbound
 // @desc    Resend inbound email webhook (noreply@ & support@prydeapp.com)
 // @access  Public (webhook signature verified)
-router.post('/resend/inbound', express.raw({ type: 'application/json' }), async (req, res) => {
+router.post('/resend/inbound', (req, res, next) => {
+  // CRITICAL: Skip CSRF for webhook endpoints
+  // Webhooks cannot send CSRF tokens (server-to-server)
+  req.skipCsrfCheck = true;
+  next();
+}, express.raw({ type: 'application/json' }), async (req, res) => {
   try {
     const signature = req.headers['resend-signature'];
     const webhookSecret = process.env.RESEND_WEBHOOK_SECRET;

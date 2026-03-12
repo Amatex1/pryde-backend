@@ -179,7 +179,7 @@ export const enforceCsrf = (req, res, next) => {
     return next();
   }
 
-  // Skip CSRF for authentication endpoints (login, register, refresh)
+// Skip CSRF for authentication endpoints (login, register, refresh)
   // These endpoints don't have a CSRF token yet since the user hasn't made any requests
   const authPaths = [
     '/api/auth/login',
@@ -194,6 +194,11 @@ export const enforceCsrf = (req, res, next) => {
   ];
 
   if (authPaths.includes(req.path)) {
+    return next();
+  }
+
+  // Skip CSRF for webhook endpoints
+  if (req.path === '/api/webhooks/resend/inbound' || req.skipCsrfCheck) {
     return next();
   }
 

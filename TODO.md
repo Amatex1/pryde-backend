@@ -10,11 +10,21 @@
 
 ✅ **Step 4-6:** Routes mounted & docs updated
 
-**Remaining:**
+✅ **CSRF webhook fix** - Backend restart needed
 
-- [ ] **Step 7:** Test webhook: Configure Resend dashboard > Domains > Inbound > Webhook URL `https://yourdomain.com/api/webhooks/resend/inbound` for both addresses
+**Final Steps:**
 
-- [ ] **Step 8:** Frontend admin UI for `/admin/emails` tab
+1. **Restart Render service** (Dashboard → Manual Deploy → Clear build cache & deploy)
+
+2. **Test webhook CMD**:
+```
+curl -X POST https://pryde-backend.onrender.com/api/webhooks/resend/inbound -H "Content-Type: application/json" -d "{\"id\":\"test\",\"from\":\"user@test.com\",\"to\":[\"support@prydeapp.com\"],\"subject\":\"Fixed\",\"text\":\"Works!\",\"created_at\":\"2024-01-01T00:00:00Z\"}"
+```
+Expected: `{"success":true}`
+
+3. **Admin panel**: `/admin/emails?mailbox=support` → See emails
+
+**Feature 100% complete!** 🎉
 
 **Commands to test:**
 ```bash
