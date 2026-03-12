@@ -167,7 +167,21 @@ You need to manually update your user account in MongoDB to grant admin access:
 - View block dates and reasons
 - Useful for identifying harassment patterns
 
-### 5. Activity Tab
+### 5. Emails Tab (New!)
+
+**Inbound Email Inbox (noreply@prydeapp.com & support@prydeapp.com):**
+- View incoming emails sent to your no-reply and support addresses
+- Filter by mailbox (noreply/support) and status (new/read/replied/archived/spam)
+- Mark as read, replied, archived
+- View attachments and full headers
+- **API:** `GET /api/admin/emails` (paginate/filter), `GET /api/admin/emails/:id`, `PATCH /api/admin/emails/:id`
+
+**Setup Resend Webhooks:**
+1. Resend Dashboard > Domains > Inbound > Add Webhook
+2. URL: `https://yourdomain.com/api/webhooks/resend/inbound`
+3. Select noreply@prydeapp.com & support@prydeapp.com
+
+### 6. Activity Tab
 
 **Recent platform activity:**
 - Recent posts (last 7 days)

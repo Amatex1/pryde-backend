@@ -8,7 +8,11 @@ const securityLogSchema = new mongoose.Schema({
       'underage_login',
       'underage_access',
       'failed_login',
+      'account_locked',
       'suspicious_activity',
+      'rate_limit_exceeded',
+      'injection_attempt',
+      'xss_attempt',
       'password_changed',
       'email_changed',
       'email_verified',
@@ -68,7 +72,7 @@ const securityLogSchema = new mongoose.Schema({
   },
   action: {
     type: String,
-    enum: ['blocked', 'banned', 'logged', 'flagged', 'created', 'used', 'revoked'],
+    enum: ['blocked', 'banned', 'logged', 'flagged', 'created', 'used', 'revoked', 'sanitized'],
     default: 'logged'
   },
   resolved: {

@@ -22,7 +22,7 @@ import {
   getIpGeolocation
 } from '../utils/sessionUtils.js';
 import { getCountryFromRequest, requiresSafetyCheck as checkSafetyRequired, HIGH_RISK_COUNTRIES } from '../utils/geoService.js';
-import { logEmailVerification, logPasswordChange } from '../utils/securityLogger.js';
+import { logEmailVerification, logPasswordChange, logFailedAuth, logAccountLocked } from '../utils/securityLogger.js';
 import { loginLimiter, signupLimiter, passwordResetLimiter, resendVerificationLimiter, checkUsernameLimiter, resetPasswordConfirmLimiter } from '../middleware/rateLimiter.js';
 import { validateSignup, validateLogin } from '../middleware/validation.js';
 import logger from '../utils/logger.js';
@@ -841,7 +841,12 @@ router.post('/login', loginLimiter, validateLogin, async (req, res) => {
       const updatedUser = await User.findById(user._id);
       const attemptsLeft = 5 - updatedUser.loginAttempts;
 
+      // Log failed login to security log
+      logFailedAuth(user.email, ipAddress, req.headers['user-agent'], 'invalid_password').catch(() => {});
+
       if (updatedUser.isLocked()) {
+        // Log account lockout to security log
+        logAccountLocked(updatedUser, ipAddress, req.headers['user-agent']).catch(() => {});
         return res.status(423).json({
           message: 'Too many failed login attempts. Your account has been temporarily locked for 15 minutes.',
           lockoutUntil: updatedUser.lockoutUntil

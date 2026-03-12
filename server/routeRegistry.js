@@ -90,6 +90,7 @@ import promptsRoutes from './routes/prompts.js';
 
 // ── Dev-only ─────────────────────────────────────────────────────────────────
 import devVerifyRoutes from './routes/devVerify.js';
+import webhooksRoutes from './routes/webhooks.js';
 
 /**
  * Mount all application routes on `app`.
@@ -182,4 +183,7 @@ export function mountRoutes(app, { restrictionMiddleware, requireDatabaseReady }
   if (process.env.NODE_ENV === 'development') {
     app.use('/api/dev', requireDatabaseReady, devVerifyRoutes);
   }
+
+  // Webhooks (always public, no auth)
+  app.use('/api/webhooks', webhooksRoutes);
 }

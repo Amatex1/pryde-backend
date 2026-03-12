@@ -152,7 +152,7 @@ export const logAccountDeletion = async (user, ipAddress, userAgent) => {
  */
 export const logFailedAuth = async (email, ipAddress, userAgent, reason = 'invalid_credentials') => {
   return logSecurityEvent({
-    type: 'failed_authentication',
+    type: 'failed_login',
     severity: 'medium',
     email,
     ipAddress,
@@ -162,12 +162,26 @@ export const logFailedAuth = async (email, ipAddress, userAgent, reason = 'inval
   });
 };
 
+export const logAccountLocked = async (user, ipAddress, userAgent) => {
+  return logSecurityEvent({
+    type: 'account_locked',
+    severity: 'high',
+    userId: user._id,
+    username: user.username,
+    email: user.email,
+    ipAddress,
+    userAgent,
+    details: 'Account locked after too many failed login attempts',
+    action: 'blocked'
+  });
+};
+
 /**
  * Log suspicious request (potential attack)
  */
 export const logSuspiciousRequest = async (req, reason) => {
   return logSecurityEvent({
-    type: 'suspicious_request',
+    type: 'suspicious_activity',
     severity: 'high',
     userId: req.user?._id || null,
     username: req.user?.username || null,
@@ -183,7 +197,7 @@ export const logSuspiciousRequest = async (req, reason) => {
  */
 export const logRateLimitExceeded = async (req, limiterType) => {
   return logSecurityEvent({
-    type: 'rate_limit_exceeded',
+    type: 'rate_limit_exceeded', // now in SecurityLog enum
     severity: 'medium',
     userId: req.user?._id || null,
     username: req.user?.username || null,
@@ -235,6 +249,7 @@ export default {
   logTwoFactorDisabled,
   logAccountDeletion,
   logFailedAuth,
+  logAccountLocked,
   logSuspiciousRequest,
   logRateLimitExceeded,
   logInjectionAttempt,

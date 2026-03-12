@@ -22,6 +22,7 @@ import { createLogger } from '../utils/logger.js';
 import { escapeRegex } from '../utils/sanitize.js';
 import { sendAccountDeletionEmail } from '../utils/emailService.js';
 import { encryptObject, decryptObject } from '../utils/encryption.js';
+import { logAccountDeletion } from '../utils/securityLogger.js';
 import { calculateTrustScore } from '../utils/trustScore.js';
 import { getTrustLevel } from '../utils/trustLevel.js';
 
@@ -1244,6 +1245,8 @@ router.post('/account/delete-confirm', deletionIPLimiter, async (req, res) => {
     user.activeSessions = [];
 
     await user.save();
+
+    logAccountDeletion({ _id: user._id, username: user.username, email: originalData.email }, req.ip, req.headers['user-agent']).catch(() => {});
 
     // CRITICAL: Force disconnect all sockets for this user
     const io = req.app.get('io');

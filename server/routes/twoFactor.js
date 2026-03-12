@@ -6,6 +6,7 @@ import { authenticateToken } from '../middleware/auth.js';
 import { twoFactorLimiter } from '../middleware/rateLimiter.js';
 import User from '../models/User.js';
 import { encryptMessage, decryptMessage, isEncrypted } from '../utils/encryption.js';
+import { logTwoFactorEnabled, logTwoFactorDisabled } from '../utils/securityLogger.js';
 
 const router = express.Router();
 
@@ -116,6 +117,8 @@ router.post('/verify', authenticateToken, async (req, res) => {
     user.twoFactorEnabled = true;
     await user.save();
 
+    logTwoFactorEnabled(user, req.ip, req.headers['user-agent']).catch(() => {});
+
     res.json({
       message: '2FA enabled successfully',
       backupCodes: user.twoFactorBackupCodes.map(bc => bc.code)
@@ -216,6 +219,8 @@ router.post('/disable', authenticateToken, async (req, res) => {
     user.twoFactorSecret = null;
     user.twoFactorBackupCodes = [];
     await user.save();
+
+    logTwoFactorDisabled(user, req.ip, req.headers['user-agent']).catch(() => {});
 
     res.json({ message: '2FA disabled successfully' });
   } catch (error) {

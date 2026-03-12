@@ -10,6 +10,7 @@ import SecurityLog from '../models/SecurityLog.js';
 import ModerationSettings from '../models/ModerationSettings.js';
 import AdminActionLog from '../models/AdminActionLog.js'; // PHASE D: Admin action logs
 import auth from '../middleware/auth.js';
+import adminEmailsRoutes from './adminEmails.js';
 import adminAuth, { checkPermission } from '../middleware/adminAuth.js';
 import requireAdminEscalation from '../middleware/requireAdminEscalation.js'; // Privileged Admin Escalation
 import crypto from 'crypto';
@@ -54,6 +55,9 @@ async function resolveBadges(badgeIds) {
 // All admin routes require authentication + admin role
 router.use(auth);
 router.use(adminAuth);
+
+// Email inbox routes (admin only)
+router.use('/emails', adminEmailsRoutes);
 
 // @route   GET /api/admin/stats
 // @desc    Get platform statistics
