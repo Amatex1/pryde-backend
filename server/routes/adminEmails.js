@@ -1,5 +1,6 @@
 import express from 'express';
 import InboundEmail from '../models/InboundEmail.js';
+import OutboundEmail from '../models/OutboundEmail.js';
 import adminAuth, { checkPermission } from '../middleware/adminAuth.js';
 import logger from '../utils/logger.js';
 
@@ -151,6 +152,48 @@ router.patch('/:id', checkPermission('canViewAnalytics'), async (req, res) => {
     res.json({ message: 'Email updated', email });
   } catch (error) {
     logger.error('Update email error:', { error: error.message, requestId: req.requestId });
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   GET /api/admin/emails/outbound
+// @desc    Get outbound email logs with pagination/filtering
+// @access  Admin (canViewAnalytics)
+router.get('/outbound', checkPermission('canViewAnalytics'), async (req, res) => {
+  try {
+    const { type, success, search, page = 1, limit = 20 } = req.query;
+
+    const filter = {};
+
+    if (type && ['password_reset','login_alert','suspicious_login','verification','password_changed','recovery_contact','account_deletion','other'].includes(type)) {
+      filter.type = type;
+    }
+
+    if (success === 'true') filter.success = true;
+    else if (success === 'false') filter.success = false;
+
+    if (search) {
+      filter.$or = [
+        { to: { $regex: search, $options: 'i' } },
+        { subject: { $regex: search, $options: 'i' } }
+      ];
+    }
+
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+
+    const [emails, total] = await Promise.all([
+      OutboundEmail.find(filter).sort({ createdAt: -1 }).limit(parseInt(limit)).skip(skip).lean(),
+      OutboundEmail.countDocuments(filter)
+    ]);
+
+    const failedCount = await OutboundEmail.countDocuments({ ...filter, success: false });
+
+    res.json({
+      emails,
+      pagination: { page: parseInt(page), limit: parseInt(limit), total, pages: Math.ceil(total / parseInt(limit)), failedCount }
+    });
+  } catch (error) {
+    logger.error('Get outbound emails error:', { error: error.message });
     res.status(500).json({ message: 'Server error' });
   }
 });

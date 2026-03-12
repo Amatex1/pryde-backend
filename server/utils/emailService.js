@@ -1,5 +1,11 @@
 import { Resend } from 'resend';
 import config from '../config/config.js';
+import OutboundEmail from '../models/OutboundEmail.js';
+
+const logOutbound = (to, subject, type, resendId, success, errorMessage) => {
+  OutboundEmail.create({ to, subject, type, resendId: resendId || null, success, errorMessage: errorMessage || null })
+    .catch(err => console.error('[emailService] Failed to log outbound email:', err.message));
+};
 
 // Initialize Resend client (lazy initialization)
 let resend = null;
@@ -123,10 +129,12 @@ export const sendPasswordResetEmail = async (email, resetToken, username) => {
     });
 
     if (error) {
+      logOutbound(email, 'Password Reset Request - Pryde Social', 'password_reset', null, false, error.message);
       console.error('Error sending password reset email:', error);
       throw new Error('Failed to send password reset email');
     }
 
+    logOutbound(email, 'Password Reset Request - Pryde Social', 'password_reset', data.id, true, null);
     console.log('Password reset email sent:', data.id);
     return { success: true, messageId: data.id };
   } catch (error) {
@@ -301,10 +309,12 @@ export const sendLoginAlertEmail = async (email, username, loginInfo) => {
     });
 
     if (error) {
+      logOutbound(email, '🔐 New Login to Your Pryde Social Account', 'login_alert', null, false, error.message);
       console.error('Error sending login alert email:', error);
       return { success: false, error: error.message };
     }
 
+    logOutbound(email, '🔐 New Login to Your Pryde Social Account', 'login_alert', data.id, true, null);
     console.log('Login alert email sent:', data.id);
     return { success: true, messageId: data.id };
   } catch (error) {
@@ -484,10 +494,12 @@ export const sendSuspiciousLoginEmail = async (email, username, loginInfo) => {
     });
 
     if (error) {
+      logOutbound(email, '⚠️ SUSPICIOUS LOGIN ATTEMPT - Pryde Social', 'suspicious_login', null, false, error.message);
       console.error('Error sending suspicious login email:', error);
       return { success: false, error: error.message };
     }
 
+    logOutbound(email, '⚠️ SUSPICIOUS LOGIN ATTEMPT - Pryde Social', 'suspicious_login', data.id, true, null);
     console.log('Suspicious login alert email sent:', data.id);
     return { success: true, messageId: data.id };
   } catch (error) {
@@ -594,10 +606,12 @@ export const sendVerificationEmail = async (email, verificationToken, username) 
     });
 
     if (error) {
+      logOutbound(email, 'Verify Your Email - Pryde Social', 'verification', null, false, error.message);
       console.error('Error sending verification email:', error);
       return { success: false, error: error.message };
     }
 
+    logOutbound(email, 'Verify Your Email - Pryde Social', 'verification', data.id, true, null);
     console.log('Verification email sent:', data.id);
     return { success: true, messageId: data.id };
   } catch (error) {
@@ -711,10 +725,12 @@ export const sendPasswordChangedEmail = async (email, username) => {
     });
 
     if (error) {
+      logOutbound(email, '🔐 Your Password Has Been Changed - Pryde Social', 'password_changed', null, false, error.message);
       console.error('Error sending password changed email:', error);
       return { success: false, error: error.message };
     }
 
+    logOutbound(email, '🔐 Your Password Has Been Changed - Pryde Social', 'password_changed', data.id, true, null);
     console.log('Password changed email sent:', data.id);
     return { success: true, messageId: data.id };
   } catch (error) {
@@ -888,10 +904,12 @@ export const sendRecoveryContactNotificationEmail = async (contactEmail, contact
     });
 
     if (error) {
+      logOutbound(contactEmail, `🔐 Account Recovery Request for ${requesterUsername} - Pryde Social`, 'recovery_contact', null, false, error.message);
       console.error('Error sending recovery contact notification email:', error);
       return { success: false, error: error.message };
     }
 
+    logOutbound(contactEmail, `🔐 Account Recovery Request for ${requesterUsername} - Pryde Social`, 'recovery_contact', data.id, true, null);
     console.log('Recovery contact notification email sent:', data.id);
     return { success: true, messageId: data.id };
   } catch (error) {
@@ -1019,10 +1037,12 @@ export const sendAccountDeletionEmail = async (email, username, deletionToken) =
     });
 
     if (error) {
+      logOutbound(email, '⚠️ Account Deletion Request - Pryde Social', 'account_deletion', null, false, error.message);
       console.error('Error sending account deletion email:', error);
       return { success: false, error: error.message };
     }
 
+    logOutbound(email, '⚠️ Account Deletion Request - Pryde Social', 'account_deletion', data.id, true, null);
     console.log('Account deletion email sent:', data.id);
     return { success: true, messageId: data.id };
   } catch (error) {
