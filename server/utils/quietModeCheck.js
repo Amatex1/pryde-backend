@@ -49,5 +49,4 @@ function getNextQuietEnd(user) {
 }
 
 export { isQuietHours, getNextQuietEnd };
-module.exports = { isQuietHours, getNextQuietEnd };
 
