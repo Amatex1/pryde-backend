@@ -76,7 +76,7 @@ import adminEscalationRoutes from './routes/adminEscalation.js';
 import adminDebugRoutes from './routes/adminDebug.js';
 import adminHealthRoutes from './routes/adminHealth.js';
 import adminModerationV2Routes from './routes/adminModerationV2.js';
-import requireAdmin2FA from '../middleware/requireAdmin2FA.js';
+import requireAdmin2FA from './middleware/requireAdmin2FA.js';
 
 // ── System & infrastructure ───────────────────────────────────────────────────
 import versionRoutes from './routes/version.js';

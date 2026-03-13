@@ -113,7 +113,60 @@ const getInactivityEmailTemplate = (daysInactive, _user) => {
  * Process inactivity email job
  * @param {object} job - BullMQ job
  */
-}\n\n/**\n * Find users eligible for inactivity emails\n * Returns users who have been inactive for 14, 30, or 60+ days\n * and haven't received an email for that tier recently\n */
+export async function processInactivityEmailJob(job) {
+  const { userId, daysInactive } = job.data;
+  logger.info(`[InactivityEmail] Processing for user ${userId}, ${daysInactive} days inactive`);
+
+  try {
+    const user = await User.findById(userId).select('username displayName email lastActivityDate');
+
+    if (!user || !user.email) {
+      logger.warn(`[InactivityEmail] No user or email for ${userId}`);
+      return { success: false, reason: 'no_user_or_email' };
+    }
+
+    // Check if we've already sent an email recently for this inactivity tier
+    const emailPrefs = user.emailPreferences || {};
+    const lastSent = emailPrefs[`inactivity_${daysInactive}EmailSentAt`];
+
+    if (lastSent) {
+      const daysSinceEmail = (Date.now() - new Date(lastSent).getTime()) / (1000 * 60 * 60 * 24);
+      if (daysSinceEmail < 30) {
+        logger.info(`[InactivityEmail] Already sent ${daysInactive}d email recently for ${userId}`);
+        return { success: false, reason: 'email_recently_sent' };
+      }
+    }
+
+    const { subject, html } = getInactivityEmailTemplate(daysInactive, user);
+
+    // Import email service
+    const { sendEmail } = await import('../services/emailService.js');
+    const result = await sendEmail(user.email, subject, html);
+
+    if (result.success) {
+      // Update user preference to prevent duplicate sends
+      const updateKey = `emailPreferences.inactivity_${daysInactive}EmailSentAt`;
+      await User.findByIdAndUpdate(userId, {
+        [updateKey]: new Date()
+      });
+
+      logger.info(`[InactivityEmail] Sent to ${user.email} (${daysInactive}d inactive)`);
+      return { success: true };
+    } else {
+      logger.error(`[InactivityEmail] Failed: ${result.error}`);
+      return { success: false, error: result.error };
+    }
+  } catch (error) {
+    logger.error(`[InactivityEmail] Error: ${error.message}`);
+    throw error;
+  }
+}
+
+/**
+ * Find users eligible for inactivity emails
+ * Returns users who have been inactive for 14, 30, or 60+ days
+ * and haven't received an email for that tier recently
+ */
 export const findUsersForInactivityEmails = async () => {
   const now = new Date();
   const users = await User.find({
