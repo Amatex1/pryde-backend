@@ -173,6 +173,26 @@ router.get('/fcm-status', (req, res) => {
 
 // Send push notification to ALL of a user's devices via both Web Push and FCM
 // Pass options.targetEndpoint to send only to a specific device subscription
+// Section 7: In-memory push throttle — { key: lastSentMs }
+const _pushThrottle = new Map();
+const PUSH_THROTTLE_MS = 5 * 60 * 1000; // 5 minutes
+const MAX_THROTTLE_ENTRIES = 5000;
+
+function _isPushThrottled(userId, type) {
+  const key = `${userId}:${type}`;
+  const last = _pushThrottle.get(key);
+  return last && (Date.now() - last) < PUSH_THROTTLE_MS;
+}
+
+function _recordPushSent(userId, type) {
+  if (_pushThrottle.size >= MAX_THROTTLE_ENTRIES) {
+    // Evict oldest 500 entries to prevent unbounded growth
+    const keys = Array.from(_pushThrottle.keys()).slice(0, 500);
+    keys.forEach(k => _pushThrottle.delete(k));
+  }
+  _pushThrottle.set(`${userId}:${type}`, Date.now());
+}
+
 async function sendPushNotification(userId, payload, options = {}) {
   try {
     const user = await User.findById(userId);
@@ -191,6 +211,12 @@ async function sendPushNotification(userId, payload, options = {}) {
     const criticalTypes = ['login_approval', 'security_alert', 'account_warning'];
     if (user.privacySettings?.quietModeEnabled && !criticalTypes.includes(notificationType)) {
       return { success: false, message: 'User is in Quiet Mode - non-critical notifications suppressed' };
+    }
+
+    // Section 7: Throttle — skip if a similar push was sent within 5 minutes
+    // (Critical types always bypass the throttle)
+    if (!criticalTypes.includes(notificationType) && _isPushThrottled(userId, notificationType)) {
+      return { success: false, message: 'Push throttled — similar notification sent recently' };
     }
 
     let anySuccess = false;
@@ -277,6 +303,7 @@ async function sendPushNotification(userId, payload, options = {}) {
     }
 
     if (anySuccess) {
+      _recordPushSent(userId, notificationType);
       return { success: true, message: 'Push notification sent' };
     }
 

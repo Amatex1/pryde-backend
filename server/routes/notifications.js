@@ -59,13 +59,11 @@ router.get('/', authMiddleware, requireActiveUser, asyncHandler(async (req, res)
   res.json(notifications);
 }));
 
-// Mark notification as read
-router.put('/:id/read', authMiddleware, requireActiveUser, asyncHandler(async (req, res) => {
-  // SAFETY: Guard clause for auth
+// Mark notification as read (shared handler for PUT and PATCH)
+async function markNotificationRead(req, res) {
   const userId = requireAuth(req, res);
   if (!userId) return;
 
-  // SAFETY: Validate ObjectId
   if (!requireValidId(req.params.id, 'notification ID', res)) return;
 
   const notification = await Notification.findOneAndUpdate(
@@ -78,14 +76,16 @@ router.put('/:id/read', authMiddleware, requireActiveUser, asyncHandler(async (r
     return sendError(res, HttpStatus.NOT_FOUND, 'Notification not found');
   }
 
-  // SAFETY: Optional chaining for io
   // NOTE: Socket room uses underscore format: user_${userId}
   req.io?.to(`user_${userId}`).emit('notification:read', {
     notificationId: req.params.id
   });
 
   res.json(notification);
-}));
+}
+
+router.put('/:id/read', authMiddleware, requireActiveUser, asyncHandler(markNotificationRead));
+router.patch('/:id/read', authMiddleware, requireActiveUser, asyncHandler(markNotificationRead));
 
 // Mark all notifications as read
 router.put('/read-all', authMiddleware, requireActiveUser, asyncHandler(async (req, res) => {

@@ -717,6 +717,10 @@ const userSchema = new mongoose.Schema({
       type: Boolean,
       default: true
     },
+    hideFromSuggestedConnections: {
+      type: Boolean,
+      default: false
+    },
     // PHASE 2: Quiet Mode - calm UX with reduced metrics
     quietModeEnabled: {
       type: Boolean,

@@ -59,6 +59,8 @@ export const ALL_NOTIFICATION_TYPES = Object.freeze([
   'login_approval',
   // Message types
   'message',
+  // Conversation resurfacing
+  'conversation_resurface',
   // Legacy types (deprecated, kept for backward compatibility)
   'friend_request',  // Deprecated: now uses follow system
   'friend_accept',   // Deprecated: now uses follow system
@@ -93,7 +95,7 @@ export function isSocialNotificationType(type) {
   const socialTypes = [
     'like', 'comment', 'mention', 'group_mention', 'group_post',
     'system', 'moderation', 'announcement', 'resonance', 'circle_invite', 'circle_post',
-    'login_approval', 'friend_request', 'friend_accept', 'share'
+    'login_approval', 'friend_request', 'friend_accept', 'share', 'conversation_resurface'
   ];
   return socialTypes.includes(type);
 }

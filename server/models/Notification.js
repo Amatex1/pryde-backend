@@ -86,11 +86,13 @@ const notificationSchema = new mongoose.Schema({
     type: String
   },
 
-  // Quiet Mode — priority level determines whether this can be suppressed
+  // Priority level — controls delivery timing and quiet-mode suppression
+  // New values: 'critical' | 'high' | 'normal' | 'low'
+  // Legacy values kept for backward compat: 'important' | 'passive'
   priority: {
     type: String,
-    enum: ['critical', 'important', 'passive'],
-    default: 'passive'
+    enum: ['critical', 'high', 'normal', 'low', 'important', 'passive'],
+    default: 'normal'
   },
   // When true the notification is held back until quiet hours end
   queued: {
@@ -98,7 +100,7 @@ const notificationSchema = new mongoose.Schema({
     default: false,
     index: true
   },
-  // The time after which the notification should be surfaced
+  // The time after which the notification should be surfaced (quiet mode)
   deliverAfter: {
     type: Date,
     default: null
@@ -113,6 +115,42 @@ const notificationSchema = new mongoose.Schema({
   actorIds: {
     type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
     default: []
+  },
+
+  // Deep link path for client-side navigation (e.g. /feed?post=X&comment=Y)
+  url: {
+    type: String
+  },
+
+  // Aggregated interaction count (incremented when notifications are merged)
+  count: {
+    type: Number,
+    default: 0
+  },
+
+  // Engagement score — used to surface high-value notifications first
+  engagementScore: {
+    type: Number,
+    default: 0
+  },
+
+  // Batch ID — groups notifications created in the same batch window
+  batchId: {
+    type: String,
+    index: true
+  },
+
+  // Delivery tracking — true once the notification has been emitted via socket
+  delivered: {
+    type: Boolean,
+    default: false,
+    index: true
+  },
+
+  // When to deliver — set by notificationDeliveryService based on priority
+  deliveryScheduledAt: {
+    type: Date,
+    default: null
   },
 
   // Generic metadata field for additional context
@@ -161,5 +199,11 @@ notificationSchema.index({ recipient: 1, read: 1 });
 notificationSchema.index({ createdAt: -1 });
 // Index for type-based filtering (social vs message)
 notificationSchema.index({ recipient: 1, type: 1, createdAt: -1 });
+// Index for aggregation lookup (find recent unread notification of same type+post)
+notificationSchema.index({ recipient: 1, type: 1, postId: 1 });
+// Section 9: Delivery worker query index
+notificationSchema.index({ recipient: 1, delivered: 1 });
+// Batch grouping lookup
+notificationSchema.index({ batchId: 1 });
 
 export default mongoose.model('Notification', notificationSchema);

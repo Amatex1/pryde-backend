@@ -149,7 +149,8 @@ router.get('/suggested', auth, cacheMedium, async (req, res) => {
       _id: { $nin: excludeIds },
       isActive: true,
       isDeleted: { $ne: true }, // Exclude deleted accounts
-      isBanned: { $ne: true }
+      isBanned: { $ne: true },
+      'privacySettings.hideFromSuggestedConnections': { $ne: true }
     };
 
     // Score-based matching

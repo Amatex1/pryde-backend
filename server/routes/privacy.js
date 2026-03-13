@@ -35,6 +35,7 @@ router.get('/settings', auth, async (req, res) => {
       hideBadges: user.privacySettings?.hideBadges || false,
       // Last seen timestamp visibility
       showLastSeen: user.privacySettings?.showLastSeen ?? true,
+      hideFromSuggestedConnections: user.privacySettings?.hideFromSuggestedConnections ?? false,
       // Default post visibility derived from profile visibility
       defaultPostVisibility,
       // =========================================
@@ -113,6 +114,8 @@ router.patch('/settings', auth, async (req, res) => {
       'hideBadges',
       // Last seen timestamp visibility
       'showLastSeen',
+      // Suggested connections opt-out
+      'hideFromSuggestedConnections',
       // CURSOR CUSTOMIZATION: Optional cursor styles
       'cursorStyle',
       // =========================================
