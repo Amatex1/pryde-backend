@@ -33,7 +33,7 @@
  * @param {Object} db - MongoDB database connection
  * @returns {Promise<Object>} Migration result
  */
-module.exports.up = async (db) => {
+module.exports.up = async (_db) => {
   console.log('[MIGRATION] Remove Relationship Status');
   console.log('[DRY RUN] The following operations would be executed:');
   console.log('');

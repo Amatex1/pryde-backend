@@ -53,7 +53,7 @@
  * @param {Object} db - MongoDB database connection
  * @returns {Promise<Object>} Migration result
  */
-module.exports.up = async (db) => {
+module.exports.up = async (_db) => {
   console.log('[MIGRATION] Remove GIF Picker');
   console.log('[INFO] This is a frontend-only feature. No database changes required.');
   console.log('');

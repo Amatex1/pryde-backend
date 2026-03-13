@@ -21,7 +21,7 @@ import logger from '../utils/logger.js';
  * @param {object} user - User object
  * @returns {object} { subject, html }
  */
-const getInactivityEmailTemplate = (daysInactive, user) => {
+const getInactivityEmailTemplate = (daysInactive, _user) => {
   const appUrl = config.app?.url || 'https://prdeapp.com';
   
   // Different messaging based on how long they've been away
@@ -113,7 +113,7 @@ const getInactivityEmailTemplate = (daysInactive, user) => {
  * Process inactivity email job
  * @param {object} job - BullMQ job
  */
-export async function processInactivityEmailJob(job) {
+export async function processInactivityEmailJob(job) {\n  const { userId, daysInactive } = job.data;\n  logger.info(`[InactivityEmail] Processing for user ${userId}, ${daysInactive} days inactive`);\n  \n  try {\n    const user = await User.findById(userId).select('username displayName email lastActivityDate');\n    \n    if (!user || !user.email) {\n      logger.warn(`[InactivityEmail] No user or email for ${userId}`);\n      return { success: false, reason: 'no_user_or_email' };\n    }\n    \n    // Check if we've already sent an email recently for this inactivity tier\n    const emailPrefs = user.emailPreferences || {};\n    const lastSent = emailPrefs[`inactivity_${daysInactive}EmailSentAt`];\n    \n    if (lastSent) {\n      const daysSinceEmail = (Date.now() - new Date(lastSent).getTime()) / (1000 * 60 * 60 * 24);\n      if (daysSinceEmail < 30) {\n        logger.info(`[InactivityEmail] Already sent ${daysInactive}d email recently for ${userId}`);\n        return { success: false, reason: 'email_recently_sent' };\n      }\n    }\n    \n    const { subject, html } = getInactivityEmailTemplate(daysInactive, user);\n    \n    // Import email service\n    const { sendEmail } = await import('../services/emailService.js');\n    const result = await sendEmail(user.email, subject, html);\n    \n    if (result.success) {\n      // Update user preference to prevent duplicate sends\n      const updateKey = `emailPreferences.inactivity_${daysInactive}EmailSentAt`;\n      await User.findByIdAndUpdate(userId, {\n        [updateKey]: new Date()\n      });\n      \n      logger.info(`[InactivityEmail] Sent to ${user.email} (${daysInactive}d inactive)`);\n      return { success: true };\n    } else {\n      logger.error(`[InactivityEmail] Failed: ${result.error}`);\n      return { success: false, error: result.error };\n    }\n  } catch (error) {\n    logger.error(`[InactivityEmail] Error: ${error.message}`);\n    throw error;\n  }\n}
   const { userId, daysInactive } = job.data;
   logger.info(`[InactivityEmail] Processing for user ${userId}, ${daysInactive} days inactive`);
   

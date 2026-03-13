@@ -12,7 +12,7 @@ import cookie from 'cookie';
  */
 export const sessionMiddleware = (options = {}) => {
   const {
-    sessionTimeout = 3600000, // 1 hour default
+    _sessionTimeout = 3600000, // 1 hour default
     cookieName = 'sessionId'
   } = options;
 

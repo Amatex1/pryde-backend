@@ -3,7 +3,7 @@
  * Runs every 5 minutes to unqueue notifications past their deliverAfter time.
  */
 
-import mongoose from 'mongoose';
+/* unused import for potential future use */ import mongoose from 'mongoose';
 import Notification from '../models/Notification.js';
 import logger from '../utils/logger.js';
 import cron from 'node-cron';

@@ -8,7 +8,7 @@
  */
 
 import mongoose from 'mongoose';
-import Post from '../models/Post.js';
+/* unused import for potential future use */ import Post from '../models/Post.js';
 import logger from '../utils/logger.js';
 
 export const addFeedIndexes = async () => {
