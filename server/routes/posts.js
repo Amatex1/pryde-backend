@@ -26,8 +26,8 @@ import { bundleNotification } from '../utils/bundleNotification.js';
 import { deleteFromGridFS } from './upload.js'; // For deleting images from storage
 import { MutationTrace, verifyWrite } from '../utils/mutationTrace.js';
 import { isFeatureEnabled } from '../utils/featureFlags.js';
-import { asyncHandler, requireAuth, requireValidId, sendError, HttpStatus } from '../utils/errorHandler.js';
-import { processUserBadgesById } from '../services/autoBadgeService.js';
+
+
 import { populatePostBadges, populateSinglePostBadges } from '../utils/populateBadges.js';
 import { checkAnonBurst } from '../utils/anonymousBurstLimiter.js';
 import { handlePostCreated } from '../services/feedBuilder.js';
