@@ -1082,12 +1082,18 @@ router.post('/login', loginLimiter, validateLogin, async (req, res) => {
     // Phase 4A: Track successful login
     incCounter('auth.login.success');
 
+    // Check if admin/moderator needs 2FA for dashboard
+    const adminRoles = ['super_admin', 'admin', 'moderator'];
+    const adminTwoFactorRequired = adminRoles.includes(user.role) && 
+      !user.twoFactorEnabled && !user.pushTwoFactorEnabled;
+
     res.json({
       success: true,
       message: 'Login successful',
       accessToken,
       // 🔐 SECURITY: refreshToken no longer returned in body - cookie is sole source
       suspicious,
+      adminTwoFactorRequired,
       // 🌍 Enterprise geo detection — uses CF header / Redis / ipapi fallback
       countryCode: countryCode || location.countryCode || null,
       requiresSafetyCheck: loginSafetyCheck,
@@ -1345,11 +1351,17 @@ router.post('/verify-2fa-login', loginLimiter, async (req, res) => {
     // Phase 4A: Track successful 2FA login
     incCounter('auth.login.success');
 
+    // Check if admin/moderator needs 2FA for dashboard
+    const adminRoles = ['super_admin', 'admin', 'moderator'];
+    const adminTwoFactorRequired = adminRoles.includes(user.role) && 
+      !user.twoFactorEnabled && !user.pushTwoFactorEnabled;
+
     res.json({
       success: true,
       message: 'Login successful',
       accessToken,
       // 🔐 SECURITY: refreshToken no longer returned in body - cookie is sole source
+      adminTwoFactorRequired,
       // 🌍 Enterprise geo detection
       countryCode: countryCode || location.countryCode || null,
       requiresSafetyCheck: loginSafetyCheck2FA,
@@ -1546,10 +1558,16 @@ router.post('/verify-push-login', loginLimiter, async (req, res) => {
 
     incCounter('auth.login.success');
 
+    // Check if admin/moderator needs 2FA for dashboard
+    const adminRoles = ['super_admin', 'admin', 'moderator'];
+    const adminTwoFactorRequired = adminRoles.includes(user.role) && 
+      !user.twoFactorEnabled && !user.pushTwoFactorEnabled;
+
     res.json({
       success: true,
       message: 'Login successful',
       accessToken,
+      adminTwoFactorRequired,
       countryCode: countryCode || location?.countryCode || null,
       requiresSafetyCheck: pushLoginSafetyCheck,
       user: {

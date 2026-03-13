@@ -1,45 +1,54 @@
-# Inbound Email Admin Access Plan Progress
+# 2FA Enforcement for Admin Dashboard - Implementation Plan
 
-## Approved Plan Steps (User confirmed)
+## Status: [ ] 0/6 Complete
 
-✅ **Step 1:** Create `server/models/InboundEmail.js` - MongoDB model for emails *(Completed)*
-
-✅ **Step 2:** Create `server/routes/adminEmails.js` - Admin routes: GET /api/admin/emails, GET /api/admin/emails/:id, PATCH /api/admin/emails/:id *(Completed)*
-
-✅ **Step 3:** Create `server/routes/webhooks.js` - POST /api/webhooks/resend/inbound *(Completed)*
-
-✅ **Step 4-6:** Routes mounted & docs updated
-
-✅ **CSRF webhook fix** - Backend restart needed
-
-**Final Steps:**
-
-1. **Restart Render service** (Dashboard → Manual Deploy → Clear build cache & deploy)
-
-2. **Test webhook CMD**:
+### [✅] Step 1: Create requireAdmin2FA middleware
+**File**: `server/middleware/requireAdmin2FA.js` (CREATED)
 ```
-curl -X POST https://pryde-backend.onrender.com/api/webhooks/resend/inbound -H "Content-Type: application/json" -d "{\"id\":\"test\",\"from\":\"user@test.com\",\"to\":[\"support@prydeapp.com\"],\"subject\":\"Fixed\",\"text\":\"Works!\",\"created_at\":\"2024-01-01T00:00:00Z\"}"
+✅ Check if req.user.role in ['super_admin','admin','moderator']
+✅ AND !req.user.twoFactorEnabled && !req.user.pushTwoFactorEnabled  
+✅ → 403 { code: 'ADMIN_2FA_REQUIRED', message: 'Admin accounts must enable 2FA...' }
 ```
-Expected: `{"success":true}`
+**Status**: ✅ COMPLETE
 
-3. **Admin panel**: `/admin/emails?mailbox=support` → See emails
+### [✅] Step 2: Update login response (auth.js)
+**File**: `server/routes/auth.js` (UPDATED)
+```
+✅ Added adminTwoFactorRequired flag to ALL login endpoints (/login, /verify-2fa-login, /verify-push-login)
+✅ if (['super_admin','admin','moderator'].includes(user.role) && !twoFactorEnabled && !pushTwoFactorEnabled)
+✅ Frontend receives adminTwoFactorRequired: true → redirect to 2FA setup
+```
+**Status**: ✅ COMPLETE
 
-**Feature 100% complete!** 🎉
+### [✅] Step 3: Protect admin routes  
+**File**: `server/routeRegistry.js` (UPDATED)
+```
+✅ Added requireAdmin2FA to /api/admin and /api/admin/posts routes
+✅ app.use('/api/admin', requireDatabaseReady, requireAdmin2FA, adminRoutes);
+```
+**Status**: ✅ COMPLETE
 
-**Commands to test:**
-```bash
-npm run dev
-# Test webhook:
-curl -X POST http://localhost:9000/api/webhooks/resend/inbound \\
-  -H 'resend-signature: test' \\
-  -H 'Content-Type: application/json' \\
-  -d '{"from":"test@example.com","to":["support@prydeapp.com"],"subject":"Test","text":"Test email"}'
-
-# Test admin API:
-curl -H 'Authorization: Bearer YOUR_JWT' http://localhost:9000/api/admin/emails?mailbox=support
+### [ ] Step 4: Test login flows
+```
+✅ Regular user → normal login
+✅ Moderator no 2FA → login OK + adminTwoFactorRequired: true + /admin 403  
+✅ Moderator WITH 2FA → full admin access
 ```
 
-**Post-Implementation:**
-- Monitor logs for webhook deliveries
-- Test admin access: `GET /api/admin/emails?mailbox=support`
-- Scale: Add attachment processing/upload to R2 if needed
+### [ ] Step 5: Frontend update note
+```
+Admin login receives adminTwoFactorRequired: true 
+→ Redirect to /twoFactor/setup with message
+→ After /verify → admin panel accessible
+```
+
+### [ ] Step 6: Deploy & verify
+```
+npm run build
+Restart server
+Test all 3 roles
+Check logs for ADMIN_2FA_REQUIRED blocks
+```
+
+**Current Step: Update server/routes/auth.js (Step 2)**
+
