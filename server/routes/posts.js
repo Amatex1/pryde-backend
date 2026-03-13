@@ -307,7 +307,7 @@ router.get('/user/:identifier', auth, requireActiveUser, async (req, res) => {
   }
 
   res.json(finalPosts);
-}));
+});
 
 // @route   GET /api/posts/:id
 // @desc    Get single post
