@@ -78,7 +78,19 @@ const adminActionLogSchema = new mongoose.Schema({
       'UPDATE_MODERATION_SETTINGS',
       'UPDATE_PLATFORM_SETTINGS',
       'TOGGLE_INVITE_MODE',
-      
+
+      // Credential management
+      'RESET_PASSWORD',
+      'UPDATE_EMAIL',
+
+      // Confirm-token preview
+      'ADMIN_ACTION_PREVIEW',
+
+      // Break-glass emergency override (two-stage)
+      'SUPER_ADMIN_OVERRIDE',
+      'ADMIN_OVERRIDE_REQUESTED',
+      'SUPER_ADMIN_OVERRIDE_EXECUTED',
+
       // Other
       'OTHER'
     ],

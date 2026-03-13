@@ -947,6 +947,17 @@ router.post('/login', loginLimiter, validateLogin, async (req, res) => {
       }
     }
 
+    // Enforce mandatory 2FA for super_admin accounts
+    // Super admins who have not configured any 2FA method cannot log in
+    if (user.role === 'super_admin' && !user.twoFactorEnabled && !user.pushTwoFactorEnabled) {
+      logger.warn(`[SuperAdmin] Login blocked — 2FA not configured for super_admin: ${user.username}`);
+      return res.status(403).json({
+        message: '2FA is required for super admin accounts. Please enable an authenticator app before logging in.',
+        code: 'SUPER_ADMIN_2FA_REQUIRED',
+        setupRequired: true
+      });
+    }
+
     // Check if 2FA is enabled (push or TOTP)
     if (user.pushTwoFactorEnabled || user.twoFactorEnabled) {
       // Check if login is suspicious (with location data)

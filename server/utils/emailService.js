@@ -439,3 +439,102 @@ export const sendAccountDeletionEmail = async (email, username, deletionToken) =
     return { success: false, error: error.message };
   }
 };
+
+/**
+ * Send override step-up verification code to the requesting super_admin.
+ */
+export const sendOverrideVerificationEmail = async (email, username, { action, targetUsername, ip, code }) => {
+  try {
+    const resendClient = getResendClient();
+    if (!resendClient) return { success: false, error: 'Email service not configured' };
+
+    const expiresNote = 'This code expires in 5 minutes.';
+    const actionLabel = {
+      DEMOTE_SUPER_ADMIN: 'Demote to Admin',
+      RESET_ADMIN_PASSWORD: 'Reset Password',
+      LOCK_ADMIN_ACCOUNT: 'Lock Account (30 days)'
+    }[action] || action;
+
+    const { data, error } = await resendClient.emails.send({
+      from: EMAIL_SENDERS.SECURITY,
+      to: email,
+      replyTo: 'security@prydeapp.com',
+      subject: 'Pryde Security — Admin Override Verification',
+      html: buildEmailTemplate({
+        title: '🚨 Admin Override Verification',
+        body: `Hi ${username},<br><br>
+          An emergency admin override was requested from your account.<br><br>
+          <strong>Details:</strong><br>
+          • <strong>Action:</strong> ${actionLabel}<br>
+          • <strong>Target account:</strong> @${targetUsername}<br>
+          • <strong>IP Address:</strong> ${ip}<br><br>
+          Your verification code is:<br><br>
+          <div style="background:#f4f4f4;border-radius:8px;padding:20px 32px;display:inline-block;font-size:32px;font-weight:700;letter-spacing:8px;color:#2B2B2B;margin:8px 0;">${code}</div><br><br>
+          ${expiresNote}<br><br>
+          If you did not initiate this override, contact <a href="mailto:security@prydeapp.com">security@prydeapp.com</a> immediately and revoke your admin escalation token.`,
+      }),
+    });
+
+    if (error) {
+      logOutbound(email, 'Pryde Security — Admin Override Verification', 'override_verification', null, false, error.message);
+      return { success: false, error: error.message };
+    }
+
+    logOutbound(email, 'Pryde Security — Admin Override Verification', 'override_verification', data.id, true, null);
+    return { success: true, messageId: data.id };
+  } catch (error) {
+    console.error('Error sending override verification email:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+/**
+ * Send security alert to security@prydeapp.com after a successful override execution.
+ */
+export const sendOverrideSecurityNotification = async ({ actorName, actorEmail, action, targetUsername, ip, timestamp }) => {
+  try {
+    const resendClient = getResendClient();
+    if (!resendClient) return { success: false, error: 'Email service not configured' };
+
+    const actionLabel = {
+      DEMOTE_SUPER_ADMIN: 'Demoted to Admin',
+      RESET_ADMIN_PASSWORD: 'Password Reset Sent',
+      LOCK_ADMIN_ACCOUNT: 'Account Locked (30 days)'
+    }[action] || action;
+
+    const formattedTime = new Date(timestamp).toLocaleString('en-US', {
+      weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+      hour: '2-digit', minute: '2-digit', timeZoneName: 'short'
+    });
+
+    const { data, error } = await resendClient.emails.send({
+      from: EMAIL_SENDERS.SECURITY,
+      to: 'security@prydeapp.com',
+      replyTo: 'security@prydeapp.com',
+      subject: '⚠️ Pryde Security Alert — Admin Override Executed',
+      html: buildEmailTemplate({
+        title: '⚠️ Admin Override Executed',
+        body: `An emergency super admin override was successfully executed and verified.<br><br>
+          <strong>Override Details:</strong><br>
+          • <strong>Admin:</strong> ${actorName} (${actorEmail})<br>
+          • <strong>Action:</strong> ${actionLabel}<br>
+          • <strong>Target account:</strong> @${targetUsername}<br>
+          • <strong>IP Address:</strong> ${ip}<br>
+          • <strong>Time:</strong> ${formattedTime}<br><br>
+          This action was verified with step-up authentication (6-digit code sent to the admin's email).<br><br>
+          If this action was not expected, investigate immediately.`,
+      }),
+    });
+
+    if (error) {
+      logOutbound('security@prydeapp.com', '⚠️ Pryde Security Alert — Admin Override Executed', 'override_security_notification', null, false, error.message);
+      return { success: false, error: error.message };
+    }
+
+    logOutbound('security@prydeapp.com', '⚠️ Pryde Security Alert — Admin Override Executed', 'override_security_notification', data.id, true, null);
+    return { success: true, messageId: data.id };
+  } catch (error) {
+    console.error('Error sending override security notification:', error);
+    return { success: false, error: error.message };
+  }
+};

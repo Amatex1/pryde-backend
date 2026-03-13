@@ -14,7 +14,7 @@ import adminEmailsRoutes from './adminEmails.js';
 import adminAuth, { checkPermission } from '../middleware/adminAuth.js';
 import requireAdminEscalation from '../middleware/requireAdminEscalation.js'; // Privileged Admin Escalation
 import crypto from 'crypto';
-import { sendPasswordResetEmail, sendPasswordChangedEmail } from '../utils/emailService.js';
+import { sendPasswordResetEmail, sendPasswordChangedEmail, sendOverrideVerificationEmail, sendOverrideSecurityNotification } from '../utils/emailService.js';
 import { EMAIL_SENDERS } from '../config/emailSenders.js';
 import config from '../config/config.js';
 import logger from '../utils/logger.js';
@@ -300,6 +300,17 @@ router.put('/users/:id/suspend', checkPermission('canManageUsers'), async (req, 
 
     await user.save();
 
+    await AdminActionLog.logAction({
+      actorId: req.user.id,
+      action: 'SUSPEND_USER',
+      targetType: 'USER',
+      targetId: user._id,
+      details: { username: user.username, days: days || 7, reason: user.suspensionReason },
+      escalationMethod: req.adminEscalation?.method || null,
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent']
+    });
+
     // Emit real-time event for user suspension (for admin panel)
     if (req.io) {
       req.io.emit('user_suspended', {
@@ -330,6 +341,17 @@ router.put('/users/:id/unsuspend', checkPermission('canManageUsers'), async (req
     user.suspensionReason = '';
 
     await user.save();
+
+    await AdminActionLog.logAction({
+      actorId: req.user.id,
+      action: 'UNSUSPEND_USER',
+      targetType: 'USER',
+      targetId: user._id,
+      details: { username: user.username },
+      escalationMethod: req.adminEscalation?.method || null,
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent']
+    });
 
     // Emit real-time event for user unsuspension (for admin panel)
     if (req.io) {
@@ -454,6 +476,17 @@ router.put('/users/:id/unban', checkPermission('canManageUsers'), requireAdminEs
 
     await user.save();
 
+    await AdminActionLog.logAction({
+      actorId: req.user.id,
+      action: 'UNBAN_USER',
+      targetType: 'USER',
+      targetId: user._id,
+      details: { username: user.username },
+      escalationMethod: req.adminEscalation?.method || null,
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent']
+    });
+
     // Emit real-time event for user unban (for admin panel)
     if (req.io) {
       req.io.emit('user_unbanned', {
@@ -499,10 +532,10 @@ router.put('/users/:id/role', checkPermission('canManageAdmins'), requireAdminEs
         isBanned: { $ne: true }
       });
 
-      if (superAdminCount <= 1) {
+      if (superAdminCount <= 2) {
         return res.status(403).json({
-          message: 'Cannot demote the last super admin. Promote another user to super admin first.',
-          code: 'LAST_SUPER_ADMIN_PROTECTED'
+          message: 'Cannot remove role. Platform requires at least two super_admin accounts.',
+          code: 'MIN_SUPER_ADMIN_FLOOR'
         });
       }
     }
@@ -552,6 +585,20 @@ router.put('/users/:id/role', checkPermission('canManageAdmins'), requireAdminEs
     }
 
     await user.save();
+
+    const previousRole = req.body._previousRole || 'unknown';
+    await AdminActionLog.logAction({
+      actorId: req.user.id,
+      action: role && role !== previousRole
+        ? (role === 'super_admin' || role === 'admin' || role === 'moderator' ? 'PROMOTE_ADMIN' : 'DEMOTE_ADMIN')
+        : 'MODIFY_PERMISSIONS',
+      targetType: 'USER',
+      targetId: user._id,
+      details: { username: user.username, fromRole: previousRole, toRole: user.role },
+      escalationMethod: req.adminEscalation?.method || null,
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent']
+    });
 
     res.json({ message: 'User role updated successfully', user: user.toJSON() });
   } catch (error) {
@@ -857,14 +904,14 @@ router.post('/users/:id/send-reset-link', checkPermission('canManageUsers'), asy
       });
     }
 
-    // Log admin action using structured logger
-    logger.info({
-      message: 'ADMIN ACTION: PASSWORD_RESET_TRIGGERED',
-      adminId: req.adminUser._id,
-      adminUsername: req.adminUser.username,
-      action: 'PASSWORD_RESET_TRIGGERED',
-      targetUserId: user._id,
-      targetUsername: user.username
+    await AdminActionLog.logAction({
+      actorId: req.user.id,
+      action: 'RESET_PASSWORD',
+      targetType: 'USER',
+      targetId: user._id,
+      details: { username: user.username, email: user.email },
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent']
     });
 
     res.json({
@@ -1037,16 +1084,14 @@ router.put('/users/:id/email', checkPermission('canManageUsers'), async (req, re
       }
     }
 
-    // Log admin action using structured logger
-    logger.info({
-      message: 'ADMIN ACTION: EMAIL_UPDATED',
-      adminId: req.adminUser._id,
-      adminUsername: req.adminUser.username,
-      action: 'EMAIL_UPDATED',
-      targetUserId: user._id,
-      targetUsername: user.username,
-      oldEmail,
-      newEmail
+    await AdminActionLog.logAction({
+      actorId: req.user.id,
+      action: 'UPDATE_EMAIL',
+      targetType: 'USER',
+      targetId: user._id,
+      details: { username: user.username, oldEmail, newEmail },
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent']
     });
 
     res.json({
@@ -1056,6 +1101,332 @@ router.put('/users/:id/email', checkPermission('canManageUsers'), async (req, re
     });
   } catch (error) {
     logger.error('Update email error', { error: error.message, requestId: req.requestId });
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// ============================================
+// EMERGENCY SUPER ADMIN OVERRIDE (BREAK-GLASS)
+// Two-stage: Request (sends code) → Confirm (validates + executes)
+// ============================================
+
+import { checkRateLimit, generateOverrideCode, validateOverrideCode, consumeOverrideCode } from '../services/adminOverrideService.js';
+
+const OVERRIDE_ALLOWED_ACTIONS = ['DEMOTE_SUPER_ADMIN', 'RESET_ADMIN_PASSWORD', 'LOCK_ADMIN_ACCOUNT'];
+
+/**
+ * Shared validation helper — re-used in both request and confirm stages.
+ * Returns { target } on success or sends an error response and returns null.
+ */
+async function validateOverrideRequest(req, res, action, targetUserId, reason) {
+  if (!action || !targetUserId || !reason) {
+    res.status(400).json({ message: 'action, targetUserId, and reason are required' });
+    return null;
+  }
+
+  if (!OVERRIDE_ALLOWED_ACTIONS.includes(action)) {
+    res.status(400).json({
+      error: 'UNSUPPORTED_ACTION',
+      message: `Allowed override actions: ${OVERRIDE_ALLOWED_ACTIONS.join(', ')}`
+    });
+    return null;
+  }
+
+  if (String(targetUserId) === String(req.user.id)) {
+    res.status(400).json({ error: 'SELF_OVERRIDE_DENIED', message: 'You cannot use the override on your own account.' });
+    return null;
+  }
+
+  const target = await User.findById(targetUserId);
+  if (!target) { res.status(404).json({ message: 'Target user not found' }); return null; }
+
+  if (target.role !== 'super_admin') {
+    res.status(400).json({
+      error: 'NOT_SUPER_ADMIN',
+      message: 'This override endpoint is only for super_admin accounts.'
+    });
+    return null;
+  }
+
+  if (action === 'DEMOTE_SUPER_ADMIN' || action === 'LOCK_ADMIN_ACCOUNT') {
+    const activeSuperAdminCount = await User.countDocuments({
+      role: 'super_admin',
+      isDeleted: { $ne: true },
+      isBanned: { $ne: true }
+    });
+    if (activeSuperAdminCount <= 2) {
+      res.status(403).json({
+        error: 'SUPER_ADMIN_FLOOR',
+        message: 'Cannot remove or lock this account. Platform requires at least two active super_admin accounts.'
+      });
+      return null;
+    }
+  }
+
+  return target;
+}
+
+/**
+ * POST /api/admin/super-admin-override
+ *
+ * Stage 1 — Request: validate inputs, generate 6-digit code, send verification email.
+ * Does NOT execute the action.
+ */
+router.post(
+  '/super-admin-override',
+  checkPermission('canManageAdmins'),
+  requireAdminEscalation,
+  async (req, res) => {
+    try {
+      const { action, targetUserId, reason, confirmText } = req.body;
+
+      if (confirmText !== 'OVERRIDE') {
+        return res.status(400).json({ error: 'CONFIRMATION_REQUIRED', message: 'You must type OVERRIDE to proceed.' });
+      }
+
+      // Rate limit: max 3 requests per admin per hour
+      const { allowed, remaining } = await checkRateLimit(String(req.user.id));
+      if (!allowed) {
+        return res.status(429).json({
+          error: 'OVERRIDE_RATE_LIMITED',
+          message: 'Too many override requests. Maximum 3 per hour. Try again later.'
+        });
+      }
+
+      const target = await validateOverrideRequest(req, res, action, targetUserId, reason);
+      if (!target) return; // error already sent
+
+      // Generate and store code
+      const code = await generateOverrideCode(String(req.user.id), action, String(target._id), reason);
+
+      // Send verification email to the requesting admin
+      await sendOverrideVerificationEmail(req.adminUser.email, req.adminUser.username, {
+        action,
+        targetUsername: target.username,
+        ip: req.ip,
+        code
+      });
+
+      // Audit log: request stage
+      await AdminActionLog.logAction({
+        actorId: req.user.id,
+        action: 'ADMIN_OVERRIDE_REQUESTED',
+        targetType: 'USER',
+        targetId: target._id,
+        details: { overrideAction: action, username: target.username, reason, attemptsRemainingThisHour: remaining },
+        escalationMethod: req.adminEscalation?.method || null,
+        ipAddress: req.ip,
+        userAgent: req.headers['user-agent']
+      });
+
+      logger.warn(`[Override] ${req.adminUser.username} requested ${action} on super_admin ${target.username} — verification code sent`);
+
+      res.json({
+        verificationRequired: true,
+        message: 'Verification code sent to your email. Enter it within 5 minutes to proceed.'
+      });
+    } catch (error) {
+      logger.error('Super admin override request error', { error: error.message, requestId: req.requestId });
+      res.status(500).json({ message: 'Server error' });
+    }
+  }
+);
+
+/**
+ * POST /api/admin/super-admin-override/confirm
+ *
+ * Stage 2 — Confirm: validate the 6-digit code, execute the action.
+ */
+router.post(
+  '/super-admin-override/confirm',
+  checkPermission('canManageAdmins'),
+  requireAdminEscalation,
+  async (req, res) => {
+    try {
+      const { code, confirmText } = req.body;
+
+      if (confirmText !== 'OVERRIDE') {
+        return res.status(400).json({ error: 'CONFIRMATION_REQUIRED', message: 'You must type OVERRIDE to proceed.' });
+      }
+
+      if (!code) {
+        return res.status(400).json({ message: 'Verification code is required.' });
+      }
+
+      // Validate code against Redis
+      const pending = await validateOverrideCode(String(req.user.id), String(code).trim());
+      if (!pending) {
+        return res.status(400).json({
+          error: 'INVALID_CODE',
+          message: 'Invalid or expired verification code. Request a new one.'
+        });
+      }
+
+      const { action, targetUserId, reason } = pending;
+
+      // Re-validate the target (state may have changed since request)
+      const target = await validateOverrideRequest(req, res, action, targetUserId, reason);
+      if (!target) {
+        await consumeOverrideCode(String(req.user.id)); // clean up
+        return;
+      }
+
+      // Execute the action
+      let actionDetail = {};
+
+      if (action === 'DEMOTE_SUPER_ADMIN') {
+        target.role = 'admin';
+        target.permissions = {
+          canViewReports: true, canResolveReports: true,
+          canManageUsers: true, canViewAnalytics: true, canManageAdmins: false
+        };
+        await target.save();
+        actionDetail = { fromRole: 'super_admin', toRole: 'admin' };
+
+      } else if (action === 'RESET_ADMIN_PASSWORD') {
+        const resetToken = crypto.randomBytes(32).toString('hex');
+        const resetTokenHashed = crypto.createHash('sha256').update(resetToken).digest('hex');
+        target.resetPasswordToken = resetTokenHashed;
+        target.resetPasswordExpires = Date.now() + 60 * 60 * 1000;
+        await target.save();
+        await sendPasswordResetEmail(target.email, resetToken, target.username);
+        actionDetail = { email: target.email };
+
+      } else if (action === 'LOCK_ADMIN_ACCOUNT') {
+        const lockUntil = new Date();
+        lockUntil.setDate(lockUntil.getDate() + 30);
+        target.isSuspended = true;
+        target.suspendedUntil = lockUntil;
+        target.suspensionReason = `Emergency account lock via override. Reason: ${reason}`;
+        await target.save();
+        actionDetail = { lockedUntil: lockUntil };
+      }
+
+      // Consume the code (single-use)
+      await consumeOverrideCode(String(req.user.id));
+
+      const timestamp = new Date();
+
+      // Audit log: execution stage
+      await AdminActionLog.logAction({
+        actorId: req.user.id,
+        action: 'SUPER_ADMIN_OVERRIDE_EXECUTED',
+        targetType: 'USER',
+        targetId: target._id,
+        details: { overrideAction: action, username: target.username, reason, ...actionDetail },
+        escalationMethod: req.adminEscalation?.method || null,
+        ipAddress: req.ip,
+        userAgent: req.headers['user-agent']
+      });
+
+      logger.warn(`[Override] ${req.adminUser.username} EXECUTED ${action} on super_admin ${target.username}. Reason: ${reason}`);
+
+      // Fire security notification asynchronously — don't block the response
+      sendOverrideSecurityNotification({
+        actorName: req.adminUser.displayName || req.adminUser.username,
+        actorEmail: req.adminUser.email,
+        action,
+        targetUsername: target.username,
+        ip: req.ip,
+        timestamp
+      }).catch(err => logger.warn('[Override] Security notification failed:', err.message));
+
+      res.json({ status: 'success', message: 'Super admin override executed.', action });
+    } catch (error) {
+      logger.error('Super admin override confirm error', { error: error.message, requestId: req.requestId });
+      res.status(500).json({ message: 'Server error' });
+    }
+  }
+);
+
+// ============================================
+// ACTION PREVIEW / CONFIRM TOKENS
+// ============================================
+
+import { generatePreviewToken, consumePreviewToken } from '../services/adminConfirmService.js';
+
+// Supported actions for the preview → confirm flow
+const PREVIEWABLE_ACTIONS = new Set([
+  'BAN_USER', 'SUSPEND_USER', 'DELETE_USER', 'PROMOTE_ADMIN', 'DEMOTE_ADMIN',
+  'RESET_PASSWORD', 'UPDATE_EMAIL'
+]);
+
+// @route   POST /api/admin/actions/preview
+// @desc    Request a confirm token before executing a destructive action
+// @access  Admin (canManageUsers)
+router.post('/actions/preview', checkPermission('canManageUsers'), async (req, res) => {
+  try {
+    const { action, targetId, details } = req.body;
+
+    if (!action || !targetId) {
+      return res.status(400).json({ message: 'action and targetId are required' });
+    }
+
+    if (!PREVIEWABLE_ACTIONS.has(action)) {
+      return res.status(400).json({ message: `Action '${action}' is not previewable`, code: 'UNSUPPORTED_ACTION' });
+    }
+
+    const target = await User.findById(targetId).select('username displayName role').lean();
+    if (!target) {
+      return res.status(404).json({ message: 'Target user not found' });
+    }
+
+    // Log the preview request
+    await AdminActionLog.logAction({
+      actorId: req.user.id,
+      action: 'ADMIN_ACTION_PREVIEW',
+      targetType: 'USER',
+      targetId,
+      details: { requestedAction: action, username: target.username, ...details },
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent']
+    });
+
+    const { token, expiresAt } = generatePreviewToken(req.user.id, action, targetId, { details });
+
+    res.json({
+      message: 'Confirm token issued. Complete the action within 60 seconds.',
+      token,
+      expiresAt,
+      preview: {
+        action,
+        target: { id: target._id, username: target.username, displayName: target.displayName, role: target.role }
+      }
+    });
+  } catch (error) {
+    logger.error('Action preview error', { error: error.message, requestId: req.requestId });
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   POST /api/admin/actions/confirm
+// @desc    Confirm and consume a preview token to validate a destructive action
+// @access  Admin (canManageUsers)
+router.post('/actions/confirm', checkPermission('canManageUsers'), async (req, res) => {
+  try {
+    const { token, confirmation } = req.body;
+
+    if (!token || !confirmation) {
+      return res.status(400).json({ message: 'token and confirmation are required' });
+    }
+
+    if (confirmation !== 'CONFIRM') {
+      return res.status(400).json({ message: 'You must type CONFIRM to proceed.', code: 'CONFIRMATION_REQUIRED' });
+    }
+
+    const { action, targetId, payload } = consumePreviewToken(token, req.user.id);
+
+    res.json({
+      message: 'Token validated. Proceed with the action.',
+      action,
+      targetId,
+      payload
+    });
+  } catch (error) {
+    if (error.message.includes('token')) {
+      return res.status(400).json({ message: error.message, code: 'INVALID_TOKEN' });
+    }
+    logger.error('Action confirm error', { error: error.message, requestId: req.requestId });
     res.status(500).json({ message: 'Server error' });
   }
 });
