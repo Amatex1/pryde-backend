@@ -82,7 +82,7 @@ const createAdvancedLimiter = (options) => {
   } = options;
 
   // Custom handler that logs rate limit hits (replaces deprecated onLimitReached)
-/* eslint-disable @typescript-eslint/no-unused-vars */ const customHandler = (req, res, _next, opts) => {
+/* eslint-disable no-unused-vars */ const customHandler = (req, res, _next, opts) => {
     // Log rate limit reached (moved from deprecated onLimitReached)
     logger.warn('Rate limit reached', {
       ip: req.ip,
