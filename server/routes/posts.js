@@ -31,6 +31,7 @@ import { processUserBadgesById } from '../services/autoBadgeService.js';
 import { populatePostBadges, populateSinglePostBadges } from '../utils/populateBadges.js';
 import { checkAnonBurst } from '../utils/anonymousBurstLimiter.js';
 import { handlePostCreated } from '../services/feedBuilder.js';
+import { sendPushNotification } from './pushNotifications.js';
 
 // ── Anonymous Post Sanitization ──────────────────────────────────────────────
 // Strip real author data from anonymous posts for non-staff users.
