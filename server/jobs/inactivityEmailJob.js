@@ -114,52 +114,7 @@ const getInactivityEmailTemplate = (daysInactive, _user) => {
  * @param {object} job - BullMQ job
  */
 export async function processInactivityEmailJob(job) {\n  const { userId, daysInactive } = job.data;\n  logger.info(`[InactivityEmail] Processing for user ${userId}, ${daysInactive} days inactive`);\n  \n  try {\n    const user = await User.findById(userId).select('username displayName email lastActivityDate');\n    \n    if (!user || !user.email) {\n      logger.warn(`[InactivityEmail] No user or email for ${userId}`);\n      return { success: false, reason: 'no_user_or_email' };\n    }\n    \n    // Check if we've already sent an email recently for this inactivity tier\n    const emailPrefs = user.emailPreferences || {};\n    const lastSent = emailPrefs[`inactivity_${daysInactive}EmailSentAt`];\n    \n    if (lastSent) {\n      const daysSinceEmail = (Date.now() - new Date(lastSent).getTime()) / (1000 * 60 * 60 * 24);\n      if (daysSinceEmail < 30) {\n        logger.info(`[InactivityEmail] Already sent ${daysInactive}d email recently for ${userId}`);\n        return { success: false, reason: 'email_recently_sent' };\n      }\n    }\n    \n    const { subject, html } = getInactivityEmailTemplate(daysInactive, user);\n    \n    // Import email service\n    const { sendEmail } = await import('../services/emailService.js');\n    const result = await sendEmail(user.email, subject, html);\n    \n    if (result.success) {\n      // Update user preference to prevent duplicate sends\n      const updateKey = `emailPreferences.inactivity_${daysInactive}EmailSentAt`;\n      await User.findByIdAndUpdate(userId, {\n        [updateKey]: new Date()\n      });\n      \n      logger.info(`[InactivityEmail] Sent to ${user.email} (${daysInactive}d inactive)`);\n      return { success: true };\n    } else {\n      logger.error(`[InactivityEmail] Failed: ${result.error}`);\n      return { success: false, error: result.error };\n    }\n  } catch (error) {\n    logger.error(`[InactivityEmail] Error: ${error.message}`);\n    throw error;\n  }\n}
-  const { userId, daysInactive } = job.data;
-  logger.info(`[InactivityEmail] Processing for user ${userId}, ${daysInactive} days inactive`);
-  
-  try {
-    const user = await User.findById(userId).select('username displayName email lastActivityDate');
-    
-    if (!user || !user.email) {
-      logger.warn(`[InactivityEmail] No user or email for ${userId}`);
-      return { success: false, reason: 'no_user_or_email' };
-    }
-    
-    // Check if we've already sent an email recently for this inactivity tier
-    const emailPrefs = user.emailPreferences || {};
-    const lastSent = emailPrefs[`inactivity_${daysInactive}EmailSentAt`];
-    
-    if (lastSent) {
-      const daysSinceEmail = (Date.now() - new Date(lastSent).getTime()) / (1000 * 60 * 60 * 24);
-      if (daysSinceEmail < 30) {
-        logger.info(`[InactivityEmail] Already sent ${daysInactive}d email recently for ${userId}`);
-        return { success: false, reason: 'email_recently_sent' };
-      }
-    }
-    
-    const { subject, html } = getInactivityEmailTemplate(daysInactive, user);
-    
-    // Import email service
-    const { sendEmail } = await import('../services/emailService.js');
-    const result = await sendEmail(user.email, subject, html);
-    
-    if (result.success) {
-      // Update user preference to prevent duplicate sends
-      const updateKey = `emailPreferences.inactivity_${daysInactive}EmailSentAt`;
-      await User.findByIdAndUpdate(userId, {
-        [updateKey]: new Date()
-      });
-      
-      logger.info(`[InactivityEmail] Sent to ${user.email} (${daysInactive}d inactive)`);
-      return { success: true };
-    } else {
-      logger.error(`[InactivityEmail] Failed: ${result.error}`);
-      return { success: false, error: result.error };
-    }
-  } catch (error) {
-    logger.error(`[InactivityEmail] Error: ${error.message}`);
-    throw error;
-  }
+
 }
 
 /**

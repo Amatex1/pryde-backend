@@ -133,10 +133,11 @@ const sanitizePostForPrivateLikes = (post, currentUserId) => {
 // @route   GET /api/posts
 // @desc    Get all posts (feed)
 // @access  Private
-router.get('/', auth, requireActiveUser, asyncHandler(async (req, res) => {
-  // SAFETY: Guard clause for auth
-  const userId = requireAuth(req, res);
-  if (!userId) return;
+router.get('/', auth, requireActiveUser, async (req, res) => {
+  if (!req.userId) {
+    return res.status(401).json({ message: 'Unauthorized' });
+  }
+  const userId = req.userId;
 
   const { page = 1, limit = 20, filter = 'followers' } = req.query;
 
@@ -146,7 +147,7 @@ router.get('/', auth, requireActiveUser, asyncHandler(async (req, res) => {
 
   const currentUser = await User.findById(userId);
   if (!currentUser) {
-    return sendError(res, HttpStatus.NOT_FOUND, 'User not found');
+    return res.status(404).json({ message: 'User not found' });
   }
   const followingIds = currentUser.following || [];
 
@@ -224,12 +225,13 @@ router.get('/', auth, requireActiveUser, asyncHandler(async (req, res) => {
     totalPages: Math.ceil(count / limitNum),
     currentPage: pageNum
   });
-}));
+});
+
 
 // @route   GET /api/posts/user/:identifier
 // @desc    Get posts by user (by ID or username)
 // @access  Private
-router.get('/user/:identifier', auth, requireActiveUser, asyncHandler(async (req, res) => {
+router.get('/user/:identifier', auth, requireActiveUser, async (req, res) => {
   // SAFETY: Guard clause for auth
   const currentUserId = requireAuth(req, res);
   if (!currentUserId) return;
