@@ -16,13 +16,15 @@ const feedEntrySchema = new mongoose.Schema({
   userId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
-    required: true,
+    // null for global community signals (shown to all users)
+    default: null,
     index: true
   },
   postId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Post',
-    required: true,
+    // null for community_signal entries
+    default: null,
     index: true
   },
   score: {
@@ -34,6 +36,20 @@ const feedEntrySchema = new mongoose.Schema({
     type: Date,
     default: Date.now,
     index: true
+  },
+  // ── Community Signal fields ─────────────────────────────────────────────────
+  type: {
+    type: String,
+    enum: ['post', 'community_signal'],
+    default: 'post',
+    index: true
+  },
+  signalType: {
+    type: String,
+    enum: ['new_member', 'conversation_heating', 'active_journal', 'group_discussion', 'reply_spike']
+  },
+  signalData: {
+    type: Object
   }
 }, {
   timestamps: false // We manage createdAt manually
@@ -46,10 +62,16 @@ feedEntrySchema.index(
   { name: 'feed_user_score_time' }
 );
 
-// Unique compound index to prevent duplicate feed entries for same user+post
+// Unique compound index to prevent duplicate feed entries for same user+post (posts only)
 feedEntrySchema.index(
   { userId: 1, postId: 1 },
-  { unique: true, name: 'feed_user_post_unique' }
+  { unique: true, sparse: true, partialFilterExpression: { type: 'post' }, name: 'feed_user_post_unique' }
+);
+
+// Index for efficient global signal queries (type + signalType + createdAt)
+feedEntrySchema.index(
+  { type: 1, signalType: 1, createdAt: -1 },
+  { name: 'feed_signal_type_time' }
 );
 
 // Static method: Add multiple feed entries efficiently
@@ -85,6 +107,15 @@ feedEntrySchema.statics.getUserFeed = async function(userId, limit = 50) {
 // Static method: Delete all feed entries for a specific post
 feedEntrySchema.statics.deleteByPostId = async function(postId) {
   return this.deleteMany({ postId });
+};
+
+// Static method: Get recent global community signals
+feedEntrySchema.statics.getRecentSignals = async function(sinceMs = 2 * 60 * 60 * 1000, limit = 5) {
+  const since = new Date(Date.now() - sinceMs);
+  return this.find({ type: 'community_signal', createdAt: { $gte: since } })
+    .sort({ createdAt: -1 })
+    .limit(limit)
+    .lean();
 };
 
 // Static method: Update score for a specific post (when engagement changes)

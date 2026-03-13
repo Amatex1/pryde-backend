@@ -34,6 +34,7 @@ import {
   setCache
 } from '../utils/redisCache.js';
 import { rankPosts, getFeedHeader, injectCommunityMoments } from '../utils/feedRanking.js';
+import FeedEntry from '../models/FeedEntry.js';
 
 const router = express.Router();
 
@@ -45,6 +46,31 @@ const FEED_CACHE_TTL = {
 
 // Enable/disable ranking (can be toggled via env)
 const ENABLE_CALM_RANKING = process.env.FEED_RANKING !== 'false';
+
+// Max signals injected per feed page (prevents signal flooding)
+const MAX_SIGNALS_PER_PAGE = 3;
+
+/**
+ * Fetch recent community signals and shape them for the feed array.
+ * Signals are stored as FeedEntry docs with type: 'community_signal'.
+ * They are returned as plain objects with type: 'community_signal' so the
+ * frontend can render a signal card instead of a FeedPost.
+ */
+const fetchFeedSignals = async () => {
+  try {
+    const raw = await FeedEntry.getRecentSignals(2 * 60 * 60 * 1000, MAX_SIGNALS_PER_PAGE);
+    return raw.map(entry => ({
+      _id: entry._id,
+      type: 'community_signal',
+      signalType: entry.signalType,
+      signalData: entry.signalData || {},
+      createdAt: entry.createdAt
+    }));
+  } catch (err) {
+    logger.warn('[Feed] Failed to fetch community signals:', err.message);
+    return [];
+  }
+};
 
 // ── Anonymous Post Sanitization (shared logic) ─────────────────────────────
 const STAFF_ROLES = ['moderator', 'admin', 'super_admin'];
@@ -152,8 +178,13 @@ router.get('/', auth, requireActiveUser, feedCache, asyncHandler(async (req, res
   const sanitizedPosts = rankedPosts.map(post => sanitizePostForPrivateLikes(post, currentUserId));
   const finalPosts = sanitizeAnonymousPosts(sanitizedPosts, req.user?.role, currentUserId);
 
-  const responseData = { 
-    posts: finalPosts,
+  // Inject community signals on first page only
+  const signals = isFirstPage ? await fetchFeedSignals() : [];
+  const postsWithSignals = [...finalPosts, ...signals]
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+  const responseData = {
+    posts: postsWithSignals,
     feedHeader: feedHeader
   };
 
@@ -215,8 +246,13 @@ router.get('/global', auth, requireActiveUser, cacheShort, asyncHandler(async (r
   const sanitizedPosts = rankedPosts.map(post => sanitizePostForPrivateLikes(post, currentUserId));
   const finalPosts = sanitizeAnonymousPosts(sanitizedPosts, req.user?.role, currentUserId);
 
-  const responseData = { 
-    posts: finalPosts,
+  // Inject community signals on first page (no cursor) only
+  const signals = !before ? await fetchFeedSignals() : [];
+  const postsWithSignals = [...finalPosts, ...signals]
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+  const responseData = {
+    posts: postsWithSignals,
     feedHeader: feedHeader
   };
 
@@ -287,8 +323,13 @@ router.get('/following', auth, requireActiveUser, cacheShort, asyncHandler(async
   const sanitizedPosts = rankedPosts.map(post => sanitizePostForPrivateLikes(post, currentUserId));
   const finalPosts = sanitizeAnonymousPosts(sanitizedPosts, req.user?.role, currentUserId);
 
-  const responseData = { 
-    posts: finalPosts,
+  // Inject community signals on first page (no cursor) only
+  const signals = !before ? await fetchFeedSignals() : [];
+  const postsWithSignals = [...finalPosts, ...signals]
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+  const responseData = {
+    posts: postsWithSignals,
     feedHeader: feedHeader
   };
 

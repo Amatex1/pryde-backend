@@ -1,6 +1,8 @@
 import { Resend } from 'resend';
 import config from '../config/config.js';
 import OutboundEmail from '../models/OutboundEmail.js';
+import { EMAIL_SENDERS } from '../config/emailSenders.js';
+import { buildEmailTemplate } from './emailTemplate.js';
 
 const logOutbound = (to, subject, type, resendId, success, errorMessage) => {
   OutboundEmail.create({ to, subject, type, resendId: resendId || null, success, errorMessage: errorMessage || null })
@@ -16,9 +18,7 @@ const getResendClient = () => {
   return resend;
 };
 
-// Email sender address
-// Force correct format - ignore env var for now to debug
-const FROM_EMAIL = 'Pryde Social <noreply@prydeapp.com>';
+// Sender addresses — see server/config/emailSenders.js for full channel documentation
 
 export const sendPasswordResetEmail = async (email, resetToken, username) => {
   try {
@@ -30,102 +30,32 @@ export const sendPasswordResetEmail = async (email, resetToken, username) => {
     }
 
     const resetUrl = `${config.frontendURL}/reset-password?token=${resetToken}`;
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000)
+      .toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
 
     const { data, error } = await resendClient.emails.send({
-      from: FROM_EMAIL,
+      from: EMAIL_SENDERS.SYSTEM,
       to: email,
+      replyTo: 'support@prydeapp.com',
       subject: 'Password Reset Request - Pryde Social',
-      html: `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <meta charset="UTF-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <!--[if mso]>
-          <style type="text/css">
-            body, table, td {font-family: Arial, Helvetica, sans-serif !important;}
-          </style>
-          <![endif]-->
-        </head>
-        <body style="margin: 0; padding: 0; background-color: #F7F7F7; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
-          <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #F7F7F7;">
-            <tr>
-              <td style="padding: 40px 20px;">
-                <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="max-width: 600px; margin: 0 auto;">
-
-                  <!-- Header with Purple Gradient -->
-                  <tr>
-                    <td style="background-color: #6C5CE7; padding: 40px 30px; text-align: center;">
-                      <h1 style="margin: 0; color: #FFFFFF; font-size: 28px; font-weight: 700;">✨ Pryde Social</h1>
-                      <p style="margin: 10px 0 0; color: #EDEAFF; font-size: 16px;">Password Reset Request</p>
-                    </td>
-                  </tr>
-
-                  <!-- Main Content -->
-                  <tr>
-                    <td style="background-color: #FFFFFF; padding: 40px 30px;">
-                      <h2 style="margin: 0 0 20px 0; color: #2B2B2B; font-size: 22px; font-weight: 600;">Hi ${username},</h2>
-
-                      <p style="margin: 0 0 20px 0; color: #2B2B2B; font-size: 16px; line-height: 1.6;">
-                        We received a request to reset your password. Click the button below to create a new password:
-                      </p>
-
-                      <!-- Button -->
-                      <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin: 30px 0;">
-                        <tr>
-                          <td style="background-color: #6C5CE7; text-align: center;">
-                            <a href="${resetUrl}" style="display: inline-block; padding: 16px 40px; color: #FFFFFF; text-decoration: none; font-weight: 600; font-size: 16px;">Reset Password</a>
-                          </td>
-                        </tr>
-                      </table>
-
-                      <p style="margin: 30px 0 10px 0; color: #616161; font-size: 14px;">
-                        Or copy and paste this link into your browser:
-                      </p>
-                      <p style="margin: 0 0 30px 0; color: #6C5CE7; font-size: 14px; word-break: break-all;">
-                        ${resetUrl}
-                      </p>
-
-                      <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 30px 0; background-color: #FFF3CD; border-left: 4px solid #FFC107;">
-                        <tr>
-                          <td style="padding: 15px;">
-                            <p style="margin: 0; color: #856404; font-size: 14px; font-weight: 600;">
-                              ⏰ This link will expire in 1 hour.
-                            </p>
-                          </td>
-                        </tr>
-                      </table>
-
-                      <p style="margin: 0 0 20px 0; color: #2B2B2B; font-size: 16px; line-height: 1.6;">
-                        If you didn't request a password reset, you can safely ignore this email. Your password will not be changed.
-                      </p>
-
-                      <p style="margin: 30px 0 0 0; color: #2B2B2B; font-size: 16px; line-height: 1.6;">
-                        Best regards,<br>
-                        <strong>The Pryde Social Team</strong>
-                      </p>
-                    </td>
-                  </tr>
-
-                  <!-- Footer -->
-                  <tr>
-                    <td style="background-color: #F7F7F7; padding: 30px; text-align: center;">
-                      <p style="margin: 0 0 10px 0; color: #616161; font-size: 12px;">
-                        © ${new Date().getFullYear()} Pryde Social. All rights reserved.
-                      </p>
-                      <p style="margin: 0; color: #616161; font-size: 12px;">
-                        This is an automated email. Please do not reply.
-                      </p>
-                    </td>
-                  </tr>
-
-                </table>
-              </td>
-            </tr>
-          </table>
-        </body>
-        </html>
-      `
+      html: buildEmailTemplate({
+        title: 'Reset your password',
+        body: `Hi ${username},<br><br>
+          We received a request to reset your Pryde Social password. Click the button below to create a new password.<br><br>
+          If you didn't request a password reset, you can safely ignore this email. Your password will not be changed.`,
+        actionText: 'Reset Password',
+        actionUrl: resetUrl,
+        expiresAt,
+      }),
+      /*
+       * List-Unsubscribe header improves deliverability and allows email clients
+       * (Gmail, Outlook, Apple Mail) to display native unsubscribe controls.
+       * Required for modern email reputation and spam compliance.
+       */
+      headers: {
+        'List-Unsubscribe': 'mailto:unsubscribe@prydeapp.com',
+        'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+      },
     });
 
     if (error) {
@@ -164,148 +94,26 @@ export const sendLoginAlertEmail = async (email, username, loginInfo) => {
     });
 
     const { data, error } = await resendClient.emails.send({
-      from: FROM_EMAIL,
+      from: EMAIL_SENDERS.SECURITY,
       to: email,
+      replyTo: 'security@prydeapp.com',
       subject: '🔐 New Login to Your Pryde Social Account',
-      html: `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <style>
-            body {
-              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-              line-height: 1.6;
-              color: #2B2B2B;
-              max-width: 600px;
-              margin: 0 auto;
-              padding: 20px;
-            }
-            .container {
-              background: linear-gradient(135deg, #6C5CE7 0%, #0984E3 100%);
-              border-radius: 16px;
-              padding: 40px;
-              color: white;
-            }
-            .content {
-              background: white;
-              border-radius: 12px;
-              padding: 30px;
-              margin-top: 20px;
-              color: #2B2B2B;
-            }
-            .info-box {
-              background: #F7F7F7;
-              border-left: 4px solid #6C5CE7;
-              padding: 15px;
-              margin: 20px 0;
-              border-radius: 4px;
-            }
-            .info-row {
-              display: flex;
-              justify-content: space-between;
-              padding: 8px 0;
-              border-bottom: 1px solid #E0E0E0;
-            }
-            .info-row:last-child {
-              border-bottom: none;
-            }
-            .label {
-              font-weight: 600;
-              color: #616161;
-            }
-            .value {
-              color: #2B2B2B;
-            }
-            .button {
-              display: inline-block;
-              background: linear-gradient(135deg, #6C5CE7 0%, #0984E3 100%);
-              color: white;
-              padding: 14px 32px;
-              text-decoration: none;
-              border-radius: 8px;
-              font-weight: 600;
-              margin: 20px 0;
-            }
-            .warning {
-              background: #FFF3CD;
-              border-left: 4px solid #FFC107;
-              padding: 15px;
-              margin: 20px 0;
-              border-radius: 4px;
-              color: #856404;
-            }
-            .footer {
-              text-align: center;
-              margin-top: 20px;
-              font-size: 12px;
-              color: #616161;
-            }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <h1 style="margin: 0;">🔐 Pryde Social Security</h1>
-            <p style="margin: 10px 0 0;">New Login Detected</p>
-          </div>
-
-          <div class="content">
-            <h2>Hi ${username},</h2>
-            <p>We detected a new login to your Pryde Social account. Here are the details:</p>
-
-            <div class="info-box">
-              <div class="info-row">
-                <span class="label">Date & Time:</span>
-                <span class="value">${formattedDate}</span>
-              </div>
-              <div class="info-row">
-                <span class="label">Device:</span>
-                <span class="value">${deviceInfo || 'Unknown Device'}</span>
-              </div>
-              <div class="info-row">
-                <span class="label">Browser:</span>
-                <span class="value">${browser || 'Unknown'}</span>
-              </div>
-              <div class="info-row">
-                <span class="label">Operating System:</span>
-                <span class="value">${os || 'Unknown'}</span>
-              </div>
-              <div class="info-row">
-                <span class="label">IP Address:</span>
-                <span class="value">${ipAddress || 'Unknown'}</span>
-              </div>
-              ${location && location.city ? `
-              <div class="info-row">
-                <span class="label">Location:</span>
-                <span class="value">${location.city}, ${location.region}, ${location.country}</span>
-              </div>
-              ` : ''}
-            </div>
-
-            <p><strong>Was this you?</strong></p>
-            <p>If you recognize this login, you can safely ignore this email.</p>
-
-            <div class="warning">
-              <strong>⚠️ Didn't recognize this login?</strong><br>
-              If this wasn't you, your account may be compromised. Please secure your account immediately:
-              <ul>
-                <li>Change your password</li>
-                <li>Enable two-factor authentication (2FA)</li>
-                <li>Review your active sessions and log out suspicious devices</li>
-              </ul>
-            </div>
-
-            <a href="${config.frontendURL}/settings/security" class="button">Review Security Settings</a>
-
-            <p>Best regards,<br>The Pryde Social Security Team</p>
-          </div>
-
-          <div class="footer">
-            <p>© ${new Date().getFullYear()} Pryde Social. All rights reserved.</p>
-            <p>This is an automated security alert. Please do not reply.</p>
-          </div>
-        </body>
-        </html>
-      `
+      html: buildEmailTemplate({
+        title: '🔐 New Login Detected',
+        body: `Hi ${username},<br><br>
+          We detected a new login to your Pryde Social account. Here are the details:<br><br>
+          <strong>Date &amp; Time:</strong> ${formattedDate}<br>
+          <strong>Device:</strong> ${deviceInfo || 'Unknown Device'}<br>
+          <strong>Browser:</strong> ${browser || 'Unknown'}<br>
+          <strong>Operating System:</strong> ${os || 'Unknown'}<br>
+          <strong>IP Address:</strong> ${ipAddress || 'Unknown'}<br>
+          ${location && location.city ? `<strong>Location:</strong> ${location.city}, ${location.region}, ${location.country}<br>` : ''}
+          <br>
+          <strong>Was this you?</strong> If you recognize this login, you can safely ignore this email.<br><br>
+          <strong>⚠️ Didn't recognize this login?</strong> If this wasn't you, your account may be compromised. Change your password, enable two-factor authentication (2FA), and review your active sessions immediately.`,
+        actionText: 'Review Security Settings',
+        actionUrl: `${config.frontendURL}/settings/security`,
+      }),
     });
 
     if (error) {
@@ -345,152 +153,30 @@ export const sendSuspiciousLoginEmail = async (email, username, loginInfo) => {
     });
 
     const { data, error } = await resendClient.emails.send({
-      from: FROM_EMAIL,
+      from: EMAIL_SENDERS.SECURITY,
       to: email,
+      replyTo: 'security@prydeapp.com',
       subject: '⚠️ SUSPICIOUS LOGIN ATTEMPT - Pryde Social',
-      html: `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <style>
-            body {
-              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-              line-height: 1.6;
-              color: #2B2B2B;
-              max-width: 600px;
-              margin: 0 auto;
-              padding: 20px;
-            }
-            .container {
-              background: linear-gradient(135deg, #DC3545 0%, #C82333 100%);
-              border-radius: 16px;
-              padding: 40px;
-              color: white;
-            }
-            .content {
-              background: white;
-              border-radius: 12px;
-              padding: 30px;
-              margin-top: 20px;
-              color: #2B2B2B;
-            }
-            .info-box {
-              background: #F7F7F7;
-              border-left: 4px solid #DC3545;
-              padding: 15px;
-              margin: 20px 0;
-              border-radius: 4px;
-            }
-            .info-row {
-              display: flex;
-              justify-content: space-between;
-              padding: 8px 0;
-              border-bottom: 1px solid #E0E0E0;
-            }
-            .info-row:last-child {
-              border-bottom: none;
-            }
-            .label {
-              font-weight: 600;
-              color: #616161;
-            }
-            .value {
-              color: #2B2B2B;
-            }
-            .button {
-              display: inline-block;
-              background: linear-gradient(135deg, #DC3545 0%, #C82333 100%);
-              color: white;
-              padding: 14px 32px;
-              text-decoration: none;
-              border-radius: 8px;
-              font-weight: 600;
-              margin: 20px 0;
-            }
-            .alert {
-              background: #F8D7DA;
-              border-left: 4px solid #DC3545;
-              padding: 20px;
-              margin: 20px 0;
-              border-radius: 4px;
-              color: #721C24;
-            }
-            .footer {
-              text-align: center;
-              margin-top: 20px;
-              font-size: 12px;
-              color: #616161;
-            }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <h1 style="margin: 0;">⚠️ Security Alert</h1>
-            <p style="margin: 10px 0 0;">Suspicious Login Detected</p>
-          </div>
-
-          <div class="content">
-            <h2>Hi ${username},</h2>
-
-            <div class="alert">
-              <strong>⚠️ SUSPICIOUS LOGIN DETECTED</strong><br>
-              We detected a login from an unrecognized device or location. This login was allowed, but we recommend reviewing your account security.
-            </div>
-
-            <p>Login details:</p>
-
-            <div class="info-box">
-              <div class="info-row">
-                <span class="label">Date & Time:</span>
-                <span class="value">${formattedDate}</span>
-              </div>
-              <div class="info-row">
-                <span class="label">Device:</span>
-                <span class="value">${deviceInfo || 'Unknown Device'}</span>
-              </div>
-              <div class="info-row">
-                <span class="label">Browser:</span>
-                <span class="value">${browser || 'Unknown'}</span>
-              </div>
-              <div class="info-row">
-                <span class="label">Operating System:</span>
-                <span class="value">${os || 'Unknown'}</span>
-              </div>
-              <div class="info-row">
-                <span class="label">IP Address:</span>
-                <span class="value">${ipAddress || 'Unknown'}</span>
-              </div>
-              ${location && location.city ? `
-              <div class="info-row">
-                <span class="label">Location:</span>
-                <span class="value">${location.city}, ${location.region}, ${location.country}</span>
-              </div>
-              ` : ''}
-            </div>
-
-            <p><strong>Was this you?</strong></p>
-            <p>If you recognize this login, you can mark this device as trusted in your security settings.</p>
-
-            <p><strong>If this wasn't you:</strong></p>
-            <ul>
-              <li><strong>Change your password immediately</strong></li>
-              <li>Enable two-factor authentication (2FA)</li>
-              <li>Log out all other sessions</li>
-              <li>Review your account activity</li>
-            </ul>
-
-            <a href="${config.frontendURL}/settings/security" class="button">Secure My Account</a>
-
-            <p>Best regards,<br>The Pryde Social Security Team</p>
-          </div>
-
-          <div class="footer">
-            <p>© ${new Date().getFullYear()} Pryde Social. All rights reserved.</p>
-            <p>This is an automated security alert. Please do not reply.</p>
-          </div>
-        </body>
-        </html>
-      `
+      html: buildEmailTemplate({
+        title: '⚠️ Suspicious Login Detected',
+        body: `Hi ${username},<br><br>
+          <strong>⚠️ SUSPICIOUS LOGIN DETECTED</strong><br>
+          We detected a login from an unrecognized device or location. This login was allowed, but we recommend reviewing your account security immediately.<br><br>
+          <strong>Date &amp; Time:</strong> ${formattedDate}<br>
+          <strong>Device:</strong> ${deviceInfo || 'Unknown Device'}<br>
+          <strong>Browser:</strong> ${browser || 'Unknown'}<br>
+          <strong>Operating System:</strong> ${os || 'Unknown'}<br>
+          <strong>IP Address:</strong> ${ipAddress || 'Unknown'}<br>
+          ${location && location.city ? `<strong>Location:</strong> ${location.city}, ${location.region}, ${location.country}<br>` : ''}
+          <br>
+          <strong>If this wasn't you:</strong><br>
+          • Change your password immediately<br>
+          • Enable two-factor authentication (2FA)<br>
+          • Log out all other sessions<br>
+          • Review your account activity`,
+        actionText: 'Secure My Account',
+        actionUrl: `${config.frontendURL}/settings/security`,
+      }),
     });
 
     if (error) {
@@ -524,85 +210,29 @@ export const sendVerificationEmail = async (email, verificationToken, username) 
     const verificationUrl = `${config.frontendURL}/verify-email?token=${verificationToken}`;
 
     const { data, error } = await resendClient.emails.send({
-      from: FROM_EMAIL,
+      from: EMAIL_SENDERS.SYSTEM,
       to: email,
+      replyTo: 'support@prydeapp.com',
       subject: 'Verify Your Email - Pryde Social',
-      html: `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <meta charset="UTF-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        </head>
-        <body style="margin: 0; padding: 0; background-color: #F7F7F7; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
-          <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #F7F7F7;">
-            <tr>
-              <td style="padding: 40px 20px;">
-                <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="max-width: 600px; margin: 0 auto; background: linear-gradient(135deg, #6C5CE7 0%, #0984E3 100%); border-radius: 16px; overflow: hidden;">
-                  <tr>
-                    <td style="padding: 40px; text-align: center;">
-                      <h1 style="margin: 0; color: #FFFFFF; font-size: 32px; font-weight: 700;">Welcome to Pryde! 🌈</h1>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td style="background-color: #FFFFFF; padding: 40px;">
-                      <p style="margin: 0 0 20px; color: #2B2B2B; font-size: 16px; line-height: 1.6;">Hi ${username},</p>
-
-                      <p style="margin: 0 0 20px; color: #2B2B2B; font-size: 16px; line-height: 1.6;">
-                        Thank you for joining Pryde Social! We're excited to have you in our LGBTQ+ community. 💜
-                      </p>
-
-                      <p style="margin: 0 0 30px; color: #2B2B2B; font-size: 16px; line-height: 1.6;">
-                        To complete your registration and start connecting with others, please verify your email address by clicking the button below:
-                      </p>
-
-                      <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
-                        <tr>
-                          <td style="text-align: center; padding: 20px 0;">
-                            <a href="${verificationUrl}" style="display: inline-block; background: linear-gradient(135deg, #6C5CE7 0%, #0984E3 100%); color: #FFFFFF; text-decoration: none; padding: 16px 40px; border-radius: 8px; font-weight: 600; font-size: 16px;">
-                              Verify Email Address
-                            </a>
-                          </td>
-                        </tr>
-                      </table>
-
-                      <p style="margin: 30px 0 20px; color: #616161; font-size: 14px; line-height: 1.6;">
-                        Or copy and paste this link into your browser:
-                      </p>
-                      <p style="margin: 0 0 30px; color: #0984E3; font-size: 14px; word-break: break-all;">
-                        ${verificationUrl}
-                      </p>
-
-                      <div style="background-color: #FFF3CD; border-left: 4px solid #FFC107; padding: 15px; margin: 30px 0; border-radius: 4px;">
-                        <p style="margin: 0; color: #856404; font-size: 14px; line-height: 1.6;">
-                          <strong>⏰ This link will expire in 24 hours.</strong><br>
-                          If you didn't create an account with Pryde Social, you can safely ignore this email.
-                        </p>
-                      </div>
-
-                      <p style="margin: 30px 0 0; color: #2B2B2B; font-size: 16px; line-height: 1.6;">
-                        Best regards,<br>
-                        The Pryde Social Team
-                      </p>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td style="background-color: #F7F7F7; padding: 30px; text-align: center;">
-                      <p style="margin: 0 0 10px; color: #616161; font-size: 12px;">
-                        © ${new Date().getFullYear()} Pryde Social. All rights reserved.
-                      </p>
-                      <p style="margin: 0; color: #616161; font-size: 12px;">
-                        This is an automated email. Please do not reply.
-                      </p>
-                    </td>
-                  </tr>
-                </table>
-              </td>
-            </tr>
-          </table>
-        </body>
-        </html>
-      `
+      html: buildEmailTemplate({
+        title: 'Welcome to Pryde! 🌈',
+        body: `Hi ${username},<br><br>
+          Thank you for joining Pryde Social! We're excited to have you in our LGBTQ+ community. 💜<br><br>
+          To complete your registration and start connecting with others, please verify your email address by clicking the button below.<br><br>
+          <strong>⏰ This link will expire in 24 hours.</strong><br><br>
+          If you didn't create an account with Pryde Social, you can safely ignore this email.`,
+        actionText: 'Verify Email Address',
+        actionUrl: verificationUrl,
+      }),
+      /*
+       * List-Unsubscribe header improves deliverability and allows email clients
+       * (Gmail, Outlook, Apple Mail) to display native unsubscribe controls.
+       * Required for modern email reputation and spam compliance.
+       */
+      headers: {
+        'List-Unsubscribe': 'mailto:unsubscribe@prydeapp.com',
+        'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+      },
     });
 
     if (error) {
@@ -633,95 +263,27 @@ export const sendPasswordChangedEmail = async (email, username) => {
     }
 
     const { data, error } = await resendClient.emails.send({
-      from: FROM_EMAIL,
+      from: EMAIL_SENDERS.SECURITY,
       to: email,
+      replyTo: 'security@prydeapp.com',
       subject: '🔐 Your Password Has Been Changed - Pryde Social',
-      html: `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <meta charset="UTF-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        </head>
-        <body style="margin: 0; padding: 0; background-color: #F7F7F7; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
-          <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #F7F7F7;">
-            <tr>
-              <td style="padding: 40px 20px;">
-                <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="max-width: 600px; margin: 0 auto; background: linear-gradient(135deg, #10B981 0%, #059669 100%); border-radius: 16px; overflow: hidden;">
-                  <tr>
-                    <td style="padding: 40px; text-align: center;">
-                      <h1 style="margin: 0; color: #FFFFFF; font-size: 32px; font-weight: 700;">Password Changed ✅</h1>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td style="background-color: #FFFFFF; padding: 40px;">
-                      <p style="margin: 0 0 20px; color: #2B2B2B; font-size: 16px; line-height: 1.6;">Hi ${username},</p>
-
-                      <p style="margin: 0 0 20px; color: #2B2B2B; font-size: 16px; line-height: 1.6;">
-                        This is a confirmation that your Pryde Social account password was successfully changed.
-                      </p>
-
-                      <div style="background-color: #D1FAE5; border-left: 4px solid #10B981; padding: 15px; margin: 30px 0; border-radius: 4px;">
-                        <p style="margin: 0; color: #065F46; font-size: 14px; line-height: 1.6;">
-                          <strong>✅ Password Changed Successfully</strong><br>
-                          Your password was changed at ${new Date().toLocaleString('en-US', {
-                            weekday: 'long',
-                            year: 'numeric',
-                            month: 'long',
-                            day: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit',
-                            timeZoneName: 'short'
-                          })}
-                        </p>
-                      </div>
-
-                      <div style="background-color: #FEE2E2; border-left: 4px solid #DC2626; padding: 15px; margin: 30px 0; border-radius: 4px;">
-                        <p style="margin: 0; color: #991B1B; font-size: 14px; line-height: 1.6;">
-                          <strong>⚠️ Didn't change your password?</strong><br>
-                          If you did not make this change, your account may be compromised. Please:
-                        </p>
-                        <ul style="margin: 10px 0 0 20px; color: #991B1B; font-size: 14px;">
-                          <li>Reset your password immediately</li>
-                          <li>Enable two-factor authentication (2FA)</li>
-                          <li>Review your active sessions</li>
-                          <li>Contact our support team</li>
-                        </ul>
-                      </div>
-
-                      <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
-                        <tr>
-                          <td style="text-align: center; padding: 20px 0;">
-                            <a href="${config.frontendURL}/settings/security" style="display: inline-block; background: linear-gradient(135deg, #6C5CE7 0%, #0984E3 100%); color: #FFFFFF; text-decoration: none; padding: 16px 40px; border-radius: 8px; font-weight: 600; font-size: 16px;">
-                              Review Security Settings
-                            </a>
-                          </td>
-                        </tr>
-                      </table>
-
-                      <p style="margin: 30px 0 0; color: #2B2B2B; font-size: 16px; line-height: 1.6;">
-                        Best regards,<br>
-                        The Pryde Social Security Team
-                      </p>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td style="background-color: #F7F7F7; padding: 30px; text-align: center;">
-                      <p style="margin: 0 0 10px; color: #616161; font-size: 12px;">
-                        © ${new Date().getFullYear()} Pryde Social. All rights reserved.
-                      </p>
-                      <p style="margin: 0; color: #616161; font-size: 12px;">
-                        This is an automated security notification. Please do not reply.
-                      </p>
-                    </td>
-                  </tr>
-                </table>
-              </td>
-            </tr>
-          </table>
-        </body>
-        </html>
-      `
+      html: buildEmailTemplate({
+        title: 'Password Changed ✅',
+        body: `Hi ${username},<br><br>
+          This is a confirmation that your Pryde Social account password was successfully changed at ${new Date().toLocaleString('en-US', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            timeZoneName: 'short'
+          })}.<br><br>
+          <strong>⚠️ Didn't change your password?</strong><br>
+          If you did not make this change, your account may be compromised. Please reset your password immediately, enable two-factor authentication (2FA), review your active sessions, and contact our support team.`,
+        actionText: 'Review Security Settings',
+        actionUrl: `${config.frontendURL}/settings/security`,
+      }),
     });
 
     if (error) {
@@ -763,144 +325,45 @@ export const sendRecoveryContactNotificationEmail = async (contactEmail, contact
     });
 
     const { data, error } = await resendClient.emails.send({
-      from: FROM_EMAIL,
+      from: EMAIL_SENDERS.SYSTEM,
       to: contactEmail,
+      replyTo: 'support@prydeapp.com',
       subject: `🔐 Account Recovery Request for ${requesterUsername} - Pryde Social`,
-      html: `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <meta charset="UTF-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        </head>
-        <body style="margin: 0; padding: 0; background-color: #F7F7F7; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
-          <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #F7F7F7;">
-            <tr>
-              <td style="padding: 40px 20px;">
-                <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="max-width: 600px; margin: 0 auto;">
-
-                  <!-- Header with Orange/Warning Gradient -->
-                  <tr>
-                    <td style="background: linear-gradient(135deg, #FF9800 0%, #F57C00 100%); border-radius: 16px 16px 0 0; padding: 40px 30px; text-align: center;">
-                      <h1 style="margin: 0; color: white; font-size: 28px; font-weight: 700; text-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                        🔐 Account Recovery Request
-                      </h1>
-                      <p style="margin: 10px 0 0 0; color: rgba(255,255,255,0.95); font-size: 16px;">
-                        Your help is needed to recover an account
-                      </p>
-                    </td>
-                  </tr>
-
-                  <!-- Content -->
-                  <tr>
-                    <td style="background: white; padding: 40px 30px; border-radius: 0 0 16px 16px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-
-                      <p style="margin: 0 0 20px 0; color: #2B2B2B; font-size: 16px; line-height: 1.6;">
-                        Hi <strong>${contactUsername}</strong>,
-                      </p>
-
-                      <p style="margin: 0 0 20px 0; color: #2B2B2B; font-size: 16px; line-height: 1.6;">
-                        <strong>${requesterUsername}</strong> has requested to recover their Pryde Social account, and you are listed as one of their trusted recovery contacts.
-                      </p>
-
-                      <!-- Info Box -->
-                      <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 30px 0;">
-                        <tr>
-                          <td style="background: #FFF3E0; border-left: 4px solid #FF9800; padding: 20px; border-radius: 8px;">
-                            <p style="margin: 0 0 10px 0; color: #2B2B2B; font-size: 14px; font-weight: 600;">
-                              📋 Recovery Request Details
-                            </p>
-                            <p style="margin: 5px 0; color: #555; font-size: 14px;">
-                              <strong>Requested by:</strong> ${requesterUsername}
-                            </p>
-                            <p style="margin: 5px 0; color: #555; font-size: 14px;">
-                              <strong>Request time:</strong> ${new Date().toLocaleString('en-US', {
-                                weekday: 'long',
-                                year: 'numeric',
-                                month: 'long',
-                                day: 'numeric',
-                                hour: '2-digit',
-                                minute: '2-digit',
-                                timeZoneName: 'short'
-                              })}
-                            </p>
-                            <p style="margin: 5px 0; color: #555; font-size: 14px;">
-                              <strong>Expires:</strong> ${expirationDate}
-                            </p>
-                            <p style="margin: 5px 0; color: #555; font-size: 14px;">
-                              <strong>Time remaining:</strong> 24 hours
-                            </p>
-                          </td>
-                        </tr>
-                      </table>
-
-                      <p style="margin: 0 0 20px 0; color: #2B2B2B; font-size: 16px; line-height: 1.6;">
-                        To help them recover their account, please review and approve this request. At least 2 trusted contacts must approve before the account can be recovered.
-                      </p>
-
-                      <!-- Action Buttons -->
-                      <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 30px 0;">
-                        <tr>
-                          <td align="center">
-                            <a href="${approveUrl}" style="display: inline-block; background: linear-gradient(135deg, #6C5CE7 0%, #0984E3 100%); color: white; text-decoration: none; padding: 16px 40px; border-radius: 12px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 6px rgba(108, 92, 231, 0.3); transition: all 0.3s;">
-                              ✓ Review Recovery Request
-                            </a>
-                          </td>
-                        </tr>
-                      </table>
-
-                      <!-- Warning Box -->
-                      <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 30px 0;">
-                        <tr>
-                          <td style="background: #FFEBEE; border-left: 4px solid #F44336; padding: 20px; border-radius: 8px;">
-                            <p style="margin: 0 0 10px 0; color: #2B2B2B; font-size: 14px; font-weight: 600;">
-                              ⚠️ Important Security Notice
-                            </p>
-                            <p style="margin: 5px 0; color: #555; font-size: 14px; line-height: 1.6;">
-                              • Only approve this request if you personally know <strong>${requesterUsername}</strong> and can verify their identity
-                            </p>
-                            <p style="margin: 5px 0; color: #555; font-size: 14px; line-height: 1.6;">
-                              • If you did not expect this request or suspect fraud, please ignore this email
-                            </p>
-                            <p style="margin: 5px 0; color: #555; font-size: 14px; line-height: 1.6;">
-                              • This request will automatically expire in 24 hours
-                            </p>
-                            <p style="margin: 5px 0; color: #555; font-size: 14px; line-height: 1.6;">
-                              • Contact us immediately if you believe this is a security threat
-                            </p>
-                          </td>
-                        </tr>
-                      </table>
-
-                      <p style="margin: 20px 0 0 0; color: #777; font-size: 14px; line-height: 1.6;">
-                        If you cannot click the button above, copy and paste this link into your browser:
-                      </p>
-                      <p style="margin: 10px 0 0 0; color: #6C5CE7; font-size: 13px; word-break: break-all;">
-                        ${approveUrl}
-                      </p>
-
-                    </td>
-                  </tr>
-
-                  <!-- Footer -->
-                  <tr>
-                    <td style="padding: 30px 20px; text-align: center;">
-                      <p style="margin: 0 0 10px 0; color: #999; font-size: 14px;">
-                        This is an automated security notification from Pryde Social
-                      </p>
-                      <p style="margin: 0; color: #999; font-size: 12px;">
-                        © ${new Date().getFullYear()} Pryde Social. All rights reserved.
-                      </p>
-                    </td>
-                  </tr>
-
-                </table>
-              </td>
-            </tr>
-          </table>
-        </body>
-        </html>
-      `
+      html: buildEmailTemplate({
+        title: '🔐 Account Recovery Request',
+        body: `Hi ${contactUsername},<br><br>
+          <strong>${requesterUsername}</strong> has requested to recover their Pryde Social account, and you are listed as one of their trusted recovery contacts.<br><br>
+          <strong>Requested by:</strong> ${requesterUsername}<br>
+          <strong>Request time:</strong> ${new Date().toLocaleString('en-US', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            timeZoneName: 'short'
+          })}<br>
+          <strong>Expires:</strong> ${expirationDate}<br>
+          <strong>Time remaining:</strong> 24 hours<br><br>
+          To help them recover their account, please review and approve this request. At least 2 trusted contacts must approve before the account can be recovered.<br><br>
+          <strong>⚠️ Important Security Notice</strong><br>
+          • Only approve this request if you personally know <strong>${requesterUsername}</strong> and can verify their identity<br>
+          • If you did not expect this request or suspect fraud, please ignore this email<br>
+          • This request will automatically expire in 24 hours<br>
+          • Contact us immediately if you believe this is a security threat`,
+        actionText: '✓ Review Recovery Request',
+        actionUrl: approveUrl,
+        expiresAt: expirationDate,
+      }),
+      /*
+       * List-Unsubscribe header improves deliverability and allows email clients
+       * (Gmail, Outlook, Apple Mail) to display native unsubscribe controls.
+       * Required for modern email reputation and spam compliance.
+       */
+      headers: {
+        'List-Unsubscribe': 'mailto:unsubscribe@prydeapp.com',
+        'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+      },
     });
 
     if (error) {
@@ -933,107 +396,33 @@ export const sendAccountDeletionEmail = async (email, username, deletionToken) =
     const deletionUrl = `${config.frontendURL}/delete-account/confirm?token=${deletionToken}`;
 
     const { data, error } = await resendClient.emails.send({
-      from: FROM_EMAIL,
+      from: EMAIL_SENDERS.SYSTEM,
       to: email,
+      replyTo: 'support@prydeapp.com',
       subject: '⚠️ Account Deletion Request - Pryde Social',
-      html: `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <meta charset="UTF-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        </head>
-        <body style="margin: 0; padding: 0; background-color: #F7F7F7; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
-          <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #F7F7F7;">
-            <tr>
-              <td style="padding: 40px 20px;">
-                <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="max-width: 600px; margin: 0 auto; background: linear-gradient(135deg, #DC3545 0%, #C82333 100%); border-radius: 16px; overflow: hidden;">
-                  <tr>
-                    <td style="padding: 40px; text-align: center;">
-                      <h1 style="margin: 0; color: #FFFFFF; font-size: 32px; font-weight: 700;">⚠️ Account Deletion</h1>
-                      <p style="margin: 10px 0 0; color: rgba(255,255,255,0.95); font-size: 16px;">Please confirm your request</p>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td style="background-color: #FFFFFF; padding: 40px;">
-                      <p style="margin: 0 0 20px; color: #2B2B2B; font-size: 16px; line-height: 1.6;">Hi ${username},</p>
-
-                      <p style="margin: 0 0 20px; color: #2B2B2B; font-size: 16px; line-height: 1.6;">
-                        We received a request to permanently delete your Pryde Social account. This action cannot be undone.
-                      </p>
-
-                      <div style="background-color: #FFF3CD; border-left: 4px solid #FFC107; padding: 20px; margin: 30px 0; border-radius: 4px;">
-                        <p style="margin: 0 0 10px 0; color: #856404; font-size: 14px; font-weight: 600;">
-                          ⚠️ Important: Account Deletion Consequences
-                        </p>
-                        <ul style="margin: 10px 0 0 20px; color: #856404; font-size: 14px; line-height: 1.6;">
-                          <li>Your profile and all posts will be permanently removed</li>
-                          <li>You will lose access to all your data</li>
-                          <li>This action cannot be reversed</li>
-                          <li>You have 30 days to recover your account after deletion</li>
-                        </ul>
-                      </div>
-
-                      <div style="background-color: #D1FAE5; border-left: 4px solid #10B981; padding: 20px; margin: 30px 0; border-radius: 4px;">
-                        <p style="margin: 0 0 10px 0; color: #065F46; font-size: 14px; font-weight: 600;">
-                          🔄 Changed Your Mind?
-                        </p>
-                        <p style="margin: 0; color: #065F46; font-size: 14px; line-height: 1.6;">
-                          If this was a mistake, simply log back in using your existing credentials to cancel deletion and restore your account.
-                        </p>
-                      </div>
-
-                      <p style="margin: 0 0 30px; color: #2B2B2B; font-size: 16px; line-height: 1.6;">
-                        If you want to proceed with deleting your account, click the button below to confirm:
-                      </p>
-
-                      <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
-                        <tr>
-                          <td style="text-align: center; padding: 20px 0;">
-                            <a href="${deletionUrl}" style="display: inline-block; background: linear-gradient(135deg, #DC3545 0%, #C82333 100%); color: #FFFFFF; text-decoration: none; padding: 16px 40px; border-radius: 8px; font-weight: 600; font-size: 16px;">
-                              Confirm Account Deletion
-                            </a>
-                          </td>
-                        </tr>
-                      </table>
-
-                      <p style="margin: 30px 0 20px; color: #616161; font-size: 14px; line-height: 1.6;">
-                        Or copy and paste this link into your browser:
-                      </p>
-                      <p style="margin: 0 0 30px; color: #DC3545; font-size: 14px; word-break: break-all;">
-                        ${deletionUrl}
-                      </p>
-
-                      <div style="background-color: #D1FAE5; border-left: 4px solid #10B981; padding: 15px; margin: 30px 0; border-radius: 4px;">
-                        <p style="margin: 0; color: #065F46; font-size: 14px; line-height: 1.6;">
-                          <strong>Changed your mind?</strong><br>
-                          If you didn't request this deletion, you can safely ignore this email. Your account will remain active.
-                        </p>
-                      </div>
-
-                      <p style="margin: 30px 0 0; color: #2B2B2B; font-size: 16px; line-height: 1.6;">
-                        Best regards,<br>
-                        The Pryde Social Team
-                      </p>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td style="background-color: #F7F7F7; padding: 30px; text-align: center;">
-                      <p style="margin: 0 0 10px; color: #616161; font-size: 12px;">
-                        © ${new Date().getFullYear()} Pryde Social. All rights reserved.
-                      </p>
-                      <p style="margin: 0; color: #616161; font-size: 12px;">
-                        This is an automated email. Please do not reply.
-                      </p>
-                    </td>
-                  </tr>
-                </table>
-              </td>
-            </tr>
-          </table>
-        </body>
-        </html>
-      `
+      html: buildEmailTemplate({
+        title: '⚠️ Account Deletion Request',
+        body: `Hi ${username},<br><br>
+          We received a request to permanently delete your Pryde Social account. This action cannot be undone.<br><br>
+          <strong>⚠️ Account Deletion Consequences:</strong><br>
+          • Your profile and all posts will be permanently removed<br>
+          • You will lose access to all your data<br>
+          • This action cannot be reversed<br>
+          • You have 30 days to recover your account after deletion<br><br>
+          If you want to proceed, click the button below to confirm. If this was a mistake, simply log back in using your existing credentials to cancel deletion and restore your account.<br><br>
+          If you didn't request this deletion, you can safely ignore this email. Your account will remain active.`,
+        actionText: 'Confirm Account Deletion',
+        actionUrl: deletionUrl,
+      }),
+      /*
+       * List-Unsubscribe header improves deliverability and allows email clients
+       * (Gmail, Outlook, Apple Mail) to display native unsubscribe controls.
+       * Required for modern email reputation and spam compliance.
+       */
+      headers: {
+        'List-Unsubscribe': 'mailto:unsubscribe@prydeapp.com',
+        'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+      },
     });
 
     if (error) {
@@ -1050,14 +439,3 @@ export const sendAccountDeletionEmail = async (email, username, deletionToken) =
     return { success: false, error: error.message };
   }
 };
-
-export default {
-  sendPasswordResetEmail,
-  sendLoginAlertEmail,
-  sendSuspiciousLoginEmail,
-  sendVerificationEmail,
-  sendPasswordChangedEmail,
-  sendRecoveryContactNotificationEmail,
-  sendAccountDeletionEmail
-};
-

@@ -15,6 +15,7 @@ import adminAuth, { checkPermission } from '../middleware/adminAuth.js';
 import requireAdminEscalation from '../middleware/requireAdminEscalation.js'; // Privileged Admin Escalation
 import crypto from 'crypto';
 import { sendPasswordResetEmail, sendPasswordChangedEmail } from '../utils/emailService.js';
+import { EMAIL_SENDERS } from '../config/emailSenders.js';
 import config from '../config/config.js';
 import logger from '../utils/logger.js';
 import { escapeRegex } from '../utils/sanitize.js';
@@ -915,7 +916,7 @@ router.put('/users/:id/email', checkPermission('canManageUsers'), async (req, re
     if (resend) {
       try {
         await resend.emails.send({
-          from: 'Pryde Social <noreply@prydeapp.com>',
+          from: EMAIL_SENDERS.SYSTEM,
           to: newEmail,
           subject: '✅ Your Pryde Social Email Was Updated',
           html: `
@@ -975,7 +976,7 @@ router.put('/users/:id/email', checkPermission('canManageUsers'), async (req, re
 
         // Send notification to old email
         await resend.emails.send({
-          from: 'Pryde Social <noreply@prydeapp.com>',
+          from: EMAIL_SENDERS.SYSTEM,
           to: oldEmail,
           subject: '⚠️ Your Pryde Social Email Was Changed',
           html: `

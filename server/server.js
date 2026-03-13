@@ -17,6 +17,9 @@ if (process.env.NODE_ENV === 'development') {
 import express from "express";
 import cors from "cors";
 import http from "http";
+import path from "path";
+import { fileURLToPath } from "url";
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 import { initRedis } from "./utils/redisInit.js";
 import pinoHttp from 'pino-http';
 import mongoose from "mongoose";
@@ -475,6 +478,9 @@ const requireDatabaseReady = (req, res, next) => {
 // To re-enable with proper persistence, store session activity in MongoDB or Redis.
 // app.use(checkSessionTimeout);
 // app.use(trackActivity);
+
+// Serve static public files (e.g. /.well-known/security.txt) before API routes
+app.use(express.static(path.join(__dirname, '../public')));
 
 // Mount all routes via route registry
 mountRoutes(app, { restrictionMiddleware, requireDatabaseReady });

@@ -59,6 +59,7 @@ import { isGroupOwner, isGroupModerator, isGroupMember, canModerateGroup, getGro
 import { processGroupPostNotifications, updateGroupNotificationSettings, getGroupNotificationSettings } from '../services/groupNotificationService.js';
 import logger from '../utils/logger.js';
 import { processUserBadgesById } from '../services/autoBadgeService.js';
+import { createGroupDiscussionSignal } from '../services/communitySignals.js';
 import { stripExifData } from '../middleware/imageProcessing.js';
 import { Readable } from 'stream';
 
@@ -1076,6 +1077,11 @@ router.post('/:slug/posts', authenticateToken, async (req, res) => {
       author: post.author
     }).catch(err => {
       logger.error('Failed to process group post notifications', { error: err.message });
+    });
+
+    // Community signal: group discussion started (fire-and-forget)
+    createGroupDiscussionSignal(group._id, group.name).catch(err => {
+      logger.warn('[CommunitySignals] Failed to create group_discussion signal:', err.message);
     });
 
     res.status(201).json({

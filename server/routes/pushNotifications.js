@@ -23,7 +23,7 @@ if (process.env.NODE_ENV === 'production') {
 // Only set VAPID details if keys are available
 if (vapidKeys.publicKey && vapidKeys.privateKey) {
   webpush.setVapidDetails(
-    'mailto:contact@prydesocial.com',
+    'mailto:admin@prydeapp.com',
     vapidKeys.publicKey,
     vapidKeys.privateKey
   );

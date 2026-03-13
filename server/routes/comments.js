@@ -22,6 +22,7 @@ import {
 } from '../utils/mutationTracker.js';
 import { asyncHandler, requireAuth, requireValidId, requireParams, sendError, HttpStatus } from '../utils/errorHandler.js';
 import { notifyMentionsInComment } from '../services/mentionNotificationService.js';
+import { createReplySpikeSignal, createActiveJournalSignal } from '../services/communitySignals.js';
 import { emitNotificationCreated } from '../utils/notificationEmitter.js';
 import { bundleNotification } from '../utils/bundleNotification.js';
 import { sendPushNotification } from './pushNotifications.js';
@@ -422,6 +423,39 @@ router.post('/posts/:postId/comments', auth, requireActiveUser, requireEmailVeri
     });
 
     logger.debug('📤 Sending comment response to client');
+
+    // Community signals (fire-and-forget, non-blocking)
+    setImmediate(async () => {
+      try {
+        const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+
+        if (parentCommentId) {
+          // Reply spike: count replies on this parent comment in the last hour
+          const recentReplyCount = await Comment.countDocuments({
+            parentCommentId,
+            createdAt: { $gte: oneHourAgo }
+          });
+          if (recentReplyCount >= 5) {
+            await createReplySpikeSignal(postId, recentReplyCount);
+          }
+        } else {
+          // Active journal: count total comments on this post in the last hour
+          const recentCommentCount = await Comment.countDocuments({
+            postId,
+            createdAt: { $gte: oneHourAgo }
+          });
+          if (recentCommentCount >= 3) {
+            const post = await Post.findById(postId).select('content groupId').lean();
+            // Only trigger for non-group posts
+            if (post && !post.groupId) {
+              await createActiveJournalSignal(postId, post.content);
+            }
+          }
+        }
+      } catch (err) {
+        logger.warn('[CommunitySignals] Comment signal failed:', err.message);
+      }
+    });
 
     res.status(201).json(comment);
   } catch (error) {

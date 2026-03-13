@@ -28,6 +28,7 @@ import { validateSignup, validateLogin } from '../middleware/validation.js';
 import logger from '../utils/logger.js';
 import { incCounter } from '../utils/authMetrics.js'; // Phase 4A
 import { createLoginSession, revokeSession, revokeAllSessions } from '../services/sessionService.js';
+import { createNewMemberSignal } from '../services/communitySignals.js';
 import { clearRefreshTokenCookies, getRefreshTokenCookieOptions } from '../utils/cookieUtils.js';
 import { decryptMessage, isEncrypted } from '../utils/encryption.js';
 // 🔧 BADGE CHURN FIX: Badge processing removed from login (now event-driven + daily sweep)
@@ -512,6 +513,11 @@ router.post('/signup', validateAgeBeforeRateLimit, signupLimiter, validateSignup
       await user.save();
     }
     const signupSafetyCheck = checkSafetyRequired(countryCode, user);
+
+    // Community signal: new member joined (fire-and-forget)
+    createNewMemberSignal(user).catch(err => {
+      logger.warn('[CommunitySignals] Failed to create new_member signal:', err.message);
+    });
 
     // Send verification email (don't block registration if email fails)
     sendVerificationEmail(email, rawVerificationToken, username).catch(err => {
