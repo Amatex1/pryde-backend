@@ -113,7 +113,10 @@ const customHandler = (req, res, _next, opts) => {
     standardHeaders,
     legacyHeaders,
     handler: customHandler,
-    ...(keyGenerator ? { keyGenerator } : {}),
+  ...(keyGenerator ? { 
+    keyGenerator,
+    validate: { xForwardedForHeader: false }
+  } : {}),
     // Skip only in test environment — admins are subject to limits (at 5× threshold above)
     skip: (req) => process.env.NODE_ENV === 'test',
     // Disable validation warnings for keyGenerator (we're handling it correctly)
