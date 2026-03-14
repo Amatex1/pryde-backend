@@ -79,6 +79,7 @@ const createAdvancedLimiter = (options) => {
     skipFailedRequests = false,
     standardHeaders = true,
     legacyHeaders = false,
+    keyGenerator, // optional — defaults to IP-based if not provided
   } = options;
 
   // Custom handler that logs rate limit hits (replaces deprecated onLimitReached)
@@ -112,6 +113,7 @@ const customHandler = (req, res, _next, opts) => {
     standardHeaders,
     legacyHeaders,
     handler: customHandler,
+    ...(keyGenerator ? { keyGenerator } : {}),
     // Skip only in test environment — admins are subject to limits (at 5× threshold above)
     skip: (req) => process.env.NODE_ENV === 'test',
     // Disable validation warnings for keyGenerator (we're handling it correctly)
@@ -207,11 +209,56 @@ export const passwordResetLimiter = createAdvancedLimiter({
   message: 'Too many password reset attempts, please try again later.'
 });
 
+// IP-based upload limiter — first line of defence (anonymous / pre-auth abuse)
 export const uploadLimiter = createAdvancedLimiter({
   windowMs: 60 * 60 * 1000, // 1 hour
-  max: 20, // 20 uploads per hour
+  max: 20, // 20 uploads per hour per IP
   prefix: 'upload'
 });
+
+// User-based burst limiter — keyed by userId, not IP
+// Catches authenticated users abusing via VPNs / multiple IPs
+export const userUploadLimiter = createAdvancedLimiter({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 15, // 15 uploads per 15 minutes per user
+  prefix: 'upload_user',
+  keyGenerator: (req) => req.userId || req.ip,
+  message: 'You are uploading too quickly. Please wait a few minutes.'
+});
+
+// Per-user daily upload quota — enforced via Redis counter with 24h TTL
+// Configurable via UPLOAD_DAILY_QUOTA env var (default: 50)
+export const uploadQuotaMiddleware = async (req, res, next) => {
+  if (process.env.NODE_ENV === 'test') return next();
+  if (!redisClient) return next(); // No Redis — skip quota (fail open)
+
+  const userId = req.userId;
+  if (!userId) return next();
+
+  const DAILY_LIMIT = parseInt(process.env.UPLOAD_DAILY_QUOTA || '50', 10);
+  const key = `quota:upload:daily:${userId}`;
+
+  try {
+    const count = await redisClient.incr(key);
+    if (count === 1) {
+      // First upload today — set TTL to end of 24h window
+      await redisClient.expire(key, 24 * 60 * 60);
+    }
+    if (count > DAILY_LIMIT) {
+      const ttl = await redisClient.ttl(key);
+      const hoursLeft = Math.ceil(ttl / 3600);
+      return res.status(429).json({
+        error: 'Daily upload quota exceeded',
+        message: `You have reached your daily upload limit of ${DAILY_LIMIT} files. Resets in ~${hoursLeft}h.`,
+        retryAfter: ttl // seconds
+      });
+    }
+    next();
+  } catch (err) {
+    logger.error('Upload quota check failed:', err.message);
+    next(); // Fail open — don't block uploads if Redis is temporarily down
+  }
+};
 
 export const searchLimiter = createAdvancedLimiter({
   windowMs: 15 * 60 * 1000, // 15 minutes
@@ -321,6 +368,8 @@ export default {
   friendRequestLimiter,
   passwordResetLimiter,
   uploadLimiter,
+  userUploadLimiter,
+  uploadQuotaMiddleware,
   searchLimiter,
   reactionLimiter,
   reportLimiter,

@@ -538,3 +538,39 @@ export const sendOverrideSecurityNotification = async ({ actorName, actorEmail, 
     return { success: false, error: error.message };
   }
 };
+
+export const sendAccountLockedEmail = async (email, username, { ipAddress, lockoutMinutes = 15 } = {}) => {
+  try {
+    const resendClient = getResendClient();
+    if (!resendClient) return { success: false, error: 'Email service not configured' };
+
+    const { data, error } = await resendClient.emails.send({
+      from: EMAIL_SENDERS.SECURITY,
+      to: email,
+      replyTo: 'security@prydeapp.com',
+      subject: '🔒 Your Pryde Account Has Been Temporarily Locked',
+      html: buildEmailTemplate({
+        title: '🔒 Account Temporarily Locked',
+        body: `Hi ${username},<br><br>
+          Your Pryde account has been <strong>temporarily locked</strong> due to too many failed login attempts.<br><br>
+          <strong>IP Address:</strong> ${ipAddress || 'Unknown'}<br>
+          <strong>Lock Duration:</strong> ${lockoutMinutes} minutes<br><br>
+          Your account will automatically unlock after ${lockoutMinutes} minutes. If you forgot your password, you can reset it using the button below.<br><br>
+          <strong>⚠️ If this wasn't you</strong>, someone may be attempting to access your account. We recommend changing your password and enabling two-factor authentication (2FA) once you regain access.`,
+        actionText: 'Reset Your Password',
+        actionUrl: `${config.frontendURL}/forgot-password`,
+      }),
+    });
+
+    if (error) {
+      logOutbound(email, '🔒 Your Pryde Account Has Been Temporarily Locked', 'account_locked', null, false, error.message);
+      return { success: false, error: error.message };
+    }
+
+    logOutbound(email, '🔒 Your Pryde Account Has Been Temporarily Locked', 'account_locked', data.id, true, null);
+    return { success: true, messageId: data.id };
+  } catch (error) {
+    console.error('Error sending account locked email:', error);
+    return { success: false, error: error.message };
+  }
+};

@@ -86,6 +86,9 @@ export function initializeSocket(httpServer, allowedOrigins, getRedisOrGetter = 
   // ─── Auth middleware ───────────────────────────────────────────────────────
   io.use(socketAuthMiddleware);
 
+  // Max concurrent Socket.IO connections per authenticated user
+  const MAX_CONNECTIONS_PER_USER = parseInt(process.env.SOCKET_MAX_CONNECTIONS_PER_USER || '5', 10);
+
   // ─── Connection handler ────────────────────────────────────────────────────
   io.on('connection', (socket) => {
     const userId = socket.userId;
@@ -97,6 +100,22 @@ export function initializeSocket(httpServer, allowedOrigins, getRedisOrGetter = 
         hasToken: !!socket.handshake.auth?.token
       });
       socket.emit('auth_error', { message: 'Authentication failed - no user ID' });
+      socket.disconnect(true);
+      return;
+    }
+
+    // Enforce per-user concurrent connection limit
+    const userRoom = io.sockets.adapter.rooms.get(`user_${userId}`);
+    const existingConnections = userRoom ? userRoom.size : 0;
+    if (existingConnections >= MAX_CONNECTIONS_PER_USER) {
+      logger.warn('Socket connection limit reached for user', {
+        userId,
+        existingConnections,
+        limit: MAX_CONNECTIONS_PER_USER
+      });
+      socket.emit('connection_limit', {
+        message: `Too many concurrent connections. Maximum is ${MAX_CONNECTIONS_PER_USER}.`
+      });
       socket.disconnect(true);
       return;
     }

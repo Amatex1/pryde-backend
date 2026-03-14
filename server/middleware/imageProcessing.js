@@ -4,6 +4,31 @@ import { createLogger } from '../utils/logger.js';
 
 const logger = createLogger('imageProcessing');
 
+const MAX_IMAGE_WIDTH  = 8000;
+const MAX_IMAGE_HEIGHT = 8000;
+const MAX_IMAGE_PIXELS = 40_000_000; // 40 megapixels
+
+/**
+ * Validate image dimensions before processing.
+ * Rejects decompression-bomb candidates and absurdly large images.
+ * Throws with code IMAGE_TOO_LARGE on violation.
+ */
+export const validateImageDimensions = async (buffer) => {
+  const metadata = await sharp(buffer).metadata();
+  const { width, height } = metadata;
+
+  if (width > MAX_IMAGE_WIDTH || height > MAX_IMAGE_HEIGHT) {
+    const err = new Error(`Image dimensions too large: ${width}x${height}. Max ${MAX_IMAGE_WIDTH}x${MAX_IMAGE_HEIGHT}.`);
+    err.code = 'IMAGE_TOO_LARGE';
+    throw err;
+  }
+  if (width * height > MAX_IMAGE_PIXELS) {
+    const err = new Error(`Image has too many pixels (${(width * height / 1_000_000).toFixed(1)}MP). Max 40MP.`);
+    err.code = 'IMAGE_TOO_LARGE';
+    throw err;
+  }
+};
+
 /**
  * Process and optimize uploaded images
  * OPTIMIZED: Faster Sharp settings (effort: 2 instead of default 4)
@@ -59,8 +84,9 @@ export const stripExifData = async (imageBuffer, mimetype, options = {}) => {
 
     // Build optimized Sharp pipeline
     let pipeline = sharp(imageBuffer, {
-      failOn: 'none',  // Don't fail on minor issues
-      sequentialRead: true  // Faster for single-pass processing
+      failOn: 'none',           // Don't fail on minor issues
+      limitInputPixels: MAX_IMAGE_PIXELS, // Reject decompression bombs at decode time
+      sequentialRead: true      // Faster for single-pass processing
     })
       .rotate(); // Auto-rotate based on EXIF orientation
 
@@ -146,7 +172,7 @@ export const generateResponsiveSizes = async (imageBuffer, mimetype, quality = 8
     // Process all sizes in parallel for speed
     const [smallWebP, mediumWebP] = await Promise.all([
       // Small size
-      sharp(imageBuffer)
+      sharp(imageBuffer, { limitInputPixels: MAX_IMAGE_PIXELS })
         .resize(sizes.small, sizes.small, {
           fit: isAvatar ? 'cover' : 'inside',
           position: 'center',
@@ -156,7 +182,7 @@ export const generateResponsiveSizes = async (imageBuffer, mimetype, quality = 8
         .toBuffer(),
 
       // Medium size
-      sharp(imageBuffer)
+      sharp(imageBuffer, { limitInputPixels: MAX_IMAGE_PIXELS })
         .resize(sizes.medium, isAvatar ? sizes.medium : null, {
           fit: isAvatar ? 'cover' : 'inside',
           position: 'center',
@@ -270,6 +296,7 @@ export const processImageStream = async (imageStream, mimetype) => {
 
 export default {
   stripExifData,
+  validateImageDimensions,
   processUploadedImage,
   processImageStream
 };

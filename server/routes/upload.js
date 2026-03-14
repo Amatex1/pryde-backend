@@ -2,13 +2,15 @@ import express from 'express';
 const router = express.Router();
 import multer from 'multer';
 import mongoose from 'mongoose';
+import crypto from 'crypto';
 import { spawn } from 'child_process';
 import auth from '../middleware/auth.js';
 import User from '../models/User.js';
 import TempMedia from '../models/TempMedia.js';
+import MediaHash from '../models/MediaHash.js';
 import config from '../config/config.js';
-import { uploadLimiter } from '../middleware/rateLimiter.js';
-import { stripExifData } from '../middleware/imageProcessing.js';
+import { uploadLimiter, userUploadLimiter, uploadQuotaMiddleware } from '../middleware/rateLimiter.js';
+import { stripExifData, validateImageDimensions } from '../middleware/imageProcessing.js';
 import { Readable } from 'stream';
 // R2 Storage import
 import { initR2, uploadToR2, deleteFromR2, getObjectStream, isR2Enabled } from '../utils/r2Storage.js';
@@ -107,6 +109,68 @@ const MP3_SIGNATURES = [
   [0x49, 0x44, 0x33]                          // ID3 tag
 ];
 
+// LAYER: SHA-256 hash tracking
+// Computes a hash of the raw uploaded bytes, checks against the blocklist,
+// then upserts the hash record to track repeat uploads.
+const computeAndCheckHash = async (buffer, userId) => {
+  const hash = crypto.createHash('sha256').update(buffer).digest('hex');
+
+  const existing = await MediaHash.findOne({ hash });
+  if (existing?.flagged) {
+    const err = new Error('File rejected: this content has been flagged.');
+    err.code = 'FLAGGED_CONTENT';
+    throw err;
+  }
+
+  // Upsert — track how many times this exact file has been uploaded
+  await MediaHash.findOneAndUpdate(
+    { hash },
+    {
+      $inc: { uploadCount: 1 },
+      $set: { lastSeenAt: new Date() },
+      $setOnInsert: { firstSeenAt: new Date() }
+    },
+    { upsert: true }
+  );
+
+  return hash;
+};
+
+// LAYER: Media decodability test via ffprobe
+// Validates the file is actually a parseable media container before processing.
+// Fails closed only when ffprobe is available — passes through if not installed.
+const validateMediaDecodable = (buffer) => {
+  return new Promise((resolve, reject) => {
+    let settled = false;
+    const done = (err) => { if (!settled) { settled = true; err ? reject(err) : resolve(); } };
+
+    try {
+      const ff = spawn('ffprobe', [
+        '-v', 'error',
+        '-i', 'pipe:0',
+        '-show_entries', 'format=duration',
+        '-of', 'default=noprint_wrappers=1'
+      ], { stdio: ['pipe', 'ignore', 'pipe'] });
+
+      let stderr = '';
+      ff.on('error', () => done()); // ffprobe not installed — pass through
+      ff.stderr.on('data', d => { stderr += d.toString(); });
+      ff.on('close', code => {
+        if (code !== 0 && stderr.length > 0) {
+          done(new Error('Media file is malformed or cannot be decoded.'));
+        } else {
+          done();
+        }
+      });
+
+      ff.stdin.write(buffer);
+      ff.stdin.end();
+    } catch {
+      done(); // spawn threw — pass through
+    }
+  });
+};
+
 const validateMagicBytes = (buffer, mimetype) => {
   if (!buffer || buffer.length < 12) return false;
 
@@ -194,7 +258,11 @@ const saveToGridFS = async (file, generateSizes = false, userId = null) => {
   let contentType = file.mimetype;
   let sizes = null;
 
-  // ── Malware scan (runs before any processing or storage) ──────────────────
+  // ── 1. SHA-256 hash tracking + blocklist check ────────────────────────────
+  await computeAndCheckHash(buffer, userId);
+  // ─────────────────────────────────────────────────────────────────────────
+
+  // ── 2. Malware scan (provider configurable — currently none) ──────────────
   const { scanFile } = await import('../services/fileScanService.js');
   const scanResult = await scanFile(buffer, file.originalname, userId);
   if (!scanResult.clean && !scanResult.skipped) {
@@ -204,9 +272,13 @@ const saveToGridFS = async (file, generateSizes = false, userId = null) => {
   }
   // ─────────────────────────────────────────────────────────────────────────
 
-  // Process and optimize images (strip EXIF, convert to WebP, compress)
-  // Sharp decode implicitly validates magic bytes for images — non-images will throw
+  // ── 3. Process and optimize images ───────────────────────────────────────
+  // validateImageDimensions rejects bombs (>8000px / >40MP) before Sharp decodes.
+  // Sharp re-encodes the image from scratch — destroys any hidden payload.
   if (file.mimetype.startsWith('image/')) {
+    if (file.mimetype !== 'image/gif') {
+      await validateImageDimensions(buffer);
+    }
     logger.debug('Processing and optimizing image', {
       originalName: file.originalname,
       contentType: file.mimetype
@@ -221,14 +293,18 @@ const saveToGridFS = async (file, generateSizes = false, userId = null) => {
     });
   }
 
-  // PART 8: Validate magic bytes for video/audio (no Sharp protection for these types)
+  // ── 4. Validate + re-encode video/audio ──────────────────────────────────
   if (file.mimetype.startsWith('video/') || file.mimetype.startsWith('audio/')) {
+    // Magic byte check — verify file content matches declared MIME type
     if (!validateMagicBytes(buffer, file.mimetype)) {
       throw new Error(`File content does not match declared MIME type: ${file.mimetype}`);
     }
-    // PART 12: Strip video/audio metadata via ffmpeg (no-op if ffmpeg unavailable)
+    // Decodability test — rejects malformed containers designed to crash parsers
+    await validateMediaDecodable(buffer);
+    // Strip metadata via ffmpeg stream copy (no re-encode cost, removes all metadata)
     buffer = await stripAVMetadata(buffer, file.mimetype);
   }
+  // ─────────────────────────────────────────────────────────────────────────
 
   // Update filename extension if converted to WebP
   const timestamp = Date.now();
@@ -386,7 +462,7 @@ const saveToGridFS = async (file, generateSizes = false, userId = null) => {
 // @route   POST /api/upload/profile-photo
 // @desc    Upload profile photo
 // @access  Private
-router.post('/profile-photo', auth, uploadLimiter, (req, res) => {
+router.post('/profile-photo', auth, uploadLimiter, userUploadLimiter, uploadQuotaMiddleware, (req, res) => {
   upload.single('photo')(req, res, async (err) => {
     try {
       logger.debug('Profile photo upload request received', { userId: req.userId });
@@ -473,7 +549,7 @@ router.post('/profile-photo', auth, uploadLimiter, (req, res) => {
 // @route   POST /api/upload/cover-photo
 // @desc    Upload cover photo
 // @access  Private
-router.post('/cover-photo', auth, uploadLimiter, (req, res) => {
+router.post('/cover-photo', auth, uploadLimiter, userUploadLimiter, uploadQuotaMiddleware, (req, res) => {
   upload.single('photo')(req, res, async (err) => {
     try {
       logger.debug('Cover photo upload request received', { userId: req.userId });
@@ -559,7 +635,7 @@ router.post('/cover-photo', auth, uploadLimiter, (req, res) => {
 // @route   POST /api/upload/chat-attachment
 // @desc    Upload chat attachment
 // @access  Private
-router.post('/chat-attachment', auth, uploadLimiter, (req, res) => {
+router.post('/chat-attachment', auth, uploadLimiter, userUploadLimiter, uploadQuotaMiddleware, (req, res) => {
   upload.single('file')(req, res, async (err) => {
     try {
       if (err) {
@@ -623,7 +699,7 @@ router.post('/chat-attachment', auth, uploadLimiter, (req, res) => {
 // @route   POST /api/upload/post-media
 // @desc    Upload media for posts (images, videos, gifs) - Max 3 files
 // @access  Private
-router.post('/post-media', auth, uploadLimiter, (req, res) => {
+router.post('/post-media', auth, uploadLimiter, userUploadLimiter, uploadQuotaMiddleware, (req, res) => {
   // DIAGNOSTIC: Log middleware chain entry point
   if (config.nodeEnv === 'development') {
     logger.debug('Post media upload request received', {
@@ -1116,7 +1192,7 @@ router.get('/file/:filename', async (req, res) => {
 // @route   POST /api/upload/voice-note
 // @desc    Upload voice note (audio file)
 // @access  Private
-router.post('/voice-note', auth, uploadLimiter, (req, res) => {
+router.post('/voice-note', auth, uploadLimiter, userUploadLimiter, uploadQuotaMiddleware, (req, res) => {
   upload.single('audio')(req, res, async (err) => {
     try {
       if (err) {

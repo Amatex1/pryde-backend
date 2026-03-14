@@ -12,7 +12,7 @@ import Invite from '../models/Invite.js'; // Phase 7B: Invite-only growth
 import auth from '../middleware/auth.js';
 import { getSessionInfo, clearSessionActivity, SESSION_TIMEOUT_MS } from '../middleware/sessionTimeout.js';
 import config from '../config/config.js';
-import { sendPasswordResetEmail, sendLoginAlertEmail, sendSuspiciousLoginEmail, sendVerificationEmail, sendPasswordChangedEmail } from '../utils/emailService.js';
+import { sendPasswordResetEmail, sendLoginAlertEmail, sendSuspiciousLoginEmail, sendVerificationEmail, sendPasswordChangedEmail, sendAccountLockedEmail } from '../utils/emailService.js';
 import {
   parseUserAgent,
   getClientIp,
@@ -866,6 +866,8 @@ router.post('/login', loginLimiter, validateLogin, async (req, res) => {
       if (updatedUser.isLocked()) {
         // Log account lockout to security log
         logAccountLocked(updatedUser, ipAddress, req.headers['user-agent']).catch(() => {});
+        // Notify the user by email (fire-and-forget)
+        sendAccountLockedEmail(updatedUser.email, updatedUser.username, { ipAddress, lockoutMinutes: 15 }).catch(() => {});
         return res.status(423).json({
           message: 'Too many failed login attempts. Your account has been temporarily locked for 15 minutes.',
           lockoutUntil: updatedUser.lockoutUntil

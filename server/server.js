@@ -62,7 +62,7 @@ const restrictionMiddleware = [auth, requireActiveUser];
 // (see server/services/sessionService.js — SESSION_IDLE_TIMEOUT_MS, default 30 min).
 // Configurable via SESSION_IDLE_TIMEOUT_MS env var (0 = disabled).
 import { setCsrfToken, enforceCsrf } from './middleware/csrf.js';
-import { requestId, requestTimeout, apiSecurityHeaders, safeJsonResponse } from './middleware/hardening.js';
+import { requestId, requestTimeout, apiSecurityHeaders, safeJsonResponse, ipBlocklist } from './middleware/hardening.js';
 import { detectAttacks } from './middleware/attackDetection.js';
 
 // Import global error handler (Phase 2 - Backend Failure Safety)
@@ -285,6 +285,21 @@ app.use(pinoHttp({
 // HARDENING MIDDLEWARE (Phase 2 - Backend Failure Safety)
 // Must be early in the chain for request tracing
 // ============================================================================
+app.use(ipBlocklist);         // Block IPs listed in BLOCKED_IPS env var
+
+// Reject requests that bypass Cloudflare and hit Render's URL directly
+if (config.nodeEnv === 'production') {
+  const allowedHosts = (process.env.ALLOWED_HOSTS || '').split(',').map(h => h.trim()).filter(Boolean);
+  if (allowedHosts.length > 0) {
+    app.use((req, res, next) => {
+      if (!allowedHosts.includes(req.headers.host)) {
+        return res.status(403).json({ error: 'Forbidden' });
+      }
+      next();
+    });
+  }
+}
+
 app.use(requestId);           // Add unique request ID to every request
 app.use(requestTimeout(30000)); // 30 second timeout for all requests
 app.use(apiSecurityHeaders);  // Add security headers for API responses

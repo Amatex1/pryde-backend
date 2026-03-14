@@ -146,10 +146,51 @@ export const safeJsonResponse = (req, res, next) => {
 };
 
 /**
+ * IP Blocklist Middleware
+ * Blocks requests from IPs listed in the BLOCKED_IPS environment variable.
+ * Format: BLOCKED_IPS=1.2.3.4,5.6.7.8  (comma-separated, no spaces)
+ *
+ * In production, prefer handling this at the WAF/CDN layer (Cloudflare, Render).
+ * This middleware serves as an additional app-level fallback.
+ */
+const parseBlockedIps = () => {
+  const raw = process.env.BLOCKED_IPS || '';
+  return new Set(raw.split(',').map(ip => ip.trim()).filter(Boolean));
+};
+
+// Parse once at startup; updated via BLOCKED_IPS env var on redeploy
+let blockedIps = parseBlockedIps();
+
+export const ipBlocklist = (req, res, next) => {
+  // Skip in test environment
+  if (process.env.NODE_ENV === 'test') return next();
+
+  const clientIp = req.ip ||
+    req.headers['x-forwarded-for']?.split(',')[0]?.trim() ||
+    req.socket?.remoteAddress;
+
+  if (clientIp && blockedIps.has(clientIp)) {
+    logger.warn('Blocked IP attempted access', { ip: clientIp, path: req.path });
+    return res.status(403).json({ error: 'Forbidden' });
+  }
+
+  next();
+};
+
+/**
+ * Reload the IP blocklist from environment (call this if BLOCKED_IPS changes at runtime).
+ */
+export const reloadIpBlocklist = () => {
+  blockedIps = parseBlockedIps();
+  logger.info('IP blocklist reloaded', { count: blockedIps.size });
+};
+
+/**
  * Combined hardening middleware
  * Apply all hardening middleware in the correct order
  */
 export const applyHardening = (app) => {
+  app.use(ipBlocklist);
   app.use(requestId);
   app.use(requestTimeout(30000)); // 30 second timeout
   app.use(apiSecurityHeaders);

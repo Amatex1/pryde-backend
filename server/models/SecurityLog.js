@@ -118,6 +118,10 @@ securityLogSchema.index({ type: 1, createdAt: -1 });
 securityLogSchema.index({ resolved: 1 });
 securityLogSchema.index({ severity: 1 });
 
+// TTL index: auto-delete logs older than 90 days (configurable via SECURITY_LOG_TTL_DAYS)
+const TTL_DAYS = parseInt(process.env.SECURITY_LOG_TTL_DAYS || '90', 10);
+securityLogSchema.index({ createdAt: 1 }, { expireAfterSeconds: TTL_DAYS * 24 * 60 * 60 });
+
 const SecurityLog = mongoose.model('SecurityLog', securityLogSchema);
 
 export default SecurityLog;
