@@ -30,7 +30,7 @@
     "polish:theme:dry": "node server/scripts/themeLeakFixer.js --dry-run",
     "create-indexes": "cd server && node scripts/create-indexes.js",
     "hooks:install": "git config core.hooksPath .githooks",
-    "migrate:follows": "node scripts/migrateFollows.js"
+    "migrate:follows": "cd server && node scripts/migrateFollows.js"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.500.0",

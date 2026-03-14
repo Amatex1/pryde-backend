@@ -2260,5 +2260,56 @@ router.post('/broadcast', checkPermission('canBroadcastAnnouncement'), async (re
   }
 });
 
+// ── One-time Follow collection migration ─────────────────────────────────────
+// Populates the Follow collection from User.followers/following arrays.
+// Idempotent — safe to call multiple times.
+// Only super_admin may run this.
+router.post('/migrate-follows', checkPermission('canManageUsers'), async (req, res) => {
+  if (req.adminUser?.role !== 'super_admin') {
+    return res.status(403).json({ message: 'Only Super Admins can run migrations' });
+  }
+
+  try {
+    const Follow = (await import('../models/Follow.js')).default;
+
+    const BATCH_SIZE = 500;
+    let processed = 0;
+    let inserted = 0;
+    let skipped = 0;
+
+    const cursor = User.find({}, '_id following').cursor();
+
+    for await (const user of cursor) {
+      const edges = (user.following || []).map(id => ({
+        follower: user._id,
+        following: id
+      }));
+
+      for (let i = 0; i < edges.length; i += BATCH_SIZE) {
+        const batch = edges.slice(i, i + BATCH_SIZE);
+        try {
+          const result = await Follow.insertMany(batch, { ordered: false });
+          inserted += result.length;
+        } catch (err) {
+          if (err.code === 11000 || err.name === 'BulkWriteError') {
+            const done = err.result?.nInserted ?? 0;
+            inserted += done;
+            skipped += batch.length - done;
+          } else {
+            throw err;
+          }
+        }
+      }
+      processed++;
+    }
+
+    logger.info(`migrate-follows: ${processed} users, ${inserted} inserted, ${skipped} skipped`);
+    res.json({ message: 'Migration complete', processed, inserted, skipped });
+  } catch (err) {
+    logger.error('migrate-follows failed:', err);
+    res.status(500).json({ message: 'Migration failed', error: err.message });
+  }
+});
+
 export default router;
 
