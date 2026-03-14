@@ -28,6 +28,7 @@ import { MutationTrace, verifyWrite } from '../utils/mutationTrace.js';
 import { isFeatureEnabled } from '../utils/featureFlags.js';
 import { asyncHandler, requireAuth, requireValidId, sendError, HttpStatus } from '../utils/errorHandler.js';
 import { processUserBadgesById } from '../services/autoBadgeService.js';
+import { applyContentWarning, applyContentWarnings, parseAcknowledged } from '../utils/contentWarningFilter.js';
 import { populatePostBadges, populateSinglePostBadges } from '../utils/populateBadges.js';
 import { checkAnonBurst } from '../utils/anonymousBurstLimiter.js';
 import { handlePostCreated } from '../services/feedBuilder.js';
@@ -339,10 +340,13 @@ router.get('/:id', auth, requireActiveUser, cacheShort, asyncHandler(async (req,
   const sanitizedPost = sanitizePostForPrivateLikes(post, userId);
 
   // Sanitize anonymous post — strip author for non-staff viewers
-  const finalPost = sanitizeAnonymousPost(
+  const anonFiltered = sanitizeAnonymousPost(
     typeof sanitizedPost.toObject === 'function' ? sanitizedPost.toObject() : { ...sanitizedPost },
     req.user?.role
   );
+
+  // Apply content warning filter — redacts content unless client acknowledged the warning
+  const finalPost = applyContentWarning(anonFiltered, parseAcknowledged(req.query.cw_ack));
 
   res.json(finalPost);
 }));
@@ -382,6 +386,11 @@ router.post('/', auth, requireActiveUser, requireEmailVerification, postLimiter,
     if ((!content || content.trim() === '') && (!media || media.length === 0) && !poll && !gifUrl) {
       mutation.fail('Validation failed: missing content/media/poll/gif', 400);
       return res.status(400).json({ message: 'Post must have content, media, GIF, or a poll', _mutationId: mutation.mutationId });
+    }
+
+    // Validate contentWarning length (field is free-text but capped)
+    if (contentWarning && typeof contentWarning === 'string' && contentWarning.length > 100) {
+      return res.status(400).json({ message: 'Content warning label must be 100 characters or fewer', _mutationId: mutation.mutationId });
     }
 
     mutation.addStep('VALIDATION_PASSED');
@@ -666,7 +675,7 @@ router.put('/:id', auth, requireActiveUser, sanitizeFields(['content', 'contentW
       return res.status(403).json({ message: 'Not authorized to edit this post' });
     }
 
-    const { content, images, media, visibility, hiddenFrom, sharedWith, deletedImages, deletedMedia } = req.body;
+    const { content, images, media, visibility, hiddenFrom, sharedWith, deletedImages, deletedMedia, contentWarning } = req.body;
 
     // DEPRECATED 2025-12-26: Edit history tracking removed (UI no longer exposed)
     // Posts will still be marked as edited, but history is not tracked
@@ -731,6 +740,8 @@ router.put('/:id', auth, requireActiveUser, sanitizeFields(['content', 'contentW
     if (visibility) post.visibility = visibility;
     if (hiddenFrom !== undefined) post.hiddenFrom = hiddenFrom;
     if (sharedWith !== undefined) post.sharedWith = sharedWith;
+    // Allow clearing or updating the content warning on edit
+    if (contentWarning !== undefined) post.contentWarning = contentWarning?.trim().slice(0, 100) || '';
 
     await post.save();
 

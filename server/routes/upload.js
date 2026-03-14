@@ -84,10 +84,28 @@ const fileFilter = (req, file, cb) => {
 const upload = multer({
   storage,
   limits: {
-    fileSize: 10 * 1024 * 1024, // 10MB limit
-    files: 1 // Only 1 file at a time
+    fileSize: 10 * 1024 * 1024, // 10MB — images / chat attachments
+    files: 1
   },
   fileFilter: fileFilter
+});
+
+// Video-only file filter
+const videoFileFilter = (req, file, cb) => {
+  const allowed = ['video/mp4', 'video/webm', 'video/ogg', 'video/quicktime'];
+  if (allowed.includes(file.mimetype)) {
+    cb(null, true);
+  } else {
+    cb(new Error(`Invalid file type for video upload. Allowed: MP4, WebM, OGG, MOV. Got: ${file.mimetype}`), false);
+  }
+};
+
+// Separate multer instance for video — configurable via VIDEO_UPLOAD_MAX_MB (default 200MB)
+const VIDEO_MAX_BYTES = parseInt(process.env.VIDEO_UPLOAD_MAX_MB || '200', 10) * 1024 * 1024;
+const uploadVideo = multer({
+  storage,
+  limits: { fileSize: VIDEO_MAX_BYTES, files: 1 },
+  fileFilter: videoFileFilter
 });
 
 // PART 8: Magic byte signatures for video/audio validation
@@ -885,6 +903,56 @@ router.post('/post-media', auth, uploadLimiter, userUploadLimiter, uploadQuotaMi
         message: 'Image upload failed. Please try again or use a smaller image.',
         detail: error.message
       });
+    }
+  });
+});
+
+// @route   POST /api/upload/video
+// @desc    Upload a video for a post or story (up to VIDEO_UPLOAD_MAX_MB, default 200MB)
+// @access  Private
+router.post('/video', auth, uploadLimiter, userUploadLimiter, uploadQuotaMiddleware, (req, res) => {
+  uploadVideo.single('video')(req, res, async (err) => {
+    try {
+      if (err) {
+        if (err.code === 'LIMIT_FILE_SIZE') {
+          return res.status(400).json({
+            error: 'File too large',
+            message: `Video exceeds the ${Math.round(VIDEO_MAX_BYTES / 1024 / 1024)}MB limit. Try trimming or compressing the video.`
+          });
+        }
+        return res.status(400).json({ error: 'Upload failed', message: err.message });
+      }
+
+      if (!req.file) {
+        return res.status(400).json({ error: 'No file', message: 'No video file received.' });
+      }
+
+      const { draftId } = req.body;
+      const fileInfo = await saveToGridFS(req.file, false, req.userId);
+      const url = fileInfo.url || `/upload/file/${fileInfo.filename}`;
+
+      const tempMedia = new TempMedia({
+        userId: req.userId,
+        filename: fileInfo.filename,
+        url,
+        type: 'video',
+        mimetype: req.file.mimetype,
+        fileSize: req.file.size,
+        status: draftId ? 'attached' : 'temporary',
+        ownerType: draftId ? 'draft' : 'none',
+        ownerId: draftId || null,
+        attachedAt: draftId ? new Date() : null
+      });
+      await tempMedia.save();
+
+      logger.info('Video uploaded', { userId: req.userId, size: req.file.size, mimetype: req.file.mimetype });
+      res.json({ url, filename: fileInfo.filename, type: 'video', tempMediaId: tempMedia._id });
+    } catch (error) {
+      logger.error('Video upload error', { userId: req.userId, error: error.message });
+      if (error.code === 'FLAGGED_CONTENT') {
+        return res.status(400).json({ error: 'Content rejected', message: error.message });
+      }
+      res.status(500).json({ error: 'Video upload failed', message: 'Please try again.' });
     }
   });
 });

@@ -1,6 +1,7 @@
 import express from 'express';
 const router = express.Router();
 import User from '../models/User.js';
+import Follow from '../models/Follow.js';
 import FollowRequest from '../models/FollowRequest.js';
 import Notification from '../models/Notification.js';
 import auth from '../middleware/auth.js';
@@ -123,6 +124,13 @@ router.post('/:userId', auth, requireActiveUser, requireEmailVerification, guard
       await targetUser.save();
       await currentUser.save();
 
+      // Primary follow record (separate collection)
+      await Follow.findOneAndUpdate(
+        { follower: currentUserId, following: targetUserId },
+        { follower: currentUserId, following: targetUserId },
+        { upsert: true, new: true }
+      );
+
       // 🔔 Create notification for new follower
       try {
         const notification = new Notification({
@@ -162,7 +170,7 @@ router.post('/:userId', auth, requireActiveUser, requireEmailVerification, guard
       });
     }
   } catch (error) {
-    console.error('Follow user error:', error);
+    logger.error('Follow user error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -182,16 +190,19 @@ router.delete('/:userId', auth, requireActiveUser, async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // Remove from following/followers
+    // Remove from following/followers (User arrays — kept for backward compat)
     currentUser.following = currentUser.following.filter(id => id.toString() !== targetUserId);
     targetUser.followers = targetUser.followers.filter(id => id.toString() !== currentUserId);
 
     await currentUser.save();
     await targetUser.save();
 
+    // Remove from dedicated Follow collection
+    await Follow.deleteOne({ follower: currentUserId, following: targetUserId });
+
     res.json({ message: `Unfollowed ${targetUser.username}` });
   } catch (error) {
-    console.error('Unfollow user error:', error);
+    logger.error('Unfollow user error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -202,29 +213,28 @@ router.delete('/:userId', auth, requireActiveUser, async (req, res) => {
 router.get('/followers/:userId', auth, requireActiveUser, async (req, res) => {
   try {
     const userId = req.params.userId;
+    const { page = 1, limit = 50 } = req.query;
+    const skip = (parseInt(page) - 1) * parseInt(limit);
 
-    const user = await User.findById(userId)
-      .select('followers username isActive isDeleted')
-      .populate({
-        path: 'followers',
-        match: {
-          isActive: true,
-          isDeleted: { $ne: true },
-          isBanned: { $ne: true }
-        },
-        select: 'username displayName profilePhoto coverPhoto bio'
-      });
+    const user = await User.findById(userId).select('username isActive isDeleted');
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    if (user.isActive === false || user.isDeleted === true) return res.json({ followers: [], total: 0 });
 
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
+    const [edges, total] = await Promise.all([
+      Follow.find({ following: userId })
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(parseInt(limit))
+        .populate({
+          path: 'follower',
+          match: { isActive: true, isDeleted: { $ne: true }, isBanned: { $ne: true } },
+          select: 'username displayName profilePhoto coverPhoto bio'
+        }),
+      Follow.countDocuments({ following: userId })
+    ]);
 
-    // Return empty array if user is deactivated or deleted
-    if (user.isActive === false || user.isDeleted === true) {
-      return res.json({ followers: [] });
-    }
-
-    res.json({ followers: user.followers || [] });
+    const followers = edges.map(e => e.follower).filter(Boolean);
+    res.json({ followers, total, page: parseInt(page), pages: Math.ceil(total / parseInt(limit)) });
   } catch (error) {
     console.error('Get followers error:', error);
     res.status(500).json({ message: 'Server error' });
@@ -237,29 +247,28 @@ router.get('/followers/:userId', auth, requireActiveUser, async (req, res) => {
 router.get('/following/:userId', auth, requireActiveUser, async (req, res) => {
   try {
     const userId = req.params.userId;
+    const { page = 1, limit = 50 } = req.query;
+    const skip = (parseInt(page) - 1) * parseInt(limit);
 
-    const user = await User.findById(userId)
-      .select('following username isActive isDeleted')
-      .populate({
-        path: 'following',
-        match: {
-          isActive: true,
-          isDeleted: { $ne: true },
-          isBanned: { $ne: true }
-        },
-        select: 'username displayName profilePhoto coverPhoto bio'
-      });
+    const user = await User.findById(userId).select('username isActive isDeleted');
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    if (user.isActive === false || user.isDeleted === true) return res.json({ following: [], total: 0 });
 
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
+    const [edges, total] = await Promise.all([
+      Follow.find({ follower: userId })
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(parseInt(limit))
+        .populate({
+          path: 'following',
+          match: { isActive: true, isDeleted: { $ne: true }, isBanned: { $ne: true } },
+          select: 'username displayName profilePhoto coverPhoto bio'
+        }),
+      Follow.countDocuments({ follower: userId })
+    ]);
 
-    // Return empty array if user is deactivated or deleted
-    if (user.isActive === false || user.isDeleted === true) {
-      return res.json({ following: [] });
-    }
-
-    res.json({ following: user.following || [] });
+    const following = edges.map(e => e.following).filter(Boolean);
+    res.json({ following, total, page: parseInt(page), pages: Math.ceil(total / parseInt(limit)) });
   } catch (error) {
     console.error('Get following error:', error);
     res.status(500).json({ message: 'Server error' });
@@ -337,6 +346,13 @@ router.post('/requests/:requestId/accept', auth, requireActiveUser, async (req, 
     await receiver.save();
     await sender.save();
 
+    // Primary follow record
+    await Follow.findOneAndUpdate(
+      { follower: followRequest.sender, following: followRequest.receiver },
+      { follower: followRequest.sender, following: followRequest.receiver },
+      { upsert: true, new: true }
+    );
+
     // 🔔 Create notification for follow request acceptance
     try {
       const notification = new Notification({
@@ -372,7 +388,7 @@ router.post('/requests/:requestId/accept', auth, requireActiveUser, async (req, 
 
     res.json({ message: 'Follow request accepted' });
   } catch (error) {
-    console.error('Accept follow request error:', error);
+    logger.error('Accept follow request error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -401,7 +417,7 @@ router.post('/requests/:requestId/reject', auth, requireActiveUser, async (req, 
 
     res.json({ message: 'Follow request rejected' });
   } catch (error) {
-    console.error('Reject follow request error:', error);
+    logger.error('Reject follow request error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -425,7 +441,7 @@ router.delete('/requests/:requestId', auth, requireActiveUser, async (req, res) 
 
     res.json({ message: 'Follow request cancelled' });
   } catch (error) {
-    console.error('Cancel follow request error:', error);
+    logger.error('Cancel follow request error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });

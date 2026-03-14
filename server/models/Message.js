@@ -129,15 +129,9 @@ messageSchema.pre('validate', function(next) {
  */
 messageSchema.pre('save', async function(next) {
   try {
-    // ⚡ PERFORMANCE: Skip encryption if disabled
-    const encryptionEnabled = process.env.ENABLE_MESSAGE_ENCRYPTION !== 'false';
-
-    // Only encrypt if enabled AND content is modified and not already encrypted
-    if (encryptionEnabled && this.isModified('content') && this.content && !isEncrypted(this.content)) {
-      console.log('🔒 Encrypting message content...');
+    // Encrypt content if modified and not already encrypted — no env toggle, always on
+    if (this.isModified('content') && this.content && !isEncrypted(this.content)) {
       this.content = encryptMessage(this.content);
-    } else if (!encryptionEnabled && this.isModified('content')) {
-      console.log('⚡ Encryption disabled - storing message in plaintext');
     }
     next();
   } catch (error) {
@@ -158,55 +152,19 @@ messageSchema.methods.toJSON = function() {
   const message = this.toObject();
 
   try {
-    // Skip if no content
-    if (!message.content) {
-      return message;
-    }
+    if (!message.content) return message;
 
-    // 🔍 DEBUG: Log content type and format
-    const contentType = typeof message.content;
-    const contentLength = message.content?.length || 0;
-    const isHexString = typeof message.content === 'string' && /^[a-f0-9]+$/i.test(message.content);
-
-    console.log('🔍 [toJSON] Content type:', contentType, 'Length:', contentLength, 'IsHex:', isHexString);
-
-    if (contentType === 'string' && contentLength > 100) {
-      console.log('🔍 [toJSON] First 100 chars:', message.content.substring(0, 100));
-    }
-
-    // Content should be a string (raw hex encrypted data or plain text)
     if (typeof message.content === 'string') {
-      // Check if it's an encrypted hex string (long hex string)
-      if (message.content.length > 64 && /^[a-f0-9]+$/i.test(message.content)) {
-        console.log('🔓 [toJSON] Attempting to decrypt hex string...');
-        // This is an encrypted hex string - decrypt it
-        if (isEncrypted(message.content)) {
-          const decrypted = decryptMessage(message.content);
-          console.log('✅ [toJSON] Decryption successful! Length:', decrypted?.length);
-          message.content = decrypted;
-        } else {
-          console.log('⚠️ [toJSON] isEncrypted returned false for hex string');
-        }
-      }
-      // Otherwise, it's plain text - leave as is
-    }
-    // Handle backward compatibility: old messages might be stored as objects or JSON strings
-    else if (typeof message.content === 'object' && message.content !== null) {
-      console.log('📦 [toJSON] Object format detected:', Object.keys(message.content));
-      // Check if it's an encrypted object format
       if (isEncrypted(message.content)) {
-        console.log('🔓 [toJSON] Attempting to decrypt object format...');
-        const decrypted = decryptMessage(message.content);
-        console.log('✅ [toJSON] Decryption successful! Length:', decrypted?.length);
-        message.content = decrypted;
-      } else {
-        console.log('⚠️ [toJSON] isEncrypted returned false for object');
+        message.content = decryptMessage(message.content);
+      }
+    } else if (typeof message.content === 'object' && message.content !== null) {
+      if (isEncrypted(message.content)) {
+        message.content = decryptMessage(message.content);
       }
     }
   } catch (error) {
-    console.error('❌ [toJSON] Error decrypting message:', error.message);
-    console.error('❌ [toJSON] Stack:', error.stack);
-    // Return encrypted content if decryption fails (better than crashing)
+    console.error('Error decrypting message:', error.message);
     message.content = '[Encrypted message - decryption failed]';
   }
 

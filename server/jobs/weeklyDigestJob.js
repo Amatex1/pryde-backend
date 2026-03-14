@@ -13,6 +13,7 @@
 
 import User from '../models/User.js';
 import Post from '../models/Post.js';
+import Follow from '../models/Follow.js';
 import config from '../config/config.js';
 import logger from '../utils/logger.js';
 
@@ -57,9 +58,10 @@ export const getWeeklyDigestData = async (userId) => {
     totalComments += post.comments?.length || 0;
   });
   
-  // Get new followers this week (would need follower tracking)
-  // For now, use placeholder
-  const newFollowers = 0;
+  const newFollowers = await Follow.countDocuments({
+    following: userId,
+    createdAt: { $gte: oneWeekAgo }
+  });
   
   return {
     user,
@@ -205,51 +207,36 @@ export async function processWeeklyDigestJob(job) {
 }
 
 /**
- * Send weekly digest to all active users
- * Should be run once per week (e.g., Sunday morning)
+ * Queue weekly digest for all eligible users.
+ * Each user gets an individual BullMQ job so failures are isolated and
+ * the batch doesn't block the cron thread.
  */
 export const sendWeeklyDigestsToAllUsers = async () => {
   logger.info('[WeeklyDigest] Starting weekly digest batch');
-  
-  const twoWeeksAgo = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000);
-  
-  // Get users who were active in the last 2 weeks and have email
-// IDEMPOTENT TASK #7: Only unprocessed users this week
+
   const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-  const users = await User.find({
+
+  const { getQueue } = await import('../queues/index.js');
+  const queue = getQueue('email');
+
+  // Stream through eligible users with cursor to avoid loading all into memory
+  let queued = 0;
+  const cursor = User.find({
     email: { $exists: true, $ne: null },
-    'emailPreferences.lastWeeklyDigestSent': { $lt: oneWeekAgo },
+    'emailPreferences.lastWeeklyDigestSent': { $not: { $gt: oneWeekAgo } },
     role: { $nin: ['system', 'prompts'] }
-  }).select('_id email username displayName emailPreferences').limit(1000);
-  
-  logger.info(`[WeeklyDigest] Found ${users.length} eligible users`);
-  
-  let sent = 0;
-  let failed = 0;
-  
-  for (const user of users) {
-    try {
-      const { sendEmail } = await import('../services/emailService.js');
-      const data = await getWeeklyDigestData(user._id);
-      
-      if (data && data.user.email) {
-        const html = generateWeeklyDigestEmail(data);
-        const subject = `🌈 Your Weekly Pryde Digest`;
-        
-        await sendEmail(data.user.email, subject, html);
-        sent++;
-        
-        // Rate limiting - small delay between emails
-        await new Promise(resolve => setTimeout(resolve, 100));
-      }
-    } catch (error) {
-      logger.error(`[WeeklyDigest] Failed for user ${user._id}: ${error.message}`);
-      failed++;
-    }
+  }).select('_id').cursor();
+
+  for await (const user of cursor) {
+    await queue.add('weekly-digest', { userId: user._id.toString() }, {
+      // Spread sends over 2 hours to avoid hammering the email provider
+      delay: Math.floor(Math.random() * 2 * 60 * 60 * 1000)
+    });
+    queued++;
   }
-  
-  logger.info(`[WeeklyDigest] Batch complete: ${sent} sent, ${failed} failed`);
-  return { sent, failed };
+
+  logger.info(`[WeeklyDigest] Queued ${queued} digest jobs`);
+  return { sent: queued };
 };
 
 export default {

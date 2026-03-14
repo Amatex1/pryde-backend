@@ -94,6 +94,8 @@ import promptsRoutes from './routes/prompts.js';
 // ── Dev-only ─────────────────────────────────────────────────────────────────
 import devVerifyRoutes from './routes/devVerify.js';
 import webhooksRoutes from './routes/webhooks.js';
+import gdprRoutes from './routes/gdpr.js';
+import storiesRoutes from './routes/stories.js';
 
 /**
  * Mount all application routes on `app`.
@@ -188,6 +190,12 @@ export function mountRoutes(app, { restrictionMiddleware, requireDatabaseReady }
   if (process.env.NODE_ENV === 'development') {
     app.use('/api/dev', requireDatabaseReady, devVerifyRoutes);
   }
+
+  // GDPR / data portability
+  app.use('/api/gdpr', requireDatabaseReady, gdprRoutes);
+
+  // Stories (ephemeral 24h content)
+  app.use('/api/stories', requireDatabaseReady, storiesRoutes);
 
   // Webhooks (always public, no auth)
   app.use('/api/webhooks', webhooksRoutes);

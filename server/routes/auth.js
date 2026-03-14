@@ -23,7 +23,7 @@ import {
 } from '../utils/sessionUtils.js';
 import { getCountryFromRequest, requiresSafetyCheck as checkSafetyRequired, HIGH_RISK_COUNTRIES } from '../utils/geoService.js';
 import { logEmailVerification, logPasswordChange, logFailedAuth, logAccountLocked } from '../utils/securityLogger.js';
-import { loginLimiter, signupLimiter, passwordResetLimiter, resendVerificationLimiter, checkUsernameLimiter, resetPasswordConfirmLimiter } from '../middleware/rateLimiter.js';
+import { loginLimiter, signupLimiter, passwordResetLimiter, passwordResetEmailLimiter, resendVerificationLimiter, checkUsernameLimiter, resetPasswordConfirmLimiter } from '../middleware/rateLimiter.js';
 import { validateSignup, validateLogin } from '../middleware/validation.js';
 import logger from '../utils/logger.js';
 import { incCounter } from '../utils/authMetrics.js'; // Phase 4A
@@ -1708,7 +1708,7 @@ router.get('/me', auth, async (req, res) => {
 // @route   POST /api/auth/forgot-password
 // @desc    Request password reset
 // @access  Public
-router.post('/forgot-password', passwordResetLimiter, async (req, res) => {
+router.post('/forgot-password', passwordResetLimiter, passwordResetEmailLimiter, async (req, res) => {
   try {
     const { email } = req.body;
 

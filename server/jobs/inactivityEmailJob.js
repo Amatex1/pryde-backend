@@ -169,38 +169,33 @@ export async function processInactivityEmailJob(job) {
  */
 export const findUsersForInactivityEmails = async () => {
   const now = new Date();
-  const users = await User.find({
+  const eligibleUsers = [];
+
+  // Use cursor so we never load the entire user collection into memory
+  const cursor = User.find({
     email: { $exists: true, $ne: null },
     role: { $nin: ['system', 'prompts'] }
-  }).select('_id email username displayName lastActivityDate emailPreferences createdAt');
-  
-  const eligibleUsers = [];
-  
-  for (const user of users) {
+  }).select('_id email username displayName lastActivityDate emailPreferences createdAt').cursor();
+
+  for await (const user of cursor) {
     if (!user.lastActivityDate && !user.createdAt) continue;
-    
+
     const lastActive = user.lastActivityDate || user.createdAt;
     const daysInactive = Math.floor((now - new Date(lastActive)) / (1000 * 60 * 60 * 24));
-    
-    // Only interested in specific tiers
+
     if (![14, 30, 60, 90].includes(daysInactive)) continue;
-    
+
     const prefs = user.emailPreferences || {};
     const lastSent = prefs[`inactivity_${daysInactive}EmailSentAt`];
-    
-    // Skip if already sent recently
+
     if (lastSent) {
       const daysSinceEmail = (now - new Date(lastSent)) / (1000 * 60 * 60 * 24);
       if (daysSinceEmail < 30) continue;
     }
-    
-    eligibleUsers.push({
-      userId: user._id,
-      daysInactive,
-      email: user.email
-    });
+
+    eligibleUsers.push({ userId: user._id, daysInactive, email: user.email });
   }
-  
+
   logger.info(`[InactivityEmail] Found ${eligibleUsers.length} eligible users for inactivity emails`);
   return eligibleUsers;
 };

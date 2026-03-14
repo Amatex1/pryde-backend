@@ -47,6 +47,7 @@ import { queueInactivityEmails as runInactivityEmailJob } from './jobs/inactivit
 import { runMemberSpotlight } from './jobs/memberSpotlightJob.js';
 import { runWeeklyTheme } from './jobs/weeklyThemesJob.js';
 import { runConversationResurfaceJob } from './jobs/conversationResurfaceJob.js';
+import { withCronLock } from './utils/cronLock.js';
 
 // Routes — all mounts are handled by routeRegistry.js
 import { mountRoutes } from './routeRegistry.js';
@@ -705,7 +706,7 @@ if (shouldStartHttpServer) {
       cron.schedule('0 2 * * *', async () => {
         logger.info('[Cleanup] Running daily data cleanup');
         try {
-          await cleanupOldData();
+          await withCronLock('cleanup-old-data', 3600, cleanupOldData);
           logger.info('[Cleanup] Daily cleanup completed successfully');
         } catch (err) {
           logger.error('[Cleanup] Daily cleanup failed', err);
@@ -720,8 +721,8 @@ if (shouldStartHttpServer) {
       cron.schedule('30 3 * * *', async () => {
         logger.info('[PermanentDeletion] 🕐 Running permanent account deletion job...');
         try {
-          const result = await runPermanentDeletionJob();
-          logger.info(`[PermanentDeletion] ✅ Complete: ${result.deleted} accounts permanently deleted`);
+          const result = await withCronLock('permanent-deletion', 3600, runPermanentDeletionJob);
+          if (result) logger.info(`[PermanentDeletion] ✅ Complete: ${result.deleted} accounts permanently deleted`);
         } catch (err) {
           logger.error('[PermanentDeletion] ❌ Job failed:', err);
         }
@@ -750,8 +751,8 @@ if (shouldStartHttpServer) {
       cron.schedule('0 10 * * 0', async () => {
         logger.info('[WeeklyDigest] 🕐 Starting weekly digest job...');
         try {
-          const result = await runWeeklyDigestJob();
-          logger.info(`[WeeklyDigest] ✅ Complete: ${result.sent} emails sent`);
+          const result = await withCronLock('weekly-digest', 7200, runWeeklyDigestJob);
+          if (result) logger.info(`[WeeklyDigest] ✅ Complete: ${result.sent} emails sent`);
         } catch (err) {
           logger.error('[WeeklyDigest] ❌ Job failed:', err);
         }
@@ -765,8 +766,8 @@ if (shouldStartHttpServer) {
       cron.schedule('0 9 * * *', async () => {
         logger.info('[InactivityEmail] 🕐 Starting inactivity email job...');
         try {
-          const result = await runInactivityEmailJob();
-          logger.info(`[InactivityEmail] ✅ Complete: ${(result.sent ?? result.queued) ?? 0} emails queued`);
+          const result = await withCronLock('inactivity-email', 3600, runInactivityEmailJob);
+          if (result) logger.info(`[InactivityEmail] ✅ Complete: ${(result.sent ?? result.queued) ?? 0} emails queued`);
         } catch (err) {
           logger.error('[InactivityEmail] ❌ Job failed:', err);
         }
@@ -780,11 +781,11 @@ if (shouldStartHttpServer) {
       cron.schedule('0 11 * * 1', async () => {
         logger.info('[MemberSpotlight] 🕐 Starting member spotlight job...');
         try {
-          const result = await runMemberSpotlight();
+          const result = await withCronLock('member-spotlight', 1800, runMemberSpotlight);
           if (result) {
             logger.info(`[MemberSpotlight] ✅ New spotlight: ${result.user?.username}`);
           } else {
-            logger.info('[MemberSpotlight] ⏭️ No eligible member for spotlight');
+            logger.info('[MemberSpotlight] ⏭️ Skipped or no eligible member');
           }
         } catch (err) {
           logger.error('[MemberSpotlight] ❌ Job failed:', err);
@@ -799,8 +800,8 @@ if (shouldStartHttpServer) {
       cron.schedule('0 10 * * 1', async () => {
         logger.info('[WeeklyThemes] 🕐 Starting weekly themes job...');
         try {
-          const result = await runWeeklyTheme();
-          logger.info(`[WeeklyThemes] ✅ Complete: ${result.success ? result.theme?.title : 'already posted this week'}`);
+          const result = await withCronLock('weekly-themes', 1800, runWeeklyTheme);
+          if (result) logger.info(`[WeeklyThemes] ✅ Complete: ${result.success ? result.theme?.title : 'already posted this week'}`);
         } catch (err) {
           logger.error('[WeeklyThemes] ❌ Job failed:', err);
         }
@@ -812,11 +813,10 @@ if (shouldStartHttpServer) {
       // ========================================
       // Finds and resurfacing old conversations that are getting attention
       cron.schedule('*/30 * * * *', async () => {
-        // Run every 30 minutes
         logger.info('[ConversationResurface] 🕐 Checking for resurfacing conversations...');
         try {
-          const result = await runConversationResurfaceJob();
-          if (result.resurfaced?.length > 0) {
+          const result = await withCronLock('conversation-resurface', 1500, runConversationResurfaceJob);
+          if (result?.resurfaced?.length > 0) {
             logger.info(`[ConversationResurface] ✅ ${result.resurfaced.length} conversations marked for resurfacing`);
           }
         } catch (err) {

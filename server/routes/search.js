@@ -13,75 +13,120 @@ import { getBlockedUserIds } from '../utils/blockHelper.js';
 import { escapeRegex } from '../utils/sanitize.js';
 
 // @route   GET /api/search
-// @desc    Global search for users and posts
+// @desc    Global search for users, posts, and hashtags
 // @access  Private
-// REMOVED 2025-12-26: Hashtag search removed (Phase 5)
+// Supports: q, type, from, to, author, sort, page, limit
 router.get('/', auth, searchLimiter, async (req, res) => {
   try {
-    const { q, type } = req.query;
+    const {
+      q,
+      type,
+      from,
+      to,
+      author,
+      sort = 'recent',  // 'recent' | 'popular'
+      page = 1,
+      limit = 20
+    } = req.query;
 
     if (!q || q.trim().length === 0) {
-      return res.json({
-        users: [],
-        posts: []
-        // REMOVED 2025-12-26: hashtags removed (Phase 5)
-      });
+      return res.json({ users: [], posts: [], hashtags: [], total: 0 });
     }
 
-    const searchQuery = escapeRegex(q.trim()); // Escape regex special characters
-    const results = {
-      users: [],
-      posts: []
-      // REMOVED 2025-12-26: hashtags removed (Phase 5)
-    };
+    const searchQuery = escapeRegex(q.trim());
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const results = { users: [], posts: [], hashtags: [] };
 
-    // Get blocked user IDs to filter them out
     const blockedUserIds = await getBlockedUserIds(req.userId);
 
-    // Search users (if type is 'all' or 'users')
+    // ── Users ─────────────────────────────────────────────────────────────
     if (!type || type === 'all' || type === 'users') {
       results.users = await User.find({
         $or: [
           { username: { $regex: searchQuery, $options: 'i' } },
           { displayName: { $regex: searchQuery, $options: 'i' } }
         ],
-        _id: { $nin: blockedUserIds }, // Exclude blocked users
-        isActive: true, // Only show active accounts
-        isBanned: { $ne: true }, // Exclude banned users
-        'privacy.hideProfileFromSearch': { $ne: true } // Phase 9: Respect hide-from-search setting
+        _id: { $nin: blockedUserIds },
+        isActive: true,
+        isBanned: { $ne: true },
+        'privacy.hideProfileFromSearch': { $ne: true }
       })
       .select('username displayName profilePhoto bio')
       .limit(10);
     }
 
-    // Search posts by content (if type is 'all' or 'posts')
+    // ── Posts ─────────────────────────────────────────────────────────────
     if (!type || type === 'all' || type === 'posts') {
-      // Build query - super_admin can see all posts
-      // Phase 2: Always exclude group posts from search
       const postQuery = {
         content: { $regex: searchQuery, $options: 'i' },
-        groupId: null // Phase 2: Exclude group posts from search
+        groupId: null
       };
 
-      // Apply privacy filters only for non-admin users
+      // Date range filters
+      if (from || to) {
+        postQuery.createdAt = {};
+        if (from) postQuery.createdAt.$gte = new Date(from);
+        if (to)   postQuery.createdAt.$lte = new Date(to);
+      }
+
+      // Author filter — resolve username to userId
+      if (author) {
+        const authorUser = await User.findOne({
+          username: { $regex: `^${escapeRegex(author)}$`, $options: 'i' }
+        }).select('_id');
+        if (authorUser) {
+          postQuery.author = authorUser._id;
+        } else {
+          // Author not found — return no posts
+          postQuery.author = null;
+        }
+      }
+
       if (req.user.role !== 'super_admin') {
         postQuery.visibility = 'public';
         postQuery.hiddenFrom = { $ne: req.userId };
-        postQuery.author = { $nin: blockedUserIds }; // Exclude blocked users
-        // Phase 9: Exclude anonymous posts from search for non-staff
+        if (!postQuery.author) postQuery.author = { $nin: blockedUserIds };
         if (!['moderator', 'admin', 'super_admin'].includes(req.user.role)) {
           postQuery.isAnonymous = { $ne: true };
         }
       }
 
+      const sortOrder = sort === 'popular'
+        ? { 'likes': -1, createdAt: -1 }
+        : { createdAt: -1 };
+
       results.posts = await Post.find(postQuery)
-      .populate('author', 'username displayName profilePhoto')
-      .sort({ createdAt: -1 })
-      .limit(20);
+        .populate('author', 'username displayName profilePhoto')
+        .sort(sortOrder)
+        .skip(skip)
+        .limit(parseInt(limit));
     }
 
-    // REMOVED 2025-12-26: Hashtag search removed (Phase 5)
-    // Hashtags field no longer exists in Post model
+    // ── Hashtags (content-based) ───────────────────────────────────────────
+    if (!type || type === 'all' || type === 'hashtags') {
+      // Extract hashtag from query (strip leading # if present)
+      const tagWord = q.trim().replace(/^#/, '');
+      const hashtagRegex = new RegExp(`#${escapeRegex(tagWord)}\\b`, 'i');
+
+      const hashtagPostQuery = {
+        content: { $regex: hashtagRegex },
+        groupId: null,
+        visibility: 'public',
+        isAnonymous: { $ne: true },
+        author: { $nin: blockedUserIds }
+      };
+
+      if (from || to) {
+        hashtagPostQuery.createdAt = {};
+        if (from) hashtagPostQuery.createdAt.$gte = new Date(from);
+        if (to)   hashtagPostQuery.createdAt.$lte = new Date(to);
+      }
+
+      results.hashtags = await Post.find(hashtagPostQuery)
+        .populate('author', 'username displayName profilePhoto')
+        .sort({ createdAt: -1 })
+        .limit(20);
+    }
 
     res.json(results);
   } catch (error) {
@@ -91,26 +136,85 @@ router.get('/', auth, searchLimiter, async (req, res) => {
 });
 
 // @route   GET /api/search/hashtag/:tag
-// @desc    DEPRECATED - Hashtag search removed 2025-12-26 (Phase 5)
+// @desc    Posts containing a specific hashtag
 // @access  Private
-router.get('/hashtag/:tag', auth, (req, res) => {
-  res.status(410).json({
-    message: 'Hashtag search has been removed.',
-    deprecated: true,
-    removedDate: '2025-12-26',
-    posts: []
-  });
+router.get('/hashtag/:tag', auth, searchLimiter, async (req, res) => {
+  try {
+    const tag = req.params.tag.replace(/^#/, '');
+    if (!tag) return res.status(400).json({ message: 'Tag is required' });
+
+    const blockedUserIds = await getBlockedUserIds(req.userId);
+    const { page = 1, limit = 20 } = req.query;
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+
+    const query = {
+      content: { $regex: new RegExp(`#${escapeRegex(tag)}\\b`, 'i') },
+      groupId: null,
+      visibility: 'public',
+      isAnonymous: { $ne: true },
+      author: { $nin: blockedUserIds }
+    };
+
+    const [posts, total] = await Promise.all([
+      Post.find(query)
+        .populate('author', 'username displayName profilePhoto')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(parseInt(limit)),
+      Post.countDocuments(query)
+    ]);
+
+    res.json({
+      tag,
+      posts,
+      total,
+      page: parseInt(page),
+      pages: Math.ceil(total / parseInt(limit))
+    });
+  } catch (error) {
+    logger.error('Hashtag search error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
 });
 
 // @route   GET /api/search/trending
-// @desc    DEPRECATED - Trending hashtags removed 2025-12-26 (Phase 5)
+// @desc    Top hashtags (by post count) in the last 7 days
 // @access  Private
-router.get('/trending', auth, (req, res) => {
-  res.status(410).json({
-    message: 'Trending hashtags feature has been removed.',
-    deprecated: true,
-    removedDate: '2025-12-26'
-  });
+router.get('/trending', auth, searchLimiter, async (req, res) => {
+  try {
+    const blockedUserIds = await getBlockedUserIds(req.userId);
+    const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+
+    const posts = await Post.find({
+      createdAt: { $gte: since },
+      visibility: 'public',
+      isAnonymous: { $ne: true },
+      groupId: null,
+      author: { $nin: blockedUserIds },
+      content: { $regex: /#\w+/, $options: 'i' }
+    }).select('content').lean();
+
+    // Extract and count hashtags from content
+    const tagCount = {};
+    const hashtagPattern = /#(\w+)/gi;
+    for (const post of posts) {
+      let match;
+      while ((match = hashtagPattern.exec(post.content)) !== null) {
+        const tag = match[1].toLowerCase();
+        tagCount[tag] = (tagCount[tag] || 0) + 1;
+      }
+    }
+
+    const trending = Object.entries(tagCount)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 20)
+      .map(([tag, count]) => ({ tag, count }));
+
+    res.json({ trending, since });
+  } catch (error) {
+    logger.error('Trending hashtags error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
 });
 
 // @route   GET /api/search/messages
