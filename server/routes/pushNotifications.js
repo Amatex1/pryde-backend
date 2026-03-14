@@ -350,16 +350,14 @@ router.post('/test', auth, async (req, res) => {
       });
     }
 
-    // If a specific device endpoint was provided, verify it is subscribed
+    // If a specific device endpoint was provided but not found, ignore it and send to all
+    let targetEndpoint = null;
     if (endpoint) {
       const deviceSub = allSubs.find(s => s.endpoint === endpoint);
-      if (!deviceSub) {
-        return res.status(400).json({
-          success: false,
-          message: 'This device is not subscribed to notifications. Enable notifications on this device first.',
-          hasSubscription: false
-        });
+      if (deviceSub) {
+        targetEndpoint = endpoint;
       }
+      // If endpoint not found, fall through and send to all subscriptions
     }
 
     let notificationConfig = {
@@ -392,8 +390,8 @@ router.post('/test', auth, async (req, res) => {
       };
     }
 
-    const result = await sendPushNotification(req.user.id, notificationConfig, { targetEndpoint: endpoint || null });
-    const deviceCount = endpoint ? 1 : ((user.pushSubscriptions?.length || 0) || (user.pushSubscription ? 1 : 0));
+    const result = await sendPushNotification(req.user.id, notificationConfig, { targetEndpoint });
+    const deviceCount = targetEndpoint ? 1 : ((user.pushSubscriptions?.length || 0) || (user.pushSubscription ? 1 : 0));
 
     if (result.success) {
       res.json({
