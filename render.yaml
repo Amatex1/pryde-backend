@@ -63,7 +63,31 @@ services:
           type: redis
           name: pryde-redis
           property: internalConnectionString
+      - key: CLAMAV_HOST
+        fromService:
+          type: pserv
+          name: pryde-clamav
+          property: host
+      - key: CLAMAV_PORT
+        value: "3310"
+      - key: FILE_SCAN_PROVIDER
+        value: clamav
+      - key: FILE_SCAN_REJECT_ON_UNAVAILABLE
+        value: "true"
     healthCheckPath: /api/health
+
+  # ClamAV — malware scanning for file uploads (private, not internet-facing)
+  - type: pserv
+    name: pryde-clamav
+    env: docker
+    region: singapore
+    plan: standard
+    dockerfilePath: ./clamav/Dockerfile
+    dockerContext: ./clamav
+    disk:
+      name: clamav-db
+      mountPath: /var/lib/clamav
+      sizeGB: 2
 
   # Redis — distributed rate limiting (co-located with backend in Singapore)
   - type: redis

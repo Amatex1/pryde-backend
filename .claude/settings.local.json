@@ -6,7 +6,18 @@
       "Bash(curl -s \"https://api.resend.com/domains\" -H \"Authorization: Bearer re_iioho97D_CMaXhgXHHqV8JUNkGsSY2gTC\")",
       "Bash(curl -s \"https://api.resend.com/webhooks\" -H \"Authorization: Bearer re_iioho97D_CMaXhgXHHqV8JUNkGsSY2gTC\")",
       "Bash(find 'f:/Desktop/Frontend and Backend Code/pryde-frontend/src' -type f \\\\\\(-iname *admin* -o -iname *email* -o -iname *mailbox* \\\\\\))",
-      "Bash(find 'f:/Desktop/Frontend and Backend Code/pryde-frontend/src' -type f \\\\\\(-name *ecurity* -o -name *ession* -o -name *etting* \\\\\\))"
+      "Bash(find 'f:/Desktop/Frontend and Backend Code/pryde-frontend/src' -type f \\\\\\(-name *ecurity* -o -name *ession* -o -name *etting* \\\\\\))",
+      "Bash(npm show:*)",
+      "Bash(grep -A5 '\"\"devDependencies\"\"' package.json)",
+      "Bash(npm update:*)",
+      "Bash(npm test:*)",
+      "Bash(vercel whoami:*)",
+      "Bash(vercel project:*)",
+      "Bash(vercel env:*)",
+      "Bash(vercel link:*)",
+      "Read(//c/Users/uncsn/**)",
+      "Read(//c/Users/uncsn/.config/render/**)",
+      "Bash(env)"
     ]
   }
 }
