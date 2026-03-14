@@ -83,9 +83,10 @@ const router = express.Router();
 
 const getActorId = (req) => req.user?._id?.toString?.() || req.user?.id || null;
 
-// All debug routes require authentication + admin role
+// Debug routes require admin or super_admin — NOT accessible to moderators
+// (system state, session timelines, deploy data are ops-level, not moderation-level)
 router.use(auth);
-router.use(adminAuth);
+router.use(adminAuth(['admin', 'super_admin']));
 
 // Admin control metadata (separate from PWA state)
 let adminMetadata = {

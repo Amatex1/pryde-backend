@@ -31,6 +31,7 @@ import { createLoginSession, revokeSession, revokeAllSessions } from '../service
 import { createNewMemberSignal } from '../services/communitySignals.js';
 import { clearRefreshTokenCookies, getRefreshTokenCookieOptions } from '../utils/cookieUtils.js';
 import { decryptMessage, isEncrypted } from '../utils/encryption.js';
+import { flagSuspectedMinor } from '../services/minorDetectionService.js';
 // 🔧 BADGE CHURN FIX: Badge processing removed from login (now event-driven + daily sweep)
 
 /**
@@ -304,6 +305,18 @@ router.post('/signup', validateAgeBeforeRateLimit, signupLimiter, validateSignup
         });
       } catch (logError) {
         logger.error('Failed to log underage registration attempt:', logError);
+      }
+
+      // Supplement existing log with minor detection signal
+      try {
+        await flagSuspectedMinor(null, {
+          reason: 'underage_signup_attempt',
+          birthday: req.body.birthday,
+          ip: getClientIp(req),
+          userAgent: req.headers['user-agent']
+        });
+      } catch (flagError) {
+        logger.error('Failed to flag suspected minor on signup:', flagError);
       }
 
       return res.status(403).json({

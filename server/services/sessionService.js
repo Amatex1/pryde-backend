@@ -1,10 +1,12 @@
 import crypto from 'crypto';
 import Session from '../models/Session.js';
 import User from '../models/User.js';
+import SecurityLog from '../models/SecurityLog.js';
 import logger from '../utils/logger.js';
 import { cleanupOldSessions, enforceMaxSessions } from '../utils/sessionUtils.js';
 import { generateTokenPair, getRefreshTokenExpiry } from '../utils/tokenUtils.js';
 import { rotateAuthoritativeSession, PREVIOUS_TOKEN_GRACE_MS } from '../utils/refreshRotation.js';
+import { onSessionFamilyRevoked } from './securityAlertService.js';
 
 export const SESSION_SERVICE_STATUS = {
   SUCCESS: 'success',
@@ -328,8 +330,7 @@ const createManagedSession = async ({
     .filter(Boolean);
 
   if (activeSessions.length > 0 && normalizedDevice && !knownDevices.includes(normalizedDevice)) {
-    console.warn('[SECURITY]', {
-      event: 'new_device_login',
+    logger.warn('[SECURITY] new_device_login', {
       userId: user._id,
       device: normalizedDevice,
       ip: ipAddress
@@ -365,11 +366,17 @@ const createManagedSession = async ({
     sessionData.isActive = false;
     sessionData.revokedAt = now;
     await persistAuthoritativeSession({ user, sessionData, upsert, logLabel });
-    console.warn('[SESSION SECURITY]', {
-      event: 'risk_threshold_exceeded',
+    logger.warn('[SESSION SECURITY] risk_threshold_exceeded on create', {
       userId: user._id,
       sessionId
     });
+    SecurityLog.create({
+      type: 'suspicious_activity',
+      severity: 'high',
+      userId: user._id,
+      details: `Session creation blocked: risk score ${sessionData.riskScore} exceeded threshold ${SESSION_RISK_THRESHOLD}.`,
+      action: 'blocked'
+    }).catch(e => logger.error('Failed to log session risk event:', e.message));
     throw buildSessionSecurityError(SESSION_SECURITY_RISK, 'Session risk threshold exceeded');
   }
 
@@ -547,11 +554,17 @@ export const touchSessionActivity = async ({
       { _id: userId },
       { $pull: { activeSessions: { sessionId } } }
     );
-    console.warn('[SESSION SECURITY]', {
-      event: 'risk_threshold_exceeded',
+    logger.warn('[SESSION SECURITY] risk_threshold_exceeded on activity', {
       userId: session.userId,
       sessionId: session.sessionId
     });
+    SecurityLog.create({
+      type: 'suspicious_activity',
+      severity: 'high',
+      userId: session.userId,
+      details: `Session revoked during activity: risk score ${session.riskScore} exceeded threshold ${SESSION_RISK_THRESHOLD}.`,
+      action: 'blocked'
+    }).catch(e => logger.error('Failed to log session risk event:', e.message));
     throw buildSessionSecurityError(SESSION_SECURITY_RISK, 'Session risk threshold exceeded');
   }
 
@@ -694,6 +707,16 @@ const resolveRefreshSessionState = async ({ user, sessionId, refreshToken }) => 
   };
 };
 
+// Idle timeout for DB-backed sessions (30 minutes by default)
+// This replaces the removed in-memory sessionTimeout middleware which caused
+// logout on server restart. The Session.lastActiveAt field is authoritative.
+const SESSION_IDLE_TIMEOUT_MS = parseInt(
+  process.env.SESSION_IDLE_TIMEOUT_MS || String(30 * 60 * 1000), // 30 minutes default
+  10
+);
+
+export { SESSION_IDLE_TIMEOUT_MS };
+
 export const rotateRefreshSession = async ({
   user,
   sessionId,
@@ -712,6 +735,30 @@ export const rotateRefreshSession = async ({
   const { session, legacySession, sessionIndex, legacyMigrated } = resolvedState;
   const tokenExpiry = session?.refreshTokenExpiry || legacySession?.refreshTokenExpiry;
   const now = new Date();
+
+  // DB-backed idle timeout check (safe across server restarts)
+  if (session?.lastActiveAt && SESSION_IDLE_TIMEOUT_MS > 0) {
+    const idleMs = now.getTime() - new Date(session.lastActiveAt).getTime();
+    if (idleMs > SESSION_IDLE_TIMEOUT_MS) {
+      await Session.updateOne(
+        { sessionId, userId: user._id },
+        { $set: { isActive: false, revokedAt: now } }
+      );
+      await revokeCachedUserSession({ user, sessionId });
+      logger.info(`[SessionTimeout] Session ${sessionId} idle-expired after ${Math.round(idleMs / 60000)}m`);
+      SecurityLog.create({
+        type: 'session_expired',
+        severity: 'info',
+        userId: user._id,
+        details: `Session idle-expired after ${Math.round(idleMs / 60000)} minutes of inactivity.`,
+        action: 'logged'
+      }).catch(e => logger.error('Failed to log session_expired:', e.message));
+      return {
+        status: SESSION_SERVICE_STATUS.EXPIRED,
+        reason: 'idle_timeout'
+      };
+    }
+  }
 
   if (tokenExpiry && new Date() > tokenExpiry) {
     if (session) {
@@ -738,15 +785,32 @@ export const rotateRefreshSession = async ({
   const matchesPrevious = !!previousHash && incomingHash === previousHash && withinGrace;
 
   if (session && !matchesCurrent && !matchesPrevious) {
-    session.isActive = false;
-    session.revokedAt = now;
-    await session.save();
-    await revokeCachedUserSession({ user, sessionId });
-    console.warn('[SESSION SECURITY]', {
-      event: 'refresh_token_reuse',
+    // SECURITY: Revoke the ENTIRE session family for this user.
+    // A reused refresh token means one may be stolen — we cannot trust any session.
+    const revokeResult = await revokeAllSessions({ userId: user._id });
+    logger.warn('[SESSION SECURITY] refresh_token_reuse — entire session family revoked', {
       userId: session.userId,
-      sessionId: session.sessionId
+      sessionId: session.sessionId,
+      revokedCount: revokeResult.revokedCount
     });
+    SecurityLog.create({
+      type: 'refresh_token_reuse_detected',
+      severity: 'critical',
+      userId: session.userId,
+      details: `Refresh token reuse detected for session ${session.sessionId}. Entire session family revoked (${revokeResult.revokedCount} sessions).`,
+      action: 'blocked'
+    }).catch(e => logger.error('Failed to log refresh_token_reuse_detected:', e.message));
+    SecurityLog.create({
+      type: 'session_family_revoked',
+      severity: 'critical',
+      userId: session.userId,
+      details: `All ${revokeResult.revokedCount} sessions revoked for user due to refresh token reuse on session ${session.sessionId}.`,
+      action: 'blocked'
+    }).catch(e => logger.error('Failed to log session_family_revoked:', e.message));
+    // Fire real-time alert (non-blocking)
+    onSessionFamilyRevoked(String(session.userId)).catch(e =>
+      logger.error('Failed to dispatch session family revoked alert:', e.message)
+    );
     throw buildSessionSecurityError(SESSION_REUSE_DETECTED, 'Refresh token reuse detected');
   }
 
@@ -791,11 +855,17 @@ export const rotateRefreshSession = async ({
     session.revokedAt = now;
     await session.save();
     await revokeCachedUserSession({ user, sessionId });
-    console.warn('[SESSION SECURITY]', {
-      event: 'risk_threshold_exceeded',
+    logger.warn('[SESSION SECURITY] risk_threshold_exceeded on rotation', {
       userId: session.userId,
       sessionId: session.sessionId
     });
+    SecurityLog.create({
+      type: 'suspicious_activity',
+      severity: 'high',
+      userId: session.userId,
+      details: `Session revoked during rotation: risk score ${nextRiskScore} exceeded threshold ${SESSION_RISK_THRESHOLD}.`,
+      action: 'blocked'
+    }).catch(e => logger.error('Failed to log session risk event:', e.message));
     throw buildSessionSecurityError(SESSION_SECURITY_RISK, 'Session risk threshold exceeded');
   }
 

@@ -28,7 +28,24 @@ const securityLogSchema = new mongoose.Schema({
       'login_after_inactivity',
       'invite_created',
       'invite_used',
-      'invite_revoked'
+      'invite_revoked',
+      'underage_profile_update_attempt',
+      'suspected_minor_signal',
+      // Moderation pipeline signals (Phase 5)
+      'reported_content_threshold_reached',
+      'reported_user_threshold_reached',
+      'high_severity_report_submitted',
+      // Session & token security
+      'refresh_token_rotated',
+      'refresh_token_reuse_detected',
+      'session_family_revoked',
+      'session_expired',
+      'security_alert_triggered',
+      // Upload security
+      'malware_scan_failed',
+      'malware_detected_upload',
+      // API docs access control
+      'swagger_access_blocked'
     ],
     required: true
   },

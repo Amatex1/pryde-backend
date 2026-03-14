@@ -13,6 +13,8 @@ import { Readable } from 'stream';
 // R2 Storage import
 import { initR2, uploadToR2, deleteFromR2, getObjectStream, isR2Enabled } from '../utils/r2Storage.js';
 import { createLogger } from '../utils/logger.js';
+// Malware scanning hook (pluggable: FILE_SCAN_PROVIDER=none|clamav|virustotal)
+import { fileScanMiddleware } from '../services/fileScanService.js';
 
 const logger = createLogger('upload');
 
@@ -187,10 +189,20 @@ export const deleteFromGridFS = async (fileUrl) => {
  * @param {Object} file - Multer file object
  * @param {boolean|Object} generateSizes - Whether to generate responsive sizes, or options object
  */
-const saveToGridFS = async (file, generateSizes = false) => {
+const saveToGridFS = async (file, generateSizes = false, userId = null) => {
   let buffer = file.buffer;
   let contentType = file.mimetype;
   let sizes = null;
+
+  // ── Malware scan (runs before any processing or storage) ──────────────────
+  const { scanFile } = await import('../services/fileScanService.js');
+  const scanResult = await scanFile(buffer, file.originalname, userId);
+  if (!scanResult.clean && !scanResult.skipped) {
+    const err = new Error('File rejected: malware detected.');
+    err.code = 'MALWARE_DETECTED';
+    throw err;
+  }
+  // ─────────────────────────────────────────────────────────────────────────
 
   // Process and optimize images (strip EXIF, convert to WebP, compress)
   // Sharp decode implicitly validates magic bytes for images — non-images will throw

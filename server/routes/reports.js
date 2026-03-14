@@ -1,18 +1,22 @@
 import express from 'express';
 const router = express.Router();
 import Report from '../models/Report.js';
+import User from '../models/User.js';
 import auth from '../middleware/auth.js';
+import { flagSuspectedMinor } from '../services/minorDetectionService.js';
 import { reportLimiter } from '../middleware/rateLimiter.js';
 import { sanitizeFields } from '../middleware/sanitize.js';
 import { validateParamId } from '../middleware/validation.js';
 import { createLogger } from '../utils/logger.js';
+import { buildContentSnapshot } from '../services/reportSnapshotService.js';
+import { computeSeverity } from '../services/reportSeverityService.js';
+import { evaluateReportSignals } from '../services/reportSignalService.js';
 
 const logger = createLogger('reports');
 
 // @route   POST /api/reports
 // @desc    Create a new report
 // @access  Private
-// 🔥 FIX: Added sanitizeFields to prevent XSS via description field
 router.post('/', auth, reportLimiter, sanitizeFields(['description', 'reason']), async (req, res) => {
   try {
     const { reportType, reportedContent, reportedUser, reason, description } = req.body;
@@ -26,21 +30,41 @@ router.post('/', auth, reportLimiter, sanitizeFields(['description', 'reason']),
     // Determine the model based on report type
     let onModel;
     switch (reportType) {
-      case 'post':
-        onModel = 'Post';
-        break;
-      case 'comment':
-        onModel = 'Comment';
-        break;
-      case 'message':
-        onModel = 'Message';
-        break;
-      case 'user':
-        onModel = 'User';
-        break;
+      case 'post':    onModel = 'Post';    break;
+      case 'comment': onModel = 'Comment'; break;
+      case 'message': onModel = 'Message'; break;
+      case 'user':    onModel = 'User';    break;
       default:
         return res.status(400).json({ message: 'Invalid report type' });
     }
+
+    // ── Phase 1: Duplicate-report guard ──────────────────────────────────────
+    // One active report per (reporter, reportType, reportedContent) triplet.
+    // If the prior report was resolved or dismissed a new report is allowed.
+    const existingReport = await Report.findOne({
+      reporter: userId,
+      reportType,
+      reportedContent: reportedContent || null,
+      status: { $in: ['pending', 'reviewing'] }
+    }).lean();
+
+    if (existingReport) {
+      return res.status(400).json({
+        message: 'You have already reported this content.',
+        existingReportId: existingReport._id
+      });
+    }
+
+    // ── Phase 3: Capture immutable content snapshot ───────────────────────────
+    const contentSnapshot = await buildContentSnapshot(reportType, reportedContent);
+
+    // ── Phase 4: Compute severity score ──────────────────────────────────────
+    const { severityScore, severityLabel } = await computeSeverity(
+      reason,
+      reportType,
+      reportedContent || null,
+      reportedUser || null
+    );
 
     const report = new Report({
       reporter: userId,
@@ -50,14 +74,53 @@ router.post('/', auth, reportLimiter, sanitizeFields(['description', 'reason']),
       onModel,
       reason,
       description: description || '',
-      status: 'pending'
+      status: 'pending',
+      contentSnapshot: contentSnapshot || undefined,
+      severityScore,
+      severityLabel
     });
 
     await report.save();
 
-    res.status(201).json({ 
+    // ── Improvement 2: Increment reported user's report counter ──────────────
+    if (reportedUser) {
+      User.updateOne(
+        { _id: reportedUser },
+        { $inc: { reportCount: 1 }, $set: { lastReportedAt: new Date() } }
+      ).catch(err => logger.error('Failed to increment reportCount', err));
+    }
+
+    // ── Phase 5: Emit moderation signals (non-blocking) ──────────────────────
+    evaluateReportSignals(report, req).catch(err =>
+      logger.error('evaluateReportSignals error', err)
+    );
+
+    // Minor-detection hook (existing behaviour preserved)
+    const lowerReason = (reason || '').toLowerCase();
+    const lowerDescription = (description || '').toLowerCase();
+    if (
+      lowerReason.includes('underage') || lowerReason.includes('minor') ||
+      lowerDescription.includes('underage') || lowerDescription.includes('minor')
+    ) {
+      try {
+        let targetUser = null;
+        if (reportedUser) {
+          targetUser = await User.findById(reportedUser).select('_id username email').lean();
+        }
+        await flagSuspectedMinor(targetUser, {
+          reason: 'user_reported_underage',
+          reporterId: userId,
+          ip: req.ip,
+          userAgent: req.headers['user-agent']
+        });
+      } catch (flagError) {
+        logger.error('Failed to flag suspected minor from report:', flagError);
+      }
+    }
+
+    res.status(201).json({
       message: 'Report submitted successfully. We will review it shortly.',
-      report 
+      report
     });
   } catch (error) {
     logger.error('Create report error', error);
@@ -98,7 +161,6 @@ router.get('/:id', auth, validateParamId('id'), async (req, res) => {
       return res.status(404).json({ message: 'Report not found' });
     }
 
-    // Only reporter can view their own report
     if (report.reporter._id.toString() !== userId.toString()) {
       return res.status(403).json({ message: 'Not authorized' });
     }
@@ -122,7 +184,6 @@ router.delete('/:id', auth, validateParamId('id'), async (req, res) => {
       return res.status(404).json({ message: 'Report not found' });
     }
 
-    // Only reporter can delete their own report if it's still pending
     if (report.reporter.toString() !== userId.toString()) {
       return res.status(403).json({ message: 'Not authorized' });
     }
@@ -141,4 +202,3 @@ router.delete('/:id', auth, validateParamId('id'), async (req, res) => {
 });
 
 export default router;
-

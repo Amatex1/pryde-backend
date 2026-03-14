@@ -34,6 +34,25 @@ const validateConfig = () => {
       console.warn('WARNING: Firebase not configured — native Android/iOS push notifications will not work. Set FIREBASE_SERVICE_ACCOUNT_JSON or FIREBASE_SERVICE_ACCOUNT_PATH.');
     }
     
+    // Message Encryption Key — REQUIRED in production for PII and message encryption
+    const encKey = process.env.MESSAGE_ENCRYPTION_KEY;
+    if (!encKey) {
+      throw new Error('CRITICAL: MESSAGE_ENCRYPTION_KEY is required in production! Generate with: node -e "console.log(require(\'crypto\').randomBytes(32).toString(\'hex\'))"');
+    }
+    if (encKey.length !== 64) {
+      throw new Error(`CRITICAL: MESSAGE_ENCRYPTION_KEY must be exactly 64 hex characters (32 bytes). Got ${encKey.length} characters.`);
+    }
+    if (!/^[0-9a-fA-F]{64}$/.test(encKey)) {
+      throw new Error('CRITICAL: MESSAGE_ENCRYPTION_KEY must be a valid 64-character hex string.');
+    }
+    const INSECURE_KEY_PATTERNS = [
+      'dev-key', 'test-key', 'changeme', '0000000000000000', 'ffffffffffffffff',
+      '1234567890abcdef', 'abcdefabcdefabcd'
+    ];
+    if (INSECURE_KEY_PATTERNS.some(p => encKey.toLowerCase().includes(p))) {
+      throw new Error('CRITICAL: MESSAGE_ENCRYPTION_KEY appears to be a placeholder or insecure value. Use a cryptographically random 32-byte hex key.');
+    }
+
     // R2/CDN Validation - RECOMMENDED for production
     if (process.env.R2_ENABLED !== 'true') {
       console.warn('WARNING: R2 storage not enabled - media will use GridFS (slower, no CDN). Set R2_ENABLED=true for production.');

@@ -1,11 +1,13 @@
 import express from 'express';
 const router = express.Router();
 import User from '../models/User.js';
+import SecurityLog from '../models/SecurityLog.js';
+import { onRefreshTokenReuse } from '../services/securityAlertService.js';
 import { verifyRefreshToken } from '../utils/tokenUtils.js';
 import { getClientIp, parseUserAgent } from '../utils/sessionUtils.js';
 import { clearRefreshTokenCookies, getRefreshTokenCookieOptions } from '../utils/cookieUtils.js';
 import { SESSION_ROTATION_CONFLICT } from '../utils/refreshRotation.js';
-import { rotateRefreshSession, SESSION_SERVICE_STATUS } from '../services/sessionService.js';
+import { rotateRefreshSession, SESSION_SERVICE_STATUS, SESSION_REUSE_DETECTED } from '../services/sessionService.js';
 import logger from '../utils/logger.js';
 import { incCounter, logRefreshFailure, logRevokedSessionAccess } from '../utils/authMetrics.js'; // Phase 4A
 import { refreshLimiter } from '../middleware/rateLimiter.js';
@@ -178,11 +180,42 @@ router.post('/', refreshLimiter, async (req, res) => {
       });
     }
 
+    // Token reuse detected — revoke session and log security event
+    if (error.code === SESSION_REUSE_DETECTED) {
+      const ipAddress = getClientIp(req);
+      logger.warn('🔴 Refresh token reuse detected', {
+        ip: ipAddress,
+        userAgent: req.headers['user-agent']
+      });
+      try {
+        await SecurityLog.create({
+          type: 'refresh_token_reuse_detected',
+          severity: 'critical',
+          ipAddress,
+          userAgent: req.headers['user-agent'],
+          details: 'Refresh token reuse detected — session revoked. Possible token theft.',
+          action: 'blocked'
+        });
+      } catch (logErr) {
+        logger.error('Failed to log token reuse event:', logErr.message);
+      }
+      // Fire real-time alert (non-blocking)
+      onRefreshTokenReuse(ipAddress).catch(e =>
+        logger.error('Failed to dispatch reuse alert:', e.message)
+      );
+      // Clear the cookie so the attacker cannot retry
+      clearRefreshTokenCookies(res, req);
+      return res.status(401).json({
+        success: false,
+        message: 'Session security violation. Please log in again.',
+        code: 'REFRESH_TOKEN_REUSE'
+      });
+    }
+
     logger.error('Token refresh error:', error.message);
-    res.status(500).json({ 
+    res.status(500).json({
       success: false,
-      message: 'Server error during token refresh',
-      error: error.message 
+      message: 'Server error during token refresh'
     });
   }
 });

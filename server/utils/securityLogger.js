@@ -1,4 +1,5 @@
 import SecurityLog from '../models/SecurityLog.js';
+import { sanitizeSecurityLogPayload } from './securityLogSanitizer.js';
 
 /**
  * Log a security event
@@ -25,10 +26,13 @@ export const logSecurityEvent = async (eventData) => {
       ipAddress = null,
       userAgent = null,
       details = '',
-      action = 'logged'
+      action = 'logged',
+      birthday = undefined,
+      calculatedAge = undefined
     } = eventData;
 
-    const securityLog = new SecurityLog({
+    // Sanitize PII before persisting: redact email, mask IP, strip exact birthday
+    const sanitized = sanitizeSecurityLogPayload({
       type,
       severity,
       userId,
@@ -37,12 +41,14 @@ export const logSecurityEvent = async (eventData) => {
       ipAddress,
       userAgent,
       details,
-      action
+      action,
+      ...(birthday !== undefined && { birthday }),
+      ...(calculatedAge !== undefined && { calculatedAge })
     });
 
+    const securityLog = new SecurityLog(sanitized);
     await securityLog.save();
-    console.log(`🔒 Security event logged: ${type} (${severity})`);
-    
+
     return securityLog;
   } catch (error) {
     console.error('Error logging security event:', error);
@@ -71,6 +77,7 @@ export const logPasswordChange = async (user, ipAddress, userAgent) => {
  * Log email change event
  */
 export const logEmailChange = async (user, oldEmail, newEmail, ipAddress, userAgent) => {
+  // Don't include raw email addresses in details — correlation is via the hashed email field
   return logSecurityEvent({
     type: 'email_changed',
     severity: 'high',
@@ -79,7 +86,7 @@ export const logEmailChange = async (user, oldEmail, newEmail, ipAddress, userAg
     email: newEmail,
     ipAddress,
     userAgent,
-    details: `Email changed from ${oldEmail} to ${newEmail}`
+    details: 'User changed their email address'
   });
 };
 

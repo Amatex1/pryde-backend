@@ -57,8 +57,10 @@ import sessionsRoutes, { setSocketIO } from './routes/sessions.js';
 import auth from './middleware/auth.js';
 import requireActiveUser from './middleware/requireActiveUser.js';
 const restrictionMiddleware = [auth, requireActiveUser];
-// DISABLED 2026-01-17: In-memory session timeout was causing logout on server restart
-// import { trackActivity, checkSessionTimeout } from './middleware/sessionTimeout.js';
+// In-memory sessionTimeout middleware is PERMANENTLY DISABLED (caused logout on server restart).
+// Session idle timeout is now enforced via Session.lastActiveAt in rotateRefreshSession()
+// (see server/services/sessionService.js — SESSION_IDLE_TIMEOUT_MS, default 30 min).
+// Configurable via SESSION_IDLE_TIMEOUT_MS env var (0 = disabled).
 import { setCsrfToken, enforceCsrf } from './middleware/csrf.js';
 import { requestId, requestTimeout, apiSecurityHeaders, safeJsonResponse } from './middleware/hardening.js';
 import { detectAttacks } from './middleware/attackDetection.js';
@@ -86,6 +88,7 @@ import {
 import { initFeedCache } from './utils/redisCache.js';
 // Import R2 storage
 import { initR2 } from './utils/r2Storage.js';
+import { logFileScanStartupStatus } from './services/fileScanService.js';
 
 import { connectDB } from './utils/dbManager.js';
 import config from "./config/config.js";
@@ -564,6 +567,7 @@ if (shouldStartHttpServer) {
         logger.info('⚠️ In-memory rate limiting (Redis not configured)');
       }
       logger.info('✅ Security headers enabled');
+      logFileScanStartupStatus();
 
     // Daily backup system is DISABLED by default
     // To enable daily backups, set ENABLE_AUTO_BACKUP=true in your .env file

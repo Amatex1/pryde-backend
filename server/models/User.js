@@ -1,6 +1,50 @@
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
+import { encryptMessage, decryptMessage, isEncrypted } from '../utils/encryption.js';
+
+// ── PII Field Encryption Helpers ───────────────────────────────────────────
+// Applied transparently via Mongoose schema get/set on sensitive fields.
+// Uses AES-256-GCM (MESSAGE_ENCRYPTION_KEY). Backward-compatible: existing
+// plaintext values are returned as-is on read and re-encrypted on next save.
+
+const _piiEncrypt = (value) => {
+  if (value === null || value === undefined || value === '') return value;
+  if (isEncrypted(value)) return value; // already encrypted
+  try {
+    return encryptMessage(String(value));
+  } catch {
+    // If encryption unavailable (e.g., test env without key), store plaintext
+    return value;
+  }
+};
+
+const _piiDecryptString = (value) => {
+  if (value === null || value === undefined || value === '') return value;
+  if (!isEncrypted(value)) return value; // legacy plaintext
+  try {
+    return decryptMessage(value);
+  } catch {
+    return null; // decryption failure — never leak ciphertext to callers
+  }
+};
+
+const _piiDecryptDate = (value) => {
+  if (value === null || value === undefined) return null;
+  if (value instanceof Date) return value; // legacy stored as BSON Date
+  if (!isEncrypted(value)) {
+    const d = new Date(value);
+    return isNaN(d.getTime()) ? null : d;
+  }
+  try {
+    const decrypted = decryptMessage(value);
+    const d = new Date(decrypted);
+    return isNaN(d.getTime()) ? null : d;
+  } catch {
+    return null;
+  }
+};
+// ─────────────────────────────────────────────────────────────────────────────
 
 const userSchema = new mongoose.Schema({
   username: {
@@ -83,22 +127,37 @@ const userSchema = new mongoose.Schema({
   pronouns: {
     type: String,
     default: null,
-    trim: true
+    trim: true,
+    get: _piiDecryptString,
+    set: _piiEncrypt
   },
   gender: {
     type: String,
     default: '',
-    trim: true
+    trim: true,
+    get: _piiDecryptString,
+    set: _piiEncrypt
   },
   sexualOrientation: {
     type: String,
     default: '',
-    trim: true
+    trim: true,
+    get: _piiDecryptString,
+    set: _piiEncrypt
   },
   // REMOVED 2025-12-26: relationshipStatus field deleted (Phase 5)
+  // birthday: type Mixed (was Date) — stores encrypted ISO string for new records,
+  // legacy BSON Date values are returned as-is until the record is next saved.
   birthday: {
-    type: Date,
-    default: null
+    type: mongoose.Schema.Types.Mixed,
+    default: null,
+    get: _piiDecryptDate,
+    set: (v) => {
+      if (v === null || v === undefined) return null;
+      // Normalise: if it's already a Date, convert to ISO string for encryption
+      const iso = v instanceof Date ? v.toISOString() : String(v);
+      return _piiEncrypt(iso);
+    }
   },
   bio: {
     type: String,
@@ -1336,6 +1395,18 @@ const userSchema = new mongoose.Schema({
     default: null
   },
 
+  // Improvement 2: Running tally of reports received — enables early-warning
+  // signals (e.g. 5 reports → moderation review, 10 → trust score penalty)
+  reportCount: {
+    type: Number,
+    default: 0,
+    min: 0
+  },
+  lastReportedAt: {
+    type: Date,
+    default: null
+  },
+
   // ============================================================================
   // Life-Signal Feature 1: Reflection Prompt Preferences
   // ============================================================================
@@ -1469,7 +1540,8 @@ userSchema.methods.migrateRefreshToken = function (session, token) {
 
 // Method to get public profile
 userSchema.methods.toJSON = function() {
-  const user = this.toObject();
+  // getters: true ensures PII fields are decrypted before serialisation
+  const user = this.toObject({ getters: true });
   delete user.password;
   delete user.twoFactorSecret;
   delete user.twoFactorBackupCodes;

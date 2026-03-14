@@ -23,6 +23,9 @@ import { escapeRegex } from '../utils/sanitize.js';
 import { sendAccountDeletionEmail } from '../utils/emailService.js';
 import { encryptObject, decryptObject } from '../utils/encryption.js';
 import { logAccountDeletion } from '../utils/securityLogger.js';
+import calculateAge from '../utils/calculateAge.js';
+import SecurityLog from '../models/SecurityLog.js';
+import { flagSuspectedMinor } from '../services/minorDetectionService.js';
 import { calculateTrustScore } from '../utils/trustScore.js';
 import { getTrustLevel } from '../utils/trustLevel.js';
 
@@ -672,7 +675,42 @@ router.put('/profile', auth, requireActiveUser, sanitizeFields([
       }
     }
     // DEPRECATED 2025-12-26: relationshipStatus update removed (UI removed)
-    if (birthday !== undefined) user.birthday = birthday;
+    if (birthday !== undefined) {
+      const age = calculateAge(birthday);
+      if (age < 18) {
+        try {
+          await SecurityLog.create({
+            type: 'underage_profile_update_attempt',
+            severity: 'high',
+            userId: user._id,
+            username: user.username,
+            email: user.email,
+            birthday: new Date(birthday),
+            calculatedAge: age,
+            ipAddress: req.ip,
+            userAgent: req.headers['user-agent'],
+            details: `User attempted to update birthday to an underage date. Age: ${age} years old.`,
+            action: 'blocked'
+          });
+        } catch (logError) {
+          logger.error('Failed to log underage profile update attempt:', logError);
+        }
+        try {
+          await flagSuspectedMinor(user, {
+            reason: 'profile_birthday_change_attempt',
+            birthday,
+            ip: req.ip,
+            userAgent: req.headers['user-agent']
+          });
+        } catch (flagError) {
+          logger.error('Failed to flag suspected minor on birthday update:', flagError);
+        }
+        return res.status(403).json({
+          message: 'Pryde is strictly for users 18 years and older.'
+        });
+      }
+      user.birthday = birthday;
+    }
     if (bio !== undefined) user.bio = bio;
     if (postcode !== undefined) user.postcode = postcode;
     if (city !== undefined) user.city = city;

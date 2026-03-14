@@ -76,6 +76,7 @@ import adminEscalationRoutes from './routes/adminEscalation.js';
 import adminDebugRoutes from './routes/adminDebug.js';
 import adminHealthRoutes from './routes/adminHealth.js';
 import adminModerationV2Routes from './routes/adminModerationV2.js';
+import adminPlatformBrainRoutes from './routes/adminPlatformBrain.js';
 import requireAdmin2FA from './middleware/requireAdmin2FA.js';
 
 // ── System & infrastructure ───────────────────────────────────────────────────
@@ -168,6 +169,7 @@ export function mountRoutes(app, { restrictionMiddleware, requireDatabaseReady }
   app.use('/api/admin/debug', requireDatabaseReady, adminDebugRoutes);
   app.use('/api/admin/health', requireDatabaseReady, adminHealthRoutes);
   app.use('/api/admin/moderation-v2', requireDatabaseReady, adminModerationV2Routes);
+  app.use('/api/admin/platform-brain', requireDatabaseReady, requireAdmin2FA, adminPlatformBrainRoutes);
 
   // System
   app.use('/api/version', versionRoutes); // static — no DB access

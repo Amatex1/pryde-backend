@@ -11,6 +11,7 @@ import ModerationSettings from '../models/ModerationSettings.js';
 import AdminActionLog from '../models/AdminActionLog.js'; // PHASE D: Admin action logs
 import auth from '../middleware/auth.js';
 import adminEmailsRoutes from './adminEmails.js';
+import adminReportsRoutes from './adminReports.js';
 import adminAuth, { checkPermission } from '../middleware/adminAuth.js';
 import requireAdminEscalation from '../middleware/requireAdminEscalation.js'; // Privileged Admin Escalation
 import crypto from 'crypto';
@@ -59,6 +60,9 @@ router.use(adminAuth);
 
 // Email inbox routes (admin only)
 router.use('/emails', adminEmailsRoutes);
+
+// Report moderation pipeline (Phase 2+6) — replaces the inline report routes below
+router.use('/reports', adminReportsRoutes);
 
 // @route   GET /api/admin/stats
 // @desc    Get platform statistics
@@ -122,82 +126,8 @@ router.get('/stats', checkPermission('canViewAnalytics'), async (req, res) => {
   }
 });
 
-// @route   GET /api/admin/reports
-// @desc    Get all reports with filters
-// @access  Admin (canViewReports)
-router.get('/reports', checkPermission('canViewReports'), async (req, res) => {
-  try {
-    const { status, reportType, page = 1, limit = 20 } = req.query;
-
-    const query = {};
-    if (status) query.status = status;
-    if (reportType) query.reportType = reportType;
-
-    const reports = await Report.find(query)
-      .populate('reporter', 'username displayName email profilePhoto')
-      .populate('reportedUser', 'username displayName email profilePhoto')
-      .populate('reportedPost')
-      .populate('reportedComment')
-      .populate('reviewedBy', 'username displayName')
-      .sort({ createdAt: -1 })
-      .limit(parseInt(limit))
-      .skip((parseInt(page) - 1) * parseInt(limit));
-
-    // Populate nested content for posts and comments
-    for (let report of reports) {
-      if (report.reportedPost) {
-        await report.populate('reportedPost.author', 'username displayName profilePhoto');
-      }
-      if (report.reportedComment) {
-        await report.populate('reportedComment.user', 'username displayName profilePhoto');
-      }
-    }
-
-    const total = await Report.countDocuments(query);
-
-    res.json({
-      reports,
-      pagination: {
-        page: parseInt(page),
-        limit: parseInt(limit),
-        total,
-        pages: Math.ceil(total / parseInt(limit))
-      }
-    });
-  } catch (error) {
-    logger.error('Get reports error', { error: error.message, requestId: req.requestId });
-    res.status(500).json({ message: 'Server error' });
-  }
-});
-
-// @route   PUT /api/admin/reports/:id
-// @desc    Update report status
-// @access  Admin (canResolveReports)
-router.put('/reports/:id', checkPermission('canResolveReports'), async (req, res) => {
-  try {
-    const { status, reviewNotes, action } = req.body;
-    const adminUserId = req.adminUser._id;
-
-    const report = await Report.findById(req.params.id);
-    
-    if (!report) {
-      return res.status(404).json({ message: 'Report not found' });
-    }
-
-    report.status = status || report.status;
-    report.reviewNotes = reviewNotes || report.reviewNotes;
-    report.action = action || report.action;
-    report.reviewedBy = adminUserId;
-    report.reviewedAt = new Date();
-
-    await report.save();
-
-    res.json({ message: 'Report updated successfully', report });
-  } catch (error) {
-    logger.error('Update report error', { error: error.message, requestId: req.requestId });
-    res.status(500).json({ message: 'Server error' });
-  }
-});
+// NOTE: Report routes (/api/admin/reports) are now handled by
+// server/routes/adminReports.js (mounted above via router.use('/reports', ...)).
 
 // @route   GET /api/admin/users
 // @desc    Get all users with filters
