@@ -55,17 +55,15 @@ export const runTrendingJob = async () => {
     
     const redisClient = getRedisClient();
     
-    // Calculate time window
-    const timeWindowStart = new Date(
-      Date.now() - (TRENDING_CONFIG.timeWindowHours * 60 * 60 * 1000)
-    );
+    // IDEMPOTENT: Skip posts already scored recently (TASK #7)
+    const cutoff = new Date(Date.now() - 15 * 60 * 1000); // 15min ago
     
-    // Fetch posts from last 24 hours with visibility 'public'
     const posts = await Post.find({
       visibility: 'public',
       createdAt: { $gte: timeWindowStart },
-      groupId: null,  // Exclude group posts
-      circleId: null   // Exclude circle posts
+      groupId: null,
+      circleId: null,
+      lastTrendingScoreAt: { $lt: cutoff } // Only unscored recently
     })
     .select('_id author content createdAt reactions comments')
     .populate('author', 'username displayName profilePhoto')

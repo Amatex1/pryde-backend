@@ -56,23 +56,12 @@ const securityLogSchema = new mongoose.Schema({
   },
   username: {
     type: String,
-    default: null
-  },
-  email: {
-    type: String,
-    default: null
+    default: null,
+    maxlength: 50 // Truncated usernames only
   },
   userId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
-    default: null
-  },
-  birthday: {
-    type: Date,
-    default: null
-  },
-  calculatedAge: {
-    type: Number,
     default: null
   },
   ipAddress: {

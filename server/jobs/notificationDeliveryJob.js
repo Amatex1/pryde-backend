@@ -29,9 +29,11 @@ async function processTick(io) {
   try {
     const now = new Date();
 
+    // IDEMPOTENT: Only notifications not processed in last run (TASK #7)
     const due = await Notification.find({
       delivered: false,
-      deliveryScheduledAt: { $lte: now }
+      deliveryScheduledAt: { $lte: now },
+      lastProcessedAttempt: { $lt: new Date(now.getTime() - 60000) } // Skip recent attempts
     })
       .populate('sender', 'username displayName profilePhoto')
       .populate('actorIds', 'username displayName profilePhoto')
@@ -40,18 +42,24 @@ async function processTick(io) {
 
     if (due.length === 0) return;
 
-    // Mark all as delivered in one bulk write before emitting
+    // IDEMPOTENT: Mark delivered + timestamp
     const ids = due.map(n => n._id);
     await Notification.updateMany(
       { _id: { $in: ids } },
-      { $set: { delivered: true } }
+      { 
+        $set: { 
+          delivered: true,
+          lastProcessedAt: now,
+          lastProcessedAttempt: now 
+        }
+      }
     );
 
     for (const notif of due) {
       io.to(`user_${notif.recipient}`).emit('notification:new', { notification: notif });
     }
 
-    logger.info(`[DeliveryJob] Delivered ${due.length} pending notification(s)`);
+    logger.info(`[DeliveryJob] Delivered ${due.length} notifications (idempotent)`);
   } catch (err) {
     logger.error('[DeliveryJob] Tick error:', err);
   }

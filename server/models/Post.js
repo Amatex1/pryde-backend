@@ -232,7 +232,26 @@ const postSchema = new mongoose.Schema({
     ref: 'User',
     default: null
   },
-  // REMOVED 2025-12-26: editHistory deleted (Phase 5)
+  // RESTORED Phase 2: Twitter-style edit history (TASK #6)
+  editHistory: [{
+    editedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: true
+    },
+    editedContent: {
+      type: String,
+      required: true
+    },
+    editedAt: {
+      type: Date,
+      default: Date.now
+    },
+    reason: {
+      type: String,
+      default: ''
+    }
+  }],
   // Poll feature
   poll: {
     question: {

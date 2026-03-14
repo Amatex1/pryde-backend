@@ -15,13 +15,15 @@ import adminReportsRoutes from './adminReports.js';
 import adminAuth, { checkPermission } from '../middleware/adminAuth.js';
 import requireAdminEscalation from '../middleware/requireAdminEscalation.js'; // Privileged Admin Escalation
 import crypto from 'crypto';
-import { sendPasswordResetEmail, sendPasswordChangedEmail, sendOverrideVerificationEmail, sendOverrideSecurityNotification } from '../utils/emailService.js';
+
 import { EMAIL_SENDERS } from '../config/emailSenders.js';
 import config from '../config/config.js';
 import logger from '../utils/logger.js';
 import { escapeRegex } from '../utils/sanitize.js';
-import Notification from '../models/Notification.js';
-import { emitNotificationCreated } from '../utils/notificationEmitter.js';
+import Notification from '../models/Notification.js';/* eslint-disable no-unused-vars */
+
+import { emitNotificationCreated } from '../utils/notificationEmitter.js'; /* eslint-enable no-unused-vars */
+import { sendPasswordResetEmail, sendOverrideVerificationEmail, sendOverrideSecurityNotification } from '../utils/emailService.js';
 import { sendPushNotification } from './pushNotifications.js';
 
 /**
@@ -156,13 +158,35 @@ router.get('/users', checkPermission('canManageUsers'), async (req, res) => {
     if (status === 'suspended') query.isSuspended = true;
     if (status === 'banned') query.isBanned = true;
 
-    // Get all users without pagination
-    const users = await User.find(query)
-      .select('-password')
-      .sort({ createdAt: -1 })
-      .lean();
+// Parse pagination params
+    const page = parseInt(req.query.page) || 1;
+    const limit = Math.min(parseInt(req.query.limit) || 50, 100); // Max 100/page
+    const skip = (page - 1) * limit;
+    const sort = req.query.sort === 'username' ? { username: 1 } : { createdAt: -1 };
 
-    const total = users.length;
+    // Paginated query + total count (parallel for perf)
+    const [users, total] = await Promise.all([
+      User.find(query)
+        .select('-password')
+        .sort(sort)
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      User.countDocuments(query)
+    ]);
+
+
+    res.json({
+      users: usersWithBadges,
+      pagination: {
+        page,
+        limit,
+        total,
+        pages: Math.ceil(total / limit),
+        hasNext: skip + limit < total,
+        hasPrev: page > 1
+      }
+    });
 
     // BADGE SYSTEM: Resolve badge IDs to full badge objects for each user
     const usersWithBadges = await Promise.all(

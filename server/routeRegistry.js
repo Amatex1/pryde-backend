@@ -77,6 +77,7 @@ import adminDebugRoutes from './routes/adminDebug.js';
 import adminHealthRoutes from './routes/adminHealth.js';
 import adminModerationV2Routes from './routes/adminModerationV2.js';
 import adminPlatformBrainRoutes from './routes/adminPlatformBrain.js';
+import userSecurityLogs from './routes/userSecurityLogs.js'; // Phase 2
 import requireAdmin2FA from './middleware/requireAdmin2FA.js';
 
 // ── System & infrastructure ───────────────────────────────────────────────────
@@ -163,6 +164,7 @@ export function mountRoutes(app, { restrictionMiddleware, requireDatabaseReady }
 
   // Reports & moderation
   app.use('/api/reports', requireDatabaseReady, reportsRoutes);
+  app.use('/api/user', requireDatabaseReady, userSecurityLogs); // Phase 2: User security logs
   app.use('/api/admin', requireDatabaseReady, requireAdmin2FA, adminRoutes);
   app.use('/api/admin/posts', requireDatabaseReady, requireAdmin2FA, adminPostsRoutes);
   app.use('/api/admin/escalate', requireDatabaseReady, adminEscalationRoutes);

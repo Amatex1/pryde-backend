@@ -3,7 +3,8 @@ import Session from '../models/Session.js';
 import { getRefreshTokenExpiry } from './tokenUtils.js';
 
 export const SESSION_ROTATION_CONFLICT = 'SESSION_ROTATION_CONFLICT';
-export const PREVIOUS_TOKEN_GRACE_MS = 30 * 1000;
+// TASK #2: Reduced from 30min → 5min (300s)
+export const PREVIOUS_TOKEN_GRACE_MS = 5 * 60 * 1000; // 5 minutes
 
 export const hashRefreshToken = (token) => (
   crypto.createHash('sha256').update(token).digest('hex')

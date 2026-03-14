@@ -214,11 +214,13 @@ export const sendWeeklyDigestsToAllUsers = async () => {
   const twoWeeksAgo = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000);
   
   // Get users who were active in the last 2 weeks and have email
+// IDEMPOTENT TASK #7: Only unprocessed users this week
+  const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
   const users = await User.find({
     email: { $exists: true, $ne: null },
-    lastActivityDate: { $gte: twoWeeksAgo },
+    'emailPreferences.lastWeeklyDigestSent': { $lt: oneWeekAgo },
     role: { $nin: ['system', 'prompts'] }
-  }).select('_id email username displayName').limit(1000);
+  }).select('_id email username displayName emailPreferences').limit(1000);
   
   logger.info(`[WeeklyDigest] Found ${users.length} eligible users`);
   

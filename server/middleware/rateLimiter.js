@@ -202,11 +202,24 @@ export const friendRequestLimiter = createAdvancedLimiter({
   prefix: 'friend_request'
 });
 
+// Per-IP fallback (used for other reset flows)
 export const passwordResetLimiter = createAdvancedLimiter({
+  windowMs: 60 * 60 * 1000,
+  max: 5,
+  prefix: 'password_reset_ip',
+  message: 'Too many password reset attempts from this IP, please try again later.'
+});
+
+// NEW: Per-email rate limiting for /forgot-password (TASK #1)
+export const passwordResetEmailLimiter = createAdvancedLimiter({
   windowMs: 60 * 60 * 1000, // 1 hour
-  max: 5, // 5 password reset attempts per hour
-  prefix: 'password_reset',
-  message: 'Too many password reset attempts, please try again later.'
+  max: 5, // 5 per email per hour
+  prefix: 'password_reset_email',
+  message: 'Too many password reset requests for this email address.',
+  keyGenerator: (req) => {
+    const email = req?.body?.email?.toLowerCase().trim();
+    return email || req.ip; // Fallback to IP if no email (prevents abuse)
+  }
 });
 
 // IP-based upload limiter — first line of defence (anonymous / pre-auth abuse)
