@@ -25,7 +25,12 @@
       "Bash(xargs -0 grep -l \"repost\\\\|Repost\")",
       "Bash(xargs -0 grep -l \"linkPreview\\\\|LinkPreview\\\\|preview\")",
       "Bash(xargs -0 grep -l \"video\\\\|media\\\\|upload\")",
-      "Bash(xargs -0 grep -l \"linkPreview\\\\|link.*preview\")"
+      "Bash(xargs -0 grep -l \"linkPreview\\\\|link.*preview\")",
+      "Bash(while read:*)",
+      "Bash(do if:*)",
+      "Bash(then echo:*)",
+      "Bash(else echo:*)",
+      "Bash(xargs -I {} grep -l \"navigate\\(-1\\)\\\\|← Back\\\\|Back to\\\\|back-\" {})"
     ]
   }
 }
