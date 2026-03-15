@@ -880,7 +880,9 @@ router.patch('/me/settings', auth, requireActiveUser, async (req, res) => {
       cursorStyle,
       // THEME PERSISTENCE: light/dark and galaxy layer
       theme,
-      galaxyMode
+      galaxyMode,
+      // TEXT DENSITY
+      textDensity
     } = req.body;
     const user = await User.findById(req.userId);
 
@@ -928,6 +930,12 @@ router.patch('/me/settings', auth, requireActiveUser, async (req, res) => {
       user.privacySettings.galaxyMode = galaxyMode;
     }
 
+    // TEXT DENSITY
+    const validDensities = ['cozy', 'compact'];
+    if (textDensity && validDensities.includes(textDensity)) {
+      user.privacySettings.textDensity = textDensity;
+    }
+
     user.markModified('privacySettings');
     await user.save();
 
@@ -940,7 +948,8 @@ router.patch('/me/settings', auth, requireActiveUser, async (req, res) => {
       hideBadges: user.privacySettings.hideBadges ?? false,
       cursorStyle: user.privacySettings.cursorStyle ?? 'system',
       theme: user.privacySettings.theme ?? 'dark',
-      galaxyMode: user.privacySettings.galaxyMode ?? true
+      galaxyMode: user.privacySettings.galaxyMode ?? true,
+      textDensity: user.privacySettings.textDensity ?? 'cozy'
     });
   } catch (error) {
     logger.error('Update settings error:', error.message);

@@ -317,9 +317,12 @@ router.patch('/safety', auth, async (req, res) => {
       user.privacy = {};
     }
 
+    const stringSafetyFields = ['onlineStatusVisibility'];
     allowedSafetyFields.forEach(field => {
       if (req.body[field] !== undefined) {
-        user.privacy[field] = Boolean(req.body[field]);
+        user.privacy[field] = stringSafetyFields.includes(field)
+          ? req.body[field]
+          : Boolean(req.body[field]);
       }
     });
 
