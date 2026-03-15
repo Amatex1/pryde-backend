@@ -57,7 +57,23 @@ const messageSchema = new mongoose.Schema({
   editedAt: {
     type: Date
   },
-  // REMOVED 2025-12-26: reactions deleted (Phase 5)
+  // Message reactions (emoji responses to individual messages)
+  reactions: [{
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: true
+    },
+    emoji: {
+      type: String,
+      required: true,
+      maxlength: 10
+    },
+    createdAt: {
+      type: Date,
+      default: Date.now
+    }
+  }],
   // Soft delete support - tracks who deleted message for themselves
   isDeletedForAll: {
     type: Boolean,

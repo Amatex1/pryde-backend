@@ -24,6 +24,7 @@ import { getBlockedUserIds } from '../utils/blockHelper.js';
 import { emitNotificationCreated } from '../utils/notificationEmitter.js'; // ✅ Socket.IO notifications
 import { bundleNotification } from '../utils/bundleNotification.js';
 import { deleteFromGridFS } from './upload.js'; // For deleting images from storage
+import ogs from 'open-graph-scraper';
 import { MutationTrace, verifyWrite } from '../utils/mutationTrace.js';
 import { isFeatureEnabled } from '../utils/featureFlags.js';
 import { asyncHandler, requireAuth, requireValidId, sendError, HttpStatus } from '../utils/errorHandler.js';
@@ -310,6 +311,53 @@ router.get('/user/:identifier', auth, requireActiveUser, async (req, res) => {
   res.json(finalPosts);
 });
 
+// @route   GET /api/posts/link-preview?url=
+// @desc    Scrape Open Graph / meta tags for a URL and return preview data
+// @access  Private
+// IMPORTANT: Must be defined BEFORE /:id routes to avoid Express matching 'link-preview' as an :id
+router.get('/link-preview', auth, async (req, res) => {
+  const { url } = req.query;
+  if (!url) return res.status(400).json({ message: 'url query param required' });
+
+  // Basic URL validation
+  let parsed;
+  try {
+    parsed = new URL(url);
+    if (!['http:', 'https:'].includes(parsed.protocol)) throw new Error('bad protocol');
+  } catch {
+    return res.status(400).json({ message: 'Invalid URL' });
+  }
+
+  // Block internal/private addresses
+  const blocked = /^(localhost|127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/i;
+  if (blocked.test(parsed.hostname)) {
+    return res.status(400).json({ message: 'URL not allowed' });
+  }
+
+  try {
+    const { result, error } = await ogs({
+      url,
+      fetchOptions: { headers: { 'user-agent': 'Pryde/1.0 (+https://prydeapp.com)' } },
+      timeout: 5000
+    });
+
+    if (error) return res.status(422).json({ message: 'Could not fetch preview' });
+
+    const image = result.ogImage?.[0]?.url || result.twitterImage?.[0]?.url || null;
+
+    res.json({
+      url,
+      title:       result.ogTitle       || result.twitterTitle       || result.dcTitle || null,
+      description: result.ogDescription || result.twitterDescription || null,
+      image:       image,
+      domain:      parsed.hostname.replace(/^www\./, '')
+    });
+  } catch (err) {
+    logger.error('Link preview error:', err.message);
+    res.status(422).json({ message: 'Could not fetch preview' });
+  }
+});
+
 // @route   GET /api/posts/:id
 // @desc    Get single post
 // @access  Private
@@ -380,7 +428,7 @@ router.post('/', auth, requireActiveUser, requireEmailVerification, postLimiter,
     // ── END EMERGENCY CONTAINMENT CHECK ─────────────────────────────────────
 
     // REMOVED 2025-12-26: hiddenFrom, sharedWith, tags, tagOnly deleted (Phase 5)
-    const { content, images, media, visibility, contentWarning, hideMetrics, poll, gifUrl, isAnonymous } = req.body;
+    const { content, images, media, visibility, contentWarning, hideMetrics, poll, gifUrl, isAnonymous, linkPreview } = req.body;
 
     // Require either content, media, poll, or GIF
     if ((!content || content.trim() === '') && (!media || media.length === 0) && !poll && !gifUrl) {
@@ -475,6 +523,13 @@ router.post('/', auth, requireActiveUser, requireEmailVerification, postLimiter,
       // REMOVED 2025-12-26: hiddenFrom, sharedWith, tags, tagOnly deleted (Phase 5)
       contentWarning: contentWarning || '',
       hideMetrics: hideMetrics || false,
+      linkPreview: linkPreview && typeof linkPreview === 'object' ? {
+        url: linkPreview.url || null,
+        title: linkPreview.title || null,
+        description: linkPreview.description || null,
+        image: linkPreview.image || null,
+        domain: linkPreview.domain || null,
+      } : undefined,
       ...anonymousFields
     };
 
@@ -1154,27 +1209,87 @@ router.post('/:id/comment/:commentId/react', auth, requireActiveUser, reactionLi
   }
 });
 
-// @route   POST /api/posts/:id/share
-// @desc    DEPRECATED - Share/Repost system removed 2025-12-26 (Phase 5)
+// @route   POST /api/posts/:id/repost
+// @desc    Repost (no added content) or Quote Post (with content/quotedPost)
+// @body    { quote: Boolean, content?, images?, visibility?, quotedPost? }
 // @access  Private
-router.post('/:id/share', auth, requireActiveUser, (req, res) => {
-  res.status(410).json({
-    message: 'Share/Repost feature has been removed.',
-    deprecated: true,
-    removedDate: '2025-12-26'
-  });
+router.post('/:id/repost', auth, requireActiveUser, requireEmailVerification, postLimiter, checkMuted, checkProbation, async (req, res) => {
+  try {
+    const original = await Post.findById(req.params.id).lean();
+    if (!original) return res.status(404).json({ message: 'Post not found' });
+    if (original.visibility === 'private') return res.status(403).json({ message: 'Cannot repost a private post' });
+
+    const userId = req.user._id || req.user.id;
+    const { quote, content, visibility } = req.body;
+
+    // Prevent duplicate simple reposts
+    if (!quote) {
+      const existing = await Post.findOne({ author: userId, isRepost: true, repostOf: original._id });
+      if (existing) return res.status(409).json({ message: 'You have already reposted this post' });
+    }
+
+    const newPost = new Post({
+      author: userId,
+      createdBy: userId,
+      isRepost: true,
+      repostOf: original._id,
+      quotedPost: quote ? original._id : null,
+      content: quote ? (content?.trim().slice(0, 5000) || '') : '',
+      visibility: visibility || 'public'
+    });
+
+    await newPost.save();
+    await Post.findByIdAndUpdate(original._id, { $inc: { repostCount: 1 } });
+    await newPost.populate('author', 'username displayName profilePhoto isVerified pronouns badges');
+
+    if (quote) {
+      await newPost.populate('quotedPost');
+    }
+
+    res.status(201).json(newPost);
+  } catch (err) {
+    logger.error('Repost error:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
 });
 
-// @route   DELETE /api/posts/:id/share
-// @desc    DEPRECATED - Share/Repost system removed 2025-12-26 (Phase 5)
+// @route   DELETE /api/posts/:id/repost
+// @desc    Undo a simple repost (not a quote post)
 // @access  Private
-router.delete('/:id/share', auth, requireActiveUser, (req, res) => {
-  res.status(410).json({
-    message: 'Share/Repost feature has been removed.',
-    deprecated: true,
-    removedDate: '2025-12-26'
-  });
+router.delete('/:id/repost', auth, requireActiveUser, async (req, res) => {
+  try {
+    const userId = req.user._id || req.user.id;
+    const repost = await Post.findOneAndDelete({ author: userId, isRepost: true, repostOf: req.params.id, quotedPost: null });
+    if (!repost) return res.status(404).json({ message: 'Repost not found' });
+    await Post.findByIdAndUpdate(req.params.id, { $inc: { repostCount: -1 } });
+    res.json({ message: 'Repost removed' });
+  } catch (err) {
+    logger.error('Delete repost error:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
 });
+
+// @route   GET /api/posts/:id/reposts
+// @desc    Get list of users who reposted this post
+// @access  Private
+router.get('/:id/reposts', auth, async (req, res) => {
+  try {
+    const reposts = await Post.find({ repostOf: req.params.id, isRepost: true })
+      .populate('author', 'username displayName profilePhoto isVerified')
+      .select('author createdAt quotedPost')
+      .sort({ createdAt: -1 })
+      .limit(50)
+      .lean();
+    res.json({ reposts });
+  } catch (err) {
+    logger.error('Get reposts error:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Backward-compat stubs (old share endpoints)
+router.post('/:id/share', auth, requireActiveUser, (req, res) => res.status(410).json({ message: 'Use POST /api/posts/:id/repost instead', deprecated: true }));
+router.delete('/:id/share', auth, requireActiveUser, (req, res) => res.status(410).json({ message: 'Use DELETE /api/posts/:id/repost instead', deprecated: true }));
 
 // @route   POST /api/posts/:id/comment
 // @desc    Legacy compatibility route for adding a comment to a post. Prefer POST /api/posts/:postId/comments in server/routes/comments.js for the maintained standalone comment flow.

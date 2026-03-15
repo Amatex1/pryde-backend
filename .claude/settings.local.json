@@ -17,7 +17,9 @@
       "Bash(vercel link:*)",
       "Read(//c/Users/uncsn/**)",
       "Read(//c/Users/uncsn/.config/render/**)",
-      "Bash(env)"
+      "Bash(env)",
+      "Bash(sed -n '1655,1670p' \"f:\\\\Desktop\\\\Frontend and Backend Code\\\\pryde-frontend\\\\src\\\\pages\\\\Profile.css\")",
+      "Bash(sed -n '1979,1995p' \"f:\\\\Desktop\\\\Frontend and Backend Code\\\\pryde-frontend\\\\src\\\\pages\\\\Profile.css\")"
     ]
   }
 }

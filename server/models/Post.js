@@ -252,6 +252,40 @@ const postSchema = new mongoose.Schema({
       default: ''
     }
   }],
+  // ── Repost / Quote Post ──────────────────────────────────────────────────────
+  isRepost: {
+    type: Boolean,
+    default: false,
+    index: true
+  },
+  // Simple repost (no added content) — points to the original post
+  repostOf: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Post',
+    default: null
+  },
+  // Quote post (has added content) — embeds the original post
+  quotedPost: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Post',
+    default: null
+  },
+  // Denormalised count — incremented/decremented when reposts are created/deleted
+  repostCount: {
+    type: Number,
+    default: 0,
+    min: 0
+  },
+
+  // ── Link Preview ─────────────────────────────────────────────────────────────
+  linkPreview: {
+    url:         { type: String, default: null },
+    title:       { type: String, default: null },
+    description: { type: String, default: null },
+    image:       { type: String, default: null },
+    domain:      { type: String, default: null }
+  },
+
   // Poll feature
   poll: {
     question: {
