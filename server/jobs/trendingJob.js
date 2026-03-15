@@ -57,6 +57,7 @@ export const runTrendingJob = async () => {
     
     // IDEMPOTENT: Skip posts already scored recently (TASK #7)
     const cutoff = new Date(Date.now() - 15 * 60 * 1000); // 15min ago
+    const timeWindowStart = new Date(Date.now() - 24 * 60 * 60 * 1000); // 24h window
     
     const posts = await Post.find({
       visibility: 'public',

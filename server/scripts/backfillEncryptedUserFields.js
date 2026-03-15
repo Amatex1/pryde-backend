@@ -103,6 +103,7 @@ async function run() {
 
   console.log(`Scanning User collection in batches of ${BATCH_SIZE}...\n`);
 
+  // eslint-disable-next-line no-constant-condition
   while (true) {
     const query = lastId ? { _id: { $gt: lastId } } : {};
 
