@@ -20,7 +20,12 @@
       "Bash(env)",
       "Bash(sed -n '1655,1670p' \"f:\\\\Desktop\\\\Frontend and Backend Code\\\\pryde-frontend\\\\src\\\\pages\\\\Profile.css\")",
       "Bash(sed -n '1979,1995p' \"f:\\\\Desktop\\\\Frontend and Backend Code\\\\pryde-frontend\\\\src\\\\pages\\\\Profile.css\")",
-      "Bash(find 'f:/Desktop/Frontend and Backend Code/pryde-frontend/src' -type f \\\\\\(-name Home* -o -name Landing* -o -name index* \\\\\\) \\\\\\(-name *.tsx -o -name *.ts -o -name *.jsx -o -name *.js \\\\\\))"
+      "Bash(find 'f:/Desktop/Frontend and Backend Code/pryde-frontend/src' -type f \\\\\\(-name Home* -o -name Landing* -o -name index* \\\\\\) \\\\\\(-name *.tsx -o -name *.ts -o -name *.jsx -o -name *.js \\\\\\))",
+      "Bash(xargs -I {} basename {})",
+      "Bash(xargs -0 grep -l \"repost\\\\|Repost\")",
+      "Bash(xargs -0 grep -l \"linkPreview\\\\|LinkPreview\\\\|preview\")",
+      "Bash(xargs -0 grep -l \"video\\\\|media\\\\|upload\")",
+      "Bash(xargs -0 grep -l \"linkPreview\\\\|link.*preview\")"
     ]
   }
 }
