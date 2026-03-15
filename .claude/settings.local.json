@@ -19,7 +19,8 @@
       "Read(//c/Users/uncsn/.config/render/**)",
       "Bash(env)",
       "Bash(sed -n '1655,1670p' \"f:\\\\Desktop\\\\Frontend and Backend Code\\\\pryde-frontend\\\\src\\\\pages\\\\Profile.css\")",
-      "Bash(sed -n '1979,1995p' \"f:\\\\Desktop\\\\Frontend and Backend Code\\\\pryde-frontend\\\\src\\\\pages\\\\Profile.css\")"
+      "Bash(sed -n '1979,1995p' \"f:\\\\Desktop\\\\Frontend and Backend Code\\\\pryde-frontend\\\\src\\\\pages\\\\Profile.css\")",
+      "Bash(find 'f:/Desktop/Frontend and Backend Code/pryde-frontend/src' -type f \\\\\\(-name Home* -o -name Landing* -o -name index* \\\\\\) \\\\\\(-name *.tsx -o -name *.ts -o -name *.jsx -o -name *.js \\\\\\))"
     ]
   }
 }
