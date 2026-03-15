@@ -2,6 +2,7 @@ import express from 'express';
 const router = express.Router();
 import Draft from '../models/Draft.js';
 import auth from '../middleware/auth.js';
+import { validateParamId } from '../middleware/validation.js';
 import { MutationTrace, verifyWrite } from '../utils/mutationTrace.js';
 import logger from '../utils/logger.js';
 
@@ -35,7 +36,7 @@ router.get('/', auth, async (req, res) => {
 // @route   GET /api/drafts/:id
 // @desc    Get a specific draft
 // @access  Private
-router.get('/:id', auth, async (req, res) => {
+router.get('/:id', auth, validateParamId('id'), async (req, res) => {
   try {
     const draft = await Draft.findById(req.params.id);
 
@@ -216,14 +217,14 @@ router.post('/', auth, async (req, res) => {
     mutation.fail(error.message, 500);
     logger.error('[DRAFT CREATE] Save draft error:', error);
     logger.error('[DRAFT CREATE] This will cause a ghost draft if frontend sets ID optimistically');
-    res.status(500).json({ message: 'Server error', error: error.message, _mutationId: mutation.mutationId });
+    res.status(500).json({ message: 'Server error', _mutationId: mutation.mutationId });
   }
 });
 
 // @route   DELETE /api/drafts/:id
 // @desc    Delete a draft
 // @access  Private
-router.delete('/:id', auth, async (req, res) => {
+router.delete('/:id', auth, validateParamId('id'), async (req, res) => {
   // Initialize mutation trace for end-to-end tracking
   const mutationId = req.headers['x-mutation-id'] || req.body?._mutationId;
   const mutation = new MutationTrace(mutationId, 'DELETE', 'draft', req.userId);

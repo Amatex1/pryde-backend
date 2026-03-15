@@ -5,6 +5,7 @@ import Post from '../models/Post.js';
 import auth from '../middleware/auth.js';
 import requireActiveUser from '../middleware/requireActiveUser.js';
 import logger from '../utils/logger.js';
+import { validateParamId } from '../middleware/validation.js';
 
 // @route   GET /api/bookmarks
 // @desc    Get all bookmarked posts
@@ -45,7 +46,7 @@ router.get('/', auth, requireActiveUser, async (req, res) => {
 // @route   POST /api/bookmarks/:postId
 // @desc    Bookmark a post
 // @access  Private
-router.post('/:postId', auth, requireActiveUser, async (req, res) => {
+router.post('/:postId', auth, requireActiveUser, validateParamId('postId'), async (req, res) => {
   try {
     const { postId } = req.params;
 
@@ -55,31 +56,19 @@ router.post('/:postId', auth, requireActiveUser, async (req, res) => {
       return res.status(404).json({ message: 'Post not found' });
     }
 
-    const user = await User.findById(req.userId);
+    // Atomic $addToSet prevents duplicates under concurrent requests
+    const user = await User.findByIdAndUpdate(
+      req.userId,
+      { $addToSet: { bookmarkedPosts: postId } },
+      { new: true }
+    );
 
-    // Idempotent: if already bookmarked, return success (no-op)
-    if (user.bookmarkedPosts.includes(postId)) {
-      logger.debug('noop.bookmark.already_present', {
-        userId: req.userId,
-        targetId: postId,
-        endpoint: 'POST /bookmarks/:postId'
-      });
-      return res.json({
-        message: 'Post bookmarked successfully',
-        bookmarkedPosts: user.bookmarkedPosts
-      });
-    }
-
-    // Add to bookmarks
-    user.bookmarkedPosts.push(postId);
-    await user.save();
-
-    res.json({ 
+    res.json({
       message: 'Post bookmarked successfully',
       bookmarkedPosts: user.bookmarkedPosts
     });
   } catch (error) {
-    console.error('Bookmark post error:', error);
+    logger.error('Bookmark post error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -87,7 +76,7 @@ router.post('/:postId', auth, requireActiveUser, async (req, res) => {
 // @route   DELETE /api/bookmarks/:postId
 // @desc    Remove bookmark from a post
 // @access  Private
-router.delete('/:postId', auth, requireActiveUser, async (req, res) => {
+router.delete('/:postId', auth, requireActiveUser, validateParamId('postId'), async (req, res) => {
   try {
     const { postId } = req.params;
 
@@ -120,7 +109,7 @@ router.delete('/:postId', auth, requireActiveUser, async (req, res) => {
       bookmarkedPosts: user.bookmarkedPosts
     });
   } catch (error) {
-    console.error('Remove bookmark error:', error);
+    logger.error('Remove bookmark error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -128,7 +117,7 @@ router.delete('/:postId', auth, requireActiveUser, async (req, res) => {
 // @route   GET /api/bookmarks/check/:postId
 // @desc    Check if a post is bookmarked
 // @access  Private
-router.get('/check/:postId', auth, requireActiveUser, async (req, res) => {
+router.get('/check/:postId', auth, requireActiveUser, validateParamId('postId'), async (req, res) => {
   try {
     const { postId } = req.params;
 
@@ -138,7 +127,7 @@ router.get('/check/:postId', auth, requireActiveUser, async (req, res) => {
 
     res.json({ isBookmarked });
   } catch (error) {
-    console.error('Check bookmark error:', error);
+    logger.error('Check bookmark error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });

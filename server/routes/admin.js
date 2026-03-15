@@ -1378,7 +1378,7 @@ router.post('/actions/confirm', checkPermission('canManageUsers'), async (req, r
     });
   } catch (error) {
     if (error.message.includes('token')) {
-      return res.status(400).json({ message: error.message, code: 'INVALID_TOKEN' });
+      return res.status(400).json({ message: 'Invalid or expired token', code: 'INVALID_TOKEN' });
     }
     logger.error('Action confirm error', { error: error.message, requestId: req.requestId });
     res.status(500).json({ message: 'Server error' });
@@ -1394,7 +1394,7 @@ import Group from '../models/Group.js';
 // @route   GET /api/admin/groups/pending
 // @desc    Get all pending group requests
 // @access  Admin
-router.get('/groups/pending', async (req, res) => {
+router.get('/groups/pending', adminAuth, checkPermission('canManageUsers'), async (req, res) => {
   try {
     const pendingGroups = await Group.find({ status: 'pending' })
       .populate('owner', 'username displayName profilePhoto email')
@@ -1410,7 +1410,7 @@ router.get('/groups/pending', async (req, res) => {
 // @route   PATCH /api/admin/groups/:id/approve
 // @desc    Approve a pending group
 // @access  Admin
-router.patch('/groups/:id/approve', async (req, res) => {
+router.patch('/groups/:id/approve', adminAuth, checkPermission('canManageUsers'), async (req, res) => {
   try {
     const group = await Group.findById(req.params.id);
 
@@ -1444,7 +1444,7 @@ router.patch('/groups/:id/approve', async (req, res) => {
 // @route   PATCH /api/admin/groups/:id/reject
 // @desc    Reject a pending group
 // @access  Admin
-router.patch('/groups/:id/reject', async (req, res) => {
+router.patch('/groups/:id/reject', adminAuth, checkPermission('canManageUsers'), async (req, res) => {
   try {
     const group = await Group.findById(req.params.id);
 

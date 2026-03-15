@@ -88,10 +88,9 @@ router.get('/download', apiKeyAuth, async (req, res) => {
     console.log(`✅ Backup downloaded successfully (${(fileSize / 1024).toFixed(2)} KB)`);
   } catch (error) {
     console.error('❌ Backup download error:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Error downloading backup file',
-      error: error.message 
+    res.status(500).json({
+      success: false,
+      message: 'Error downloading backup file'
     });
   }
 });
@@ -141,10 +140,9 @@ router.get('/info', apiKeyAuth, async (req, res) => {
     });
   } catch (error) {
     console.error('❌ Backup info error:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Error retrieving backup information',
-      error: error.message 
+    res.status(500).json({
+      success: false,
+      message: 'Error retrieving backup information'
     });
   }
 });
@@ -178,10 +176,10 @@ router.get('/health', async (req, res) => {
       });
     }
   } catch (error) {
-    res.status(500).json({ 
-      success: false, 
+    res.status(500).json({
+      success: false,
       status: 'error',
-      message: error.message 
+      message: 'Backup health check failed'
     });
   }
 });
