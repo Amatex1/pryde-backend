@@ -84,6 +84,8 @@ router.get('/settings', auth, async (req, res) => {
       quietHideMentions: user.privacySettings?.quietHideMentions ?? false,
       quietMuteGroupSummary: user.privacySettings?.quietMuteGroupSummary ?? false,
       quietReduceStoryNotifications: user.privacySettings?.quietReduceStoryNotifications ?? false,
+      // Content warnings
+      autoHideContentWarnings: user.privacySettings?.autoHideContentWarnings ?? false,
     };
 
     res.json(settings);
@@ -164,6 +166,8 @@ router.patch('/settings', auth, async (req, res) => {
       'quietHideMentions',
       'quietMuteGroupSummary',
       'quietReduceStoryNotifications',
+      // Content warnings
+      'autoHideContentWarnings',
     ];
 
     // Validate cursorStyle if provided
@@ -252,6 +256,7 @@ router.patch('/settings', auth, async (req, res) => {
         quietHideMentions: user.privacySettings?.quietHideMentions ?? false,
         quietMuteGroupSummary: user.privacySettings?.quietMuteGroupSummary ?? false,
         quietReduceStoryNotifications: user.privacySettings?.quietReduceStoryNotifications ?? false,
+        autoHideContentWarnings: user.privacySettings?.autoHideContentWarnings ?? false,
       }
     });
   } catch (error) {

@@ -562,9 +562,10 @@ router.get('/:identifier', auth, checkProfileVisibility, async (req, res) => {
 
     // BADGE SYSTEM: Resolve badge IDs to full badge objects
     if (sanitizedUser.badges && sanitizedUser.badges.length > 0) {
-      // Check if user has hideBadges enabled in privacy settings
+      const isOwnProfile = user._id.toString() === currentUserId.toString();
       const hideBadges = user.privacySettings?.hideBadges;
-      if (hideBadges) {
+      const showBadgesPublicly = user.privacy?.showBadgesPublicly ?? true;
+      if (hideBadges || (!isOwnProfile && !showBadgesPublicly)) {
         sanitizedUser.badges = [];
       } else {
         sanitizedUser.badges = await resolveBadges(sanitizedUser.badges);
