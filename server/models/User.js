@@ -708,8 +708,7 @@ const userSchema = new mongoose.Schema({
     type: [{
       requestId: {
         type: String,
-        required: true,
-        unique: true
+        required: true
       },
       contactsNotified: {
         type: [{
@@ -1439,6 +1438,7 @@ userSchema.index({ role: 1 });
 userSchema.index({ 'followers': 1 });
 userSchema.index({ 'following': 1 });
 userSchema.index({ 'passkeys.credentialId': 1 });
+userSchema.index({ 'recoveryRequests.requestId': 1 }, { unique: true, sparse: true });
 userSchema.index({ resetPasswordToken: 1 });
 userSchema.index({ lastSeen: -1 });
 userSchema.index({ 'groupNotificationSettings.groupId': 1 });

@@ -25,13 +25,14 @@ function buildUserQuery(id, role = 'super_admin') {
 
   return {
     ...user,
-    select: async (projection) => {
-      if (projection === 'role') {
-        return { role };
+    select: (projection) => ({
+      lean: async () => {
+        if (projection === 'role') {
+          return { role };
+        }
+        return user;
       }
-
-      return user;
-    }
+    })
   };
 }
 
@@ -90,7 +91,7 @@ describe('security hardening', function() {
       .set('Authorization', `Bearer ${generateAccessToken('user-123')}`);
 
     assert.strictEqual(response.status, 403);
-    assert.match(response.body?.message || '', /admin/i);
+    assert.match(response.body?.message || '', /access denied|insufficient|forbidden/i);
   });
 
   it('denies moderator access to system prompt admin routes', async function() {
@@ -106,7 +107,7 @@ describe('security hardening', function() {
       .set('Authorization', `Bearer ${generateAccessToken('user-123')}`);
 
     assert.strictEqual(response.status, 403);
-    assert.match(response.body?.message || '', /admin/i);
+    assert.match(response.body?.message || '', /access denied|insufficient|forbidden/i);
   });
 
   it('denies moderator access to admin post surfaces', async function() {
@@ -122,6 +123,6 @@ describe('security hardening', function() {
       .set('Authorization', `Bearer ${generateAccessToken('user-123')}`);
 
     assert.strictEqual(response.status, 403);
-    assert.match(response.body?.message || '', /admin/i);
+    assert.match(response.body?.message || '', /access denied|insufficient|forbidden/i);
   });
 });

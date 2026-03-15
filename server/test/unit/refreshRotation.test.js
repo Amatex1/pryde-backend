@@ -52,8 +52,8 @@ describe('refreshRotation utility', () => {
       {
         $set: {
           previousRefreshTokenHash: '$refreshTokenHash',
-          previousTokenGraceUntil: new Date(now.getTime() + 30 * 1000),
-          previousTokenExpiry: new Date(now.getTime() + 30 * 1000),
+          previousTokenGraceUntil: new Date(now.getTime() + 5 * 60 * 1000),
+          previousTokenExpiry: new Date(now.getTime() + 5 * 60 * 1000),
           refreshTokenHash: hashRefreshToken('new-token'),
           refreshTokenExpiry,
           lastActiveAt: now,

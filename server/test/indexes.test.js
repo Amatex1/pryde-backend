@@ -57,10 +57,11 @@ describe('Database Index Tests', function() {
     //   assert.ok(exists, 'hashtags_1 index is missing');
     // });
 
-    it('should have tags index', async function() {
-      const exists = await hasIndex(Post, 'tags_1');
-      assert.ok(exists, 'tags_1 index is missing');
-    });
+    // REMOVED 2025-12-26: tags index removed (Phase 5)
+    // it('should have tags index', async function() {
+    //   const exists = await hasIndex(Post, 'tags_1');
+    //   assert.ok(exists, 'tags_1 index is missing');
+    // });
   });
   
   describe('Message Model Indexes', function() {
