@@ -10,6 +10,7 @@ import requireEmailVerification from '../middleware/requireEmailVerification.js'
 import { checkBlocked } from '../middleware/privacy.js';
 import { guardFollow } from '../middleware/systemAccountGuard.js';
 import logger from '../utils/logger.js';
+import { validateParamId } from '../middleware/validation.js';
 import { emitNotificationCreated } from '../utils/notificationEmitter.js';
 import { sendPushNotification } from './pushNotifications.js';
 
@@ -117,12 +118,9 @@ router.post('/:userId', auth, requireActiveUser, requireEmailVerification, guard
         followRequest
       });
     } else {
-      // Public account - instant follow
-      targetUser.followers.push(currentUserId);
-      currentUser.following.push(targetUserId);
-
-      await targetUser.save();
-      await currentUser.save();
+      // Public account - instant follow (atomic $addToSet prevents duplicates under concurrent requests)
+      await User.updateOne({ _id: targetUserId }, { $addToSet: { followers: currentUserId } });
+      await User.updateOne({ _id: currentUserId }, { $addToSet: { following: targetUserId } });
 
       // Primary follow record (separate collection)
       await Follow.findOneAndUpdate(
@@ -236,7 +234,7 @@ router.get('/followers/:userId', auth, requireActiveUser, async (req, res) => {
     const followers = edges.map(e => e.follower).filter(Boolean);
     res.json({ followers, total, page: parseInt(page), pages: Math.ceil(total / parseInt(limit)) });
   } catch (error) {
-    console.error('Get followers error:', error);
+    logger.error('Get followers error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -270,7 +268,7 @@ router.get('/following/:userId', auth, requireActiveUser, async (req, res) => {
     const following = edges.map(e => e.following).filter(Boolean);
     res.json({ following, total, page: parseInt(page), pages: Math.ceil(total / parseInt(limit)) });
   } catch (error) {
-    console.error('Get following error:', error);
+    logger.error('Get following error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -289,7 +287,7 @@ router.get('/requests', auth, requireActiveUser, async (req, res) => {
 
     res.json({ followRequests });
   } catch (error) {
-    console.error('Get follow requests error:', error);
+    logger.error('Get follow requests error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -308,7 +306,7 @@ router.get('/requests/sent', auth, requireActiveUser, async (req, res) => {
 
     res.json({ sentRequests });
   } catch (error) {
-    console.error('Get sent follow requests error:', error);
+    logger.error('Get sent follow requests error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -316,7 +314,7 @@ router.get('/requests/sent', auth, requireActiveUser, async (req, res) => {
 // @route   POST /api/follow/requests/:requestId/accept
 // @desc    Accept follow request
 // @access  Private
-router.post('/requests/:requestId/accept', auth, requireActiveUser, async (req, res) => {
+router.post('/requests/:requestId/accept', auth, requireActiveUser, validateParamId('requestId'), async (req, res) => {
   try {
     const followRequest = await FollowRequest.findById(req.params.requestId);
 
@@ -396,7 +394,7 @@ router.post('/requests/:requestId/accept', auth, requireActiveUser, async (req, 
 // @route   POST /api/follow/requests/:requestId/reject
 // @desc    Reject follow request
 // @access  Private
-router.post('/requests/:requestId/reject', auth, requireActiveUser, async (req, res) => {
+router.post('/requests/:requestId/reject', auth, requireActiveUser, validateParamId('requestId'), async (req, res) => {
   try {
     const followRequest = await FollowRequest.findById(req.params.requestId);
 
@@ -425,7 +423,7 @@ router.post('/requests/:requestId/reject', auth, requireActiveUser, async (req, 
 // @route   DELETE /api/follow/requests/:requestId
 // @desc    Cancel follow request
 // @access  Private
-router.delete('/requests/:requestId', auth, requireActiveUser, async (req, res) => {
+router.delete('/requests/:requestId', auth, requireActiveUser, validateParamId('requestId'), async (req, res) => {
   try {
     const followRequest = await FollowRequest.findById(req.params.requestId);
 

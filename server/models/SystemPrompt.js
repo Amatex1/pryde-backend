@@ -53,7 +53,8 @@ const systemPromptSchema = new mongoose.Schema({
   // How many times this prompt has been posted (for analytics, not user-facing)
   timesPosted: {
     type: Number,
-    default: 0
+    default: 0,
+    min: 0
   },
   
   // Admin who created the prompt (null for seeded prompts)

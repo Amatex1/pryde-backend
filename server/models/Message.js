@@ -30,16 +30,23 @@ const messageSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
-  readBy: [{
-    user: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User'
+  readBy: {
+    type: [{
+      user: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
+      },
+      readAt: {
+        type: Date,
+        default: Date.now
+      }
+    }],
+    validate: {
+      validator: v => v.length <= 500,
+      message: 'readBy cannot exceed 500 entries'
     },
-    readAt: {
-      type: Date,
-      default: Date.now
-    }
-  }],
+    default: []
+  },
   deliveredTo: [{
     user: {
       type: mongoose.Schema.Types.ObjectId,
@@ -58,22 +65,29 @@ const messageSchema = new mongoose.Schema({
     type: Date
   },
   // Message reactions (emoji responses to individual messages)
-  reactions: [{
-    user: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
-      required: true
+  reactions: {
+    type: [{
+      user: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        required: true
+      },
+      emoji: {
+        type: String,
+        required: true,
+        maxlength: 10
+      },
+      createdAt: {
+        type: Date,
+        default: Date.now
+      }
+    }],
+    validate: {
+      validator: v => v.length <= 100,
+      message: 'A message cannot have more than 100 reactions'
     },
-    emoji: {
-      type: String,
-      required: true,
-      maxlength: 10
-    },
-    createdAt: {
-      type: Date,
-      default: Date.now
-    }
-  }],
+    default: []
+  },
   // Soft delete support - tracks who deleted message for themselves
   isDeletedForAll: {
     type: Boolean,
@@ -122,14 +136,17 @@ messageSchema.index({ groupChat: 1, isDeletedForAll: 1, createdAt: -1 }); // Gro
 // ============================================================================
 
 /**
- * Validate that message has either content or attachment
+ * Validate that message has either content or attachment,
+ * and is addressed to either a recipient (DM) or groupChat (group message).
  */
 messageSchema.pre('validate', function(next) {
   if (!this.content && !this.attachment) {
-    next(new Error('Message must have either content or attachment'));
-  } else {
-    next();
+    return next(new Error('Message must have either content or attachment'));
   }
+  if (!this.recipient && !this.groupChat) {
+    return next(new Error('Message must have either a recipient or a groupChat'));
+  }
+  next();
 });
 
 // ============================================================================

@@ -142,6 +142,7 @@ router.get('/hashtag/:tag', auth, searchLimiter, async (req, res) => {
   try {
     const tag = req.params.tag.replace(/^#/, '');
     if (!tag) return res.status(400).json({ message: 'Tag is required' });
+    if (tag.length > 50) return res.status(400).json({ message: 'Tag too long' });
 
     const blockedUserIds = await getBlockedUserIds(req.userId);
     const { page = 1, limit = 20 } = req.query;

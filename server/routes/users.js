@@ -1050,20 +1050,16 @@ router.patch('/me/ally', auth, requireActiveUser, (req, res) => {
 // @access  Private
 router.put('/deactivate', auth, async (req, res) => {
   try {
-    const user = await User.findById(req.userId);
+    // Atomic update — prevents double-deactivation race condition
+    const user = await User.findByIdAndUpdate(
+      req.userId,
+      { isActive: false, deactivatedAt: new Date(), activeSessions: [] },
+      { new: true }
+    );
 
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
-
-    // Deactivate account
-    user.isActive = false;
-    user.deactivatedAt = new Date();
-
-    // Clear all sessions (force logout everywhere)
-    user.activeSessions = [];
-
-    await user.save();
 
     // CRITICAL: Force disconnect all sockets for this user
     const io = req.app.get('io');

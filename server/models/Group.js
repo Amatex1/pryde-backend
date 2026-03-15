@@ -157,6 +157,7 @@ groupSchema.index({ slug: 1 }, { unique: true });
 groupSchema.index({ owner: 1 });
 groupSchema.index({ members: 1 });
 groupSchema.index({ visibility: 1 });
+groupSchema.index({ visibility: 1, createdAt: -1 }); // Ordered group discovery
 groupSchema.index({ status: 1 });
 groupSchema.index({ createdFromTag: 1 });
 groupSchema.index({ joinMode: 1 });

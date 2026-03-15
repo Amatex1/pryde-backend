@@ -233,25 +233,32 @@ const postSchema = new mongoose.Schema({
     default: null
   },
   // RESTORED Phase 2: Twitter-style edit history (TASK #6)
-  editHistory: [{
-    editedBy: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
-      required: true
+  editHistory: {
+    type: [{
+      editedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        required: true
+      },
+      editedContent: {
+        type: String,
+        required: true
+      },
+      editedAt: {
+        type: Date,
+        default: Date.now
+      },
+      reason: {
+        type: String,
+        default: ''
+      }
+    }],
+    validate: {
+      validator: v => v.length <= 50,
+      message: 'editHistory cannot exceed 50 entries'
     },
-    editedContent: {
-      type: String,
-      required: true
-    },
-    editedAt: {
-      type: Date,
-      default: Date.now
-    },
-    reason: {
-      type: String,
-      default: ''
-    }
-  }],
+    default: []
+  },
   // ── Repost / Quote Post ──────────────────────────────────────────────────────
   isRepost: {
     type: Boolean,
@@ -340,6 +347,10 @@ postSchema.index({ visibility: 1, groupId: 1, createdAt: -1 }); // Global feed f
 postSchema.index({ visibility: 1, author: 1, groupId: 1, createdAt: -1 }); // Followers feed
 postSchema.index({ isPinned: -1, createdAt: -1 }); // Pinned post sorting
 postSchema.index({ isLocked: 1, createdAt: -1 }); // Locked post queries
+// Repost / quote post indexes — needed for "show all reposts of X" and profile repost filtering
+postSchema.index({ repostOf: 1, createdAt: -1 });
+postSchema.index({ quotedPost: 1, createdAt: -1 });
+postSchema.index({ author: 1, isRepost: 1, createdAt: -1 }); // Profile page: filter reposts
 
 // Virtual for comment count from Comment collection
 postSchema.virtual('commentCount', {

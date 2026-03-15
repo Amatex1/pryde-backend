@@ -10,7 +10,7 @@ import mongoose from 'mongoose';
  */
 const mediaHashSchema = new mongoose.Schema({
   hash:        { type: String, required: true, unique: true, index: true },
-  uploadCount: { type: Number, default: 1 },
+  uploadCount: { type: Number, default: 1, min: 0 },
   firstSeenAt: { type: Date,   default: Date.now },
   lastSeenAt:  { type: Date,   default: Date.now },
   flagged:     { type: Boolean, default: false, index: true },

@@ -114,6 +114,10 @@ const notificationSchema = new mongoose.Schema({
   // All actors who contributed to this bundle (populated on read)
   actorIds: {
     type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+    validate: {
+      validator: v => v.length <= 100,
+      message: 'actorIds cannot exceed 100 entries'
+    },
     default: []
   },
 

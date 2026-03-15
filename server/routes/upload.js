@@ -558,7 +558,7 @@ router.post('/profile-photo', auth, uploadLimiter, userUploadLimiter, uploadQuot
       res.status(500).json({
         error: 'Image upload failed',
         message: 'Profile photo upload failed. Please try again or use a smaller image.',
-        detail: error.message
+        detail: 'See server logs for details'
       });
     }
   });
@@ -644,7 +644,7 @@ router.post('/cover-photo', auth, uploadLimiter, userUploadLimiter, uploadQuotaM
       res.status(500).json({
         error: 'Image upload failed',
         message: 'Cover photo upload failed. Please try again or use a smaller image.',
-        detail: error.message
+        detail: 'See server logs for details'
       });
     }
   });
@@ -708,7 +708,7 @@ router.post('/chat-attachment', auth, uploadLimiter, userUploadLimiter, uploadQu
       res.status(500).json({
         error: 'Upload failed',
         message: 'File upload failed. Please try again or use a smaller file.',
-        detail: error.message
+        detail: 'See server logs for details'
       });
     }
   });
@@ -901,7 +901,7 @@ router.post('/post-media', auth, uploadLimiter, userUploadLimiter, uploadQuotaMi
       res.status(500).json({
         error: 'Image upload failed',
         message: 'Image upload failed. Please try again or use a smaller image.',
-        detail: error.message
+        detail: 'See server logs for details'
       });
     }
   });
@@ -1061,8 +1061,7 @@ router.delete('/post-media/:mediaId', auth, async (req, res) => {
       error
     });
     res.status(500).json({
-      message: 'Failed to delete media',
-      error: error.message
+      message: 'Failed to delete media'
     });
   }
 });
@@ -1070,7 +1069,7 @@ router.delete('/post-media/:mediaId', auth, async (req, res) => {
 // @route   DELETE /api/upload/post-media/by-url
 // @desc    Delete temporary media by URL (fallback for older uploads without tempMediaId)
 // @access  Private
-router.delete('/post-media/by-url', auth, async (req, res) => {
+router.delete('/post-media/by-url', auth, uploadLimiter, async (req, res) => {
   try {
     const { url } = req.body;
 
@@ -1164,8 +1163,7 @@ router.delete('/post-media/by-url', auth, async (req, res) => {
       error
     });
     res.status(500).json({
-      message: 'Failed to delete media',
-      error: error.message
+      message: 'Failed to delete media'
     });
   }
 });

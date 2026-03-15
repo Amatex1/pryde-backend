@@ -163,7 +163,7 @@ router.get('/list', auth, requireActiveUser, async (req, res) => {
     res.json(populatedConversations);
   } catch (error) {
     logger.error('❌ Error fetching conversations list:', error);
-    res.status(500).json({ message: 'Error fetching conversations', error: error.message });
+    res.status(500).json({ message: 'Error fetching conversations'});
   }
 });
 
@@ -205,7 +205,7 @@ router.get('/:userId/media', auth, requireActiveUser, validateParamId('userId'),
     });
   } catch (error) {
     logger.error('❌ Error fetching shared media:', error);
-    res.status(500).json({ message: 'Error fetching shared media', error: error.message });
+    res.status(500).json({ message: 'Error fetching shared media'});
   }
 });
 
@@ -309,7 +309,7 @@ router.get('/:userId', auth, requireActiveUser, validateParamId('userId'), check
     res.json(transformedMessages);
   } catch (error) {
     logger.error('❌ Error fetching messages:', error);
-    res.status(500).json({ message: 'Error fetching messages', error: error.message });
+    res.status(500).json({ message: 'Error fetching messages'});
   }
 });
 
@@ -384,7 +384,7 @@ router.get('/unread/counts', auth, requireActiveUser, async (req, res) => {
     res.json(response);
   } catch (error) {
     logger.error('❌ Error fetching unread counts:', error);
-    res.status(500).json({ message: 'Error fetching unread counts', error: error.message });
+    res.status(500).json({ message: 'Error fetching unread counts'});
   }
 });
 
@@ -526,7 +526,7 @@ router.get('/', auth, requireActiveUser, async (req, res) => {
     res.json(populatedConversations);
   } catch (error) {
     logger.error('❌ Error fetching conversations:', error);
-    res.status(500).json({ message: 'Error fetching conversations', error: error.message });
+    res.status(500).json({ message: 'Error fetching conversations'});
   }
 });
 
@@ -695,7 +695,7 @@ router.post('/', auth, requireActiveUser, requireEmailVerification, messageLimit
       recipient: req.body.recipient,
       groupChatId: req.body.groupChatId
     });
-    res.status(500).json({ message: 'Error sending message', error: error.message });
+    res.status(500).json({ message: 'Error sending message'});
   }
 });
 
@@ -733,7 +733,7 @@ router.put('/:id', auth, requireActiveUser, validateParamId('id'), sanitizeField
     res.json(message);
   } catch (error) {
     logger.error('❌ Error editing message:', error);
-    res.status(500).json({ message: 'Error editing message', error: error.message });
+    res.status(500).json({ message: 'Error editing message'});
   }
 });
 
@@ -824,7 +824,7 @@ router.delete('/:id', auth, requireActiveUser, validateParamId('id'), async (req
     });
   } catch (error) {
     logger.error('❌ Error deleting message:', error);
-    res.status(500).json({ message: 'Error deleting message', error: error.message });
+    res.status(500).json({ message: 'Error deleting message'});
   }
 });
 
@@ -883,7 +883,7 @@ router.put('/:id/read', auth, requireActiveUser, validateParamId('id'), async (r
     res.json(message);
   } catch (error) {
     logger.error('❌ Error updating message:', error);
-    res.status(500).json({ message: 'Error updating message', error: error.message });
+    res.status(500).json({ message: 'Error updating message'});
   }
 });
 
@@ -912,7 +912,7 @@ router.put('/:id/delivered', auth, requireActiveUser, validateParamId('id'), asy
     res.json(message);
   } catch (error) {
     logger.error('❌ Error updating message:', error);
-    res.status(500).json({ message: 'Error updating message', error: error.message });
+    res.status(500).json({ message: 'Error updating message'});
   }
 });
 
@@ -920,7 +920,17 @@ router.put('/:id/delivered', auth, requireActiveUser, validateParamId('id'), asy
 router.get('/group/:groupId', auth, requireActiveUser, async (req, res) => {
   try {
     const { groupId } = req.params;
-    
+
+    // Verify the requesting user is a member of this group chat
+    const groupChat = await GroupChat.findById(groupId).select('members');
+    if (!groupChat) {
+      return res.status(404).json({ message: 'Group chat not found' });
+    }
+    const isMember = groupChat.members.some(m => m.toString() === req.userId);
+    if (!isMember) {
+      return res.status(403).json({ message: 'Not a member of this group chat' });
+    }
+
     const messages = await Message.find({ groupChat: groupId })
       .populate('sender', 'username profilePhoto')
       .populate('readBy.user', 'username')
@@ -932,7 +942,7 @@ router.get('/group/:groupId', auth, requireActiveUser, async (req, res) => {
     
     res.json(decryptedMessages);
   } catch (error) {
-    res.status(500).json({ message: 'Error fetching group messages', error: error.message });
+    res.status(500).json({ message: 'Error fetching group messages'});
   }
 });
 
